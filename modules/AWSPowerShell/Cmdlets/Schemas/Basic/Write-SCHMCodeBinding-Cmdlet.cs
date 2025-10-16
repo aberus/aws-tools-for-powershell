@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Schemas;
 using Amazon.Schemas.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SCHM
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.SCHM
     [OutputType("Amazon.Schemas.Model.PutCodeBindingResponse")]
     [AWSCmdlet("Calls the Amazon EventBridge Schema Registry PutCodeBinding API operation.", Operation = new[] {"PutCodeBinding"}, SelectReturnType = typeof(Amazon.Schemas.Model.PutCodeBindingResponse))]
     [AWSCmdletOutput("Amazon.Schemas.Model.PutCodeBindingResponse",
-        "This cmdlet returns an Amazon.Schemas.Model.PutCodeBindingResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Schemas.Model.PutCodeBindingResponse object containing multiple properties."
     )]
     public partial class WriteSCHMCodeBindingCmdlet : AmazonSchemasClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Language
         /// <summary>
@@ -123,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.SCHM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SchemaName), MyInvocation.BoundParameters);
@@ -236,13 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.SCHM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge Schema Registry", "PutCodeBinding");
             try
             {
-                #if DESKTOP
-                return client.PutCodeBinding(request);
-                #elif CORECLR
-                return client.PutCodeBindingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutCodeBindingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

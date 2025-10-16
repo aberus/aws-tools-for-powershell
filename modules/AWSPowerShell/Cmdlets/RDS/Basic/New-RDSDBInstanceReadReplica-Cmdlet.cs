@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -41,9 +43,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     /// Amazon Aurora doesn't support this operation. To create a DB instance for an Aurora
     /// DB cluster, use the <c>CreateDBInstance</c> operation.
     /// </para><para>
-    /// All read replica DB instances are created with backups disabled. All other attributes
-    /// (including DB security groups and DB parameter groups) are inherited from the source
-    /// DB instance or cluster, except as specified.
+    /// RDS creates read replicas with backups disabled. All other attributes (including DB
+    /// security groups and DB parameter groups) are inherited from the source DB instance
+    /// or cluster, except as specified.
     /// </para><important><para>
     /// Your source DB instance or cluster must have backup retention enabled.
     /// </para></important>
@@ -53,18 +55,19 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service CreateDBInstanceReadReplica API operation.", Operation = new[] {"CreateDBInstanceReadReplica"}, SelectReturnType = typeof(Amazon.RDS.Model.CreateDBInstanceReadReplicaResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBInstance or Amazon.RDS.Model.CreateDBInstanceReadReplicaResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBInstance object.",
-        "The service call response (type Amazon.RDS.Model.CreateDBInstanceReadReplicaResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.CreateDBInstanceReadReplicaResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewRDSDBInstanceReadReplicaCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocatedStorage
         /// <summary>
         /// <para>
         /// <para>The amount of storage (in gibibytes) to allocate initially for the read replica. Follow
-        /// the allocation rules specified in <c>CreateDBInstance</c>.</para><note><para>Be sure to allocate enough storage for your read replica so that the create operation
+        /// the allocation rules specified in <c>CreateDBInstance</c>.</para><para>This setting isn't valid for RDS for SQL Server.</para><note><para>Be sure to allocate enough storage for your read replica so that the create operation
         /// can succeed. You can also allocate additional storage for future growth.</para></note>
         /// </para>
         /// </summary>
@@ -76,7 +79,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>Specifies whether to automatically apply minor engine upgrades to the read replica
-        /// during the maintenance window.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Default: Inherits the value from the source DB instance.</para>
+        /// during the maintenance window.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Default: Inherits the value from the source DB instance.</para><para>For more information about automatic minor version upgrades, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.Upgrading.html#USER_UpgradeDBInstance.Upgrading.AutoMinorVersionUpgrades">Automatically
+        /// upgrading the minor engine version</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,6 +96,30 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AvailabilityZone { get; set; }
+        #endregion
+        
+        #region Parameter BackupTarget
+        /// <summary>
+        /// <para>
+        /// <para>The location where RDS stores automated backups and manual snapshots.</para><para>Valid Values:</para><ul><li><para><c>local</c> for Dedicated Local Zones</para></li><li><para><c>region</c> for Amazon Web Services Region</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String BackupTarget { get; set; }
+        #endregion
+        
+        #region Parameter CACertificateIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The CA certificate identifier to use for the read replica's server certificate.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html">Using
+        /// SSL/TLS to encrypt a connection to a DB instance</a> in the <i>Amazon RDS User Guide</i>
+        /// and <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html">
+        /// Using SSL/TLS to encrypt a connection to a DB cluster</a> in the <i>Amazon Aurora
+        /// User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CACertificateIdentifier { get; set; }
         #endregion
         
         #region Parameter CopyTagsToSnapshot
@@ -116,6 +144,17 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String CustomIamInstanceProfile { get; set; }
+        #endregion
+        
+        #region Parameter DatabaseInsightsMode
+        /// <summary>
+        /// <para>
+        /// <para>The mode of Database Insights to enable for the read replica.</para><note><para>This setting isn't supported.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.DatabaseInsightsMode")]
+        public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
         #endregion
         
         #region Parameter DBInstanceClass
@@ -153,12 +192,21 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter DBParameterGroupName
         /// <summary>
         /// <para>
-        /// <para>The name of the DB parameter group to associate with this DB instance.</para><para>If you don't specify a value for <c>DBParameterGroupName</c>, then Amazon RDS uses
-        /// the <c>DBParameterGroup</c> of the source DB instance for a same Region read replica,
-        /// or the default <c>DBParameterGroup</c> for the specified DB engine for a cross-Region
-        /// read replica.</para><para>Specifying a parameter group for this operation is only supported for MySQL DB instances
-        /// for cross-Region read replicas and for Oracle DB instances. It isn't supported for
-        /// MySQL DB instances for same Region read replicas or for RDS Custom.</para><para>Constraints:</para><ul><li><para>Must be 1 to 255 letters, numbers, or hyphens.</para></li><li><para>First character must be a letter.</para></li><li><para>Can't end with a hyphen or contain two consecutive hyphens.</para></li></ul>
+        /// <para>The name of the DB parameter group to associate with this read replica DB instance.</para><para>For the Db2 DB engine, if your source DB instance uses the bring your own license
+        /// (BYOL) model, then a custom parameter group must be associated with the replica. For
+        /// a same Amazon Web Services Region replica, if you don't specify a custom parameter
+        /// group, Amazon RDS associates the custom parameter group associated with the source
+        /// DB instance. For a cross-Region replica, you must specify a custom parameter group.
+        /// This custom parameter group must include your IBM Site ID and IBM Customer ID. For
+        /// more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/db2-licensing.html#db2-prereqs-ibm-info">IBM
+        /// IDs for bring your own license (BYOL) for Db2</a>. </para><para>For Single-AZ or Multi-AZ DB instance read replica instances, if you don't specify
+        /// a value for <c>DBParameterGroupName</c>, then Amazon RDS uses the <c>DBParameterGroup</c>
+        /// of the source DB instance for a same Region read replica, or the default <c>DBParameterGroup</c>
+        /// for the specified DB engine for a cross-Region read replica.</para><para>For Multi-AZ DB cluster same Region read replica instances, if you don't specify a
+        /// value for <c>DBParameterGroupName</c>, then Amazon RDS uses the default <c>DBParameterGroup</c>.</para><para>Specifying a parameter group for this operation is only supported for MySQL DB instances
+        /// for cross-Region read replicas, for Multi-AZ DB cluster read replica instances, for
+        /// Db2 DB instances, and for Oracle DB instances. It isn't supported for MySQL DB instances
+        /// for same Region read replicas or for RDS Custom.</para><para>Constraints:</para><ul><li><para>Must be 1 to 255 letters, numbers, or hyphens.</para></li><li><para>First character must be a letter.</para></li><li><para>Can't end with a hyphen or contain two consecutive hyphens.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,7 +280,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The IPv4 DNS IP addresses of your primary and secondary Active Directory domain controllers.</para><para>Constraints:</para><ul><li><para>Two IP addresses must be provided. If there isn't a secondary domain controller, use
-        /// the IP address of the primary domain controller for both entries in the list.</para></li></ul><para>Example: <c>123.124.125.126,234.235.236.237</c></para>
+        /// the IP address of the primary domain controller for both entries in the list.</para></li></ul><para>Example: <c>123.124.125.126,234.235.236.237</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -275,7 +327,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>The list of logs that the new DB instance is to export to CloudWatch Logs. The values
         /// in the list depend on the DB engine being used. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.html#USER_LogAccess.Procedural.UploadtoCloudWatch">Publishing
-        /// Database Logs to Amazon CloudWatch Logs </a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting doesn't apply to RDS Custom DB instances.</para>
+        /// Database Logs to Amazon CloudWatch Logs </a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -506,8 +562,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// Version 4 Signing Process</a>.</para><note><para>If you are using an Amazon Web Services SDK tool or the CLI, you can specify <c>SourceRegion</c>
         /// (or <c>--source-region</c> for the CLI) instead of specifying <c>PreSignedUrl</c>
         /// manually. Specifying <c>SourceRegion</c> autogenerates a presigned URL that is a valid
-        /// request for the operation that can run in the source Amazon Web Services Region.</para><para><c>SourceRegion</c> isn't supported for SQL Server, because Amazon RDS for SQL Server
-        /// doesn't support cross-Region read replicas.</para></note><para>This setting doesn't apply to RDS Custom DB instances.</para>
+        /// request for the operation that can run in the source Amazon Web Services Region.</para></note><para>This setting doesn't apply to RDS Custom DB instances.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -518,7 +573,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The number of CPU cores and the number of threads per core for the DB instance class
-        /// of the DB instance.</para><para>This setting doesn't apply to RDS Custom DB instances.</para>
+        /// of the DB instance.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -545,14 +604,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter ReplicaMode
         /// <summary>
         /// <para>
-        /// <para>The open mode of the replica database: mounted or read-only.</para><note><para>This parameter is only supported for Oracle DB instances.</para></note><para>Mounted DB replicas are included in Oracle Database Enterprise Edition. The main use
+        /// <para>The open mode of the replica database.</para><para>This parameter is only supported for Db2 DB instances and Oracle DB instances.</para><dl><dt>Db2</dt><dd><para>Standby DB replicas are included in Db2 Advanced Edition (AE) and Db2 Standard Edition
+        /// (SE). The main use case for standby replicas is cross-Region disaster recovery. Because
+        /// it doesn't accept user connections, a standby replica can't serve a read-only workload.</para><para>You can create a combination of standby and read-only DB replicas for the same primary
+        /// DB instance. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/db2-replication.html">Working
+        /// with replicas for Amazon RDS for Db2</a> in the <i>Amazon RDS User Guide</i>.</para><para>To create standby DB replicas for RDS for Db2, set this parameter to <c>mounted</c>.</para></dd><dt>Oracle</dt><dd><para>Mounted DB replicas are included in Oracle Database Enterprise Edition. The main use
         /// case for mounted replicas is cross-Region disaster recovery. The primary database
         /// doesn't use Active Data Guard to transmit information to the mounted replica. Because
         /// it doesn't accept user connections, a mounted replica can't serve a read-only workload.</para><para>You can create a combination of mounted and read-only DB replicas for the same primary
         /// DB instance. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/oracle-read-replicas.html">Working
-        /// with Oracle Read Replicas for Amazon RDS</a> in the <i>Amazon RDS User Guide</i>.</para><para>For RDS Custom, you must specify this parameter and set it to <c>mounted</c>. The
+        /// with read replicas for Amazon RDS for Oracle</a> in the <i>Amazon RDS User Guide</i>.</para><para>For RDS Custom, you must specify this parameter and set it to <c>mounted</c>. The
         /// value won't be set by default. After replica creation, you can manage the open mode
-        /// manually.</para>
+        /// manually.</para></dd></dl>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -577,8 +640,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The identifier of the DB instance that will act as the source for the read replica.
-        /// Each DB instance can have up to 15 read replicas, with the exception of Oracle and
-        /// SQL Server, which can have up to five.</para><para>Constraints:</para><ul><li><para>Must be the identifier of an existing Db2, MariaDB, MySQL, Oracle, PostgreSQL, or
+        /// Each DB instance can have up to 15 read replicas, except for the following engines:</para><ul><li><para>Db2 - Can have up to three replicas.</para></li><li><para>Oracle - Can have up to five read replicas.</para></li><li><para>SQL Server - Can have up to five read replicas.</para></li></ul><para>Constraints:</para><ul><li><para>Must be the identifier of an existing Db2, MariaDB, MySQL, Oracle, PostgreSQL, or
         /// SQL Server DB instance.</para></li><li><para>Can't be specified if the <c>SourceDBClusterIdentifier</c> parameter is also specified.</para></li><li><para>For the limitations of Oracle read replicas, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/oracle-read-replicas.limitations.html#oracle-read-replicas.limitations.versions-and-licenses">Version
         /// and licensing considerations for RDS for Oracle replicas</a> in the <i>Amazon RDS
         /// User Guide</i>.</para></li><li><para>For the limitations of SQL Server read replicas, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/SQLServer.ReadReplicas.html#SQLServer.ReadReplicas.Limitations">Read
@@ -620,8 +682,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter StorageType
         /// <summary>
         /// <para>
-        /// <para>The storage type to associate with the read replica.</para><para>If you specify <c>io1</c> or <c>gp3</c>, you must also include a value for the <c>Iops</c>
-        /// parameter.</para><para>Valid Values: <c>gp2 | gp3 | io1 | standard</c></para><para>Default: <c>io1</c> if the <c>Iops</c> parameter is specified. Otherwise, <c>gp2</c>.</para>
+        /// <para>The storage type to associate with the read replica.</para><para>If you specify <c>io1</c>, <c>io2</c>, or <c>gp3</c>, you must also include a value
+        /// for the <c>Iops</c> parameter.</para><para>Valid Values: <c>gp2 | gp3 | io1 | io2 | standard</c></para><para>Default: <c>io1</c> if the <c>Iops</c> parameter is specified. Otherwise, <c>gp3</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -631,7 +693,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -666,7 +732,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of Amazon EC2 VPC security groups to associate with the read replica.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Default: The default EC2 VPC security group for the DB subnet group's VPC.</para>
+        /// <para>A list of Amazon EC2 VPC security groups to associate with the read replica.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Default: The default EC2 VPC security group for the DB subnet group's VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -685,16 +755,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBInstance";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBInstanceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -705,9 +765,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBInstanceIdentifier), MyInvocation.BoundParameters);
@@ -721,27 +785,20 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.CreateDBInstanceReadReplicaResponse, NewRDSDBInstanceReadReplicaCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBInstanceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SourceRegion = this.SourceRegion;
             context.AllocatedStorage = this.AllocatedStorage;
             context.AutoMinorVersionUpgrade = this.AutoMinorVersionUpgrade;
             context.AvailabilityZone = this.AvailabilityZone;
+            context.BackupTarget = this.BackupTarget;
+            context.CACertificateIdentifier = this.CACertificateIdentifier;
             context.CopyTagsToSnapshot = this.CopyTagsToSnapshot;
             context.CustomIamInstanceProfile = this.CustomIamInstanceProfile;
+            context.DatabaseInsightsMode = this.DatabaseInsightsMode;
             context.DBInstanceClass = this.DBInstanceClass;
             context.DBInstanceIdentifier = this.DBInstanceIdentifier;
             #if MODULAR
@@ -834,6 +891,14 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.AvailabilityZone = cmdletContext.AvailabilityZone;
             }
+            if (cmdletContext.BackupTarget != null)
+            {
+                request.BackupTarget = cmdletContext.BackupTarget;
+            }
+            if (cmdletContext.CACertificateIdentifier != null)
+            {
+                request.CACertificateIdentifier = cmdletContext.CACertificateIdentifier;
+            }
             if (cmdletContext.CopyTagsToSnapshot != null)
             {
                 request.CopyTagsToSnapshot = cmdletContext.CopyTagsToSnapshot.Value;
@@ -841,6 +906,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.CustomIamInstanceProfile != null)
             {
                 request.CustomIamInstanceProfile = cmdletContext.CustomIamInstanceProfile;
+            }
+            if (cmdletContext.DatabaseInsightsMode != null)
+            {
+                request.DatabaseInsightsMode = cmdletContext.DatabaseInsightsMode;
             }
             if (cmdletContext.DBInstanceClass != null)
             {
@@ -1036,13 +1105,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "CreateDBInstanceReadReplica");
             try
             {
-                #if DESKTOP
-                return client.CreateDBInstanceReadReplica(request);
-                #elif CORECLR
-                return client.CreateDBInstanceReadReplicaAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDBInstanceReadReplicaAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1063,8 +1126,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Int32? AllocatedStorage { get; set; }
             public System.Boolean? AutoMinorVersionUpgrade { get; set; }
             public System.String AvailabilityZone { get; set; }
+            public System.String BackupTarget { get; set; }
+            public System.String CACertificateIdentifier { get; set; }
             public System.Boolean? CopyTagsToSnapshot { get; set; }
             public System.String CustomIamInstanceProfile { get; set; }
+            public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
             public System.String DBInstanceClass { get; set; }
             public System.String DBInstanceIdentifier { get; set; }
             public System.String DBParameterGroupName { get; set; }

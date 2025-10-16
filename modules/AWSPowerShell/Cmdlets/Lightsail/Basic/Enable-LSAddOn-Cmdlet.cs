@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
     /// Enables or modifies an add-on for an Amazon Lightsail resource. For more information,
-    /// see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+    /// see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
     /// Lightsail Developer Guide</a>.
     /// </summary>
     [Cmdlet("Enable", "LSAddOn", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail EnableAddOn API operation.", Operation = new[] {"EnableAddOn"}, SelectReturnType = typeof(Amazon.Lightsail.Model.EnableAddOnResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.Operation or Amazon.Lightsail.Model.EnableAddOnResponse",
         "This cmdlet returns a collection of Amazon.Lightsail.Model.Operation objects.",
-        "The service call response (type Amazon.Lightsail.Model.EnableAddOnResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.EnableAddOnResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EnableLSAddOnCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddOnRequest_AddOnType
         /// <summary>
@@ -124,16 +127,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "Operations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -144,9 +137,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceName), MyInvocation.BoundParameters);
@@ -160,21 +157,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.EnableAddOnResponse, EnableLSAddOnCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AddOnRequest_AddOnType = this.AddOnRequest_AddOnType;
             #if MODULAR
             if (this.AddOnRequest_AddOnType == null && ParameterWasBound(nameof(this.AddOnRequest_AddOnType)))
@@ -329,13 +316,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "EnableAddOn");
             try
             {
-                #if DESKTOP
-                return client.EnableAddOn(request);
-                #elif CORECLR
-                return client.EnableAddOnAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.EnableAddOnAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

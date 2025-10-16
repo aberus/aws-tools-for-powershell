@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmail;
 using Amazon.SimpleEmail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES
 {
     /// <summary>
@@ -47,14 +49,15 @@ namespace Amazon.PowerShell.Cmdlets.SES
     [AWSCmdlet("Calls the Amazon Simple Email Service (SES) SendBounce API operation.", Operation = new[] {"SendBounce"}, SelectReturnType = typeof(Amazon.SimpleEmail.Model.SendBounceResponse))]
     [AWSCmdletOutput("System.String or Amazon.SimpleEmail.Model.SendBounceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SimpleEmail.Model.SendBounceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleEmail.Model.SendBounceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SendSESBounceCmdlet : AmazonSimpleEmailServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
-        #region Parameter MessageDsn_UtcArrivalDate
+        #region Parameter MessageDsn_ArrivalDate
         /// <summary>
         /// <para>
         /// <para>When the message was received by the reporting mail transfer agent (MTA), in <a href="https://www.ietf.org/rfc/rfc0822.txt">RFC
@@ -62,7 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.SES
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? MessageDsn_UtcArrivalDate { get; set; }
+        public System.DateTime? MessageDsn_ArrivalDate { get; set; }
         #endregion
         
         #region Parameter BouncedRecipientInfoList
@@ -70,7 +73,11 @@ namespace Amazon.PowerShell.Cmdlets.SES
         /// <para>
         /// <para>A list of recipients of the bounced message, including the information required to
         /// create the Delivery Status Notifications (DSNs) for the recipients. You must specify
-        /// at least one <c>BouncedRecipientInfo</c> in the list.</para>
+        /// at least one <c>BouncedRecipientInfo</c> in the list.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -130,7 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.SES
         #region Parameter MessageDsn_ExtensionField
         /// <summary>
         /// <para>
-        /// <para>Additional X-headers to include in the DSN.</para>
+        /// <para>Additional X-headers to include in the DSN.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,24 +178,6 @@ namespace Amazon.PowerShell.Cmdlets.SES
         public System.String MessageDsn_ReportingMta { get; set; }
         #endregion
         
-        #region Parameter MessageDsn_ArrivalDate
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use ArrivalDateUtc instead. Setting either ArrivalDate
-        /// or ArrivalDateUtc results in both ArrivalDate and ArrivalDateUtc being assigned, the
-        /// latest assignment to either one of the two property is reflected in the value of both.
-        /// ArrivalDate is provided for backwards compatibility only and assigning a non-Utc DateTime
-        /// to it results in the wrong timestamp being passed to the service.</para><para>When the message was received by the reporting mail transfer agent (MTA), in <a href="https://www.ietf.org/rfc/rfc0822.txt">RFC
-        /// 822</a> date-time format.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use MessageDsn_UtcArrivalDate instead.")]
-        public System.DateTime? MessageDsn_ArrivalDate { get; set; }
-        #endregion
-        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'MessageId'.
@@ -194,16 +187,6 @@ namespace Amazon.PowerShell.Cmdlets.SES
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "MessageId";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BouncedRecipientInfoList parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BouncedRecipientInfoList' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BouncedRecipientInfoList' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -216,9 +199,13 @@ namespace Amazon.PowerShell.Cmdlets.SES
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BounceSender), MyInvocation.BoundParameters);
@@ -232,21 +219,11 @@ namespace Amazon.PowerShell.Cmdlets.SES
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleEmail.Model.SendBounceResponse, SendSESBounceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BouncedRecipientInfoList;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.BouncedRecipientInfoList != null)
             {
                 context.BouncedRecipientInfoList = new List<Amazon.SimpleEmail.Model.BouncedRecipientInfo>(this.BouncedRecipientInfoList);
@@ -266,15 +243,12 @@ namespace Amazon.PowerShell.Cmdlets.SES
             #endif
             context.BounceSenderArn = this.BounceSenderArn;
             context.Explanation = this.Explanation;
-            context.MessageDsn_UtcArrivalDate = this.MessageDsn_UtcArrivalDate;
+            context.MessageDsn_ArrivalDate = this.MessageDsn_ArrivalDate;
             if (this.MessageDsn_ExtensionField != null)
             {
                 context.MessageDsn_ExtensionField = new List<Amazon.SimpleEmail.Model.ExtensionField>(this.MessageDsn_ExtensionField);
             }
             context.MessageDsn_ReportingMta = this.MessageDsn_ReportingMta;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.MessageDsn_ArrivalDate = this.MessageDsn_ArrivalDate;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.OriginalMessageId = this.OriginalMessageId;
             #if MODULAR
             if (this.OriginalMessageId == null && ParameterWasBound(nameof(this.OriginalMessageId)))
@@ -318,14 +292,14 @@ namespace Amazon.PowerShell.Cmdlets.SES
              // populate MessageDsn
             var requestMessageDsnIsNull = true;
             request.MessageDsn = new Amazon.SimpleEmail.Model.MessageDsn();
-            System.DateTime? requestMessageDsn_messageDsn_UtcArrivalDate = null;
-            if (cmdletContext.MessageDsn_UtcArrivalDate != null)
+            System.DateTime? requestMessageDsn_messageDsn_ArrivalDate = null;
+            if (cmdletContext.MessageDsn_ArrivalDate != null)
             {
-                requestMessageDsn_messageDsn_UtcArrivalDate = cmdletContext.MessageDsn_UtcArrivalDate.Value;
+                requestMessageDsn_messageDsn_ArrivalDate = cmdletContext.MessageDsn_ArrivalDate.Value;
             }
-            if (requestMessageDsn_messageDsn_UtcArrivalDate != null)
+            if (requestMessageDsn_messageDsn_ArrivalDate != null)
             {
-                request.MessageDsn.ArrivalDateUtc = requestMessageDsn_messageDsn_UtcArrivalDate.Value;
+                request.MessageDsn.ArrivalDate = requestMessageDsn_messageDsn_ArrivalDate.Value;
                 requestMessageDsnIsNull = false;
             }
             List<Amazon.SimpleEmail.Model.ExtensionField> requestMessageDsn_messageDsn_ExtensionField = null;
@@ -348,22 +322,6 @@ namespace Amazon.PowerShell.Cmdlets.SES
                 request.MessageDsn.ReportingMta = requestMessageDsn_messageDsn_ReportingMta;
                 requestMessageDsnIsNull = false;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            System.DateTime? requestMessageDsn_messageDsn_ArrivalDate = null;
-            if (cmdletContext.MessageDsn_ArrivalDate != null)
-            {
-                if (cmdletContext.MessageDsn_UtcArrivalDate != null)
-                {
-                    throw new System.ArgumentException("Parameters MessageDsn_ArrivalDate and MessageDsn_UtcArrivalDate are mutually exclusive.", nameof(this.MessageDsn_ArrivalDate));
-                }
-                requestMessageDsn_messageDsn_ArrivalDate = cmdletContext.MessageDsn_ArrivalDate.Value;
-            }
-            if (requestMessageDsn_messageDsn_ArrivalDate != null)
-            {
-                request.MessageDsn.ArrivalDate = requestMessageDsn_messageDsn_ArrivalDate.Value;
-                requestMessageDsnIsNull = false;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
              // determine if request.MessageDsn should be set to null
             if (requestMessageDsnIsNull)
             {
@@ -411,13 +369,7 @@ namespace Amazon.PowerShell.Cmdlets.SES
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service (SES)", "SendBounce");
             try
             {
-                #if DESKTOP
-                return client.SendBounce(request);
-                #elif CORECLR
-                return client.SendBounceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendBounceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -438,11 +390,9 @@ namespace Amazon.PowerShell.Cmdlets.SES
             public System.String BounceSender { get; set; }
             public System.String BounceSenderArn { get; set; }
             public System.String Explanation { get; set; }
-            public System.DateTime? MessageDsn_UtcArrivalDate { get; set; }
+            public System.DateTime? MessageDsn_ArrivalDate { get; set; }
             public List<Amazon.SimpleEmail.Model.ExtensionField> MessageDsn_ExtensionField { get; set; }
             public System.String MessageDsn_ReportingMta { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? MessageDsn_ArrivalDate { get; set; }
             public System.String OriginalMessageId { get; set; }
             public System.Func<Amazon.SimpleEmail.Model.SendBounceResponse, SendSESBounceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.MessageId;

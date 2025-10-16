@@ -5,14 +5,15 @@
 .DESCRIPTION
     Publishes the AWS Tools for PowerShell modules (AWSPowerShell, 
     AWSPowerShell.NetCore, and AWS.Tools.*) to the PowerShell Gallery or a 
-    local PowerShell repository.
+    local PowerShell repository. Updating DDB Package Versions can be skipped by
+    passing an empty value to UpdatePackageVersionsProfile parameter.
 
 .NOTES
     The script must be run in a folder that contains subfolders holding the 
     modules to be published (i.e. .\AWSPowerShell, .\AWSPowerShell.NetCore, and
     .\AWS.Tools).
 
-    Publishing is done using the Publish-Module cmdlet of the PowerShellGet 
+    Publishing is done using the Publish-PSResource cmdlet of the PSResourceGet 
     module. This module must be installed either in user scope or globally 
     before this script can be used.
 
@@ -66,8 +67,7 @@ Param
     [ValidateNotNullOrEmpty()]
     [string]$SecretKey,
 
-    [Parameter(ParameterSetName="remote", Mandatory = $true, HelpMessage = "The AWS profile to use to update and store PowerShell Gallery package information in the ProfileVersions table.")]
-    [ValidateNotNullOrEmpty()]
+    [Parameter(ParameterSetName="remote", HelpMessage = "The AWS profile to use to update and store PowerShell Gallery package information in the ProfileVersions table. This should have a value for the latest GA version of AWSPowerShell. This should be empty for older versions and non-GA releases.")]
     [string]$UpdatePackageVersionsProfile,
     
     [Parameter(ParameterSetName="remote")]    
@@ -85,18 +85,39 @@ Param
 
 $ErrorActionPreference = "Stop"
 $paramSetRemoteName = "remote"
+$paramSetLocalName = "local"
 
-Import-Module -Name "PowerShellGet"
+# Import module Microsoft.PowerShell.PSResourceGet using path to psd1 as there is an issue with pwsh 7.4.6 in codebuild where assemblies of other module versions were being loaded.
+$psResourceGetModulePath = (Get-Module 'Microsoft.PowerShell.PSResourceGet' -ListAvailable | Where-Object {$_.Version -eq '1.1.1'})[0].Path
+Import-Module -Name $psResourceGetModulePath -Force
 
+# in pwsh 7.1.0, running Publish-PSResource errors out with
+# Cannot retrieve the dynamic parameters for the cmdlet. Loading repository store failed: Could not find file 'C:\Users\ContainerAdministrator\AppData\Local\PSResourceGet\PSResourceRepository.xml'.
+# Running Get-PSResourceRepository seems to create the PSResourceRepository.xml file
+$allRepos = Get-PSResourceRepository
+
+$shouldUpdatePackageVersions = ![string]::IsNullOrEmpty($UpdatePackageVersionsProfile)
 #Import DynamoDBv2 needed to update the PackageVersions table.
 if ($PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
-    if (-not (Get-Module -ListAvailable -Name AWS.Tools.DynamoDBv2 | Where-Object { $_.Version -eq $RequiredAWSPowerShellVersionToUse })) {
-        Write-Host "Installing AWS.Tools.DynamoDBv2 $RequiredAWSPowerShellVersionToUse"
-        Install-Module -Name AWS.Tools.DynamoDBv2 -RequiredVersion $RequiredAWSPowerShellVersionToUse -Force
-    }
-    Import-Module -Name AWS.Tools.DynamoDBv2 -RequiredVersion $RequiredAWSPowerShellVersionToUse
+    if ($shouldUpdatePackageVersions) {
+        if (-not (Get-Module -ListAvailable -Name AWS.Tools.DynamoDBv2 | Where-Object { $_.Version -eq $RequiredAWSPowerShellVersionToUse })) {
+            Write-Host "Installing AWS.Tools.DynamoDBv2 $RequiredAWSPowerShellVersionToUse"
+            Install-Module -Name AWS.Tools.DynamoDBv2 -RequiredVersion $RequiredAWSPowerShellVersionToUse -Force
+        }
+        Import-Module -Name AWS.Tools.DynamoDBv2 -RequiredVersion $RequiredAWSPowerShellVersionToUse
 
-    Import-Module $PSScriptRoot/Update-ModulePackageVersion.psm1
+        Import-Module $PSScriptRoot/Update-ModulePackageVersion.psm1
+    }
+    else {
+        Write-Warning 'Skipping updates to the PackageVersions table since UpdatePackageVersionsProfile parameter is either null or empty'
+    }
+}
+elseif($PSCmdlet.ParameterSetName -eq $paramSetLocalName){
+    # validate if the LocalRepositoryName exists
+    $localRepo = $allRepos | Where-Object {$_.Name -eq $LocalRepositoryName}
+    if(-not $localRepo){
+        throw "Local repository $LocalRepositoryName does not exist."
+    }
 }
 
 $alreadyImportedModules = New-Object System.Collections.Generic.HashSet[string]
@@ -105,6 +126,12 @@ $currentLocation = (Get-Location).Path
 $awsPowerShellModuleLocation = Join-Path $currentLocation "AWSPowerShell"
 $awsPowerShellCoreModuleLocation = Join-Path $currentLocation "AWSPowerShell.NetCore"
 $awsPowerShellModularModulesLocation = Join-Path $currentLocation "AWS.Tools"
+$s3ModularModuleLocation = Join-Path $awsPowerShellModularModulesLocation "AWS.Tools.S3"
+
+# Validate the generated nuget package from Microsoft.PowerShell.PSResourceGet for AWS.Tools.S3 is valid
+# It is enough to test a single Tools module since the psd1 template is same for all service modules
+.\Test-NugetPackageDependencyVersion.ps1 -ModulePath $s3ModularModuleLocation
+
 
 if (-not $DryRun -and $PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
     #Import SecretsManager needed to get the secret key.
@@ -117,17 +144,16 @@ if (-not $DryRun -and $PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
     $ApiKey = ((Get-SECSecretValue -SecretId $SecretId -Region $SecretRegion -ProfileName $SecretReaderProfile).SecretString | ConvertFrom-Json).$SecretKey
 }
 
-if($PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
-    $commonArgs = @{
-        'NuGetApiKey' = $ApiKey
-        'Repository'  = "PSGallery"
-    }
+$commonArgs = @{
+    'ApiKey'                     = $LocalRepositoryNuGetApiKey
+    'SkipDependenciesCheck'      = $true
+    'SkipModuleManifestValidate' = $true
+    'Repository'                 = $LocalRepositoryName
 }
-else {
-    $commonArgs = @{        
-        'NuGetApiKey' = $LocalRepositoryNuGetApiKey
-        'Repository'  = $LocalRepositoryName
-    }
+
+if ($PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
+    $commonArgs.ApiKey = $ApiKey
+    $commonArgs.Repository = "PSGallery"
 }
 
 function PublishRecursive([string]$modulePath) {
@@ -145,6 +171,10 @@ function PublishRecursive([string]$modulePath) {
 
     if ($alreadyImportedModules.Add($manifest.Name)) {
         $manifestData = Import-PowerShellDataFile $manifest.FullName
+        $prereleaseLabel = ''
+        if($manifestData.PrivateData.PSData.ContainsKey('Prerelease')){
+            $prereleaseLabel = '-' + $manifestData.PrivateData.PSData.Prerelease
+        }
         
         foreach ($dependency in $manifestData.RequiredModules.ModuleName) {
             if ($dependency -like 'AWS.Tools.*') {
@@ -162,8 +192,8 @@ function PublishRecursive([string]$modulePath) {
                     Write-Host "-DryRun specified, skipped actual publish and PackageVersions update of $modulePath"
                 }
                 else {
-                    Publish-Module -Path $modulePath @commonArgs -Force
-                    if($PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
+                    Publish-PSResource -Path $modulePath @commonArgs
+                    if($PSCmdlet.ParameterSetName -eq $paramSetRemoteName -and $shouldUpdatePackageVersions) {
                         Update-ModulePackageVersion -modulePath $modulePath -versionNumber $manifestData.ModuleVersion -repository "PSGallery" -profileName $UpdatePackageVersionsProfile
                     }
                     Write-Host "Published $modulePath"
@@ -174,12 +204,13 @@ function PublishRecursive([string]$modulePath) {
                 #We could have failed because the module was already published (possible in case we run this script multiple times)
                 if($PSCmdlet.ParameterSetName -eq $paramSetRemoteName) {
                     try {
-                        Find-Module ([System.IO.Path]::GetFileNameWithoutExtension($manifest)) -RequiredVersion $manifestData.ModuleVersion
-                        Write-Host "Successfully found module $modulePath version $($manifestData.ModuleVersion) already on the gallery"
+                        $findVersion = $manifestData.ModuleVersion + $prereleaseLabel
+                        Find-PSResource -Repository 'PSGallery' -Type 'Module' -Name ([System.IO.Path]::GetFileNameWithoutExtension($manifest)) -Version $findVersion
+                        Write-Host "Successfully found module $modulePath version $findVersion already on the gallery"
                         if ($DryRun) {
                             Write-Host "-DryRun specified, skipped PackageVersions update of $modulePath in catch."
                         }
-                        else {
+                        elseif($shouldUpdatePackageVersions){
                             Update-ModulePackageVersion -modulePath $modulePath -versionNumber $manifestData.ModuleVersion -repository "PSGallery" -profileName $UpdatePackageVersionsProfile
                         }
                         break;

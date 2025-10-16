@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,18 +22,23 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Personalize;
 using Amazon.Personalize.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PERS
 {
     /// <summary>
+    /// <important><para>
+    ///  You incur campaign costs while it is active. To avoid unnecessary costs, make sure
+    /// to delete the campaign when you are finished. For information about campaign costs,
+    /// see <a href="https://aws.amazon.com/personalize/pricing/">Amazon Personalize pricing</a>.
+    /// </para></important><para>
     /// Creates a campaign that deploys a solution version. When a client calls the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">GetRecommendations</a>
     /// and <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetPersonalizedRanking.html">GetPersonalizedRanking</a>
     /// APIs, a campaign is specified in the request.
-    /// 
-    ///  
-    /// <para><b>Minimum Provisioned TPS and Auto-Scaling</b></para><important><para>
+    /// </para><para><b>Minimum Provisioned TPS and Auto-Scaling</b></para><important><para>
     ///  A high <c>minProvisionedTPS</c> will increase your cost. We recommend starting with
     /// 1 for <c>minProvisionedTPS</c> (the default). Track your usage using Amazon CloudWatch
     /// metrics, and increase the <c>minProvisionedTPS</c> as necessary.
@@ -76,12 +81,13 @@ namespace Amazon.PowerShell.Cmdlets.PERS
     [AWSCmdlet("Calls the AWS Personalize CreateCampaign API operation.", Operation = new[] {"CreateCampaign"}, SelectReturnType = typeof(Amazon.Personalize.Model.CreateCampaignResponse))]
     [AWSCmdletOutput("System.String or Amazon.Personalize.Model.CreateCampaignResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Personalize.Model.CreateCampaignResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Personalize.Model.CreateCampaignResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPERSCampaignCmdlet : AmazonPersonalizeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CampaignConfig_EnableMetadataWithRecommendation
         /// <summary>
@@ -107,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         /// and <c>explorationItemAgeCutOff</c>, you want to use to configure the amount of item
         /// exploration Amazon Personalize uses when recommending items. Provide <c>itemExplorationConfig</c>
         /// data only if your solution uses the <a href="https://docs.aws.amazon.com/personalize/latest/dg/native-recipe-new-item-USER_PERSONALIZATION.html">User-Personalization</a>
-        /// recipe.</para>
+        /// recipe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,7 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #region Parameter SolutionVersionArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the solution version to deploy.</para>
+        /// <para>The Amazon Resource Name (ARN) of the trained model to deploy with the campaign. To
+        /// specify the latest solution version of your solution, specify the ARN of your <i>solution</i>
+        /// in <c>SolutionArn/$LATEST</c> format. You must use this format if you set <c>syncWithLatestSolutionVersion</c>
+        /// to <c>True</c> in the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CampaignConfig.html">CampaignConfig</a>.
+        /// </para><para> To deploy a model that isn't the latest solution version of your solution, specify
+        /// the ARN of the solution version. </para><para> For more information about automatic campaign updates, see <a href="https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html#create-campaign-automatic-latest-sv-update">Enabling
+        /// automatic campaign updates</a>. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -162,11 +178,30 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public System.String SolutionVersionArn { get; set; }
         #endregion
         
+        #region Parameter CampaignConfig_SyncWithLatestSolutionVersion
+        /// <summary>
+        /// <para>
+        /// <para>Whether the campaign automatically updates to use the latest solution version (trained
+        /// model) of a solution. If you specify <c>True</c>, you must specify the ARN of your
+        /// <i>solution</i> for the <c>SolutionVersionArn</c> parameter. It must be in <c>SolutionArn/$LATEST</c>
+        /// format. The default is <c>False</c> and you must manually update the campaign to deploy
+        /// the latest solution version. </para><para> For more information about automatic campaign updates, see <a href="https://docs.aws.amazon.com/personalize/latest/dg/campaigns.html#create-campaign-automatic-latest-sv-update">Enabling
+        /// automatic campaign updates</a>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? CampaignConfig_SyncWithLatestSolutionVersion { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>A list of <a href="https://docs.aws.amazon.com/personalize/latest/dg/tagging-resources.html">tags</a>
-        /// to apply to the campaign.</para>
+        /// to apply to the campaign.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public string Select { get; set; } = "CampaignArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -205,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -221,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Personalize.Model.CreateCampaignResponse, NewPERSCampaignCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CampaignConfig_EnableMetadataWithRecommendation = this.CampaignConfig_EnableMetadataWithRecommendation;
             if (this.CampaignConfig_ItemExplorationConfig != null)
             {
@@ -245,6 +264,7 @@ namespace Amazon.PowerShell.Cmdlets.PERS
                     context.CampaignConfig_ItemExplorationConfig.Add((String)hashKey, (System.String)(this.CampaignConfig_ItemExplorationConfig[hashKey]));
                 }
             }
+            context.CampaignConfig_SyncWithLatestSolutionVersion = this.CampaignConfig_SyncWithLatestSolutionVersion;
             context.MinProvisionedTPS = this.MinProvisionedTPS;
             context.Name = this.Name;
             #if MODULAR
@@ -302,6 +322,16 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             if (requestCampaignConfig_campaignConfig_ItemExplorationConfig != null)
             {
                 request.CampaignConfig.ItemExplorationConfig = requestCampaignConfig_campaignConfig_ItemExplorationConfig;
+                requestCampaignConfigIsNull = false;
+            }
+            System.Boolean? requestCampaignConfig_campaignConfig_SyncWithLatestSolutionVersion = null;
+            if (cmdletContext.CampaignConfig_SyncWithLatestSolutionVersion != null)
+            {
+                requestCampaignConfig_campaignConfig_SyncWithLatestSolutionVersion = cmdletContext.CampaignConfig_SyncWithLatestSolutionVersion.Value;
+            }
+            if (requestCampaignConfig_campaignConfig_SyncWithLatestSolutionVersion != null)
+            {
+                request.CampaignConfig.SyncWithLatestSolutionVersion = requestCampaignConfig_campaignConfig_SyncWithLatestSolutionVersion.Value;
                 requestCampaignConfigIsNull = false;
             }
              // determine if request.CampaignConfig should be set to null
@@ -363,13 +393,7 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Personalize", "CreateCampaign");
             try
             {
-                #if DESKTOP
-                return client.CreateCampaign(request);
-                #elif CORECLR
-                return client.CreateCampaignAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCampaignAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -388,6 +412,7 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         {
             public System.Boolean? CampaignConfig_EnableMetadataWithRecommendation { get; set; }
             public Dictionary<System.String, System.String> CampaignConfig_ItemExplorationConfig { get; set; }
+            public System.Boolean? CampaignConfig_SyncWithLatestSolutionVersion { get; set; }
             public System.Int32? MinProvisionedTPS { get; set; }
             public System.String Name { get; set; }
             public System.String SolutionVersionArn { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -69,12 +71,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [AWSCmdlet("Calls the Amazon Rekognition CreateStreamProcessor API operation.", Operation = new[] {"CreateStreamProcessor"}, SelectReturnType = typeof(Amazon.Rekognition.Model.CreateStreamProcessorResponse))]
     [AWSCmdletOutput("System.String or Amazon.Rekognition.Model.CreateStreamProcessorResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Rekognition.Model.CreateStreamProcessorResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Rekognition.Model.CreateStreamProcessorResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewREKStreamProcessorCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KinesisVideoStream_Arn
         /// <summary>
@@ -167,7 +170,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// <para>
         /// <para> Specifies what you want to detect in the video, such as people, packages, or pets.
         /// The current valid labels you can include in this list are: "PERSON", "PET", "PACKAGE",
-        /// and "ALL". </para>
+        /// and "ALL". </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -223,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// <para> Specifies locations in the frames where Amazon Rekognition checks for objects or
         /// people. You can specify up to 10 regions of interest, and each region has either a
         /// polygon or a bounding box. This is an optional parameter for label detection stream
-        /// processors and should not be used to create a face search stream processor. </para>
+        /// processors and should not be used to create a face search stream processor. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -266,7 +277,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// <summary>
         /// <para>
         /// <para> A set of tags (key-value pairs) that you want to attach to the stream processor.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,16 +300,6 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public string Select { get; set; } = "StreamProcessorArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -305,9 +310,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -321,21 +330,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Rekognition.Model.CreateStreamProcessorResponse, NewREKStreamProcessorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DataSharingPreference_OptIn = this.DataSharingPreference_OptIn;
             context.KinesisVideoStream_Arn = this.KinesisVideoStream_Arn;
             context.KmsKeyId = this.KmsKeyId;
@@ -670,13 +669,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "CreateStreamProcessor");
             try
             {
-                #if DESKTOP
-                return client.CreateStreamProcessor(request);
-                #elif CORECLR
-                return client.CreateStreamProcessorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateStreamProcessorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

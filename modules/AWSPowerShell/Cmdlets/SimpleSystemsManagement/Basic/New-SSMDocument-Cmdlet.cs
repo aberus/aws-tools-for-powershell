@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
     /// Creates a Amazon Web Services Systems Manager (SSM document). An SSM document defines
     /// the actions that Systems Manager performs on your managed nodes. For more information
     /// about SSM documents, including information about supported schemas, features, and
-    /// syntax, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-ssm-docs.html">Amazon
+    /// syntax, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/documents.html">Amazon
     /// Web Services Systems Manager Documents</a> in the <i>Amazon Web Services Systems Manager
     /// User Guide</i>.
     /// </summary>
@@ -40,17 +42,22 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager CreateDocument API operation.", Operation = new[] {"CreateDocument"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.CreateDocumentResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.DocumentDescription or Amazon.SimpleSystemsManagement.Model.CreateDocumentResponse",
         "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.DocumentDescription object.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.CreateDocumentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.CreateDocumentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSSMDocumentCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attachment
         /// <summary>
         /// <para>
-        /// <para>A list of key-value pairs that describe attachments to a version of a document.</para>
+        /// <para>A list of key-value pairs that describe attachments to a version of a document.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -65,9 +72,9 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// must not exceed 64KB. This quota also includes the content specified for input parameters
         /// at runtime. We recommend storing the contents for your new document in an external
         /// JSON or YAML file and referencing the file in a command.</para><para>For examples, see the following topics in the <i>Amazon Web Services Systems Manager
-        /// User Guide</i>.</para><ul><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html">Create
-        /// an SSM document (Amazon Web Services API)</a></para></li><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-cli.html">Create
-        /// an SSM document (Amazon Web Services CLI)</a></para></li><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/create-ssm-document-api.html">Create
+        /// User Guide</i>.</para><ul><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-using.html#create-ssm-console">Create
+        /// an SSM document (console)</a></para></li><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-using.html#create-ssm-document-cli">Create
+        /// an SSM document (command line)</a></para></li><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-using.html#create-ssm-document-api">Create
         /// an SSM document (API)</a></para></li></ul>
         /// </para>
         /// </summary>
@@ -122,7 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>A name for the SSM document.</para><important><para>You can't use the following strings as document name prefixes. These are reserved
-        /// by Amazon Web Services for use as document name prefixes:</para><ul><li><para><c>aws</c></para></li><li><para><c>amazon</c></para></li><li><para><c>amzn</c></para></li></ul></important>
+        /// by Amazon Web Services for use as document name prefixes:</para><ul><li><para><c>aws</c></para></li><li><para><c>amazon</c></para></li><li><para><c>amzn</c></para></li><li><para><c>AWSEC2</c></para></li><li><para><c>AWSConfigRemediation</c></para></li><li><para><c>AWSSupport</c></para></li></ul></important>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -144,7 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// user must also specify a required document for validation purposes. In this case,
         /// an <c>ApplicationConfiguration</c> document requires an <c>ApplicationConfigurationSchema</c>
         /// document for validation purposes. For more information, see <a href="https://docs.aws.amazon.com/appconfig/latest/userguide/what-is-appconfig.html">What
-        /// is AppConfig?</a> in the <i>AppConfig User Guide</i>.</para>
+        /// is AppConfig?</a> in the <i>AppConfig User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>Optional metadata that you assign to a resource. Tags enable you to categorize a resource
         /// in different ways, such as by purpose, owner, or environment. For example, you might
         /// want to tag an SSM document to identify the types of targets or the environment where
-        /// it will run. In this case, you could specify the following key-value pairs:</para><ul><li><para><c>Key=OS,Value=Windows</c></para></li><li><para><c>Key=Environment,Value=Production</c></para></li></ul><note><para>To add tags to an existing SSM document, use the <a>AddTagsToResource</a> operation.</para></note>
+        /// it will run. In this case, you could specify the following key-value pairs:</para><ul><li><para><c>Key=OS,Value=Windows</c></para></li><li><para><c>Key=Environment,Value=Production</c></para></li></ul><note><para>To add tags to an existing SSM document, use the <a>AddTagsToResource</a> operation.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "DocumentDescription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Content parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Content' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Content' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -225,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -241,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.CreateDocumentResponse, NewSSMDocumentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Content;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attachment != null)
             {
                 context.Attachment = new List<Amazon.SimpleSystemsManagement.Model.AttachmentsSource>(this.Attachment);
@@ -381,13 +380,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "CreateDocument");
             try
             {
-                #if DESKTOP
-                return client.CreateDocument(request);
-                #elif CORECLR
-                return client.CreateDocumentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDocumentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

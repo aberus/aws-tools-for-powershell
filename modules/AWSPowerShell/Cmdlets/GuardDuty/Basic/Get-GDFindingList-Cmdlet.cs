@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,43 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
-    /// Lists Amazon GuardDuty findings for the specified detector ID.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Lists GuardDuty findings for the specified detector ID.
+    /// 
+    ///  
+    /// <para>
+    /// There might be regional differences because some flags might not be available in all
+    /// the Regions where GuardDuty is currently supported. For more information, see <a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_regions.html">Regions
+    /// and endpoints</a>.
+    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "GDFindingList")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon GuardDuty ListFindings API operation.", Operation = new[] {"ListFindings"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.ListFindingsResponse))]
     [AWSCmdletOutput("System.String or Amazon.GuardDuty.Model.ListFindingsResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.GuardDuty.Model.ListFindingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GuardDuty.Model.ListFindingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGDFindingListCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DetectorId
         /// <summary>
         /// <para>
         /// <para>The ID of the detector that specifies the GuardDuty service whose findings you want
-        /// to list.</para>
+        /// to list.</para><para>To find the <c>detectorId</c> in the current Region, see the Settings page in the
+        /// GuardDuty console, or run the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_ListDetectors.html">ListDetectors</a>
+        /// API.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -65,7 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
         /// <para>
         /// <para>Represents the criteria used for querying findings. Valid values include:</para><ul><li><para>JSON field name</para></li><li><para>accountId</para></li><li><para>region</para></li><li><para>confidence</para></li><li><para>id</para></li><li><para>resource.accessKeyDetails.accessKeyId</para></li><li><para>resource.accessKeyDetails.principalId</para></li><li><para>resource.accessKeyDetails.userName</para></li><li><para>resource.accessKeyDetails.userType</para></li><li><para>resource.instanceDetails.iamInstanceProfile.id</para></li><li><para>resource.instanceDetails.imageId</para></li><li><para>resource.instanceDetails.instanceId</para></li><li><para>resource.instanceDetails.networkInterfaces.ipv6Addresses</para></li><li><para>resource.instanceDetails.networkInterfaces.privateIpAddresses.privateIpAddress</para></li><li><para>resource.instanceDetails.networkInterfaces.publicDnsName</para></li><li><para>resource.instanceDetails.networkInterfaces.publicIp</para></li><li><para>resource.instanceDetails.networkInterfaces.securityGroups.groupId</para></li><li><para>resource.instanceDetails.networkInterfaces.securityGroups.groupName</para></li><li><para>resource.instanceDetails.networkInterfaces.subnetId</para></li><li><para>resource.instanceDetails.networkInterfaces.vpcId</para></li><li><para>resource.instanceDetails.tags.key</para></li><li><para>resource.instanceDetails.tags.value</para></li><li><para>resource.resourceType</para></li><li><para>service.action.actionType</para></li><li><para>service.action.awsApiCallAction.api</para></li><li><para>service.action.awsApiCallAction.callerType</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.city.cityName</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.country.countryName</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.organization.asnOrg</para></li><li><para>service.action.awsApiCallAction.serviceName</para></li><li><para>service.action.dnsRequestAction.domain</para></li><li><para>service.action.dnsRequestAction.domainWithSuffix</para></li><li><para>service.action.networkConnectionAction.blocked</para></li><li><para>service.action.networkConnectionAction.connectionDirection</para></li><li><para>service.action.networkConnectionAction.localPortDetails.port</para></li><li><para>service.action.networkConnectionAction.protocol</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.country.countryName</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.organization.asnOrg</para></li><li><para>service.action.networkConnectionAction.remotePortDetails.port</para></li><li><para>service.additionalInfo.threatListName</para></li><li><para>service.archived</para><para>When this attribute is set to 'true', only archived findings are listed. When it's
         /// set to 'false', only unarchived findings are listed. When this attribute is not set,
-        /// all existing findings are listed.</para></li><li><para>service.resourceRole</para></li><li><para>severity</para></li><li><para>type</para></li><li><para>updatedAt</para><para>Type: Timestamp in Unix Epoch millisecond format: 1486685375000</para></li></ul>
+        /// all existing findings are listed.</para></li><li><para>service.ebsVolumeScanDetails.scanId</para></li><li><para>service.resourceRole</para></li><li><para>severity</para></li><li><para>type</para></li><li><para>updatedAt</para><para>Type: Timestamp in Unix Epoch millisecond format: 1486685375000</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +123,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,16 +141,6 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "FindingIds";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DetectorId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -149,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -159,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GuardDuty.Model.ListFindingsResponse, GetGDFindingListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DetectorId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DetectorId = this.DetectorId;
             #if MODULAR
             if (this.DetectorId == null && ParameterWasBound(nameof(this.DetectorId)))
@@ -208,9 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.GuardDuty.Model.ListFindingsRequest();
@@ -282,7 +276,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.GuardDuty.Model.ListFindingsRequest();
@@ -345,7 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.FindingIds.Count;
+                    int _receivedThisCall = response.FindingIds?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -394,13 +388,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "ListFindings");
             try
             {
-                #if DESKTOP
-                return client.ListFindings(request);
-                #elif CORECLR
-                return client.ListFindingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListFindingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

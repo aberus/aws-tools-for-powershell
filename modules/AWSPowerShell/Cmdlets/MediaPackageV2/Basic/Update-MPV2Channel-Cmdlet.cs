@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaPackageV2;
 using Amazon.MediaPackageV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MPV2
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
     [OutputType("Amazon.MediaPackageV2.Model.UpdateChannelResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaPackage v2 UpdateChannel API operation.", Operation = new[] {"UpdateChannel"}, SelectReturnType = typeof(Amazon.MediaPackageV2.Model.UpdateChannelResponse))]
     [AWSCmdletOutput("Amazon.MediaPackageV2.Model.UpdateChannelResponse",
-        "This cmdlet returns an Amazon.MediaPackageV2.Model.UpdateChannelResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaPackageV2.Model.UpdateChannelResponse object containing multiple properties."
     )]
     public partial class UpdateMPV2ChannelCmdlet : AmazonMediaPackageV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChannelGroupName
         /// <summary>
@@ -96,6 +99,52 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter InputSwitchConfiguration_MQCSInputSwitching
+        /// <summary>
+        /// <para>
+        /// <para>When true, AWS Elemental MediaPackage performs input switching based on the MQCS.
+        /// Default is true. This setting is valid only when <c>InputType</c> is <c>CMAF</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? InputSwitchConfiguration_MQCSInputSwitching { get; set; }
+        #endregion
+        
+        #region Parameter InputSwitchConfiguration_PreferredInput
+        /// <summary>
+        /// <para>
+        /// <para>For CMAF inputs, indicates which input MediaPackage should prefer when both inputs
+        /// have equal MQCS scores. Select <c>1</c> to prefer the first ingest endpoint, or <c>2</c>
+        /// to prefer the second ingest endpoint. If you don't specify a preferred input, MediaPackage
+        /// uses its default switching behavior when MQCS scores are equal.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? InputSwitchConfiguration_PreferredInput { get; set; }
+        #endregion
+        
+        #region Parameter OutputHeaderConfiguration_PublishMQCS
+        /// <summary>
+        /// <para>
+        /// <para>When true, AWS Elemental MediaPackage includes the MQCS in responses to the CDN. This
+        /// setting is valid only when <c>InputType</c> is <c>CMAF</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? OutputHeaderConfiguration_PublishMQCS { get; set; }
+        #endregion
+        
+        #region Parameter ETag
+        /// <summary>
+        /// <para>
+        /// <para>The expected current Entity Tag (ETag) for the resource. If the specified ETag does
+        /// not match the resource's current entity tag, the update request will be rejected.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ETag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -105,16 +154,6 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ChannelName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ChannelName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ChannelName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -127,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -143,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaPackageV2.Model.UpdateChannelResponse, UpdateMPV2ChannelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ChannelName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ChannelGroupName = this.ChannelGroupName;
             #if MODULAR
             if (this.ChannelGroupName == null && ParameterWasBound(nameof(this.ChannelGroupName)))
@@ -173,6 +206,10 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             }
             #endif
             context.Description = this.Description;
+            context.ETag = this.ETag;
+            context.InputSwitchConfiguration_MQCSInputSwitching = this.InputSwitchConfiguration_MQCSInputSwitching;
+            context.InputSwitchConfiguration_PreferredInput = this.InputSwitchConfiguration_PreferredInput;
+            context.OutputHeaderConfiguration_PublishMQCS = this.OutputHeaderConfiguration_PublishMQCS;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -200,6 +237,58 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.ETag != null)
+            {
+                request.ETag = cmdletContext.ETag;
+            }
+            
+             // populate InputSwitchConfiguration
+            var requestInputSwitchConfigurationIsNull = true;
+            request.InputSwitchConfiguration = new Amazon.MediaPackageV2.Model.InputSwitchConfiguration();
+            System.Boolean? requestInputSwitchConfiguration_inputSwitchConfiguration_MQCSInputSwitching = null;
+            if (cmdletContext.InputSwitchConfiguration_MQCSInputSwitching != null)
+            {
+                requestInputSwitchConfiguration_inputSwitchConfiguration_MQCSInputSwitching = cmdletContext.InputSwitchConfiguration_MQCSInputSwitching.Value;
+            }
+            if (requestInputSwitchConfiguration_inputSwitchConfiguration_MQCSInputSwitching != null)
+            {
+                request.InputSwitchConfiguration.MQCSInputSwitching = requestInputSwitchConfiguration_inputSwitchConfiguration_MQCSInputSwitching.Value;
+                requestInputSwitchConfigurationIsNull = false;
+            }
+            System.Int32? requestInputSwitchConfiguration_inputSwitchConfiguration_PreferredInput = null;
+            if (cmdletContext.InputSwitchConfiguration_PreferredInput != null)
+            {
+                requestInputSwitchConfiguration_inputSwitchConfiguration_PreferredInput = cmdletContext.InputSwitchConfiguration_PreferredInput.Value;
+            }
+            if (requestInputSwitchConfiguration_inputSwitchConfiguration_PreferredInput != null)
+            {
+                request.InputSwitchConfiguration.PreferredInput = requestInputSwitchConfiguration_inputSwitchConfiguration_PreferredInput.Value;
+                requestInputSwitchConfigurationIsNull = false;
+            }
+             // determine if request.InputSwitchConfiguration should be set to null
+            if (requestInputSwitchConfigurationIsNull)
+            {
+                request.InputSwitchConfiguration = null;
+            }
+            
+             // populate OutputHeaderConfiguration
+            var requestOutputHeaderConfigurationIsNull = true;
+            request.OutputHeaderConfiguration = new Amazon.MediaPackageV2.Model.OutputHeaderConfiguration();
+            System.Boolean? requestOutputHeaderConfiguration_outputHeaderConfiguration_PublishMQCS = null;
+            if (cmdletContext.OutputHeaderConfiguration_PublishMQCS != null)
+            {
+                requestOutputHeaderConfiguration_outputHeaderConfiguration_PublishMQCS = cmdletContext.OutputHeaderConfiguration_PublishMQCS.Value;
+            }
+            if (requestOutputHeaderConfiguration_outputHeaderConfiguration_PublishMQCS != null)
+            {
+                request.OutputHeaderConfiguration.PublishMQCS = requestOutputHeaderConfiguration_outputHeaderConfiguration_PublishMQCS.Value;
+                requestOutputHeaderConfigurationIsNull = false;
+            }
+             // determine if request.OutputHeaderConfiguration should be set to null
+            if (requestOutputHeaderConfigurationIsNull)
+            {
+                request.OutputHeaderConfiguration = null;
             }
             
             CmdletOutput output;
@@ -239,13 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaPackage v2", "UpdateChannel");
             try
             {
-                #if DESKTOP
-                return client.UpdateChannel(request);
-                #elif CORECLR
-                return client.UpdateChannelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateChannelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -265,6 +348,10 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             public System.String ChannelGroupName { get; set; }
             public System.String ChannelName { get; set; }
             public System.String Description { get; set; }
+            public System.String ETag { get; set; }
+            public System.Boolean? InputSwitchConfiguration_MQCSInputSwitching { get; set; }
+            public System.Int32? InputSwitchConfiguration_PreferredInput { get; set; }
+            public System.Boolean? OutputHeaderConfiguration_PublishMQCS { get; set; }
             public System.Func<Amazon.MediaPackageV2.Model.UpdateChannelResponse, UpdateMPV2ChannelCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

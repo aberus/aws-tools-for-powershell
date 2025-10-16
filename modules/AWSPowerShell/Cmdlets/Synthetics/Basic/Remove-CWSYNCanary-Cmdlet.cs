@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Synthetics;
 using Amazon.Synthetics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWSYN
 {
     /// <summary>
@@ -32,23 +34,21 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
     /// 
     ///  
     /// <para>
-    /// If you specify <c>DeleteLambda</c> to <c>true</c>, CloudWatch Synthetics also deletes
-    /// the Lambda functions and layers that are used by the canary.
+    /// If the canary's <c>ProvisionedResourceCleanup</c> field is set to <c>AUTOMATIC</c>
+    /// or you specify <c>DeleteLambda</c> in this operation as <c>true</c>, CloudWatch Synthetics
+    /// also deletes the Lambda functions and layers that are used by the canary.
     /// </para><para>
     /// Other resources used and created by the canary are not automatically deleted. After
-    /// you delete a canary that you do not intend to use again, you should also delete the
-    /// following:
+    /// you delete a canary, you should also delete the following:
     /// </para><ul><li><para>
-    /// The CloudWatch alarms created for this canary. These alarms have a name of <c>Synthetics-SharpDrop-Alarm-<i>MyCanaryName</i></c>.
-    /// </para></li><li><para>
+    /// The CloudWatch alarms created for this canary. These alarms have a name of <c>Synthetics-Alarm-<i>first-198-characters-of-canary-name</i>-<i>canaryId</i>-<i>alarm
+    /// number</i></c></para></li><li><para>
     /// Amazon S3 objects and buckets, such as the canary's artifact location.
     /// </para></li><li><para>
     /// IAM roles created for the canary. If they were created in the console, these roles
-    /// have the name <c> role/service-role/CloudWatchSyntheticsRole-<i>MyCanaryName</i></c>.
-    /// </para></li><li><para>
+    /// have the name <c> role/service-role/CloudWatchSyntheticsRole-<i>First-21-Characters-of-CanaryName</i></c></para></li><li><para>
     /// CloudWatch Logs log groups created for the canary. These logs groups have the name
-    /// <c>/aws/lambda/cwsyn-<i>MyCanaryName</i></c>. 
-    /// </para></li></ul><para>
+    /// <c>/aws/lambda/cwsyn-<i>First-21-Characters-of-CanaryName</i></c></para></li></ul><para>
     /// Before you delete a canary, you might want to use <c>GetCanary</c> to display the
     /// information about this canary. Make note of the information returned by this operation
     /// so that you can delete these resources after you delete the canary.
@@ -59,18 +59,22 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
     [AWSCmdlet("Calls the Amazon CloudWatch Synthetics DeleteCanary API operation.", Operation = new[] {"DeleteCanary"}, SelectReturnType = typeof(Amazon.Synthetics.Model.DeleteCanaryResponse))]
     [AWSCmdletOutput("None or Amazon.Synthetics.Model.DeleteCanaryResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Synthetics.Model.DeleteCanaryResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Synthetics.Model.DeleteCanaryResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveCWSYNCanaryCmdlet : AmazonSyntheticsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeleteLambda
         /// <summary>
         /// <para>
         /// <para>Specifies whether to also delete the Lambda functions and layers used by this canary.
-        /// The default is false.</para><para>Type: Boolean</para>
+        /// The default is <c>false</c>.</para><para>Your setting for this parameter is used only if the canary doesn't have <c>AUTOMATIC</c>
+        /// for its <c>ProvisionedResourceCleanup</c> field. If that field is set to <c>AUTOMATIC</c>,
+        /// then the Lambda functions and layers will be deleted when this canary is deleted.
+        /// </para><para>Type: Boolean</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,16 +109,6 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -125,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -141,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Synthetics.Model.DeleteCanaryResponse, RemoveCWSYNCanaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeleteLambda = this.DeleteLambda;
             context.Name = this.Name;
             #if MODULAR
@@ -226,13 +214,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Synthetics", "DeleteCanary");
             try
             {
-                #if DESKTOP
-                return client.DeleteCanary(request);
-                #elif CORECLR
-                return client.DeleteCanaryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteCanaryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

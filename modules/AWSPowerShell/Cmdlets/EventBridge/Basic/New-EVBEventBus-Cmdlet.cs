@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
@@ -37,12 +39,33 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     [AWSCmdlet("Calls the Amazon EventBridge CreateEventBus API operation.", Operation = new[] {"CreateEventBus"}, SelectReturnType = typeof(Amazon.EventBridge.Model.CreateEventBusResponse))]
     [AWSCmdletOutput("System.String or Amazon.EventBridge.Model.CreateEventBusResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EventBridge.Model.CreateEventBusResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EventBridge.Model.CreateEventBusResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEVBEventBusCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DeadLetterConfig_Arn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the SQS queue specified as the target for the dead-letter queue.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DeadLetterConfig_Arn { get; set; }
+        #endregion
+        
+        #region Parameter Description
+        /// <summary>
+        /// <para>
+        /// <para>The event bus description.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Description { get; set; }
+        #endregion
         
         #region Parameter EventSourceName
         /// <summary>
@@ -53,6 +76,53 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EventSourceName { get; set; }
+        #endregion
+        
+        #region Parameter LogConfig_IncludeDetail
+        /// <summary>
+        /// <para>
+        /// <para>Whether EventBridge include detailed event information in the records it generates.
+        /// Detailed data can be useful for troubleshooting and debugging. This information includes
+        /// details of the event itself, as well as target details.</para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-bus-logs.html#eb-event-logs-data">Including
+        /// detail data in event bus logs</a> in the <i>EventBridge User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EventBridge.IncludeDetail")]
+        public Amazon.EventBridge.IncludeDetail LogConfig_IncludeDetail { get; set; }
+        #endregion
+        
+        #region Parameter KmsKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of the KMS customer managed key for EventBridge to use, if you choose
+        /// to use a customer managed key to encrypt events on this event bus. The identifier
+        /// can be the key Amazon Resource Name (ARN), KeyId, key alias, or key alias ARN.</para><para>If you do not specify a customer managed key identifier, EventBridge uses an Amazon
+        /// Web Services owned key to encrypt events on the event bus.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/viewing-keys.html">Identify
+        /// and view keys</a> in the <i>Key Management Service Developer Guide</i>. </para><note><para>Schema discovery is not supported for event buses encrypted using a customer managed
+        /// key. EventBridge returns an error if: </para><ul><li><para>You call <c><a href="https://docs.aws.amazon.com/eventbridge/latest/schema-reference/v1-discoverers.html#CreateDiscoverer">CreateDiscoverer</a></c> on an event bus set to use a customer managed key for encryption.</para></li><li><para>You call <c><a href="https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_UpdatedEventBus.html">UpdatedEventBus</a></c> to set a customer managed key on an event bus with schema discovery enabled.</para></li></ul><para>To enable schema discovery on an event bus, choose to use an Amazon Web Services owned
+        /// key. For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-encryption-event-bus-cmkey.html">Encrypting
+        /// events</a> in the <i>Amazon EventBridge User Guide</i>.</para></note><important><para>If you have specified that EventBridge use a customer managed key for encrypting the
+        /// source event bus, we strongly recommend you also specify a customer managed key for
+        /// any archives for the event bus as well. </para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/encryption-archives.html">Encrypting
+        /// archives</a> in the <i>Amazon EventBridge User Guide</i>.</para></important>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KmsKeyIdentifier { get; set; }
+        #endregion
+        
+        #region Parameter LogConfig_Level
+        /// <summary>
+        /// <para>
+        /// <para>The level of logging detail to include. This applies to all log destinations for the
+        /// event bus.</para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-bus-logs.html#eb-event-bus-logs-level">Specifying
+        /// event bus log level</a> in the <i>EventBridge User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EventBridge.Level")]
+        public Amazon.EventBridge.Level LogConfig_Level { get; set; }
         #endregion
         
         #region Parameter Name
@@ -79,7 +149,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags to associate with the event bus.</para>
+        /// <para>Tags to associate with the event bus.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,16 +172,6 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public string Select { get; set; } = "EventBusArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -118,9 +182,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -134,22 +202,17 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EventBridge.Model.CreateEventBusResponse, NewEVBEventBusCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DeadLetterConfig_Arn = this.DeadLetterConfig_Arn;
+            context.Description = this.Description;
             context.EventSourceName = this.EventSourceName;
+            context.KmsKeyIdentifier = this.KmsKeyIdentifier;
+            context.LogConfig_IncludeDetail = this.LogConfig_IncludeDetail;
+            context.LogConfig_Level = this.LogConfig_Level;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -177,9 +240,65 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // create request
             var request = new Amazon.EventBridge.Model.CreateEventBusRequest();
             
+            
+             // populate DeadLetterConfig
+            var requestDeadLetterConfigIsNull = true;
+            request.DeadLetterConfig = new Amazon.EventBridge.Model.DeadLetterConfig();
+            System.String requestDeadLetterConfig_deadLetterConfig_Arn = null;
+            if (cmdletContext.DeadLetterConfig_Arn != null)
+            {
+                requestDeadLetterConfig_deadLetterConfig_Arn = cmdletContext.DeadLetterConfig_Arn;
+            }
+            if (requestDeadLetterConfig_deadLetterConfig_Arn != null)
+            {
+                request.DeadLetterConfig.Arn = requestDeadLetterConfig_deadLetterConfig_Arn;
+                requestDeadLetterConfigIsNull = false;
+            }
+             // determine if request.DeadLetterConfig should be set to null
+            if (requestDeadLetterConfigIsNull)
+            {
+                request.DeadLetterConfig = null;
+            }
+            if (cmdletContext.Description != null)
+            {
+                request.Description = cmdletContext.Description;
+            }
             if (cmdletContext.EventSourceName != null)
             {
                 request.EventSourceName = cmdletContext.EventSourceName;
+            }
+            if (cmdletContext.KmsKeyIdentifier != null)
+            {
+                request.KmsKeyIdentifier = cmdletContext.KmsKeyIdentifier;
+            }
+            
+             // populate LogConfig
+            var requestLogConfigIsNull = true;
+            request.LogConfig = new Amazon.EventBridge.Model.LogConfig();
+            Amazon.EventBridge.IncludeDetail requestLogConfig_logConfig_IncludeDetail = null;
+            if (cmdletContext.LogConfig_IncludeDetail != null)
+            {
+                requestLogConfig_logConfig_IncludeDetail = cmdletContext.LogConfig_IncludeDetail;
+            }
+            if (requestLogConfig_logConfig_IncludeDetail != null)
+            {
+                request.LogConfig.IncludeDetail = requestLogConfig_logConfig_IncludeDetail;
+                requestLogConfigIsNull = false;
+            }
+            Amazon.EventBridge.Level requestLogConfig_logConfig_Level = null;
+            if (cmdletContext.LogConfig_Level != null)
+            {
+                requestLogConfig_logConfig_Level = cmdletContext.LogConfig_Level;
+            }
+            if (requestLogConfig_logConfig_Level != null)
+            {
+                request.LogConfig.Level = requestLogConfig_logConfig_Level;
+                requestLogConfigIsNull = false;
+            }
+             // determine if request.LogConfig should be set to null
+            if (requestLogConfigIsNull)
+            {
+                request.LogConfig = null;
             }
             if (cmdletContext.Name != null)
             {
@@ -227,13 +346,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "CreateEventBus");
             try
             {
-                #if DESKTOP
-                return client.CreateEventBus(request);
-                #elif CORECLR
-                return client.CreateEventBusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateEventBusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -250,7 +363,12 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String DeadLetterConfig_Arn { get; set; }
+            public System.String Description { get; set; }
             public System.String EventSourceName { get; set; }
+            public System.String KmsKeyIdentifier { get; set; }
+            public Amazon.EventBridge.IncludeDetail LogConfig_IncludeDetail { get; set; }
+            public Amazon.EventBridge.Level LogConfig_Level { get; set; }
             public System.String Name { get; set; }
             public List<Amazon.EventBridge.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.EventBridge.Model.CreateEventBusResponse, NewEVBEventBusCmdlet, object> Select { get; set; } =

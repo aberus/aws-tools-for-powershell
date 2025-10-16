@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
-    /// Gets information about a read set export job.
+    /// Retrieves status information about a read set export job and returns the data in JSON
+    /// format. Use this operation to actively monitor the progress of an export job.
     /// </summary>
     [Cmdlet("Get", "OMICSReadSetExportJob")]
     [OutputType("Amazon.Omics.Model.GetReadSetExportJobResponse")]
     [AWSCmdlet("Calls the Amazon Omics GetReadSetExportJob API operation.", Operation = new[] {"GetReadSetExportJob"}, SelectReturnType = typeof(Amazon.Omics.Model.GetReadSetExportJobResponse))]
     [AWSCmdletOutput("Amazon.Omics.Model.GetReadSetExportJobResponse",
-        "This cmdlet returns an Amazon.Omics.Model.GetReadSetExportJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Omics.Model.GetReadSetExportJobResponse object containing multiple properties."
     )]
     public partial class GetOMICSReadSetExportJobCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Id
         /// <summary>
@@ -86,19 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -106,21 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Omics.Model.GetReadSetExportJobResponse, GetOMICSReadSetExportJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Id = this.Id;
             #if MODULAR
             if (this.Id == null && ParameterWasBound(nameof(this.Id)))
@@ -197,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "GetReadSetExportJob");
             try
             {
-                #if DESKTOP
-                return client.GetReadSetExportJob(request);
-                #elif CORECLR
-                return client.GetReadSetExportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetReadSetExportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

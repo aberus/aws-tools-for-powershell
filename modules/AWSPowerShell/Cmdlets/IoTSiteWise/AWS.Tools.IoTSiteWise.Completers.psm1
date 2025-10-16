@@ -83,7 +83,20 @@ $IOTSW_Completers = {
         # Amazon.IoTSiteWise.AssetModelType
         "New-IOTSWAssetModel/AssetModelType"
         {
-            $v = "ASSET_MODEL","COMPONENT_MODEL"
+            $v = "ASSET_MODEL","COMPONENT_MODEL","INTERFACE"
+            break
+        }
+
+        # Amazon.IoTSiteWise.AssetModelVersionType
+        {
+            ($_ -eq "New-IOTSWAssetModelCompositeModel/MatchForVersionType") -Or
+            ($_ -eq "Remove-IOTSWAssetModel/MatchForVersionType") -Or
+            ($_ -eq "Remove-IOTSWAssetModelCompositeModel/MatchForVersionType") -Or
+            ($_ -eq "Update-IOTSWAssetModel/MatchForVersionType") -Or
+            ($_ -eq "Update-IOTSWAssetModelCompositeModel/MatchForVersionType")
+        }
+        {
+            $v = "ACTIVE","LATEST"
             break
         }
 
@@ -91,6 +104,41 @@ $IOTSW_Completers = {
         "New-IOTSWPortal/PortalAuthMode"
         {
             $v = "IAM","SSO"
+            break
+        }
+
+        # Amazon.IoTSiteWise.ComputationModelType
+        "Get-IOTSWComputationModelList/ComputationModelType"
+        {
+            $v = "ANOMALY_DETECTION"
+            break
+        }
+
+        # Amazon.IoTSiteWise.CoreDeviceOperatingSystem
+        "New-IOTSWGateway/GreengrassV2_CoreDeviceOperatingSystem"
+        {
+            $v = "LINUX_AARCH64","LINUX_AMD64","WINDOWS_AMD64"
+            break
+        }
+
+        # Amazon.IoTSiteWise.DatasetSourceFormat
+        {
+            ($_ -eq "New-IOTSWDataset/DatasetSource_SourceFormat") -Or
+            ($_ -eq "Update-IOTSWDataset/DatasetSource_SourceFormat")
+        }
+        {
+            $v = "KNOWLEDGE_BASE"
+            break
+        }
+
+        # Amazon.IoTSiteWise.DatasetSourceType
+        {
+            ($_ -eq "New-IOTSWDataset/DatasetSource_SourceType") -Or
+            ($_ -eq "Update-IOTSWDataset/DatasetSource_SourceType") -Or
+            ($_ -eq "Get-IOTSWDatasetList/SourceType")
+        }
+        {
+            $v = "KENDRA"
             break
         }
 
@@ -117,7 +165,7 @@ $IOTSW_Completers = {
 
         # Amazon.IoTSiteWise.ImageFileType
         {
-            ($_ -eq "Update-IOTSWPortal/PortalLogoImage_File_Type") -Or
+            ($_ -eq "Update-IOTSWPortal/File_Type") -Or
             ($_ -eq "New-IOTSWPortal/PortalLogoImageFile_Type")
         }
         {
@@ -177,6 +225,16 @@ $IOTSW_Completers = {
             break
         }
 
+        # Amazon.IoTSiteWise.PortalType
+        {
+            ($_ -eq "New-IOTSWPortal/PortalType") -Or
+            ($_ -eq "Update-IOTSWPortal/PortalType")
+        }
+        {
+            $v = "SITEWISE_PORTAL_V1","SITEWISE_PORTAL_V2"
+            break
+        }
+
         # Amazon.IoTSiteWise.PropertyNotificationState
         "Update-IOTSWAssetProperty/PropertyNotificationState"
         {
@@ -188,6 +246,17 @@ $IOTSW_Completers = {
         "Get-IOTSWInterpolatedAssetPropertyValue/Quality"
         {
             $v = "BAD","GOOD","UNCERTAIN"
+            break
+        }
+
+        # Amazon.IoTSiteWise.ResolveToResourceType
+        {
+            ($_ -eq "Get-IOTSWActionList/ResolveToResourceType") -Or
+            ($_ -eq "Get-IOTSWComputationModelExecutionSummary/ResolveToResourceType") -Or
+            ($_ -eq "Get-IOTSWExecutionList/ResolveToResourceType")
+        }
+        {
+            $v = "ASSET"
             break
         }
 
@@ -206,9 +275,12 @@ $IOTSW_Completers = {
         }
 
         # Amazon.IoTSiteWise.TargetResourceType
-        "Get-IOTSWActionList/TargetResourceType"
         {
-            $v = "ASSET"
+            ($_ -eq "Get-IOTSWActionList/TargetResourceType") -Or
+            ($_ -eq "Get-IOTSWExecutionList/TargetResourceType")
+        }
+        {
+            $v = "ASSET","COMPUTATION_MODEL"
             break
         }
 
@@ -254,19 +326,27 @@ $IOTSW_Completers = {
 $IOTSW_map = @{
     "AccessPolicyPermission"=@("New-IOTSWAccessPolicy","Update-IOTSWAccessPolicy")
     "AssetModelType"=@("New-IOTSWAssetModel")
+    "ComputationModelType"=@("Get-IOTSWComputationModelList")
+    "DatasetSource_SourceFormat"=@("New-IOTSWDataset","Update-IOTSWDataset")
+    "DatasetSource_SourceType"=@("New-IOTSWDataset","Update-IOTSWDataset")
     "DisassociatedDataStorage"=@("Write-IOTSWStorageConfiguration")
     "EncryptionType"=@("Write-IOTSWDefaultEncryptionConfiguration")
+    "File_Type"=@("Update-IOTSWPortal")
     "Filter"=@("Get-IOTSWAssetList","Get-IOTSWAssetModelPropertyList","Get-IOTSWAssetPropertyList","Get-IOTSWBulkImportJobList")
+    "GreengrassV2_CoreDeviceOperatingSystem"=@("New-IOTSWGateway")
     "IdentityType"=@("Get-IOTSWAccessPolicyList")
     "LoggingOptions_Level"=@("Write-IOTSWLoggingOption")
+    "MatchForVersionType"=@("New-IOTSWAssetModelCompositeModel","Remove-IOTSWAssetModel","Remove-IOTSWAssetModelCompositeModel","Update-IOTSWAssetModel","Update-IOTSWAssetModelCompositeModel")
     "PortalAuthMode"=@("New-IOTSWPortal")
-    "PortalLogoImage_File_Type"=@("Update-IOTSWPortal")
     "PortalLogoImageFile_Type"=@("New-IOTSWPortal")
+    "PortalType"=@("New-IOTSWPortal","Update-IOTSWPortal")
     "PropertyNotificationState"=@("Update-IOTSWAssetProperty")
     "Quality"=@("Get-IOTSWInterpolatedAssetPropertyValue")
+    "ResolveToResourceType"=@("Get-IOTSWActionList","Get-IOTSWComputationModelExecutionSummary","Get-IOTSWExecutionList")
     "ResourceType"=@("Get-IOTSWAccessPolicyList")
+    "SourceType"=@("Get-IOTSWDatasetList")
     "StorageType"=@("Write-IOTSWStorageConfiguration")
-    "TargetResourceType"=@("Get-IOTSWActionList")
+    "TargetResourceType"=@("Get-IOTSWActionList","Get-IOTSWExecutionList")
     "TimeOrdering"=@("Get-IOTSWAssetPropertyAggregate","Get-IOTSWAssetPropertyValueHistory")
     "TimeSeriesType"=@("Get-IOTSWTimeSeriesList")
     "TraversalDirection"=@("Get-IOTSWAssociatedAssetList")
@@ -337,7 +417,9 @@ $IOTSW_SelectMap = @{
                "New-IOTSWAssetModel",
                "New-IOTSWAssetModelCompositeModel",
                "New-IOTSWBulkImportJob",
+               "New-IOTSWComputationModel",
                "New-IOTSWDashboard",
+               "New-IOTSWDataset",
                "New-IOTSWGateway",
                "New-IOTSWPortal",
                "New-IOTSWProject",
@@ -345,7 +427,10 @@ $IOTSW_SelectMap = @{
                "Remove-IOTSWAsset",
                "Remove-IOTSWAssetModel",
                "Remove-IOTSWAssetModelCompositeModel",
+               "Remove-IOTSWAssetModelInterfaceRelationship",
+               "Remove-IOTSWComputationModel",
                "Remove-IOTSWDashboard",
+               "Remove-IOTSWDataset",
                "Remove-IOTSWGateway",
                "Remove-IOTSWPortal",
                "Remove-IOTSWProject",
@@ -356,10 +441,15 @@ $IOTSW_SelectMap = @{
                "Get-IOTSWAssetCompositeModel",
                "Get-IOTSWAssetModel",
                "Get-IOTSWAssetModelCompositeModel",
+               "Get-IOTSWAssetModelInterfaceRelationship",
                "Get-IOTSWAssetProperty",
                "Get-IOTSWBulkImportJob",
+               "Get-IOTSWComputationModel",
+               "Get-IOTSWComputationModelExecutionSummary",
                "Get-IOTSWDashboard",
+               "Get-IOTSWDataset",
                "Get-IOTSWDefaultEncryptionConfiguration",
+               "Get-IOTSWExecution",
                "Get-IOTSWGateway",
                "Get-IOTSWGatewayCapabilityConfiguration",
                "Get-IOTSWLoggingOption",
@@ -375,6 +465,7 @@ $IOTSW_SelectMap = @{
                "Get-IOTSWAssetPropertyValue",
                "Get-IOTSWAssetPropertyValueHistory",
                "Get-IOTSWInterpolatedAssetPropertyValue",
+               "Invoke-IOTSWAssistant",
                "Get-IOTSWAccessPolicyList",
                "Get-IOTSWActionList",
                "Get-IOTSWAssetModelCompositeModelList",
@@ -386,13 +477,20 @@ $IOTSW_SelectMap = @{
                "Get-IOTSWAssociatedAssetList",
                "Get-IOTSWBulkImportJobList",
                "Get-IOTSWCompositionRelationshipList",
+               "Get-IOTSWComputationModelDataBindingUsageList",
+               "Get-IOTSWComputationModelResolveToResourceList",
+               "Get-IOTSWComputationModelList",
                "Get-IOTSWDashboardList",
+               "Get-IOTSWDatasetList",
+               "Get-IOTSWExecutionList",
                "Get-IOTSWGatewayList",
+               "Get-IOTSWInterfaceRelationshipList",
                "Get-IOTSWPortalList",
                "Get-IOTSWProjectAssetList",
                "Get-IOTSWProjectList",
                "Get-IOTSWResourceTag",
                "Get-IOTSWTimeSeriesList",
+               "Write-IOTSWAssetModelInterfaceRelationship",
                "Write-IOTSWDefaultEncryptionConfiguration",
                "Write-IOTSWLoggingOption",
                "Write-IOTSWStorageConfiguration",
@@ -403,7 +501,9 @@ $IOTSW_SelectMap = @{
                "Update-IOTSWAssetModel",
                "Update-IOTSWAssetModelCompositeModel",
                "Update-IOTSWAssetProperty",
+               "Update-IOTSWComputationModel",
                "Update-IOTSWDashboard",
+               "Update-IOTSWDataset",
                "Update-IOTSWGateway",
                "Update-IOTSWGatewayCapabilityConfiguration",
                "Update-IOTSWPortal",

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpacesWeb;
 using Amazon.WorkSpacesWeb.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WSW
 {
     /// <summary>
@@ -35,16 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WSW
     [AWSCmdlet("Calls the Amazon WorkSpaces Web UpdatePortal API operation.", Operation = new[] {"UpdatePortal"}, SelectReturnType = typeof(Amazon.WorkSpacesWeb.Model.UpdatePortalResponse))]
     [AWSCmdletOutput("Amazon.WorkSpacesWeb.Model.Portal or Amazon.WorkSpacesWeb.Model.UpdatePortalResponse",
         "This cmdlet returns an Amazon.WorkSpacesWeb.Model.Portal object.",
-        "The service call response (type Amazon.WorkSpacesWeb.Model.UpdatePortalResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkSpacesWeb.Model.UpdatePortalResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateWSWPortalCmdlet : AmazonWorkSpacesWebClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuthenticationType
         /// <summary>
@@ -53,11 +52,9 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// Defaults to <c>Standard</c>.</para><para><c>Standard</c> web portals are authenticated directly through your identity provider.
         /// You need to call <c>CreateIdentityProvider</c> to integrate your identity provider
         /// with your web portal. User and group access to your web portal is controlled through
-        /// your identity provider.</para><para><c>IAM_Identity_Center</c> web portals are authenticated through AWS IAM Identity
-        /// Center (successor to AWS Single Sign-On). They provide additional features, such as
-        /// IdP-initiated authentication. Identity sources (including external identity provider
-        /// integration), plus user and group access to your web portal, can be configured in
-        /// the IAM Identity Center.</para>
+        /// your identity provider.</para><para><c>IAM Identity Center</c> web portals are authenticated through IAM Identity Center.
+        /// Identity sources (including external identity provider integration), plus user and
+        /// group access to your web portal, can be configured in the IAM Identity Center.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,6 +70,28 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DisplayName { get; set; }
+        #endregion
+        
+        #region Parameter InstanceType
+        /// <summary>
+        /// <para>
+        /// <para>The type and resources of the underlying instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpacesWeb.InstanceType")]
+        public Amazon.WorkSpacesWeb.InstanceType InstanceType { get; set; }
+        #endregion
+        
+        #region Parameter MaxConcurrentSession
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of concurrent sessions for the portal.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MaxConcurrentSessions")]
+        public System.Int32? MaxConcurrentSession { get; set; }
         #endregion
         
         #region Parameter PortalArn
@@ -103,16 +122,6 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public string Select { get; set; } = "Portal";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PortalArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PortalArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PortalArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -123,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PortalArn), MyInvocation.BoundParameters);
@@ -139,23 +152,15 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpacesWeb.Model.UpdatePortalResponse, UpdateWSWPortalCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PortalArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuthenticationType = this.AuthenticationType;
             context.DisplayName = this.DisplayName;
+            context.InstanceType = this.InstanceType;
+            context.MaxConcurrentSession = this.MaxConcurrentSession;
             context.PortalArn = this.PortalArn;
             #if MODULAR
             if (this.PortalArn == null && ParameterWasBound(nameof(this.PortalArn)))
@@ -186,6 +191,14 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             if (cmdletContext.DisplayName != null)
             {
                 request.DisplayName = cmdletContext.DisplayName;
+            }
+            if (cmdletContext.InstanceType != null)
+            {
+                request.InstanceType = cmdletContext.InstanceType;
+            }
+            if (cmdletContext.MaxConcurrentSession != null)
+            {
+                request.MaxConcurrentSessions = cmdletContext.MaxConcurrentSession.Value;
             }
             if (cmdletContext.PortalArn != null)
             {
@@ -229,13 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces Web", "UpdatePortal");
             try
             {
-                #if DESKTOP
-                return client.UpdatePortal(request);
-                #elif CORECLR
-                return client.UpdatePortalAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePortalAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -254,6 +261,8 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         {
             public Amazon.WorkSpacesWeb.AuthenticationType AuthenticationType { get; set; }
             public System.String DisplayName { get; set; }
+            public Amazon.WorkSpacesWeb.InstanceType InstanceType { get; set; }
+            public System.Int32? MaxConcurrentSession { get; set; }
             public System.String PortalArn { get; set; }
             public System.Func<Amazon.WorkSpacesWeb.Model.UpdatePortalResponse, UpdateWSWPortalCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Portal;

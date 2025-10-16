@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexModelsV2;
 using Amazon.LexModelsV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LMBV2
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
     [OutputType("Amazon.LexModelsV2.Model.UpdateIntentResponse")]
     [AWSCmdlet("Calls the Amazon Lex Model Building V2 UpdateIntent API operation.", Operation = new[] {"UpdateIntent"}, SelectReturnType = typeof(Amazon.LexModelsV2.Model.UpdateIntentResponse))]
     [AWSCmdletOutput("Amazon.LexModelsV2.Model.UpdateIntentResponse",
-        "This cmdlet returns an Amazon.LexModelsV2.Model.UpdateIntentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexModelsV2.Model.UpdateIntentResponse object containing multiple properties."
     )]
     public partial class UpdateLMBV2IntentCmdlet : AmazonLexModelsV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FulfillmentCodeHook_Active
         /// <summary>
@@ -585,6 +588,50 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.Boolean? PromptSpecification_AllowInterrupt { get; set; }
         #endregion
         
+        #region Parameter QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField
+        /// <summary>
+        /// <para>
+        /// <para>The answer field used for an exact response from Bedrock Knowledge Store.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField { get; set; }
+        #endregion
+        
+        #region Parameter QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField
+        /// <summary>
+        /// <para>
+        /// <para>The name of the field that contains the answer to the query made to the OpenSearch
+        /// Service database.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExactResponseFields_AnswerField")]
+        public System.String QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField { get; set; }
+        #endregion
+        
+        #region Parameter QInConnectAssistantConfiguration_AssistantArn
+        /// <summary>
+        /// <para>
+        /// <para>The assistant Arn details of the Qinconnect assistant configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QInConnectIntentConfiguration_QInConnectAssistantConfiguration_AssistantArn")]
+        public System.String QInConnectAssistantConfiguration_AssistantArn { get; set; }
+        #endregion
+        
+        #region Parameter BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn
+        /// <summary>
+        /// <para>
+        /// <para>The base ARN of the knowledge base used.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn")]
+        public System.String BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn { get; set; }
+        #endregion
+        
         #region Parameter BotId
         /// <summary>
         /// <para>
@@ -624,7 +671,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -636,7 +687,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -648,7 +703,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -660,7 +719,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -672,7 +735,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -684,7 +751,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -696,7 +767,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -708,7 +783,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -720,7 +799,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -732,7 +815,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -744,7 +831,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -756,7 +847,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -769,7 +864,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -782,11 +881,26 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <para>
         /// <para>A list of conditional branches. A conditional branch is made up of a condition, a
         /// response and a next step. The response and next step are executed when the condition
-        /// is true.</para>
+        /// is true.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.LexModelsV2.Model.ConditionalBranch[] IntentConfirmationSetting_FailureConditional_ConditionalBranches { get; set; }
+        #endregion
+        
+        #region Parameter BedrockModelConfiguration_CustomPrompt
+        /// <summary>
+        /// <para>
+        /// <para>The custom prompt used in the Bedrock model specification details.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_BedrockModelConfiguration_CustomPrompt")]
+        public System.String BedrockModelConfiguration_CustomPrompt { get; set; }
         #endregion
         
         #region Parameter StartResponse_DelayInSecond
@@ -810,6 +924,17 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter OpensearchConfiguration_DomainEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>The endpoint of the Amazon OpenSearch Service domain.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_DomainEndpoint")]
+        public System.String OpensearchConfiguration_DomainEndpoint { get; set; }
         #endregion
         
         #region Parameter InitialResponseSetting_CodeHook_EnableCodeHookInvocation
@@ -863,6 +988,45 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.Boolean? FulfillmentCodeHook_Enabled { get; set; }
         #endregion
         
+        #region Parameter BedrockKnowledgeStoreConfiguration_ExactResponse
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to return an exact response, or to return an answer generated by
+        /// the model, using the fields you specify from the database.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponse")]
+        public System.Boolean? BedrockKnowledgeStoreConfiguration_ExactResponse { get; set; }
+        #endregion
+        
+        #region Parameter KendraConfiguration_ExactResponse
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to return an exact response from the Amazon Kendra index or to let
+        /// the Amazon Bedrock model you select generate a response based on the results. To use
+        /// this feature, you must first add FAQ questions to your index by following the steps
+        /// at <a href="https://docs.aws.amazon.com/kendra/latest/dg/in-creating-faq.html">Adding
+        /// frequently asked questions (FAQs) to an index</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_ExactResponse")]
+        public System.Boolean? KendraConfiguration_ExactResponse { get; set; }
+        #endregion
+        
+        #region Parameter OpensearchConfiguration_ExactResponse
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to return an exact response or to return an answer generated by
+        /// the model using the fields you specify from the database.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponse")]
+        public System.Boolean? OpensearchConfiguration_ExactResponse { get; set; }
+        #endregion
+        
         #region Parameter UpdateResponse_FrequencyInSecond
         /// <summary>
         /// <para>
@@ -877,11 +1041,53 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.Int32? UpdateResponse_FrequencyInSecond { get; set; }
         #endregion
         
+        #region Parameter Guardrail_Identifier
+        /// <summary>
+        /// <para>
+        /// <para>The unique guardrail id for the Bedrock guardrail configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_BedrockModelConfiguration_Guardrail_Identifier")]
+        public System.String Guardrail_Identifier { get; set; }
+        #endregion
+        
+        #region Parameter OpensearchConfiguration_IncludeField
+        /// <summary>
+        /// <para>
+        /// <para>Contains a list of fields from the Amazon OpenSearch Service that the model can use
+        /// to generate the answer to the query.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_IncludeFields")]
+        public System.String[] OpensearchConfiguration_IncludeField { get; set; }
+        #endregion
+        
+        #region Parameter OpensearchConfiguration_IndexName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the Amazon OpenSearch Service index.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_IndexName")]
+        public System.String OpensearchConfiguration_IndexName { get; set; }
+        #endregion
+        
         #region Parameter InputContext
         /// <summary>
         /// <para>
         /// <para>A new list of contexts that must be active in order for Amazon Lex to consider the
-        /// intent.</para>
+        /// intent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -966,6 +1172,16 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.String KendraConfiguration_KendraIndex { get; set; }
         #endregion
         
+        #region Parameter QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the Amazon Kendra index to use.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex { get; set; }
+        #endregion
+        
         #region Parameter LocaleId
         /// <summary>
         /// <para>
@@ -1001,7 +1217,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>1 - 5 message groups that contain start messages. Amazon Lex chooses one of the messages
-        /// to play to the user.</para>
+        /// to play to the user.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1013,7 +1233,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>1 - 5 message groups that contain update messages. Amazon Lex chooses one of the messages
-        /// to play to the user.</para>
+        /// to play to the user.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1025,7 +1249,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1036,7 +1264,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1048,7 +1280,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1059,7 +1295,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1071,7 +1311,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1082,7 +1326,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1094,7 +1342,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1105,7 +1357,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1116,7 +1372,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1127,7 +1387,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1138,7 +1402,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1149,7 +1417,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1160,7 +1432,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1171,7 +1447,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1183,7 +1463,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1195,7 +1479,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1206,7 +1494,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1217,7 +1509,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1228,7 +1524,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1239,7 +1539,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1250,7 +1554,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1261,7 +1569,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1272,7 +1584,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1283,7 +1599,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1295,7 +1615,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1306,7 +1630,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1318,7 +1646,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1329,7 +1661,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of responses that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual response to send at runtime.</para>
+        /// the actual response to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1340,7 +1676,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A collection of messages that Amazon Lex can send to the user. Amazon Lex chooses
-        /// the actual message to send at runtime.</para>
+        /// the actual message to send at runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1358,6 +1698,17 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         [Alias("IntentConfirmationSetting_PromptSpecification_MessageSelectionStrategy")]
         [AWSConstantClassSource("Amazon.LexModelsV2.MessageSelectionStrategy")]
         public Amazon.LexModelsV2.MessageSelectionStrategy PromptSpecification_MessageSelectionStrategy { get; set; }
+        #endregion
+        
+        #region Parameter BedrockModelConfiguration_ModelArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the foundation model used in descriptive bot building.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_BedrockModelConfiguration_ModelArn")]
+        public System.String BedrockModelConfiguration_ModelArn { get; set; }
         #endregion
         
         #region Parameter FulfillmentCodeHook_PostFulfillmentStatusSpecification_FailureConditional_DefaultBranch_NextStep_Intent_Name
@@ -1643,7 +1994,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         #region Parameter OutputContext
         /// <summary>
         /// <para>
-        /// <para>A new list of contexts that Amazon Lex activates when the intent is fulfilled.</para>
+        /// <para>A new list of contexts that Amazon Lex activates when the intent is fulfilled.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1664,7 +2019,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         #region Parameter PromptSpecification_PromptAttemptsSpecification
         /// <summary>
         /// <para>
-        /// <para>Specifies the advanced settings on each attempt of the prompt.</para>
+        /// <para>Specifies the advanced settings on each attempt of the prompt.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1685,6 +2044,18 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.String KendraConfiguration_QueryFilterString { get; set; }
         #endregion
         
+        #region Parameter QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString
+        /// <summary>
+        /// <para>
+        /// <para>Contains the Amazon Kendra filter string to use if enabled. For more information on
+        /// the Amazon Kendra search filter JSON format, see <a href="https://docs.aws.amazon.com/kendra/latest/dg/filtering.html#search-filtering">Using
+        /// document attributes to filter search results</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString { get; set; }
+        #endregion
+        
         #region Parameter KendraConfiguration_QueryFilterStringEnabled
         /// <summary>
         /// <para>
@@ -1696,10 +2067,35 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.Boolean? KendraConfiguration_QueryFilterStringEnabled { get; set; }
         #endregion
         
+        #region Parameter QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to enable an Amazon Kendra filter string or not.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled { get; set; }
+        #endregion
+        
+        #region Parameter ExactResponseFields_QuestionField
+        /// <summary>
+        /// <para>
+        /// <para>The name of the field that contains the query made to the OpenSearch Service database.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_QuestionField")]
+        public System.String ExactResponseFields_QuestionField { get; set; }
+        #endregion
+        
         #region Parameter SampleUtterance
         /// <summary>
         /// <para>
-        /// <para>New utterances used to invoke the intent.</para>
+        /// <para>New utterances used to invoke the intent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1711,7 +2107,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1722,7 +2122,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1733,7 +2137,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1744,7 +2152,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1755,7 +2167,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1766,7 +2182,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1777,7 +2197,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1788,7 +2212,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1799,7 +2227,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1810,7 +2242,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1821,7 +2257,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1832,7 +2272,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1843,7 +2287,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1854,7 +2302,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1865,7 +2317,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1876,7 +2332,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1887,7 +2347,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1898,7 +2362,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1909,7 +2377,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1920,7 +2392,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1931,7 +2407,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1942,7 +2422,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1953,7 +2437,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1964,7 +2452,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1976,7 +2468,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1987,7 +2483,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1999,7 +2499,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2010,7 +2514,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2020,7 +2528,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         #region Parameter SlotPriority
         /// <summary>
         /// <para>
-        /// <para>A new list of slots and their priorities that are contained by the intent.</para>
+        /// <para>A new list of slots and their priorities that are contained by the intent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2032,7 +2544,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2043,7 +2559,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2054,7 +2574,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2065,7 +2589,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2076,7 +2604,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2087,7 +2619,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2098,7 +2634,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2109,7 +2649,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2120,7 +2664,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2131,7 +2679,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2142,7 +2694,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2153,7 +2709,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2164,7 +2724,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2175,7 +2739,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2186,7 +2754,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2197,7 +2769,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2208,7 +2784,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2219,7 +2799,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2230,7 +2814,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2241,7 +2829,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2252,7 +2844,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2263,7 +2859,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2274,7 +2874,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2285,7 +2889,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2296,7 +2904,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2307,7 +2919,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2318,7 +2934,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2329,7 +2949,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slot value overrides for the intent. The name of the slot maps
-        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para>
+        /// to the value of the slot. Slots that are not included in the map aren't overridden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -2908,6 +3532,18 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.Int32? FulfillmentUpdatesSpecification_TimeoutInSecond { get; set; }
         #endregion
         
+        #region Parameter BedrockModelConfiguration_TraceStatus
+        /// <summary>
+        /// <para>
+        /// <para>The Bedrock trace status in the Bedrock model specification details.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_BedrockModelConfiguration_TraceStatus")]
+        [AWSConstantClassSource("Amazon.LexModelsV2.BedrockTraceStatus")]
+        public Amazon.LexModelsV2.BedrockTraceStatus BedrockModelConfiguration_TraceStatus { get; set; }
+        #endregion
+        
         #region Parameter FulfillmentCodeHook_PostFulfillmentStatusSpecification_FailureConditional_DefaultBranch_NextStep_DialogAction_Type
         /// <summary>
         /// <para>
@@ -3216,6 +3852,17 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public Amazon.LexModelsV2.DialogActionType IntentConfirmationSetting_FailureNextStep_DialogAction_Type { get; set; }
         #endregion
         
+        #region Parameter Guardrail_Version
+        /// <summary>
+        /// <para>
+        /// <para>The guardrail version for the Bedrock guardrail configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("QnAIntentConfiguration_BedrockModelConfiguration_Guardrail_Version")]
+        public System.String Guardrail_Version { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -3225,16 +3872,6 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IntentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IntentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IntentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -3247,9 +3884,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IntentId), MyInvocation.BoundParameters);
@@ -3263,21 +3904,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LexModelsV2.Model.UpdateIntentResponse, UpdateLMBV2IntentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IntentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BotId = this.BotId;
             #if MODULAR
             if (this.BotId == null && ParameterWasBound(nameof(this.BotId)))
@@ -4138,6 +4769,28 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
                 context.OutputContext = new List<Amazon.LexModelsV2.Model.OutputContext>(this.OutputContext);
             }
             context.ParentIntentSignature = this.ParentIntentSignature;
+            context.QInConnectAssistantConfiguration_AssistantArn = this.QInConnectAssistantConfiguration_AssistantArn;
+            context.BedrockModelConfiguration_CustomPrompt = this.BedrockModelConfiguration_CustomPrompt;
+            context.Guardrail_Identifier = this.Guardrail_Identifier;
+            context.Guardrail_Version = this.Guardrail_Version;
+            context.BedrockModelConfiguration_ModelArn = this.BedrockModelConfiguration_ModelArn;
+            context.BedrockModelConfiguration_TraceStatus = this.BedrockModelConfiguration_TraceStatus;
+            context.BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn = this.BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn;
+            context.BedrockKnowledgeStoreConfiguration_ExactResponse = this.BedrockKnowledgeStoreConfiguration_ExactResponse;
+            context.QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField = this.QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField;
+            context.KendraConfiguration_ExactResponse = this.KendraConfiguration_ExactResponse;
+            context.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex = this.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex;
+            context.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString = this.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString;
+            context.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled = this.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled;
+            context.OpensearchConfiguration_DomainEndpoint = this.OpensearchConfiguration_DomainEndpoint;
+            context.OpensearchConfiguration_ExactResponse = this.OpensearchConfiguration_ExactResponse;
+            context.QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField = this.QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField;
+            context.ExactResponseFields_QuestionField = this.ExactResponseFields_QuestionField;
+            if (this.OpensearchConfiguration_IncludeField != null)
+            {
+                context.OpensearchConfiguration_IncludeField = new List<System.String>(this.OpensearchConfiguration_IncludeField);
+            }
+            context.OpensearchConfiguration_IndexName = this.OpensearchConfiguration_IndexName;
             if (this.SampleUtterance != null)
             {
                 context.SampleUtterance = new List<Amazon.LexModelsV2.Model.SampleUtterance>(this.SampleUtterance);
@@ -9312,6 +9965,349 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             {
                 request.ParentIntentSignature = cmdletContext.ParentIntentSignature;
             }
+            
+             // populate QInConnectIntentConfiguration
+            var requestQInConnectIntentConfigurationIsNull = true;
+            request.QInConnectIntentConfiguration = new Amazon.LexModelsV2.Model.QInConnectIntentConfiguration();
+            Amazon.LexModelsV2.Model.QInConnectAssistantConfiguration requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration = null;
+            
+             // populate QInConnectAssistantConfiguration
+            var requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfigurationIsNull = true;
+            requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration = new Amazon.LexModelsV2.Model.QInConnectAssistantConfiguration();
+            System.String requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration_qInConnectAssistantConfiguration_AssistantArn = null;
+            if (cmdletContext.QInConnectAssistantConfiguration_AssistantArn != null)
+            {
+                requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration_qInConnectAssistantConfiguration_AssistantArn = cmdletContext.QInConnectAssistantConfiguration_AssistantArn;
+            }
+            if (requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration_qInConnectAssistantConfiguration_AssistantArn != null)
+            {
+                requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration.AssistantArn = requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration_qInConnectAssistantConfiguration_AssistantArn;
+                requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfigurationIsNull = false;
+            }
+             // determine if requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration should be set to null
+            if (requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfigurationIsNull)
+            {
+                requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration = null;
+            }
+            if (requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration != null)
+            {
+                request.QInConnectIntentConfiguration.QInConnectAssistantConfiguration = requestQInConnectIntentConfiguration_qInConnectIntentConfiguration_QInConnectAssistantConfiguration;
+                requestQInConnectIntentConfigurationIsNull = false;
+            }
+             // determine if request.QInConnectIntentConfiguration should be set to null
+            if (requestQInConnectIntentConfigurationIsNull)
+            {
+                request.QInConnectIntentConfiguration = null;
+            }
+            
+             // populate QnAIntentConfiguration
+            var requestQnAIntentConfigurationIsNull = true;
+            request.QnAIntentConfiguration = new Amazon.LexModelsV2.Model.QnAIntentConfiguration();
+            Amazon.LexModelsV2.Model.DataSourceConfiguration requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration = null;
+            
+             // populate DataSourceConfiguration
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfigurationIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration = new Amazon.LexModelsV2.Model.DataSourceConfiguration();
+            Amazon.LexModelsV2.Model.BedrockKnowledgeStoreConfiguration requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration = null;
+            
+             // populate BedrockKnowledgeStoreConfiguration
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfigurationIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration = new Amazon.LexModelsV2.Model.BedrockKnowledgeStoreConfiguration();
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn = null;
+            if (cmdletContext.BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn = cmdletContext.BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration.BedrockKnowledgeBaseArn = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfigurationIsNull = false;
+            }
+            System.Boolean? requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_ExactResponse = null;
+            if (cmdletContext.BedrockKnowledgeStoreConfiguration_ExactResponse != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_ExactResponse = cmdletContext.BedrockKnowledgeStoreConfiguration_ExactResponse.Value;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_ExactResponse != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration.ExactResponse = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_bedrockKnowledgeStoreConfiguration_ExactResponse.Value;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.Model.BedrockKnowledgeStoreExactResponseFields requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields = null;
+            
+             // populate ExactResponseFields
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFieldsIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields = new Amazon.LexModelsV2.Model.BedrockKnowledgeStoreExactResponseFields();
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField = null;
+            if (cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField = cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields.AnswerField = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFieldsIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFieldsIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration.ExactResponseFields = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfigurationIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfigurationIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration.BedrockKnowledgeStoreConfiguration = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.Model.QnAKendraConfiguration requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration = null;
+            
+             // populate KendraConfiguration
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfigurationIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration = new Amazon.LexModelsV2.Model.QnAKendraConfiguration();
+            System.Boolean? requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_kendraConfiguration_ExactResponse = null;
+            if (cmdletContext.KendraConfiguration_ExactResponse != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_kendraConfiguration_ExactResponse = cmdletContext.KendraConfiguration_ExactResponse.Value;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_kendraConfiguration_ExactResponse != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration.ExactResponse = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_kendraConfiguration_ExactResponse.Value;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfigurationIsNull = false;
+            }
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex = null;
+            if (cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex = cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration.KendraIndex = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfigurationIsNull = false;
+            }
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString = null;
+            if (cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString = cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration.QueryFilterString = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfigurationIsNull = false;
+            }
+            System.Boolean? requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled = null;
+            if (cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled = cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled.Value;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration.QueryFilterStringEnabled = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled.Value;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfigurationIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfigurationIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration.KendraConfiguration = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.Model.OpensearchConfiguration requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration = null;
+            
+             // populate OpensearchConfiguration
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration = new Amazon.LexModelsV2.Model.OpensearchConfiguration();
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_DomainEndpoint = null;
+            if (cmdletContext.OpensearchConfiguration_DomainEndpoint != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_DomainEndpoint = cmdletContext.OpensearchConfiguration_DomainEndpoint;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_DomainEndpoint != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration.DomainEndpoint = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_DomainEndpoint;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull = false;
+            }
+            System.Boolean? requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_ExactResponse = null;
+            if (cmdletContext.OpensearchConfiguration_ExactResponse != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_ExactResponse = cmdletContext.OpensearchConfiguration_ExactResponse.Value;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_ExactResponse != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration.ExactResponse = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_ExactResponse.Value;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull = false;
+            }
+            List<System.String> requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IncludeField = null;
+            if (cmdletContext.OpensearchConfiguration_IncludeField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IncludeField = cmdletContext.OpensearchConfiguration_IncludeField;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IncludeField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration.IncludeFields = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IncludeField;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull = false;
+            }
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IndexName = null;
+            if (cmdletContext.OpensearchConfiguration_IndexName != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IndexName = cmdletContext.OpensearchConfiguration_IndexName;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IndexName != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration.IndexName = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_opensearchConfiguration_IndexName;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.Model.ExactResponseFields requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields = null;
+            
+             // populate ExactResponseFields
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFieldsIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields = new Amazon.LexModelsV2.Model.ExactResponseFields();
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField = null;
+            if (cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField = cmdletContext.QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields.AnswerField = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFieldsIsNull = false;
+            }
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_exactResponseFields_QuestionField = null;
+            if (cmdletContext.ExactResponseFields_QuestionField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_exactResponseFields_QuestionField = cmdletContext.ExactResponseFields_QuestionField;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_exactResponseFields_QuestionField != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields.QuestionField = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_exactResponseFields_QuestionField;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFieldsIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFieldsIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration.ExactResponseFields = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfigurationIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration.OpensearchConfiguration = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration_qnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfigurationIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfigurationIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration != null)
+            {
+                request.QnAIntentConfiguration.DataSourceConfiguration = requestQnAIntentConfiguration_qnAIntentConfiguration_DataSourceConfiguration;
+                requestQnAIntentConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.Model.BedrockModelSpecification requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration = null;
+            
+             // populate BedrockModelConfiguration
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfigurationIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration = new Amazon.LexModelsV2.Model.BedrockModelSpecification();
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_CustomPrompt = null;
+            if (cmdletContext.BedrockModelConfiguration_CustomPrompt != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_CustomPrompt = cmdletContext.BedrockModelConfiguration_CustomPrompt;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_CustomPrompt != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration.CustomPrompt = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_CustomPrompt;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfigurationIsNull = false;
+            }
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_ModelArn = null;
+            if (cmdletContext.BedrockModelConfiguration_ModelArn != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_ModelArn = cmdletContext.BedrockModelConfiguration_ModelArn;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_ModelArn != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration.ModelArn = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_ModelArn;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.BedrockTraceStatus requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_TraceStatus = null;
+            if (cmdletContext.BedrockModelConfiguration_TraceStatus != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_TraceStatus = cmdletContext.BedrockModelConfiguration_TraceStatus;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_TraceStatus != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration.TraceStatus = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_bedrockModelConfiguration_TraceStatus;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfigurationIsNull = false;
+            }
+            Amazon.LexModelsV2.Model.BedrockGuardrailConfiguration requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail = null;
+            
+             // populate Guardrail
+            var requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_GuardrailIsNull = true;
+            requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail = new Amazon.LexModelsV2.Model.BedrockGuardrailConfiguration();
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Identifier = null;
+            if (cmdletContext.Guardrail_Identifier != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Identifier = cmdletContext.Guardrail_Identifier;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Identifier != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail.Identifier = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Identifier;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_GuardrailIsNull = false;
+            }
+            System.String requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Version = null;
+            if (cmdletContext.Guardrail_Version != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Version = cmdletContext.Guardrail_Version;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Version != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail.Version = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail_guardrail_Version;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_GuardrailIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_GuardrailIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail != null)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration.Guardrail = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_qnAIntentConfiguration_BedrockModelConfiguration_Guardrail;
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfigurationIsNull = false;
+            }
+             // determine if requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration should be set to null
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfigurationIsNull)
+            {
+                requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration = null;
+            }
+            if (requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration != null)
+            {
+                request.QnAIntentConfiguration.BedrockModelConfiguration = requestQnAIntentConfiguration_qnAIntentConfiguration_BedrockModelConfiguration;
+                requestQnAIntentConfigurationIsNull = false;
+            }
+             // determine if request.QnAIntentConfiguration should be set to null
+            if (requestQnAIntentConfigurationIsNull)
+            {
+                request.QnAIntentConfiguration = null;
+            }
             if (cmdletContext.SampleUtterance != null)
             {
                 request.SampleUtterances = cmdletContext.SampleUtterance;
@@ -9358,13 +10354,7 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Model Building V2", "UpdateIntent");
             try
             {
-                #if DESKTOP
-                return client.UpdateIntent(request);
-                #elif CORECLR
-                return client.UpdateIntentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateIntentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -9671,6 +10661,25 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             public System.String LocaleId { get; set; }
             public List<Amazon.LexModelsV2.Model.OutputContext> OutputContext { get; set; }
             public System.String ParentIntentSignature { get; set; }
+            public System.String QInConnectAssistantConfiguration_AssistantArn { get; set; }
+            public System.String BedrockModelConfiguration_CustomPrompt { get; set; }
+            public System.String Guardrail_Identifier { get; set; }
+            public System.String Guardrail_Version { get; set; }
+            public System.String BedrockModelConfiguration_ModelArn { get; set; }
+            public Amazon.LexModelsV2.BedrockTraceStatus BedrockModelConfiguration_TraceStatus { get; set; }
+            public System.String BedrockKnowledgeStoreConfiguration_BedrockKnowledgeBaseArn { get; set; }
+            public System.Boolean? BedrockKnowledgeStoreConfiguration_ExactResponse { get; set; }
+            public System.String QnAIntentConfiguration_DataSourceConfiguration_BedrockKnowledgeStoreConfiguration_ExactResponseFields_AnswerField { get; set; }
+            public System.Boolean? KendraConfiguration_ExactResponse { get; set; }
+            public System.String QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_KendraIndex { get; set; }
+            public System.String QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterString { get; set; }
+            public System.Boolean? QnAIntentConfiguration_DataSourceConfiguration_KendraConfiguration_QueryFilterStringEnabled { get; set; }
+            public System.String OpensearchConfiguration_DomainEndpoint { get; set; }
+            public System.Boolean? OpensearchConfiguration_ExactResponse { get; set; }
+            public System.String QnAIntentConfiguration_DataSourceConfiguration_OpensearchConfiguration_ExactResponseFields_AnswerField { get; set; }
+            public System.String ExactResponseFields_QuestionField { get; set; }
+            public List<System.String> OpensearchConfiguration_IncludeField { get; set; }
+            public System.String OpensearchConfiguration_IndexName { get; set; }
             public List<Amazon.LexModelsV2.Model.SampleUtterance> SampleUtterance { get; set; }
             public List<Amazon.LexModelsV2.Model.SlotPriority> SlotPriority { get; set; }
             public System.Func<Amazon.LexModelsV2.Model.UpdateIntentResponse, UpdateLMBV2IntentCmdlet, object> Select { get; set; } =

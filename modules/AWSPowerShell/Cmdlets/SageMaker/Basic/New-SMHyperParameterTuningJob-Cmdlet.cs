@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -41,10 +43,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
     /// in Amazon SageMaker Studio. For more information, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/experiments-view-compare.html#experiments-view">View
     /// Experiments, Trials, and Trial Components</a>.
     /// </para><important><para>
-    /// Do not include any security-sensitive information including account access IDs, secrets
-    /// or tokens in any hyperparameter field. If the use of security-sensitive credentials
-    /// are detected, SageMaker will reject your training job request and return an exception
-    /// error.
+    /// Do not include any security-sensitive information including account access IDs, secrets,
+    /// or tokens in any hyperparameter fields. As part of the shared responsibility model,
+    /// you are responsible for any potential exposure, unauthorized access, or compromise
+    /// of your sensitive data if caused by any security-sensitive information included in
+    /// the request hyperparameter variable or plain text fields..
     /// </para></important>
     /// </summary>
     [Cmdlet("New", "SMHyperParameterTuningJob", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -52,12 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateHyperParameterTuningJob API operation.", Operation = new[] {"CreateHyperParameterTuningJob"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateHyperParameterTuningJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateHyperParameterTuningJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateHyperParameterTuningJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateHyperParameterTuningJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMHyperParameterTuningJobCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlgorithmSpecification_AlgorithmName
         /// <summary>
@@ -88,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list containing hyperparameter names and example values to be used by Autotune to
-        /// determine optimal ranges for your tuning job.</para>
+        /// determine optimal ranges for your tuning job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list containing hyperparameter names and example values to be used by Autotune to
-        /// determine optimal ranges for your tuning job.</para>
+        /// determine optimal ranges for your tuning job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,7 +125,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CategoricalParameterRange.html">CategoricalParameterRange</a>
         /// objects that specify ranges of categorical hyperparameters that a hyperparameter tuning
-        /// job searches.</para>
+        /// job searches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,7 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CategoricalParameterRange.html">CategoricalParameterRange</a>
         /// objects that specify ranges of categorical hyperparameters that a hyperparameter tuning
-        /// job searches.</para>
+        /// job searches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,7 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_ContinuousParameterRange.html">ContinuousParameterRange</a>
         /// objects that specify ranges of continuous hyperparameters that a hyperparameter tuning
-        /// job searches.</para>
+        /// job searches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -164,7 +188,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_ContinuousParameterRange.html">ContinuousParameterRange</a>
         /// objects that specify ranges of continuous hyperparameters that a hyperparameter tuning
-        /// job searches.</para>
+        /// job searches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -231,7 +259,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// number of environment variables for each <c>TrainingJobDefinition</c> and also the
         /// maximum for the hyperparameter tuning job itself. That is, the sum of the number of
         /// environment variables for all the training job definitions can't exceed the maximum
-        /// number specified.</para></note>
+        /// number specified.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -263,7 +295,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>An array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_Channel.html">Channel</a>
-        /// objects that specify the input for the training jobs that the tuning job launches.</para>
+        /// objects that specify the input for the training jobs that the tuning job launches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -280,7 +316,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// are used.</para><note><para>If you only want to use a single instance configuration inside the <c>HyperParameterTuningResourceConfig</c>
         /// API, do not provide a value for <c>InstanceConfigs</c>. Instead, use <c>InstanceType</c>,
         /// <c>VolumeSizeInGB</c> and <c>InstanceCount</c>. If you use <c>InstanceConfigs</c>,
-        /// do not provide values for <c>InstanceType</c>, <c>VolumeSizeInGB</c> or <c>InstanceCount</c>.</para></note>
+        /// do not provide values for <c>InstanceType</c>, <c>VolumeSizeInGB</c> or <c>InstanceCount</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -318,7 +358,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_IntegerParameterRange.html">IntegerParameterRange</a>
         /// objects that specify ranges of integer hyperparameters that a hyperparameter tuning
-        /// job searches.</para>
+        /// job searches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -331,7 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_IntegerParameterRange.html">IntegerParameterRange</a>
         /// objects that specify ranges of integer hyperparameters that a hyperparameter tuning
-        /// job searches.</para>
+        /// job searches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -408,7 +456,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The maximum length of time, in seconds, that a training or compilation job can be
-        /// pending before it is stopped.</para>
+        /// pending before it is stopped.</para><note><para>When working with training jobs that use capacity from <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/reserve-capacity-with-training-plans.html">training
+        /// plans</a>, not all <c>Pending</c> job states count against the <c>MaxPendingTimeInSeconds</c>
+        /// limit. The following scenarios do not increment the <c>MaxPendingTimeInSeconds</c>
+        /// counter:</para><ul><li><para>The plan is in a <c>Scheduled</c> state: Jobs queued (in <c>Pending</c> status) before
+        /// a plan's start date (waiting for scheduled start time)</para></li><li><para>Between capacity reservations: Jobs temporarily back to <c>Pending</c> status between
+        /// two capacity reservation periods</para></li></ul><para><c>MaxPendingTimeInSeconds</c> only increments when jobs are actively waiting for
+        /// capacity in an <c>Active</c> plan.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -487,7 +541,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>An array of <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_MetricDefinition.html">MetricDefinition</a>
-        /// objects that specify the metrics that the algorithm emits.</para>
+        /// objects that specify the metrics that the algorithm emits.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -559,7 +617,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// new hyperparameter tuning job. For more information about warm starting a hyperparameter
         /// tuning job, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/automatic-model-tuning-warm-start.html">Using
         /// a Previous Hyperparameter Tuning Job as a Starting Point</a>.</para><para>Hyperparameter tuning jobs created before October 1, 2018 cannot be used as parent
-        /// jobs for warm start tuning jobs.</para>
+        /// jobs for warm start tuning jobs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -622,7 +684,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs, in the form <c>sg-xxxxxxxx</c>. Specify the security groups
-        /// for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -633,7 +699,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter TrainingJobDefinition_StaticHyperParameter
         /// <summary>
         /// <para>
-        /// <para>Specifies the values of hyperparameters that do not change for the tuning job.</para>
+        /// <para>Specifies the values of hyperparameters that do not change for the tuning job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -666,7 +736,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The ID of the subnets in the VPC to which you want to connect your training job or
         /// model. For information about the availability of specific instance types, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/instance-types-az.html">Supported
-        /// Instance Types and Availability Zones</a>.</para>
+        /// Instance Types and Availability Zones</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -681,7 +755,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// resources in different ways, for example, by purpose, owner, or environment. For more
         /// information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
         /// Amazon Web Services Resources</a>.</para><para>Tags that you specify for the tuning job are also added to all training jobs that
-        /// the tuning job launches.</para>
+        /// the tuning job launches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -732,7 +810,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of the <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_HyperParameterTrainingJobDefinition.html">HyperParameterTrainingJobDefinition</a>
-        /// objects launched for this tuning job.</para>
+        /// objects launched for this tuning job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -856,16 +938,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "HyperParameterTuningJobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the HyperParameterTuningJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^HyperParameterTuningJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^HyperParameterTuningJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -876,9 +948,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.HyperParameterTuningJobName), MyInvocation.BoundParameters);
@@ -892,21 +968,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateHyperParameterTuningJobResponse, NewSMHyperParameterTuningJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.HyperParameterTuningJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Autotune_Mode = this.Autotune_Mode;
             context.HyperParameterTuningJobObjective_MetricName = this.HyperParameterTuningJobObjective_MetricName;
             context.HyperParameterTuningJobObjective_Type = this.HyperParameterTuningJobObjective_Type;
@@ -1926,13 +1992,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateHyperParameterTuningJob");
             try
             {
-                #if DESKTOP
-                return client.CreateHyperParameterTuningJob(request);
-                #elif CORECLR
-                return client.CreateHyperParameterTuningJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateHyperParameterTuningJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

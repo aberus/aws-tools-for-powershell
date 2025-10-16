@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,54 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
-    /// Gets a list of aliases (also called CNAMEs or alternate domain names) that conflict
-    /// or overlap with the provided alias, and the associated CloudFront distributions and
-    /// Amazon Web Services accounts for each conflicting alias. In the returned list, the
-    /// distribution and account IDs are partially hidden, which allows you to identify the
-    /// distributions and accounts that you own, but helps to protect the information of ones
-    /// that you don't own.
-    /// 
-    ///  
-    /// <para>
-    /// Use this operation to find aliases that are in use in CloudFront that conflict or
-    /// overlap with the provided alias. For example, if you provide <c>www.example.com</c>
-    /// as input, the returned list can include <c>www.example.com</c> and the overlapping
-    /// wildcard alternate domain name (<c>*.example.com</c>), if they exist. If you provide
-    /// <c>*.example.com</c> as input, the returned list can include <c>*.example.com</c>
-    /// and any alternate domain names covered by that wildcard (for example, <c>www.example.com</c>,
-    /// <c>test.example.com</c>, <c>dev.example.com</c>, and so on), if they exist.
-    /// </para><para>
-    /// To list conflicting aliases, you provide the alias to search and the ID of a distribution
-    /// in your account that has an attached SSL/TLS certificate that includes the provided
-    /// alias. For more information, including how to set up the distribution and certificate,
-    /// see <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html#alternate-domain-names-move">Moving
-    /// an alternate domain name to a different distribution</a> in the <i>Amazon CloudFront
-    /// Developer Guide</i>.
-    /// </para><para>
-    /// You can optionally specify the maximum number of items to receive in the response.
-    /// If the total number of items in the list exceeds the maximum that you specify, or
-    /// the default maximum, the response is paginated. To get the next page of items, send
-    /// a subsequent request that specifies the <c>NextMarker</c> value from the current response
-    /// as the <c>Marker</c> value in the subsequent request.
-    /// </para>
+    /// Amazon.CloudFront.IAmazonCloudFront.ListConflictingAliases
     /// </summary>
     [Cmdlet("Get", "CFConflictingAlias")]
     [OutputType("Amazon.CloudFront.Model.ConflictingAliasesList")]
     [AWSCmdlet("Calls the Amazon CloudFront ListConflictingAliases API operation.", Operation = new[] {"ListConflictingAliases"}, SelectReturnType = typeof(Amazon.CloudFront.Model.ListConflictingAliasesResponse))]
     [AWSCmdletOutput("Amazon.CloudFront.Model.ConflictingAliasesList or Amazon.CloudFront.Model.ListConflictingAliasesResponse",
         "This cmdlet returns an Amazon.CloudFront.Model.ConflictingAliasesList object.",
-        "The service call response (type Amazon.CloudFront.Model.ListConflictingAliasesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFront.Model.ListConflictingAliasesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFConflictingAliasCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Alias
         /// <summary>
@@ -91,7 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter DistributionId
         /// <summary>
         /// <para>
-        /// <para>The ID of a distribution in your account that has an attached SSL/TLS certificate
+        /// <para>The ID of a standard distribution in your account that has an attached TLS certificate
         /// that includes the provided alias.</para>
         /// </para>
         /// </summary>
@@ -141,19 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public string Select { get; set; } = "ConflictingAliasesList";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Alias parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Alias' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Alias' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -161,21 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFront.Model.ListConflictingAliasesResponse, GetCFConflictingAliasCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Alias;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Alias = this.Alias;
             #if MODULAR
             if (this.Alias == null && ParameterWasBound(nameof(this.Alias)))
@@ -262,13 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "ListConflictingAliases");
             try
             {
-                #if DESKTOP
-                return client.ListConflictingAliases(request);
-                #elif CORECLR
-                return client.ListConflictingAliasesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListConflictingAliasesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

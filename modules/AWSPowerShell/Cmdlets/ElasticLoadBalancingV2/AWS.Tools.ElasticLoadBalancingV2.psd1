@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The ElasticLoadBalancingV2 module of AWS Tools for PowerShell lets developers and administrators manage Elastic Load Balancing V2 from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.ElasticLoadBalancingV2.dll'
     )
@@ -89,17 +90,23 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-ELB2ListenerCertificate', 
         'Add-ELB2Tag', 
         'Add-ELB2TrustStoreRevocation', 
+        'Edit-ELB2CapacityReservation', 
+        'Edit-ELB2IpPool', 
         'Edit-ELB2Listener', 
+        'Edit-ELB2ListenerAttribute', 
         'Edit-ELB2LoadBalancerAttribute', 
         'Edit-ELB2Rule', 
         'Edit-ELB2TargetGroup', 
         'Edit-ELB2TargetGroupAttribute', 
         'Edit-ELB2TrustStore', 
         'Get-ELB2AccountLimit', 
+        'Get-ELB2CapacityReservation', 
         'Get-ELB2Listener', 
+        'Get-ELB2ListenerAttribute', 
         'Get-ELB2ListenerCertificate', 
         'Get-ELB2LoadBalancer', 
         'Get-ELB2LoadBalancerAttribute', 
+        'Get-ELB2ResourcePolicy', 
         'Get-ELB2Rule', 
         'Get-ELB2SSLPolicy', 
         'Get-ELB2Tag', 
@@ -121,6 +128,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-ELB2ListenerCertificate', 
         'Remove-ELB2LoadBalancer', 
         'Remove-ELB2Rule', 
+        'Remove-ELB2SharedTrustStoreAssociation', 
         'Remove-ELB2Tag', 
         'Remove-ELB2TargetGroup', 
         'Remove-ELB2TrustStore', 
@@ -153,7 +161,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

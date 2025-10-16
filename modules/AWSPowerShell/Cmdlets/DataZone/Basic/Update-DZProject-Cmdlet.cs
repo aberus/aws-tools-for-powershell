@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
@@ -35,16 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
     [AWSCmdlet("Calls the Amazon DataZone UpdateProject API operation.", Operation = new[] {"UpdateProject"}, SelectReturnType = typeof(Amazon.DataZone.Model.UpdateProjectResponse))]
     [AWSCmdletOutput("System.String or Amazon.DataZone.Model.UpdateProjectResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DataZone.Model.UpdateProjectResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataZone.Model.UpdateProjectResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateDZProjectCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -59,7 +58,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter DomainIdentifier
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Amazon DataZone domain in which a project is to be updated.</para>
+        /// <para>The ID of the Amazon DataZone domain where a project is being updated.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,10 +72,39 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public System.String DomainIdentifier { get; set; }
         #endregion
         
+        #region Parameter DomainUnitId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the domain unit.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DomainUnitId { get; set; }
+        #endregion
+        
+        #region Parameter EnvironmentDeploymentDetails_EnvironmentFailureReason
+        /// <summary>
+        /// <para>
+        /// <para>Environment failure reasons.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EnvironmentDeploymentDetails_EnvironmentFailureReasons")]
+        public System.Collections.Hashtable EnvironmentDeploymentDetails_EnvironmentFailureReason { get; set; }
+        #endregion
+        
         #region Parameter GlossaryTerm
         /// <summary>
         /// <para>
-        /// <para>The glossary terms to be updated as part of the <c>UpdateProject</c> action.</para>
+        /// <para>The glossary terms to be updated as part of the <c>UpdateProject</c> action.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,6 +139,43 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter EnvironmentDeploymentDetails_OverallDeploymentStatus
+        /// <summary>
+        /// <para>
+        /// <para>The overall deployment status of the environment.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DataZone.OverallDeploymentStatus")]
+        public Amazon.DataZone.OverallDeploymentStatus EnvironmentDeploymentDetails_OverallDeploymentStatus { get; set; }
+        #endregion
+        
+        #region Parameter ProjectProfileVersion
+        /// <summary>
+        /// <para>
+        /// <para>The project profile version to which the project should be updated. You can only specify
+        /// the following string for this parameter: <c>latest</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ProjectProfileVersion { get; set; }
+        #endregion
+        
+        #region Parameter UserParameter
+        /// <summary>
+        /// <para>
+        /// <para>The user parameters of the project.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UserParameters")]
+        public Amazon.DataZone.Model.EnvironmentConfigurationUserParameter[] UserParameter { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Id'.
@@ -120,16 +185,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Id";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Identifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -142,9 +197,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Identifier), MyInvocation.BoundParameters);
@@ -158,21 +217,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.UpdateProjectResponse, UpdateDZProjectCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Identifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.DomainIdentifier = this.DomainIdentifier;
             #if MODULAR
@@ -181,6 +230,28 @@ namespace Amazon.PowerShell.Cmdlets.DZ
                 WriteWarning("You are passing $null as a value for parameter DomainIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DomainUnitId = this.DomainUnitId;
+            if (this.EnvironmentDeploymentDetails_EnvironmentFailureReason != null)
+            {
+                context.EnvironmentDeploymentDetails_EnvironmentFailureReason = new Dictionary<System.String, List<Amazon.DataZone.Model.EnvironmentError>>(StringComparer.Ordinal);
+                foreach (var hashKey in this.EnvironmentDeploymentDetails_EnvironmentFailureReason.Keys)
+                {
+                    object hashValue = this.EnvironmentDeploymentDetails_EnvironmentFailureReason[hashKey];
+                    if (hashValue == null)
+                    {
+                        context.EnvironmentDeploymentDetails_EnvironmentFailureReason.Add((String)hashKey, null);
+                        continue;
+                    }
+                    var enumerable = SafeEnumerable(hashValue);
+                    var valueSet = new List<Amazon.DataZone.Model.EnvironmentError>();
+                    foreach (var s in enumerable)
+                    {
+                        valueSet.Add((Amazon.DataZone.Model.EnvironmentError)s);
+                    }
+                    context.EnvironmentDeploymentDetails_EnvironmentFailureReason.Add((String)hashKey, valueSet);
+                }
+            }
+            context.EnvironmentDeploymentDetails_OverallDeploymentStatus = this.EnvironmentDeploymentDetails_OverallDeploymentStatus;
             if (this.GlossaryTerm != null)
             {
                 context.GlossaryTerm = new List<System.String>(this.GlossaryTerm);
@@ -193,6 +264,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             }
             #endif
             context.Name = this.Name;
+            context.ProjectProfileVersion = this.ProjectProfileVersion;
+            if (this.UserParameter != null)
+            {
+                context.UserParameter = new List<Amazon.DataZone.Model.EnvironmentConfigurationUserParameter>(this.UserParameter);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -217,6 +293,39 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             {
                 request.DomainIdentifier = cmdletContext.DomainIdentifier;
             }
+            if (cmdletContext.DomainUnitId != null)
+            {
+                request.DomainUnitId = cmdletContext.DomainUnitId;
+            }
+            
+             // populate EnvironmentDeploymentDetails
+            var requestEnvironmentDeploymentDetailsIsNull = true;
+            request.EnvironmentDeploymentDetails = new Amazon.DataZone.Model.EnvironmentDeploymentDetails();
+            Dictionary<System.String, List<Amazon.DataZone.Model.EnvironmentError>> requestEnvironmentDeploymentDetails_environmentDeploymentDetails_EnvironmentFailureReason = null;
+            if (cmdletContext.EnvironmentDeploymentDetails_EnvironmentFailureReason != null)
+            {
+                requestEnvironmentDeploymentDetails_environmentDeploymentDetails_EnvironmentFailureReason = cmdletContext.EnvironmentDeploymentDetails_EnvironmentFailureReason;
+            }
+            if (requestEnvironmentDeploymentDetails_environmentDeploymentDetails_EnvironmentFailureReason != null)
+            {
+                request.EnvironmentDeploymentDetails.EnvironmentFailureReasons = requestEnvironmentDeploymentDetails_environmentDeploymentDetails_EnvironmentFailureReason;
+                requestEnvironmentDeploymentDetailsIsNull = false;
+            }
+            Amazon.DataZone.OverallDeploymentStatus requestEnvironmentDeploymentDetails_environmentDeploymentDetails_OverallDeploymentStatus = null;
+            if (cmdletContext.EnvironmentDeploymentDetails_OverallDeploymentStatus != null)
+            {
+                requestEnvironmentDeploymentDetails_environmentDeploymentDetails_OverallDeploymentStatus = cmdletContext.EnvironmentDeploymentDetails_OverallDeploymentStatus;
+            }
+            if (requestEnvironmentDeploymentDetails_environmentDeploymentDetails_OverallDeploymentStatus != null)
+            {
+                request.EnvironmentDeploymentDetails.OverallDeploymentStatus = requestEnvironmentDeploymentDetails_environmentDeploymentDetails_OverallDeploymentStatus;
+                requestEnvironmentDeploymentDetailsIsNull = false;
+            }
+             // determine if request.EnvironmentDeploymentDetails should be set to null
+            if (requestEnvironmentDeploymentDetailsIsNull)
+            {
+                request.EnvironmentDeploymentDetails = null;
+            }
             if (cmdletContext.GlossaryTerm != null)
             {
                 request.GlossaryTerms = cmdletContext.GlossaryTerm;
@@ -228,6 +337,14 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.ProjectProfileVersion != null)
+            {
+                request.ProjectProfileVersion = cmdletContext.ProjectProfileVersion;
+            }
+            if (cmdletContext.UserParameter != null)
+            {
+                request.UserParameters = cmdletContext.UserParameter;
             }
             
             CmdletOutput output;
@@ -267,13 +384,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "UpdateProject");
             try
             {
-                #if DESKTOP
-                return client.UpdateProject(request);
-                #elif CORECLR
-                return client.UpdateProjectAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateProjectAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -292,9 +403,14 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         {
             public System.String Description { get; set; }
             public System.String DomainIdentifier { get; set; }
+            public System.String DomainUnitId { get; set; }
+            public Dictionary<System.String, List<Amazon.DataZone.Model.EnvironmentError>> EnvironmentDeploymentDetails_EnvironmentFailureReason { get; set; }
+            public Amazon.DataZone.OverallDeploymentStatus EnvironmentDeploymentDetails_OverallDeploymentStatus { get; set; }
             public List<System.String> GlossaryTerm { get; set; }
             public System.String Identifier { get; set; }
             public System.String Name { get; set; }
+            public System.String ProjectProfileVersion { get; set; }
+            public List<Amazon.DataZone.Model.EnvironmentConfigurationUserParameter> UserParameter { get; set; }
             public System.Func<Amazon.DataZone.Model.UpdateProjectResponse, UpdateDZProjectCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Id;
         }

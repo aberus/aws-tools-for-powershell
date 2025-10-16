@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -47,16 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.SearchPlaceIndexForTextResponse")]
     [AWSCmdlet("Calls the Amazon Location Service SearchPlaceIndexForText API operation.", Operation = new[] {"SearchPlaceIndexForText"}, SelectReturnType = typeof(Amazon.LocationService.Model.SearchPlaceIndexForTextResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.SearchPlaceIndexForTextResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.SearchPlaceIndexForTextResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.SearchPlaceIndexForTextResponse object containing multiple properties."
     )]
     public partial class SearchLOCPlaceIndexForTextCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BiasPosition
         /// <summary>
@@ -66,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// the X coordinate, or longitude; the second number represents the Y coordinate, or
         /// latitude.</para><para>For example, <c>[-123.1174, 49.2847]</c> represents the position with longitude <c>-123.1174</c>
         /// and latitude <c>49.2847</c>.</para><note><para><c>BiasPosition</c> and <c>FilterBBox</c> are mutually exclusive. Specifying both
-        /// options results in an error. </para></note>
+        /// options results in an error. </para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,7 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// of the northeast corner of the bounding box.</para><para>For example, <c>[-12.7935, -37.4835, -12.0684, -36.9542]</c> represents a bounding
         /// box where the southwest corner has longitude <c>-12.7935</c> and latitude <c>-37.4835</c>,
         /// and the northeast corner has longitude <c>-12.0684</c> and latitude <c>-36.9542</c>.</para><note><para><c>FilterBBox</c> and <c>BiasPosition</c> are mutually exclusive. Specifying both
-        /// options results in an error. </para></note>
+        /// options results in an error. </para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,8 +104,12 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>A list of one or more Amazon Location categories to filter the returned places. If
         /// you include more than one category, the results will include results that match <i>any</i>
         /// of the categories listed.</para><para>For more information about using categories, including a list of Amazon Location categories,
-        /// see <a href="https://docs.aws.amazon.com/location/latest/developerguide/category-filtering.html">Categories
-        /// and filtering</a>, in the <i>Amazon Location Service Developer Guide</i>.</para>
+        /// see <a href="https://docs.aws.amazon.com/location/previous/developerguide/category-filtering.html">Categories
+        /// and filtering</a>, in the <i>Amazon Location Service developer guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>An optional parameter that limits the search results by returning only places that
         /// are in a specified list of countries.</para><ul><li><para>Valid values include <a href="https://www.iso.org/iso-3166-country-codes.html">ISO
         /// 3166</a> 3-digit country codes. For example, Australia uses three upper-case characters:
-        /// <c>AUS</c>.</para></li></ul>
+        /// <c>AUS</c>.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,7 +155,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         #region Parameter Key
         /// <summary>
         /// <para>
-        /// <para>The optional <a href="https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html">API
+        /// <para>The optional <a href="https://docs.aws.amazon.com/location/previous/developerguide/using-apikeys.html">API
         /// key</a> to authorize the request.</para>
         /// </para>
         /// </summary>
@@ -205,19 +220,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IndexName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IndexName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IndexName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -225,21 +234,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.SearchPlaceIndexForTextResponse, SearchLOCPlaceIndexForTextCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IndexName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.BiasPosition != null)
             {
                 context.BiasPosition = new List<System.Double>(this.BiasPosition);
@@ -363,13 +362,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "SearchPlaceIndexForText");
             try
             {
-                #if DESKTOP
-                return client.SearchPlaceIndexForText(request);
-                #elif CORECLR
-                return client.SearchPlaceIndexForTextAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SearchPlaceIndexForTextAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

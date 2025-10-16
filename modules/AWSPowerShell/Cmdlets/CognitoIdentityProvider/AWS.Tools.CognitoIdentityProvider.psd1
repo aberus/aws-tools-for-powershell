@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The CognitoIdentityProvider module of AWS Tools for PowerShell lets developers and administrators manage Amazon Cognito Identity Provider from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.CognitoIdentityProvider.dll'
     )
@@ -91,6 +92,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-CGIPSoftwareToken', 
         'Add-CGIPUserToGroupAdmin', 
         'Approve-CGIPDevice', 
+        'Complete-CGIPWebAuthnRegistration', 
         'Confirm-CGIPForgotPassword', 
         'Confirm-CGIPUserRegistration', 
         'Confirm-CGIPUserRegistrationAdmin', 
@@ -114,16 +116,22 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CGIPIdentityProviderByIdentifier', 
         'Get-CGIPIdentityProviderList', 
         'Get-CGIPLogDeliveryConfiguration', 
+        'Get-CGIPManagedLoginBranding', 
+        'Get-CGIPManagedLoginBrandingByClient', 
         'Get-CGIPResourceServer', 
         'Get-CGIPResourceServerList', 
         'Get-CGIPResourceTag', 
         'Get-CGIPRiskConfiguration', 
         'Get-CGIPSigningCertificate', 
+        'Get-CGIPTerm', 
+        'Get-CGIPTermList', 
+        'Get-CGIPTokensFromRefreshToken', 
         'Get-CGIPUICustomization', 
         'Get-CGIPUser', 
         'Get-CGIPUserAdmin', 
         'Get-CGIPUserAttributeVerificationCode', 
         'Get-CGIPUserAuthEventListAdmin', 
+        'Get-CGIPUserAuthFactor', 
         'Get-CGIPUserImportJob', 
         'Get-CGIPUserImportJobList', 
         'Get-CGIPUserList', 
@@ -134,9 +142,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CGIPUserPoolList', 
         'Get-CGIPUserPoolMfaConfig', 
         'Get-CGIPUsersInGroup', 
+        'Get-CGIPWebAuthnCredentialList', 
         'New-CGIPGroup', 
         'New-CGIPIdentityProvider', 
+        'New-CGIPManagedLoginBranding', 
         'New-CGIPResourceServer', 
+        'New-CGIPTerm', 
         'New-CGIPUserAdmin', 
         'New-CGIPUserImportJob', 
         'New-CGIPUserPool', 
@@ -145,8 +156,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Register-CGIPUserInPool', 
         'Remove-CGIPGroup', 
         'Remove-CGIPIdentityProvider', 
+        'Remove-CGIPManagedLoginBranding', 
         'Remove-CGIPResourceServer', 
         'Remove-CGIPResourceTag', 
+        'Remove-CGIPTerm', 
         'Remove-CGIPUser', 
         'Remove-CGIPUserAdmin', 
         'Remove-CGIPUserAttribute', 
@@ -155,6 +168,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CGIPUserPool', 
         'Remove-CGIPUserPoolClient', 
         'Remove-CGIPUserPoolDomain', 
+        'Remove-CGIPWebAuthnCredential', 
         'Reset-CGIPForgottenPassword', 
         'Reset-CGIPUserPasswordAdmin', 
         'Revoke-CGIPToken', 
@@ -173,6 +187,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Start-CGIPAuth', 
         'Start-CGIPAuthAdmin', 
         'Start-CGIPUserImportJob', 
+        'Start-CGIPWebAuthnRegistration', 
         'Stop-CGIPDeviceTracking', 
         'Stop-CGIPDeviceTrackingAdmin', 
         'Stop-CGIPUserImportJob', 
@@ -182,8 +197,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-CGIPAuthEventFeedbackAdmin', 
         'Update-CGIPGroup', 
         'Update-CGIPIdentityProvider', 
+        'Update-CGIPManagedLoginBranding', 
         'Update-CGIPPassword', 
         'Update-CGIPResourceServer', 
+        'Update-CGIPTerm', 
         'Update-CGIPUserAttribute', 
         'Update-CGIPUserAttributeAdmin', 
         'Update-CGIPUserPool', 
@@ -212,7 +229,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

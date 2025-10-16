@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,42 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
-    /// This operation uploads a specific part of a read set. If you upload a new part using
-    /// a previously used part number, the previously uploaded part will be overwritten.
+    /// Uploads a specific part of a read set into a sequence store. When you a upload a read
+    /// set part with a part number that already exists, the new part replaces the existing
+    /// one. This operation returns a JSON formatted response containing a string identifier
+    /// that is used to confirm that parts are being added to the intended upload.
+    /// 
+    ///  
+    /// <para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/omics/latest/dev/synchronous-uploads.html">Direct
+    /// upload to a sequence store</a> in the <i>Amazon Web Services HealthOmics User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("Set", "OMICSReadSetPart", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon Omics UploadReadSetPart API operation.", Operation = new[] {"UploadReadSetPart"}, SelectReturnType = typeof(Amazon.Omics.Model.UploadReadSetPartResponse))]
     [AWSCmdletOutput("System.String or Amazon.Omics.Model.UploadReadSetPartResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Omics.Model.UploadReadSetPartResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Omics.Model.UploadReadSetPartResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetOMICSReadSetPartCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PartNumber
         /// <summary>
         /// <para>
-        /// <para> The number of the part being uploaded. </para>
+        /// <para>The number of the part being uploaded.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +73,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter PartSource
         /// <summary>
         /// <para>
-        /// <para> The source file for an upload part. </para>
+        /// <para>The source file for an upload part.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -79,7 +90,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter Payload
         /// <summary>
         /// <para>
-        /// <para> The read set data to upload for a part. </para>
+        /// <para>The read set data to upload for a part.</para>
         /// </para>
         /// <para>The cmdlet accepts a parameter of type string, string[], System.IO.FileInfo or System.IO.Stream.</para>
         /// </summary>
@@ -96,7 +107,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter SequenceStoreId
         /// <summary>
         /// <para>
-        /// <para> The Sequence Store ID used for the multipart upload. </para>
+        /// <para>The Sequence Store ID used for the multipart upload.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,7 +124,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter UploadId
         /// <summary>
         /// <para>
-        /// <para> The ID for the initiated multipart upload. </para>
+        /// <para>The ID for the initiated multipart upload.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -138,16 +149,6 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public string Select { get; set; } = "Checksum";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UploadId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UploadId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UploadId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -158,9 +159,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UploadId), MyInvocation.BoundParameters);
@@ -174,21 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Omics.Model.UploadReadSetPartResponse, SetOMICSReadSetPartCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UploadId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.PartNumber = this.PartNumber;
             #if MODULAR
             if (this.PartNumber == null && ParameterWasBound(nameof(this.PartNumber)))
@@ -311,13 +306,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "UploadReadSetPart");
             try
             {
-                #if DESKTOP
-                return client.UploadReadSetPart(request);
-                #elif CORECLR
-                return client.UploadReadSetPartAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UploadReadSetPartAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

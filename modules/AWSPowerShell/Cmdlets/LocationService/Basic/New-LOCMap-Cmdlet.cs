@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -42,21 +44,25 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.CreateMapResponse")]
     [AWSCmdlet("Calls the Amazon Location Service CreateMap API operation.", Operation = new[] {"CreateMap"}, SelectReturnType = typeof(Amazon.LocationService.Model.CreateMapResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.CreateMapResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.CreateMapResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.CreateMapResponse object containing multiple properties."
     )]
     public partial class NewLOCMapCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Configuration_CustomLayer
         /// <summary>
         /// <para>
         /// <para>Specifies the custom layers for the style. Leave unset to not enable any custom layer,
-        /// or, for styles that support custom layers, you can enable layer(s), such as <c>POI</c>
-        /// layer for the VectorEsriNavigation style. Default is <c>unset</c>.</para><note><para>Currenlty only <c>VectorEsriNavigation</c> supports CustomLayers. For more information,
-        /// see <a href="https://docs.aws.amazon.com/location/latest/developerguide/map-concepts.html#map-custom-layers">Custom
-        /// Layers</a>.</para></note>
+        /// or, for styles that support custom layers, you can enable layer(s), such as POI layer
+        /// for the VectorEsriNavigation style. Default is <c>unset</c>.</para><note><para>Not all map resources or styles support custom layers. See Custom Layers for more
+        /// information.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +103,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>
         /// <para>Specifies the political view for the style. Leave unset to not use a political view,
         /// or, for styles that support specific political views, you can choose a view, such
-        /// as <c>IND</c> for the Indian view.</para><para>Default is unset.</para><note><para>Not all map resources or styles support political view styles. See <a href="https://docs.aws.amazon.com/location/latest/developerguide/map-concepts.html#political-views">Political
+        /// as <c>IND</c> for the Indian view.</para><para>Default is unset.</para><note><para>Not all map resources or styles support political view styles. See <a href="https://docs.aws.amazon.com/location/previous/developerguide/map-concepts.html#political-views">Political
         /// views</a> for more information.</para></note>
         /// </para>
         /// </summary>
@@ -108,13 +114,10 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         #region Parameter Configuration_Style
         /// <summary>
         /// <para>
-        /// <para>Specifies the map style selected from an available data provider.</para><para>Valid <a href="https://docs.aws.amazon.com/location/latest/developerguide/esri.html">Esri
-        /// map styles</a>:</para><ul><li><para><c>VectorEsriNavigation</c> – The Esri Navigation map style, which provides a detailed
-        /// basemap for the world symbolized with a custom navigation map style that's designed
-        /// for use during the day in mobile devices. It also includes a richer set of places,
-        /// such as shops, services, restaurants, attractions, and other points of interest. Enable
-        /// the <c>POI</c> layer by setting it in CustomLayers to leverage the additional places
-        /// data.</para></li><li><para><c>RasterEsriImagery</c> – The Esri Imagery map style. A raster basemap that provides
+        /// <para>Specifies the map style selected from an available data provider.</para><para>Valid <a href="https://docs.aws.amazon.com/location/previous/developerguide/esri.html">Esri
+        /// map styles</a>:</para><ul><li><para><c>VectorEsriDarkGrayCanvas</c> – The Esri Dark Gray Canvas map style. A vector basemap
+        /// with a dark gray, neutral background with minimal colors, labels, and features that's
+        /// designed to draw attention to your thematic content. </para></li><li><para><c>RasterEsriImagery</c> – The Esri Imagery map style. A raster basemap that provides
         /// one meter or better satellite and aerial imagery in many parts of the world and lower
         /// resolution satellite imagery worldwide. </para></li><li><para><c>VectorEsriLightGrayCanvas</c> – The Esri Light Gray Canvas map style, which provides
         /// a detailed vector basemap with a light gray, neutral background style with minimal
@@ -122,29 +125,29 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// </para></li><li><para><c>VectorEsriTopographic</c> – The Esri Light map style, which provides a detailed
         /// vector basemap with a classic Esri map style.</para></li><li><para><c>VectorEsriStreets</c> – The Esri Street Map style, which provides a detailed vector
         /// basemap for the world symbolized with a classic Esri street map style. The vector
-        /// tile layer is similar in content and style to the World Street Map raster map.</para></li><li><para><c>VectorEsriDarkGrayCanvas</c> – The Esri Dark Gray Canvas map style. A vector basemap
-        /// with a dark gray, neutral background with minimal colors, labels, and features that's
-        /// designed to draw attention to your thematic content. </para></li></ul><para>Valid <a href="https://docs.aws.amazon.com/location/latest/developerguide/HERE.html">HERE
-        /// Technologies map styles</a>:</para><ul><li><para><c>VectorHereExplore</c> – A default HERE map style containing a neutral, global
+        /// tile layer is similar in content and style to the World Street Map raster map.</para></li><li><para><c>VectorEsriNavigation</c> – The Esri Navigation map style, which provides a detailed
+        /// basemap for the world symbolized with a custom navigation map style that's designed
+        /// for use during the day in mobile devices.</para></li></ul><para>Valid <a href="https://docs.aws.amazon.com/location/previous/developerguide/HERE.html">HERE
+        /// Technologies map styles</a>:</para><ul><li><para><c>VectorHereContrast</c> – The HERE Contrast (Berlin) map style is a high contrast
+        /// detailed base map of the world that blends 3D and 2D rendering.</para><note><para>The <c>VectorHereContrast</c> style has been renamed from <c>VectorHereBerlin</c>.
+        /// <c>VectorHereBerlin</c> has been deprecated, but will continue to work in applications
+        /// that use it.</para></note></li><li><para><c>VectorHereExplore</c> – A default HERE map style containing a neutral, global
         /// map and its features including roads, buildings, landmarks, and water features. It
-        /// also now includes a fully designed map of Japan.</para></li><li><para><c>RasterHereExploreSatellite</c> – A global map containing high resolution satellite
+        /// also now includes a fully designed map of Japan.</para></li><li><para><c>VectorHereExploreTruck</c> – A global map containing truck restrictions and attributes
+        /// (e.g. width / height / HAZMAT) symbolized with highlighted segments and icons on top
+        /// of HERE Explore to support use cases within transport and logistics.</para></li><li><para><c>RasterHereExploreSatellite</c> – A global map containing high resolution satellite
         /// imagery.</para></li><li><para><c>HybridHereExploreSatellite</c> – A global map displaying the road network, street
         /// names, and city labels over satellite imagery. This style will automatically retrieve
         /// both raster and vector tiles, and your charges will be based on total tiles retrieved.</para><note><para>Hybrid styles use both vector and raster tiles when rendering the map that you see.
         /// This means that more tiles are retrieved than when using either vector or raster tiles
-        /// alone. Your charges will include all tiles retrieved.</para></note></li><li><para><c>VectorHereContrast</c> – The HERE Contrast (Berlin) map style is a high contrast
-        /// detailed base map of the world that blends 3D and 2D rendering.</para><note><para>The <c>VectorHereContrast</c> style has been renamed from <c>VectorHereBerlin</c>.
-        /// <c>VectorHereBerlin</c> has been deprecated, but will continue to work in applications
-        /// that use it.</para></note></li><li><para><c>VectorHereExploreTruck</c> – A global map containing truck restrictions and attributes
-        /// (e.g. width / height / HAZMAT) symbolized with highlighted segments and icons on top
-        /// of HERE Explore to support use cases within transport and logistics.</para></li></ul><para>Valid <a href="https://docs.aws.amazon.com/location/latest/developerguide/grab.html">GrabMaps
+        /// alone. Your charges will include all tiles retrieved.</para></note></li></ul><para>Valid <a href="https://docs.aws.amazon.com/location/previous/developerguide/grab.html">GrabMaps
         /// map styles</a>:</para><ul><li><para><c>VectorGrabStandardLight</c> – The Grab Standard Light map style provides a basemap
         /// with detailed land use coloring, area names, roads, landmarks, and points of interest
         /// covering Southeast Asia.</para></li><li><para><c>VectorGrabStandardDark</c> – The Grab Standard Dark map style provides a dark
         /// variation of the standard basemap covering Southeast Asia.</para></li></ul><note><para>Grab provides maps only for countries in Southeast Asia, and is only available in
         /// the Asia Pacific (Singapore) Region (<c>ap-southeast-1</c>). For more information,
-        /// see <a href="https://docs.aws.amazon.com/location/latest/developerguide/grab.html#grab-coverage-area">GrabMaps
-        /// countries and area covered</a>.</para></note><para>Valid <a href="https://docs.aws.amazon.com/location/latest/developerguide/open-data.html">Open
+        /// see <a href="https://docs.aws.amazon.com/location/previous/developerguide/grab.html#grab-coverage-area">GrabMaps
+        /// countries and area covered</a>.</para></note><para>Valid <a href="https://docs.aws.amazon.com/location/previous/developerguide/open-data.html">Open
         /// Data map styles</a>:</para><ul><li><para><c>VectorOpenDataStandardLight</c> – The Open Data Standard Light map style provides
         /// a detailed basemap for the world suitable for website and mobile application use.
         /// The map includes highways major roads, minor roads, railways, water features, cities,
@@ -174,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>
         /// <para>Applies one or more tags to the map resource. A tag is a key-value pair helps manage,
         /// identify, search, and filter your resources by labelling them.</para><para>Format: <c>"key" : "value"</c></para><para>Restrictions:</para><ul><li><para>Maximum 50 tags per resource</para></li><li><para>Each resource tag must be unique with a maximum of one value.</para></li><li><para>Maximum key length: 128 Unicode characters in UTF-8</para></li><li><para>Maximum value length: 256 Unicode characters in UTF-8</para></li><li><para>Can use alphanumeric characters (A–Z, a–z, 0–9), and the following characters: + -
-        /// = . _ : / @. </para></li><li><para>Cannot use "aws:" as a prefix for a key.</para></li></ul>
+        /// = . _ : / @. </para></li><li><para>Cannot use "aws:" as a prefix for a key.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,16 +213,6 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MapName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MapName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MapName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -226,9 +223,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MapName), MyInvocation.BoundParameters);
@@ -242,21 +243,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.CreateMapResponse, NewLOCMapCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MapName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Configuration_CustomLayer != null)
             {
                 context.Configuration_CustomLayer = new List<System.String>(this.Configuration_CustomLayer);
@@ -399,13 +390,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "CreateMap");
             try
             {
-                #if DESKTOP
-                return client.CreateMap(request);
-                #elif CORECLR
-                return client.CreateMapAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMapAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

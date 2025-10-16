@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Pinpoint;
 using Amazon.Pinpoint.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PIN
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.PIN
     [AWSCmdlet("Calls the Amazon Pinpoint GetApps API operation.", Operation = new[] {"GetApps"}, SelectReturnType = typeof(Amazon.Pinpoint.Model.GetAppsResponse))]
     [AWSCmdletOutput("Amazon.Pinpoint.Model.ApplicationsResponse or Amazon.Pinpoint.Model.GetAppsResponse",
         "This cmdlet returns an Amazon.Pinpoint.Model.ApplicationsResponse object.",
-        "The service call response (type Amazon.Pinpoint.Model.GetAppsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Pinpoint.Model.GetAppsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetPINAppListCmdlet : AmazonPinpointClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Token
         /// <summary>
@@ -76,9 +79,13 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         public string Select { get; set; } = "ApplicationsResponse";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -155,13 +162,7 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint", "GetApps");
             try
             {
-                #if DESKTOP
-                return client.GetApps(request);
-                #elif CORECLR
-                return client.GetAppsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAppsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

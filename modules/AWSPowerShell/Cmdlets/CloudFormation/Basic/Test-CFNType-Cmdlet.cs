@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -37,7 +39,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// For modules, this includes determining if the module's model meets all necessary requirements.
     /// </para></li></ul><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html#publish-extension-testing">Testing
-    /// your public extension prior to publishing</a> in the <i>CloudFormation CLI User Guide</i>.
+    /// your public extension before publishing</a> in the <i>CloudFormation Command Line
+    /// Interface (CLI) User Guide</i>.
     /// </para><para>
     /// If you don't specify a version, CloudFormation uses the default version of the extension
     /// in your account and Region for testing.
@@ -51,8 +54,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// </para><para>
     /// An extension must have a test status of <c>PASSED</c> before it can be published.
     /// For more information, see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-publish.html">Publishing
-    /// extensions to make them available for public use</a> in the <i>CloudFormation CLI
-    /// User Guide</i>.
+    /// extensions to make them available for public use</a> in the <i>CloudFormation Command
+    /// Line Interface (CLI) User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Test", "CFNType")]
@@ -60,12 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation TestType API operation.", Operation = new[] {"TestType"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.TestTypeResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudFormation.Model.TestTypeResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudFormation.Model.TestTypeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.TestTypeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class TestCFNTypeCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Arn
         /// <summary>
@@ -83,8 +87,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// <para>The S3 bucket to which CloudFormation delivers the contract test execution logs.</para><para>CloudFormation delivers the logs by the time contract testing has completed and the
         /// extension has been assigned a test type status of <c>PASSED</c> or <c>FAILED</c>.</para><para>The user calling <c>TestType</c> must be able to access items in the specified S3
         /// bucket. Specifically, the user needs the following permissions:</para><ul><li><para><c>GetObject</c></para></li><li><para><c>PutObject</c></para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazons3.html">Actions,
-        /// Resources, and Condition Keys for Amazon S3</a> in the <i>Amazon Web Services Identity
-        /// and Access Management User Guide</i>.</para>
+        /// Resources, and Condition Keys for Amazon S3</a> in the <i>Identity and Access Management
+        /// User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "TypeVersionArn";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -229,13 +237,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "TestType");
             try
             {
-                #if DESKTOP
-                return client.TestType(request);
-                #elif CORECLR
-                return client.TestTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TestTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

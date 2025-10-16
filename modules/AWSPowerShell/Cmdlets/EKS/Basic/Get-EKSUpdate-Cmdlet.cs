@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EKS;
 using Amazon.EKS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EKS
 {
     /// <summary>
@@ -32,9 +34,9 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     /// 
     ///  
     /// <para>
-    /// When the status of the update is <c>Succeeded</c>, the update is complete. If an update
-    /// fails, the status is <c>Failed</c>, and an error detail explains the reason for the
-    /// failure.
+    /// When the status of the update is <c>Successful</c>, the update is complete. If an
+    /// update fails, the status is <c>Failed</c>, and an error detail explains the reason
+    /// for the failure.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "EKSUpdate")]
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     [AWSCmdlet("Calls the Amazon Elastic Container Service for Kubernetes DescribeUpdate API operation.", Operation = new[] {"DescribeUpdate"}, SelectReturnType = typeof(Amazon.EKS.Model.DescribeUpdateResponse))]
     [AWSCmdletOutput("Amazon.EKS.Model.Update or Amazon.EKS.Model.DescribeUpdateResponse",
         "This cmdlet returns an Amazon.EKS.Model.Update object.",
-        "The service call response (type Amazon.EKS.Model.DescribeUpdateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EKS.Model.DescribeUpdateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEKSUpdateCmdlet : AmazonEKSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddonName
         /// <summary>
@@ -115,19 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public string Select { get; set; } = "Update";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UpdateId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UpdateId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UpdateId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -135,21 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EKS.Model.DescribeUpdateResponse, GetEKSUpdateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UpdateId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AddonName = this.AddonName;
             context.Name = this.Name;
             #if MODULAR
@@ -236,13 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Container Service for Kubernetes", "DescribeUpdate");
             try
             {
-                #if DESKTOP
-                return client.DescribeUpdate(request);
-                #elif CORECLR
-                return client.DescribeUpdateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeUpdateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

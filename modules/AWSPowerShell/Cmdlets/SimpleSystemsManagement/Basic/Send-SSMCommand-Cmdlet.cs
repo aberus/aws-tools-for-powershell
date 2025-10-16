@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -35,21 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager SendCommand API operation.", Operation = new[] {"SendCommand"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.SendCommandResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.Command or Amazon.SimpleSystemsManagement.Model.SendCommandResponse",
         "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.Command object.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.SendCommandResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.SendCommandResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SendSSMCommandCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlarmConfiguration_Alarm
         /// <summary>
         /// <para>
-        /// <para>The name of the CloudWatch alarm specified in the configuration.</para>
+        /// <para>The name of the CloudWatch alarm specified in the configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,8 +120,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>The name of the Amazon Web Services Systems Manager document (SSM document) to run.
         /// This can be a public document or a custom document. To run a shared document belonging
         /// to another account, specify the document Amazon Resource Name (ARN). For more information
-        /// about how to use shared documents, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-using-shared.html">Using
-        /// shared SSM documents</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><note><para>If you specify a document name or ARN that hasn't been shared with your account, you
+        /// about how to use shared documents, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-using-shared.html">Sharing
+        /// SSM documents</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><note><para>If you specify a document name or ARN that hasn't been shared with your account, you
         /// receive an <c>InvalidDocument</c> error. </para></note>
         /// </para>
         /// </summary>
@@ -167,9 +170,12 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// you can specify up to 50 IDs.</para><para>To target a larger number of managed nodes, or if you prefer not to list individual
         /// node IDs, we recommend using the <c>Targets</c> option instead. Using <c>Targets</c>,
         /// which accepts tag key-value pairs to identify the managed nodes to send commands to,
-        /// you can a send command to tens, hundreds, or thousands of nodes at once.</para><para>For more information about how to use targets, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-multiple.html">Using
-        /// targets and rate controls to send commands to a fleet</a> in the <i>Amazon Web Services
-        /// Systems Manager User Guide</i>.</para>
+        /// you can a send command to tens, hundreds, or thousands of nodes at once.</para><para>For more information about how to use targets, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-multiple.html">Run
+        /// commands at scale</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -224,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>The different events for which you can receive notifications. To learn more about
         /// these events, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/monitoring-sns-notifications.html">Monitoring
         /// Systems Manager status changes using Amazon SNS notifications</a> in the <i>Amazon
-        /// Web Services Systems Manager User Guide</i>.</para>
+        /// Web Services Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -279,7 +289,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter Parameter
         /// <summary>
         /// <para>
-        /// <para>The required and optional parameters specified in the document being run.</para>
+        /// <para>The required and optional parameters specified in the document being run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -309,8 +323,12 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// to a large number of managed nodes at once. Using <c>Targets</c>, which accepts tag
         /// key-value pairs to identify managed nodes, you can send a command to tens, hundreds,
         /// or thousands of nodes at once.</para><para>To send a command to a smaller number of managed nodes, you can use the <c>InstanceIds</c>
-        /// option instead.</para><para>For more information about how to use targets, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-multiple.html">Sending
-        /// commands to a fleet</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para>
+        /// option instead.</para><para>For more information about how to use targets, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/send-commands-multiple.html">Run
+        /// commands at scale</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -340,16 +358,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "Command";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -360,9 +368,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -376,21 +388,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.SendCommandResponse, SendSSMCommandCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AlarmConfiguration_Alarm != null)
             {
                 context.AlarmConfiguration_Alarm = new List<Amazon.SimpleSystemsManagement.Model.Alarm>(this.AlarmConfiguration_Alarm);
@@ -661,13 +663,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "SendCommand");
             try
             {
-                #if DESKTOP
-                return client.SendCommand(request);
-                #elif CORECLR
-                return client.SendCommandAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendCommandAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

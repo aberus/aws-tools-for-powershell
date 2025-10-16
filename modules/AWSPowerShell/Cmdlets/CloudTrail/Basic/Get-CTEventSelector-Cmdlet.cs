@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudTrail;
 using Amazon.CloudTrail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CT
 {
     /// <summary>
@@ -33,29 +35,34 @@ namespace Amazon.PowerShell.Cmdlets.CT
     /// 
     ///  <ul><li><para>
     /// If your event selector includes read-only events, write-only events, or all events.
-    /// This applies to both management events and data events.
+    /// This applies to management events, data events, and network activity events.
     /// </para></li><li><para>
     /// If your event selector includes management events.
+    /// </para></li><li><para>
+    /// If your event selector includes network activity events, the event sources for which
+    /// you are logging network activity events.
     /// </para></li><li><para>
     /// If your event selector includes data events, the resources on which you are logging
     /// data events.
     /// </para></li></ul><para>
-    /// For more information about logging management and data events, see the following topics
-    /// in the <i>CloudTrail User Guide</i>:
+    /// For more information about logging management, data, and network activity events,
+    /// see the following topics in the <i>CloudTrail User Guide</i>:
     /// </para><ul><li><para><a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-management-events-with-cloudtrail.html">Logging
     /// management events</a></para></li><li><para><a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html">Logging
-    /// data events</a></para></li></ul>
+    /// data events</a></para></li><li><para><a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-network-events-with-cloudtrail.html">Logging
+    /// network activity events</a></para></li></ul>
     /// </summary>
     [Cmdlet("Get", "CTEventSelector")]
     [OutputType("Amazon.CloudTrail.Model.GetEventSelectorsResponse")]
     [AWSCmdlet("Calls the AWS CloudTrail GetEventSelectors API operation.", Operation = new[] {"GetEventSelectors"}, SelectReturnType = typeof(Amazon.CloudTrail.Model.GetEventSelectorsResponse), LegacyAlias="Get-CTEventSelectors")]
     [AWSCmdletOutput("Amazon.CloudTrail.Model.GetEventSelectorsResponse",
-        "This cmdlet returns an Amazon.CloudTrail.Model.GetEventSelectorsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudTrail.Model.GetEventSelectorsResponse object containing multiple properties."
     )]
     public partial class GetCTEventSelectorCmdlet : AmazonCloudTrailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TrailName
         /// <summary>
@@ -88,19 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.CT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TrailName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TrailName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TrailName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -108,21 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.CT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudTrail.Model.GetEventSelectorsResponse, GetCTEventSelectorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TrailName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.TrailName = this.TrailName;
             #if MODULAR
             if (this.TrailName == null && ParameterWasBound(nameof(this.TrailName)))
@@ -188,13 +179,7 @@ namespace Amazon.PowerShell.Cmdlets.CT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudTrail", "GetEventSelectors");
             try
             {
-                #if DESKTOP
-                return client.GetEventSelectors(request);
-                #elif CORECLR
-                return client.GetEventSelectorsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetEventSelectorsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

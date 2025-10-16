@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -42,18 +44,34 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail SetIpAddressType API operation.", Operation = new[] {"SetIpAddressType"}, SelectReturnType = typeof(Amazon.Lightsail.Model.SetIpAddressTypeResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.Operation or Amazon.Lightsail.Model.SetIpAddressTypeResponse",
         "This cmdlet returns a collection of Amazon.Lightsail.Model.Operation objects.",
-        "The service call response (type Amazon.Lightsail.Model.SetIpAddressTypeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.SetIpAddressTypeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetLSIpAddressTypeCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AcceptBundleUpdate
+        /// <summary>
+        /// <para>
+        /// <para>Required parameter to accept the instance bundle update when changing to, and from,
+        /// IPv6-only.</para><note><para>An instance bundle will change when switching from <c>dual-stack</c> or <c>ipv4</c>,
+        /// to <c>ipv6</c>. It also changes when switching from <c>ipv6</c>, to <c>dual-stack</c>
+        /// or <c>ipv4</c>.</para><para>You must include this parameter in the command to update the bundle. For example,
+        /// if you switch from <c>dual-stack</c> to <c>ipv6</c>, the bundle will be updated, and
+        /// billing for the IPv6-only instance bundle begins immediately.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? AcceptBundleUpdate { get; set; }
+        #endregion
         
         #region Parameter IpAddressType
         /// <summary>
         /// <para>
-        /// <para>The IP address type to set for the specified resource.</para><para>The possible values are <c>ipv4</c> for IPv4 only, and <c>dualstack</c> for IPv4 and
-        /// IPv6.</para>
+        /// <para>The IP address type to set for the specified resource.</para><para>The possible values are <c>ipv4</c> for IPv4 only, <c>ipv6</c> for IPv6 only, and
+        /// <c>dualstack</c> for IPv4 and IPv6.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -124,9 +142,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceName), MyInvocation.BoundParameters);
@@ -145,6 +167,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.SetIpAddressTypeResponse, SetLSIpAddressTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.AcceptBundleUpdate = this.AcceptBundleUpdate;
             context.IpAddressType = this.IpAddressType;
             #if MODULAR
             if (this.IpAddressType == null && ParameterWasBound(nameof(this.IpAddressType)))
@@ -182,6 +205,10 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // create request
             var request = new Amazon.Lightsail.Model.SetIpAddressTypeRequest();
             
+            if (cmdletContext.AcceptBundleUpdate != null)
+            {
+                request.AcceptBundleUpdate = cmdletContext.AcceptBundleUpdate.Value;
+            }
             if (cmdletContext.IpAddressType != null)
             {
                 request.IpAddressType = cmdletContext.IpAddressType;
@@ -232,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "SetIpAddressType");
             try
             {
-                #if DESKTOP
-                return client.SetIpAddressType(request);
-                #elif CORECLR
-                return client.SetIpAddressTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetIpAddressTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -255,6 +276,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? AcceptBundleUpdate { get; set; }
             public Amazon.Lightsail.IpAddressType IpAddressType { get; set; }
             public System.String ResourceName { get; set; }
             public Amazon.Lightsail.ResourceType ResourceType { get; set; }

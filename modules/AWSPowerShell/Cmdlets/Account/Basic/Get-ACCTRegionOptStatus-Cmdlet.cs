@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Account;
 using Amazon.Account.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACCT
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.ACCT
     [AWSCmdlet("Calls the AWS Account GetRegionOptStatus API operation.", Operation = new[] {"GetRegionOptStatus"}, SelectReturnType = typeof(Amazon.Account.Model.GetRegionOptStatusResponse))]
     [AWSCmdletOutput("Amazon.Account.RegionOptStatus or Amazon.Account.Model.GetRegionOptStatusResponse",
         "This cmdlet returns an Amazon.Account.RegionOptStatus object.",
-        "The service call response (type Amazon.Account.Model.GetRegionOptStatusResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Account.Model.GetRegionOptStatusResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetACCTRegionOptStatusCmdlet : AmazonAccountClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -50,10 +53,9 @@ namespace Amazon.PowerShell.Cmdlets.ACCT
         /// it defaults to the Amazon Web Services account of the identity used to call the operation.
         /// To use this parameter, the caller must be an identity in the <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html#account">organization's
         /// management account</a> or a delegated administrator account. The specified account
-        /// ID must also be a member account in the same organization. The organization must have
-        /// <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_org_support-all-features.html">all
-        /// features enabled</a>, and the organization must have <a href="https://docs.aws.amazon.com/organizations/latest/userguide/using-orgs-trusted-access.html">trusted
-        /// access</a> enabled for the Account Management service, and optionally a <a href="https://docs.aws.amazon.com/organizations/latest/userguide/using-orgs-delegated-admin.html">delegated
+        /// ID must be a member account in the same organization. The organization must have <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_org_support-all-features.html">all
+        /// features enabled</a>, and the organization must have <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_integrate_services.html">trusted
+        /// access</a> enabled for the Account Management service, and optionally a <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_getting-started_concepts.html#delegated-admin">delegated
         /// admin</a> account assigned.</para><note><para>The management account can't specify its own <c>AccountId</c>. It must call the operation
         /// in standalone context by not including the <c>AccountId</c> parameter.</para></note><para>To call this operation on an account that is not a member of an organization, don't
         /// specify this parameter. Instead, call the operation using an identity belonging to
@@ -94,9 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.ACCT
         public string Select { get; set; } = "RegionOptStatus";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -179,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.ACCT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Account", "GetRegionOptStatus");
             try
             {
-                #if DESKTOP
-                return client.GetRegionOptStatus(request);
-                #elif CORECLR
-                return client.GetRegionOptStatusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetRegionOptStatusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

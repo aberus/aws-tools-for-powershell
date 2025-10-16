@@ -1,0 +1,1 @@
+Get-S3BucketPolicyStatus -BucketName 'amzn-s3-demo-bucket'

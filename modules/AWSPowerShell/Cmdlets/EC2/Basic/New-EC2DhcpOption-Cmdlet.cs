@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,63 +22,73 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Creates a set of DHCP options for your VPC. After creating the set, you must associate
-    /// it with the VPC, causing all existing and new instances that you launch in the VPC
-    /// to use this set of DHCP options. The following are the individual DHCP options you
-    /// can specify. For more information about the options, see <a href="http://www.ietf.org/rfc/rfc2132.txt">RFC
-    /// 2132</a>.
+    /// Creates a custom set of DHCP options. After you create a DHCP option set, you associate
+    /// it with a VPC. After you associate a DHCP option set with a VPC, all existing and
+    /// newly launched instances in the VPC use this set of DHCP options.
     /// 
-    ///  <ul><li><para><c>domain-name-servers</c> - The IP addresses of up to four domain name servers,
-    /// or AmazonProvidedDNS. The default DHCP option set specifies AmazonProvidedDNS. If
-    /// specifying more than one domain name server, specify the IP addresses in a single
-    /// parameter, separated by commas. To have your instance receive a custom DNS hostname
-    /// as specified in <c>domain-name</c>, you must set <c>domain-name-servers</c> to a custom
-    /// DNS server.
-    /// </para></li><li><para><c>domain-name</c> - If you're using AmazonProvidedDNS in <c>us-east-1</c>, specify
-    /// <c>ec2.internal</c>. If you're using AmazonProvidedDNS in another Region, specify
-    /// <c>region.compute.internal</c> (for example, <c>ap-northeast-1.compute.internal</c>).
-    /// Otherwise, specify a domain name (for example, <c>ExampleCompany.com</c>). This value
-    /// is used to complete unqualified DNS hostnames. <b>Important</b>: Some Linux operating
-    /// systems accept multiple domain names separated by spaces. However, Windows and other
-    /// Linux operating systems treat the value as a single domain, which results in unexpected
-    /// behavior. If your DHCP options set is associated with a VPC that has instances with
-    /// multiple operating systems, specify only one domain name.
-    /// </para></li><li><para><c>ntp-servers</c> - The IP addresses of up to four Network Time Protocol (NTP) servers.
+    ///  
+    /// <para>
+    /// The following are the individual DHCP options you can specify. For more information,
+    /// see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_DHCP_Options.html">DHCP
+    /// option sets</a> in the <i>Amazon VPC User Guide</i>.
+    /// </para><ul><li><para><c>domain-name</c> - If you're using AmazonProvidedDNS in <c>us-east-1</c>, specify
+    /// <c>ec2.internal</c>. If you're using AmazonProvidedDNS in any other Region, specify
+    /// <c>region.compute.internal</c>. Otherwise, specify a custom domain name. This value
+    /// is used to complete unqualified DNS hostnames.
+    /// </para><para>
+    /// Some Linux operating systems accept multiple domain names separated by spaces. However,
+    /// Windows and other Linux operating systems treat the value as a single domain, which
+    /// results in unexpected behavior. If your DHCP option set is associated with a VPC that
+    /// has instances running operating systems that treat the value as a single domain, specify
+    /// only one domain name.
+    /// </para></li><li><para><c>domain-name-servers</c> - The IP addresses of up to four DNS servers, or AmazonProvidedDNS.
+    /// To specify multiple domain name servers in a single parameter, separate the IP addresses
+    /// using commas. To have your instances receive custom DNS hostnames as specified in
+    /// <c>domain-name</c>, you must specify a custom DNS server.
+    /// </para></li><li><para><c>ntp-servers</c> - The IP addresses of up to eight Network Time Protocol (NTP)
+    /// servers (four IPv4 addresses and four IPv6 addresses).
     /// </para></li><li><para><c>netbios-name-servers</c> - The IP addresses of up to four NetBIOS name servers.
     /// </para></li><li><para><c>netbios-node-type</c> - The NetBIOS node type (1, 2, 4, or 8). We recommend that
-    /// you specify 2 (broadcast and multicast are not currently supported). For more information
-    /// about these node types, see <a href="http://www.ietf.org/rfc/rfc2132.txt">RFC 2132</a>.
-    /// </para></li></ul><para>
-    /// Your VPC automatically starts out with a set of DHCP options that includes only a
-    /// DNS server that we provide (AmazonProvidedDNS). If you create a set of options, and
-    /// if your VPC has an internet gateway, make sure to set the <c>domain-name-servers</c>
-    /// option either to <c>AmazonProvidedDNS</c> or to a domain name server of your choice.
-    /// For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_DHCP_Options.html">DHCP
-    /// options sets</a> in the <i>Amazon VPC User Guide</i>.
-    /// </para>
+    /// you specify 2. Broadcast and multicast are not supported. For more information about
+    /// NetBIOS node types, see <a href="https://www.ietf.org/rfc/rfc2132.txt">RFC 2132</a>.
+    /// </para></li><li><para><c>ipv6-address-preferred-lease-time</c> - A value (in seconds, minutes, hours, or
+    /// years) for how frequently a running instance with an IPv6 assigned to it goes through
+    /// DHCPv6 lease renewal. Acceptable values are between 140 and 2147483647 seconds (approximately
+    /// 68 years). If no value is entered, the default lease time is 140 seconds. If you use
+    /// long-term addressing for EC2 instances, you can increase the lease time and avoid
+    /// frequent lease renewal requests. Lease renewal typically occurs when half of the lease
+    /// time has elapsed.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("New", "EC2DhcpOption", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EC2.Model.DhcpOptions")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateDhcpOptions API operation.", Operation = new[] {"CreateDhcpOptions"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateDhcpOptionsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.DhcpOptions or Amazon.EC2.Model.CreateDhcpOptionsResponse",
         "This cmdlet returns an Amazon.EC2.Model.DhcpOptions object.",
-        "The service call response (type Amazon.EC2.Model.CreateDhcpOptionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateDhcpOptionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2DhcpOptionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DhcpConfiguration
         /// <summary>
         /// <para>
-        /// <para>A DHCP configuration option.</para>
+        /// <para>A DHCP configuration option.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,10 +103,26 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public Amazon.EC2.Model.DhcpConfiguration[] DhcpConfiguration { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to assign to the DHCP option.</para>
+        /// <para>The tags to assign to the DHCP option.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,16 +141,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "DhcpOptions";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DhcpConfiguration parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DhcpConfiguration' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DhcpConfiguration' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -135,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DhcpConfiguration), MyInvocation.BoundParameters);
@@ -151,21 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateDhcpOptionsResponse, NewEC2DhcpOptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DhcpConfiguration;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.DhcpConfiguration != null)
             {
                 context.DhcpConfiguration = new List<Amazon.EC2.Model.DhcpConfiguration>(this.DhcpConfiguration);
@@ -176,6 +186,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter DhcpConfiguration which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DryRun = this.DryRun;
             if (this.TagSpecification != null)
             {
                 context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
@@ -199,6 +210,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.DhcpConfiguration != null)
             {
                 request.DhcpConfigurations = cmdletContext.DhcpConfiguration;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.TagSpecification != null)
             {
@@ -242,13 +257,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateDhcpOptions");
             try
             {
-                #if DESKTOP
-                return client.CreateDhcpOptions(request);
-                #elif CORECLR
-                return client.CreateDhcpOptionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDhcpOptionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -266,6 +275,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public List<Amazon.EC2.Model.DhcpConfiguration> DhcpConfiguration { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public System.Func<Amazon.EC2.Model.CreateDhcpOptionsResponse, NewEC2DhcpOptionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.DhcpOptions;

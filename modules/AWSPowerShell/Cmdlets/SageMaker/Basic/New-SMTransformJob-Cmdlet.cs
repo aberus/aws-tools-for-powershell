@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -46,8 +48,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
     /// location where it is stored.
     /// </para></li><li><para><c>TransformOutput</c> - Identifies the Amazon S3 location where you want Amazon
     /// SageMaker to save the results from the transform job.
-    /// </para></li><li><para><c>TransformResources</c> - Identifies the ML compute instances for the transform
-    /// job.
+    /// </para></li><li><para><c>TransformResources</c> - Identifies the ML compute instances and AMI image versions
+    /// for the transform job.
     /// </para></li></ul><para>
     /// For more information about how batch transformation works, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/batch-transform.html">Batch
     /// Transform</a>.
@@ -58,12 +60,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateTransformJob API operation.", Operation = new[] {"CreateTransformJob"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateTransformJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateTransformJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateTransformJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateTransformJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMTransformJobCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TransformOutput_Accept
         /// <summary>
@@ -143,8 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter Environment
         /// <summary>
         /// <para>
-        /// <para>The environment variables to set in the Docker container. We support up to 16 key
-        /// and values entries in the map.</para>
+        /// <para>The environment variables to set in the Docker container. Don't include any sensitive
+        /// data in your environment variables. We support up to 16 key and values entries in
+        /// the map.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -481,12 +489,28 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>(Optional) An array of key-value pairs. For more information, see <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html#allocation-what">Using
         /// Cost Allocation Tags</a> in the <i>Amazon Web Services Billing and Cost Management
-        /// User Guide</i>.</para>
+        /// User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.SageMaker.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter TransformResources_TransformAmiVersion
+        /// <summary>
+        /// <para>
+        /// <para>Specifies an option from a collection of preconfigured Amazon Machine Image (AMI)
+        /// images. Each image is configured by Amazon Web Services with a set of software and
+        /// driver versions.</para><dl><dt>al2-ami-sagemaker-batch-gpu-470</dt><dd><ul><li><para>Accelerator: GPU</para></li><li><para>NVIDIA driver version: 470</para></li></ul></dd><dt>al2-ami-sagemaker-batch-gpu-535</dt><dd><ul><li><para>Accelerator: GPU</para></li><li><para>NVIDIA driver version: 535</para></li></ul></dd></dl>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TransformResources_TransformAmiVersion { get; set; }
         #endregion
         
         #region Parameter TransformJobName
@@ -556,16 +580,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "TransformJobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TransformJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TransformJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TransformJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -576,9 +590,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TransformJobName), MyInvocation.BoundParameters);
@@ -592,21 +610,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateTransformJobResponse, NewSMTransformJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TransformJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BatchStrategy = this.BatchStrategy;
             context.DataCaptureConfig_DestinationS3Uri = this.DataCaptureConfig_DestinationS3Uri;
             context.DataCaptureConfig_GenerateInferenceId = this.DataCaptureConfig_GenerateInferenceId;
@@ -689,6 +697,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 WriteWarning("You are passing $null as a value for parameter TransformResources_InstanceType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.TransformResources_TransformAmiVersion = this.TransformResources_TransformAmiVersion;
             context.TransformResources_VolumeKmsKeyId = this.TransformResources_VolumeKmsKeyId;
             
             // allow further manipulation of loaded context prior to processing
@@ -1052,6 +1061,16 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 request.TransformResources.InstanceType = requestTransformResources_transformResources_InstanceType;
                 requestTransformResourcesIsNull = false;
             }
+            System.String requestTransformResources_transformResources_TransformAmiVersion = null;
+            if (cmdletContext.TransformResources_TransformAmiVersion != null)
+            {
+                requestTransformResources_transformResources_TransformAmiVersion = cmdletContext.TransformResources_TransformAmiVersion;
+            }
+            if (requestTransformResources_transformResources_TransformAmiVersion != null)
+            {
+                request.TransformResources.TransformAmiVersion = requestTransformResources_transformResources_TransformAmiVersion;
+                requestTransformResourcesIsNull = false;
+            }
             System.String requestTransformResources_transformResources_VolumeKmsKeyId = null;
             if (cmdletContext.TransformResources_VolumeKmsKeyId != null)
             {
@@ -1105,13 +1124,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateTransformJob");
             try
             {
-                #if DESKTOP
-                return client.CreateTransformJob(request);
-                #elif CORECLR
-                return client.CreateTransformJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTransformJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1158,6 +1171,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String TransformOutput_S3OutputPath { get; set; }
             public System.Int32? TransformResources_InstanceCount { get; set; }
             public Amazon.SageMaker.TransformInstanceType TransformResources_InstanceType { get; set; }
+            public System.String TransformResources_TransformAmiVersion { get; set; }
             public System.String TransformResources_VolumeKmsKeyId { get; set; }
             public System.Func<Amazon.SageMaker.Model.CreateTransformJobResponse, NewSMTransformJobCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.TransformJobArn;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DLM;
 using Amazon.DLM.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DLM
 {
     /// <summary>
@@ -54,18 +56,23 @@ namespace Amazon.PowerShell.Cmdlets.DLM
     [AWSCmdlet("Calls the Amazon Data Lifecycle Manager CreateLifecyclePolicy API operation.", Operation = new[] {"CreateLifecyclePolicy"}, SelectReturnType = typeof(Amazon.DLM.Model.CreateLifecyclePolicyResponse))]
     [AWSCmdletOutput("System.String or Amazon.DLM.Model.CreateLifecyclePolicyResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DLM.Model.CreateLifecyclePolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DLM.Model.CreateLifecyclePolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDLMLifecyclePolicyCmdlet : AmazonDLMClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PolicyDetails_Action
         /// <summary>
         /// <para>
         /// <para><b>[Event-based policies only]</b> The actions to be performed when the event-based
-        /// policy is activated. You can specify only one action per policy.</para>
+        /// policy is activated. You can specify only one action per policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,7 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <para>
         /// <para><b>[Default policies only]</b> Specifies destination Regions for snapshot or AMI
         /// copies. You can specify up to 3 destination Regions. If you do not want to create
-        /// cross-Region copies, omit this parameter.</para>
+        /// cross-Region copies, omit this parameter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <para>
         /// <para><b>[Default policies only]</b> Specifies destination Regions for snapshot or AMI
         /// copies. You can specify up to 3 destination Regions. If you do not want to create
-        /// cross-Region copies, omit this parameter.</para>
+        /// cross-Region copies, omit this parameter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -254,7 +269,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// data (non-root) volumes to exclude from multi-volume snapshot sets.</para><para>If you create a snapshot lifecycle policy that targets instances and you specify tags
         /// for this parameter, then data volumes with the specified tags that are attached to
         /// targeted instances will be excluded from the multi-volume snapshot sets created by
-        /// the policy.</para>
+        /// the policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -266,7 +285,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <summary>
         /// <para>
         /// <para><b>[Default policies for EBS-backed AMIs only]</b> Specifies whether to exclude volumes
-        /// that have specific tags. </para>
+        /// that have specific tags. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -278,7 +301,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <summary>
         /// <para>
         /// <para><b>[Default policies for EBS-backed AMIs only]</b> Specifies whether to exclude volumes
-        /// that have specific tags. </para>
+        /// that have specific tags. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -289,7 +316,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <summary>
         /// <para>
         /// <para><b>[Default policies for EBS snapshots only]</b> Specifies the volume types to exclude.
-        /// Volumes of the specified types will not be targeted by the policy.</para>
+        /// Volumes of the specified types will not be targeted by the policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -301,7 +332,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <summary>
         /// <para>
         /// <para><b>[Default policies for EBS snapshots only]</b> Specifies the volume types to exclude.
-        /// Volumes of the specified types will not be targeted by the policy.</para>
+        /// Volumes of the specified types will not be targeted by the policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -392,12 +427,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         #region Parameter PolicyDetails_PolicyType
         /// <summary>
         /// <para>
-        /// <para><b>[Custom policies only]</b> The valid target resource types and actions a policy
-        /// can manage. Specify <c>EBS_SNAPSHOT_MANAGEMENT</c> to create a lifecycle policy that
-        /// manages the lifecycle of Amazon EBS snapshots. Specify <c>IMAGE_MANAGEMENT</c> to
-        /// create a lifecycle policy that manages the lifecycle of EBS-backed AMIs. Specify <c>EVENT_BASED_POLICY
-        /// </c> to create an event-based policy that performs specific actions when a defined
-        /// event occurs in your Amazon Web Services account.</para><para>The default is <c>EBS_SNAPSHOT_MANAGEMENT</c>.</para>
+        /// <para>The type of policy. Specify <c>EBS_SNAPSHOT_MANAGEMENT</c> to create a lifecycle policy
+        /// that manages the lifecycle of Amazon EBS snapshots. Specify <c>IMAGE_MANAGEMENT</c>
+        /// to create a lifecycle policy that manages the lifecycle of EBS-backed AMIs. Specify
+        /// <c>EVENT_BASED_POLICY </c> to create an event-based policy that performs specific
+        /// actions when a defined event occurs in your Amazon Web Services account.</para><para>The default is <c>EBS_SNAPSHOT_MANAGEMENT</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -408,11 +442,17 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         #region Parameter PolicyDetails_ResourceLocation
         /// <summary>
         /// <para>
-        /// <para><b>[Custom snapshot and AMI policies only]</b> The location of the resources to backup.
-        /// If the source resources are located in an Amazon Web Services Region, specify <c>CLOUD</c>.
-        /// If the source resources are located on an Outpost in your account, specify <c>OUTPOST</c>.</para><para>If you specify <c>OUTPOST</c>, Amazon Data Lifecycle Manager backs up all resources
-        /// of the specified type with matching target tags across all of the Outposts in your
-        /// account.</para>
+        /// <para><b>[Custom snapshot and AMI policies only]</b> The location of the resources to backup.</para><ul><li><para>If the source resources are located in a Region, specify <c>CLOUD</c>. In this case,
+        /// the policy targets all resources of the specified type with matching target tags across
+        /// all Availability Zones in the Region.</para></li><li><para><b>[Custom snapshot policies only]</b> If the source resources are located in a Local
+        /// Zone, specify <c>LOCAL_ZONE</c>. In this case, the policy targets all resources of
+        /// the specified type with matching target tags across all Local Zones in the Region.</para></li><li><para>If the source resources are located on an Outpost in your account, specify <c>OUTPOST</c>.
+        /// In this case, the policy targets all resources of the specified type with matching
+        /// target tags across all of the Outposts in your account.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -438,7 +478,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <para>
         /// <para><b>[Custom snapshot policies only]</b> The target resource type for snapshot and
         /// AMI lifecycle policies. Use <c>VOLUME </c>to create snapshots of individual volumes
-        /// or use <c>INSTANCE</c> to create multi-volume snapshots from the volumes for an instance.</para>
+        /// or use <c>INSTANCE</c> to create multi-volume snapshots from the volumes for an instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -479,7 +523,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <para>
         /// <para><b>[Custom snapshot and AMI policies only]</b> The schedules of policy-defined actions
         /// for snapshot and AMI lifecycle policies. A policy can have up to four schedules—one
-        /// mandatory schedule and up to three optional schedules.</para>
+        /// mandatory schedule and up to three optional schedules.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -492,7 +540,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <para>
         /// <para>The IDs of the Amazon Web Services accounts that can trigger policy by sharing snapshots
         /// with your account. The policy only runs if one of the specified Amazon Web Services
-        /// accounts shares a snapshot with your account.</para>
+        /// accounts shares a snapshot with your account.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -520,7 +572,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the lifecycle policy during creation.</para>
+        /// <para>The tags to apply to the lifecycle policy during creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -532,7 +588,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <summary>
         /// <para>
         /// <para><b>[Custom snapshot and AMI policies only]</b> The single tag that identifies targeted
-        /// resources for this policy.</para>
+        /// resources for this policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -563,16 +623,6 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         public string Select { get; set; } = "PolicyId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ExecutionRoleArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ExecutionRoleArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ExecutionRoleArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -583,9 +633,13 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ExecutionRoleArn), MyInvocation.BoundParameters);
@@ -599,21 +653,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DLM.Model.CreateLifecyclePolicyResponse, NewDLMLifecyclePolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ExecutionRoleArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CopyTag = this.CopyTag;
             context.CreateInterval = this.CreateInterval;
             if (this.CrossRegionCopyTarget != null)
@@ -1146,13 +1190,7 @@ namespace Amazon.PowerShell.Cmdlets.DLM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Data Lifecycle Manager", "CreateLifecyclePolicy");
             try
             {
-                #if DESKTOP
-                return client.CreateLifecyclePolicy(request);
-                #elif CORECLR
-                return client.CreateLifecyclePolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLifecyclePolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -96,7 +96,7 @@ $DSYN_Completers = {
             ($_ -eq "Update-DSYNLocationAzureBlob/AuthenticationType")
         }
         {
-            $v = "SAS"
+            $v = "NONE","SAS"
             break
         }
 
@@ -110,26 +110,11 @@ $DSYN_Completers = {
             break
         }
 
-        # Amazon.DataSync.DiscoveryResourceType
-        {
-            ($_ -eq "Get-DSYNStorageSystemResource/ResourceType") -Or
-            ($_ -eq "Get-DSYNStorageSystemResourceMetric/ResourceType") -Or
-            ($_ -eq "New-DSYNRecommendation/ResourceType")
-        }
-        {
-            $v = "CLUSTER","SVM","VOLUME"
-            break
-        }
-
-        # Amazon.DataSync.DiscoverySystemType
-        "Add-DSYNStorageSystem/SystemType"
-        {
-            $v = "NetAppONTAP"
-            break
-        }
-
         # Amazon.DataSync.EfsInTransitEncryption
-        "New-DSYNLocationEfs/InTransitEncryption"
+        {
+            ($_ -eq "New-DSYNLocationEfs/InTransitEncryption") -Or
+            ($_ -eq "Update-DSYNLocationEfs/InTransitEncryption")
+        }
         {
             $v = "NONE","TLS1_2"
             break
@@ -189,10 +174,12 @@ $DSYN_Completers = {
 
         # Amazon.DataSync.NfsVersion
         {
+            ($_ -eq "New-DSYNLocationFsxOpenZf/MountOptions_Version") -Or
             ($_ -eq "New-DSYNLocationNfs/MountOptions_Version") -Or
             ($_ -eq "Update-DSYNLocationNfs/MountOptions_Version") -Or
             ($_ -eq "New-DSYNLocationFsxOntap/Protocol_NFS_MountOptions_Version") -Or
-            ($_ -eq "New-DSYNLocationFsxOpenZf/Protocol_NFS_MountOptions_Version")
+            ($_ -eq "Update-DSYNLocationFsxOntap/Protocol_NFS_MountOptions_Version") -Or
+            ($_ -eq "Update-DSYNLocationFsxOpenZf/Protocol_NFS_MountOptions_Version")
         }
         {
             $v = "AUTOMATIC","NFS3","NFS4_0","NFS4_1"
@@ -211,9 +198,9 @@ $DSYN_Completers = {
 
         # Amazon.DataSync.ObjectVersionIds
         {
-            ($_ -eq "New-DSYNTask/TaskReportConfig_ObjectVersionIds") -Or
-            ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_ObjectVersionIds") -Or
-            ($_ -eq "Update-DSYNTask/TaskReportConfig_ObjectVersionIds")
+            ($_ -eq "New-DSYNTask/TaskReportConfig_ObjectVersionId") -Or
+            ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_ObjectVersionId") -Or
+            ($_ -eq "Update-DSYNTask/TaskReportConfig_ObjectVersionId")
         }
         {
             $v = "INCLUDE","NONE"
@@ -222,21 +209,21 @@ $DSYN_Completers = {
 
         # Amazon.DataSync.ReportLevel
         {
-            ($_ -eq "New-DSYNTask/TaskReportConfig_Overrides_Deleted_ReportLevel") -Or
-            ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_Overrides_Deleted_ReportLevel") -Or
-            ($_ -eq "Update-DSYNTask/TaskReportConfig_Overrides_Deleted_ReportLevel") -Or
-            ($_ -eq "New-DSYNTask/TaskReportConfig_Overrides_Skipped_ReportLevel") -Or
-            ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_Overrides_Skipped_ReportLevel") -Or
-            ($_ -eq "Update-DSYNTask/TaskReportConfig_Overrides_Skipped_ReportLevel") -Or
-            ($_ -eq "New-DSYNTask/TaskReportConfig_Overrides_Transferred_ReportLevel") -Or
-            ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_Overrides_Transferred_ReportLevel") -Or
-            ($_ -eq "Update-DSYNTask/TaskReportConfig_Overrides_Transferred_ReportLevel") -Or
-            ($_ -eq "New-DSYNTask/TaskReportConfig_Overrides_Verified_ReportLevel") -Or
-            ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_Overrides_Verified_ReportLevel") -Or
-            ($_ -eq "Update-DSYNTask/TaskReportConfig_Overrides_Verified_ReportLevel") -Or
+            ($_ -eq "New-DSYNTask/Deleted_ReportLevel") -Or
+            ($_ -eq "Start-DSYNTaskExecution/Deleted_ReportLevel") -Or
+            ($_ -eq "Update-DSYNTask/Deleted_ReportLevel") -Or
+            ($_ -eq "New-DSYNTask/Skipped_ReportLevel") -Or
+            ($_ -eq "Start-DSYNTaskExecution/Skipped_ReportLevel") -Or
+            ($_ -eq "Update-DSYNTask/Skipped_ReportLevel") -Or
             ($_ -eq "New-DSYNTask/TaskReportConfig_ReportLevel") -Or
             ($_ -eq "Start-DSYNTaskExecution/TaskReportConfig_ReportLevel") -Or
-            ($_ -eq "Update-DSYNTask/TaskReportConfig_ReportLevel")
+            ($_ -eq "Update-DSYNTask/TaskReportConfig_ReportLevel") -Or
+            ($_ -eq "New-DSYNTask/Transferred_ReportLevel") -Or
+            ($_ -eq "Start-DSYNTaskExecution/Transferred_ReportLevel") -Or
+            ($_ -eq "Update-DSYNTask/Transferred_ReportLevel") -Or
+            ($_ -eq "New-DSYNTask/Verified_ReportLevel") -Or
+            ($_ -eq "Start-DSYNTaskExecution/Verified_ReportLevel") -Or
+            ($_ -eq "Update-DSYNTask/Verified_ReportLevel")
         }
         {
             $v = "ERRORS_ONLY","SUCCESSES_AND_ERRORS"
@@ -255,9 +242,32 @@ $DSYN_Completers = {
         }
 
         # Amazon.DataSync.S3StorageClass
-        "New-DSYNLocationS3/S3StorageClass"
+        {
+            ($_ -eq "New-DSYNLocationS3/S3StorageClass") -Or
+            ($_ -eq "Update-DSYNLocationS3/S3StorageClass")
+        }
         {
             $v = "DEEP_ARCHIVE","GLACIER","GLACIER_INSTANT_RETRIEVAL","INTELLIGENT_TIERING","ONEZONE_IA","OUTPOSTS","STANDARD","STANDARD_IA"
+            break
+        }
+
+        # Amazon.DataSync.ScheduleStatus
+        {
+            ($_ -eq "New-DSYNTask/Schedule_Status") -Or
+            ($_ -eq "Update-DSYNTask/Schedule_Status")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.DataSync.SmbAuthenticationType
+        {
+            ($_ -eq "New-DSYNLocationSmb/AuthenticationType") -Or
+            ($_ -eq "Update-DSYNLocationSmb/AuthenticationType")
+        }
+        {
+            $v = "KERBEROS","NTLM"
             break
         }
 
@@ -266,10 +276,19 @@ $DSYN_Completers = {
             ($_ -eq "New-DSYNLocationSmb/MountOptions_Version") -Or
             ($_ -eq "Update-DSYNLocationSmb/MountOptions_Version") -Or
             ($_ -eq "New-DSYNLocationFsxOntap/Protocol_SMB_MountOptions_Version") -Or
-            ($_ -eq "New-DSYNLocationFsxOpenZf/Protocol_SMB_MountOptions_Version")
+            ($_ -eq "New-DSYNLocationFsxOpenZf/Protocol_SMB_MountOptions_Version") -Or
+            ($_ -eq "Update-DSYNLocationFsxOntap/Protocol_SMB_MountOptions_Version") -Or
+            ($_ -eq "Update-DSYNLocationFsxOpenZf/Protocol_SMB_MountOptions_Version")
         }
         {
             $v = "AUTOMATIC","SMB1","SMB2","SMB2_0","SMB3"
+            break
+        }
+
+        # Amazon.DataSync.TaskMode
+        "New-DSYNTask/TaskMode"
+        {
+            $v = "BASIC","ENHANCED"
             break
         }
 
@@ -283,27 +302,27 @@ $DSYN_Completers = {
 
 $DSYN_map = @{
     "AccessTier"=@("New-DSYNLocationAzureBlob","Update-DSYNLocationAzureBlob")
-    "AuthenticationType"=@("New-DSYNLocationAzureBlob","New-DSYNLocationHdf","Update-DSYNLocationAzureBlob","Update-DSYNLocationHdf")
+    "AuthenticationType"=@("New-DSYNLocationAzureBlob","New-DSYNLocationHdf","New-DSYNLocationSmb","Update-DSYNLocationAzureBlob","Update-DSYNLocationHdf","Update-DSYNLocationSmb")
     "BlobType"=@("New-DSYNLocationAzureBlob","Update-DSYNLocationAzureBlob")
-    "InTransitEncryption"=@("New-DSYNLocationEfs")
+    "Deleted_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
+    "InTransitEncryption"=@("New-DSYNLocationEfs","Update-DSYNLocationEfs")
     "ManifestConfig_Action"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
     "ManifestConfig_Format"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
-    "MountOptions_Version"=@("New-DSYNLocationNfs","New-DSYNLocationSmb","Update-DSYNLocationNfs","Update-DSYNLocationSmb")
-    "Protocol_NFS_MountOptions_Version"=@("New-DSYNLocationFsxOntap","New-DSYNLocationFsxOpenZf")
-    "Protocol_SMB_MountOptions_Version"=@("New-DSYNLocationFsxOntap","New-DSYNLocationFsxOpenZf")
+    "MountOptions_Version"=@("New-DSYNLocationFsxOpenZf","New-DSYNLocationNfs","New-DSYNLocationSmb","Update-DSYNLocationNfs","Update-DSYNLocationSmb")
+    "Protocol_NFS_MountOptions_Version"=@("New-DSYNLocationFsxOntap","Update-DSYNLocationFsxOntap","Update-DSYNLocationFsxOpenZf")
+    "Protocol_SMB_MountOptions_Version"=@("New-DSYNLocationFsxOntap","New-DSYNLocationFsxOpenZf","Update-DSYNLocationFsxOntap","Update-DSYNLocationFsxOpenZf")
     "QopConfiguration_DataTransferProtection"=@("New-DSYNLocationHdf","Update-DSYNLocationHdf")
     "QopConfiguration_RpcProtection"=@("New-DSYNLocationHdf","Update-DSYNLocationHdf")
-    "ResourceType"=@("Get-DSYNStorageSystemResource","Get-DSYNStorageSystemResourceMetric","New-DSYNRecommendation")
-    "S3StorageClass"=@("New-DSYNLocationS3")
+    "S3StorageClass"=@("New-DSYNLocationS3","Update-DSYNLocationS3")
+    "Schedule_Status"=@("New-DSYNTask","Update-DSYNTask")
     "ServerProtocol"=@("New-DSYNLocationObjectStorage","Update-DSYNLocationObjectStorage")
-    "SystemType"=@("Add-DSYNStorageSystem")
-    "TaskReportConfig_ObjectVersionIds"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
+    "Skipped_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
+    "TaskMode"=@("New-DSYNTask")
+    "TaskReportConfig_ObjectVersionId"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
     "TaskReportConfig_OutputType"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
-    "TaskReportConfig_Overrides_Deleted_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
-    "TaskReportConfig_Overrides_Skipped_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
-    "TaskReportConfig_Overrides_Transferred_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
-    "TaskReportConfig_Overrides_Verified_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
     "TaskReportConfig_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
+    "Transferred_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
+    "Verified_ReportLevel"=@("New-DSYNTask","Start-DSYNTaskExecution","Update-DSYNTask")
 }
 
 _awsArgumentCompleterRegistration $DSYN_Completers $DSYN_map
@@ -356,8 +375,7 @@ $DSYN_SelectCompleters = {
 }
 
 $DSYN_SelectMap = @{
-    "Select"=@("Add-DSYNStorageSystem",
-               "Stop-DSYNTaskExecution",
+    "Select"=@("Stop-DSYNTaskExecution",
                "New-DSYNAgent",
                "New-DSYNLocationAzureBlob",
                "New-DSYNLocationEfs",
@@ -375,7 +393,6 @@ $DSYN_SelectMap = @{
                "Remove-DSYNLocation",
                "Remove-DSYNTask",
                "Get-DSYNAgent",
-               "Get-DSYNDiscoveryJob",
                "Get-DSYNLocationAzureBlob",
                "Get-DSYNLocationEfs",
                "Get-DSYNLocationFsxLustre",
@@ -387,33 +404,28 @@ $DSYN_SelectMap = @{
                "Get-DSYNLocationObjectStorage",
                "Get-DSYNLocationS3",
                "Get-DSYNLocationSmb",
-               "Get-DSYNStorageSystem",
-               "Get-DSYNStorageSystemResourceMetric",
-               "Get-DSYNStorageSystemResource",
                "Get-DSYNTask",
                "Get-DSYNTaskExecution",
-               "New-DSYNRecommendation",
                "Get-DSYNAgentList",
-               "Get-DSYNDiscoveryJobList",
                "Get-DSYNLocationList",
-               "Get-DSYNStorageSystemList",
                "Get-DSYNResourceTagList",
                "Get-DSYNTaskExecutionList",
                "Get-DSYNTaskList",
-               "Remove-DSYNStorageSystem",
-               "Start-DSYNDiscoveryJob",
                "Start-DSYNTaskExecution",
-               "Stop-DSYNDiscoveryJob",
                "Add-DSYNResourceTag",
                "Remove-DSYNResourceTag",
                "Update-DSYNAgent",
-               "Update-DSYNDiscoveryJob",
                "Update-DSYNLocationAzureBlob",
+               "Update-DSYNLocationEfs",
+               "Update-DSYNLocationFsxLustre",
+               "Update-DSYNLocationFsxOntap",
+               "Update-DSYNLocationFsxOpenZf",
+               "Update-DSYNLocationFsxWindow",
                "Update-DSYNLocationHdf",
                "Update-DSYNLocationNfs",
                "Update-DSYNLocationObjectStorage",
+               "Update-DSYNLocationS3",
                "Update-DSYNLocationSmb",
-               "Update-DSYNStorageSystem",
                "Update-DSYNTask",
                "Update-DSYNTaskExecution")
 }

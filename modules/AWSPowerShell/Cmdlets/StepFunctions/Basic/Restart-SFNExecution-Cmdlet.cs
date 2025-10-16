@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StepFunctions;
 using Amazon.StepFunctions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SFN
 {
     /// <summary>
@@ -80,13 +82,14 @@ namespace Amazon.PowerShell.Cmdlets.SFN
     [OutputType("System.DateTime")]
     [AWSCmdlet("Calls the AWS Step Functions RedriveExecution API operation.", Operation = new[] {"RedriveExecution"}, SelectReturnType = typeof(Amazon.StepFunctions.Model.RedriveExecutionResponse))]
     [AWSCmdletOutput("System.DateTime or Amazon.StepFunctions.Model.RedriveExecutionResponse",
-        "This cmdlet returns a System.DateTime object.",
-        "The service call response (type Amazon.StepFunctions.Model.RedriveExecutionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.DateTime objects.",
+        "The service call response (type Amazon.StepFunctions.Model.RedriveExecutionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestartSFNExecutionCmdlet : AmazonStepFunctionsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExecutionArn
         /// <summary>
@@ -131,16 +134,6 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public string Select { get; set; } = "RedriveDate";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ExecutionArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ExecutionArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ExecutionArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -151,9 +144,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ExecutionArn), MyInvocation.BoundParameters);
@@ -167,21 +164,11 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StepFunctions.Model.RedriveExecutionResponse, RestartSFNExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ExecutionArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ExecutionArn = this.ExecutionArn;
             #if MODULAR
@@ -252,13 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Step Functions", "RedriveExecution");
             try
             {
-                #if DESKTOP
-                return client.RedriveExecution(request);
-                #elif CORECLR
-                return client.RedriveExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RedriveExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

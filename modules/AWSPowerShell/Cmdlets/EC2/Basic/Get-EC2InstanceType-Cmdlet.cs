@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,41 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Describes the details of the instance types that are offered in a location. The results
-    /// can be filtered by the attributes of the instance types.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Describes the specified instance types. By default, all instance types for the current
+    /// Region are described. Alternatively, you can filter the results.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2InstanceType")]
     [OutputType("Amazon.EC2.Model.InstanceTypeInfo")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeInstanceTypes API operation.", Operation = new[] {"DescribeInstanceTypes"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeInstanceTypesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.InstanceTypeInfo or Amazon.EC2.Model.DescribeInstanceTypesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.InstanceTypeInfo objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeInstanceTypesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeInstanceTypesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2InstanceTypeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -50,7 +65,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// recovery is supported (<c>true</c> | <c>false</c>).</para></li><li><para><c>bare-metal</c> - Indicates whether it is a bare metal instance type (<c>true</c>
         /// | <c>false</c>).</para></li><li><para><c>burstable-performance-supported</c> - Indicates whether the instance type is a
         /// burstable performance T instance type (<c>true</c> | <c>false</c>).</para></li><li><para><c>current-generation</c> - Indicates whether this instance type is the latest generation
-        /// instance type of an instance family (<c>true</c> | <c>false</c>).</para></li><li><para><c>ebs-info.ebs-optimized-info.baseline-bandwidth-in-mbps</c> - The baseline bandwidth
+        /// instance type of an instance family (<c>true</c> | <c>false</c>).</para></li><li><para><c>dedicated-hosts-supported</c> - Indicates whether the instance type supports Dedicated
+        /// Hosts. (<c>true</c> | <c>false</c>)</para></li><li><para><c>ebs-info.attachment-limit-type</c> - The type of Amazon EBS volume attachment
+        /// limit (<c>shared</c> | <c>dedicated</c>).</para></li><li><para><c>ebs-info.maximum-ebs-attachments</c> - The maximum number of Amazon EBS volumes
+        /// that can be attached to the instance type.</para></li><li><para><c>ebs-info.ebs-optimized-info.baseline-bandwidth-in-mbps</c> - The baseline bandwidth
         /// performance for an EBS-optimized instance type, in Mbps.</para></li><li><para><c>ebs-info.ebs-optimized-info.baseline-iops</c> - The baseline input/output storage
         /// operations per second for an EBS-optimized instance type.</para></li><li><para><c>ebs-info.ebs-optimized-info.baseline-throughput-in-mbps</c> - The baseline throughput
         /// performance for an EBS-optimized instance type, in MB/s.</para></li><li><para><c>ebs-info.ebs-optimized-info.maximum-bandwidth-in-mbps</c> - The maximum bandwidth
@@ -59,8 +77,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// performance for an EBS-optimized instance type, in MB/s.</para></li><li><para><c>ebs-info.ebs-optimized-support</c> - Indicates whether the instance type is EBS-optimized
         /// (<c>supported</c> | <c>unsupported</c> | <c>default</c>).</para></li><li><para><c>ebs-info.encryption-support</c> - Indicates whether EBS encryption is supported
         /// (<c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>ebs-info.nvme-support</c> - Indicates whether non-volatile memory express (NVMe)
-        /// is supported for EBS volumes (<c>required</c> | <c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>free-tier-eligible</c> - Indicates whether the instance type is eligible to use
-        /// in the free tier (<c>true</c> | <c>false</c>).</para></li><li><para><c>hibernation-supported</c> - Indicates whether On-Demand hibernation is supported
+        /// is supported for EBS volumes (<c>required</c> | <c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>free-tier-eligible</c> - A Boolean that indicates whether this instance type can
+        /// be used under the Amazon Web Services Free Tier (<c>true</c> | <c>false</c>).</para></li><li><para><c>hibernation-supported</c> - Indicates whether On-Demand hibernation is supported
         /// (<c>true</c> | <c>false</c>).</para></li><li><para><c>hypervisor</c> - The hypervisor (<c>nitro</c> | <c>xen</c>).</para></li><li><para><c>instance-storage-info.disk.count</c> - The number of local disks.</para></li><li><para><c>instance-storage-info.disk.size-in-gb</c> - The storage size of each instance
         /// storage disk, in GB.</para></li><li><para><c>instance-storage-info.disk.type</c> - The storage technology for the local instance
         /// storage disks (<c>hdd</c> | <c>ssd</c>).</para></li><li><para><c>instance-storage-info.encryption-support</c> - Indicates whether data is encrypted
@@ -68,10 +86,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// express (NVMe) is supported for instance store (<c>required</c> | <c>supported</c>
         /// | <c>unsupported</c>).</para></li><li><para><c>instance-storage-info.total-size-in-gb</c> - The total amount of storage available
         /// from all local instance storage, in GB.</para></li><li><para><c>instance-storage-supported</c> - Indicates whether the instance type has local
-        /// instance storage (<c>true</c> | <c>false</c>).</para></li><li><para><c>instance-type</c> - The instance type (for example <c>c5.2xlarge</c> or c5*).</para></li><li><para><c>memory-info.size-in-mib</c> - The memory size.</para></li><li><para><c>network-info.efa-info.maximum-efa-interfaces</c> - The maximum number of Elastic
+        /// instance storage (<c>true</c> | <c>false</c>).</para></li><li><para><c>instance-type</c> - The instance type (for example <c>c5.2xlarge</c> or c5*).</para></li><li><para><c>memory-info.size-in-mib</c> - The memory size.</para></li><li><para><c>network-info.bandwidth-weightings</c> - For instances that support bandwidth weighting
+        /// to boost performance (<c>default</c>, <c>vpc-1</c>, <c>ebs-1</c>).</para></li><li><para><c>network-info.efa-info.maximum-efa-interfaces</c> - The maximum number of Elastic
         /// Fabric Adapters (EFAs) per instance.</para></li><li><para><c>network-info.efa-supported</c> - Indicates whether the instance type supports
         /// Elastic Fabric Adapter (EFA) (<c>true</c> | <c>false</c>).</para></li><li><para><c>network-info.ena-support</c> - Indicates whether Elastic Network Adapter (ENA)
-        /// is supported or required (<c>required</c> | <c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>network-info.encryption-in-transit-supported</c> - Indicates whether the instance
+        /// is supported or required (<c>required</c> | <c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>network-info.flexible-ena-queues-support</c> - Indicates whether an instance supports
+        /// flexible ENA queues (<c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>network-info.encryption-in-transit-supported</c> - Indicates whether the instance
         /// type automatically encrypts in-transit traffic between instances (<c>true</c> | <c>false</c>).</para></li><li><para><c>network-info.ipv4-addresses-per-interface</c> - The maximum number of private
         /// IPv4 addresses per network interface.</para></li><li><para><c>network-info.ipv6-addresses-per-interface</c> - The maximum number of private
         /// IPv6 addresses per network interface.</para></li><li><para><c>network-info.ipv6-supported</c> - Indicates whether the instance type supports
@@ -81,10 +101,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// Gigabit").</para></li><li><para><c>nitro-enclaves-support</c> - Indicates whether Nitro Enclaves is supported (<c>supported</c>
         /// | <c>unsupported</c>).</para></li><li><para><c>nitro-tpm-support</c> - Indicates whether NitroTPM is supported (<c>supported</c>
         /// | <c>unsupported</c>).</para></li><li><para><c>nitro-tpm-info.supported-versions</c> - The supported NitroTPM version (<c>2.0</c>).</para></li><li><para><c>processor-info.supported-architecture</c> - The CPU architecture (<c>arm64</c>
-        /// | <c>i386</c> | <c>x86_64</c>).</para></li><li><para><c>processor-info.sustained-clock-speed-in-ghz</c> - The CPU clock speed, in GHz.</para></li><li><para><c>processor-info.supported-features</c> - The supported CPU features (<c>amd-sev-snp</c>).</para></li><li><para><c>supported-boot-mode</c> - The boot mode (<c>legacy-bios</c> | <c>uefi</c>).</para></li><li><para><c>supported-root-device-type</c> - The root device type (<c>ebs</c> | <c>instance-store</c>).</para></li><li><para><c>supported-usage-class</c> - The usage class (<c>on-demand</c> | <c>spot</c>).</para></li><li><para><c>supported-virtualization-type</c> - The virtualization type (<c>hvm</c> | <c>paravirtual</c>).</para></li><li><para><c>vcpu-info.default-cores</c> - The default number of cores for the instance type.</para></li><li><para><c>vcpu-info.default-threads-per-core</c> - The default number of threads per core
+        /// | <c>i386</c> | <c>x86_64</c>).</para></li><li><para><c>processor-info.sustained-clock-speed-in-ghz</c> - The CPU clock speed, in GHz.</para></li><li><para><c>processor-info.supported-features</c> - The supported CPU features (<c>amd-sev-snp</c>).</para></li><li><para><c>reboot-migration-support</c> - Indicates whether enabling reboot migration is
+        /// supported (<c>supported</c> | <c>unsupported</c>).</para></li><li><para><c>supported-boot-mode</c> - The boot mode (<c>legacy-bios</c> | <c>uefi</c>).</para></li><li><para><c>supported-root-device-type</c> - The root device type (<c>ebs</c> | <c>instance-store</c>).</para></li><li><para><c>supported-usage-class</c> - The usage class (<c>on-demand</c> | <c>spot</c> |
+        /// <c>capacity-block</c>).</para></li><li><para><c>supported-virtualization-type</c> - The virtualization type (<c>hvm</c> | <c>paravirtual</c>).</para></li><li><para><c>vcpu-info.default-cores</c> - The default number of cores for the instance type.</para></li><li><para><c>vcpu-info.default-threads-per-core</c> - The default number of threads per core
         /// for the instance type.</para></li><li><para><c>vcpu-info.default-vcpus</c> - The default number of vCPUs for the instance type.</para></li><li><para><c>vcpu-info.valid-cores</c> - The number of cores that can be configured for the
         /// instance type.</para></li><li><para><c>vcpu-info.valid-threads-per-core</c> - The number of threads per core that can
-        /// be configured for the instance type. For example, "1" or "1,2".</para></li></ul>
+        /// be configured for the instance type. For example, "1" or "1,2".</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,8 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceType
         /// <summary>
         /// <para>
-        /// <para>The instance types. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">Instance
-        /// types</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// <para>The instance types.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -130,7 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -173,6 +206,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeInstanceTypesResponse, GetEC2InstanceTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -211,6 +245,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeInstanceTypesRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -278,6 +316,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeInstanceTypesRequest();
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -333,7 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.InstanceTypes.Count;
+                    int _receivedThisCall = response.InstanceTypes?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -382,13 +424,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeInstanceTypes");
             try
             {
-                #if DESKTOP
-                return client.DescribeInstanceTypes(request);
-                #elif CORECLR
-                return client.DescribeInstanceTypesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeInstanceTypesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -405,6 +441,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public List<System.String> InstanceType { get; set; }
             public int? MaxResult { get; set; }

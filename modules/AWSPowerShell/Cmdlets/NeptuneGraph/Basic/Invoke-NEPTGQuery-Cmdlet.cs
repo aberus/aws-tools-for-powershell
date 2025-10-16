@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,41 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NeptuneGraph;
 using Amazon.NeptuneGraph.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NEPTG
 {
     /// <summary>
-    /// Execute an openCypher query. Currently, the SDK does not support parameterized queries.
-    /// If you want to make a parameterized query call, you can use an HTTP request. 
+    /// Execute an openCypher query.
     /// 
-    ///  <note><para>
-    ///  Non-parametrized queries are not considered for plan caching. You can force plan
-    /// caching with <c>planCache=enabled</c>. The plan cache will be reused only for the
-    /// same exact query. Slight variations in the query will not be able to reuse the query
-    /// plan cache. 
-    /// </para></note>
+    ///  
+    /// <para>
+    ///  When invoking this operation in a Neptune Analytics cluster, the IAM user or role
+    /// making the request must have a policy attached that allows one of the following IAM
+    /// actions in that cluster, depending on the query: 
+    /// </para><ul><li><para>
+    /// neptune-graph:ReadDataViaQuery
+    /// </para></li><li><para>
+    /// neptune-graph:WriteDataViaQuery
+    /// </para></li><li><para>
+    /// neptune-graph:DeleteDataViaQuery
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Invoke", "NEPTGQuery", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.IO.Stream")]
     [AWSCmdlet("Calls the Amazon Neptune Graph ExecuteQuery API operation.", Operation = new[] {"ExecuteQuery"}, SelectReturnType = typeof(Amazon.NeptuneGraph.Model.ExecuteQueryResponse))]
     [AWSCmdletOutput("System.IO.Stream or Amazon.NeptuneGraph.Model.ExecuteQueryResponse",
         "This cmdlet returns a System.IO.Stream object.",
-        "The service call response (type Amazon.NeptuneGraph.Model.ExecuteQueryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.NeptuneGraph.Model.ExecuteQueryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class InvokeNEPTGQueryCmdlet : AmazonNeptuneGraphClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExplainMode
         /// <summary>
@@ -95,6 +103,22 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         [AWSConstantClassSource("Amazon.NeptuneGraph.QueryLanguage")]
         public Amazon.NeptuneGraph.QueryLanguage Language { get; set; }
+        #endregion
+        
+        #region Parameter Parameter
+        /// <summary>
+        /// <para>
+        /// <para>The data parameters the query can use in JSON format. For example: {"name": "john",
+        /// "age": 20}. (optional) </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Parameters")]
+        public System.Collections.Hashtable Parameter { get; set; }
         #endregion
         
         #region Parameter PlanCache
@@ -150,16 +174,6 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         public string Select { get; set; } = "Payload";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GraphIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GraphIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GraphIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -170,9 +184,13 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GraphIdentifier), MyInvocation.BoundParameters);
@@ -186,21 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NeptuneGraph.Model.ExecuteQueryResponse, InvokeNEPTGQueryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GraphIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ExplainMode = this.ExplainMode;
             context.GraphIdentifier = this.GraphIdentifier;
             #if MODULAR
@@ -216,6 +224,14 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
                 WriteWarning("You are passing $null as a value for parameter Language which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Parameter != null)
+            {
+                context.Parameter = new Dictionary<System.String, Amazon.Runtime.Documents.Document>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Parameter.Keys)
+                {
+                    context.Parameter.Add((String)hashKey, Amazon.PowerShell.Common.DocumentHelper.ToDocument(this.Parameter[hashKey]));
+                }
+            }
             context.PlanCache = this.PlanCache;
             context.QueryString = this.QueryString;
             #if MODULAR
@@ -252,6 +268,10 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             if (cmdletContext.Language != null)
             {
                 request.Language = cmdletContext.Language;
+            }
+            if (cmdletContext.Parameter != null)
+            {
+                request.Parameters = cmdletContext.Parameter;
             }
             if (cmdletContext.PlanCache != null)
             {
@@ -303,13 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Neptune Graph", "ExecuteQuery");
             try
             {
-                #if DESKTOP
-                return client.ExecuteQuery(request);
-                #elif CORECLR
-                return client.ExecuteQueryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExecuteQueryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -329,6 +343,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             public Amazon.NeptuneGraph.ExplainMode ExplainMode { get; set; }
             public System.String GraphIdentifier { get; set; }
             public Amazon.NeptuneGraph.QueryLanguage Language { get; set; }
+            public Dictionary<System.String, Amazon.Runtime.Documents.Document> Parameter { get; set; }
             public Amazon.NeptuneGraph.PlanCacheType PlanCache { get; set; }
             public System.String QueryString { get; set; }
             public System.Int32? QueryTimeoutMillisecond { get; set; }

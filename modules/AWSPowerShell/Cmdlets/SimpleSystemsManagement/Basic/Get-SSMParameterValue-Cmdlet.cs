@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -33,26 +35,36 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     ///  <note><para>
     /// To get information about a single parameter, you can use the <a>GetParameter</a> operation
     /// instead.
-    /// </para></note>
+    /// </para></note><para>
+    /// Parameter names can't contain spaces. The service removes any spaces specified for
+    /// the beginning or end of a parameter name. If the specified name for a parameter contains
+    /// spaces between characters, the request fails with a <c>ValidationException</c> error.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "SSMParameterValue")]
     [OutputType("Amazon.SimpleSystemsManagement.Model.GetParametersResponse")]
     [AWSCmdlet("Calls the AWS Systems Manager GetParameters API operation.", Operation = new[] {"GetParameters"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.GetParametersResponse), LegacyAlias="Get-SSMParameterNameList")]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.GetParametersResponse",
-        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.GetParametersResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.GetParametersResponse object containing multiple properties."
     )]
     public partial class GetSSMParameterValueCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>Names of the parameters for which you want to query information.</para><para>To query by parameter label, use <c>"Name": "name:label"</c>. To query by parameter
-        /// version, use <c>"Name": "name:version"</c>.</para>
+        /// <para>The names or Amazon Resource Names (ARNs) of the parameters that you want to query.
+        /// For parameters shared with you from another account, you must use the full ARNs.</para><para>To query by parameter label, use <c>"Name": "name:label"</c>. To query by parameter
+        /// version, use <c>"Name": "name:version"</c>.</para><note><para>The results for <c>GetParameters</c> requests are listed in alphabetical order in
+        /// query responses.</para></note><para>For information about shared parameters, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-store-shared-parameters.html">Working
+        /// with shared parameters</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -89,9 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -177,13 +193,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "GetParameters");
             try
             {
-                #if DESKTOP
-                return client.GetParameters(request);
-                #elif CORECLR
-                return client.GetParametersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetParametersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

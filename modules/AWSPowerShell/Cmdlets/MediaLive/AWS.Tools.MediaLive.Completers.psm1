@@ -107,6 +107,63 @@ $EML_Completers = {
             break
         }
 
+        # Amazon.MediaLive.CloudWatchAlarmTemplateComparisonOperator
+        {
+            ($_ -eq "New-EMLCloudWatchAlarmTemplate/ComparisonOperator") -Or
+            ($_ -eq "Update-EMLCloudWatchAlarmTemplate/ComparisonOperator")
+        }
+        {
+            $v = "GreaterThanOrEqualToThreshold","GreaterThanThreshold","LessThanOrEqualToThreshold","LessThanThreshold"
+            break
+        }
+
+        # Amazon.MediaLive.CloudWatchAlarmTemplateStatistic
+        {
+            ($_ -eq "New-EMLCloudWatchAlarmTemplate/Statistic") -Or
+            ($_ -eq "Update-EMLCloudWatchAlarmTemplate/Statistic")
+        }
+        {
+            $v = "Average","Maximum","Minimum","SampleCount","Sum"
+            break
+        }
+
+        # Amazon.MediaLive.CloudWatchAlarmTemplateTargetResourceType
+        {
+            ($_ -eq "New-EMLCloudWatchAlarmTemplate/TargetResourceType") -Or
+            ($_ -eq "Update-EMLCloudWatchAlarmTemplate/TargetResourceType")
+        }
+        {
+            $v = "CLOUDFRONT_DISTRIBUTION","MEDIACONNECT_FLOW","MEDIALIVE_CHANNEL","MEDIALIVE_INPUT_DEVICE","MEDIALIVE_MULTIPLEX","MEDIAPACKAGE_CHANNEL","MEDIAPACKAGE_ORIGIN_ENDPOINT","MEDIATAILOR_PLAYBACK_CONFIGURATION","S3_BUCKET"
+            break
+        }
+
+        # Amazon.MediaLive.CloudWatchAlarmTemplateTreatMissingData
+        {
+            ($_ -eq "New-EMLCloudWatchAlarmTemplate/TreatMissingData") -Or
+            ($_ -eq "Update-EMLCloudWatchAlarmTemplate/TreatMissingData")
+        }
+        {
+            $v = "breaching","ignore","missing","notBreaching"
+            break
+        }
+
+        # Amazon.MediaLive.ClusterType
+        "New-EMLCluster/ClusterType"
+        {
+            $v = "ON_PREMISES"
+            break
+        }
+
+        # Amazon.MediaLive.EventBridgeRuleTemplateEventType
+        {
+            ($_ -eq "New-EMLEventBridgeRuleTemplate/EventType") -Or
+            ($_ -eq "Update-EMLEventBridgeRuleTemplate/EventType")
+        }
+        {
+            $v = "MEDIACONNECT_ALERT","MEDIACONNECT_FLOW_STATUS_CHANGE","MEDIACONNECT_OUTPUT_HEALTH","MEDIACONNECT_SOURCE_HEALTH","MEDIALIVE_CHANNEL_ALERT","MEDIALIVE_CHANNEL_INPUT_CHANGE","MEDIALIVE_CHANNEL_STATE_CHANGE","MEDIALIVE_MULTIPLEX_ALERT","MEDIALIVE_MULTIPLEX_STATE_CHANGE","MEDIAPACKAGE_HARVEST_JOB_NOTIFICATION","MEDIAPACKAGE_INPUT_NOTIFICATION","MEDIAPACKAGE_KEY_PROVIDER_NOTIFICATION","SIGNAL_MAP_ACTIVE_ALARM"
+            break
+        }
+
         # Amazon.MediaLive.InputCodec
         {
             ($_ -eq "New-EMLChannel/InputSpecification_Codec") -Or
@@ -147,6 +204,13 @@ $EML_Completers = {
             break
         }
 
+        # Amazon.MediaLive.InputNetworkLocation
+        "New-EMLInput/InputNetworkLocation"
+        {
+            $v = "AWS","ON_PREMISES"
+            break
+        }
+
         # Amazon.MediaLive.InputResolution
         {
             ($_ -eq "New-EMLChannel/InputSpecification_Resolution") -Or
@@ -160,7 +224,7 @@ $EML_Completers = {
         # Amazon.MediaLive.InputType
         "New-EMLInput/Type"
         {
-            $v = "AWS_CDI","INPUT_DEVICE","MEDIACONNECT","MP4_FILE","RTMP_PULL","RTMP_PUSH","RTP_PUSH","TS_FILE","UDP_PUSH","URL_PULL"
+            $v = "AWS_CDI","INPUT_DEVICE","MEDIACONNECT","MP4_FILE","MULTICAST","RTMP_PULL","RTMP_PUSH","RTP_PUSH","SDI","SMPTE_2110_RECEIVER_GROUP","SRT_CALLER","TS_FILE","UDP_PUSH","URL_PULL"
             break
         }
 
@@ -184,6 +248,17 @@ $EML_Completers = {
             break
         }
 
+        # Amazon.MediaLive.NodeRole
+        {
+            ($_ -eq "New-EMLNode/Role") -Or
+            ($_ -eq "New-EMLNodeRegistrationScript/Role") -Or
+            ($_ -eq "Update-EMLNode/Role")
+        }
+        {
+            $v = "ACTIVE","BACKUP"
+            break
+        }
+
         # Amazon.MediaLive.PreferredChannelPipeline
         {
             ($_ -eq "New-EMLMultiplexProgram/MultiplexProgramSettings_PreferredChannelPipeline") -Or
@@ -195,7 +270,7 @@ $EML_Completers = {
         }
 
         # Amazon.MediaLive.RebootInputDeviceForce
-        "Restart-EMLInputDevice/Force"
+        "Restart-EMLInputDevice/IgnoreStreaming"
         {
             $v = "NO","YES"
             break
@@ -211,6 +286,33 @@ $EML_Completers = {
             break
         }
 
+        # Amazon.MediaLive.SdiSourceMode
+        {
+            ($_ -eq "New-EMLSdiSource/Mode") -Or
+            ($_ -eq "Update-EMLSdiSource/Mode")
+        }
+        {
+            $v = "INTERLEAVE","QUADRANT"
+            break
+        }
+
+        # Amazon.MediaLive.SdiSourceType
+        {
+            ($_ -eq "New-EMLSdiSource/Type") -Or
+            ($_ -eq "Update-EMLSdiSource/Type")
+        }
+        {
+            $v = "QUAD","SINGLE"
+            break
+        }
+
+        # Amazon.MediaLive.UpdateNodeState
+        "Update-EMLNodeState/State"
+        {
+            $v = "ACTIVE","DRAINING"
+            break
+        }
+
 
     }
 
@@ -223,17 +325,27 @@ $EML_map = @{
     "Accept"=@("Get-EMLInputDeviceThumbnail")
     "CdiInputSpecification_Resolution"=@("New-EMLChannel","Update-EMLChannel")
     "ChannelClass"=@("New-EMLChannel","Update-EMLChannelClass")
-    "Force"=@("Restart-EMLInputDevice")
+    "ClusterType"=@("New-EMLCluster")
+    "ComparisonOperator"=@("New-EMLCloudWatchAlarmTemplate","Update-EMLCloudWatchAlarmTemplate")
+    "EventType"=@("New-EMLEventBridgeRuleTemplate","Update-EMLEventBridgeRuleTemplate")
     "HdDeviceSettings_Codec"=@("Update-EMLInputDevice")
     "HdDeviceSettings_ConfiguredInput"=@("Update-EMLInputDevice")
+    "IgnoreStreaming"=@("Restart-EMLInputDevice")
+    "InputNetworkLocation"=@("New-EMLInput")
     "InputSpecification_Codec"=@("New-EMLChannel","Update-EMLChannel")
     "InputSpecification_MaximumBitrate"=@("New-EMLChannel","Update-EMLChannel")
     "InputSpecification_Resolution"=@("New-EMLChannel","Update-EMLChannel")
     "LogLevel"=@("New-EMLChannel","Update-EMLChannel")
     "Maintenance_MaintenanceDay"=@("New-EMLChannel","Update-EMLChannel")
+    "Mode"=@("New-EMLSdiSource","Update-EMLSdiSource")
     "MultiplexProgramSettings_PreferredChannelPipeline"=@("New-EMLMultiplexProgram","Update-EMLMultiplexProgram")
     "RenewalSettings_AutomaticRenewal"=@("New-EMLOfferingPurchase","Update-EMLReservation")
-    "Type"=@("New-EMLInput")
+    "Role"=@("New-EMLNode","New-EMLNodeRegistrationScript","Update-EMLNode")
+    "State"=@("Update-EMLNodeState")
+    "Statistic"=@("New-EMLCloudWatchAlarmTemplate","Update-EMLCloudWatchAlarmTemplate")
+    "TargetResourceType"=@("New-EMLCloudWatchAlarmTemplate","Update-EMLCloudWatchAlarmTemplate")
+    "TreatMissingData"=@("New-EMLCloudWatchAlarmTemplate","Update-EMLCloudWatchAlarmTemplate")
+    "Type"=@("New-EMLInput","New-EMLSdiSource","Update-EMLSdiSource")
     "UhdDeviceSettings_Codec"=@("Update-EMLInputDevice")
     "UhdDeviceSettings_ConfiguredInput"=@("Update-EMLInputDevice")
 }
@@ -296,49 +408,95 @@ $EML_SelectMap = @{
                "Stop-EMLInputDeviceTransfer",
                "Request-EMLDevice",
                "New-EMLChannel",
+               "New-EMLChannelPlacementGroup",
+               "New-EMLCloudWatchAlarmTemplate",
+               "New-EMLCloudWatchAlarmTemplateGroup",
+               "New-EMLCluster",
+               "New-EMLEventBridgeRuleTemplate",
+               "New-EMLEventBridgeRuleTemplateGroup",
                "New-EMLInput",
                "New-EMLInputSecurityGroup",
                "New-EMLMultiplex",
                "New-EMLMultiplexProgram",
+               "New-EMLNetwork",
+               "New-EMLNode",
+               "New-EMLNodeRegistrationScript",
                "New-EMLPartnerInput",
+               "New-EMLSdiSource",
+               "New-EMLSignalMap",
                "Add-EMLResourceTag",
                "Remove-EMLChannel",
+               "Remove-EMLChannelPlacementGroup",
+               "Remove-EMLCloudWatchAlarmTemplate",
+               "Remove-EMLCloudWatchAlarmTemplateGroup",
+               "Remove-EMLCluster",
+               "Remove-EMLEventBridgeRuleTemplate",
+               "Remove-EMLEventBridgeRuleTemplateGroup",
                "Remove-EMLInput",
                "Remove-EMLInputSecurityGroup",
                "Remove-EMLMultiplex",
                "Remove-EMLMultiplexProgram",
+               "Remove-EMLNetwork",
+               "Remove-EMLNode",
                "Remove-EMLReservation",
                "Remove-EMLSchedule",
+               "Remove-EMLSdiSource",
+               "Remove-EMLSignalMap",
                "Remove-EMLResourceTag",
                "Get-EMLAccountConfiguration",
                "Get-EMLChannel",
+               "Get-EMLChannelPlacementGroup",
+               "Get-EMLCluster",
                "Get-EMLInput",
                "Get-EMLInputDevice",
                "Get-EMLInputDeviceThumbnail",
                "Get-EMLInputSecurityGroup",
                "Get-EMLMultiplex",
                "Get-EMLMultiplexProgram",
+               "Get-EMLNetwork",
+               "Get-EMLNode",
                "Get-EMLOffering",
                "Get-EMLReservation",
                "Get-EMLSchedule",
+               "Get-EMLSdiSource",
                "Get-EMLThumbnail",
+               "Get-EMLCloudWatchAlarmTemplate",
+               "Get-EMLCloudWatchAlarmTemplateGroup",
+               "Get-EMLEventBridgeRuleTemplate",
+               "Get-EMLEventBridgeRuleTemplateGroup",
+               "Get-EMLSignalMap",
+               "Get-EMLChannelPlacementGroupList",
                "Get-EMLChannelList",
+               "Get-EMLCloudWatchAlarmTemplateGroupList",
+               "Get-EMLCloudWatchAlarmTemplateList",
+               "Get-EMLClusterList",
+               "Get-EMLEventBridgeRuleTemplateGroupList",
+               "Get-EMLEventBridgeRuleTemplateList",
                "Get-EMLInputDeviceList",
                "Get-EMLInputDeviceTransferList",
                "Get-EMLInputList",
                "Get-EMLInputSecurityGroupList",
                "Get-EMLMultiplexList",
                "Get-EMLMultiplexProgramList",
+               "Get-EMLNetworkList",
+               "Get-EMLNodeList",
                "Get-EMLOfferingList",
                "Get-EMLReservationList",
+               "Get-EMLSdiSourceList",
+               "Get-EMLSignalMapList",
                "Get-EMLResourceTag",
+               "Get-EMLVersionList",
                "New-EMLOfferingPurchase",
                "Restart-EMLInputDevice",
                "Deny-EMLInputDeviceTransfer",
+               "Restart-EMLChannelPipeline",
                "Start-EMLChannel",
+               "Start-EMLDeleteMonitorDeployment",
                "Start-EMLInputDevice",
                "Start-EMLInputDeviceMaintenanceWindow",
+               "Start-EMLMonitorDeployment",
                "Start-EMLMultiplex",
+               "Start-EMLUpdateSignalMap",
                "Stop-EMLChannel",
                "Stop-EMLInputDevice",
                "Stop-EMLMultiplex",
@@ -346,12 +504,22 @@ $EML_SelectMap = @{
                "Update-EMLAccountConfiguration",
                "Update-EMLChannel",
                "Update-EMLChannelClass",
+               "Update-EMLChannelPlacementGroup",
+               "Update-EMLCloudWatchAlarmTemplate",
+               "Update-EMLCloudWatchAlarmTemplateGroup",
+               "Update-EMLCluster",
+               "Update-EMLEventBridgeRuleTemplate",
+               "Update-EMLEventBridgeRuleTemplateGroup",
                "Update-EMLInput",
                "Update-EMLInputDevice",
                "Update-EMLInputSecurityGroup",
                "Update-EMLMultiplex",
                "Update-EMLMultiplexProgram",
-               "Update-EMLReservation")
+               "Update-EMLNetwork",
+               "Update-EMLNode",
+               "Update-EMLNodeState",
+               "Update-EMLReservation",
+               "Update-EMLSdiSource")
 }
 
 _awsArgumentCompleterRegistration $EML_SelectCompleters $EML_SelectMap

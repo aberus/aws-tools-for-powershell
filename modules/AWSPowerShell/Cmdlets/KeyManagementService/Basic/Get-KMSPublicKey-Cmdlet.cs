@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -49,10 +51,12 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><ul><li><para><a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html#KMS-GetPublicKey-response-KeySpec">KeySpec</a>:
     /// The type of key material in the public key, such as <c>RSA_4096</c> or <c>ECC_NIST_P521</c>.
     /// </para></li><li><para><a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html#KMS-GetPublicKey-response-KeyUsage">KeyUsage</a>:
-    /// Whether the key is used for encryption or signing.
-    /// </para></li><li><para><a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html#KMS-GetPublicKey-response-EncryptionAlgorithms">EncryptionAlgorithms</a>
+    /// Whether the key is used for encryption, signing, or deriving a shared secret.
+    /// </para></li><li><para><a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html#KMS-GetPublicKey-response-EncryptionAlgorithms">EncryptionAlgorithms</a>,
+    /// <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html#KMS-GetPublicKey-response-KeyAgreementAlgorithms">KeyAgreementAlgorithms</a>,
     /// or <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html#KMS-GetPublicKey-response-SigningAlgorithms">SigningAlgorithms</a>:
-    /// A list of the encryption algorithms or the signing algorithms for the key.
+    /// A list of the encryption algorithms, key agreement algorithms, or signing algorithms
+    /// for the key.
     /// </para></li></ul><para>
     /// Although KMS cannot enforce these restrictions on external operations, it is crucial
     /// that you use this information to prevent the public key from being used improperly.
@@ -63,7 +67,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><para>
     /// To verify a signature outside of KMS with an SM2 public key (China Regions only),
     /// you must specify the distinguishing ID. By default, KMS uses <c>1234567812345678</c>
-    /// as the distinguishing ID. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/asymmetric-key-specs.html#key-spec-sm-offline-verification">Offline
+    /// as the distinguishing ID. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/offline-operations.html#key-spec-sm-offline-verification">Offline
     /// verification with SM2 key pairs</a>.
     /// </para><para>
     /// The KMS key that you use for this operation must be in a compatible key state. For
@@ -75,7 +79,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><para><b>Required permissions</b>: <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-api-permissions-reference.html">kms:GetPublicKey</a>
     /// (key policy)
     /// </para><para><b>Related operations</b>: <a>CreateKey</a></para><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -83,20 +87,25 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [OutputType("Amazon.KeyManagementService.Model.GetPublicKeyResponse")]
     [AWSCmdlet("Calls the AWS Key Management Service GetPublicKey API operation.", Operation = new[] {"GetPublicKey"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.GetPublicKeyResponse))]
     [AWSCmdletOutput("Amazon.KeyManagementService.Model.GetPublicKeyResponse",
-        "This cmdlet returns an Amazon.KeyManagementService.Model.GetPublicKeyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KeyManagementService.Model.GetPublicKeyResponse object containing multiple properties."
     )]
     public partial class GetKMSPublicKeyCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GrantToken
         /// <summary>
         /// <para>
         /// <para>A list of grant tokens.</para><para>Use a grant token when your permission to call this operation comes from a new grant
         /// that has not yet achieved <i>eventual consistency</i>. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/grants.html#grant_token">Grant
-        /// token</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/grant-manage.html#using-grant-token">Using
-        /// a grant token</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// token</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/using-grant-token.html">Using
+        /// a grant token</a> in the <i>Key Management Service Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,19 +144,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -155,21 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.GetPublicKeyResponse, GetKMSPublicKeyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.GrantToken != null)
             {
                 context.GrantToken = new List<System.String>(this.GrantToken);
@@ -243,13 +236,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "GetPublicKey");
             try
             {
-                #if DESKTOP
-                return client.GetPublicKey(request);
-                #elif CORECLR
-                return client.GetPublicKeyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPublicKeyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

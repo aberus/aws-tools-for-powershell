@@ -90,6 +90,20 @@ $HSM2_Completers = {
             break
         }
 
+        # Amazon.CloudHSMV2.ClusterMode
+        "New-HSM2Cluster/Mode"
+        {
+            $v = "FIPS","NON_FIPS"
+            break
+        }
+
+        # Amazon.CloudHSMV2.NetworkType
+        "New-HSM2Cluster/NetworkType"
+        {
+            $v = "DUALSTACK","IPV4"
+            break
+        }
+
 
     }
 
@@ -100,6 +114,8 @@ $HSM2_Completers = {
 
 $HSM2_map = @{
     "BackupRetentionPolicy_Type"=@("Edit-HSM2Cluster","New-HSM2Cluster")
+    "Mode"=@("New-HSM2Cluster")
+    "NetworkType"=@("New-HSM2Cluster")
 }
 
 _awsArgumentCompleterRegistration $HSM2_Completers $HSM2_map
@@ -158,12 +174,15 @@ $HSM2_SelectMap = @{
                "Remove-HSM2Backup",
                "Remove-HSM2Cluster",
                "Remove-HSM2Hsm",
+               "Remove-HSM2ResourcePolicy",
                "Get-HSM2Backup",
                "Get-HSM2Cluster",
+               "Get-HSM2ResourcePolicy",
                "Initialize-HSM2Cluster",
                "Get-HSM2ResourceTag",
                "Edit-HSM2BackupAttribute",
                "Edit-HSM2Cluster",
+               "Write-HSM2ResourcePolicy",
                "Restore-HSM2Backup",
                "Add-HSM2ResourceTag",
                "Remove-HSM2ResourceTag")

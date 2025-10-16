@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,58 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
     /// Gets a metadata form type in Amazon DataZone.
+    /// 
+    ///  
+    /// <para>
+    /// Form types define the structure and validation rules for collecting metadata about
+    /// assets in Amazon DataZone. They act as templates that ensure consistent metadata capture
+    /// across similar types of assets, while allowing for customization to meet specific
+    /// organizational needs. Form types can include required fields, validation rules, and
+    /// dependencies, helping maintain high-quality metadata that makes data assets more discoverable
+    /// and usable.
+    /// </para><ul><li><para>
+    /// The form type with the specified identifier must exist in the given domain. 
+    /// </para></li><li><para>
+    /// The domain must be valid and active.
+    /// </para></li><li><para>
+    /// User must have permission on the form type.
+    /// </para></li><li><para>
+    /// The form type should not be deleted or in an invalid state.
+    /// </para></li></ul><para>
+    /// One use case for this API is to determine whether a form field is indexed for search.
+    /// 
+    /// </para><para>
+    /// A searchable field will be annotated with <c>@amazon.datazone#searchable</c>. By default,
+    /// searchable fields are indexed for semantic search, where related query terms will
+    /// match the attribute value even if they are not stemmed or keyword matches. If a field
+    /// is indexed technical identifier search, it will be annotated with <c>@amazon.datazone#searchable(modes:["TECHNICAL"])</c>.
+    /// If a field is indexed for lexical search (supports stemmed and prefix matches but
+    /// not semantic matches), it will be annotated with <c>@amazon.datazone#searchable(modes:["LEXICAL"])</c>.
+    /// </para><para>
+    /// A field storing glossary term IDs (which is filterable) will be annotated with <c>@amazon.datazone#glossaryterm("${glossaryId}")</c>.
+    /// 
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "DZFormType")]
     [OutputType("Amazon.DataZone.Model.GetFormTypeResponse")]
     [AWSCmdlet("Calls the Amazon DataZone GetFormType API operation.", Operation = new[] {"GetFormType"}, SelectReturnType = typeof(Amazon.DataZone.Model.GetFormTypeResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.GetFormTypeResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.GetFormTypeResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.GetFormTypeResponse object containing multiple properties."
     )]
     public partial class GetDZFormTypeCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DomainIdentifier
         /// <summary>
@@ -98,19 +130,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FormTypeIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FormTypeIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FormTypeIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -118,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.GetFormTypeResponse, GetDZFormTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FormTypeIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainIdentifier = this.DomainIdentifier;
             #if MODULAR
             if (this.DomainIdentifier == null && ParameterWasBound(nameof(this.DomainIdentifier)))
@@ -214,13 +230,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "GetFormType");
             try
             {
-                #if DESKTOP
-                return client.GetFormType(request);
-                #elif CORECLR
-                return client.GetFormTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetFormTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

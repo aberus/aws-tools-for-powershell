@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
@@ -81,6 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     /// you use budgeting, which alerts you when charges exceed your specified limit. For
     /// more information, see <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/budgets-managing-costs.html">Managing
     /// Your Costs with Budgets</a>.
+    /// </para><para>
+    /// To create a rule that filters for management events from Amazon Web Services services,
+    /// see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event-cloudtrail.html#eb-service-event-cloudtrail-management">Receiving
+    /// read-only management events from Amazon Web Services services</a> in the <i>EventBridge
+    /// User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Write", "EVBRule", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -88,12 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     [AWSCmdlet("Calls the Amazon EventBridge PutRule API operation.", Operation = new[] {"PutRule"}, SelectReturnType = typeof(Amazon.EventBridge.Model.PutRuleResponse))]
     [AWSCmdletOutput("System.String or Amazon.EventBridge.Model.PutRuleResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EventBridge.Model.PutRuleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EventBridge.Model.PutRuleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteEVBRuleCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -120,7 +128,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         /// <summary>
         /// <para>
         /// <para>The event pattern. For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html">Amazon
-        /// EventBridge event patterns</a> in the <i>Amazon EventBridge User Guide</i>.</para>
+        /// EventBridge event patterns</a> in the <i><i>Amazon EventBridge User Guide</i></i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +178,18 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter State
         /// <summary>
         /// <para>
-        /// <para>Indicates whether the rule is enabled or disabled.</para>
+        /// <para>The state of the rule.</para><para>Valid values include:</para><ul><li><para><c>DISABLED</c>: The rule is disabled. EventBridge does not match any events against
+        /// the rule.</para></li><li><para><c>ENABLED</c>: The rule is enabled. EventBridge matches events against the rule,
+        /// <i>except</i> for Amazon Web Services management events delivered through CloudTrail.</para></li><li><para><c>ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS</c>: The rule is enabled for all
+        /// events, including Amazon Web Services management events delivered through CloudTrail.</para><para>Management events provide visibility into management operations that are performed
+        /// on resources in your Amazon Web Services account. These are also known as control
+        /// plane operations. For more information, see <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-management-events-with-cloudtrail.html#logging-management-events">Logging
+        /// management events</a> in the <i>CloudTrail User Guide</i>, and <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event.html#eb-service-event-cloudtrail">Filtering
+        /// management events from Amazon Web Services services</a> in the <i><i>Amazon EventBridge
+        /// User Guide</i></i>.</para><para>This value is only valid for rules on the <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is-how-it-works-concepts.html#eb-bus-concepts-buses">default</a>
+        /// event bus or <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-create-event-bus.html">custom
+        /// event buses</a>. It does not apply to <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-saas.html">partner
+        /// event buses</a>.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,7 +200,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The list of key-value pairs to associate with the rule.</para>
+        /// <para>The list of key-value pairs to associate with the rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,16 +223,6 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public string Select { get; set; } = "RuleArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -220,9 +233,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -236,21 +253,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EventBridge.Model.PutRuleResponse, WriteEVBRuleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.EventBusName = this.EventBusName;
             context.EventPattern = this.EventPattern;
@@ -354,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "PutRule");
             try
             {
-                #if DESKTOP
-                return client.PutRule(request);
-                #elif CORECLR
-                return client.PutRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

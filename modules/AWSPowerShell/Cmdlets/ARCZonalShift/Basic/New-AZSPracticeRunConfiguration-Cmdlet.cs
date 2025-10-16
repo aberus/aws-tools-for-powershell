@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ARCZonalShift;
 using Amazon.ARCZonalShift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AZS
 {
     /// <summary>
@@ -37,31 +39,63 @@ namespace Amazon.PowerShell.Cmdlets.AZS
     /// 
     ///  
     /// <para>
+    /// When a resource has a practice run configuration, ARC starts zonal shifts for the
+    /// resource weekly, to shift traffic for practice runs. Practice runs help you to ensure
+    /// that shifting away traffic from an Availability Zone during an autoshift is safe for
+    /// your application.
+    /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-autoshift.considerations.html">
-    /// Considerations when you configure zonal autoshift</a> in the Amazon Route 53 Application
-    /// Recovery Controller Developer Guide.
+    /// Considerations when you configure zonal autoshift</a> in the Amazon Application Recovery
+    /// Controller Developer Guide.
     /// </para>
     /// </summary>
     [Cmdlet("New", "AZSPracticeRunConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationResponse")]
     [AWSCmdlet("Calls the AWS ARC - Zonal Shift CreatePracticeRunConfiguration API operation.", Operation = new[] {"CreatePracticeRunConfiguration"}, SelectReturnType = typeof(Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationResponse))]
     [AWSCmdletOutput("Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationResponse",
-        "This cmdlet returns an Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationResponse object containing multiple properties."
     )]
     public partial class NewAZSPracticeRunConfigurationCmdlet : AmazonARCZonalShiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AllowedWindow
+        /// <summary>
+        /// <para>
+        /// <para>Optionally, you can allow ARC to start practice runs for specific windows of days
+        /// and times. </para><para>The format for allowed windows is: DAY:HH:SS-DAY:HH:SS. Keep in mind, when you specify
+        /// dates, that dates and times for practice runs are in UTC. Also, be aware of potential
+        /// time adjustments that might be required for daylight saving time differences. Separate
+        /// multiple allowed windows with spaces.</para><para>For example, say you want to allow practice runs only on Wednesdays and Fridays from
+        /// noon to 5 p.m. For this scenario, you could set the following recurring days and times
+        /// as allowed windows, for example: <c>Wed-12:00-Wed:17:00 Fri-12:00-Fri:17:00</c>.</para><important><para>The <c>allowedWindows</c> have to start and end on the same day. Windows that span
+        /// multiple days aren't supported.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AllowedWindows")]
+        public System.String[] AllowedWindow { get; set; }
+        #endregion
         
         #region Parameter BlockedDate
         /// <summary>
         /// <para>
-        /// <para>Optionally, you can block Route 53 ARC from starting practice runs for a resource
-        /// on specific calendar dates.</para><para>The format for blocked dates is: YYYY-MM-DD. Keep in mind, when you specify dates,
+        /// <para>Optionally, you can block ARC from starting practice runs for a resource on specific
+        /// calendar dates.</para><para>The format for blocked dates is: YYYY-MM-DD. Keep in mind, when you specify dates,
         /// that dates and times for practice runs are in UTC. Separate multiple blocked dates
         /// with spaces.</para><para>For example, if you have an application update scheduled to launch on May 1, 2024,
         /// and you don't want practice runs to shift traffic away at that time, you could set
-        /// a blocked date for <c>2024-05-01</c>.</para>
+        /// a blocked date for <c>2024-05-01</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,13 +106,18 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         #region Parameter BlockedWindow
         /// <summary>
         /// <para>
-        /// <para>Optionally, you can block Route 53 ARC from starting practice runs for specific windows
-        /// of days and times. </para><para>The format for blocked windows is: DAY:HH:SS-DAY:HH:SS. Keep in mind, when you specify
+        /// <para>Optionally, you can block ARC from starting practice runs for specific windows of
+        /// days and times. </para><para>The format for blocked windows is: DAY:HH:SS-DAY:HH:SS. Keep in mind, when you specify
         /// dates, that dates and times for practice runs are in UTC. Also, be aware of potential
         /// time adjustments that might be required for daylight saving time differences. Separate
         /// multiple blocked windows with spaces.</para><para>For example, say you run business report summaries three days a week. For this scenario,
-        /// you might set the following recurring days and times as blocked windows, for example:
-        /// <c>MON-20:30-21:30 WED-20:30-21:30 FRI-20:30-21:30</c>.</para>
+        /// you could set the following recurring days and times as blocked windows, for example:
+        /// <c>Mon:00:00-Mon:10:00 Wed-20:30-Wed:21:30 Fri-20:30-Fri:21:30</c>.</para><important><para>The <c>blockedWindows</c> have to start and end on the same day. Windows that span
+        /// multiple days aren't supported.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -89,9 +128,12 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         #region Parameter BlockingAlarm
         /// <summary>
         /// <para>
-        /// <para>An Amazon CloudWatch alarm that you can specify for zonal autoshift practice runs.
-        /// This alarm blocks Route 53 ARC from starting practice run zonal shifts, and ends a
-        /// practice run that's in progress, when the alarm is in an <c>ALARM</c> state. </para>
+        /// <para><i>Blocking alarms</i> for practice runs are optional alarms that you can specify
+        /// that block practice runs when one or more of the alarms is in an <c>ALARM</c> state.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,12 +144,15 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         #region Parameter OutcomeAlarm
         /// <summary>
         /// <para>
-        /// <para>The <i>outcome alarm</i> for practice runs is a required Amazon CloudWatch alarm that
-        /// you specify that ends a practice run when the alarm is in an <c>ALARM</c> state.</para><para>Configure the alarm to monitor the health of your application when traffic is shifted
-        /// away from an Availability Zone during each weekly practice run. You should configure
-        /// the alarm to go into an <c>ALARM</c> state if your application is impacted by the
-        /// zonal shift, and you want to stop the zonal shift, to let traffic for the resource
-        /// return to the Availability Zone.</para>
+        /// <para><i>Outcome alarms</i> for practice runs are alarms that you specify that end a practice
+        /// run when one or more of the alarms is in an <c>ALARM</c> state.</para><para>Configure one or more of these alarms to monitor the health of your application when
+        /// traffic is shifted away from an Availability Zone during each practice run. You should
+        /// configure these alarms to go into an <c>ALARM</c> state if you want to stop a zonal
+        /// shift, to let traffic for the resource return to the original Availability Zone.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -125,9 +170,14 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         #region Parameter ResourceIdentifier
         /// <summary>
         /// <para>
-        /// <para>The identifier of the resource to shift away traffic for when a practice run starts
-        /// a zonal shift. The identifier is the Amazon Resource Name (ARN) for the resource.</para><para>At this time, supported resources are Network Load Balancers and Application Load
-        /// Balancers with cross-zone load balancing turned off.</para>
+        /// <para>The identifier of the resource that Amazon Web Services shifts traffic for with a
+        /// practice run zonal shift. The identifier is the Amazon Resource Name (ARN) for the
+        /// resource.</para><para>Amazon Application Recovery Controller currently supports enabling the following resources
+        /// for zonal shift and zonal autoshift:</para><ul><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.ec2-auto-scaling-groups.html">Amazon
+        /// EC2 Auto Scaling groups</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.eks.html">Amazon
+        /// Elastic Kubernetes Service</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.app-load-balancers.html">Application
+        /// Load Balancer</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.network-load-balancers.html">Network
+        /// Load Balancer</a></para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -152,16 +202,6 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -172,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceIdentifier), MyInvocation.BoundParameters);
@@ -188,21 +232,15 @@ namespace Amazon.PowerShell.Cmdlets.AZS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationResponse, NewAZSPracticeRunConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            if (this.AllowedWindow != null)
             {
-                context.Select = (response, cmdlet) => this.ResourceIdentifier;
+                context.AllowedWindow = new List<System.String>(this.AllowedWindow);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.BlockedDate != null)
             {
                 context.BlockedDate = new List<System.String>(this.BlockedDate);
@@ -248,6 +286,10 @@ namespace Amazon.PowerShell.Cmdlets.AZS
             // create request
             var request = new Amazon.ARCZonalShift.Model.CreatePracticeRunConfigurationRequest();
             
+            if (cmdletContext.AllowedWindow != null)
+            {
+                request.AllowedWindows = cmdletContext.AllowedWindow;
+            }
             if (cmdletContext.BlockedDate != null)
             {
                 request.BlockedDates = cmdletContext.BlockedDate;
@@ -306,13 +348,7 @@ namespace Amazon.PowerShell.Cmdlets.AZS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS ARC - Zonal Shift", "CreatePracticeRunConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreatePracticeRunConfiguration(request);
-                #elif CORECLR
-                return client.CreatePracticeRunConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePracticeRunConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -329,6 +365,7 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public List<System.String> AllowedWindow { get; set; }
             public List<System.String> BlockedDate { get; set; }
             public List<System.String> BlockedWindow { get; set; }
             public List<Amazon.ARCZonalShift.Model.ControlCondition> BlockingAlarm { get; set; }

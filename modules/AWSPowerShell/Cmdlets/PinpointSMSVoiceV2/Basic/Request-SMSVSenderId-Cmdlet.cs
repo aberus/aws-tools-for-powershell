@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.RequestSenderIdResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 RequestSenderId API operation.", Operation = new[] {"RequestSenderId"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.RequestSenderIdResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.RequestSenderIdResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.RequestSenderIdResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.RequestSenderIdResponse object containing multiple properties."
     )]
     public partial class RequestSMSVSenderIdCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeletionProtectionEnabled
         /// <summary>
@@ -72,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>The type of message. Valid values are TRANSACTIONAL for messages that are critical
-        /// or time-sensitive and PROMOTIONAL for messages that aren't critical or time-sensitive.</para>
+        /// or time-sensitive and PROMOTIONAL for messages that aren't critical or time-sensitive.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>An array of tags (key and value pairs) to associate with the sender ID.</para>
+        /// <para>An array of tags (key and value pairs) to associate with the sender ID.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,9 +152,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -264,13 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "RequestSenderId");
             try
             {
-                #if DESKTOP
-                return client.RequestSenderId(request);
-                #elif CORECLR
-                return client.RequestSenderIdAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RequestSenderIdAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

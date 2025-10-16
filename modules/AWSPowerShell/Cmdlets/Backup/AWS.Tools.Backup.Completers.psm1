@@ -119,6 +119,23 @@ $BAK_Completers = {
             break
         }
 
+        # Amazon.Backup.Index
+        {
+            ($_ -eq "Start-BAKBackupJob/Index") -Or
+            ($_ -eq "Update-BAKRecoveryPointIndexSetting/Index")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.Backup.IndexStatus
+        "Get-BAKIndexedRecoveryPointList/IndexStatus"
+        {
+            $v = "ACTIVE","DELETING","FAILED","PENDING"
+            break
+        }
+
         # Amazon.Backup.RestoreJobState
         "Get-BAKRestoreJobSummaryList/State"
         {
@@ -138,8 +155,8 @@ $BAK_Completers = {
 
         # Amazon.Backup.RestoreTestingRecoveryPointSelectionAlgorithm
         {
-            ($_ -eq "New-BAKRestoreTestingPlan/RestoreTestingPlan_RecoveryPointSelection_Algorithm") -Or
-            ($_ -eq "Update-BAKRestoreTestingPlan/RestoreTestingPlan_RecoveryPointSelection_Algorithm")
+            ($_ -eq "New-BAKRestoreTestingPlan/RecoveryPointSelection_Algorithm") -Or
+            ($_ -eq "Update-BAKRestoreTestingPlan/RecoveryPointSelection_Algorithm")
         }
         {
             $v = "LATEST_WITHIN_WINDOW","RANDOM_WITHIN_WINDOW"
@@ -156,7 +173,7 @@ $BAK_Completers = {
         # Amazon.Backup.VaultType
         "Get-BAKBackupVaultList/ByVaultType"
         {
-            $v = "BACKUP_VAULT","LOGICALLY_AIR_GAPPED_BACKUP_VAULT"
+            $v = "BACKUP_VAULT","LOGICALLY_AIR_GAPPED_BACKUP_VAULT","RESTORE_ACCESS_BACKUP_VAULT"
             break
         }
 
@@ -173,7 +190,9 @@ $BAK_map = @{
     "ByState"=@("Get-BAKBackupJobList","Get-BAKCopyJobList")
     "ByStatus"=@("Get-BAKRestoreJobList","Get-BAKRestoreJobsByProtectedResourceList")
     "ByVaultType"=@("Get-BAKBackupVaultList")
-    "RestoreTestingPlan_RecoveryPointSelection_Algorithm"=@("New-BAKRestoreTestingPlan","Update-BAKRestoreTestingPlan")
+    "Index"=@("Start-BAKBackupJob","Update-BAKRecoveryPointIndexSetting")
+    "IndexStatus"=@("Get-BAKIndexedRecoveryPointList")
+    "RecoveryPointSelection_Algorithm"=@("New-BAKRestoreTestingPlan","Update-BAKRestoreTestingPlan")
     "State"=@("Get-BAKBackupJobSummaryList","Get-BAKCopyJobSummaryList","Get-BAKRestoreJobSummaryList")
     "ValidationStatus"=@("Write-BAKRestoreValidationResult")
 }
@@ -228,7 +247,8 @@ $BAK_SelectCompleters = {
 }
 
 $BAK_SelectMap = @{
-    "Select"=@("Stop-BAKLegalHold",
+    "Select"=@("Add-BAKBackupVaultMpaApprovalTeam",
+               "Stop-BAKLegalHold",
                "New-BAKBackupPlan",
                "New-BAKBackupSelection",
                "New-BAKBackupVault",
@@ -236,6 +256,7 @@ $BAK_SelectMap = @{
                "New-BAKLegalHold",
                "New-BAKLogicallyAirGappedBackupVault",
                "New-BAKReportPlan",
+               "New-BAKRestoreAccessBackupVault",
                "New-BAKRestoreTestingPlan",
                "New-BAKRestoreTestingSelection",
                "Remove-BAKBackupPlan",
@@ -260,6 +281,7 @@ $BAK_SelectMap = @{
                "Get-BAKReportJob",
                "Get-BAKReportPlan",
                "Get-BAKRestoreJob",
+               "Remove-BAKBackupVaultMpaApprovalTeam",
                "Unlock-BAKRecoveryPoint",
                "Move-BAKRecoveryPoint",
                "Export-BAKBackupPlanTemplate",
@@ -270,6 +292,7 @@ $BAK_SelectMap = @{
                "Get-BAKBackupVaultAccessPolicy",
                "Get-BAKBackupVaultNotification",
                "Get-BAKLegalHold",
+               "Get-BAKRecoveryPointIndexDetail",
                "Get-BAKRecoveryPointRestoreMetadata",
                "Get-BAKRestoreJobMetadata",
                "Get-BAKRestoreTestingInferredMetadata",
@@ -286,6 +309,7 @@ $BAK_SelectMap = @{
                "Get-BAKCopyJobList",
                "Get-BAKCopyJobSummaryList",
                "Get-BAKFrameworkList",
+               "Get-BAKIndexedRecoveryPointList",
                "Get-BAKLegalHoldList",
                "Get-BAKProtectedResourceList",
                "Get-BAKProtectedResourcesByBackupVaultList",
@@ -294,6 +318,7 @@ $BAK_SelectMap = @{
                "Get-BAKRecoveryPointsByResourceList",
                "Get-BAKReportJobList",
                "Get-BAKReportPlanList",
+               "Get-BAKRestoreAccessBackupVaultList",
                "Get-BAKRestoreJobList",
                "Get-BAKRestoreJobsByProtectedResourceList",
                "Get-BAKRestoreJobSummaryList",
@@ -304,6 +329,7 @@ $BAK_SelectMap = @{
                "Write-BAKBackupVaultLockConfiguration",
                "Write-BAKBackupVaultNotification",
                "Write-BAKRestoreValidationResult",
+               "Revoke-BAKRestoreAccessBackupVault",
                "Start-BAKBackupJob",
                "Start-BAKCopyJob",
                "Start-BAKReportJob",
@@ -314,6 +340,7 @@ $BAK_SelectMap = @{
                "Update-BAKBackupPlan",
                "Update-BAKFramework",
                "Update-BAKGlobalSetting",
+               "Update-BAKRecoveryPointIndexSetting",
                "Update-BAKRecoveryPointLifecycle",
                "Update-BAKRegionSetting",
                "Update-BAKReportPlan",

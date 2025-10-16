@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MWAA;
 using Amazon.MWAA.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MWAA
 {
     /// <summary>
-    /// Creates an Amazon Managed Workflows for Apache Airflow (MWAA) environment.
+    /// Creates an Amazon Managed Workflows for Apache Airflow (Amazon MWAA) environment.
     /// </summary>
     [Cmdlet("New", "MWAAEnvironment", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AmazonMWAA CreateEnvironment API operation.", Operation = new[] {"CreateEnvironment"}, SelectReturnType = typeof(Amazon.MWAA.Model.CreateEnvironmentResponse))]
     [AWSCmdletOutput("System.String or Amazon.MWAA.Model.CreateEnvironmentResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.MWAA.Model.CreateEnvironmentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MWAA.Model.CreateEnvironmentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewMWAAEnvironmentCmdlet : AmazonMWAAClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AirflowConfigurationOption
         /// <summary>
         /// <para>
         /// <para>A list of key-value pairs containing the Apache Airflow configuration options you
         /// want to attach to your environment. For more information, see <a href="https://docs.aws.amazon.com/mwaa/latest/userguide/configuring-env-variables.html">Apache
-        /// Airflow configuration options</a>.</para>
+        /// Airflow configuration options</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -62,8 +67,8 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         /// <para>
         /// <para>The Apache Airflow version for your environment. If no value is specified, it defaults
         /// to the latest version. For more information, see <a href="https://docs.aws.amazon.com/mwaa/latest/userguide/airflow-versions.html">Apache
-        /// Airflow versions on Amazon Managed Workflows for Apache Airflow (MWAA)</a>.</para><para>Valid values: <c>1.10.12</c>, <c>2.0.2</c>, <c>2.2.2</c>, <c>2.4.3</c>, <c>2.5.1</c>,
-        /// <c>2.6.3</c>, <c>2.7.2</c></para>
+        /// Airflow versions on Amazon Managed Workflows for Apache Airflow (Amazon MWAA)</a>.</para><para>Valid values: <c>1.10.12</c>, <c>2.0.2</c>, <c>2.2.2</c>, <c>2.4.3</c>, <c>2.5.1</c>,
+        /// <c>2.6.3</c>, <c>2.7.2</c>, <c>2.8.1</c>, <c>2.9.2</c>, <c>2.10.1</c>, and <c>2.10.3</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -166,8 +171,9 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         #region Parameter EnvironmentClass
         /// <summary>
         /// <para>
-        /// <para>The environment class type. Valid values: <c>mw1.small</c>, <c>mw1.medium</c>, <c>mw1.large</c>.
-        /// For more information, see <a href="https://docs.aws.amazon.com/mwaa/latest/userguide/environment-class.html">Amazon
+        /// <para>The environment class type. Valid values: <c>mw1.micro</c>, <c>mw1.small</c>, <c>mw1.medium</c>,
+        /// <c>mw1.large</c>, <c>mw1.xlarge</c>, and <c>mw1.2xlarge</c>. For more information,
+        /// see <a href="https://docs.aws.amazon.com/mwaa/latest/userguide/environment-class.html">Amazon
         /// MWAA environment class</a>.</para>
         /// </para>
         /// </summary>
@@ -270,6 +276,26 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         public Amazon.MWAA.LoggingLevel WorkerLogs_LogLevel { get; set; }
         #endregion
         
+        #region Parameter MaxWebserver
+        /// <summary>
+        /// <para>
+        /// <para> The maximum number of web servers that you want to run in your environment. Amazon
+        /// MWAA scales the number of Apache Airflow web servers up to the number you specify
+        /// for <c>MaxWebservers</c> when you interact with your Apache Airflow environment using
+        /// Apache Airflow REST API, or the Apache Airflow CLI. For example, in scenarios where
+        /// your workload requires network calls to the Apache Airflow REST API with a high transaction-per-second
+        /// (TPS) rate, Amazon MWAA will increase the number of web servers up to the number set
+        /// in <c>MaxWebserers</c>. As TPS rates decrease Amazon MWAA disposes of the additional
+        /// web servers, and scales down to the number set in <c>MinxWebserers</c>. </para><para>Valid values: For environments larger than mw1.micro, accepts values from <c>2</c>
+        /// to <c>5</c>. Defaults to <c>2</c> for all environment sizes except mw1.micro, which
+        /// defaults to <c>1</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MaxWebservers")]
+        public System.Int32? MaxWebserver { get; set; }
+        #endregion
+        
         #region Parameter MaxWorker
         /// <summary>
         /// <para>
@@ -283,6 +309,24 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("MaxWorkers")]
         public System.Int32? MaxWorker { get; set; }
+        #endregion
+        
+        #region Parameter MinWebserver
+        /// <summary>
+        /// <para>
+        /// <para> The minimum number of web servers that you want to run in your environment. Amazon
+        /// MWAA scales the number of Apache Airflow web servers up to the number you specify
+        /// for <c>MaxWebservers</c> when you interact with your Apache Airflow environment using
+        /// Apache Airflow REST API, or the Apache Airflow CLI. As the transaction-per-second
+        /// rate, and the network load, decrease, Amazon MWAA disposes of the additional web servers,
+        /// and scales down to the number set in <c>MinxWebserers</c>. </para><para>Valid values: For environments larger than mw1.micro, accepts values from <c>2</c>
+        /// to <c>5</c>. Defaults to <c>2</c> for all environment sizes except mw1.micro, which
+        /// defaults to <c>1</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MinWebservers")]
+        public System.Int32? MinWebserver { get; set; }
         #endregion
         
         #region Parameter MinWorker
@@ -371,7 +415,9 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         #region Parameter Scheduler
         /// <summary>
         /// <para>
-        /// <para>The number of Apache Airflow schedulers to run in your environment. Valid values:</para><ul><li><para>v2 - Accepts between 2 to 5. Defaults to 2.</para></li><li><para>v1 - Accepts 1.</para></li></ul>
+        /// <para>The number of Apache Airflow schedulers to run in your environment. Valid values:</para><ul><li><para>v2 - For environments larger than mw1.micro, accepts values from <c>2</c> to <c>5</c>.
+        /// Defaults to <c>2</c> for all environment sizes except mw1.micro, which defaults to
+        /// <c>1</c>.</para></li><li><para>v1 - Accepts <c>1</c>.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -383,7 +429,11 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         /// <summary>
         /// <para>
         /// <para>A list of security group IDs. For more information, see <a href="https://docs.aws.amazon.com/mwaa/latest/userguide/vpc-security.html">Security
-        /// in your VPC on Amazon MWAA</a>.</para>
+        /// in your VPC on Amazon MWAA</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -443,7 +493,11 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         /// <summary>
         /// <para>
         /// <para>A list of subnet IDs. For more information, see <a href="https://docs.aws.amazon.com/mwaa/latest/userguide/networking-about.html">About
-        /// networking on Amazon MWAA</a>.</para>
+        /// networking on Amazon MWAA</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -456,7 +510,11 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         /// <para>
         /// <para>The key-value tag pairs you want to associate to your environment. For example, <c>"Environment":
         /// "Staging"</c>. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services resources</a>.</para>
+        /// Amazon Web Services resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -511,9 +569,13 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -568,7 +630,9 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
             context.WebserverLogs_LogLevel = this.WebserverLogs_LogLevel;
             context.WorkerLogs_Enabled = this.WorkerLogs_Enabled;
             context.WorkerLogs_LogLevel = this.WorkerLogs_LogLevel;
+            context.MaxWebserver = this.MaxWebserver;
             context.MaxWorker = this.MaxWorker;
+            context.MinWebserver = this.MinWebserver;
             context.MinWorker = this.MinWorker;
             context.Name = this.Name;
             #if MODULAR
@@ -837,9 +901,17 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
             {
                 request.LoggingConfiguration = null;
             }
+            if (cmdletContext.MaxWebserver != null)
+            {
+                request.MaxWebservers = cmdletContext.MaxWebserver.Value;
+            }
             if (cmdletContext.MaxWorker != null)
             {
                 request.MaxWorkers = cmdletContext.MaxWorker.Value;
+            }
+            if (cmdletContext.MinWebserver != null)
+            {
+                request.MinWebservers = cmdletContext.MinWebserver.Value;
             }
             if (cmdletContext.MinWorker != null)
             {
@@ -960,13 +1032,7 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AmazonMWAA", "CreateEnvironment");
             try
             {
-                #if DESKTOP
-                return client.CreateEnvironment(request);
-                #elif CORECLR
-                return client.CreateEnvironmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateEnvironmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1000,7 +1066,9 @@ namespace Amazon.PowerShell.Cmdlets.MWAA
             public Amazon.MWAA.LoggingLevel WebserverLogs_LogLevel { get; set; }
             public System.Boolean? WorkerLogs_Enabled { get; set; }
             public Amazon.MWAA.LoggingLevel WorkerLogs_LogLevel { get; set; }
+            public System.Int32? MaxWebserver { get; set; }
             public System.Int32? MaxWorker { get; set; }
+            public System.Int32? MinWebserver { get; set; }
             public System.Int32? MinWorker { get; set; }
             public System.String Name { get; set; }
             public List<System.String> NetworkConfiguration_SecurityGroupId { get; set; }

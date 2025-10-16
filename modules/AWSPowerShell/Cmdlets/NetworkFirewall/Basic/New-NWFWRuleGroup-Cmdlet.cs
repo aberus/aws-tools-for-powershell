@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkFirewall;
 using Amazon.NetworkFirewall.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NWFW
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
     [OutputType("Amazon.NetworkFirewall.Model.CreateRuleGroupResponse")]
     [AWSCmdlet("Calls the AWS Network Firewall CreateRuleGroup API operation.", Operation = new[] {"CreateRuleGroup"}, SelectReturnType = typeof(Amazon.NetworkFirewall.Model.CreateRuleGroupResponse))]
     [AWSCmdletOutput("Amazon.NetworkFirewall.Model.CreateRuleGroupResponse",
-        "This cmdlet returns an Amazon.NetworkFirewall.Model.CreateRuleGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NetworkFirewall.Model.CreateRuleGroupResponse object containing multiple properties."
     )]
     public partial class NewNWFWRuleGroupCmdlet : AmazonNetworkFirewallClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnalyzeRuleGroup
         /// <summary>
@@ -98,7 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <para>Defines an array of individual custom action definitions that are available for use
         /// by the stateless rules in this <c>StatelessRulesAndCustomActions</c> specification.
         /// You name each custom action that you define, and then you can use it by name in your
-        /// <a>StatelessRule</a><a>RuleDefinition</a><c>Actions</c> specification.</para>
+        /// <a>StatelessRule</a><a>RuleDefinition</a><c>Actions</c> specification.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,7 +143,10 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter RulesSourceList_GeneratedRulesType
         /// <summary>
         /// <para>
-        /// <para>Whether you want to allow or deny access to the domains in your target list.</para>
+        /// <para>Whether you want to apply allow, reject, alert, or drop behavior to the domains in
+        /// your target list.</para><note><para>When logging is enabled and you choose Alert, traffic that matches the domain specifications
+        /// generates an alert in the firewall's logs. Then, traffic either passes, is rejected,
+        /// or drops based on other rules in the firewall policy.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,7 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter ReferenceSets_IPSetReference
         /// <summary>
         /// <para>
-        /// <para>The list of IP set references.</para>
+        /// <para>The list of IP set references.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +173,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter RuleVariables_IPSet
         /// <summary>
         /// <para>
-        /// <para>A list of IP addresses and address ranges, in CIDR notation. </para>
+        /// <para>A list of IP addresses and address ranges, in CIDR notation. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,7 +202,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter RuleVariables_PortSet
         /// <summary>
         /// <para>
-        /// <para>A list of port ranges. </para>
+        /// <para>A list of port ranges. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -208,6 +230,21 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String RuleGroupName { get; set; }
+        #endregion
+        
+        #region Parameter SummaryConfiguration_RuleOption
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the selected rule options returned by <a>DescribeRuleGroupSummary</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SummaryConfiguration_RuleOptions")]
+        public System.String[] SummaryConfiguration_RuleOption { get; set; }
         #endregion
         
         #region Parameter StatefulRuleOptions_RuleOrder
@@ -286,8 +323,12 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <para>An array of individual stateful rules inspection criteria to be used together in a
         /// stateful rule group. Use this option to specify simple Suricata rules with protocol,
         /// source and destination, ports, direction, and rule options. For information about
-        /// the Suricata <c>Rules</c> format, see <a href="https://suricata.readthedocs.io/en/suricata-6.0.9/rules/intro.html">Rules
-        /// Format</a>. </para>
+        /// the Suricata <c>Rules</c> format, see <a href="https://suricata.readthedocs.io/en/suricata-7.0.3/rules/intro.html">Rules
+        /// Format</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -298,7 +339,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter StatelessRulesAndCustomActions_StatelessRule
         /// <summary>
         /// <para>
-        /// <para>Defines the set of stateless rules for use in a stateless rule group. </para>
+        /// <para>Defines the set of stateless rules for use in a stateless rule group. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -309,7 +354,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The key:value pairs to associate with the resource.</para>
+        /// <para>The key:value pairs to associate with the resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -324,7 +373,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// are the following:</para><ul><li><para>Explicit names. For example, <c>abc.example.com</c> matches only the domain <c>abc.example.com</c>.</para></li><li><para>Names that use a domain wildcard, which you indicate with an initial '<c>.</c>'. For
         /// example,<c>.example.com</c> matches <c>example.com</c> and matches all subdomains
         /// of <c>example.com</c>, such as <c>abc.example.com</c> and <c>www.example.com</c>.
-        /// </para></li></ul>
+        /// </para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -336,7 +389,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <summary>
         /// <para>
         /// <para>The protocols you want to inspect. Specify <c>TLS_SNI</c> for <c>HTTPS</c>. Specify
-        /// <c>HTTP_HOST</c> for <c>HTTP</c>. You can specify either or both. </para>
+        /// <c>HTTP_HOST</c> for <c>HTTP</c>. You can specify either or both. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -385,16 +442,6 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RuleGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RuleGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RuleGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -405,9 +452,13 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RuleGroupName), MyInvocation.BoundParameters);
@@ -421,21 +472,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkFirewall.Model.CreateRuleGroupResponse, NewNWFWRuleGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RuleGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnalyzeRuleGroup = this.AnalyzeRuleGroup;
             context.Capacity = this.Capacity;
             #if MODULAR
@@ -505,6 +546,10 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             context.Rule = this.Rule;
             context.SourceMetadata_SourceArn = this.SourceMetadata_SourceArn;
             context.SourceMetadata_SourceUpdateToken = this.SourceMetadata_SourceUpdateToken;
+            if (this.SummaryConfiguration_RuleOption != null)
+            {
+                context.SummaryConfiguration_RuleOption = new List<System.String>(this.SummaryConfiguration_RuleOption);
+            }
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.NetworkFirewall.Model.Tag>(this.Tag);
@@ -823,6 +868,25 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             {
                 request.SourceMetadata = null;
             }
+            
+             // populate SummaryConfiguration
+            var requestSummaryConfigurationIsNull = true;
+            request.SummaryConfiguration = new Amazon.NetworkFirewall.Model.SummaryConfiguration();
+            List<System.String> requestSummaryConfiguration_summaryConfiguration_RuleOption = null;
+            if (cmdletContext.SummaryConfiguration_RuleOption != null)
+            {
+                requestSummaryConfiguration_summaryConfiguration_RuleOption = cmdletContext.SummaryConfiguration_RuleOption;
+            }
+            if (requestSummaryConfiguration_summaryConfiguration_RuleOption != null)
+            {
+                request.SummaryConfiguration.RuleOptions = requestSummaryConfiguration_summaryConfiguration_RuleOption;
+                requestSummaryConfigurationIsNull = false;
+            }
+             // determine if request.SummaryConfiguration should be set to null
+            if (requestSummaryConfigurationIsNull)
+            {
+                request.SummaryConfiguration = null;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
@@ -869,13 +933,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Firewall", "CreateRuleGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateRuleGroup(request);
-                #elif CORECLR
-                return client.CreateRuleGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRuleGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -913,6 +971,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             public System.String Rule { get; set; }
             public System.String SourceMetadata_SourceArn { get; set; }
             public System.String SourceMetadata_SourceUpdateToken { get; set; }
+            public List<System.String> SummaryConfiguration_RuleOption { get; set; }
             public List<Amazon.NetworkFirewall.Model.Tag> Tag { get; set; }
             public Amazon.NetworkFirewall.RuleGroupType Type { get; set; }
             public System.Func<Amazon.NetworkFirewall.Model.CreateRuleGroupResponse, NewNWFWRuleGroupCmdlet, object> Select { get; set; } =

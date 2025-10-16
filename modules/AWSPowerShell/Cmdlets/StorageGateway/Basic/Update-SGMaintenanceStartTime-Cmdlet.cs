@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,66 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StorageGateway;
 using Amazon.StorageGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SG
 {
     /// <summary>
-    /// Updates a gateway's weekly maintenance start time information, including day and time
-    /// of the week. The maintenance time is the time in your gateway's time zone.
+    /// Updates a gateway's maintenance window schedule, with settings for monthly or weekly
+    /// cadence, specific day and time to begin maintenance, and which types of updates to
+    /// apply. Time configuration uses the gateway's time zone. You can pass values for a
+    /// complete maintenance schedule, or update policy, or both. Previous values will persist
+    /// for whichever setting you choose not to modify. If an incomplete or invalid maintenance
+    /// schedule is passed, the entire request will be rejected with an error and no changes
+    /// will occur.
+    /// 
+    ///  
+    /// <para>
+    /// A complete maintenance schedule must include values for <i>both</i><c>MinuteOfHour</c>
+    /// and <c>HourOfDay</c>, and <i>either</i><c>DayOfMonth</c><i>or</i><c>DayOfWeek</c>.
+    /// </para><note><para>
+    /// We recommend keeping maintenance updates turned on, except in specific use cases where
+    /// the brief disruptions caused by updating the gateway could critically impact your
+    /// deployment.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Update", "SGMaintenanceStartTime", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Storage Gateway UpdateMaintenanceStartTime API operation.", Operation = new[] {"UpdateMaintenanceStartTime"}, SelectReturnType = typeof(Amazon.StorageGateway.Model.UpdateMaintenanceStartTimeResponse))]
     [AWSCmdletOutput("System.String or Amazon.StorageGateway.Model.UpdateMaintenanceStartTimeResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.StorageGateway.Model.UpdateMaintenanceStartTimeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.StorageGateway.Model.UpdateMaintenanceStartTimeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateSGMaintenanceStartTimeCmdlet : AmazonStorageGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter SoftwareUpdatePreferences_AutomaticUpdatePolicy
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the automatic update policy for a gateway.</para><para><c>ALL_VERSIONS</c> - Enables regular gateway maintenance updates.</para><para><c>EMERGENCY_VERSIONS_ONLY</c> - Disables regular gateway maintenance updates. The
+        /// gateway will still receive emergency version updates on rare occasions if necessary
+        /// to remedy highly critical security or durability issues. You will be notified before
+        /// an emergency version update is applied. These updates are applied during your gateway's
+        /// scheduled maintenance window.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.StorageGateway.AutomaticUpdatePolicy")]
+        public Amazon.StorageGateway.AutomaticUpdatePolicy SoftwareUpdatePreferences_AutomaticUpdatePolicy { get; set; }
+        #endregion
         
         #region Parameter DayOfMonth
         /// <summary>
         /// <para>
         /// <para>The day of the month component of the maintenance start time represented as an ordinal
-        /// number from 1 to 28, where 1 represents the first day of the month and 28 represents
-        /// the last day of the month.</para>
+        /// number from 1 to 28, where 1 represents the first day of the month. It is not possible
+        /// to set the maintenance schedule to start on days 29 through 31.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -59,7 +92,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// <summary>
         /// <para>
         /// <para>The day of the week component of the maintenance start time week represented as an
-        /// ordinal number from 0 to 6, where 0 represents Sunday and 6 Saturday.</para>
+        /// ordinal number from 0 to 6, where 0 represents Sunday and 6 represents Saturday.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
@@ -90,13 +123,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// is the hour (00 to 23). The hour of the day is in the time zone of the gateway.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Int32? HourOfDay { get; set; }
         #endregion
         
@@ -108,13 +135,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// the gateway.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Int32? MinuteOfHour { get; set; }
         #endregion
         
@@ -129,16 +150,6 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public string Select { get; set; } = "GatewayARN";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GatewayARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GatewayARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GatewayARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -149,9 +160,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GatewayARN), MyInvocation.BoundParameters);
@@ -165,21 +180,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StorageGateway.Model.UpdateMaintenanceStartTimeResponse, UpdateSGMaintenanceStartTimeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GatewayARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DayOfMonth = this.DayOfMonth;
             context.DayOfWeek = this.DayOfWeek;
             context.GatewayARN = this.GatewayARN;
@@ -190,19 +195,8 @@ namespace Amazon.PowerShell.Cmdlets.SG
             }
             #endif
             context.HourOfDay = this.HourOfDay;
-            #if MODULAR
-            if (this.HourOfDay == null && ParameterWasBound(nameof(this.HourOfDay)))
-            {
-                WriteWarning("You are passing $null as a value for parameter HourOfDay which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.MinuteOfHour = this.MinuteOfHour;
-            #if MODULAR
-            if (this.MinuteOfHour == null && ParameterWasBound(nameof(this.MinuteOfHour)))
-            {
-                WriteWarning("You are passing $null as a value for parameter MinuteOfHour which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.SoftwareUpdatePreferences_AutomaticUpdatePolicy = this.SoftwareUpdatePreferences_AutomaticUpdatePolicy;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -238,6 +232,25 @@ namespace Amazon.PowerShell.Cmdlets.SG
             if (cmdletContext.MinuteOfHour != null)
             {
                 request.MinuteOfHour = cmdletContext.MinuteOfHour.Value;
+            }
+            
+             // populate SoftwareUpdatePreferences
+            var requestSoftwareUpdatePreferencesIsNull = true;
+            request.SoftwareUpdatePreferences = new Amazon.StorageGateway.Model.SoftwareUpdatePreferences();
+            Amazon.StorageGateway.AutomaticUpdatePolicy requestSoftwareUpdatePreferences_softwareUpdatePreferences_AutomaticUpdatePolicy = null;
+            if (cmdletContext.SoftwareUpdatePreferences_AutomaticUpdatePolicy != null)
+            {
+                requestSoftwareUpdatePreferences_softwareUpdatePreferences_AutomaticUpdatePolicy = cmdletContext.SoftwareUpdatePreferences_AutomaticUpdatePolicy;
+            }
+            if (requestSoftwareUpdatePreferences_softwareUpdatePreferences_AutomaticUpdatePolicy != null)
+            {
+                request.SoftwareUpdatePreferences.AutomaticUpdatePolicy = requestSoftwareUpdatePreferences_softwareUpdatePreferences_AutomaticUpdatePolicy;
+                requestSoftwareUpdatePreferencesIsNull = false;
+            }
+             // determine if request.SoftwareUpdatePreferences should be set to null
+            if (requestSoftwareUpdatePreferencesIsNull)
+            {
+                request.SoftwareUpdatePreferences = null;
             }
             
             CmdletOutput output;
@@ -277,13 +290,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Storage Gateway", "UpdateMaintenanceStartTime");
             try
             {
-                #if DESKTOP
-                return client.UpdateMaintenanceStartTime(request);
-                #elif CORECLR
-                return client.UpdateMaintenanceStartTimeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateMaintenanceStartTimeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -305,6 +312,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             public System.String GatewayARN { get; set; }
             public System.Int32? HourOfDay { get; set; }
             public System.Int32? MinuteOfHour { get; set; }
+            public Amazon.StorageGateway.AutomaticUpdatePolicy SoftwareUpdatePreferences_AutomaticUpdatePolicy { get; set; }
             public System.Func<Amazon.StorageGateway.Model.UpdateMaintenanceStartTimeResponse, UpdateSGMaintenanceStartTimeCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.GatewayARN;
         }

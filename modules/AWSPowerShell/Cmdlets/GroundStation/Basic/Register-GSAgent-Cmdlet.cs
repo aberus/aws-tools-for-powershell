@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GroundStation;
 using Amazon.GroundStation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GS
 {
     /// <summary>
@@ -39,17 +41,22 @@ namespace Amazon.PowerShell.Cmdlets.GS
     [AWSCmdlet("Calls the AWS Ground Station RegisterAgent API operation.", Operation = new[] {"RegisterAgent"}, SelectReturnType = typeof(Amazon.GroundStation.Model.RegisterAgentResponse))]
     [AWSCmdletOutput("System.String or Amazon.GroundStation.Model.RegisterAgentResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GroundStation.Model.RegisterAgentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GroundStation.Model.RegisterAgentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterGSAgentCmdlet : AmazonGroundStationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AgentDetails_AgentCpuCore
         /// <summary>
         /// <para>
-        /// <para>List of CPU cores reserved for the agent.</para>
+        /// <para>List of CPU cores reserved for the agent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -77,7 +84,11 @@ namespace Amazon.PowerShell.Cmdlets.GS
         #region Parameter DiscoveryData_CapabilityArn
         /// <summary>
         /// <para>
-        /// <para>List of capabilities to associate with agent.</para>
+        /// <para>List of capabilities to associate with agent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -95,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.GS
         #region Parameter AgentDetails_ComponentVersion
         /// <summary>
         /// <para>
-        /// <para>List of versions being used by agent components.</para>
+        /// <para>List of versions being used by agent components.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -147,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.GS
         #region Parameter DiscoveryData_PrivateIpAddress
         /// <summary>
         /// <para>
-        /// <para>List of private IP addresses to associate with agent.</para>
+        /// <para>List of private IP addresses to associate with agent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -165,7 +184,11 @@ namespace Amazon.PowerShell.Cmdlets.GS
         #region Parameter DiscoveryData_PublicIpAddress
         /// <summary>
         /// <para>
-        /// <para>List of public IP addresses to associate with agent.</para>
+        /// <para>List of public IP addresses to associate with agent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -183,12 +206,31 @@ namespace Amazon.PowerShell.Cmdlets.GS
         #region Parameter AgentDetails_ReservedCpuCore
         /// <summary>
         /// <para>
-        /// <note><para>This field should not be used. Use agentCpuCores instead.</para></note><para>List of CPU cores reserved for processes other than the agent running on the EC2 instance.</para>
+        /// <note><para>This field should not be used. Use agentCpuCores instead.</para></note><para>List of CPU cores reserved for processes other than the agent running on the EC2 instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AgentDetails_ReservedCpuCores")]
         public System.Int32[] AgentDetails_ReservedCpuCore { get; set; }
+        #endregion
+        
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>Tags assigned to an <c>Agent</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
         #endregion
         
         #region Parameter Select
@@ -212,9 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.GS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AgentDetails_InstanceId), MyInvocation.BoundParameters);
@@ -302,6 +348,14 @@ namespace Amazon.PowerShell.Cmdlets.GS
                 WriteWarning("You are passing $null as a value for parameter DiscoveryData_PublicIpAddress which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -426,6 +480,10 @@ namespace Amazon.PowerShell.Cmdlets.GS
             {
                 request.DiscoveryData = null;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
             CmdletOutput output;
             
@@ -464,13 +522,7 @@ namespace Amazon.PowerShell.Cmdlets.GS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Ground Station", "RegisterAgent");
             try
             {
-                #if DESKTOP
-                return client.RegisterAgent(request);
-                #elif CORECLR
-                return client.RegisterAgentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterAgentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -496,6 +548,7 @@ namespace Amazon.PowerShell.Cmdlets.GS
             public List<System.String> DiscoveryData_CapabilityArn { get; set; }
             public List<System.String> DiscoveryData_PrivateIpAddress { get; set; }
             public List<System.String> DiscoveryData_PublicIpAddress { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.GroundStation.Model.RegisterAgentResponse, RegisterGSAgentCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.AgentId;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.InternetMonitor;
 using Amazon.InternetMonitor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWIM
 {
     /// <summary>
-    /// Gets information the Amazon CloudWatch Internet Monitor has created and stored about
+    /// Gets information that Amazon CloudWatch Internet Monitor has created and stored about
     /// a health event for a specified monitor. This information includes the impacted locations,
     /// and all the information related to the event, by location.
     /// 
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
     [OutputType("Amazon.InternetMonitor.Model.GetHealthEventResponse")]
     [AWSCmdlet("Calls the Amazon CloudWatch Internet Monitor GetHealthEvent API operation.", Operation = new[] {"GetHealthEvent"}, SelectReturnType = typeof(Amazon.InternetMonitor.Model.GetHealthEventResponse))]
     [AWSCmdletOutput("Amazon.InternetMonitor.Model.GetHealthEventResponse",
-        "This cmdlet returns an Amazon.InternetMonitor.Model.GetHealthEventResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.InternetMonitor.Model.GetHealthEventResponse object containing multiple properties."
     )]
     public partial class GetCWIMHealthEventCmdlet : AmazonInternetMonitorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EventId
         /// <summary>
@@ -69,6 +72,20 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String EventId { get; set; }
+        #endregion
+        
+        #region Parameter LinkedAccountId
+        /// <summary>
+        /// <para>
+        /// <para>The account ID for an account that you've set up cross-account sharing for in Amazon
+        /// CloudWatch Internet Monitor. You configure cross-account sharing by using Amazon CloudWatch
+        /// Observability Access Manager. For more information, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cwim-cross-account.html">Internet
+        /// Monitor cross-account observability</a> in the Amazon CloudWatch Internet Monitor
+        /// User Guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String LinkedAccountId { get; set; }
         #endregion
         
         #region Parameter MonitorName
@@ -99,19 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EventId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EventId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EventId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -119,21 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.InternetMonitor.Model.GetHealthEventResponse, GetCWIMHealthEventCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EventId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EventId = this.EventId;
             #if MODULAR
             if (this.EventId == null && ParameterWasBound(nameof(this.EventId)))
@@ -141,6 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
                 WriteWarning("You are passing $null as a value for parameter EventId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.LinkedAccountId = this.LinkedAccountId;
             context.MonitorName = this.MonitorName;
             #if MODULAR
             if (this.MonitorName == null && ParameterWasBound(nameof(this.MonitorName)))
@@ -167,6 +169,10 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             if (cmdletContext.EventId != null)
             {
                 request.EventId = cmdletContext.EventId;
+            }
+            if (cmdletContext.LinkedAccountId != null)
+            {
+                request.LinkedAccountId = cmdletContext.LinkedAccountId;
             }
             if (cmdletContext.MonitorName != null)
             {
@@ -210,13 +216,7 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Internet Monitor", "GetHealthEvent");
             try
             {
-                #if DESKTOP
-                return client.GetHealthEvent(request);
-                #elif CORECLR
-                return client.GetHealthEventAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetHealthEventAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -234,6 +234,7 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String EventId { get; set; }
+            public System.String LinkedAccountId { get; set; }
             public System.String MonitorName { get; set; }
             public System.Func<Amazon.InternetMonitor.Model.GetHealthEventResponse, GetCWIMHealthEventCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

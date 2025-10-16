@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
@@ -32,12 +34,12 @@ namespace Amazon.PowerShell.Cmdlets.QS
     /// 
     ///  
     /// <para>
-    /// An Asset Bundle export job exports specified Amazon QuickSight assets. You can also
+    /// An Asset Bundle export job exports specified Amazon Quick Sight assets. You can also
     /// choose to export any asset dependencies in the same job. Export jobs run asynchronously
     /// and can be polled with a <c>DescribeAssetBundleExportJob</c> API call. When a job
     /// is successfully completed, a download URL that contains the exported assets is returned.
     /// The URL is valid for 5 minutes and can be refreshed with a <c>DescribeAssetBundleExportJob</c>
-    /// API call. Each Amazon QuickSight account can run up to 5 export jobs concurrently.
+    /// API call. Each Amazon Quick Sight account can run up to 5 export jobs concurrently.
     /// </para><para>
     /// The API caller must have the necessary permissions in their IAM role to access each
     /// resource before the resources can be exported.
@@ -47,18 +49,23 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [OutputType("Amazon.QuickSight.Model.StartAssetBundleExportJobResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight StartAssetBundleExportJob API operation.", Operation = new[] {"StartAssetBundleExportJob"}, SelectReturnType = typeof(Amazon.QuickSight.Model.StartAssetBundleExportJobResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.StartAssetBundleExportJobResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.StartAssetBundleExportJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.StartAssetBundleExportJobResponse object containing multiple properties."
     )]
     public partial class StartQSAssetBundleExportJobCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CloudFormationOverridePropertyConfiguration_Analyses
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>Analysis</c> resources are parameterized
-        /// in the returned CloudFormation template.</para>
+        /// in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,7 +111,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>Dashboard</c> resources are parameterized
-        /// in the returned CloudFormation template.</para>
+        /// in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>DataSet</c> resources are parameterized
-        /// in the returned CloudFormation template.</para>
+        /// in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,7 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>DataSource</c> resources are parameterized
-        /// in the returned CloudFormation template.</para>
+        /// in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,6 +172,22 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public Amazon.QuickSight.AssetBundleExportFormat ExportFormat { get; set; }
         #endregion
         
+        #region Parameter CloudFormationOverridePropertyConfiguration_Folder
+        /// <summary>
+        /// <para>
+        /// <para>An optional list of structures that controls how <c>Folder</c> resources are parameterized
+        /// in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CloudFormationOverridePropertyConfiguration_Folders")]
+        public Amazon.QuickSight.Model.AssetBundleExportJobFolderOverrideProperties[] CloudFormationOverridePropertyConfiguration_Folder { get; set; }
+        #endregion
+        
         #region Parameter IncludeAllDependency
         /// <summary>
         /// <para>
@@ -165,6 +200,31 @@ namespace Amazon.PowerShell.Cmdlets.QS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("IncludeAllDependencies")]
         public System.Boolean? IncludeAllDependency { get; set; }
+        #endregion
+        
+        #region Parameter IncludeFolderMember
+        /// <summary>
+        /// <para>
+        /// <para>A setting that indicates whether you want to include folder assets. You can also use
+        /// this setting to recusrsively include all subfolders of an exported folder.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeFolderMembers")]
+        [AWSConstantClassSource("Amazon.QuickSight.IncludeFolderMembers")]
+        public Amazon.QuickSight.IncludeFolderMembers IncludeFolderMember { get; set; }
+        #endregion
+        
+        #region Parameter IncludeFolderMembership
+        /// <summary>
+        /// <para>
+        /// <para>A Boolean that determines if the exported asset carries over information about the
+        /// folders that the asset is a member of. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeFolderMemberships")]
+        public System.Boolean? IncludeFolderMembership { get; set; }
         #endregion
         
         #region Parameter IncludePermission
@@ -210,7 +270,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>RefreshSchedule</c> resources are
-        /// parameterized in the returned CloudFormation template.</para>
+        /// parameterized in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -222,7 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An array of resource ARNs to export. The following resources are supported.</para><ul><li><para><c>Analysis</c></para></li><li><para><c>Dashboard</c></para></li><li><para><c>DataSet</c></para></li><li><para><c>DataSource</c></para></li><li><para><c>RefreshSchedule</c></para></li><li><para><c>Theme</c></para></li><li><para><c>VPCConnection</c></para></li></ul><para>The API caller must have the necessary permissions in their IAM role to access each
-        /// resource before the resources can be exported.</para>
+        /// resource before the resources can be exported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -253,7 +321,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>Theme</c> resources are parameterized
-        /// in the returned CloudFormation template.</para>
+        /// in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -265,7 +337,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An optional list of structures that control how <c>VPCConnection</c> resources are
-        /// parameterized in the returned CloudFormation template.</para>
+        /// parameterized in the returned CloudFormation template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -284,16 +360,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AssetBundleExportJobId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AssetBundleExportJobId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AssetBundleExportJobId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -304,9 +370,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -320,21 +390,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.StartAssetBundleExportJobResponse, StartQSAssetBundleExportJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AssetBundleExportJobId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssetBundleExportJobId = this.AssetBundleExportJobId;
             #if MODULAR
             if (this.AssetBundleExportJobId == null && ParameterWasBound(nameof(this.AssetBundleExportJobId)))
@@ -365,6 +425,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
             {
                 context.CloudFormationOverridePropertyConfiguration_DataSource = new List<Amazon.QuickSight.Model.AssetBundleExportJobDataSourceOverrideProperties>(this.CloudFormationOverridePropertyConfiguration_DataSource);
             }
+            if (this.CloudFormationOverridePropertyConfiguration_Folder != null)
+            {
+                context.CloudFormationOverridePropertyConfiguration_Folder = new List<Amazon.QuickSight.Model.AssetBundleExportJobFolderOverrideProperties>(this.CloudFormationOverridePropertyConfiguration_Folder);
+            }
             if (this.CloudFormationOverridePropertyConfiguration_RefreshSchedule != null)
             {
                 context.CloudFormationOverridePropertyConfiguration_RefreshSchedule = new List<Amazon.QuickSight.Model.AssetBundleExportJobRefreshScheduleOverrideProperties>(this.CloudFormationOverridePropertyConfiguration_RefreshSchedule);
@@ -386,6 +450,8 @@ namespace Amazon.PowerShell.Cmdlets.QS
             }
             #endif
             context.IncludeAllDependency = this.IncludeAllDependency;
+            context.IncludeFolderMember = this.IncludeFolderMember;
+            context.IncludeFolderMembership = this.IncludeFolderMembership;
             context.IncludePermission = this.IncludePermission;
             context.IncludeTag = this.IncludeTag;
             if (this.ResourceArn != null)
@@ -467,6 +533,16 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 request.CloudFormationOverridePropertyConfiguration.DataSources = requestCloudFormationOverridePropertyConfiguration_cloudFormationOverridePropertyConfiguration_DataSource;
                 requestCloudFormationOverridePropertyConfigurationIsNull = false;
             }
+            List<Amazon.QuickSight.Model.AssetBundleExportJobFolderOverrideProperties> requestCloudFormationOverridePropertyConfiguration_cloudFormationOverridePropertyConfiguration_Folder = null;
+            if (cmdletContext.CloudFormationOverridePropertyConfiguration_Folder != null)
+            {
+                requestCloudFormationOverridePropertyConfiguration_cloudFormationOverridePropertyConfiguration_Folder = cmdletContext.CloudFormationOverridePropertyConfiguration_Folder;
+            }
+            if (requestCloudFormationOverridePropertyConfiguration_cloudFormationOverridePropertyConfiguration_Folder != null)
+            {
+                request.CloudFormationOverridePropertyConfiguration.Folders = requestCloudFormationOverridePropertyConfiguration_cloudFormationOverridePropertyConfiguration_Folder;
+                requestCloudFormationOverridePropertyConfigurationIsNull = false;
+            }
             List<Amazon.QuickSight.Model.AssetBundleExportJobRefreshScheduleOverrideProperties> requestCloudFormationOverridePropertyConfiguration_cloudFormationOverridePropertyConfiguration_RefreshSchedule = null;
             if (cmdletContext.CloudFormationOverridePropertyConfiguration_RefreshSchedule != null)
             {
@@ -534,6 +610,14 @@ namespace Amazon.PowerShell.Cmdlets.QS
             if (cmdletContext.IncludeAllDependency != null)
             {
                 request.IncludeAllDependencies = cmdletContext.IncludeAllDependency.Value;
+            }
+            if (cmdletContext.IncludeFolderMember != null)
+            {
+                request.IncludeFolderMembers = cmdletContext.IncludeFolderMember;
+            }
+            if (cmdletContext.IncludeFolderMembership != null)
+            {
+                request.IncludeFolderMemberships = cmdletContext.IncludeFolderMembership.Value;
             }
             if (cmdletContext.IncludePermission != null)
             {
@@ -604,13 +688,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "StartAssetBundleExportJob");
             try
             {
-                #if DESKTOP
-                return client.StartAssetBundleExportJob(request);
-                #elif CORECLR
-                return client.StartAssetBundleExportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartAssetBundleExportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -633,12 +711,15 @@ namespace Amazon.PowerShell.Cmdlets.QS
             public List<Amazon.QuickSight.Model.AssetBundleExportJobDashboardOverrideProperties> CloudFormationOverridePropertyConfiguration_Dashboard { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleExportJobDataSetOverrideProperties> CloudFormationOverridePropertyConfiguration_DataSet { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleExportJobDataSourceOverrideProperties> CloudFormationOverridePropertyConfiguration_DataSource { get; set; }
+            public List<Amazon.QuickSight.Model.AssetBundleExportJobFolderOverrideProperties> CloudFormationOverridePropertyConfiguration_Folder { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleExportJobRefreshScheduleOverrideProperties> CloudFormationOverridePropertyConfiguration_RefreshSchedule { get; set; }
             public System.Boolean? ResourceIdOverrideConfiguration_PrefixForAllResource { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleExportJobThemeOverrideProperties> CloudFormationOverridePropertyConfiguration_Theme { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleExportJobVPCConnectionOverrideProperties> CloudFormationOverridePropertyConfiguration_VPCConnection { get; set; }
             public Amazon.QuickSight.AssetBundleExportFormat ExportFormat { get; set; }
             public System.Boolean? IncludeAllDependency { get; set; }
+            public Amazon.QuickSight.IncludeFolderMembers IncludeFolderMember { get; set; }
+            public System.Boolean? IncludeFolderMembership { get; set; }
             public System.Boolean? IncludePermission { get; set; }
             public System.Boolean? IncludeTag { get; set; }
             public List<System.String> ResourceArn { get; set; }

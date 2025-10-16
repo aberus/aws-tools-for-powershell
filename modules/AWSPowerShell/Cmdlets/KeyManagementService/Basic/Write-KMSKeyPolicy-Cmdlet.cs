@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -35,14 +37,15 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// For more information about key policies, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html">Key
     /// Policies</a> in the <i>Key Management Service Developer Guide</i>. For help writing
     /// and formatting a JSON policy document, see the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html">IAM
-    /// JSON Policy Reference</a> in the <i><i>Identity and Access Management User Guide</i></i>. For examples of adding a key policy in multiple programming languages, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-key-policies.html#put-policy">Setting
-    /// a key policy</a> in the <i>Key Management Service Developer Guide</i>.
+    /// JSON Policy Reference</a> in the <i><i>Identity and Access Management User Guide</i></i>. For examples of adding a key policy in multiple programming languages, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/example_kms_PutKeyPolicy_section.html">Use
+    /// PutKeyPolicy with an Amazon Web Services SDK or CLI</a> in the <i>Key Management Service
+    /// Developer Guide</i>.
     /// </para><para><b>Cross-account use</b>: No. You cannot perform this operation on a KMS key in a
     /// different Amazon Web Services account.
     /// </para><para><b>Required permissions</b>: <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-api-permissions-reference.html">kms:PutKeyPolicy</a>
     /// (key policy)
     /// </para><para><b>Related operations</b>: <a>GetKeyPolicy</a></para><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -51,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [AWSCmdlet("Calls the AWS Key Management Service PutKeyPolicy API operation.", Operation = new[] {"PutKeyPolicy"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.PutKeyPolicyResponse))]
     [AWSCmdletOutput("None or Amazon.KeyManagementService.Model.PutKeyPolicyResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.KeyManagementService.Model.PutKeyPolicyResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.KeyManagementService.Model.PutKeyPolicyResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteKMSKeyPolicyCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BypassPolicyLockoutSafetyCheck
         /// <summary>
@@ -102,10 +106,15 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// in a key policy because the new principal might not be immediately visible to KMS.
         /// For more information, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/troubleshoot_general.html#troubleshoot_general_eventual-consistency">Changes
         /// that I make are not always immediately visible</a> in the <i>Amazon Web Services Identity
-        /// and Access Management User Guide</i>.</para></li></ul><para>A key policy document can include only the following characters:</para><ul><li><para>Printable ASCII characters from the space character (<c>\u0020</c>) through the end
+        /// and Access Management User Guide</i>.</para></li></ul><note><para>If either of the required <c>Resource</c> or <c>Action</c> elements are missing from
+        /// a key policy statement, the policy statement has no effect. When a key policy statement
+        /// is missing one of these elements, the KMS console correctly reports an error, but
+        /// the <c>PutKeyPolicy</c> API request succeeds, even though the policy statement is
+        /// ineffective.</para><para>For more information on required key policy elements, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-overview.html#key-policy-elements">Elements
+        /// in a key policy</a> in the <i>Key Management Service Developer Guide</i>.</para></note><para>A key policy document can include only the following characters:</para><ul><li><para>Printable ASCII characters from the space character (<c>\u0020</c>) through the end
         /// of the ASCII character range.</para></li><li><para>Printable characters in the Basic Latin and Latin-1 Supplement character set (through
         /// <c>\u00FF</c>).</para></li><li><para>The tab (<c>\u0009</c>), line feed (<c>\u000A</c>), and carriage return (<c>\u000D</c>)
-        /// special characters</para></li></ul><para>For information about key policies, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html">Key
+        /// special characters</para></li></ul><note><para>If the key policy exceeds the length constraint, KMS returns a <c>LimitExceededException</c>.</para></note><para>For information about key policies, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html">Key
         /// policies in KMS</a> in the <i>Key Management Service Developer Guide</i>.For help
         /// writing and formatting a JSON policy document, see the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies.html">IAM
         /// JSON Policy Reference</a> in the <i><i>Identity and Access Management User Guide</i></i>.</para>
@@ -125,17 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         #region Parameter PolicyName
         /// <summary>
         /// <para>
-        /// <para>The name of the key policy. The only valid value is <c>default</c>.</para>
+        /// <para>The name of the key policy. If no policy name is specified, the default value is <c>default</c>.
+        /// The only valid value is <c>default</c>.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String PolicyName { get; set; }
         #endregion
         
@@ -149,16 +152,6 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -169,9 +162,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KeyId), MyInvocation.BoundParameters);
@@ -185,21 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.PutKeyPolicyResponse, WriteKMSKeyPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BypassPolicyLockoutSafetyCheck = this.BypassPolicyLockoutSafetyCheck;
             context.KeyId = this.KeyId;
             #if MODULAR
@@ -216,12 +203,6 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             }
             #endif
             context.PolicyName = this.PolicyName;
-            #if MODULAR
-            if (this.PolicyName == null && ParameterWasBound(nameof(this.PolicyName)))
-            {
-                WriteWarning("You are passing $null as a value for parameter PolicyName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -292,13 +273,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "PutKeyPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutKeyPolicy(request);
-                #elif CORECLR
-                return client.PutKeyPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutKeyPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

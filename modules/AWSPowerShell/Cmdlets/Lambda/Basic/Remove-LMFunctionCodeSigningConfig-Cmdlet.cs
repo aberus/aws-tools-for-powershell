@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LM
 {
     /// <summary>
@@ -35,17 +37,18 @@ namespace Amazon.PowerShell.Cmdlets.LM
     [AWSCmdlet("Calls the AWS Lambda DeleteFunctionCodeSigningConfig API operation.", Operation = new[] {"DeleteFunctionCodeSigningConfig"}, SelectReturnType = typeof(Amazon.Lambda.Model.DeleteFunctionCodeSigningConfigResponse))]
     [AWSCmdletOutput("None or Amazon.Lambda.Model.DeleteFunctionCodeSigningConfigResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Lambda.Model.DeleteFunctionCodeSigningConfigResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Lambda.Model.DeleteFunctionCodeSigningConfigResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveLMFunctionCodeSigningConfigCmdlet : AmazonLambdaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FunctionName
         /// <summary>
         /// <para>
-        /// <para>The name of the Lambda function.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> - <c>MyFunction</c>.</para></li><li><para><b>Function ARN</b> - <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction</c>.</para></li><li><para><b>Partial ARN</b> - <c>123456789012:function:MyFunction</c>.</para></li></ul><para>The length constraint applies only to the full ARN. If you specify only the function
+        /// <para>The name or ARN of the Lambda function.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> - <c>MyFunction</c>.</para></li><li><para><b>Function ARN</b> - <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction</c>.</para></li><li><para><b>Partial ARN</b> - <c>123456789012:function:MyFunction</c>.</para></li></ul><para>The length constraint applies only to the full ARN. If you specify only the function
         /// name, it is limited to 64 characters in length.</para>
         /// </para>
         /// </summary>
@@ -70,16 +73,6 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FunctionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -90,9 +83,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FunctionName), MyInvocation.BoundParameters);
@@ -106,21 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lambda.Model.DeleteFunctionCodeSigningConfigResponse, RemoveLMFunctionCodeSigningConfigCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FunctionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FunctionName = this.FunctionName;
             #if MODULAR
             if (this.FunctionName == null && ParameterWasBound(nameof(this.FunctionName)))
@@ -186,13 +173,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lambda", "DeleteFunctionCodeSigningConfig");
             try
             {
-                #if DESKTOP
-                return client.DeleteFunctionCodeSigningConfig(request);
-                #elif CORECLR
-                return client.DeleteFunctionCodeSigningConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteFunctionCodeSigningConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

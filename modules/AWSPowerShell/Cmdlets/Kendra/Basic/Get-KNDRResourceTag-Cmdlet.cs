@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kendra;
 using Amazon.Kendra.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KNDR
 {
     /// <summary>
-    /// Gets a list of tags associated with a specified resource. Indexes, FAQs, and data
-    /// sources can have tags associated with them.
+    /// Gets a list of tags associated with a resource. Indexes, FAQs, data sources, and other
+    /// resources can have tags associated with them.
     /// </summary>
     [Cmdlet("Get", "KNDRResourceTag")]
     [OutputType("Amazon.Kendra.Model.Tag")]
     [AWSCmdlet("Calls the Amazon Kendra ListTagsForResource API operation.", Operation = new[] {"ListTagsForResource"}, SelectReturnType = typeof(Amazon.Kendra.Model.ListTagsForResourceResponse))]
     [AWSCmdletOutput("Amazon.Kendra.Model.Tag or Amazon.Kendra.Model.ListTagsForResourceResponse",
         "This cmdlet returns a collection of Amazon.Kendra.Model.Tag objects.",
-        "The service call response (type Amazon.Kendra.Model.ListTagsForResourceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Kendra.Model.ListTagsForResourceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetKNDRResourceTagCmdlet : AmazonKendraClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the index, FAQ, or data source to get a list of
-        /// tags for.</para>
+        /// <para>The Amazon Resource Name (ARN) of the index, FAQ, data source, or other resource to
+        /// get a list of tags for. For example, the ARN of an index is constructed as follows:
+        /// <i>arn:aws:kendra:your-region:your-account-id:index/index-id</i> For information on
+        /// how to construct an ARN for all types of Amazon Kendra resources, see <a href="https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonkendra.html#amazonkendra-resources-for-iam-policies">Resource
+        /// types</a>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -72,19 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public string Select { get; set; } = "Tags";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -92,21 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kendra.Model.ListTagsForResourceResponse, GetKNDRResourceTagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceARN = this.ResourceARN;
             #if MODULAR
             if (this.ResourceARN == null && ParameterWasBound(nameof(this.ResourceARN)))
@@ -172,13 +162,7 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kendra", "ListTagsForResource");
             try
             {
-                #if DESKTOP
-                return client.ListTagsForResource(request);
-                #elif CORECLR
-                return client.ListTagsForResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTagsForResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

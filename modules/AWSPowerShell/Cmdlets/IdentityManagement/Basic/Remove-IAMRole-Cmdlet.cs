@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -35,14 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// items: 
     /// 
     ///  <ul><li><para>
-    /// Inline policies (<a>DeleteRolePolicy</a>)
+    /// Inline policies (<a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteRolePolicy.html">DeleteRolePolicy</a>)
     /// </para></li><li><para>
-    /// Attached managed policies (<a>DetachRolePolicy</a>)
+    /// Attached managed policies (<a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_DetachRolePolicy.html">DetachRolePolicy</a>)
     /// </para></li><li><para>
-    /// Instance profile (<a>RemoveRoleFromInstanceProfile</a>)
+    /// Instance profile (<a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_RemoveRoleFromInstanceProfile.html">RemoveRoleFromInstanceProfile</a>)
     /// </para></li><li><para>
     /// Optional – Delete instance profile after detaching from role for resource clean up
-    /// (<a>DeleteInstanceProfile</a>)
+    /// (<a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteInstanceProfile.html">DeleteInstanceProfile</a>)
     /// </para></li></ul><important><para>
     /// Make sure that you do not have any Amazon EC2 instances running with the role you
     /// are about to delete. Deleting a role or instance profile that is associated with a
@@ -54,12 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management DeleteRole API operation.", Operation = new[] {"DeleteRole"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.DeleteRoleResponse))]
     [AWSCmdletOutput("None or Amazon.IdentityManagement.Model.DeleteRoleResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IdentityManagement.Model.DeleteRoleResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IdentityManagement.Model.DeleteRoleResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveIAMRoleCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RoleName
         /// <summary>
@@ -90,16 +93,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RoleName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RoleName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RoleName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -110,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RoleName), MyInvocation.BoundParameters);
@@ -126,21 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.DeleteRoleResponse, RemoveIAMRoleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RoleName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.RoleName = this.RoleName;
             #if MODULAR
             if (this.RoleName == null && ParameterWasBound(nameof(this.RoleName)))
@@ -206,13 +193,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "DeleteRole");
             try
             {
-                #if DESKTOP
-                return client.DeleteRole(request);
-                #elif CORECLR
-                return client.DeleteRoleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteRoleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

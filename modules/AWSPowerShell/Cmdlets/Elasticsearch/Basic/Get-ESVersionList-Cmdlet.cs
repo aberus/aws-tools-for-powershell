@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Elasticsearch;
 using Amazon.Elasticsearch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ES
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.ES
     [AWSCmdlet("Calls the Amazon Elasticsearch ListElasticsearchVersions API operation.", Operation = new[] {"ListElasticsearchVersions"}, SelectReturnType = typeof(Amazon.Elasticsearch.Model.ListElasticsearchVersionsResponse))]
     [AWSCmdletOutput("System.String or Amazon.Elasticsearch.Model.ListElasticsearchVersionsResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.Elasticsearch.Model.ListElasticsearchVersionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Elasticsearch.Model.ListElasticsearchVersionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetESVersionListCmdlet : AmazonElasticsearchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -66,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.ES
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,9 +97,13 @@ namespace Amazon.PowerShell.Cmdlets.ES
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -245,7 +252,7 @@ namespace Amazon.PowerShell.Cmdlets.ES
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ElasticsearchVersions.Count;
+                    int _receivedThisCall = response.ElasticsearchVersions?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -294,13 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.ES
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elasticsearch", "ListElasticsearchVersions");
             try
             {
-                #if DESKTOP
-                return client.ListElasticsearchVersions(request);
-                #elif CORECLR
-                return client.ListElasticsearchVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListElasticsearchVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

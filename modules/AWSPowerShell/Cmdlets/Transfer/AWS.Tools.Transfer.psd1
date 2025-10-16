@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The Transfer module of AWS Tools for PowerShell lets developers and administrators manage AWS Transfer for SFTP from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.Transfer.dll'
     )
@@ -97,6 +98,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-TFRConnectorList', 
         'Get-TFRExecution', 
         'Get-TFRExecutionList', 
+        'Get-TFRFileTransferResultList', 
         'Get-TFRHostKey', 
         'Get-TFRHostKeyList', 
         'Get-TFRProfile', 
@@ -108,6 +110,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-TFRServerList', 
         'Get-TFRUser', 
         'Get-TFRUserList', 
+        'Get-TFRWebApp', 
+        'Get-TFRWebAppCustomization', 
+        'Get-TFRWebAppList', 
         'Get-TFRWorkflow', 
         'Get-TFRWorkflowList', 
         'Import-TFRCertificate', 
@@ -119,6 +124,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-TFRProfile', 
         'New-TFRServer', 
         'New-TFRUser', 
+        'New-TFRWebApp', 
         'New-TFRWorkflow', 
         'Remove-TFRAccess', 
         'Remove-TFRAgreement', 
@@ -130,9 +136,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-TFRServer', 
         'Remove-TFRSshPublicKey', 
         'Remove-TFRUser', 
+        'Remove-TFRWebApp', 
+        'Remove-TFRWebAppCustomization', 
         'Remove-TFRWorkflow', 
         'Send-TFRWorkflowStepState', 
+        'Start-TFRDirectoryListing', 
         'Start-TFRFileTransfer', 
+        'Start-TFRRemoteDelete', 
+        'Start-TFRRemoteMove', 
         'Start-TFRServer', 
         'Stop-TFRServer', 
         'Test-TFRConnection', 
@@ -144,7 +155,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-TFRHostKey', 
         'Update-TFRProfile', 
         'Update-TFRServer', 
-        'Update-TFRUser')
+        'Update-TFRUser', 
+        'Update-TFRWebApp', 
+        'Update-TFRWebAppCustomization')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -168,7 +181,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

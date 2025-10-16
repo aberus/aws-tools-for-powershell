@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The WorkSpacesWeb module of AWS Tools for PowerShell lets developers and administrators manage Amazon WorkSpaces Web from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.WorkSpacesWeb.dll'
     )
@@ -89,6 +90,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-WSWResourceTag', 
         'Get-WSWBrowserSetting', 
         'Get-WSWBrowserSettingList', 
+        'Get-WSWDataProtectionSetting', 
+        'Get-WSWDataProtectionSettingList', 
         'Get-WSWIdentityProvider', 
         'Get-WSWIdentityProviderList', 
         'Get-WSWIpAccessSetting', 
@@ -99,6 +102,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-WSWPortalList', 
         'Get-WSWPortalServiceProviderMetadata', 
         'Get-WSWResourceTag', 
+        'Get-WSWSession', 
+        'Get-WSWSessionList', 
+        'Get-WSWSessionLogger', 
+        'Get-WSWSessionLoggerList', 
         'Get-WSWTrustStore', 
         'Get-WSWTrustStoreCertificate', 
         'Get-WSWTrustStoreCertificateList', 
@@ -108,39 +115,50 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-WSWUserSetting', 
         'Get-WSWUserSettingList', 
         'New-WSWBrowserSetting', 
+        'New-WSWDataProtectionSetting', 
         'New-WSWIdentityProvider', 
         'New-WSWIpAccessSetting', 
         'New-WSWNetworkSetting', 
         'New-WSWPortal', 
+        'New-WSWSessionLogger', 
         'New-WSWTrustStore', 
         'New-WSWUserAccessLoggingSetting', 
         'New-WSWUserSetting', 
         'Register-WSWBrowserSetting', 
+        'Register-WSWDataProtectionSetting', 
         'Register-WSWIpAccessSetting', 
         'Register-WSWNetworkSetting', 
+        'Register-WSWSessionLogger', 
         'Register-WSWTrustStore', 
         'Register-WSWUserAccessLoggingSetting', 
         'Register-WSWUserSetting', 
         'Remove-WSWBrowserSetting', 
+        'Remove-WSWDataProtectionSetting', 
         'Remove-WSWIdentityProvider', 
         'Remove-WSWIpAccessSetting', 
         'Remove-WSWNetworkSetting', 
         'Remove-WSWPortal', 
         'Remove-WSWResourceTag', 
+        'Remove-WSWSessionLogger', 
         'Remove-WSWTrustStore', 
         'Remove-WSWUserAccessLoggingSetting', 
         'Remove-WSWUserSetting', 
+        'Revoke-WSWSession', 
         'Unregister-WSWBrowserSetting', 
+        'Unregister-WSWDataProtectionSetting', 
         'Unregister-WSWIpAccessSetting', 
         'Unregister-WSWNetworkSetting', 
+        'Unregister-WSWSessionLogger', 
         'Unregister-WSWTrustStore', 
         'Unregister-WSWUserAccessLoggingSetting', 
         'Unregister-WSWUserSetting', 
         'Update-WSWBrowserSetting', 
+        'Update-WSWDataProtectionSetting', 
         'Update-WSWIdentityProvider', 
         'Update-WSWIpAccessSetting', 
         'Update-WSWNetworkSetting', 
         'Update-WSWPortal', 
+        'Update-WSWSessionLogger', 
         'Update-WSWTrustStore', 
         'Update-WSWUserAccessLoggingSetting', 
         'Update-WSWUserSetting')
@@ -167,7 +185,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

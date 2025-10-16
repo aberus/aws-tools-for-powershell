@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Registers a compute resource to an Amazon GameLift Anywhere fleet. With Anywhere fleets
-    /// you can incorporate your own computing hardware into an Amazon GameLift game hosting
-    /// solution.
+    /// Registers a compute resource in an Amazon GameLift Servers Anywhere fleet. 
     /// 
     ///  
     /// <para>
-    /// To register a compute to a fleet, give the compute a name (must be unique within the
-    /// fleet) and specify the compute resource's DNS name or IP address. Provide the Anywhere
-    /// fleet ID and a fleet location to associate with the compute being registered. You
-    /// can optionally include the path to a TLS certificate on the compute resource.
+    /// For an Anywhere fleet that's running the Amazon GameLift Servers Agent, the Agent
+    /// handles all compute registry tasks for you. For an Anywhere fleet that doesn't use
+    /// the Agent, call this operation to register fleet computes.
     /// </para><para>
-    /// If successful, this operation returns the compute details, including an Amazon GameLift
-    /// SDK endpoint. Game server processes that run on the compute use this endpoint to communicate
-    /// with the Amazon GameLift service. Each server process includes the SDK endpoint in
-    /// its call to the Amazon GameLift server SDK action <c>InitSDK()</c>.
+    /// To register a compute, give the compute a name (must be unique within the fleet) and
+    /// specify the compute resource's DNS name or IP address. Provide a fleet ID and a fleet
+    /// location to associate with the compute being registered. You can optionally include
+    /// the path to a TLS certificate on the compute resource.
+    /// </para><para>
+    /// If successful, this operation returns compute details, including an Amazon GameLift
+    /// Servers SDK endpoint or Agent endpoint. Game server processes running on the compute
+    /// can use this endpoint to communicate with the Amazon GameLift Servers service. Each
+    /// server process includes the SDK endpoint in its call to the Amazon GameLift Servers
+    /// server SDK action <c>InitSDK()</c>. 
+    /// </para><para>
+    /// To view compute details, call <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeCompute.html">DescribeCompute</a>
+    /// with the compute name. 
     /// </para><para><b>Learn more</b></para><ul><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-creating-anywhere.html">Create
     /// an Anywhere fleet</a></para></li><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/integration-testing.html">Test
     /// your integration</a></para></li><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/reference-serversdk.html">Server
@@ -54,22 +62,19 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service RegisterCompute API operation.", Operation = new[] {"RegisterCompute"}, SelectReturnType = typeof(Amazon.GameLift.Model.RegisterComputeResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.Compute or Amazon.GameLift.Model.RegisterComputeResponse",
         "This cmdlet returns an Amazon.GameLift.Model.Compute object.",
-        "The service call response (type Amazon.GameLift.Model.RegisterComputeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.RegisterComputeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterGMLComputeCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificatePath
         /// <summary>
         /// <para>
-        /// <para>The path to a TLS certificate on your compute resource. Amazon GameLift doesn't validate
-        /// the path and certificate.</para>
+        /// <para>The path to a TLS certificate on your compute resource. Amazon GameLift Servers doesn't
+        /// validate the path and certificate.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,8 +101,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter DnsName
         /// <summary>
         /// <para>
-        /// <para>The DNS name of the compute resource. Amazon GameLift requires either a DNS name or
-        /// IP address.</para>
+        /// <para>The DNS name of the compute resource. Amazon GameLift Servers requires either a DNS
+        /// name or IP address.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,8 +130,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter IpAddress
         /// <summary>
         /// <para>
-        /// <para>The IP address of the compute resource. Amazon GameLift requires either a DNS name
-        /// or IP address.</para>
+        /// <para>The IP address of the compute resource. Amazon GameLift Servers requires either a
+        /// DNS name or IP address. When registering an Anywhere fleet, an IP address is required.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,7 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The name of a custom location to associate with the compute resource being registered.
-        /// </para>
+        /// This parameter is required when registering a compute for an Anywhere fleet.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,16 +160,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "Compute";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ComputeName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ComputeName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ComputeName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -175,9 +170,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ComputeName), MyInvocation.BoundParameters);
@@ -191,21 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.RegisterComputeResponse, RegisterGMLComputeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ComputeName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CertificatePath = this.CertificatePath;
             context.ComputeName = this.ComputeName;
             #if MODULAR
@@ -302,13 +291,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "RegisterCompute");
             try
             {
-                #if DESKTOP
-                return client.RegisterCompute(request);
-                #elif CORECLR
-                return client.RegisterComputeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterComputeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

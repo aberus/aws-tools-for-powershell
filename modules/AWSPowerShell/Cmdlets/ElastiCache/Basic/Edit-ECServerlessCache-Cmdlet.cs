@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
@@ -35,19 +37,20 @@ namespace Amazon.PowerShell.Cmdlets.EC
     [AWSCmdlet("Calls the Amazon ElastiCache ModifyServerlessCache API operation.", Operation = new[] {"ModifyServerlessCache"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.ModifyServerlessCacheResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.ServerlessCache or Amazon.ElastiCache.Model.ModifyServerlessCacheResponse",
         "This cmdlet returns an Amazon.ElastiCache.Model.ServerlessCache object.",
-        "The service call response (type Amazon.ElastiCache.Model.ModifyServerlessCacheResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.ModifyServerlessCacheResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditECServerlessCacheCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DailySnapshotTime
         /// <summary>
         /// <para>
         /// <para>The daily time during which Elasticache begins taking a daily snapshot of the serverless
-        /// cache. Available for Redis only. The default is NULL, i.e. the existing snapshot time
-        /// configured for the cluster is not removed.</para>
+        /// cache. Available for Valkey, Redis OSS and Serverless Memcached only. The default
+        /// is NULL, i.e. the existing snapshot time configured for the cluster is not removed.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,6 +66,27 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter Engine
+        /// <summary>
+        /// <para>
+        /// <para>Modifies the engine listed in a serverless cache request. The options are redis, memcached
+        /// or valkey.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Engine { get; set; }
+        #endregion
+        
+        #region Parameter MajorEngineVersion
+        /// <summary>
+        /// <para>
+        /// <para>Modifies the engine vesion listed in a serverless cache request. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MajorEngineVersion { get; set; }
         #endregion
         
         #region Parameter DataStorage_Maximum
@@ -87,11 +111,34 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public System.Int32? ECPUPerSecond_Maximum { get; set; }
         #endregion
         
+        #region Parameter DataStorage_Minimum
+        /// <summary>
+        /// <para>
+        /// <para>The lower limit for data storage the cache is set to use.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CacheUsageLimits_DataStorage_Minimum")]
+        public System.Int32? DataStorage_Minimum { get; set; }
+        #endregion
+        
+        #region Parameter ECPUPerSecond_Minimum
+        /// <summary>
+        /// <para>
+        /// <para>The configuration for the minimum number of ECPUs the cache should be able consume
+        /// per second.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CacheUsageLimits_ECPUPerSecond_Minimum")]
+        public System.Int32? ECPUPerSecond_Minimum { get; set; }
+        #endregion
+        
         #region Parameter RemoveUserGroup
         /// <summary>
         /// <para>
-        /// <para>The identifier of the UserGroup to be removed from association with the Redis serverless
-        /// cache. Available for Redis only. Default is NULL.</para>
+        /// <para>The identifier of the UserGroup to be removed from association with the Valkey and
+        /// Redis OSS serverless cache. Available for Valkey and Redis OSS only. Default is NULL.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,7 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <para>The new list of VPC security groups to be associated with the serverless cache. Populating
         /// this list means the current VPC security groups will be removed. This security group
         /// is used to authorize traffic access for the VPC end-point (private-link). Default
-        /// = NULL - the existing list of VPC security groups is not removed.</para>
+        /// = NULL - the existing list of VPC security groups is not removed.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,8 +184,9 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The number of days for which Elasticache retains automatic snapshots before deleting
-        /// them. Available for Redis only. Default = NULL, i.e. the existing snapshot-retention-limit
-        /// will not be removed or modified. The maximum value allowed is 35 days.</para>
+        /// them. Available for Valkey, Redis OSS and Serverless Memcached only. Default = NULL,
+        /// i.e. the existing snapshot-retention-limit will not be removed or modified. The maximum
+        /// value allowed is 35 days.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +209,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The identifier of the UserGroup to be associated with the serverless cache. Available
-        /// for Redis only. Default is NULL - the existing UserGroup is not removed.</para>
+        /// for Valkey and Redis OSS only. Default is NULL - the existing UserGroup is not removed.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,16 +227,6 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "ServerlessCache";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServerlessCacheName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServerlessCacheName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServerlessCacheName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -195,9 +237,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ServerlessCacheName), MyInvocation.BoundParameters);
@@ -211,26 +257,20 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.ModifyServerlessCacheResponse, EditECServerlessCacheCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServerlessCacheName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DataStorage_Maximum = this.DataStorage_Maximum;
+            context.DataStorage_Minimum = this.DataStorage_Minimum;
             context.DataStorage_Unit = this.DataStorage_Unit;
             context.ECPUPerSecond_Maximum = this.ECPUPerSecond_Maximum;
+            context.ECPUPerSecond_Minimum = this.ECPUPerSecond_Minimum;
             context.DailySnapshotTime = this.DailySnapshotTime;
             context.Description = this.Description;
+            context.Engine = this.Engine;
+            context.MajorEngineVersion = this.MajorEngineVersion;
             context.RemoveUserGroup = this.RemoveUserGroup;
             if (this.SecurityGroupId != null)
             {
@@ -280,6 +320,16 @@ namespace Amazon.PowerShell.Cmdlets.EC
                 requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond.Maximum = requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond_eCPUPerSecond_Maximum.Value;
                 requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecondIsNull = false;
             }
+            System.Int32? requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond_eCPUPerSecond_Minimum = null;
+            if (cmdletContext.ECPUPerSecond_Minimum != null)
+            {
+                requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond_eCPUPerSecond_Minimum = cmdletContext.ECPUPerSecond_Minimum.Value;
+            }
+            if (requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond_eCPUPerSecond_Minimum != null)
+            {
+                requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond.Minimum = requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond_eCPUPerSecond_Minimum.Value;
+                requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecondIsNull = false;
+            }
              // determine if requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecond should be set to null
             if (requestCacheUsageLimits_cacheUsageLimits_ECPUPerSecondIsNull)
             {
@@ -303,6 +353,16 @@ namespace Amazon.PowerShell.Cmdlets.EC
             if (requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Maximum != null)
             {
                 requestCacheUsageLimits_cacheUsageLimits_DataStorage.Maximum = requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Maximum.Value;
+                requestCacheUsageLimits_cacheUsageLimits_DataStorageIsNull = false;
+            }
+            System.Int32? requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Minimum = null;
+            if (cmdletContext.DataStorage_Minimum != null)
+            {
+                requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Minimum = cmdletContext.DataStorage_Minimum.Value;
+            }
+            if (requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Minimum != null)
+            {
+                requestCacheUsageLimits_cacheUsageLimits_DataStorage.Minimum = requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Minimum.Value;
                 requestCacheUsageLimits_cacheUsageLimits_DataStorageIsNull = false;
             }
             Amazon.ElastiCache.DataStorageUnit requestCacheUsageLimits_cacheUsageLimits_DataStorage_dataStorage_Unit = null;
@@ -337,6 +397,14 @@ namespace Amazon.PowerShell.Cmdlets.EC
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.Engine != null)
+            {
+                request.Engine = cmdletContext.Engine;
+            }
+            if (cmdletContext.MajorEngineVersion != null)
+            {
+                request.MajorEngineVersion = cmdletContext.MajorEngineVersion;
             }
             if (cmdletContext.RemoveUserGroup != null)
             {
@@ -396,13 +464,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "ModifyServerlessCache");
             try
             {
-                #if DESKTOP
-                return client.ModifyServerlessCache(request);
-                #elif CORECLR
-                return client.ModifyServerlessCacheAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyServerlessCacheAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -420,10 +482,14 @@ namespace Amazon.PowerShell.Cmdlets.EC
         internal partial class CmdletContext : ExecutorContext
         {
             public System.Int32? DataStorage_Maximum { get; set; }
+            public System.Int32? DataStorage_Minimum { get; set; }
             public Amazon.ElastiCache.DataStorageUnit DataStorage_Unit { get; set; }
             public System.Int32? ECPUPerSecond_Maximum { get; set; }
+            public System.Int32? ECPUPerSecond_Minimum { get; set; }
             public System.String DailySnapshotTime { get; set; }
             public System.String Description { get; set; }
+            public System.String Engine { get; set; }
+            public System.String MajorEngineVersion { get; set; }
             public System.Boolean? RemoveUserGroup { get; set; }
             public List<System.String> SecurityGroupId { get; set; }
             public System.String ServerlessCacheName { get; set; }

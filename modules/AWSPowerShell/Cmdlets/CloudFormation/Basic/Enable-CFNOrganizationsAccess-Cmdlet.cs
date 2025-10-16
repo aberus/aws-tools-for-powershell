@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation ActivateOrganizationsAccess API operation.", Operation = new[] {"ActivateOrganizationsAccess"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.ActivateOrganizationsAccessResponse))]
     [AWSCmdletOutput("None or Amazon.CloudFormation.Model.ActivateOrganizationsAccessResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudFormation.Model.ActivateOrganizationsAccessResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudFormation.Model.ActivateOrganizationsAccessResponse) be returned by specifying '-Select *'."
     )]
     public partial class EnableCFNOrganizationsAccessCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -64,9 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -139,13 +146,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "ActivateOrganizationsAccess");
             try
             {
-                #if DESKTOP
-                return client.ActivateOrganizationsAccess(request);
-                #elif CORECLR
-                return client.ActivateOrganizationsAccessAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ActivateOrganizationsAccessAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

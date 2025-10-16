@@ -90,6 +90,16 @@ $IOT_Completers = {
             break
         }
 
+        # Amazon.IoT.ApplicationProtocol
+        {
+            ($_ -eq "New-IOTDomainConfiguration/ApplicationProtocol") -Or
+            ($_ -eq "Update-IOTDomainConfiguration/ApplicationProtocol")
+        }
+        {
+            $v = "DEFAULT","HTTPS","MQTT_WSS","SECURE_MQTT"
+            break
+        }
+
         # Amazon.IoT.AuditFrequency
         {
             ($_ -eq "New-IOTScheduledAudit/Frequency") -Or
@@ -125,6 +135,16 @@ $IOT_Completers = {
         "Get-IOTTaskList/TaskType"
         {
             $v = "ON_DEMAND_AUDIT_TASK","SCHEDULED_AUDIT_TASK"
+            break
+        }
+
+        # Amazon.IoT.AuthenticationType
+        {
+            ($_ -eq "New-IOTDomainConfiguration/AuthenticationType") -Or
+            ($_ -eq "Update-IOTDomainConfiguration/AuthenticationType")
+        }
+        {
+            $v = "AWS_SIGV4","AWS_X509","CUSTOM_AUTH","CUSTOM_AUTH_X509","DEFAULT"
             break
         }
 
@@ -165,8 +185,8 @@ $IOT_Completers = {
 
         # Amazon.IoT.CACertificateUpdateAction
         {
-            ($_ -eq "New-IOTMitigationAction/ActionParams_UpdateCACertificateParams_Action") -Or
-            ($_ -eq "Update-IOTMitigationAction/ActionParams_UpdateCACertificateParams_Action")
+            ($_ -eq "New-IOTMitigationAction/UpdateCACertificateParams_Action") -Or
+            ($_ -eq "Update-IOTMitigationAction/UpdateCACertificateParams_Action")
         }
         {
             $v = "DEACTIVATE"
@@ -175,8 +195,8 @@ $IOT_Completers = {
 
         # Amazon.IoT.CannedAccessControlList
         {
-            ($_ -eq "New-IOTTopicRule/TopicRulePayload_ErrorAction_S3_CannedAcl") -Or
-            ($_ -eq "Set-IOTTopicRule/TopicRulePayload_ErrorAction_S3_CannedAcl")
+            ($_ -eq "New-IOTTopicRule/S3_CannedAcl") -Or
+            ($_ -eq "Set-IOTTopicRule/S3_CannedAcl")
         }
         {
             $v = "authenticated-read","aws-exec-read","bucket-owner-full-control","bucket-owner-read","log-delivery-write","private","public-read","public-read-write"
@@ -201,6 +221,24 @@ $IOT_Completers = {
             break
         }
 
+        # Amazon.IoT.CommandExecutionStatus
+        "Get-IOTCommandExecutionList/Status"
+        {
+            $v = "CREATED","FAILED","IN_PROGRESS","REJECTED","SUCCEEDED","TIMED_OUT"
+            break
+        }
+
+        # Amazon.IoT.CommandNamespace
+        {
+            ($_ -eq "Get-IOTCommandExecutionList/Namespace") -Or
+            ($_ -eq "Get-IOTCommandList/Namespace") -Or
+            ($_ -eq "New-IOTCommand/Namespace")
+        }
+        {
+            $v = "AWS-IoT","AWS-IoT-FleetWise"
+            break
+        }
+
         # Amazon.IoT.CustomMetricType
         "New-IOTCustomMetric/MetricType"
         {
@@ -220,8 +258,8 @@ $IOT_Completers = {
 
         # Amazon.IoT.DeviceCertificateUpdateAction
         {
-            ($_ -eq "New-IOTMitigationAction/ActionParams_UpdateDeviceCertificateParams_Action") -Or
-            ($_ -eq "Update-IOTMitigationAction/ActionParams_UpdateDeviceCertificateParams_Action")
+            ($_ -eq "New-IOTMitigationAction/UpdateDeviceCertificateParams_Action") -Or
+            ($_ -eq "Update-IOTMitigationAction/UpdateDeviceCertificateParams_Action")
         }
         {
             $v = "DEACTIVATE"
@@ -258,13 +296,20 @@ $IOT_Completers = {
 
         # Amazon.IoT.DynamoKeyType
         {
-            ($_ -eq "New-IOTTopicRule/TopicRulePayload_ErrorAction_DynamoDB_HashKeyType") -Or
-            ($_ -eq "Set-IOTTopicRule/TopicRulePayload_ErrorAction_DynamoDB_HashKeyType") -Or
-            ($_ -eq "New-IOTTopicRule/TopicRulePayload_ErrorAction_DynamoDB_RangeKeyType") -Or
-            ($_ -eq "Set-IOTTopicRule/TopicRulePayload_ErrorAction_DynamoDB_RangeKeyType")
+            ($_ -eq "New-IOTTopicRule/DynamoDB_HashKeyType") -Or
+            ($_ -eq "Set-IOTTopicRule/DynamoDB_HashKeyType") -Or
+            ($_ -eq "New-IOTTopicRule/DynamoDB_RangeKeyType") -Or
+            ($_ -eq "Set-IOTTopicRule/DynamoDB_RangeKeyType")
         }
         {
             $v = "NUMBER","STRING"
+            break
+        }
+
+        # Amazon.IoT.EncryptionType
+        "Update-IOTEncryptionConfiguration/EncryptionType"
+        {
+            $v = "AWS_OWNED_KMS_KEY","CUSTOMER_MANAGED_KMS_KEY"
             break
         }
 
@@ -304,9 +349,9 @@ $IOT_Completers = {
 
         # Amazon.IoT.LogLevel
         {
-            ($_ -eq "New-IOTMitigationAction/ActionParams_EnableIoTLoggingParams_LogLevel") -Or
-            ($_ -eq "Update-IOTMitigationAction/ActionParams_EnableIoTLoggingParams_LogLevel") -Or
             ($_ -eq "Set-IOTV2LoggingOption/DefaultLogLevel") -Or
+            ($_ -eq "New-IOTMitigationAction/EnableIoTLoggingParams_LogLevel") -Or
+            ($_ -eq "Update-IOTMitigationAction/EnableIoTLoggingParams_LogLevel") -Or
             ($_ -eq "Set-IOTLoggingOption/LoggingOptionsPayload_LogLevel") -Or
             ($_ -eq "Set-IOTV2LoggingLevel/LogLevel")
         }
@@ -328,8 +373,8 @@ $IOT_Completers = {
 
         # Amazon.IoT.MessageFormat
         {
-            ($_ -eq "New-IOTTopicRule/TopicRulePayload_ErrorAction_Sns_MessageFormat") -Or
-            ($_ -eq "Set-IOTTopicRule/TopicRulePayload_ErrorAction_Sns_MessageFormat")
+            ($_ -eq "New-IOTTopicRule/Sns_MessageFormat") -Or
+            ($_ -eq "Set-IOTTopicRule/Sns_MessageFormat")
         }
         {
             $v = "JSON","RAW"
@@ -373,8 +418,8 @@ $IOT_Completers = {
 
         # Amazon.IoT.PolicyTemplateName
         {
-            ($_ -eq "New-IOTMitigationAction/ActionParams_ReplaceDefaultPolicyVersionParams_TemplateName") -Or
-            ($_ -eq "Update-IOTMitigationAction/ActionParams_ReplaceDefaultPolicyVersionParams_TemplateName")
+            ($_ -eq "New-IOTMitigationAction/ReplaceDefaultPolicyVersionParams_TemplateName") -Or
+            ($_ -eq "Update-IOTMitigationAction/ReplaceDefaultPolicyVersionParams_TemplateName")
         }
         {
             $v = "BLANK_POLICY"
@@ -388,6 +433,13 @@ $IOT_Completers = {
             break
         }
 
+        # Amazon.IoT.SbomValidationResult
+        "Get-IOTSbomValidationResultList/ValidationResult"
+        {
+            $v = "FAILED","SUCCEEDED"
+            break
+        }
+
         # Amazon.IoT.ServiceType
         {
             ($_ -eq "Get-IOTDomainConfigurationList/ServiceType") -Or
@@ -395,6 +447,16 @@ $IOT_Completers = {
         }
         {
             $v = "CREDENTIAL_PROVIDER","DATA","JOBS"
+            break
+        }
+
+        # Amazon.IoT.SortOrder
+        {
+            ($_ -eq "Get-IOTCommandExecutionList/SortOrder") -Or
+            ($_ -eq "Get-IOTCommandList/SortOrder")
+        }
+        {
+            $v = "ASCENDING","DESCENDING"
             break
         }
 
@@ -444,6 +506,17 @@ $IOT_Completers = {
             break
         }
 
+        # Amazon.IoT.ThingPrincipalType
+        {
+            ($_ -eq "Add-IOTThingPrincipal/ThingPrincipalType") -Or
+            ($_ -eq "Get-IOTPrincipalThingsV2List/ThingPrincipalType") -Or
+            ($_ -eq "Get-IOTThingPrincipalsV2List/ThingPrincipalType")
+        }
+        {
+            $v = "EXCLUSIVE_THING","NON_EXCLUSIVE_THING"
+            break
+        }
+
         # Amazon.IoT.TopicRuleDestinationStatus
         "Update-IOTTopicRuleDestination/Status"
         {
@@ -472,31 +545,38 @@ $IOT_Completers = {
 
 $IOT_map = @{
     "Action"=@("Update-IOTPackageVersion")
-    "ActionParams_EnableIoTLoggingParams_LogLevel"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
-    "ActionParams_ReplaceDefaultPolicyVersionParams_TemplateName"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
-    "ActionParams_UpdateCACertificateParams_Action"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
-    "ActionParams_UpdateDeviceCertificateParams_Action"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
     "ActionStatus"=@("Get-IOTAuditMitigationActionsExecutionList")
     "ActionType"=@("Get-IOTMitigationActionList")
     "AggregationType_Name"=@("New-IOTFleetMetric","Update-IOTFleetMetric")
+    "ApplicationProtocol"=@("New-IOTDomainConfiguration","Update-IOTDomainConfiguration")
+    "AuthenticationType"=@("New-IOTDomainConfiguration","Update-IOTDomainConfiguration")
     "BehaviorCriteriaType"=@("Get-IOTActiveViolationList","Get-IOTViolationEventList")
     "CertificateMode"=@("Register-IOTCACertificate")
     "DayOfWeek"=@("New-IOTScheduledAudit","Update-IOTScheduledAudit")
     "DefaultLogLevel"=@("Set-IOTV2LoggingOption")
     "DimensionValueOperator"=@("Get-IOTMetricValueList")
     "DomainConfigurationStatus"=@("Update-IOTDomainConfiguration")
+    "DynamoDB_HashKeyType"=@("New-IOTTopicRule","Set-IOTTopicRule")
+    "DynamoDB_RangeKeyType"=@("New-IOTTopicRule","Set-IOTTopicRule")
+    "EnableIoTLoggingParams_LogLevel"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
+    "EncryptionType"=@("Update-IOTEncryptionConfiguration")
     "Frequency"=@("New-IOTScheduledAudit","Update-IOTScheduledAudit")
     "LoggingOptionsPayload_LogLevel"=@("Set-IOTLoggingOption")
     "LogLevel"=@("Set-IOTV2LoggingLevel")
     "LogTarget_TargetType"=@("Set-IOTV2LoggingLevel")
     "MetricType"=@("New-IOTCustomMetric")
+    "Namespace"=@("Get-IOTCommandExecutionList","Get-IOTCommandList","New-IOTCommand")
     "NewAutoRegistrationStatus"=@("Update-IOTCACertificate")
     "NewStatus"=@("Update-IOTCACertificate","Update-IOTCertificate")
     "OtaUpdateStatus"=@("Get-IOTOTAUpdateList")
+    "ReplaceDefaultPolicyVersionParams_TemplateName"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
     "ReportType"=@("Get-IOTThingRegistrationTaskReportList")
+    "S3_CannedAcl"=@("New-IOTTopicRule","Set-IOTTopicRule")
     "SchedulingConfig_EndBehavior"=@("New-IOTJob")
     "ServiceType"=@("Get-IOTDomainConfigurationList","New-IOTDomainConfiguration")
-    "Status"=@("Get-IOTAuthorizerList","Get-IOTJobExecutionsForJobList","Get-IOTJobExecutionsForThingList","Get-IOTJobList","Get-IOTPackageVersionList","Get-IOTThingRegistrationTaskList","New-IOTAuthorizer","Register-IOTCertificate","Register-IOTCertificateWithoutCA","Update-IOTAuthorizer","Update-IOTTopicRuleDestination")
+    "Sns_MessageFormat"=@("New-IOTTopicRule","Set-IOTTopicRule")
+    "SortOrder"=@("Get-IOTCommandExecutionList","Get-IOTCommandList")
+    "Status"=@("Get-IOTAuthorizerList","Get-IOTCommandExecutionList","Get-IOTJobExecutionsForJobList","Get-IOTJobExecutionsForThingList","Get-IOTJobList","Get-IOTPackageVersionList","Get-IOTThingRegistrationTaskList","New-IOTAuthorizer","Register-IOTCertificate","Register-IOTCertificateWithoutCA","Update-IOTAuthorizer","Update-IOTTopicRuleDestination")
     "TargetSelection"=@("Get-IOTJobList","New-IOTJob","New-IOTOTAUpdate")
     "TargetType"=@("Get-IOTV2LoggingLevelList","Remove-IOTV2LoggingLevel")
     "TaskStatus"=@("Get-IOTAuditMitigationActionsTaskList","Get-IOTTaskList")
@@ -506,12 +586,12 @@ $IOT_map = @{
     "ThingIndexingConfiguration_NamedShadowIndexingMode"=@("Update-IOTIndexingConfiguration")
     "ThingIndexingConfiguration_ThingConnectivityIndexingMode"=@("Update-IOTIndexingConfiguration")
     "ThingIndexingConfiguration_ThingIndexingMode"=@("Update-IOTIndexingConfiguration")
-    "TopicRulePayload_ErrorAction_DynamoDB_HashKeyType"=@("New-IOTTopicRule","Set-IOTTopicRule")
-    "TopicRulePayload_ErrorAction_DynamoDB_RangeKeyType"=@("New-IOTTopicRule","Set-IOTTopicRule")
-    "TopicRulePayload_ErrorAction_S3_CannedAcl"=@("New-IOTTopicRule","Set-IOTTopicRule")
-    "TopicRulePayload_ErrorAction_Sns_MessageFormat"=@("New-IOTTopicRule","Set-IOTTopicRule")
+    "ThingPrincipalType"=@("Add-IOTThingPrincipal","Get-IOTPrincipalThingsV2List","Get-IOTThingPrincipalsV2List")
     "Type"=@("New-IOTDimension","New-IOTProvisioningTemplate")
     "Unit"=@("New-IOTFleetMetric","Update-IOTFleetMetric")
+    "UpdateCACertificateParams_Action"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
+    "UpdateDeviceCertificateParams_Action"=@("New-IOTMitigationAction","Update-IOTMitigationAction")
+    "ValidationResult"=@("Get-IOTSbomValidationResultList")
     "VerificationState"=@("Get-IOTActiveViolationList","Get-IOTViolationEventList","Write-IOTVerificationStateOnViolation")
 }
 
@@ -568,6 +648,7 @@ $IOT_SelectMap = @{
     "Select"=@("Confirm-IOTCertificateTransfer",
                "Add-IOTThingToBillingGroup",
                "Add-IOTThingToThingGroup",
+               "Add-IOTSbomWithPackageVersion",
                "Add-IOTTargetsWithJob",
                "Add-IOTPolicy",
                "Add-IOTPrincipalPolicy",
@@ -586,6 +667,7 @@ $IOT_SelectMap = @{
                "New-IOTBillingGroup",
                "New-IOTCertificateFromCsr",
                "New-IOTCertificateProvider",
+               "New-IOTCommand",
                "New-IOTCustomMetric",
                "New-IOTDimension",
                "New-IOTDomainConfiguration",
@@ -619,6 +701,8 @@ $IOT_SelectMap = @{
                "Remove-IOTCACertificate",
                "Remove-IOTCertificate",
                "Remove-IOTCertificateProvider",
+               "Remove-IOTCommand",
+               "Remove-IOTCommandExecution",
                "Remove-IOTCustomMetric",
                "Remove-IOTDimension",
                "Remove-IOTDomainConfiguration",
@@ -662,6 +746,7 @@ $IOT_SelectMap = @{
                "Get-IOTDetectMitigationActionsTask",
                "Get-IOTDimension",
                "Get-IOTDomainConfiguration",
+               "Get-IOTEncryptionConfiguration",
                "Get-IOTEndpoint",
                "Get-IOTEventConfiguration",
                "Get-IOTFleetMetric",
@@ -686,10 +771,13 @@ $IOT_SelectMap = @{
                "Dismount-IOTSecurityProfile",
                "Remove-IOTThingPrincipal",
                "Disable-IOTTopicRule",
+               "Remove-IOTSbomFromPackageVersion",
                "Enable-IOTTopicRule",
                "Get-IOTBehaviorModelTrainingSummary",
                "Get-IOTBucketsAggregation",
                "Get-IOTCardinality",
+               "Get-IOTCommand",
+               "Get-IOTCommandExecution",
                "Get-IOTEffectivePolicy",
                "Get-IOTIndexingConfiguration",
                "Get-IOTJobDocument",
@@ -703,6 +791,7 @@ $IOT_SelectMap = @{
                "Get-IOTPolicyVersion",
                "Get-IOTRegistrationCode",
                "Get-IOTStatistic",
+               "Get-IOTThingConnectivityData",
                "Get-IOTTopicRule",
                "Get-IOTTopicRuleDestination",
                "Get-IOTV2LoggingOption",
@@ -719,6 +808,8 @@ $IOT_SelectMap = @{
                "Get-IOTCertificateProviderList",
                "Get-IOTCertificateList",
                "Get-IOTCertificateListByCA",
+               "Get-IOTCommandExecutionList",
+               "Get-IOTCommandList",
                "Get-IOTCustomMetricList",
                "Get-IOTDetectMitigationActionsExecutionList",
                "Get-IOTDetectMitigationActionsTaskList",
@@ -742,10 +833,12 @@ $IOT_SelectMap = @{
                "Get-IOTPolicyVersionList",
                "Get-IOTPrincipalPolicyList",
                "Get-IOTPrincipalThingList",
+               "Get-IOTPrincipalThingsV2List",
                "Get-IOTProvisioningTemplateList",
                "Get-IOTProvisioningTemplateVersionList",
                "Get-IOTRelatedResourcesForAuditFindingList",
                "Get-IOTRoleAliasList",
+               "Get-IOTSbomValidationResultList",
                "Get-IOTScheduledAuditList",
                "Get-IOTSecurityProfileList",
                "Get-IOTSecurityProfilesForTargetList",
@@ -756,6 +849,7 @@ $IOT_SelectMap = @{
                "Get-IOTThingGroupList",
                "Get-IOTThingGroupsForThingList",
                "Get-IOTThingPrincipalList",
+               "Get-IOTThingPrincipalsV2List",
                "Get-IOTThingRegistrationTaskReportList",
                "Get-IOTThingRegistrationTaskList",
                "Get-IOTThingList",
@@ -798,10 +892,12 @@ $IOT_SelectMap = @{
                "Update-IOTCACertificate",
                "Update-IOTCertificate",
                "Update-IOTCertificateProvider",
+               "Update-IOTCommand",
                "Update-IOTCustomMetric",
                "Update-IOTDimension",
                "Update-IOTDomainConfiguration",
                "Update-IOTDynamicThingGroup",
+               "Update-IOTEncryptionConfiguration",
                "Update-IOTEventConfiguration",
                "Update-IOTFleetMetric",
                "Update-IOTIndexingConfiguration",
@@ -818,6 +914,7 @@ $IOT_SelectMap = @{
                "Update-IOTThing",
                "Update-IOTThingGroup",
                "Update-IOTThingGroupsForThing",
+               "Update-IOTThingType",
                "Update-IOTTopicRuleDestination",
                "Test-IOTValidSecurityProfileBehavior")
 }

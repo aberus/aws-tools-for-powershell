@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -42,11 +44,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// 31 days can be viewed.
     /// </para><para>
     /// To use this API, you must have the required permissions. For more information, see
-    /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-store-restore.html#ami-s3-permissions">Permissions
-    /// for storing and restoring AMIs using Amazon S3</a> in the <i>Amazon EC2 User Guide</i>.
+    /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/work-with-ami-store-restore.html#ami-s3-permissions">Permissions
+    /// for storing and restoring AMIs using S3</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-store-restore.html">Store
-    /// and restore an AMI using Amazon S3</a> in the <i>Amazon EC2 User Guide</i>.
+    /// and restore an AMI using S3</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2StoreImageTask")]
@@ -54,12 +56,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeStoreImageTasks API operation.", Operation = new[] {"DescribeStoreImageTasks"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeStoreImageTasksResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.StoreImageTaskResult or Amazon.EC2.Model.DescribeStoreImageTasksResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.StoreImageTaskResult objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeStoreImageTasksResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeStoreImageTasksResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2StoreImageTaskCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -67,7 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The filters.</para><ul><li><para><c>task-state</c> - Returns tasks in a certain state (<c>InProgress</c> | <c>Completed</c>
         /// | <c>Failed</c>)</para></li><li><para><c>bucket</c> - Returns task information for tasks that targeted a specific bucket.
         /// For the filter value, specify the bucket name.</para></li></ul><note><para>When you specify the <c>ImageIds</c> parameter, any filters that you specify are ignored.
-        /// To use the filters, you must remove the <c>ImageIds</c> parameter.</para></note>
+        /// To use the filters, you must remove the <c>ImageIds</c> parameter.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ImageId
         /// <summary>
         /// <para>
-        /// <para>The AMI IDs for which to show progress. Up to 20 AMI IDs can be included in a request.</para>
+        /// <para>The AMI IDs for which to show progress. Up to 20 AMI IDs can be included in a request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,7 +130,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,9 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -150,6 +177,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeStoreImageTasksResponse, GetEC2StoreImageTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -178,6 +206,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeStoreImageTasksRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -252,13 +284,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeStoreImageTasks");
             try
             {
-                #if DESKTOP
-                return client.DescribeStoreImageTasks(request);
-                #elif CORECLR
-                return client.DescribeStoreImageTasksAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeStoreImageTasksAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -275,6 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public List<System.String> ImageId { get; set; }
             public System.Int32? MaxResult { get; set; }

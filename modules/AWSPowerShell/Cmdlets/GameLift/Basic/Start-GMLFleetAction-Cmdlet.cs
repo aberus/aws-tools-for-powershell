@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
@@ -42,27 +44,32 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// To restart actions on instances in one of the fleet's remote locations, provide a
     /// fleet ID, a location name, and the type of actions to resume. 
     /// </para></li></ul><para>
-    /// If successful, Amazon GameLift once again initiates scaling events as triggered by
-    /// the fleet's scaling policies. If actions on the fleet location were never stopped,
+    /// If successful, Amazon GameLift Servers once again initiates scaling events as triggered
+    /// by the fleet's scaling policies. If actions on the fleet location were never stopped,
     /// this operation will have no effect.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-intro.html">Setting
-    /// up Amazon GameLift fleets</a></para>
+    /// up Amazon GameLift Servers fleets</a></para>
     /// </summary>
     [Cmdlet("Start", "GMLFleetAction", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.GameLift.Model.StartFleetActionsResponse")]
     [AWSCmdlet("Calls the Amazon GameLift Service StartFleetActions API operation.", Operation = new[] {"StartFleetActions"}, SelectReturnType = typeof(Amazon.GameLift.Model.StartFleetActionsResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.StartFleetActionsResponse",
-        "This cmdlet returns an Amazon.GameLift.Model.StartFleetActionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GameLift.Model.StartFleetActionsResponse object containing multiple properties."
     )]
     public partial class StartGMLFleetActionCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
         /// <para>
-        /// <para>List of actions to restart on the fleet.</para>
+        /// <para>List of actions to restart on the fleet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -117,16 +124,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FleetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -137,9 +134,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FleetId), MyInvocation.BoundParameters);
@@ -153,21 +154,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.StartFleetActionsResponse, StartGMLFleetActionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FleetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Action != null)
             {
                 context.Action = new List<System.String>(this.Action);
@@ -252,13 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "StartFleetActions");
             try
             {
-                #if DESKTOP
-                return client.StartFleetActions(request);
-                #elif CORECLR
-                return client.StartFleetActionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartFleetActionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

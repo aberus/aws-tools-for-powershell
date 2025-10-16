@@ -22,7 +22,7 @@ namespace AWSPowerShellGenerator.Generators
 
         #region Public properties
 
-        // the root path of the AWS .Net sdk docs; eg http://docs.aws.amazon.com/sdkfornet/v3/apidocs
+        // the root path of the AWS .Net sdk docs; eg http://docs.aws.amazon.com/sdkfornet/v4/apidocs
         public string SDKHelpRoot { get; set; }
 
         // the root path of the docs domain for cn-north-1 region
@@ -32,8 +32,9 @@ namespace AWSPowerShellGenerator.Generators
                     = "AWS services or capabilities described in AWS Documentation may vary by region/location. "
                     + "Click <a href=\"https://{0}/en_us/aws/latest/userguide/services.html\">Getting Started with Amazon AWS</a> to see specific differences applicable to the China (Beijing) Region.";
 
-        public static HashSet<string> NonModularizedServices = new HashSet<string> {
-            "CloudHSM", "ElasticLoadBalancing", "CloudWatchEvents", "KinesisAnalytics"
+        public static HashSet<string> NonModularizedServices = new HashSet<string> 
+        {
+            "CloudHSM", "CloudWatchEvents", "KinesisAnalytics"
         };
 
         public string BJSRegionDisclaimer
@@ -88,7 +89,7 @@ namespace AWSPowerShellGenerator.Generators
             base.GenerateHelper();
 
             if (string.IsNullOrEmpty(SDKHelpRoot))
-                SDKHelpRoot = "http://docs.aws.amazon.com/sdkfornet/v3/apidocs/";
+                SDKHelpRoot = "http://docs.aws.amazon.com/sdkfornet/v4/apidocs/";
             else if (!SDKHelpRoot.EndsWith("/"))
                 SDKHelpRoot = SDKHelpRoot + "/";
 
@@ -446,7 +447,7 @@ namespace AWSPowerShellGenerator.Generators
             }
 
             // Add link for User Guide to all cmdlets
-            AppendLink(sb, "AWS Tools for PowerShell User Guide", "http://docs.aws.amazon.com/powershell/latest/userguide/");
+            AppendLink(sb, "AWS Tools for PowerShell User Guide", "http://docs.aws.amazon.com/powershell/v5/userguide/");
 
             writer.AddPageElement(CmdletPageWriter.RelatedLinksElementKey, sb.ToString());
         }
@@ -504,7 +505,7 @@ namespace AWSPowerShellGenerator.Generators
                 {
                     // generate the old 'full' namepath and then shrink it down in the same way
                     // as the sdk to avoid filepath limitations. Example SDK path:
-                    // http://docs.aws.amazon.com/sdkfornet/v3/apidocs/index.html?page=EC2/TEC2ScheduledInstance.html&tocid=Amazon_EC2_Model_ScheduledInstance
+                    // http://docs.aws.amazon.com/sdkfornet/v4/apidocs/index.html?page=EC2/TEC2ScheduledInstance.html&tocid=Amazon_EC2_Model_ScheduledInstance
                     // Note how the pages are arranged beneath an extra folder
                     var nameComponents = t.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
                     
@@ -513,7 +514,14 @@ namespace AWSPowerShellGenerator.Generators
                         serviceName = ServiceNamespaceContractions[serviceName];
 
                     var tName = nameComponents[nameComponents.Length - 1];
-                    var sdkTypePagePath = ShrinkSdkLongFilepath($"T{serviceName}{tName}");
+
+                    // Check if this is a Config class (not in Model namespace and tName starts with Amazon)
+                    bool isConfigClass = !t.Contains(".Model.") && tName.StartsWith("Amazon" + serviceName);
+
+                    var sdkTypePagePath = isConfigClass
+                        ? ShrinkSdkLongFilepath($"T{tName}")  // Don't prepend serviceName for Config classes
+                        : ShrinkSdkLongFilepath($"T{serviceName}{tName}"); // Prepend for Model classes
+                        
                     return $"{SDKHelpRoot}index.html?page={serviceName}/{sdkTypePagePath}.html&tocid={t.Replace('.', '_')}";
                 }
 

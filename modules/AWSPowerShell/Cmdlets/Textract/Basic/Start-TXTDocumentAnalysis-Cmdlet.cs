@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Textract;
 using Amazon.Textract.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TXT
 {
     /// <summary>
@@ -52,17 +54,22 @@ namespace Amazon.PowerShell.Cmdlets.TXT
     [AWSCmdlet("Calls the Amazon Textract StartDocumentAnalysis API operation.", Operation = new[] {"StartDocumentAnalysis"}, SelectReturnType = typeof(Amazon.Textract.Model.StartDocumentAnalysisResponse))]
     [AWSCmdletOutput("System.String or Amazon.Textract.Model.StartDocumentAnalysisResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Textract.Model.StartDocumentAnalysisResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Textract.Model.StartDocumentAnalysisResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartTXTDocumentAnalysisCmdlet : AmazonTextractClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdaptersConfig_Adapter
         /// <summary>
         /// <para>
-        /// <para>A list of adapters to be used when analyzing the specified document.</para>
+        /// <para>A list of adapters to be used when analyzing the specified document.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         /// about the tables that are detected in the input document. Add FORMS to return detected
         /// form data. To perform both types of analysis, add TABLES and FORMS to <c>FeatureTypes</c>.
         /// All lines and words detected in the document are included in the response (including
-        /// text that isn't related to the value of <c>FeatureTypes</c>). </para>
+        /// text that isn't related to the value of <c>FeatureTypes</c>). </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -146,9 +157,8 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         #region Parameter S3Object_Name
         /// <summary>
         /// <para>
-        /// <para>The file name of the input document. Synchronous operations can use image files that
-        /// are in JPEG or PNG format. Asynchronous operations also support PDF and TIFF format
-        /// files.</para>
+        /// <para>The file name of the input document. Image files may be in PDF, TIFF, JPEG, or PNG
+        /// format.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         #region Parameter QueriesConfig_Query
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -231,16 +245,6 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         public string Select { get; set; } = "JobId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FeatureType parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FeatureType' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FeatureType' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -251,9 +255,13 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -267,21 +275,11 @@ namespace Amazon.PowerShell.Cmdlets.TXT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Textract.Model.StartDocumentAnalysisResponse, StartTXTDocumentAnalysisCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FeatureType;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AdaptersConfig_Adapter != null)
             {
                 context.AdaptersConfig_Adapter = new List<Amazon.Textract.Model.Adapter>(this.AdaptersConfig_Adapter);
@@ -530,13 +528,7 @@ namespace Amazon.PowerShell.Cmdlets.TXT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Textract", "StartDocumentAnalysis");
             try
             {
-                #if DESKTOP
-                return client.StartDocumentAnalysis(request);
-                #elif CORECLR
-                return client.StartDocumentAnalysisAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartDocumentAnalysisAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

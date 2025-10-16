@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAF;
 using Amazon.WAF.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAF
 {
     /// <summary>
@@ -61,12 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF
     [OutputType("Amazon.WAF.Model.CreateSqlInjectionMatchSetResponse")]
     [AWSCmdlet("Calls the AWS WAF CreateSqlInjectionMatchSet API operation.", Operation = new[] {"CreateSqlInjectionMatchSet"}, SelectReturnType = typeof(Amazon.WAF.Model.CreateSqlInjectionMatchSetResponse))]
     [AWSCmdletOutput("Amazon.WAF.Model.CreateSqlInjectionMatchSetResponse",
-        "This cmdlet returns an Amazon.WAF.Model.CreateSqlInjectionMatchSetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.WAF.Model.CreateSqlInjectionMatchSetResponse object containing multiple properties."
     )]
     public partial class NewWAFSqlInjectionMatchSetCmdlet : AmazonWAFClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChangeToken
         /// <summary>
@@ -124,9 +127,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -221,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF", "CreateSqlInjectionMatchSet");
             try
             {
-                #if DESKTOP
-                return client.CreateSqlInjectionMatchSet(request);
-                #elif CORECLR
-                return client.CreateSqlInjectionMatchSetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSqlInjectionMatchSetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

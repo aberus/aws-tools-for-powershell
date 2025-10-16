@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Calling this API causes a message to be sent to the end user with a confirmation code
-    /// that is required to change the user's password. For the <c>Username</c> parameter,
-    /// you can use the username or user alias. The method used to send the confirmation code
-    /// is sent according to the specified AccountRecoverySetting. For more information, see
-    /// <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/how-to-recover-a-user-account.html">Recovering
-    /// User Accounts</a> in the <i>Amazon Cognito Developer Guide</i>. To use the confirmation
-    /// code for resetting the password, call <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_ConfirmForgotPassword.html">ConfirmForgotPassword</a>.
-    /// 
+    /// Sends a password-reset confirmation code to the email address or phone number of the
+    /// requested username. The message delivery method is determined by the user's available
+    /// attributes and the <c>AccountRecoverySetting</c> configuration of the user pool.
     /// 
     ///  
     /// <para>
-    /// If neither a verified phone number nor a verified email exists, this API returns <c>InvalidParameterException</c>.
-    /// If your app client has a client secret and you don't provide a <c>SECRET_HASH</c>
-    /// parameter, this API returns <c>NotAuthorizedException</c>.
+    /// For the <c>Username</c> parameter, you can use the username or an email, phone, or
+    /// preferred username alias.
+    /// </para><para>
+    /// If neither a verified phone number nor a verified email exists, Amazon Cognito responds
+    /// with an <c>InvalidParameterException</c> error . If your app client has a client secret
+    /// and you don't provide a <c>SECRET_HASH</c> parameter, this API returns <c>NotAuthorizedException</c>.
     /// </para><note><para>
     /// Amazon Cognito doesn't evaluate Identity and Access Management (IAM) policies in requests
     /// for this API operation. For this operation, you can't use IAM credentials to authorize
@@ -58,8 +58,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// their accounts, or sign in.
     /// </para><para>
     /// If you have never used SMS text messages with Amazon Cognito or any other Amazon Web
-    /// Service, Amazon Simple Notification Service might place your account in the SMS sandbox.
-    /// In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
+    /// Services service, Amazon Simple Notification Service might place your account in the
+    /// SMS sandbox. In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
     /// mode</a></i>, you can send messages only to verified phone numbers. After you test
     /// your app while in the sandbox environment, you can move out of the sandbox and into
     /// production. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-sms-settings.html">
@@ -72,19 +72,19 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider ForgotPassword API operation. This operation uses anonymous authentication and does not require credential parameters to be supplied.", Operation = new[] {"ForgotPassword"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.ForgotPasswordResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.CodeDeliveryDetailsType or Amazon.CognitoIdentityProvider.Model.ForgotPasswordResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.CodeDeliveryDetailsType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.ForgotPasswordResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.ForgotPasswordResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ResetCGIPForgottenPasswordCmdlet : AnonymousAmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnalyticsMetadata_AnalyticsEndpointId
         /// <summary>
         /// <para>
-        /// <para>The endpoint ID.</para>
+        /// <para>The endpoint ID. Information that you want to pass to Amazon Pinpoint about where
+        /// to send notifications.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +94,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ClientId
         /// <summary>
         /// <para>
-        /// <para>The ID of the client associated with the user pool.</para>
+        /// <para>The ID of the user pool app client associated with the current signed-in user.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,11 +120,15 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// attribute, which provides the data that you assigned to the ClientMetadata parameter
         /// in your ForgotPassword request. In your function code in Lambda, you can process the
         /// <c>clientMetadata</c> value to enhance your workflow for your specific needs.</para><para>For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html">
-        /// Customizing user pool Workflows with Lambda Triggers</a> in the <i>Amazon Cognito
-        /// Developer Guide</i>.</para><note><para>When you use the ClientMetadata parameter, remember that Amazon Cognito won't do the
-        /// following:</para><ul><li><para>Store the ClientMetadata value. This data is available only to Lambda triggers that
-        /// are assigned to a user pool to support custom workflows. If your user pool configuration
-        /// doesn't include triggers, the ClientMetadata parameter serves no purpose.</para></li><li><para>Validate the ClientMetadata value.</para></li><li><para>Encrypt the ClientMetadata value. Don't use Amazon Cognito to provide sensitive information.</para></li></ul></note>
+        /// Using Lambda triggers</a> in the <i>Amazon Cognito Developer Guide</i>.</para><note><para>When you use the <c>ClientMetadata</c> parameter, note that Amazon Cognito won't do
+        /// the following:</para><ul><li><para>Store the <c>ClientMetadata</c> value. This data is available only to Lambda triggers
+        /// that are assigned to a user pool to support custom workflows. If your user pool configuration
+        /// doesn't include triggers, the <c>ClientMetadata</c> parameter serves no purpose.</para></li><li><para>Validate the <c>ClientMetadata</c> value.</para></li><li><para>Encrypt the <c>ClientMetadata</c> value. Don't send sensitive information in this
+        /// parameter.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +161,9 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <summary>
         /// <para>
         /// <para>A keyed-hash message authentication code (HMAC) calculated using the secret key of
-        /// a user pool client and username plus the client ID in the message.</para>
+        /// a user pool client and username plus the client ID in the message. For more information
+        /// about <c>SecretHash</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash">Computing
+        /// secret hash values</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,10 +173,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Username
         /// <summary>
         /// <para>
-        /// <para>The username of the user that you want to query or modify. The value of this parameter
+        /// <para>The name of the user that you want to query or modify. The value of this parameter
         /// is typically your user's username, but it can be any of their alias attributes. If
-        /// <c>username</c> isn't an alias attribute in your user pool, you can also use their
-        /// <c>sub</c> in this request.</para>
+        /// <c>username</c> isn't an alias attribute in your user pool, this value must be the
+        /// <c>sub</c> of a local user or the username of a user from a third-party IdP.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -195,16 +201,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "CodeDeliveryDetails";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Username parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Username' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Username' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -215,9 +211,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Username), MyInvocation.BoundParameters);
@@ -231,21 +231,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.ForgotPasswordResponse, ResetCGIPForgottenPasswordCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Username;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnalyticsMetadata_AnalyticsEndpointId = this.AnalyticsMetadata_AnalyticsEndpointId;
             context.ClientId = this.ClientId;
             #if MODULAR
@@ -390,13 +380,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "ForgotPassword");
             try
             {
-                #if DESKTOP
-                return client.ForgotPassword(request);
-                #elif CORECLR
-                return client.ForgotPasswordAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ForgotPasswordAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

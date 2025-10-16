@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IVS;
 using Amazon.IVS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IVS
 {
     /// <summary>
@@ -47,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.IVS
     [AWSCmdlet("Calls the Amazon Interactive Video Service CreateRecordingConfiguration API operation.", Operation = new[] {"CreateRecordingConfiguration"}, SelectReturnType = typeof(Amazon.IVS.Model.CreateRecordingConfigurationResponse))]
     [AWSCmdletOutput("Amazon.IVS.Model.RecordingConfiguration or Amazon.IVS.Model.CreateRecordingConfigurationResponse",
         "This cmdlet returns an Amazon.IVS.Model.RecordingConfiguration object.",
-        "The service call response (type Amazon.IVS.Model.CreateRecordingConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IVS.Model.CreateRecordingConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewIVSRecordingConfigurationCmdlet : AmazonIVSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3_BucketName
         /// <summary>
@@ -107,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         /// recorded if they are available during the stream. If a selected rendition is unavailable,
         /// the best available rendition is recorded. For details on the resolution dimensions
         /// of each rendition, see <a href="https://docs.aws.amazon.com/ivs/latest/userguide/record-to-s3.html">Auto-Record
-        /// to Amazon S3</a>.</para>
+        /// to Amazon S3</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +157,11 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         /// generated thumbnails in a serial manner, to the media/thumbnails directory. <c>LATEST</c>
         /// saves the latest thumbnail in media/latest_thumbnail/thumb.jpg and overwrites it at
         /// the interval specified by <c>targetIntervalSeconds</c>. You can enable both <c>SEQUENTIAL</c>
-        /// and <c>LATEST</c>. Default: <c>SEQUENTIAL</c>.</para>
+        /// and <c>LATEST</c>. Default: <c>SEQUENTIAL</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -160,10 +171,15 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Array of 1-50 maps, each of the form <c>string:string (key:value)</c>. See <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services Resources</a> for more information, including restrictions that
-        /// apply to tags and "Tag naming limits and requirements"; Amazon IVS has no service-specific
-        /// constraints beyond what is documented there.</para>
+        /// <para>Array of 1-50 maps, each of the form <c>string:string (key:value)</c>. See <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/best-practices-and-strats.html">Best
+        /// practices and strategies</a> in <i>Tagging Amazon Web Services Resources and Tag Editor</i>
+        /// for details, including restrictions that apply to tags and "Tag naming limits and
+        /// requirements"; Amazon IVS has no service-specific constraints beyond what is documented
+        /// there.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,8 +191,9 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         /// <summary>
         /// <para>
         /// <para>The targeted thumbnail-generation interval in seconds. This is configurable (and required)
-        /// only if <c>recordingMode</c> is <c>INTERVAL</c>. Default: 60.</para><para><b>Important:</b> For the <c>BASIC</c> channel type, setting a value for <c>targetIntervalSeconds</c>
-        /// does not guarantee that thumbnails are generated at the specified interval. For thumbnails
+        /// only if <c>recordingMode</c> is <c>INTERVAL</c>. Default: 60.</para><para><b>Important:</b> For the <c>BASIC</c> channel type, or the <c>STANDARD</c> channel
+        /// type with multitrack input, setting a value for <c>targetIntervalSeconds</c> does
+        /// not guarantee that thumbnails are generated at the specified interval. For thumbnails
         /// to be generated at the <c>targetIntervalSeconds</c> interval, the <c>IDR/Keyframe</c>
         /// value for the input video must be less than the <c>targetIntervalSeconds</c> value.
         /// See <a href="https://docs.aws.amazon.com/ivs/latest/userguide/streaming-config.html">
@@ -200,16 +217,6 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public string Select { get; set; } = "RecordingConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -220,9 +227,13 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -236,21 +247,11 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IVS.Model.CreateRecordingConfigurationResponse, NewIVSRecordingConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.S3_BucketName = this.S3_BucketName;
             context.Name = this.Name;
             context.RecordingReconnectWindowSecond = this.RecordingReconnectWindowSecond;
@@ -452,13 +453,7 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Interactive Video Service", "CreateRecordingConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateRecordingConfiguration(request);
-                #elif CORECLR
-                return client.CreateRecordingConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRecordingConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKMediaPipelines;
 using Amazon.ChimeSDKMediaPipelines.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMMP
 {
     /// <summary>
-    /// Creates an Kinesis video stream pool for the media pipeline.
+    /// Creates an Amazon Kinesis Video Stream pool for use with media stream pipelines.
+    /// 
+    ///  <note><para>
+    /// If a meeting uses an opt-in Region as its <a href="https://docs.aws.amazon.com/chime-sdk/latest/APIReference/API_meeting-chime_CreateMeeting.html#chimesdk-meeting-chime_CreateMeeting-request-MediaRegion">MediaRegion</a>,
+    /// the KVS stream must be in that same Region. For example, if a meeting uses the <c>af-south-1</c>
+    /// Region, the KVS stream must also be in <c>af-south-1</c>. However, if the meeting
+    /// uses a Region that AWS turns on by default, the KVS stream can be in any available
+    /// Region, including an opt-in Region. For example, if the meeting uses <c>ca-central-1</c>,
+    /// the KVS stream can be in <c>eu-west-2</c>, <c>us-east-1</c>, <c>af-south-1</c>, or
+    /// any other Region that the Amazon Chime SDK supports.
+    /// </para><para>
+    /// To learn which AWS Region a meeting uses, call the <a href="https://docs.aws.amazon.com/chime-sdk/latest/APIReference/API_meeting-chime_GetMeeting.html">GetMeeting</a>
+    /// API and use the <a href="https://docs.aws.amazon.com/chime-sdk/latest/APIReference/API_meeting-chime_CreateMeeting.html#chimesdk-meeting-chime_CreateMeeting-request-MediaRegion">MediaRegion</a>
+    /// parameter from the response.
+    /// </para><para>
+    /// For more information about opt-in Regions, refer to <a href="https://docs.aws.amazon.com/chime-sdk/latest/dg/sdk-available-regions.html">Available
+    /// Regions</a> in the <i>Amazon Chime SDK Developer Guide</i>, and <a href="https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-regions.html#rande-manage-enable.html">Specify
+    /// which AWS Regions your account can use</a>, in the <i>AWS Account Management Reference
+    /// Guide</i>.
+    /// </para></note>
     /// </summary>
     [Cmdlet("New", "CHMMPMediaPipelineKinesisVideoStreamPool", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ChimeSDKMediaPipelines.Model.KinesisVideoStreamPoolConfiguration")]
     [AWSCmdlet("Calls the Amazon Chime SDK Media Pipelines CreateMediaPipelineKinesisVideoStreamPool API operation.", Operation = new[] {"CreateMediaPipelineKinesisVideoStreamPool"}, SelectReturnType = typeof(Amazon.ChimeSDKMediaPipelines.Model.CreateMediaPipelineKinesisVideoStreamPoolResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKMediaPipelines.Model.KinesisVideoStreamPoolConfiguration or Amazon.ChimeSDKMediaPipelines.Model.CreateMediaPipelineKinesisVideoStreamPoolResponse",
         "This cmdlet returns an Amazon.ChimeSDKMediaPipelines.Model.KinesisVideoStreamPoolConfiguration object.",
-        "The service call response (type Amazon.ChimeSDKMediaPipelines.Model.CreateMediaPipelineKinesisVideoStreamPoolResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ChimeSDKMediaPipelines.Model.CreateMediaPipelineKinesisVideoStreamPoolResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCHMMPMediaPipelineKinesisVideoStreamPoolCmdlet : AmazonChimeSDKMediaPipelinesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -70,7 +88,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         #region Parameter PoolName
         /// <summary>
         /// <para>
-        /// <para>The name of the video stream pool.</para>
+        /// <para>The name of the pool.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -104,7 +122,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags assigned to the video stream pool.</para>
+        /// <para>The tags assigned to the stream pool.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,16 +145,6 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         public string Select { get; set; } = "KinesisVideoStreamPoolConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PoolName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PoolName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PoolName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -143,9 +155,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PoolName), MyInvocation.BoundParameters);
@@ -159,21 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ChimeSDKMediaPipelines.Model.CreateMediaPipelineKinesisVideoStreamPoolResponse, NewCHMMPMediaPipelineKinesisVideoStreamPoolCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PoolName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.PoolName = this.PoolName;
             #if MODULAR
@@ -289,13 +295,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Media Pipelines", "CreateMediaPipelineKinesisVideoStreamPool");
             try
             {
-                #if DESKTOP
-                return client.CreateMediaPipelineKinesisVideoStreamPool(request);
-                #elif CORECLR
-                return client.CreateMediaPipelineKinesisVideoStreamPoolAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMediaPipelineKinesisVideoStreamPoolAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

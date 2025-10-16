@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -25,7 +25,7 @@ using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
-using ThirdParty.Json.LitJson;
+using System.Text.Json;
 
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
@@ -37,7 +37,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Retrieves the latest EC2 AMIs (Amazon Machine Images) from AWS Systems Manager parameters by calling Get-SSMParametersByPath or Get-SSMParameterValue.")]
     [AWSCmdletOutput("PSObject or System.String",
         "This cmdlet returns a collection of PSObjects when listing AMIs. When -ImageName is specified without using wildcard characters, the cmdlet returns only the AMI's identifier as a string.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse or Amazon.SimpleSystemsManagement.Model.GetParametersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse or Amazon.SimpleSystemsManagement.Model.GetParametersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSSMLatestEC2ImageCmdlet : AmazonSimpleSystemsManagementClientCmdlet
     {
@@ -117,11 +117,24 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                     {
                         try
                         {
-                            var jsonData = JsonMapper.ToObject(value);
-                            var imageId = jsonData["image_id"];
-                            if (imageId?.IsString ?? false)
+                            JsonDocument document = null;
+                            try
                             {
-                                value = (string)imageId;
+                                document = JsonDocument.Parse(value);
+                                if (document.RootElement.TryGetProperty("image_id", out JsonElement imageIdElement))
+                                {
+                                    if (imageIdElement.ValueKind == JsonValueKind.String)
+                                    {
+                                        value = imageIdElement.GetString();
+                                    }
+                                }
+                            }
+                            finally
+                            {
+                                if (document != null)
+                                {
+                                    document.Dispose();
+                                }
                             }
                         }
                         catch

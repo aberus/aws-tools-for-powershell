@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
@@ -34,12 +36,25 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [OutputType("Amazon.QuickSight.Model.PutDataSetRefreshPropertiesResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight PutDataSetRefreshProperties API operation.", Operation = new[] {"PutDataSetRefreshProperties"}, SelectReturnType = typeof(Amazon.QuickSight.Model.PutDataSetRefreshPropertiesResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.PutDataSetRefreshPropertiesResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.PutDataSetRefreshPropertiesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.PutDataSetRefreshPropertiesResponse object containing multiple properties."
     )]
     public partial class WriteQSDataSetRefreshPropertyCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter EmailAlert_AlertStatus
+        /// <summary>
+        /// <para>
+        /// <para>The status value that determines if email alerts are sent.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSetRefreshProperties_FailureConfiguration_EmailAlert_AlertStatus")]
+        [AWSConstantClassSource("Amazon.QuickSight.RefreshFailureAlertStatus")]
+        public Amazon.QuickSight.RefreshFailureAlertStatus EmailAlert_AlertStatus { get; set; }
+        #endregion
         
         #region Parameter AwsAccountId
         /// <summary>
@@ -64,14 +79,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>The name of the lookback window column.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("DataSetRefreshProperties_RefreshConfiguration_IncrementalRefresh_LookbackWindow_ColumnName")]
         public System.String LookbackWindow_ColumnName { get; set; }
         #endregion
@@ -99,13 +107,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>The lookback window column size.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("DataSetRefreshProperties_RefreshConfiguration_IncrementalRefresh_LookbackWindow_Size")]
         public System.Int64? LookbackWindow_Size { get; set; }
         #endregion
@@ -117,13 +119,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// are <c>HOUR</c>, <c>DAY</c>, and <c>WEEK</c>.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("DataSetRefreshProperties_RefreshConfiguration_IncrementalRefresh_LookbackWindow_SizeUnit")]
         [AWSConstantClassSource("Amazon.QuickSight.LookbackWindowSizeUnit")]
         public Amazon.QuickSight.LookbackWindowSizeUnit LookbackWindow_SizeUnit { get; set; }
@@ -140,16 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DataSetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DataSetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DataSetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -160,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DataSetId), MyInvocation.BoundParameters);
@@ -176,21 +166,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.PutDataSetRefreshPropertiesResponse, WriteQSDataSetRefreshPropertyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DataSetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -205,27 +185,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 WriteWarning("You are passing $null as a value for parameter DataSetId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.EmailAlert_AlertStatus = this.EmailAlert_AlertStatus;
             context.LookbackWindow_ColumnName = this.LookbackWindow_ColumnName;
-            #if MODULAR
-            if (this.LookbackWindow_ColumnName == null && ParameterWasBound(nameof(this.LookbackWindow_ColumnName)))
-            {
-                WriteWarning("You are passing $null as a value for parameter LookbackWindow_ColumnName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.LookbackWindow_Size = this.LookbackWindow_Size;
-            #if MODULAR
-            if (this.LookbackWindow_Size == null && ParameterWasBound(nameof(this.LookbackWindow_Size)))
-            {
-                WriteWarning("You are passing $null as a value for parameter LookbackWindow_Size which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.LookbackWindow_SizeUnit = this.LookbackWindow_SizeUnit;
-            #if MODULAR
-            if (this.LookbackWindow_SizeUnit == null && ParameterWasBound(nameof(this.LookbackWindow_SizeUnit)))
-            {
-                WriteWarning("You are passing $null as a value for parameter LookbackWindow_SizeUnit which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -254,6 +217,46 @@ namespace Amazon.PowerShell.Cmdlets.QS
              // populate DataSetRefreshProperties
             var requestDataSetRefreshPropertiesIsNull = true;
             request.DataSetRefreshProperties = new Amazon.QuickSight.Model.DataSetRefreshProperties();
+            Amazon.QuickSight.Model.RefreshFailureConfiguration requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration = null;
+            
+             // populate FailureConfiguration
+            var requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfigurationIsNull = true;
+            requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration = new Amazon.QuickSight.Model.RefreshFailureConfiguration();
+            Amazon.QuickSight.Model.RefreshFailureEmailAlert requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert = null;
+            
+             // populate EmailAlert
+            var requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlertIsNull = true;
+            requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert = new Amazon.QuickSight.Model.RefreshFailureEmailAlert();
+            Amazon.QuickSight.RefreshFailureAlertStatus requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert_emailAlert_AlertStatus = null;
+            if (cmdletContext.EmailAlert_AlertStatus != null)
+            {
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert_emailAlert_AlertStatus = cmdletContext.EmailAlert_AlertStatus;
+            }
+            if (requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert_emailAlert_AlertStatus != null)
+            {
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert.AlertStatus = requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert_emailAlert_AlertStatus;
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlertIsNull = false;
+            }
+             // determine if requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert should be set to null
+            if (requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlertIsNull)
+            {
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert = null;
+            }
+            if (requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert != null)
+            {
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration.EmailAlert = requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration_dataSetRefreshProperties_FailureConfiguration_EmailAlert;
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfigurationIsNull = false;
+            }
+             // determine if requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration should be set to null
+            if (requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfigurationIsNull)
+            {
+                requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration = null;
+            }
+            if (requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration != null)
+            {
+                request.DataSetRefreshProperties.FailureConfiguration = requestDataSetRefreshProperties_dataSetRefreshProperties_FailureConfiguration;
+                requestDataSetRefreshPropertiesIsNull = false;
+            }
             Amazon.QuickSight.Model.RefreshConfiguration requestDataSetRefreshProperties_dataSetRefreshProperties_RefreshConfiguration = null;
             
              // populate RefreshConfiguration
@@ -372,13 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "PutDataSetRefreshProperties");
             try
             {
-                #if DESKTOP
-                return client.PutDataSetRefreshProperties(request);
-                #elif CORECLR
-                return client.PutDataSetRefreshPropertiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutDataSetRefreshPropertiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -397,6 +394,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         {
             public System.String AwsAccountId { get; set; }
             public System.String DataSetId { get; set; }
+            public Amazon.QuickSight.RefreshFailureAlertStatus EmailAlert_AlertStatus { get; set; }
             public System.String LookbackWindow_ColumnName { get; set; }
             public System.Int64? LookbackWindow_Size { get; set; }
             public Amazon.QuickSight.LookbackWindowSizeUnit LookbackWindow_SizeUnit { get; set; }

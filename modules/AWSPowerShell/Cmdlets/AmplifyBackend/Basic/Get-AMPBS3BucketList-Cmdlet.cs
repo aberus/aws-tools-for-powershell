@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AmplifyBackend;
 using Amazon.AmplifyBackend.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMPB
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPB
     [AWSCmdlet("Calls the Amplify Backend ListS3Buckets API operation.", Operation = new[] {"ListS3Buckets"}, SelectReturnType = typeof(Amazon.AmplifyBackend.Model.ListS3BucketsResponse))]
     [AWSCmdletOutput("Amazon.AmplifyBackend.Model.S3BucketInfo or Amazon.AmplifyBackend.Model.ListS3BucketsResponse",
         "This cmdlet returns a collection of Amazon.AmplifyBackend.Model.S3BucketInfo objects.",
-        "The service call response (type Amazon.AmplifyBackend.Model.ListS3BucketsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AmplifyBackend.Model.ListS3BucketsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAMPBS3BucketListCmdlet : AmazonAmplifyBackendClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NextToken
         /// <summary>
@@ -63,9 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPB
         public string Select { get; set; } = "Buckets";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -137,13 +144,7 @@ namespace Amazon.PowerShell.Cmdlets.AMPB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amplify Backend", "ListS3Buckets");
             try
             {
-                #if DESKTOP
-                return client.ListS3Buckets(request);
-                #elif CORECLR
-                return client.ListS3BucketsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListS3BucketsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

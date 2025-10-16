@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
     [AWSCmdlet("Calls the AWS Security Hub StartConfigurationPolicyDisassociation API operation.", Operation = new[] {"StartConfigurationPolicyDisassociation"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.StartConfigurationPolicyDisassociationResponse))]
     [AWSCmdletOutput("None or Amazon.SecurityHub.Model.StartConfigurationPolicyDisassociationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SecurityHub.Model.StartConfigurationPolicyDisassociationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SecurityHub.Model.StartConfigurationPolicyDisassociationResponse) be returned by specifying '-Select *'."
     )]
     public partial class StartSHUBConfigurationPolicyDisassociationCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Target_AccountId
         /// <summary>
@@ -60,8 +63,9 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         #region Parameter ConfigurationPolicyIdentifier
         /// <summary>
         /// <para>
-        /// <para> The Amazon Resource Name (ARN) or universally unique identifier (UUID) of the configuration
-        /// policy. </para>
+        /// <para> The Amazon Resource Name (ARN) of a configuration policy, the universally unique
+        /// identifier (UUID) of a configuration policy, or a value of <c>SELF_MANAGED_SECURITY_HUB</c>
+        /// for a self-managed configuration. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -105,16 +109,6 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigurationPolicyIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigurationPolicyIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigurationPolicyIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -125,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigurationPolicyIdentifier), MyInvocation.BoundParameters);
@@ -141,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SecurityHub.Model.StartConfigurationPolicyDisassociationResponse, StartSHUBConfigurationPolicyDisassociationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigurationPolicyIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConfigurationPolicyIdentifier = this.ConfigurationPolicyIdentifier;
             #if MODULAR
             if (this.ConfigurationPolicyIdentifier == null && ParameterWasBound(nameof(this.ConfigurationPolicyIdentifier)))
@@ -263,13 +251,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "StartConfigurationPolicyDisassociation");
             try
             {
-                #if DESKTOP
-                return client.StartConfigurationPolicyDisassociation(request);
-                #elif CORECLR
-                return client.StartConfigurationPolicyDisassociationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartConfigurationPolicyDisassociationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

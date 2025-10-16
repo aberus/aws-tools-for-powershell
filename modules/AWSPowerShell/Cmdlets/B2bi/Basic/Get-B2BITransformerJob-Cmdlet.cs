@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.B2bi;
 using Amazon.B2bi.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.B2BI
 {
     /// <summary>
     /// Returns the details of the transformer run, based on the Transformer job ID.
+    /// 
+    ///  <note><para>
+    /// If 30 days have elapsed since your transformer job was started, the system deletes
+    /// it. So, if you run <c>GetTransformerJob</c> and supply a <c>transformerId</c> and
+    /// <c>transformerJobId</c> for a job that was started more than 30 days previously, you
+    /// receive a 404 response.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Get", "B2BITransformerJob")]
     [OutputType("Amazon.B2bi.Model.GetTransformerJobResponse")]
     [AWSCmdlet("Calls the AWS B2B Data Interchange GetTransformerJob API operation.", Operation = new[] {"GetTransformerJob"}, SelectReturnType = typeof(Amazon.B2bi.Model.GetTransformerJobResponse))]
     [AWSCmdletOutput("Amazon.B2bi.Model.GetTransformerJobResponse",
-        "This cmdlet returns an Amazon.B2bi.Model.GetTransformerJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.B2bi.Model.GetTransformerJobResponse object containing multiple properties."
     )]
     public partial class GetB2BITransformerJobCmdlet : AmazonB2biClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TransformerId
         /// <summary>
@@ -86,9 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -177,13 +191,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS B2B Data Interchange", "GetTransformerJob");
             try
             {
-                #if DESKTOP
-                return client.GetTransformerJob(request);
-                #elif CORECLR
-                return client.GetTransformerJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTransformerJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

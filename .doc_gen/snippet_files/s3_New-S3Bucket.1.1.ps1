@@ -1,0 +1,1 @@
+New-S3Bucket -BucketName amzn-s3-demo-bucket

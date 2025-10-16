@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -63,9 +65,9 @@ namespace Amazon.PowerShell.Cmdlets.AS
     /// and the new <c>MaxSize</c> is smaller than the current size of the group, this sets
     /// the group's <c>DesiredCapacity</c> to the new <c>MaxSize</c> value.
     /// </para></li></ul><para>
-    /// To see which properties have been set, call the <a>DescribeAutoScalingGroups</a> API.
-    /// To view the scaling policies for an Auto Scaling group, call the <a>DescribePolicies</a>
-    /// API. If the group has scaling policies, you can update them by calling the <a>PutScalingPolicy</a>
+    /// To see which properties have been set, call the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribeAutoScalingGroups.html">DescribeAutoScalingGroups</a>
+    /// API. To view the scaling policies for an Auto Scaling group, call the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribePolicies.html">DescribePolicies</a>
+    /// API. If the group has scaling policies, you can update them by calling the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_PutScalingPolicy.html">PutScalingPolicy</a>
     /// API.
     /// </para>
     /// </summary>
@@ -74,12 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling UpdateAutoScalingGroup API operation.", Operation = new[] {"UpdateAutoScalingGroup"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.UpdateAutoScalingGroupResponse))]
     [AWSCmdletOutput("None or Amazon.AutoScaling.Model.UpdateAutoScalingGroupResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.AutoScaling.Model.UpdateAutoScalingGroupResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.AutoScaling.Model.UpdateAutoScalingGroupResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateASAutoScalingGroupCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoScalingGroupName
         /// <summary>
@@ -101,7 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
         #region Parameter AvailabilityZone
         /// <summary>
         /// <para>
-        /// <para>One or more Availability Zones for the group.</para>
+        /// <para>One or more Availability Zones for the group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,16 +116,79 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String[] AvailabilityZone { get; set; }
         #endregion
         
+        #region Parameter AvailabilityZoneDistribution_CapacityDistributionStrategy
+        /// <summary>
+        /// <para>
+        /// <para> If launches fail in an Availability Zone, the following strategies are available.
+        /// The default is <c>balanced-best-effort</c>. </para><ul><li><para><c>balanced-only</c> - If launches fail in an Availability Zone, Auto Scaling will
+        /// continue to attempt to launch in the unhealthy zone to preserve a balanced distribution.</para></li><li><para><c>balanced-best-effort</c> - If launches fail in an Availability Zone, Auto Scaling
+        /// will attempt to launch in another healthy Availability Zone instead.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AutoScaling.CapacityDistributionStrategy")]
+        public Amazon.AutoScaling.CapacityDistributionStrategy AvailabilityZoneDistribution_CapacityDistributionStrategy { get; set; }
+        #endregion
+        
         #region Parameter CapacityRebalance
         /// <summary>
         /// <para>
-        /// <para>Enables or disables Capacity Rebalancing. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-capacity-rebalancing.html">Use
-        /// Capacity Rebalancing to handle Amazon EC2 Spot Interruptions</a> in the <i>Amazon
-        /// EC2 Auto Scaling User Guide</i>.</para>
+        /// <para>Enables or disables Capacity Rebalancing. If Capacity Rebalancing is disabled, proactive
+        /// replacement of at-risk Spot Instances does not occur. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-capacity-rebalancing.html">Capacity
+        /// Rebalancing in Auto Scaling to replace at-risk Spot Instances</a> in the <i>Amazon
+        /// EC2 Auto Scaling User Guide</i>.</para><note><para>To suspend rebalancing across Availability Zones, use the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_SuspendedProcess.html">SuspendProcesses</a>
+        /// API.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? CapacityRebalance { get; set; }
+        #endregion
+        
+        #region Parameter CapacityReservationTarget_CapacityReservationId
+        /// <summary>
+        /// <para>
+        /// <para> The Capacity Reservation IDs to launch instances into. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CapacityReservationSpecification_CapacityReservationTarget_CapacityReservationIds")]
+        public System.String[] CapacityReservationTarget_CapacityReservationId { get; set; }
+        #endregion
+        
+        #region Parameter CapacityReservationSpecification_CapacityReservationPreference
+        /// <summary>
+        /// <para>
+        /// <para> The capacity reservation preference. The following options are available: </para><ul><li><para><c>capacity-reservations-only</c> - Auto Scaling will only launch instances into
+        /// a Capacity Reservation or Capacity Reservation resource group. If capacity isn't available,
+        /// instances will fail to launch.</para></li><li><para><c>capacity-reservations-first</c> - Auto Scaling will try to launch instances into
+        /// a Capacity Reservation or Capacity Reservation resource group first. If capacity isn't
+        /// available, instances will run in On-Demand capacity.</para></li><li><para><c>none</c> - Auto Scaling will not launch instances into a Capacity Reservation.
+        /// Instances will run in On-Demand capacity. </para></li><li><para><c>default</c> - Auto Scaling uses the Capacity Reservation preference from your
+        /// launch template or an open Capacity Reservation.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AutoScaling.CapacityReservationPreference")]
+        public Amazon.AutoScaling.CapacityReservationPreference CapacityReservationSpecification_CapacityReservationPreference { get; set; }
+        #endregion
+        
+        #region Parameter CapacityReservationTarget_CapacityReservationResourceGroupArn
+        /// <summary>
+        /// <para>
+        /// <para> The resource group ARNs of the Capacity Reservation to launch instances into. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CapacityReservationSpecification_CapacityReservationTarget_CapacityReservationResourceGroupArns")]
+        public System.String[] CapacityReservationTarget_CapacityReservationResourceGroupArn { get; set; }
         #endregion
         
         #region Parameter Context
@@ -135,7 +205,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <summary>
         /// <para>
         /// <para><i>Only needed if you use simple scaling policies.</i></para><para>The amount of time, in seconds, between one scaling activity ending and another one
-        /// starting due to simple scaling policies. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html">Scaling
+        /// starting due to simple scaling policies. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-scaling-cooldowns.html">Scaling
         /// cooldowns for Amazon EC2 Auto Scaling</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -184,8 +254,8 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <para>
         /// <para>The unit of measurement for the value specified for desired capacity. Amazon EC2 Auto
         /// Scaling supports <c>DesiredCapacityType</c> for attribute-based instance type selection
-        /// only. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-asg-instance-type-requirements.html">Creating
-        /// an Auto Scaling group using attribute-based instance type selection</a> in the <i>Amazon
+        /// only. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-mixed-instances-group-attribute-based-instance-type-selection.html">Create
+        /// a mixed instances group using attribute-based instance type selection</a> in the <i>Amazon
         /// EC2 Auto Scaling User Guide</i>.</para><para>By default, Amazon EC2 Auto Scaling specifies <c>units</c>, which translates into
         /// number of instances.</para><para>Valid values: <c>units</c> | <c>vcpu</c> | <c>memory-mib</c></para>
         /// </para>
@@ -213,13 +283,30 @@ namespace Amazon.PowerShell.Cmdlets.AS
         #region Parameter HealthCheckType
         /// <summary>
         /// <para>
-        /// <para>A comma-separated value string of one or more health check types.</para><para>The valid values are <c>EC2</c>, <c>ELB</c>, and <c>VPC_LATTICE</c>. <c>EC2</c> is
-        /// the default health check and cannot be disabled. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/healthcheck.html">Health
-        /// checks for Auto Scaling instances</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.</para><para>Only specify <c>EC2</c> if you must clear a value that was previously set.</para>
+        /// <para>A comma-separated value string of one or more health check types.</para><para>The valid values are <c>EC2</c>, <c>EBS</c>, <c>ELB</c>, and <c>VPC_LATTICE</c>. <c>EC2</c>
+        /// is the default health check and cannot be disabled. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-health-checks.html">Health
+        /// checks for instances in an Auto Scaling group</a> in the <i>Amazon EC2 Auto Scaling
+        /// User Guide</i>.</para><para>Only specify <c>EC2</c> if you must clear a value that was previously set.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String HealthCheckType { get; set; }
+        #endregion
+        
+        #region Parameter AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior
+        /// <summary>
+        /// <para>
+        /// <para> Specifies the health check behavior for the impaired Availability Zone in an active
+        /// zonal shift. If you select <c>Replace unhealthy</c>, instances that appear unhealthy
+        /// will be replaced in all Availability Zones. If you select <c>Ignore unhealthy</c>,
+        /// instances will not be replaced in the Availability Zone with the active zonal shift.
+        /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-zonal-shift.html">Auto
+        /// Scaling group zonal shift</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AutoScaling.ImpairedZoneHealthCheckBehavior")]
+        public Amazon.AutoScaling.ImpairedZoneHealthCheckBehavior AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior { get; set; }
         #endregion
         
         #region Parameter LaunchConfigurationName
@@ -341,7 +428,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <para>
         /// <para>Indicates whether newly launched instances are protected from termination by Amazon
         /// EC2 Auto Scaling when scaling in. For more information about preventing instances
-        /// from terminating on scale in, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-instance-protection.html">Using
+        /// from terminating on scale in, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-instance-protection.html">Use
         /// instance scale-in protection</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -352,9 +439,10 @@ namespace Amazon.PowerShell.Cmdlets.AS
         #region Parameter PlacementGroup
         /// <summary>
         /// <para>
-        /// <para>The name of an existing placement group into which to launch your instances. For more
-        /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html">Placement
-        /// groups</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.</para><note><para>A <i>cluster</i> placement group is a logical grouping of instances within a single
+        /// <para>The name of an existing placement group into which to launch your instances. To remove
+        /// the placement group setting, pass an empty string for <c>placement-group</c>. For
+        /// more information about placement groups, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html">Placement
+        /// groups</a> in the <i>Amazon EC2 User Guide</i>.</para><note><para>A <i>cluster</i> placement group is a logical grouping of instances within a single
         /// Availability Zone. You cannot specify multiple Availability Zones and a cluster placement
         /// group. </para></note>
         /// </para>
@@ -375,16 +463,33 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String ServiceLinkedRoleARN { get; set; }
         #endregion
         
+        #region Parameter SkipZonalShiftValidation
+        /// <summary>
+        /// <para>
+        /// <para> If you enable zonal shift with cross-zone disabled load balancers, capacity could
+        /// become imbalanced across Availability Zones. To skip the validation, specify <c>true</c>.
+        /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-zonal-shift.html">Auto
+        /// Scaling group zonal shift</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? SkipZonalShiftValidation { get; set; }
+        #endregion
+        
         #region Parameter TerminationPolicy
         /// <summary>
         /// <para>
         /// <para>A policy or a list of policies that are used to select the instances to terminate.
         /// The policies are executed in the order that you list them. For more information, see
-        /// <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-termination-policies.html">Work
-        /// with Amazon EC2 Auto Scaling termination policies</a> in the <i>Amazon EC2 Auto Scaling
+        /// <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-termination-policies.html">Configure
+        /// termination policies for Amazon EC2 Auto Scaling</a> in the <i>Amazon EC2 Auto Scaling
         /// User Guide</i>.</para><para>Valid values: <c>Default</c> | <c>AllocationStrategy</c> | <c>ClosestToNextInstanceHour</c>
         /// | <c>NewestInstance</c> | <c>OldestInstance</c> | <c>OldestLaunchConfiguration</c>
-        /// | <c>OldestLaunchTemplate</c> | <c>arn:aws:lambda:region:account-id:function:my-function:my-alias</c></para>
+        /// | <c>OldestLaunchTemplate</c> | <c>arn:aws:lambda:region:account-id:function:my-function:my-alias</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -420,6 +525,16 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String VPCZoneIdentifier { get; set; }
         #endregion
         
+        #region Parameter AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled
+        /// <summary>
+        /// <para>
+        /// <para> If <c>true</c>, enable zonal shift for your Auto Scaling group. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -428,16 +543,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutoScalingGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -450,9 +555,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutoScalingGroupName), MyInvocation.BoundParameters);
@@ -466,21 +575,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.UpdateAutoScalingGroupResponse, UpdateASAutoScalingGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutoScalingGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScalingGroupName = this.AutoScalingGroupName;
             #if MODULAR
             if (this.AutoScalingGroupName == null && ParameterWasBound(nameof(this.AutoScalingGroupName)))
@@ -488,11 +587,23 @@ namespace Amazon.PowerShell.Cmdlets.AS
                 WriteWarning("You are passing $null as a value for parameter AutoScalingGroupName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.AvailabilityZoneDistribution_CapacityDistributionStrategy = this.AvailabilityZoneDistribution_CapacityDistributionStrategy;
+            context.AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior = this.AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior;
+            context.AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled = this.AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled;
             if (this.AvailabilityZone != null)
             {
                 context.AvailabilityZone = new List<System.String>(this.AvailabilityZone);
             }
             context.CapacityRebalance = this.CapacityRebalance;
+            context.CapacityReservationSpecification_CapacityReservationPreference = this.CapacityReservationSpecification_CapacityReservationPreference;
+            if (this.CapacityReservationTarget_CapacityReservationId != null)
+            {
+                context.CapacityReservationTarget_CapacityReservationId = new List<System.String>(this.CapacityReservationTarget_CapacityReservationId);
+            }
+            if (this.CapacityReservationTarget_CapacityReservationResourceGroupArn != null)
+            {
+                context.CapacityReservationTarget_CapacityReservationResourceGroupArn = new List<System.String>(this.CapacityReservationTarget_CapacityReservationResourceGroupArn);
+            }
             context.Context = this.Context;
             context.DefaultCooldown = this.DefaultCooldown;
             context.DefaultInstanceWarmup = this.DefaultInstanceWarmup;
@@ -513,6 +624,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             context.NewInstancesProtectedFromScaleIn = this.NewInstancesProtectedFromScaleIn;
             context.PlacementGroup = this.PlacementGroup;
             context.ServiceLinkedRoleARN = this.ServiceLinkedRoleARN;
+            context.SkipZonalShiftValidation = this.SkipZonalShiftValidation;
             if (this.TerminationPolicy != null)
             {
                 context.TerminationPolicy = new List<System.String>(this.TerminationPolicy);
@@ -538,6 +650,54 @@ namespace Amazon.PowerShell.Cmdlets.AS
             {
                 request.AutoScalingGroupName = cmdletContext.AutoScalingGroupName;
             }
+            
+             // populate AvailabilityZoneDistribution
+            var requestAvailabilityZoneDistributionIsNull = true;
+            request.AvailabilityZoneDistribution = new Amazon.AutoScaling.Model.AvailabilityZoneDistribution();
+            Amazon.AutoScaling.CapacityDistributionStrategy requestAvailabilityZoneDistribution_availabilityZoneDistribution_CapacityDistributionStrategy = null;
+            if (cmdletContext.AvailabilityZoneDistribution_CapacityDistributionStrategy != null)
+            {
+                requestAvailabilityZoneDistribution_availabilityZoneDistribution_CapacityDistributionStrategy = cmdletContext.AvailabilityZoneDistribution_CapacityDistributionStrategy;
+            }
+            if (requestAvailabilityZoneDistribution_availabilityZoneDistribution_CapacityDistributionStrategy != null)
+            {
+                request.AvailabilityZoneDistribution.CapacityDistributionStrategy = requestAvailabilityZoneDistribution_availabilityZoneDistribution_CapacityDistributionStrategy;
+                requestAvailabilityZoneDistributionIsNull = false;
+            }
+             // determine if request.AvailabilityZoneDistribution should be set to null
+            if (requestAvailabilityZoneDistributionIsNull)
+            {
+                request.AvailabilityZoneDistribution = null;
+            }
+            
+             // populate AvailabilityZoneImpairmentPolicy
+            var requestAvailabilityZoneImpairmentPolicyIsNull = true;
+            request.AvailabilityZoneImpairmentPolicy = new Amazon.AutoScaling.Model.AvailabilityZoneImpairmentPolicy();
+            Amazon.AutoScaling.ImpairedZoneHealthCheckBehavior requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior = null;
+            if (cmdletContext.AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior != null)
+            {
+                requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior = cmdletContext.AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior;
+            }
+            if (requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior != null)
+            {
+                request.AvailabilityZoneImpairmentPolicy.ImpairedZoneHealthCheckBehavior = requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior;
+                requestAvailabilityZoneImpairmentPolicyIsNull = false;
+            }
+            System.Boolean? requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ZonalShiftEnabled = null;
+            if (cmdletContext.AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled != null)
+            {
+                requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ZonalShiftEnabled = cmdletContext.AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled.Value;
+            }
+            if (requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ZonalShiftEnabled != null)
+            {
+                request.AvailabilityZoneImpairmentPolicy.ZonalShiftEnabled = requestAvailabilityZoneImpairmentPolicy_availabilityZoneImpairmentPolicy_ZonalShiftEnabled.Value;
+                requestAvailabilityZoneImpairmentPolicyIsNull = false;
+            }
+             // determine if request.AvailabilityZoneImpairmentPolicy should be set to null
+            if (requestAvailabilityZoneImpairmentPolicyIsNull)
+            {
+                request.AvailabilityZoneImpairmentPolicy = null;
+            }
             if (cmdletContext.AvailabilityZone != null)
             {
                 request.AvailabilityZones = cmdletContext.AvailabilityZone;
@@ -545,6 +705,60 @@ namespace Amazon.PowerShell.Cmdlets.AS
             if (cmdletContext.CapacityRebalance != null)
             {
                 request.CapacityRebalance = cmdletContext.CapacityRebalance.Value;
+            }
+            
+             // populate CapacityReservationSpecification
+            var requestCapacityReservationSpecificationIsNull = true;
+            request.CapacityReservationSpecification = new Amazon.AutoScaling.Model.CapacityReservationSpecification();
+            Amazon.AutoScaling.CapacityReservationPreference requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationPreference = null;
+            if (cmdletContext.CapacityReservationSpecification_CapacityReservationPreference != null)
+            {
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationPreference = cmdletContext.CapacityReservationSpecification_CapacityReservationPreference;
+            }
+            if (requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationPreference != null)
+            {
+                request.CapacityReservationSpecification.CapacityReservationPreference = requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationPreference;
+                requestCapacityReservationSpecificationIsNull = false;
+            }
+            Amazon.AutoScaling.Model.CapacityReservationTarget requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget = null;
+            
+             // populate CapacityReservationTarget
+            var requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTargetIsNull = true;
+            requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget = new Amazon.AutoScaling.Model.CapacityReservationTarget();
+            List<System.String> requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationId = null;
+            if (cmdletContext.CapacityReservationTarget_CapacityReservationId != null)
+            {
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationId = cmdletContext.CapacityReservationTarget_CapacityReservationId;
+            }
+            if (requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationId != null)
+            {
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget.CapacityReservationIds = requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationId;
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTargetIsNull = false;
+            }
+            List<System.String> requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationResourceGroupArn = null;
+            if (cmdletContext.CapacityReservationTarget_CapacityReservationResourceGroupArn != null)
+            {
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationResourceGroupArn = cmdletContext.CapacityReservationTarget_CapacityReservationResourceGroupArn;
+            }
+            if (requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationResourceGroupArn != null)
+            {
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget.CapacityReservationResourceGroupArns = requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget_capacityReservationTarget_CapacityReservationResourceGroupArn;
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTargetIsNull = false;
+            }
+             // determine if requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget should be set to null
+            if (requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTargetIsNull)
+            {
+                requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget = null;
+            }
+            if (requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget != null)
+            {
+                request.CapacityReservationSpecification.CapacityReservationTarget = requestCapacityReservationSpecification_capacityReservationSpecification_CapacityReservationTarget;
+                requestCapacityReservationSpecificationIsNull = false;
+            }
+             // determine if request.CapacityReservationSpecification should be set to null
+            if (requestCapacityReservationSpecificationIsNull)
+            {
+                request.CapacityReservationSpecification = null;
             }
             if (cmdletContext.Context != null)
             {
@@ -674,6 +888,10 @@ namespace Amazon.PowerShell.Cmdlets.AS
             {
                 request.ServiceLinkedRoleARN = cmdletContext.ServiceLinkedRoleARN;
             }
+            if (cmdletContext.SkipZonalShiftValidation != null)
+            {
+                request.SkipZonalShiftValidation = cmdletContext.SkipZonalShiftValidation.Value;
+            }
             if (cmdletContext.TerminationPolicy != null)
             {
                 request.TerminationPolicies = cmdletContext.TerminationPolicy;
@@ -720,13 +938,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "UpdateAutoScalingGroup");
             try
             {
-                #if DESKTOP
-                return client.UpdateAutoScalingGroup(request);
-                #elif CORECLR
-                return client.UpdateAutoScalingGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateAutoScalingGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -744,8 +956,14 @@ namespace Amazon.PowerShell.Cmdlets.AS
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AutoScalingGroupName { get; set; }
+            public Amazon.AutoScaling.CapacityDistributionStrategy AvailabilityZoneDistribution_CapacityDistributionStrategy { get; set; }
+            public Amazon.AutoScaling.ImpairedZoneHealthCheckBehavior AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior { get; set; }
+            public System.Boolean? AvailabilityZoneImpairmentPolicy_ZonalShiftEnabled { get; set; }
             public List<System.String> AvailabilityZone { get; set; }
             public System.Boolean? CapacityRebalance { get; set; }
+            public Amazon.AutoScaling.CapacityReservationPreference CapacityReservationSpecification_CapacityReservationPreference { get; set; }
+            public List<System.String> CapacityReservationTarget_CapacityReservationId { get; set; }
+            public List<System.String> CapacityReservationTarget_CapacityReservationResourceGroupArn { get; set; }
             public System.String Context { get; set; }
             public System.Int32? DefaultCooldown { get; set; }
             public System.Int32? DefaultInstanceWarmup { get; set; }
@@ -766,6 +984,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             public System.Boolean? NewInstancesProtectedFromScaleIn { get; set; }
             public System.String PlacementGroup { get; set; }
             public System.String ServiceLinkedRoleARN { get; set; }
+            public System.Boolean? SkipZonalShiftValidation { get; set; }
             public List<System.String> TerminationPolicy { get; set; }
             public System.String VPCZoneIdentifier { get; set; }
             public System.Func<Amazon.AutoScaling.Model.UpdateAutoScalingGroupResponse, UpdateASAutoScalingGroupCmdlet, object> Select { get; set; } =

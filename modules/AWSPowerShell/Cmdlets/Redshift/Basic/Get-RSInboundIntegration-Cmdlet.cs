@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
     [AWSCmdlet("Calls the Amazon Redshift DescribeInboundIntegrations API operation.", Operation = new[] {"DescribeInboundIntegrations"}, SelectReturnType = typeof(Amazon.Redshift.Model.DescribeInboundIntegrationsResponse))]
     [AWSCmdletOutput("Amazon.Redshift.Model.InboundIntegration or Amazon.Redshift.Model.DescribeInboundIntegrationsResponse",
         "This cmdlet returns a collection of Amazon.Redshift.Model.InboundIntegration objects.",
-        "The service call response (type Amazon.Redshift.Model.DescribeInboundIntegrationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.DescribeInboundIntegrationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetRSInboundIntegrationCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IntegrationArn
         /// <summary>
@@ -74,7 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -228,13 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "DescribeInboundIntegrations");
             try
             {
-                #if DESKTOP
-                return client.DescribeInboundIntegrations(request);
-                #elif CORECLR
-                return client.DescribeInboundIntegrationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeInboundIntegrationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

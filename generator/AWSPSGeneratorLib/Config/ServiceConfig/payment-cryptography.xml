@@ -18,47 +18,92 @@
     <ParamEmitters />
     <MetadataProperties />
     <ServiceOperations>
-        <ServiceOperation MethodName="CreateAlias" OutputProperty="Alias" Verb="New" Noun="Alias" ShouldProcessTarget="AliasName" PipelineParameter="AliasName" NoPipelineParameter="false">
+        <ServiceOperation MethodName="AddKeyReplicationRegions" OutputProperty="Key" Verb="Add" Noun="KeyReplicationRegion" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="CreateKey" OutputProperty="Key" Verb="New" Noun="Key" ShouldProcessTarget="Exportable" PipelineParameter="Exportable" NoPipelineParameter="false">
+        <ServiceOperation MethodName="CreateAlias" OutputProperty="Alias" Verb="New" Noun="Alias" ShouldProcessTarget="AliasName" PipelineParameter="AliasName" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="DeleteAlias" Verb="Remove" Noun="Alias" ShouldProcessTarget="AliasName" PipelineParameter="AliasName" NoPipelineParameter="false">
+        <ServiceOperation MethodName="CreateKey" OutputProperty="Key" Verb="New" Noun="Key" ShouldProcessTarget="Exportable" PipelineParameter="Exportable" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="DeleteKey" OutputProperty="Key" Verb="Remove" Noun="Key" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="DeleteAlias" Verb="Remove" Noun="Alias" ShouldProcessTarget="AliasName" PipelineParameter="AliasName" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="ExportKey" OutputProperty="WrappedKey" Verb="Export" Noun="Key" ShouldProcessTarget="ExportKeyIdentifier" PipelineParameter="ExportKeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="DeleteKey" OutputProperty="Key" Verb="Remove" Noun="Key" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="GetAlias" OutputProperty="Alias" Verb="Get" Noun="Alias" PipelineParameter="AliasName" NoPipelineParameter="false">
+        <ServiceOperation MethodName="DisableDefaultKeyReplicationRegions" OutputProperty="EnabledReplicationRegions" Verb="Disable" Noun="DefaultKeyReplicationRegion" ShouldProcessTarget="ReplicationRegions" PipelineParameter="" NoPipelineParameter="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="GetKey" OutputProperty="Key" Verb="Get" Noun="Key" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="EnableDefaultKeyReplicationRegions" OutputProperty="EnabledReplicationRegions" Verb="Enable" Noun="DefaultKeyReplicationRegion" ShouldProcessTarget="ReplicationRegions" PipelineParameter="" NoPipelineParameter="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="GetParametersForExport" OutputProperty="*" Verb="Get" Noun="ParametersForExport" PipelineParameter="KeyMaterialType" NoPipelineParameter="false">
+        <ServiceOperation MethodName="ExportKey" OutputProperty="WrappedKey" Verb="Export" Noun="Key" ShouldProcessTarget="ExportKeyIdentifier" PipelineParameter="ExportKeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params>
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyExportability" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyExportability" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyExportability" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Decrypt" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Decrypt" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Decrypt" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Encrypt" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Encrypt" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Encrypt" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_DeriveKey" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_DeriveKey" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_DeriveKey" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Generate" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Generate" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Generate" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_NoRestrictions" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_NoRestrictions" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_NoRestrictions" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Sign" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Sign" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Sign" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Unwrap" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Unwrap" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Unwrap" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Verify" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Verify" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Verify" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Wrap" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Wrap" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyModesOfUse_Wrap" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyVersion" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_KeyVersion" Alias="Tr34KeyBlock_KeyBlockHeaders_KeyVersion" />
+                <Param Name="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_OptionalBlocks" NewName="KeyMaterial_Tr34KeyBlock_KeyBlockHeaders_OptionalBlocks" Alias="Tr34KeyBlock_KeyBlockHeaders_OptionalBlocks" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyExportability" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyExportability" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyExportability" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Decrypt" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Decrypt" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Decrypt" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Encrypt" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Encrypt" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Encrypt" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_DeriveKey" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_DeriveKey" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_DeriveKey" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Generate" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Generate" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Generate" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_NoRestrictions" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_NoRestrictions" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_NoRestrictions" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Sign" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Sign" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Sign" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Unwrap" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Unwrap" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Unwrap" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Verify" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Verify" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Verify" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Wrap" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Wrap" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyModesOfUse_Wrap" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyVersion" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyVersion" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_KeyVersion" />
+                <Param Name="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_OptionalBlocks" NewName="KeyMaterial_DiffieHellmanTr31KeyBlock_KeyBlockHeaders_OptionalBlocks" Alias="DiffieHellmanTr31KeyBlock_KeyBlockHeaders_OptionalBlocks" />
+            </Params>
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetAlias" OutputProperty="Alias" Verb="Get" Noun="Alias" PipelineParameter="AliasName" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="GetParametersForImport" OutputProperty="*" Verb="Get" Noun="ParametersForImport" PipelineParameter="KeyMaterialType" NoPipelineParameter="false">
+        <ServiceOperation MethodName="GetCertificateSigningRequest" OutputProperty="CertificateSigningRequest" Verb="Get" Noun="CertificateSigningRequest" PipelineParameter="" NoPipelineParameter="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="GetPublicKeyCertificate" OutputProperty="*" Verb="Get" Noun="PublicKeyCertificate" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="GetDefaultKeyReplicationRegions" OutputProperty="EnabledReplicationRegions" Verb="Get" Noun="DefaultKeyReplicationRegion" PipelineParameter="" NoPipelineParameter="false">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="ImportKey" OutputProperty="Key" Verb="Import" Noun="Key" AnonymousShouldProcessTarget="true" PipelineParameter="" NoPipelineParameter="true">
+        <ServiceOperation MethodName="GetKey" OutputProperty="Key" Verb="Get" Noun="Key" PipelineParameter="KeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetParametersForExport" OutputProperty="*" Verb="Get" Noun="ParametersForExport" PipelineParameter="KeyMaterialType" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetParametersForImport" OutputProperty="*" Verb="Get" Noun="ParametersForImport" PipelineParameter="KeyMaterialType" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetPublicKeyCertificate" OutputProperty="*" Verb="Get" Noun="PublicKeyCertificate" PipelineParameter="KeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ImportKey" OutputProperty="Key" Verb="Import" Noun="Key" AnonymousShouldProcessTarget="true" PipelineParameter="" NoPipelineParameter="true" LegacyV4Pagination="true">
             <Params>
                 <Param Name="KeyMaterial_RootCertificatePublicKey_KeyAttributes_KeyAlgorithm" NewName="KeyMaterial_RootCertificatePublicKey_KeyAttributes_KeyAlgorithm" />
                 <Param Name="KeyMaterial_RootCertificatePublicKey_KeyAttributes_KeyClass" NewName="KeyMaterial_RootCertificatePublicKey_KeyAttributes_KeyClass" />
@@ -87,39 +132,43 @@
             </Params>
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="ListAliases" OutputProperty="Aliases" Verb="Get" Noun="AliasList" PipelineParameter="" NoPipelineParameter="false">
+        <ServiceOperation MethodName="ListAliases" OutputProperty="Aliases" Verb="Get" Noun="AliasList" PipelineParameter="" NoPipelineParameter="true" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="ListKeys" OutputProperty="Keys" Verb="Get" Noun="KeyList" PipelineParameter="KeyState" NoPipelineParameter="false">
+        <ServiceOperation MethodName="ListKeys" OutputProperty="Keys" Verb="Get" Noun="KeyList" PipelineParameter="KeyState" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="ListTagsForResource" OutputProperty="Tags" Verb="Get" Noun="ResourceTag" PipelineParameter="ResourceArn" NoPipelineParameter="false">
+        <ServiceOperation MethodName="ListTagsForResource" OutputProperty="Tags" Verb="Get" Noun="ResourceTag" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="RestoreKey" OutputProperty="Key" Verb="Restore" Noun="Key" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="RemoveKeyReplicationRegions" OutputProperty="Key" Verb="Remove" Noun="KeyReplicationRegion" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="StartKeyUsage" OutputProperty="Key" Verb="Start" Noun="KeyUsage" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="RestoreKey" OutputProperty="Key" Verb="Restore" Noun="Key" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="StopKeyUsage" OutputProperty="Key" Verb="Stop" Noun="KeyUsage" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false">
+        <ServiceOperation MethodName="StartKeyUsage" OutputProperty="Key" Verb="Start" Noun="KeyUsage" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="TagResource" Verb="Add" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false">
+        <ServiceOperation MethodName="StopKeyUsage" OutputProperty="Key" Verb="Stop" Noun="KeyUsage" ShouldProcessTarget="KeyIdentifier" PipelineParameter="KeyIdentifier" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="UntagResource" Verb="Remove" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false">
+        <ServiceOperation MethodName="TagResource" Verb="Add" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>
-        <ServiceOperation MethodName="UpdateAlias" OutputProperty="Alias" Verb="Update" Noun="Alias" ShouldProcessTarget="AliasName" PipelineParameter="AliasName" NoPipelineParameter="false">
+        <ServiceOperation MethodName="UntagResource" Verb="Remove" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="UpdateAlias" OutputProperty="Alias" Verb="Update" Noun="Alias" ShouldProcessTarget="AliasName" PipelineParameter="AliasName" NoPipelineParameter="false" LegacyV4Pagination="true">
             <Params />
             <TypesNotToFlatten />
         </ServiceOperation>

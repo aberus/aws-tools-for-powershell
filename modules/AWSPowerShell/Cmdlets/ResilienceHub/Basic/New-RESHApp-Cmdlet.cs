@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResilienceHub;
 using Amazon.ResilienceHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RESH
 {
     /// <summary>
@@ -52,16 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
     [AWSCmdlet("Calls the AWS Resilience Hub CreateApp API operation.", Operation = new[] {"CreateApp"}, SelectReturnType = typeof(Amazon.ResilienceHub.Model.CreateAppResponse))]
     [AWSCmdletOutput("Amazon.ResilienceHub.Model.App or Amazon.ResilienceHub.Model.CreateAppResponse",
         "This cmdlet returns an Amazon.ResilienceHub.Model.App object.",
-        "The service call response (type Amazon.ResilienceHub.Model.CreateAppResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ResilienceHub.Model.CreateAppResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewRESHAppCmdlet : AmazonResilienceHubClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssessmentSchedule
         /// <summary>
@@ -74,6 +73,19 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         public Amazon.ResilienceHub.AppAssessmentScheduleType AssessmentSchedule { get; set; }
         #endregion
         
+        #region Parameter AwsApplicationArn
+        /// <summary>
+        /// <para>
+        /// <para>Amazon Resource Name (ARN) of Resource Groups group that is integrated with an AppRegistry
+        /// application. For more information about ARNs, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">
+        /// Amazon Resource Names (ARNs)</a> in the <i>Amazon Web Services General Reference</i>
+        /// guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AwsApplicationArn { get; set; }
+        #endregion
+        
         #region Parameter PermissionModel_CrossAccountRoleArn
         /// <summary>
         /// <para>
@@ -82,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         /// your application.</para><note><ul><li><para>These ARNs are required only when your resources are in other accounts and you have
         /// different role name in these accounts. Else, the invoker role name will be used in
         /// the other accounts.</para></li><li><para>These roles must have a trust policy with <c>iam:AssumeRole</c> permission to the
-        /// invoker role in the primary account.</para></li></ul></note>
+        /// invoker role in the primary account.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,7 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         /// <para>
         /// <para>The list of events you would like to subscribe and get notification for. Currently,
         /// Resilience Hub supports only <b>Drift detected</b> and <b>Scheduled assessment failure</b>
-        /// events notification.</para>
+        /// events notification.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,7 +138,9 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         /// <para>
         /// <para>Existing Amazon Web Services IAM role name in the primary Amazon Web Services account
         /// that will be assumed by Resilience Hub Service Principle to obtain a read-only access
-        /// to your application resources while running an assessment.</para><note><ul><li><para>You must have <c>iam:passRole</c> permission for this role while creating or updating
+        /// to your application resources while running an assessment. </para><para>If your IAM role includes a path, you must include the path in the <c>invokerRoleName</c>
+        /// parameter. For example, if your IAM role's ARN is <c>arn:aws:iam:123456789012:role/my-path/role-name</c>,
+        /// you should pass <c>my-path/role-name</c>. </para><note><ul><li><para>You must have <c>iam:passRole</c> permission for this role while creating or updating
         /// the application.</para></li><li><para>Currently, <c>invokerRoleName</c> accepts only <c>[A-Za-z0-9_+=,.@-]</c> characters.</para></li></ul></note>
         /// </para>
         /// </summary>
@@ -160,7 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         /// <summary>
         /// <para>
         /// <para>Tags assigned to the resource. A tag is a label that you assign to an Amazon Web Services
-        /// resource. Each tag consists of a key/value pair.</para>
+        /// resource. Each tag consists of a key/value pair.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,16 +230,6 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         public string Select { get; set; } = "App";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -224,9 +240,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -240,22 +260,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ResilienceHub.Model.CreateAppResponse, NewRESHAppCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssessmentSchedule = this.AssessmentSchedule;
+            context.AwsApplicationArn = this.AwsApplicationArn;
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             if (this.EventSubscription != null)
@@ -303,6 +314,10 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             if (cmdletContext.AssessmentSchedule != null)
             {
                 request.AssessmentSchedule = cmdletContext.AssessmentSchedule;
+            }
+            if (cmdletContext.AwsApplicationArn != null)
+            {
+                request.AwsApplicationArn = cmdletContext.AwsApplicationArn;
             }
             if (cmdletContext.ClientToken != null)
             {
@@ -405,13 +420,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resilience Hub", "CreateApp");
             try
             {
-                #if DESKTOP
-                return client.CreateApp(request);
-                #elif CORECLR
-                return client.CreateAppAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAppAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -429,6 +438,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.ResilienceHub.AppAssessmentScheduleType AssessmentSchedule { get; set; }
+            public System.String AwsApplicationArn { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
             public List<Amazon.ResilienceHub.Model.EventSubscription> EventSubscription { get; set; }

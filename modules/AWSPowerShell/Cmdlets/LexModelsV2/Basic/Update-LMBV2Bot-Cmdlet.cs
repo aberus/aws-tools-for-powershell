@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexModelsV2;
 using Amazon.LexModelsV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LMBV2
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
     [OutputType("Amazon.LexModelsV2.Model.UpdateBotResponse")]
     [AWSCmdlet("Calls the Amazon Lex Model Building V2 UpdateBot API operation.", Operation = new[] {"UpdateBot"}, SelectReturnType = typeof(Amazon.LexModelsV2.Model.UpdateBotResponse))]
     [AWSCmdletOutput("Amazon.LexModelsV2.Model.UpdateBotResponse",
-        "This cmdlet returns an Amazon.LexModelsV2.Model.UpdateBotResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexModelsV2.Model.UpdateBotResponse object containing multiple properties."
     )]
     public partial class UpdateLMBV2BotCmdlet : AmazonLexModelsV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BotId
         /// <summary>
@@ -62,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         #region Parameter BotMember
         /// <summary>
         /// <para>
-        /// <para>The list of bot members in the network associated with the update action.</para>
+        /// <para>The list of bot members in the network associated with the update action.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,6 +150,16 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter ErrorLogSettings_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Settings parameters for the error logs, when it is enabled.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ErrorLogSettings_Enabled { get; set; }
+        #endregion
+        
         #region Parameter IdleSessionTTLInSecond
         /// <summary>
         /// <para>
@@ -191,16 +208,6 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BotId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BotId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BotId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -211,9 +218,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BotId), MyInvocation.BoundParameters);
@@ -227,21 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LexModelsV2.Model.UpdateBotResponse, UpdateLMBV2BotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BotId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BotId = this.BotId;
             #if MODULAR
             if (this.BotId == null && ParameterWasBound(nameof(this.BotId)))
@@ -269,6 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             }
             #endif
             context.Description = this.Description;
+            context.ErrorLogSettings_Enabled = this.ErrorLogSettings_Enabled;
             context.IdleSessionTTLInSecond = this.IdleSessionTTLInSecond;
             #if MODULAR
             if (this.IdleSessionTTLInSecond == null && ParameterWasBound(nameof(this.IdleSessionTTLInSecond)))
@@ -338,6 +340,25 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             {
                 request.Description = cmdletContext.Description;
             }
+            
+             // populate ErrorLogSettings
+            var requestErrorLogSettingsIsNull = true;
+            request.ErrorLogSettings = new Amazon.LexModelsV2.Model.ErrorLogSettings();
+            System.Boolean? requestErrorLogSettings_errorLogSettings_Enabled = null;
+            if (cmdletContext.ErrorLogSettings_Enabled != null)
+            {
+                requestErrorLogSettings_errorLogSettings_Enabled = cmdletContext.ErrorLogSettings_Enabled.Value;
+            }
+            if (requestErrorLogSettings_errorLogSettings_Enabled != null)
+            {
+                request.ErrorLogSettings.Enabled = requestErrorLogSettings_errorLogSettings_Enabled.Value;
+                requestErrorLogSettingsIsNull = false;
+            }
+             // determine if request.ErrorLogSettings should be set to null
+            if (requestErrorLogSettingsIsNull)
+            {
+                request.ErrorLogSettings = null;
+            }
             if (cmdletContext.IdleSessionTTLInSecond != null)
             {
                 request.IdleSessionTTLInSeconds = cmdletContext.IdleSessionTTLInSecond.Value;
@@ -384,13 +405,7 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Model Building V2", "UpdateBot");
             try
             {
-                #if DESKTOP
-                return client.UpdateBot(request);
-                #elif CORECLR
-                return client.UpdateBotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateBotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -413,6 +428,7 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             public Amazon.LexModelsV2.BotType BotType { get; set; }
             public System.Boolean? DataPrivacy_ChildDirected { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? ErrorLogSettings_Enabled { get; set; }
             public System.Int32? IdleSessionTTLInSecond { get; set; }
             public System.String RoleArn { get; set; }
             public System.Func<Amazon.LexModelsV2.Model.UpdateBotResponse, UpdateLMBV2BotCmdlet, object> Select { get; set; } =

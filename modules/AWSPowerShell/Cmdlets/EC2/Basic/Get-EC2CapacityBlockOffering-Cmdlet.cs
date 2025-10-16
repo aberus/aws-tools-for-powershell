@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,42 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Describes Capacity Block offerings available for purchase. With Capacity Blocks, you
-    /// purchase a specific instance type for a period of time.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Describes Capacity Block offerings available for purchase in the Amazon Web Services
+    /// Region that you're currently using. With Capacity Blocks, you can purchase a specific
+    /// GPU instance type or EC2 UltraServer for a period of time.
+    /// 
+    ///  
+    /// <para>
+    /// To search for an available Capacity Block offering, you specify a reservation duration
+    /// and instance count.
+    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2CapacityBlockOffering")]
     [OutputType("Amazon.EC2.Model.CapacityBlockOffering")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeCapacityBlockOfferings API operation.", Operation = new[] {"DescribeCapacityBlockOfferings"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeCapacityBlockOfferingsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.CapacityBlockOffering or Amazon.EC2.Model.DescribeCapacityBlockOfferingsResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.CapacityBlockOffering objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeCapacityBlockOfferingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeCapacityBlockOfferingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2CapacityBlockOfferingCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CapacityDurationHour
         /// <summary>
         /// <para>
-        /// <para>The number of hours for which to reserve Capacity Block.</para>
+        /// <para>The reservation duration for the Capacity Block, in hours. You must specify the duration
+        /// in 1-day increments up 14 days, and in 7-day increments up to 182 days.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -58,6 +69,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("CapacityDurationHours")]
         public System.Int32? CapacityDurationHour { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EndDateRange
@@ -73,16 +96,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceCount
         /// <summary>
         /// <para>
-        /// <para>The number of instances for which to reserve capacity.</para>
+        /// <para>The number of instances for which to reserve capacity. Each Capacity Block can have
+        /// up to 64 instances, and you can have up to 256 instances across Capacity Blocks.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Int32? InstanceCount { get; set; }
         #endregion
         
@@ -92,14 +110,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The type of instance for which the Capacity Block offering reserves capacity.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String InstanceType { get; set; }
         #endregion
         
@@ -111,6 +122,26 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.DateTime? StartDateRange { get; set; }
+        #endregion
+        
+        #region Parameter UltraserverCount
+        /// <summary>
+        /// <para>
+        /// <para>The number of EC2 UltraServers in the offerings.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? UltraserverCount { get; set; }
+        #endregion
+        
+        #region Parameter UltraserverType
+        /// <summary>
+        /// <para>
+        /// <para>The EC2 UltraServer type of the Capacity Block offerings.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String UltraserverType { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -133,7 +164,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,9 +192,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -183,24 +218,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter CapacityDurationHour which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DryRun = this.DryRun;
             context.EndDateRange = this.EndDateRange;
             context.InstanceCount = this.InstanceCount;
-            #if MODULAR
-            if (this.InstanceCount == null && ParameterWasBound(nameof(this.InstanceCount)))
-            {
-                WriteWarning("You are passing $null as a value for parameter InstanceCount which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.InstanceType = this.InstanceType;
-            #if MODULAR
-            if (this.InstanceType == null && ParameterWasBound(nameof(this.InstanceType)))
-            {
-                WriteWarning("You are passing $null as a value for parameter InstanceType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
             context.StartDateRange = this.StartDateRange;
+            context.UltraserverCount = this.UltraserverCount;
+            context.UltraserverType = this.UltraserverType;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -223,6 +249,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.CapacityDurationHours = cmdletContext.CapacityDurationHour.Value;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.EndDateRange != null)
             {
                 request.EndDateRange = cmdletContext.EndDateRange.Value;
@@ -242,6 +272,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.StartDateRange != null)
             {
                 request.StartDateRange = cmdletContext.StartDateRange.Value;
+            }
+            if (cmdletContext.UltraserverCount != null)
+            {
+                request.UltraserverCount = cmdletContext.UltraserverCount.Value;
+            }
+            if (cmdletContext.UltraserverType != null)
+            {
+                request.UltraserverType = cmdletContext.UltraserverType;
             }
             
             // Initialize loop variant and commence piping
@@ -305,13 +343,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeCapacityBlockOfferings");
             try
             {
-                #if DESKTOP
-                return client.DescribeCapacityBlockOfferings(request);
-                #elif CORECLR
-                return client.DescribeCapacityBlockOfferingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeCapacityBlockOfferingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -329,12 +361,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.Int32? CapacityDurationHour { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.DateTime? EndDateRange { get; set; }
             public System.Int32? InstanceCount { get; set; }
             public System.String InstanceType { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.DateTime? StartDateRange { get; set; }
+            public System.Int32? UltraserverCount { get; set; }
+            public System.String UltraserverType { get; set; }
             public System.Func<Amazon.EC2.Model.DescribeCapacityBlockOfferingsResponse, GetEC2CapacityBlockOfferingCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.CapacityBlockOfferings;
         }

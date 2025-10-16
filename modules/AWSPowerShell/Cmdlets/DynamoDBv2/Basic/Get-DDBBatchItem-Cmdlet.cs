@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
@@ -78,26 +80,40 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     /// nonexistent items consume the minimum read capacity units according to the type of
     /// read. For more information, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/WorkingWithTables.html#CapacityUnitCalculations">Working
     /// with Tables</a> in the <i>Amazon DynamoDB Developer Guide</i>.
-    /// </para>
+    /// </para><note><para><c>BatchGetItem</c> will result in a <c>ValidationException</c> if the same key is
+    /// specified multiple times.
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "DDBBatchItem")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon DynamoDB BatchGetItem API operation.", Operation = new[] {"BatchGetItem"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.BatchGetItemResponse))]
     [AWSCmdletOutput("System.String or Amazon.DynamoDBv2.Model.BatchGetItemResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.DynamoDBv2.Model.BatchGetItemResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.BatchGetItemResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDDBBatchItemCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ReturnConsumedCapacity
+        /// <summary>
+        /// <para>
+        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        [AWSConstantClassSource("Amazon.DynamoDBv2.ReturnConsumedCapacity")]
+        public Amazon.DynamoDBv2.ReturnConsumedCapacity ReturnConsumedCapacity { get; set; }
+        #endregion
         
         #region Parameter RequestItem
         /// <summary>
         /// <para>
-        /// <para>A map of one or more table names and, for each table, a map that describes one or
-        /// more items to retrieve from that table. Each table name can be used only once per
-        /// <c>BatchGetItem</c> request.</para><para>Each element in the map of items to retrieve consists of the following:</para><ul><li><para><c>ConsistentRead</c> - If <c>true</c>, a strongly consistent read is used; if <c>false</c>
+        /// <para>A map of one or more table names or table ARNs and, for each table, a map that describes
+        /// one or more items to retrieve from that table. Each table name or ARN can be used
+        /// only once per <c>BatchGetItem</c> request.</para><para>Each element in the map of items to retrieve consists of the following:</para><ul><li><para><c>ConsistentRead</c> - If <c>true</c>, a strongly consistent read is used; if <c>false</c>
         /// (the default), an eventually consistent read is used.</para></li><li><para><c>ExpressionAttributeNames</c> - One or more substitution tokens for attribute names
         /// in the <c>ProjectionExpression</c> parameter. The following are some use cases for
         /// using <c>ExpressionAttributeNames</c>:</para><ul><li><para>To access an attribute whose name conflicts with a DynamoDB reserved word.</para></li><li><para>To create a placeholder for repeating occurrences of an attribute name in an expression.</para></li><li><para>To prevent special characters in an attribute name from being misinterpreted in an
@@ -117,30 +133,27 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// requested attributes are not found, they do not appear in the result.</para><para>For more information, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.AccessingItemAttributes.html">Accessing
         /// Item Attributes</a> in the <i>Amazon DynamoDB Developer Guide</i>.</para></li><li><para><c>AttributesToGet</c> - This is a legacy parameter. Use <c>ProjectionExpression</c>
         /// instead. For more information, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.AttributesToGet.html">AttributesToGet</a>
-        /// in the <i>Amazon DynamoDB Developer Guide</i>. </para></li></ul>
+        /// in the <i>Amazon DynamoDB Developer Guide</i>. </para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'RequestItem' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-RequestItem' to null for the first call then set the 'RequestItem' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         #if !MODULAR
-        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         #else
-        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
         [System.Management.Automation.AllowEmptyCollection]
         [System.Management.Automation.AllowNull]
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
-        [Alias("RequestItems")]
+        [Alias("NextToken","RequestItems")]
         public System.Collections.Hashtable RequestItem { get; set; }
-        #endregion
-        
-        #region Parameter ReturnConsumedCapacity
-        /// <summary>
-        /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [AWSConstantClassSource("Amazon.DynamoDBv2.ReturnConsumedCapacity")]
-        public Amazon.DynamoDBv2.ReturnConsumedCapacity ReturnConsumedCapacity { get; set; }
         #endregion
         
         #region Parameter Select
@@ -154,19 +167,24 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "Responses";
         #endregion
         
-        #region Parameter PassThru
+        #region Parameter NoAutoIteration
         /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RequestItem parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RequestItem' instead. This parameter will be removed in a future version.
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of RequestItem
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
         /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RequestItem' instead. This parameter will be removed in a future version.")]
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -174,21 +192,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.BatchGetItemResponse, GetDDBBatchItemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RequestItem;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.RequestItem != null)
             {
                 context.RequestItem = new Dictionary<System.String, Amazon.DynamoDBv2.Model.KeysAndAttributes>(StringComparer.Ordinal);
@@ -217,39 +225,62 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.DynamoDBv2.Model.BatchGetItemRequest();
             
-            if (cmdletContext.RequestItem != null)
-            {
-                request.RequestItems = cmdletContext.RequestItem;
-            }
             if (cmdletContext.ReturnConsumedCapacity != null)
             {
                 request.ReturnConsumedCapacity = cmdletContext.ReturnConsumedCapacity;
             }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.RequestItem;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.RequestItem));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.RequestItems = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.UnprocessedKeys;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -266,13 +297,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "BatchGetItem");
             try
             {
-                #if DESKTOP
-                return client.BatchGetItem(request);
-                #elif CORECLR
-                return client.BatchGetItemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchGetItemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RoboMaker;
 using Amazon.RoboMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ROBO
 {
     /// <summary>
-    /// Deploys a specific version of a robot application to robots in a fleet.
+    /// <important><para>
+    /// End of support notice: On September 10, 2025, Amazon Web Services will discontinue
+    /// support for Amazon Web Services RoboMaker. After September 10, 2025, you will no longer
+    /// be able to access the Amazon Web Services RoboMaker console or Amazon Web Services
+    /// RoboMaker resources. For more information on transitioning to Batch to help run containerized
+    /// simulations, visit <a href="https://aws.amazon.com/blogs/hpc/run-simulations-using-multiple-containers-in-a-single-aws-batch-job/">https://aws.amazon.com/blogs/hpc/run-simulations-using-multiple-containers-in-a-single-aws-batch-job/</a>.
     /// 
-    ///  <important><para>
-    /// This API is no longer supported and will throw an error if used.
+    /// </para></important><important><para>
+    /// This API is no longer supported and will throw an error if used. For more information,
+    /// see the January 31, 2022 update in the <a href="https://docs.aws.amazon.com/robomaker/latest/dg/chapter-support-policy.html#software-support-policy-january2022">Support
+    /// policy</a> page.
     /// </para></important><para>
+    /// Deploys a specific version of a robot application to robots in a fleet.
+    /// </para><para>
     /// The robot application must have a numbered <c>applicationVersion</c> for consistency
     /// reasons. To create a new version, use <c>CreateRobotApplicationVersion</c> or see
     /// <a href="https://docs.aws.amazon.com/robomaker/latest/dg/create-robot-application-version.html">Creating
@@ -46,13 +57,14 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
     [OutputType("Amazon.RoboMaker.Model.CreateDeploymentJobResponse")]
     [AWSCmdlet("Calls the AWS RoboMaker CreateDeploymentJob API operation.", Operation = new[] {"CreateDeploymentJob"}, SelectReturnType = typeof(Amazon.RoboMaker.Model.CreateDeploymentJobResponse))]
     [AWSCmdletOutput("Amazon.RoboMaker.Model.CreateDeploymentJobResponse",
-        "This cmdlet returns an Amazon.RoboMaker.Model.CreateDeploymentJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RoboMaker.Model.CreateDeploymentJobResponse object containing multiple properties."
     )]
     [System.ObsoleteAttribute("AWS RoboMaker is unable to process this request as the support for the AWS RoboMaker application deployment feature has ended. For additional information, see https://docs.aws.amazon.com/robomaker/latest/dg/fleets.html.")]
     public partial class NewROBODeploymentJobCmdlet : AmazonRoboMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -68,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         #region Parameter DeploymentApplicationConfig
         /// <summary>
         /// <para>
-        /// <para>The deployment application configuration.</para>
+        /// <para>The deployment application configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,7 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A map that contains tag keys and tag values that are attached to the deployment job.</para>
+        /// <para>A map that contains tag keys and tag values that are attached to the deployment job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,16 +152,6 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Fleet parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Fleet' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Fleet' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +162,13 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Fleet), MyInvocation.BoundParameters);
@@ -168,21 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RoboMaker.Model.CreateDeploymentJobResponse, NewROBODeploymentJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Fleet;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             if (this.DeploymentApplicationConfig != null)
             {
@@ -284,13 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS RoboMaker", "CreateDeploymentJob");
             try
             {
-                #if DESKTOP
-                return client.CreateDeploymentJob(request);
-                #elif CORECLR
-                return client.CreateDeploymentJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDeploymentJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

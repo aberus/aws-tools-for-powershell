@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
-    /// Sets the log-level override for a resource-ID and resource-type. This option can be
-    /// specified for a wireless gateway or a wireless device. A limit of 200 log level override
-    /// can be set per account.
+    /// Sets the log-level override for a resource ID and resource type. A limit of 200 log
+    /// level override can be set per account.
     /// </summary>
     [Cmdlet("Write", "IOTWResourceLogLevel", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS IoT Wireless PutResourceLogLevel API operation.", Operation = new[] {"PutResourceLogLevel"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.PutResourceLogLevelResponse))]
     [AWSCmdletOutput("None or Amazon.IoTWireless.Model.PutResourceLogLevelResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IoTWireless.Model.PutResourceLogLevelResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IoTWireless.Model.PutResourceLogLevelResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteIOTWResourceLogLevelCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LogLevel
         /// <summary>
@@ -81,7 +83,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>The type of the resource, which can be <c>WirelessDevice</c> or <c>WirelessGateway</c>.</para>
+        /// <para>The type of resource, which can be <c>WirelessDevice</c>, <c>WirelessGateway</c>,
+        /// or <c>FuotaTask</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -115,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceIdentifier), MyInvocation.BoundParameters);
@@ -223,13 +230,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "PutResourceLogLevel");
             try
             {
-                #if DESKTOP
-                return client.PutResourceLogLevel(request);
-                #elif CORECLR
-                return client.PutResourceLogLevelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutResourceLogLevelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

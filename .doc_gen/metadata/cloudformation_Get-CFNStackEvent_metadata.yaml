@@ -1,0 +1,20 @@
+---
+cloudformation_DescribeStackEvents:
+  title: Use Get-CFNStackEvent
+  title_abbrev: Get-CFNStackEvent
+  synopsis: use Get-CFNStackEvent
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Get-CFNStackEvent
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: Returns all stack related events for the specified stack.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudformation_Get-CFNStackEvent.1.1.ps1
+  services:
+    cloudformation:
+      DescribeStackEvents:
+

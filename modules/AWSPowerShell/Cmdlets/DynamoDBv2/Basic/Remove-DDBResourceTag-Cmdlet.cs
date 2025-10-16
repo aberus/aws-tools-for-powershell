@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
     /// Removes the association of tags from an Amazon DynamoDB resource. You can call <c>UntagResource</c>
     /// up to five times per second, per account. 
     /// 
-    ///  
-    /// <para>
+    ///  <ul><li><para><c>UntagResource</c> is an asynchronous operation. If you issue a <a>ListTagsOfResource</a>
+    /// request immediately after an <c>UntagResource</c> request, DynamoDB might return your
+    /// previous tag set, if there was one, or an empty tag set. This is because <c>ListTagsOfResource</c>
+    /// uses an eventually consistent query, and the metadata for your tags or table might
+    /// not be available at that moment. Wait for a few seconds, and then try the <c>ListTagsOfResource</c>
+    /// request again.
+    /// </para></li><li><para>
+    /// The application or removal of tags using <c>TagResource</c> and <c>UntagResource</c>
+    /// APIs is eventually consistent. <c>ListTagsOfResource</c> API will only reflect the
+    /// changes after a few seconds.
+    /// </para></li></ul><para>
     /// For an overview on tagging DynamoDB resources, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Tagging.html">Tagging
     /// for DynamoDB</a> in the <i>Amazon DynamoDB Developer Guide</i>.
     /// </para>
@@ -42,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB UntagResource API operation.", Operation = new[] {"UntagResource"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.UntagResourceResponse))]
     [AWSCmdletOutput("None or Amazon.DynamoDBv2.Model.UntagResourceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DynamoDBv2.Model.UntagResourceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DynamoDBv2.Model.UntagResourceResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveDDBResourceTagCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceArn
         /// <summary>
@@ -71,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <summary>
         /// <para>
         /// <para>A list of tag keys. Existing tags of the resource whose keys are members of this list
-        /// will be removed from the DynamoDB resource.</para>
+        /// will be removed from the DynamoDB resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -96,16 +112,6 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -116,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceArn), MyInvocation.BoundParameters);
@@ -132,21 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.UntagResourceResponse, RemoveDDBResourceTagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceArn = this.ResourceArn;
             #if MODULAR
             if (this.ResourceArn == null && ParameterWasBound(nameof(this.ResourceArn)))
@@ -226,13 +226,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "UntagResource");
             try
             {
-                #if DESKTOP
-                return client.UntagResource(request);
-                #elif CORECLR
-                return client.UntagResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UntagResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

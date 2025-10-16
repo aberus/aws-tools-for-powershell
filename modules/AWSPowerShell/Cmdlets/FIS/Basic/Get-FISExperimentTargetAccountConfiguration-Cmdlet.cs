@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FIS;
 using Amazon.FIS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FIS
 {
     /// <summary>
@@ -35,17 +37,18 @@ namespace Amazon.PowerShell.Cmdlets.FIS
     [AWSCmdlet("Calls the AWS Fault Injection Simulator GetExperimentTargetAccountConfiguration API operation.", Operation = new[] {"GetExperimentTargetAccountConfiguration"}, SelectReturnType = typeof(Amazon.FIS.Model.GetExperimentTargetAccountConfigurationResponse))]
     [AWSCmdletOutput("Amazon.FIS.Model.ExperimentTargetAccountConfiguration or Amazon.FIS.Model.GetExperimentTargetAccountConfigurationResponse",
         "This cmdlet returns an Amazon.FIS.Model.ExperimentTargetAccountConfiguration object.",
-        "The service call response (type Amazon.FIS.Model.GetExperimentTargetAccountConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FIS.Model.GetExperimentTargetAccountConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetFISExperimentTargetAccountConfigurationCmdlet : AmazonFISClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
-        /// <para>The AWS account ID of the target account.</para>
+        /// <para>The Amazon Web Services account ID of the target account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -87,19 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         public string Select { get; set; } = "TargetAccountConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ExperimentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ExperimentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ExperimentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,21 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.FIS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FIS.Model.GetExperimentTargetAccountConfigurationResponse, GetFISExperimentTargetAccountConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ExperimentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             #if MODULAR
             if (this.AccountId == null && ParameterWasBound(nameof(this.AccountId)))
@@ -198,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.FIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Fault Injection Simulator", "GetExperimentTargetAccountConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetExperimentTargetAccountConfiguration(request);
-                #elif CORECLR
-                return client.GetExperimentTargetAccountConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetExperimentTargetAccountConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

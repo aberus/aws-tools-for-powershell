@@ -117,9 +117,9 @@ $EMC_Completers = {
 
         # Amazon.MediaConvert.InputPolicy
         {
-            ($_ -eq "Write-EMCPolicy/Policy_HttpInputs") -Or
-            ($_ -eq "Write-EMCPolicy/Policy_HttpsInputs") -Or
-            ($_ -eq "Write-EMCPolicy/Policy_S3Inputs")
+            ($_ -eq "Write-EMCPolicy/Policy_HttpInput") -Or
+            ($_ -eq "Write-EMCPolicy/Policy_HttpsInput") -Or
+            ($_ -eq "Write-EMCPolicy/Policy_S3Input")
         }
         {
             $v = "ALLOWED","DISALLOWED"
@@ -127,7 +127,10 @@ $EMC_Completers = {
         }
 
         # Amazon.MediaConvert.JobStatus
-        "Get-EMCJobList/Status"
+        {
+            ($_ -eq "Get-EMCJobList/Status") -Or
+            ($_ -eq "Search-EMCJob/Status")
+        }
         {
             $v = "CANCELED","COMPLETE","ERROR","PROGRESSING","SUBMITTED"
             break
@@ -145,7 +148,8 @@ $EMC_Completers = {
             ($_ -eq "Get-EMCJobList/Order") -Or
             ($_ -eq "Get-EMCJobTemplateList/Order") -Or
             ($_ -eq "Get-EMCPresetList/Order") -Or
-            ($_ -eq "Get-EMCQueueList/Order")
+            ($_ -eq "Get-EMCQueueList/Order") -Or
+            ($_ -eq "Search-EMCJob/Order")
         }
         {
             $v = "ASCENDING","DESCENDING"
@@ -224,15 +228,15 @@ $EMC_map = @{
     "BillingTagsSource"=@("New-EMCJob")
     "ListBy"=@("Get-EMCJobTemplateList","Get-EMCPresetList","Get-EMCQueueList")
     "Mode"=@("Get-EMCEndpoint")
-    "Order"=@("Get-EMCJobList","Get-EMCJobTemplateList","Get-EMCPresetList","Get-EMCQueueList")
-    "Policy_HttpInputs"=@("Write-EMCPolicy")
-    "Policy_HttpsInputs"=@("Write-EMCPolicy")
-    "Policy_S3Inputs"=@("Write-EMCPolicy")
+    "Order"=@("Get-EMCJobList","Get-EMCJobTemplateList","Get-EMCPresetList","Get-EMCQueueList","Search-EMCJob")
+    "Policy_HttpInput"=@("Write-EMCPolicy")
+    "Policy_HttpsInput"=@("Write-EMCPolicy")
+    "Policy_S3Input"=@("Write-EMCPolicy")
     "PricingPlan"=@("New-EMCQueue")
     "ReservationPlanSettings_Commitment"=@("New-EMCQueue","Update-EMCQueue")
     "ReservationPlanSettings_RenewalType"=@("New-EMCQueue","Update-EMCQueue")
     "SimulateReservedQueue"=@("New-EMCJob")
-    "Status"=@("Get-EMCJobList","New-EMCQueue","Update-EMCQueue")
+    "Status"=@("Get-EMCJobList","New-EMCQueue","Search-EMCJob","Update-EMCQueue")
     "StatusUpdateInterval"=@("New-EMCJob","New-EMCJobTemplate","Update-EMCJobTemplate")
 }
 
@@ -292,6 +296,7 @@ $EMC_SelectMap = @{
                "New-EMCJobTemplate",
                "New-EMCPreset",
                "New-EMCQueue",
+               "New-EMCResourceShare",
                "Remove-EMCJobTemplate",
                "Remove-EMCPolicy",
                "Remove-EMCPreset",
@@ -308,7 +313,10 @@ $EMC_SelectMap = @{
                "Get-EMCPresetList",
                "Get-EMCQueueList",
                "Get-EMCResourceTag",
+               "Get-EMCVersionList",
+               "Invoke-EMCProbe",
                "Write-EMCPolicy",
+               "Search-EMCJob",
                "Add-EMCResourceTag",
                "Remove-EMCResourceTag",
                "Update-EMCJobTemplate",

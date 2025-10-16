@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Pinpoint;
 using Amazon.Pinpoint.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PIN
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.PIN
     [AWSCmdlet("Calls the Amazon Pinpoint CreateJourney API operation.", Operation = new[] {"CreateJourney"}, SelectReturnType = typeof(Amazon.Pinpoint.Model.CreateJourneyResponse))]
     [AWSCmdletOutput("Amazon.Pinpoint.Model.JourneyResponse or Amazon.Pinpoint.Model.CreateJourneyResponse",
         "This cmdlet returns an Amazon.Pinpoint.Model.JourneyResponse object.",
-        "The service call response (type Amazon.Pinpoint.Model.CreateJourneyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Pinpoint.Model.CreateJourneyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPINJourneyCmdlet : AmazonPinpointClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WriteJourneyRequest_Activity
         /// <summary>
@@ -48,7 +51,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <para>A map that contains a set of Activity objects, one object for each activity in the
         /// journey. For each Activity object, the key is the unique identifier (string) for an
         /// activity and the value is the settings for the activity. An activity identifier can
-        /// contain a maximum of 100 characters. The characters must be alphanumeric characters.</para>
+        /// contain a maximum of 100 characters. The characters must be alphanumeric characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +85,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <summary>
         /// <para>
         /// <para>One or more custom attributes that your application reports to Amazon Pinpoint. You
-        /// can use these attributes as selection criteria when you create an event filter.</para>
+        /// can use these attributes as selection criteria when you create an event filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter ClosedDays_CUSTOM
         /// <summary>
         /// <para>
-        /// <para>Rules for the Custom channel.</para>
+        /// <para>Rules for the Custom channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,7 +159,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter OpenHours_CUSTOM
         /// <summary>
         /// <para>
-        /// <para>Specifies the schedule settings for the custom channel.</para>
+        /// <para>Specifies the schedule settings for the custom channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,7 +223,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter ClosedDays_EMAIL
         /// <summary>
         /// <para>
-        /// <para>Rules for the Email channel.</para>
+        /// <para>Rules for the Email channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,7 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter OpenHours_EMAIL
         /// <summary>
         /// <para>
-        /// <para>Specifies the schedule settings for the email channel.</para>
+        /// <para>Specifies the schedule settings for the email channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -326,7 +353,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <summary>
         /// <para>
         /// <para>One or more custom metrics that your application reports to Amazon Pinpoint. You can
-        /// use these metrics as selection criteria when you create an event filter.</para>
+        /// use these metrics as selection criteria when you create an event filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -356,7 +387,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter ClosedDays_PUSH
         /// <summary>
         /// <para>
-        /// <para>Rules for the Push channel.</para>
+        /// <para>Rules for the Push channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -367,7 +402,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter OpenHours_PUSH
         /// <summary>
         /// <para>
-        /// <para>Specifies the schedule settings for the push channel.</para>
+        /// <para>Specifies the schedule settings for the push channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -432,7 +471,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter ClosedDays_SMS
         /// <summary>
         /// <para>
-        /// <para>Rules for the SMS channel.</para>
+        /// <para>Rules for the SMS channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -443,7 +486,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter OpenHours_SMS
         /// <summary>
         /// <para>
-        /// <para>Specifies the schedule settings for the SMS channel.</para>
+        /// <para>Specifies the schedule settings for the SMS channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -527,7 +574,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// time zone if the Endpoint does not have a value for the Demographic.Timezone attribute.</para><ul><li><para>PHONE_NUMBER - A time zone is determined based on the Endpoint.Address and Endpoint.Location.Country.</para></li><li><para>POSTAL_CODE - A time zone is determined based on the Endpoint.Location.PostalCode
         /// and Endpoint.Location.Country.</para><note><para>POSTAL_CODE detection is only supported in the United States, United Kingdom, Australia,
         /// New Zealand, Canada, France, Italy, Spain, Germany and in regions where Amazon Pinpoint
-        /// is available.</para></note></li></ul>
+        /// is available.</para></note></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -552,7 +603,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <para>
         /// <para>The criteria values to use for the segment dimension. Depending on the value of the
         /// DimensionType property, endpoints are included or excluded from the segment if their
-        /// values match the criteria values.</para>
+        /// values match the criteria values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -563,7 +618,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter ClosedDays_VOICE
         /// <summary>
         /// <para>
-        /// <para>Rules for the Voice channel.</para>
+        /// <para>Rules for the Voice channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -574,7 +633,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter OpenHours_VOICE
         /// <summary>
         /// <para>
-        /// <para>Specifies the schedule settings for the voice channel.</para>
+        /// <para>Specifies the schedule settings for the voice channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -604,16 +667,6 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         public string Select { get; set; } = "JourneyResponse";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -624,9 +677,13 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -640,21 +697,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Pinpoint.Model.CreateJourneyResponse, NewPINJourneyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -1551,13 +1598,7 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint", "CreateJourney");
             try
             {
-                #if DESKTOP
-                return client.CreateJourney(request);
-                #elif CORECLR
-                return client.CreateJourneyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateJourneyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

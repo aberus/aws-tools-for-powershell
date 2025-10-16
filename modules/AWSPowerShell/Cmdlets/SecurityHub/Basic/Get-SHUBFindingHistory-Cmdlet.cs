@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,44 +22,56 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
-    /// Returns history for a Security Hub finding in the last 90 days. The history includes
-    /// changes made to any fields in the Amazon Web Services Security Finding Format (ASFF).<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Returns the history of a Security Hub finding. The history includes changes made
+    /// to any fields in the Amazon Web Services Security Finding Format (ASFF) except top-level
+    /// timestamp fields, such as the <c>CreatedAt</c> and <c>UpdatedAt</c> fields. 
+    /// 
+    ///  
+    /// <para>
+    /// This operation might return fewer results than the maximum number of results (<c>MaxResults</c>)
+    /// specified in a request, even when more results are available. If this occurs, the
+    /// response includes a <c>NextToken</c> value, which you should use to retrieve the next
+    /// set of results in the response. The presence of a <c>NextToken</c> value in a response
+    /// doesn't necessarily indicate that the results are incomplete. However, you should
+    /// continue to specify a <c>NextToken</c> value until you receive a response that doesn't
+    /// include this value.
+    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "SHUBFindingHistory")]
     [OutputType("Amazon.SecurityHub.Model.FindingHistoryRecord")]
     [AWSCmdlet("Calls the AWS Security Hub GetFindingHistory API operation.", Operation = new[] {"GetFindingHistory"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.GetFindingHistoryResponse))]
     [AWSCmdletOutput("Amazon.SecurityHub.Model.FindingHistoryRecord or Amazon.SecurityHub.Model.GetFindingHistoryResponse",
         "This cmdlet returns a collection of Amazon.SecurityHub.Model.FindingHistoryRecord objects.",
-        "The service call response (type Amazon.SecurityHub.Model.GetFindingHistoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SecurityHub.Model.GetFindingHistoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSHUBFindingHistoryCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndTime
         /// <summary>
         /// <para>
         /// <para> An ISO 8601-formatted timestamp that indicates the end time of the requested finding
-        /// history. A correctly formatted example is <c>2020-05-21T20:16:34.724Z</c>. The value
-        /// cannot contain spaces, and date and time should be separated by <c>T</c>. For more
-        /// information, see <a href="https://www.rfc-editor.org/rfc/rfc3339#section-5.6">RFC
-        /// 3339 section 5.6, Internet Date/Time Format</a>.</para><para>If you provide values for both <c>StartTime</c> and <c>EndTime</c>, Security Hub returns
+        /// history.</para><para>If you provide values for both <c>StartTime</c> and <c>EndTime</c>, Security Hub returns
         /// finding history for the specified time period. If you provide a value for <c>StartTime</c>
         /// but not for <c>EndTime</c>, Security Hub returns finding history from the <c>StartTime</c>
         /// to the time at which the API is called. If you provide a value for <c>EndTime</c>
         /// but not for <c>StartTime</c>, Security Hub returns finding history from the <a href="https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_AwsSecurityFindingFilters.html#securityhub-Type-AwsSecurityFindingFilters-CreatedAt">CreatedAt</a>
         /// timestamp of the finding to the <c>EndTime</c>. If you provide neither <c>StartTime</c>
-        /// nor <c>EndTime</c>, Security Hub returns finding history from the CreatedAt timestamp
-        /// of the finding to the time at which the API is called. In all of these scenarios,
-        /// the response is limited to 100 results, and the maximum time period is limited to
-        /// 90 days.</para>
+        /// nor <c>EndTime</c>, Security Hub returns finding history from the <c>CreatedAt</c>
+        /// timestamp of the finding to the time at which the API is called. In all of these scenarios,
+        /// the response is limited to 100 results.</para><para>For more information about the validation and formatting of timestamp fields in Security
+        /// Hub, see <a href="https://docs.aws.amazon.com/securityhub/1.0/APIReference/Welcome.html#timestamps">Timestamps</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,20 +117,16 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         #region Parameter StartTime
         /// <summary>
         /// <para>
-        /// <para> An ISO 8601-formatted timestamp that indicates the start time of the requested finding
-        /// history. A correctly formatted example is <c>2020-05-21T20:16:34.724Z</c>. The value
-        /// cannot contain spaces, and date and time should be separated by <c>T</c>. For more
-        /// information, see <a href="https://www.rfc-editor.org/rfc/rfc3339#section-5.6">RFC
-        /// 3339 section 5.6, Internet Date/Time Format</a>.</para><para>If you provide values for both <c>StartTime</c> and <c>EndTime</c>, Security Hub returns
+        /// <para>A timestamp that indicates the start time of the requested finding history.</para><para>If you provide values for both <c>StartTime</c> and <c>EndTime</c>, Security Hub returns
         /// finding history for the specified time period. If you provide a value for <c>StartTime</c>
         /// but not for <c>EndTime</c>, Security Hub returns finding history from the <c>StartTime</c>
         /// to the time at which the API is called. If you provide a value for <c>EndTime</c>
         /// but not for <c>StartTime</c>, Security Hub returns finding history from the <a href="https://docs.aws.amazon.com/securityhub/1.0/APIReference/API_AwsSecurityFindingFilters.html#securityhub-Type-AwsSecurityFindingFilters-CreatedAt">CreatedAt</a>
         /// timestamp of the finding to the <c>EndTime</c>. If you provide neither <c>StartTime</c>
-        /// nor <c>EndTime</c>, Security Hub returns finding history from the CreatedAt timestamp
-        /// of the finding to the time at which the API is called. In all of these scenarios,
-        /// the response is limited to 100 results, and the maximum time period is limited to
-        /// 90 days. </para>
+        /// nor <c>EndTime</c>, Security Hub returns finding history from the <c>CreatedAt</c>
+        /// timestamp of the finding to the time at which the API is called. In all of these scenarios,
+        /// the response is limited to 100 results.</para><para>For more information about the validation and formatting of timestamp fields in Security
+        /// Hub, see <a href="https://docs.aws.amazon.com/securityhub/1.0/APIReference/Welcome.html#timestamps">Timestamps</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,7 +155,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,9 +183,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -329,13 +341,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "GetFindingHistory");
             try
             {
-                #if DESKTOP
-                return client.GetFindingHistory(request);
-                #elif CORECLR
-                return client.GetFindingHistoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetFindingHistoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

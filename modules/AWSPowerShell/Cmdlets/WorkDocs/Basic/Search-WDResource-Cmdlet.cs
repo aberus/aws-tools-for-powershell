@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkDocs;
 using Amazon.WorkDocs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WD
 {
     /// <summary>
@@ -35,22 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.WD
     [AWSCmdlet("Calls the Amazon WorkDocs SearchResources API operation.", Operation = new[] {"SearchResources"}, SelectReturnType = typeof(Amazon.WorkDocs.Model.SearchResourcesResponse))]
     [AWSCmdletOutput("Amazon.WorkDocs.Model.ResponseItem or Amazon.WorkDocs.Model.SearchResourcesResponse",
         "This cmdlet returns a collection of Amazon.WorkDocs.Model.ResponseItem objects.",
-        "The service call response (type Amazon.WorkDocs.Model.SearchResourcesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkDocs.Model.SearchResourcesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SearchWDResourceCmdlet : AmazonWorkDocsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalResponseField
         /// <summary>
         /// <para>
         /// <para>A list of attributes to include in the response. Used to request fields that are not
-        /// normally returned in a standard response.</para>
+        /// normally returned in a standard response.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -61,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_AncestorId
         /// <summary>
         /// <para>
-        /// <para>Filter based on resource’s path.</para>
+        /// <para>Filter based on resource’s path.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,7 +90,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_ContentCategory
         /// <summary>
         /// <para>
-        /// <para>Filters by content category.</para>
+        /// <para>Filters by content category.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_Label
         /// <summary>
         /// <para>
-        /// <para>Filter by labels using exact match.</para>
+        /// <para>Filter by labels using exact match.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter OrderBy
         /// <summary>
         /// <para>
-        /// <para>Order by results in one or more categories.</para>
+        /// <para>Order by results in one or more categories.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +178,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_Principal
         /// <summary>
         /// <para>
-        /// <para>Filter based on UserIds or GroupIds.</para>
+        /// <para>Filter based on UserIds or GroupIds.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,7 +194,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         /// <summary>
         /// <para>
         /// <para>Filter based on the text field type. A Folder has only a name and no content. A Comment
-        /// has only content and no name. A Document or Document Version has a name and content</para>
+        /// has only content and no name. A Document or Document Version has a name and content</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -193,7 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_ResourceType
         /// <summary>
         /// <para>
-        /// <para>Filters based on entity type.</para>
+        /// <para>Filters based on entity type.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,7 +235,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_SearchCollectionType
         /// <summary>
         /// <para>
-        /// <para>Filter based on file groupings.</para>
+        /// <para>Filter based on file groupings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -248,7 +283,11 @@ namespace Amazon.PowerShell.Cmdlets.WD
         #region Parameter Filters_TextLocale
         /// <summary>
         /// <para>
-        /// <para>Filters by the locale of the content or comment.</para>
+        /// <para>Filters by the locale of the content or comment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -273,7 +312,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -302,9 +341,13 @@ namespace Amazon.PowerShell.Cmdlets.WD
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -660,13 +703,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkDocs", "SearchResources");
             try
             {
-                #if DESKTOP
-                return client.SearchResources(request);
-                #elif CORECLR
-                return client.SearchResourcesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SearchResourcesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

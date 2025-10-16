@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -36,8 +38,9 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// <para>
     /// Operations engineers and IT professionals use Amazon Web Services Systems Manager
     /// OpsCenter to view, investigate, and remediate operational issues impacting the performance
-    /// and health of their Amazon Web Services resources. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter.html">OpsCenter</a>
-    /// in the <i>Amazon Web Services Systems Manager User Guide</i>. 
+    /// and health of their Amazon Web Services resources. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter.html">Amazon
+    /// Web Services Systems Manager OpsCenter</a> in the <i>Amazon Web Services Systems Manager
+    /// User Guide</i>. 
     /// </para>
     /// </summary>
     [Cmdlet("Update", "SSMOpsItem", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -45,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager UpdateOpsItem API operation.", Operation = new[] {"UpdateOpsItem"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.UpdateOpsItemResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleSystemsManagement.Model.UpdateOpsItemResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleSystemsManagement.Model.UpdateOpsItemResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleSystemsManagement.Model.UpdateOpsItemResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateSSMOpsItemCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActualEndTime
         /// <summary>
@@ -98,7 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of an SNS topic where notifications are sent when this
-        /// OpsItem is edited or changed.</para>
+        /// OpsItem is edited or changed.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +131,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// in the request. Use the <c>/aws/automations</c> key in OperationalData to associate
         /// an Automation runbook with the OpsItem. To view Amazon Web Services CLI example commands
         /// that use these keys, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter-manually-create-OpsItems.html">Creating
-        /// OpsItems manually</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para>
+        /// OpsItems manually</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter OperationalDataToDelete
         /// <summary>
         /// <para>
-        /// <para>Keys that you want to remove from the OperationalData map.</para>
+        /// <para>Keys that you want to remove from the OperationalData map.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,7 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>One or more OpsItems that share something in common with the current OpsItems. For
         /// example, related OpsItems can include OpsItems with similar error messages, impacted
-        /// resources, or statuses for the impacted resource.</para>
+        /// resources, or statuses for the impacted resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -225,8 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter Status
         /// <summary>
         /// <para>
-        /// <para>The OpsItem status. Status can be <c>Open</c>, <c>In Progress</c>, or <c>Resolved</c>.
-        /// For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter-working-with-OpsItems-editing-details.html">Editing
+        /// <para>The OpsItem status. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter-working-with-OpsItems-editing-details.html">Editing
         /// OpsItem details</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -255,16 +274,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OpsItemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OpsItemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OpsItemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -275,9 +284,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.OpsItemId), MyInvocation.BoundParameters);
@@ -291,21 +304,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.UpdateOpsItemResponse, UpdateSSMOpsItemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OpsItemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ActualEndTime = this.ActualEndTime;
             context.ActualStartTime = this.ActualStartTime;
             context.Category = this.Category;
@@ -462,13 +465,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "UpdateOpsItem");
             try
             {
-                #if DESKTOP
-                return client.UpdateOpsItem(request);
-                #elif CORECLR
-                return client.UpdateOpsItemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateOpsItemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

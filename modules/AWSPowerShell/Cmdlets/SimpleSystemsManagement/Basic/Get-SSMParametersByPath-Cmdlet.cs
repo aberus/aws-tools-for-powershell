@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
-    /// Retrieve information about one or more parameters in a specific hierarchy. 
+    /// Retrieve information about one or more parameters under a specified level in a hierarchy.
+    /// 
     /// 
     ///  
     /// <para>
@@ -38,6 +41,10 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// If the service reaches an internal limit while processing the results, it stops the
     /// operation and returns the matching values up to that point and a <c>NextToken</c>.
     /// You can specify the <c>NextToken</c> in a subsequent call to get the next set of results.
+    /// </para><para>
+    /// Parameter names can't contain spaces. The service removes any spaces specified for
+    /// the beginning or end of a parameter name. If the specified name for a parameter contains
+    /// spaces between characters, the request fails with a <c>ValidationException</c> error.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "SSMParametersByPath")]
@@ -45,21 +52,24 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager GetParametersByPath API operation.", Operation = new[] {"GetParametersByPath"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.Parameter or Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse",
         "This cmdlet returns a collection of Amazon.SimpleSystemsManagement.Model.Parameter objects.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSSMParametersByPathCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ParameterFilter
         /// <summary>
         /// <para>
         /// <para>Filters to limit the request results.</para><note><para>The following <c>Key</c> values are supported for <c>GetParametersByPath</c>: <c>Type</c>,
         /// <c>KeyId</c>, and <c>Label</c>.</para><para>The following <c>Key</c> values aren't supported for <c>GetParametersByPath</c>: <c>tag</c>,
-        /// <c>DataType</c>, <c>Name</c>, <c>Path</c>, and <c>Tier</c>.</para></note>
+        /// <c>DataType</c>, <c>Name</c>, <c>Path</c>, and <c>Tier</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,7 +147,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,16 +165,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "Parameters";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Path parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Path' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Path' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -175,9 +175,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -185,21 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.GetParametersByPathResponse, GetSSMParametersByPathCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Path;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MaxResult = this.MaxResult;
             #if MODULAR
             if (!ParameterWasBound(nameof(this.MaxResult)))
@@ -245,9 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.SimpleSystemsManagement.Model.GetParametersByPathRequest();
@@ -323,7 +315,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.SimpleSystemsManagement.Model.GetParametersByPathRequest();
@@ -394,7 +386,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Parameters.Count;
+                    int _receivedThisCall = response.Parameters?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -443,13 +435,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "GetParametersByPath");
             try
             {
-                #if DESKTOP
-                return client.GetParametersByPath(request);
-                #elif CORECLR
-                return client.GetParametersByPathAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetParametersByPathAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

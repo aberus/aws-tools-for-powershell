@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LM
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
     [OutputType("Amazon.Lambda.Model.CreateCodeSigningConfigResponse")]
     [AWSCmdlet("Calls the AWS Lambda CreateCodeSigningConfig API operation.", Operation = new[] {"CreateCodeSigningConfig"}, SelectReturnType = typeof(Amazon.Lambda.Model.CreateCodeSigningConfigResponse))]
     [AWSCmdletOutput("Amazon.Lambda.Model.CreateCodeSigningConfigResponse",
-        "This cmdlet returns an Amazon.Lambda.Model.CreateCodeSigningConfigResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Lambda.Model.CreateCodeSigningConfigResponse object containing multiple properties."
     )]
     public partial class NewLMCodeSigningConfigCmdlet : AmazonLambdaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -58,7 +61,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) for each of the signing profiles. A signing profile
-        /// defines a trusted user who can sign a code package. </para>
+        /// defines a trusted user who can sign a code package. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,13 +80,29 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public System.String[] AllowedPublishers_SigningProfileVersionArn { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>A list of tags to add to the code signing configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
         #region Parameter CodeSigningPolicies_UntrustedArtifactOnDeployment
         /// <summary>
         /// <para>
         /// <para>Code signing configuration policy for deployment validation failure. If you set the
         /// policy to <c>Enforce</c>, Lambda blocks the deployment request if signature validation
         /// checks fail. If you set the policy to <c>Warn</c>, Lambda allows the deployment and
-        /// creates a CloudWatch log. </para><para>Default value: <c>Warn</c></para>
+        /// issues a new Amazon CloudWatch metric (<c>SignatureValidationErrors</c>) and also
+        /// stores the warning in the CloudTrail log.</para><para>Default value: <c>Warn</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Description), MyInvocation.BoundParameters);
@@ -141,6 +168,14 @@ namespace Amazon.PowerShell.Cmdlets.LM
             #endif
             context.CodeSigningPolicies_UntrustedArtifactOnDeployment = this.CodeSigningPolicies_UntrustedArtifactOnDeployment;
             context.Description = this.Description;
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -199,6 +234,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
             CmdletOutput output;
             
@@ -237,13 +276,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lambda", "CreateCodeSigningConfig");
             try
             {
-                #if DESKTOP
-                return client.CreateCodeSigningConfig(request);
-                #elif CORECLR
-                return client.CreateCodeSigningConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCodeSigningConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -263,6 +296,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             public List<System.String> AllowedPublishers_SigningProfileVersionArn { get; set; }
             public Amazon.Lambda.CodeSigningPolicy CodeSigningPolicies_UntrustedArtifactOnDeployment { get; set; }
             public System.String Description { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.Lambda.Model.CreateCodeSigningConfigResponse, NewLMCodeSigningConfigCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

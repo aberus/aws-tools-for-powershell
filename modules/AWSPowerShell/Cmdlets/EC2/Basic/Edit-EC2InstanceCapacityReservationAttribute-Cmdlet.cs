@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
     /// Modifies the Capacity Reservation settings for a stopped instance. Use this action
     /// to configure an instance to target a specific Capacity Reservation, run in any <c>open</c>
-    /// Capacity Reservation with matching attributes, or run On-Demand Instance capacity.
+    /// Capacity Reservation with matching attributes, run in On-Demand Instance capacity,
+    /// or only run in a Capacity Reservation.
     /// </summary>
     [Cmdlet("Edit", "EC2InstanceCapacityReservationAttribute", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.Boolean")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyInstanceCapacityReservationAttributes API operation.", Operation = new[] {"ModifyInstanceCapacityReservationAttributes"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyInstanceCapacityReservationAttributesResponse))]
     [AWSCmdletOutput("System.Boolean or Amazon.EC2.Model.ModifyInstanceCapacityReservationAttributesResponse",
-        "This cmdlet returns a System.Boolean object.",
-        "The service call response (type Amazon.EC2.Model.ModifyInstanceCapacityReservationAttributesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Boolean objects.",
+        "The service call response (type Amazon.EC2.Model.ModifyInstanceCapacityReservationAttributesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2InstanceCapacityReservationAttributeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CapacityReservationTarget_CapacityReservationId
         /// <summary>
@@ -58,9 +62,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter CapacityReservationSpecification_CapacityReservationPreference
         /// <summary>
         /// <para>
-        /// <para>Indicates the instance's Capacity Reservation preferences. Possible preferences include:</para><ul><li><para><c>open</c> - The instance can run in any <c>open</c> Capacity Reservation that has
-        /// matching attributes (instance type, platform, Availability Zone).</para></li><li><para><c>none</c> - The instance avoids running in a Capacity Reservation even if one is
-        /// available. The instance runs as an On-Demand Instance.</para></li></ul>
+        /// <para>Indicates the instance's Capacity Reservation preferences. Possible preferences include:</para><ul><li><para><c>capacity-reservations-only</c> - The instance will only run in a Capacity Reservation
+        /// or Capacity Reservation group. If capacity isn't available, the instance will fail
+        /// to launch.</para></li><li><para><c>open</c> - The instance can run in any <c>open</c> Capacity Reservation that has
+        /// matching attributes (instance type, platform, Availability Zone, and tenancy). If
+        /// capacity isn't available, the instance runs as an On-Demand Instance.</para></li><li><para><c>none</c> - The instance doesn't run in a Capacity Reservation even if one is available.
+        /// The instance runs as an On-Demand Instance.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -77,6 +84,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("CapacityReservationSpecification_CapacityReservationTarget_CapacityReservationResourceGroupArn")]
         public System.String CapacityReservationTarget_CapacityReservationResourceGroupArn { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter InstanceId
@@ -107,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Return";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -127,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -143,24 +156,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyInstanceCapacityReservationAttributesResponse, EditEC2InstanceCapacityReservationAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CapacityReservationSpecification_CapacityReservationPreference = this.CapacityReservationSpecification_CapacityReservationPreference;
             context.CapacityReservationTarget_CapacityReservationId = this.CapacityReservationTarget_CapacityReservationId;
             context.CapacityReservationTarget_CapacityReservationResourceGroupArn = this.CapacityReservationTarget_CapacityReservationResourceGroupArn;
+            context.DryRun = this.DryRun;
             context.InstanceId = this.InstanceId;
             #if MODULAR
             if (this.InstanceId == null && ParameterWasBound(nameof(this.InstanceId)))
@@ -238,6 +242,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.CapacityReservationSpecification = null;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.InstanceId != null)
             {
                 request.InstanceId = cmdletContext.InstanceId;
@@ -280,13 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyInstanceCapacityReservationAttributes");
             try
             {
-                #if DESKTOP
-                return client.ModifyInstanceCapacityReservationAttributes(request);
-                #elif CORECLR
-                return client.ModifyInstanceCapacityReservationAttributesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyInstanceCapacityReservationAttributesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -306,6 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public Amazon.EC2.CapacityReservationPreference CapacityReservationSpecification_CapacityReservationPreference { get; set; }
             public System.String CapacityReservationTarget_CapacityReservationId { get; set; }
             public System.String CapacityReservationTarget_CapacityReservationResourceGroupArn { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String InstanceId { get; set; }
             public System.Func<Amazon.EC2.Model.ModifyInstanceCapacityReservationAttributesResponse, EditEC2InstanceCapacityReservationAttributeCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Return;

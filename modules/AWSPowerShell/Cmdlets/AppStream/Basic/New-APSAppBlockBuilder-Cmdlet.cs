@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppStream;
 using Amazon.AppStream.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APS
 {
     /// <summary>
@@ -35,18 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.APS
     [AWSCmdlet("Calls the Amazon AppStream CreateAppBlockBuilder API operation.", Operation = new[] {"CreateAppBlockBuilder"}, SelectReturnType = typeof(Amazon.AppStream.Model.CreateAppBlockBuilderResponse))]
     [AWSCmdletOutput("Amazon.AppStream.Model.AppBlockBuilder or Amazon.AppStream.Model.CreateAppBlockBuilderResponse",
         "This cmdlet returns an Amazon.AppStream.Model.AppBlockBuilder object.",
-        "The service call response (type Amazon.AppStream.Model.CreateAppBlockBuilderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppStream.Model.CreateAppBlockBuilderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAPSAppBlockBuilderCmdlet : AmazonAppStreamClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessEndpoint
         /// <summary>
         /// <para>
         /// <para>The list of interface VPC endpoint (interface endpoint) objects. Administrators can
-        /// connect to the app block builder only through the specified endpoints.</para>
+        /// connect to the app block builder only through the specified endpoints.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.APS
         #region Parameter VpcConfig_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The identifiers of the security groups for the fleet or image builder.</para>
+        /// <para>The identifiers of the security groups for the fleet or image builder.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,7 +180,11 @@ namespace Amazon.PowerShell.Cmdlets.APS
         /// <para>
         /// <para>The identifiers of the subnets to which a network interface is attached from the fleet
         /// instance or image builder instance. Fleet instances use one or more subnets. Image
-        /// builder instances use one subnet.</para>
+        /// builder instances use one subnet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,7 +199,11 @@ namespace Amazon.PowerShell.Cmdlets.APS
         /// value is optional. For example, Environment=Test. If you do not specify a value, Environment=.
         /// </para><para>If you do not specify a value, the value is set to an empty string.</para><para>Generally allowed characters are: letters, numbers, and spaces representable in UTF-8,
         /// and the following special characters: </para><para>_ . : / = + \ - @</para><para>For more information, see <a href="https://docs.aws.amazon.com/appstream2/latest/developerguide/tagging-basic.html">Tagging
-        /// Your Resources</a> in the <i>Amazon AppStream 2.0 Administration Guide</i>.</para>
+        /// Your Resources</a> in the <i>Amazon AppStream 2.0 Administration Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -213,9 +232,13 @@ namespace Amazon.PowerShell.Cmdlets.APS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -398,13 +421,7 @@ namespace Amazon.PowerShell.Cmdlets.APS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon AppStream", "CreateAppBlockBuilder");
             try
             {
-                #if DESKTOP
-                return client.CreateAppBlockBuilder(request);
-                #elif CORECLR
-                return client.CreateAppBlockBuilderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAppBlockBuilderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

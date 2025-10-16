@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKMediaPipelines;
 using Amazon.ChimeSDKMediaPipelines.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMMP
 {
     /// <summary>
@@ -35,16 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
     [AWSCmdlet("Calls the Amazon Chime SDK Media Pipelines CreateMediaCapturePipeline API operation.", Operation = new[] {"CreateMediaCapturePipeline"}, SelectReturnType = typeof(Amazon.ChimeSDKMediaPipelines.Model.CreateMediaCapturePipelineResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKMediaPipelines.Model.MediaCapturePipeline or Amazon.ChimeSDKMediaPipelines.Model.CreateMediaCapturePipelineResponse",
         "This cmdlet returns an Amazon.ChimeSDKMediaPipelines.Model.MediaCapturePipeline object.",
-        "The service call response (type Amazon.ChimeSDKMediaPipelines.Model.CreateMediaCapturePipelineResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ChimeSDKMediaPipelines.Model.CreateMediaCapturePipelineResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCHMMPMediaCapturePipelineCmdlet : AmazonChimeSDKMediaPipelinesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActiveSpeakerOnlyConfiguration_ActiveSpeakerPosition
         /// <summary>
@@ -61,12 +60,45 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         #region Parameter SelectedVideoStreams_AttendeeId
         /// <summary>
         /// <para>
-        /// <para>The attendee IDs of the streams selected for a media pipeline. </para>
+        /// <para>The attendee IDs of the streams selected for a media pipeline. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ChimeSdkMeetingConfiguration_SourceConfiguration_SelectedVideoStreams_AttendeeIds")]
         public System.String[] SelectedVideoStreams_AttendeeId { get; set; }
+        #endregion
+        
+        #region Parameter SseAwsKeyManagementParams_AwsKmsEncryptionContext
+        /// <summary>
+        /// <para>
+        /// <para>Base64-encoded string of a UTF-8 encoded JSON, which contains the encryption context
+        /// as non-secret key-value pair known as encryption context pairs, that provides an added
+        /// layer of security for your data. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html">KMS
+        /// encryption context</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/symmetric-asymmetric.html">Asymmetric
+        /// keys in KMS</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SseAwsKeyManagementParams_AwsKmsEncryptionContext { get; set; }
+        #endregion
+        
+        #region Parameter SseAwsKeyManagementParams_AwsKmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>The KMS key you want to use to encrypt your media pipeline output. Decryption is required
+        /// for concatenation pipeline. If using a key located in the current Amazon Web Services
+        /// account, you can specify your KMS key in one of four ways:</para><ul><li><para>Use the KMS key ID itself. For example, <c>1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use an alias for the KMS key ID. For example, <c>alias/ExampleAlias</c>.</para></li><li><para>Use the Amazon Resource Name (ARN) for the KMS key ID. For example, <c>arn:aws:kms:region:account-ID:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use the ARN for the KMS key alias. For example, <c>arn:aws:kms:region:account-ID:alias/ExampleAlias</c>.</para></li></ul><para>If using a key located in a different Amazon Web Services account than the current
+        /// Amazon Web Services account, you can specify your KMS key in one of two ways:</para><ul><li><para>Use the ARN for the KMS key ID. For example, <c>arn:aws:kms:region:account-ID:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use the ARN for the KMS key alias. For example, <c>arn:aws:kms:region:account-ID:alias/ExampleAlias</c>.</para></li></ul><para>If you don't specify an encryption key, your output is encrypted with the default
+        /// Amazon S3 key (SSE-S3).</para><para>Note that the role specified in the <c>SinkIamRoleArn</c> request parameter must have
+        /// permission to use the specified KMS key.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SseAwsKeyManagementParams_AwsKmsKeyId { get; set; }
         #endregion
         
         #region Parameter VideoAttribute_BorderColor
@@ -141,7 +173,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         #region Parameter SelectedVideoStreams_ExternalUserId
         /// <summary>
         /// <para>
-        /// <para>The external user IDs of the streams selected for a media pipeline.</para>
+        /// <para>The external user IDs of the streams selected for a media pipeline.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -251,6 +287,23 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         public System.String SinkArn { get; set; }
         #endregion
         
+        #region Parameter SinkIamRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the sink role to be used with <c>AwsKmsKeyId</c>
+        /// in <c>SseAwsKeyManagementParams</c>. Can only interact with <c>S3Bucket</c> sink type.
+        /// The role must belong to the caller’s account and be able to act on behalf of the caller
+        /// during the API call. All minimum policy permissions requirements for the caller to
+        /// perform sink-related actions are the same for <c>SinkIamRoleArn</c>.</para><para>Additionally, the role must have permission to <c>kms:GenerateDataKey</c> using KMS
+        /// key supplied as <c>AwsKmsKeyId</c> in <c>SseAwsKeyManagementParams</c>. If media concatenation
+        /// will be required later, the role must also have permission to <c>kms:Decrypt</c> for
+        /// the same KMS key.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SinkIamRoleArn { get; set; }
+        #endregion
+        
         #region Parameter SinkType
         /// <summary>
         /// <para>
@@ -330,7 +383,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tag key-value pairs.</para>
+        /// <para>The tag key-value pairs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -451,9 +508,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -511,6 +572,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
                 WriteWarning("You are passing $null as a value for parameter SinkArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SinkIamRoleArn = this.SinkIamRoleArn;
             context.SinkType = this.SinkType;
             #if MODULAR
             if (this.SinkType == null && ParameterWasBound(nameof(this.SinkType)))
@@ -532,6 +594,8 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
                 WriteWarning("You are passing $null as a value for parameter SourceType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SseAwsKeyManagementParams_AwsKmsEncryptionContext = this.SseAwsKeyManagementParams_AwsKmsEncryptionContext;
+            context.SseAwsKeyManagementParams_AwsKmsKeyId = this.SseAwsKeyManagementParams_AwsKmsKeyId;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.ChimeSDKMediaPipelines.Model.Tag>(this.Tag);
@@ -1014,6 +1078,10 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
             {
                 request.SinkArn = cmdletContext.SinkArn;
             }
+            if (cmdletContext.SinkIamRoleArn != null)
+            {
+                request.SinkIamRoleArn = cmdletContext.SinkIamRoleArn;
+            }
             if (cmdletContext.SinkType != null)
             {
                 request.SinkType = cmdletContext.SinkType;
@@ -1025,6 +1093,35 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
             if (cmdletContext.SourceType != null)
             {
                 request.SourceType = cmdletContext.SourceType;
+            }
+            
+             // populate SseAwsKeyManagementParams
+            var requestSseAwsKeyManagementParamsIsNull = true;
+            request.SseAwsKeyManagementParams = new Amazon.ChimeSDKMediaPipelines.Model.SseAwsKeyManagementParams();
+            System.String requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsEncryptionContext = null;
+            if (cmdletContext.SseAwsKeyManagementParams_AwsKmsEncryptionContext != null)
+            {
+                requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsEncryptionContext = cmdletContext.SseAwsKeyManagementParams_AwsKmsEncryptionContext;
+            }
+            if (requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsEncryptionContext != null)
+            {
+                request.SseAwsKeyManagementParams.AwsKmsEncryptionContext = requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsEncryptionContext;
+                requestSseAwsKeyManagementParamsIsNull = false;
+            }
+            System.String requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsKeyId = null;
+            if (cmdletContext.SseAwsKeyManagementParams_AwsKmsKeyId != null)
+            {
+                requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsKeyId = cmdletContext.SseAwsKeyManagementParams_AwsKmsKeyId;
+            }
+            if (requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsKeyId != null)
+            {
+                request.SseAwsKeyManagementParams.AwsKmsKeyId = requestSseAwsKeyManagementParams_sseAwsKeyManagementParams_AwsKmsKeyId;
+                requestSseAwsKeyManagementParamsIsNull = false;
+            }
+             // determine if request.SseAwsKeyManagementParams should be set to null
+            if (requestSseAwsKeyManagementParamsIsNull)
+            {
+                request.SseAwsKeyManagementParams = null;
             }
             if (cmdletContext.Tag != null)
             {
@@ -1068,13 +1165,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Media Pipelines", "CreateMediaCapturePipeline");
             try
             {
-                #if DESKTOP
-                return client.CreateMediaCapturePipeline(request);
-                #elif CORECLR
-                return client.CreateMediaCapturePipelineAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMediaCapturePipelineAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1118,9 +1209,12 @@ namespace Amazon.PowerShell.Cmdlets.CHMMP
             public List<System.String> SelectedVideoStreams_ExternalUserId { get; set; }
             public System.String ClientRequestToken { get; set; }
             public System.String SinkArn { get; set; }
+            public System.String SinkIamRoleArn { get; set; }
             public Amazon.ChimeSDKMediaPipelines.MediaPipelineSinkType SinkType { get; set; }
             public System.String SourceArn { get; set; }
             public Amazon.ChimeSDKMediaPipelines.MediaPipelineSourceType SourceType { get; set; }
+            public System.String SseAwsKeyManagementParams_AwsKmsEncryptionContext { get; set; }
+            public System.String SseAwsKeyManagementParams_AwsKmsKeyId { get; set; }
             public List<Amazon.ChimeSDKMediaPipelines.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.ChimeSDKMediaPipelines.Model.CreateMediaCapturePipelineResponse, NewCHMMPMediaCapturePipelineCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.MediaCapturePipeline;

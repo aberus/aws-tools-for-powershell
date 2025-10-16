@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WellArchitected;
 using Amazon.WellArchitected.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAT
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
     [OutputType("Amazon.WellArchitected.Model.CreateProfileResponse")]
     [AWSCmdlet("Calls the AWS Well-Architected Tool CreateProfile API operation.", Operation = new[] {"CreateProfile"}, SelectReturnType = typeof(Amazon.WellArchitected.Model.CreateProfileResponse))]
     [AWSCmdletOutput("Amazon.WellArchitected.Model.CreateProfileResponse",
-        "This cmdlet returns an Amazon.WellArchitected.Model.CreateProfileResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.WellArchitected.Model.CreateProfileResponse object containing multiple properties."
     )]
     public partial class NewWATProfileCmdlet : AmazonWellArchitectedClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -88,7 +91,11 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         #region Parameter ProfileQuestion
         /// <summary>
         /// <para>
-        /// <para>The profile questions.</para>
+        /// <para>The profile questions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -106,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags assigned to the profile.</para>
+        /// <para>The tags assigned to the profile.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -263,13 +278,7 @@ namespace Amazon.PowerShell.Cmdlets.WAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Well-Architected Tool", "CreateProfile");
             try
             {
-                #if DESKTOP
-                return client.CreateProfile(request);
-                #elif CORECLR
-                return client.CreateProfileAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateProfileAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

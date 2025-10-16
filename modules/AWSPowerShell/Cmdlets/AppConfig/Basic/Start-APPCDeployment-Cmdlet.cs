@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppConfig;
 using Amazon.AppConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APPC
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.APPC
     [OutputType("Amazon.AppConfig.Model.StartDeploymentResponse")]
     [AWSCmdlet("Calls the AWS AppConfig StartDeployment API operation.", Operation = new[] {"StartDeployment"}, SelectReturnType = typeof(Amazon.AppConfig.Model.StartDeploymentResponse))]
     [AWSCmdletOutput("Amazon.AppConfig.Model.StartDeploymentResponse",
-        "This cmdlet returns an Amazon.AppConfig.Model.StartDeploymentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AppConfig.Model.StartDeploymentResponse object containing multiple properties."
     )]
     public partial class StartAPPCDeploymentCmdlet : AmazonAppConfigClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -121,6 +124,22 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DynamicExtensionParameter
+        /// <summary>
+        /// <para>
+        /// <para>A map of dynamic extension parameter names to values to pass to associated extensions
+        /// with <c>PRE_START_DEPLOYMENT</c> actions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DynamicExtensionParameters")]
+        public System.Collections.Hashtable DynamicExtensionParameter { get; set; }
+        #endregion
+        
         #region Parameter EnvironmentId
         /// <summary>
         /// <para>
@@ -153,7 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         /// <summary>
         /// <para>
         /// <para>Metadata to assign to the deployment. Tags help organize and categorize your AppConfig
-        /// resources. Each tag consists of a key and an optional value, both of which you define.</para>
+        /// resources. Each tag consists of a key and an optional value, both of which you define.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,16 +195,6 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -192,9 +205,13 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -208,21 +225,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppConfig.Model.StartDeploymentResponse, StartAPPCDeploymentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -252,6 +259,14 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             }
             #endif
             context.Description = this.Description;
+            if (this.DynamicExtensionParameter != null)
+            {
+                context.DynamicExtensionParameter = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.DynamicExtensionParameter.Keys)
+                {
+                    context.DynamicExtensionParameter.Add((String)hashKey, (System.String)(this.DynamicExtensionParameter[hashKey]));
+                }
+            }
             context.EnvironmentId = this.EnvironmentId;
             #if MODULAR
             if (this.EnvironmentId == null && ParameterWasBound(nameof(this.EnvironmentId)))
@@ -304,6 +319,10 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DynamicExtensionParameter != null)
+            {
+                request.DynamicExtensionParameters = cmdletContext.DynamicExtensionParameter;
+            }
             if (cmdletContext.EnvironmentId != null)
             {
                 request.EnvironmentId = cmdletContext.EnvironmentId;
@@ -354,13 +373,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppConfig", "StartDeployment");
             try
             {
-                #if DESKTOP
-                return client.StartDeployment(request);
-                #elif CORECLR
-                return client.StartDeploymentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartDeploymentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -382,6 +395,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             public System.String ConfigurationVersion { get; set; }
             public System.String DeploymentStrategyId { get; set; }
             public System.String Description { get; set; }
+            public Dictionary<System.String, System.String> DynamicExtensionParameter { get; set; }
             public System.String EnvironmentId { get; set; }
             public System.String KmsKeyIdentifier { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }

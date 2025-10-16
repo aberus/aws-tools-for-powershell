@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MemoryDB;
 using Amazon.MemoryDB.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MDB
 {
     /// <summary>
-    /// Deletes a cluster. It also deletes all associated nodes and node endpoints
+    /// Deletes a cluster. It also deletes all associated nodes and node endpoints.
+    /// 
+    ///  <note><para><c>CreateSnapshot</c> permission is required to create a final snapshot. Without
+    /// this permission, the API call will fail with an <c>Access Denied</c> exception.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Remove", "MDBCluster", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.MemoryDB.Model.Cluster")]
     [AWSCmdlet("Calls the Amazon MemoryDB DeleteCluster API operation.", Operation = new[] {"DeleteCluster"}, SelectReturnType = typeof(Amazon.MemoryDB.Model.DeleteClusterResponse))]
     [AWSCmdletOutput("Amazon.MemoryDB.Model.Cluster or Amazon.MemoryDB.Model.DeleteClusterResponse",
         "This cmdlet returns an Amazon.MemoryDB.Model.Cluster object.",
-        "The service call response (type Amazon.MemoryDB.Model.DeleteClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MemoryDB.Model.DeleteClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveMDBClusterCmdlet : AmazonMemoryDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterName
         /// <summary>
@@ -71,6 +78,16 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         public System.String FinalSnapshotName { get; set; }
         #endregion
         
+        #region Parameter MultiRegionClusterName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the multi-Region cluster to be deleted.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MultiRegionClusterName { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Cluster'.
@@ -80,16 +97,6 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Cluster";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -102,9 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterName), MyInvocation.BoundParameters);
@@ -118,21 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MemoryDB.Model.DeleteClusterResponse, RemoveMDBClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterName = this.ClusterName;
             #if MODULAR
             if (this.ClusterName == null && ParameterWasBound(nameof(this.ClusterName)))
@@ -141,6 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             }
             #endif
             context.FinalSnapshotName = this.FinalSnapshotName;
+            context.MultiRegionClusterName = this.MultiRegionClusterName;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -164,6 +166,10 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             if (cmdletContext.FinalSnapshotName != null)
             {
                 request.FinalSnapshotName = cmdletContext.FinalSnapshotName;
+            }
+            if (cmdletContext.MultiRegionClusterName != null)
+            {
+                request.MultiRegionClusterName = cmdletContext.MultiRegionClusterName;
             }
             
             CmdletOutput output;
@@ -203,13 +209,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon MemoryDB", "DeleteCluster");
             try
             {
-                #if DESKTOP
-                return client.DeleteCluster(request);
-                #elif CORECLR
-                return client.DeleteClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -228,6 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         {
             public System.String ClusterName { get; set; }
             public System.String FinalSnapshotName { get; set; }
+            public System.String MultiRegionClusterName { get; set; }
             public System.Func<Amazon.MemoryDB.Model.DeleteClusterResponse, RemoveMDBClusterCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Cluster;
         }

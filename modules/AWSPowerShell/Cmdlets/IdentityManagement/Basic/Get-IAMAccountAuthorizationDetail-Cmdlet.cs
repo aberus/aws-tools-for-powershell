@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -37,7 +39,8 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// Policies returned by this operation are URL-encoded compliant with <a href="https://tools.ietf.org/html/rfc3986">RFC
     /// 3986</a>. You can use a URL decoding method to convert the policy back to plain JSON
     /// text. For example, if you use Java, you can use the <c>decode</c> method of the <c>java.net.URLDecoder</c>
-    /// utility class in the Java SDK. Other languages and SDKs provide similar functionality.
+    /// utility class in the Java SDK. Other languages and SDKs provide similar functionality,
+    /// and some SDKs do this decoding automatically.
     /// </para></note><para>
     /// You can optionally filter the results using the <c>Filter</c> parameter. You can paginate
     /// the results using the <c>MaxItems</c> and <c>Marker</c> parameters.
@@ -47,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [OutputType("Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsResponse")]
     [AWSCmdlet("Calls the AWS Identity and Access Management GetAccountAuthorizationDetails API operation.", Operation = new[] {"GetAccountAuthorizationDetails"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsResponse), LegacyAlias="Get-IAMAccountAuthorizationDetails")]
     [AWSCmdletOutput("Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsResponse",
-        "This cmdlet returns an Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsResponse object containing multiple properties."
     )]
     public partial class GetIAMAccountAuthorizationDetailCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -60,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// <para>A list of entity types used to filter the results. Only the entities that match the
         /// types you specify are included in the output. Use the value <c>LocalManagedPolicy</c>
         /// to include customer managed policies.</para><para>The format for this parameter is a comma-separated (if more than one) list of strings.
-        /// Each string value in the list must be one of the valid values listed below.</para>
+        /// Each string value in the list must be one of the valid values listed below.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -76,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.IdentityManagement module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,16 +120,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Filter parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Filter' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Filter' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -134,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -144,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsResponse, GetIAMAccountAuthorizationDetailCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Filter;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Filter != null)
             {
                 context.Filter = new List<System.String>(this.Filter);
@@ -179,9 +171,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.IdentityManagement.Model.GetAccountAuthorizationDetailsRequest();
@@ -299,13 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "GetAccountAuthorizationDetails");
             try
             {
-                #if DESKTOP
-                return client.GetAccountAuthorizationDetails(request);
-                #elif CORECLR
-                return client.GetAccountAuthorizationDetailsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAccountAuthorizationDetailsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

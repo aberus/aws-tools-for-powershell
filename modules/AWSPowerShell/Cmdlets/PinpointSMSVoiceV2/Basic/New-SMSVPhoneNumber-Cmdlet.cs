@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
     /// Request an origination phone number for use in your account. For more information
-    /// on phone number request see <a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/settings-sms-request-number.html">
-    /// Requesting a number </a> in the <i>Amazon Pinpoint User Guide</i>.
+    /// on phone number request see <a href="https://docs.aws.amazon.com/sms-voice/latest/userguide/phone-numbers-request.html">Request
+    /// a phone number</a> in the <i>AWS End User Messaging SMS User Guide</i>.
     /// </summary>
     [Cmdlet("New", "SMSVPhoneNumber", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.RequestPhoneNumberResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 RequestPhoneNumber API operation.", Operation = new[] {"RequestPhoneNumber"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.RequestPhoneNumberResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.RequestPhoneNumberResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.RequestPhoneNumberResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.RequestPhoneNumberResponse object containing multiple properties."
     )]
     public partial class NewSMSVPhoneNumberCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeletionProtectionEnabled
         /// <summary>
@@ -51,6 +54,17 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? DeletionProtectionEnabled { get; set; }
+        #endregion
+        
+        #region Parameter InternationalSendingEnabled
+        /// <summary>
+        /// <para>
+        /// <para>By default this is set to false. When set to true the international sending of phone
+        /// number is Enabled. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? InternationalSendingEnabled { get; set; }
         #endregion
         
         #region Parameter IsoCountryCode
@@ -73,8 +87,8 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter MessageType
         /// <summary>
         /// <para>
-        /// <para>The type of message. Valid values are TRANSACTIONAL for messages that are critical
-        /// or time-sensitive and PROMOTIONAL for messages that aren't critical or time-sensitive.</para>
+        /// <para>The type of message. Valid values are <c>TRANSACTIONAL</c> for messages that are critical
+        /// or time-sensitive and <c>PROMOTIONAL</c> for messages that aren't critical or time-sensitive.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -92,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>Indicates if the phone number will be used for text messages, voice messages, or both.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -110,7 +128,8 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter NumberType
         /// <summary>
         /// <para>
-        /// <para>The type of phone number to request.</para>
+        /// <para>The type of phone number to request.</para><para>When you request a <c>SIMULATOR</c> phone number, you must set <b>MessageType</b>
+        /// as <c>TRANSACTIONAL</c>. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -128,7 +147,8 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>The name of the OptOutList to associate with the phone number. You can use the OptOutListName
-        /// or OptOutListArn.</para>
+        /// or OptOutListArn.</para><important><para>If you are using a shared AWS End User Messaging SMS and Voice resource then you must
+        /// use the full Amazon Resource Name(ARN).</para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +158,8 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter PoolId
         /// <summary>
         /// <para>
-        /// <para>The pool to associated with the phone number. You can use the PoolId or PoolArn. </para>
+        /// <para>The pool to associated with the phone number. You can use the PoolId or PoolArn. </para><important><para>If you are using a shared AWS End User Messaging SMS and Voice resource then you must
+        /// use the full Amazon Resource Name(ARN).</para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +180,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>An array of tags (key and value pairs) associate with the requested phone number.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,9 +225,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -223,6 +252,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             }
             context.ClientToken = this.ClientToken;
             context.DeletionProtectionEnabled = this.DeletionProtectionEnabled;
+            context.InternationalSendingEnabled = this.InternationalSendingEnabled;
             context.IsoCountryCode = this.IsoCountryCode;
             #if MODULAR
             if (this.IsoCountryCode == null && ParameterWasBound(nameof(this.IsoCountryCode)))
@@ -284,6 +314,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             if (cmdletContext.DeletionProtectionEnabled != null)
             {
                 request.DeletionProtectionEnabled = cmdletContext.DeletionProtectionEnabled.Value;
+            }
+            if (cmdletContext.InternationalSendingEnabled != null)
+            {
+                request.InternationalSendingEnabled = cmdletContext.InternationalSendingEnabled.Value;
             }
             if (cmdletContext.IsoCountryCode != null)
             {
@@ -355,13 +389,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "RequestPhoneNumber");
             try
             {
-                #if DESKTOP
-                return client.RequestPhoneNumber(request);
-                #elif CORECLR
-                return client.RequestPhoneNumberAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RequestPhoneNumberAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -380,6 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         {
             public System.String ClientToken { get; set; }
             public System.Boolean? DeletionProtectionEnabled { get; set; }
+            public System.Boolean? InternationalSendingEnabled { get; set; }
             public System.String IsoCountryCode { get; set; }
             public Amazon.PinpointSMSVoiceV2.MessageType MessageType { get; set; }
             public List<System.String> NumberCapability { get; set; }

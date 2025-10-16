@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -32,24 +34,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// volume type, and IOPS capacity. If your EBS volume is attached to a current-generation
     /// EC2 instance type, you might be able to apply these changes without stopping the instance
     /// or detaching the volume from it. For more information about modifying EBS volumes,
-    /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-modify-volume.html">Amazon
-    /// EBS Elastic Volumes</a> (Linux instances) or <a href="https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ebs-modify-volume.html">Amazon
-    /// EBS Elastic Volumes</a> (Windows instances).
+    /// see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-modify-volume.html">Amazon
+    /// EBS Elastic Volumes</a> in the <i>Amazon EBS User Guide</i>.
     /// 
     ///  
     /// <para>
     /// When you complete a resize operation on your volume, you need to extend the volume's
     /// file-system size to take advantage of the new storage capacity. For more information,
-    /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-expand-volume.html#recognize-expanded-volume-linux">Extend
-    /// a Linux file system</a> or <a href="https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/ebs-expand-volume.html#recognize-expanded-volume-windows">Extend
-    /// a Windows file system</a>.
+    /// see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/recognize-expanded-volume-linux.html">Extend
+    /// the file system</a>.
     /// </para><para>
-    ///  You can use CloudWatch Events to check the status of a modification to an EBS volume.
-    /// For information about CloudWatch Events, see the <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/">Amazon
-    /// CloudWatch Events User Guide</a>. You can also track the status of a modification
-    /// using <a>DescribeVolumesModifications</a>. For information about tracking status changes
-    /// using either method, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/monitoring-volume-modifications.html">Monitor
-    /// the progress of volume modifications</a>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/monitoring-volume-modifications.html">Monitor
+    /// the progress of volume modifications</a> in the <i>Amazon EBS User Guide</i>.
     /// </para><para>
     /// With previous-generation instance types, resizing an EBS volume might require detaching
     /// and reattaching the volume or stopping and restarting the instance.
@@ -64,20 +60,33 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyVolume API operation.", Operation = new[] {"ModifyVolume"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyVolumeResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.VolumeModification or Amazon.EC2.Model.ModifyVolumeResponse",
         "This cmdlet returns an Amazon.EC2.Model.VolumeModification object.",
-        "The service call response (type Amazon.EC2.Model.ModifyVolumeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.ModifyVolumeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2VolumeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Iops
         /// <summary>
         /// <para>
         /// <para>The target IOPS rate of the volume. This parameter is valid only for <c>gp3</c>, <c>io1</c>,
-        /// and <c>io2</c> volumes.</para><para>The following are the supported values for each volume type:</para><ul><li><para><c>gp3</c>: 3,000 - 16,000 IOPS</para></li><li><para><c>io1</c>: 100 - 64,000 IOPS</para></li><li><para><c>io2</c>: 100 - 256,000 IOPS</para></li></ul><para>For <c>io2</c> volumes, you can achieve up to 256,000 IOPS on <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances">instances
-        /// built on the Nitro System</a>. On other instances, you can achieve performance up
-        /// to 32,000 IOPS.</para><para>Default: The existing value is retained if you keep the same volume type. If you change
+        /// and <c>io2</c> volumes.</para><para>The following are the supported values for each volume type:</para><ul><li><para><c>gp3</c>: 3,000 - 80,000 IOPS</para></li><li><para><c>io1</c>: 100 - 64,000 IOPS</para></li><li><para><c>io2</c>: 100 - 256,000 IOPS</para></li></ul><note><para><a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-nitro-instances.html">
+        /// Instances built on the Nitro System</a> can support up to 256,000 IOPS. Other instances
+        /// can support up to 32,000 IOPS.</para></note><para>Default: The existing value is retained if you keep the same volume type. If you change
         /// the volume type to <c>io1</c>, <c>io2</c>, or <c>gp3</c>, the default is 3,000.</para>
         /// </para>
         /// </summary>
@@ -89,10 +98,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Specifies whether to enable Amazon EBS Multi-Attach. If you enable Multi-Attach, you
-        /// can attach the volume to up to 16 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances">
+        /// can attach the volume to up to 16 <a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-nitro-instances.html">
         /// Nitro-based instances</a> in the same Availability Zone. This parameter is supported
-        /// with <c>io1</c> and <c>io2</c> volumes only. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html">
-        /// Amazon EBS Multi-Attach</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.</para>
+        /// with <c>io1</c> and <c>io2</c> volumes only. For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes-multi.html">
+        /// Amazon EBS Multi-Attach</a> in the <i>Amazon EBS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,7 +112,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The target size of the volume, in GiB. The target volume size must be greater than
-        /// or equal to the existing size of the volume.</para><para>The following are the supported volumes sizes for each volume type:</para><ul><li><para><c>gp2</c> and <c>gp3</c>: 1 - 16,384 GiB</para></li><li><para><c>io1</c>: 4 - 16,384 GiB</para></li><li><para><c>io2</c>: 4 - 65,536 GiB</para></li><li><para><c>st1</c> and <c>sc1</c>: 125 - 16,384 GiB</para></li><li><para><c>standard</c>: 1 - 1024 GiB</para></li></ul><para>Default: The existing size is retained.</para>
+        /// or equal to the existing size of the volume.</para><para>The following are the supported volumes sizes for each volume type:</para><ul><li><para><c>gp2</c>: 1 - 16,384 GiB</para></li><li><para><c>gp3</c>: 1 - 65,536 GiB</para></li><li><para><c>io1</c>: 4 - 16,384 GiB</para></li><li><para><c>io2</c>: 4 - 65,536 GiB</para></li><li><para><c>st1</c> and <c>sc1</c>: 125 - 16,384 GiB</para></li><li><para><c>standard</c>: 1 - 1024 GiB</para></li></ul><para>Default: The existing size is retained.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,8 +123,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The target throughput of the volume, in MiB/s. This parameter is valid only for <c>gp3</c>
-        /// volumes. The maximum value is 1,000.</para><para>Default: The existing value is retained if the source and target volume type is <c>gp3</c>.
-        /// Otherwise, the default value is 125.</para><para>Valid Range: Minimum value of 125. Maximum value of 1000.</para>
+        /// volumes. The maximum value is 2,000.</para><para>Default: The existing value is retained if the source and target volume type is <c>gp3</c>.
+        /// Otherwise, the default value is 125.</para><para>Valid Range: Minimum value of 125. Maximum value of 2,000.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,8 +151,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter VolumeType
         /// <summary>
         /// <para>
-        /// <para>The target EBS volume type of the volume. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html">Amazon
-        /// EBS volume types</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.</para><para>Default: The existing type is retained.</para>
+        /// <para>The target EBS volume type of the volume. For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html">Amazon
+        /// EBS volume types</a> in the <i>Amazon EBS User Guide</i>.</para><para>Default: The existing type is retained.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,16 +171,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "VolumeModification";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VolumeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -182,9 +181,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VolumeId), MyInvocation.BoundParameters);
@@ -198,21 +201,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyVolumeResponse, EditEC2VolumeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VolumeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             context.Iops = this.Iops;
             context.MultiAttachEnabled = this.MultiAttachEnabled;
             context.Size = this.Size;
@@ -241,6 +235,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.ModifyVolumeRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Iops != null)
             {
                 request.Iops = cmdletContext.Iops.Value;
@@ -303,13 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyVolume");
             try
             {
-                #if DESKTOP
-                return client.ModifyVolume(request);
-                #elif CORECLR
-                return client.ModifyVolumeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyVolumeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -326,6 +318,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public System.Int32? Iops { get; set; }
             public System.Boolean? MultiAttachEnabled { get; set; }
             public System.Int32? Size { get; set; }

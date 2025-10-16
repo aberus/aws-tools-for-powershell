@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AmplifyUIBuilder;
 using Amazon.AmplifyUIBuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMPUI
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
     [AWSCmdlet("Calls the AWS Amplify UI Builder CreateComponent API operation.", Operation = new[] {"CreateComponent"}, SelectReturnType = typeof(Amazon.AmplifyUIBuilder.Model.CreateComponentResponse))]
     [AWSCmdletOutput("Amazon.AmplifyUIBuilder.Model.Component or Amazon.AmplifyUIBuilder.Model.CreateComponentResponse",
         "This cmdlet returns an Amazon.AmplifyUIBuilder.Model.Component object.",
-        "The service call response (type Amazon.AmplifyUIBuilder.Model.CreateComponentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AmplifyUIBuilder.Model.CreateComponentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAMPUIComponentCmdlet : AmazonAmplifyUIBuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppId
         /// <summary>
@@ -62,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         #region Parameter ComponentToCreate_BindingProperty
         /// <summary>
         /// <para>
-        /// <para>The data binding information for the component's properties.</para>
+        /// <para>The data binding information for the component's properties.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -80,7 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         #region Parameter ComponentToCreate_Child
         /// <summary>
         /// <para>
-        /// <para>A list of child components that are instances of the main component.</para>
+        /// <para>A list of child components that are instances of the main component.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         /// <summary>
         /// <para>
         /// <para>The data binding configuration for customizing a component's properties. Use this
-        /// for a collection component.</para>
+        /// for a collection component.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         /// <summary>
         /// <para>
         /// <para>The event configuration for the component. Use for the workflow feature in Amplify
-        /// Studio that allows you to bind events and actions to components.</para>
+        /// Studio that allows you to bind events and actions to components.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,7 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         /// <summary>
         /// <para>
         /// <para>Describes the component properties that can be overriden to customize an instance
-        /// of the component.</para>
+        /// of the component.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -185,7 +208,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         #region Parameter ComponentToCreate_Property
         /// <summary>
         /// <para>
-        /// <para>Describes the component's properties.</para>
+        /// <para>Describes the component's properties.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -223,7 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         #region Parameter ComponentToCreate_Tag
         /// <summary>
         /// <para>
-        /// <para>One or more key-value pairs to use when tagging the component data.</para>
+        /// <para>One or more key-value pairs to use when tagging the component data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -234,7 +265,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         #region Parameter ComponentToCreate_Variant
         /// <summary>
         /// <para>
-        /// <para>A list of the unique variants of this component.</para>
+        /// <para>A list of the unique variants of this component.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -280,9 +315,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -607,13 +646,7 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify UI Builder", "CreateComponent");
             try
             {
-                #if DESKTOP
-                return client.CreateComponent(request);
-                #elif CORECLR
-                return client.CreateComponentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateComponentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

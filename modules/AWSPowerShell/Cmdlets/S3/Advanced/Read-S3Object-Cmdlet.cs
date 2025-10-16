@@ -24,6 +24,7 @@ using Amazon.S3.Model;
 using Amazon.S3.Transfer;
 using System.IO;
 using Amazon.PowerShell.Utils;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.S3
 {
@@ -51,8 +52,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
         // try and anticipate all the ways a user might mean 'get everything from root'
         internal static readonly string[] rootIndicators = new string[] { "/", @"\", "*", "/*", @"\*" };
-
-        protected override bool IsSensitiveRequest { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         #region Bucket Params
 
@@ -63,8 +63,20 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </para>
         ///  
         /// <para>
-        /// When using this action with an access point, you must direct requests to the access
-        /// point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
+        ///  <b>Directory buckets</b> - When you use this operation with a directory bucket, you
+        /// must use virtual-hosted-style requests in the format <c> <i>Bucket_name</i>.s3express-<i>az_id</i>.<i>region</i>.amazonaws.com</c>.
+        /// Path-style requests are not supported. Directory bucket names must be unique in the
+        /// chosen Availability Zone. Bucket names must follow the format <c> <i>bucket_base_name</i>--<i>az-id</i>--x-s3</c>
+        /// (for example, <c> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</c>). For information
+        /// about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        ///  
+        /// <para>
+        ///  <b>Access points</b> - When you use this action with an access point, you must provide
+        /// the alias of the access point in place of the bucket name or specify the access point
+        /// ARN. When using the access point ARN, you must direct requests to the access point
+        /// hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
         /// When using this action with an access point through the Amazon Web Services SDKs,
         /// you provide the access point ARN in place of the bucket name. For more information
         /// about access point ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using
@@ -72,12 +84,23 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </para>
         ///  
         /// <para>
-        /// When you use this action with Amazon S3 on Outposts, you must direct requests to the
-        /// S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>.
+        ///  <b>Object Lambda access points</b> - When you use this action with an Object Lambda
+        /// access point, you must direct requests to the Object Lambda access point hostname.
+        /// The Object Lambda access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-object-lambda.<i>Region</i>.amazonaws.com.
+        /// </para>
+        ///  <note> 
+        /// <para>
+        /// Access points and Object Lambda access points are not supported by directory buckets.
+        /// </para>
+        ///  </note> 
+        /// <para>
+        ///  <b>S3 on Outposts</b> - When you use this action with Amazon S3 on Outposts, you
+        /// must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes
+        /// the form <c> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</c>.
         /// When you use this action with S3 on Outposts through the Amazon Web Services SDKs,
         /// you provide the Outposts access point ARN in place of the bucket name. For more information
         /// about S3 on Outposts ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html">What
-        /// is S3 on Outposts</a> in the <i>Amazon S3 User Guide</i>.
+        /// is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
         /// </summary>
         [Parameter(Position = 0, Mandatory = true, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -112,9 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// If specified, the specific version of the S3 object is returned.
         /// </summary>
+        [Alias("Version")]
         [Parameter(Position = 3, ParameterSetName = ParamSet_ToLocalFile, ValueFromPipelineByPropertyName = true)]
-        public System.String Version { get; set; }
+        public System.String VersionId { get; set; }
         #endregion
+
 
         #endregion
 
@@ -190,8 +215,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>This parameter is deprecated.</para>
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated because it doesn't honor DateTimeKind. Use UtcModifiedSinceDate instead")]
-
         public System.DateTime ModifiedSinceDate { get; set; }
         #endregion
 
@@ -201,25 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>This parameter is deprecated.</para>
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated because it doesn't honor DateTimeKind. Use UtcUnmodifiedSinceDate instead")]
-
         public System.DateTime UnmodifiedSinceDate { get; set; }
-        #endregion
-
-        #region Parameter UtcModifiedSinceDate
-        /// <summary>
-        /// If specified, only  objects that have been modified since this date will be downloaded.
-        /// </summary>
-        [Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime UtcModifiedSinceDate { get; set; }
-        #endregion
-
-        #region Parameter UtcUnmodifiedSinceDate
-        /// <summary>
-        /// If specified, only objects that have not been modified since this date will be downloaded.
-        /// </summary>
-        [Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime UtcUnmodifiedSinceDate { get; set; }
         #endregion
 
         #region Parameter ServerSideEncryptionCustomerMethod
@@ -265,6 +270,23 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
         #endregion
 
+        #region Parameter EnableLegacyKeyCleaning
+        /// <summary>
+        /// Specifies whether to use legacy key cleaning behavior for S3 key names. When this switch is present,
+        /// the cmdlet will clean key names by removing leading spaces, forward slashes (/), and backslashes (\),
+        /// converting all backslashes to forward slashes, and removing trailing spaces. When not specified,
+        /// the legacy key cleaning is disabled.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter EnableLegacyKeyCleaning { get; set; }
+        #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
+
         protected override void ProcessRecord()
         {
             base.ProcessRecord();
@@ -278,17 +300,24 @@ namespace Amazon.PowerShell.Cmdlets.S3
             {
                 case ParamSet_ToLocalFile:
                     {
-                        context.Key = AmazonS3Helper.CleanKey(this.Key);
+
+                        context.Key = this.Key;
+                        if (this.EnableLegacyKeyCleaning.IsPresent)
+                        {
+                            context.Key = AmazonS3Helper.CleanKey(this.Key);
+                            base.UserAgentAddition = AmazonS3Helper.GetCleanKeyUserAgentAdditionString(this.Key, context.Key);
+                        }
                         context.File = PSHelpers.PSPathToAbsolute(this.SessionState.Path, this.File);
-                        context.Version = this.Version;
+                        context.VersionId = this.VersionId;
                     }
                     break;
 
                 case ParamSet_ToLocalFolder:
                     {
                         context.OriginalKeyPrefix = this.KeyPrefix;
-                        context.KeyPrefix = rootIndicators.Contains<string>(this.KeyPrefix, StringComparer.OrdinalIgnoreCase) 
-                            ? "/" : AmazonS3Helper.CleanKey(this.KeyPrefix);
+                        context.KeyPrefix = rootIndicators.Contains<string>(this.KeyPrefix, StringComparer.OrdinalIgnoreCase)
+                            ? "/" : this.EnableLegacyKeyCleaning.IsPresent ? AmazonS3Helper.CleanKey(this.KeyPrefix) : this.KeyPrefix;
+                        base.UserAgentAddition = this.EnableLegacyKeyCleaning.IsPresent ? AmazonS3Helper.GetCleanKeyUserAgentAdditionString(this.KeyPrefix, context.KeyPrefix) : base.UserAgentAddition;
                         context.Folder = PSHelpers.PSPathToAbsolute(this.SessionState.Path, this.Folder);
                         context.DisableSlashCorrection = this.DisableSlashCorrection;
                     }
@@ -299,7 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
                         context.BucketName = this.S3Object.BucketName;
                         context.Key = this.S3Object.Key;
                         var s3ObjectVersion = this.S3Object as S3ObjectVersion;
-                        context.Version = s3ObjectVersion == null ? null : s3ObjectVersion.VersionId;
+                        context.VersionId = s3ObjectVersion == null ? null : s3ObjectVersion.VersionId;
 
                         if (this.ParameterWasBound("File"))
                         {
@@ -314,10 +343,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     break;
             }
 
-            if (ParameterWasBound("UtcModifiedSinceDate"))
-                context.UtcModifiedSinceDate = this.UtcModifiedSinceDate;
-            if (ParameterWasBound("UtcUnmodifiedSinceDate"))
-                context.UtcUnmodifiedSinceDate = this.UtcUnmodifiedSinceDate;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound("ModifiedSinceDate"))
                 context.ModifiedSinceDate = this.ModifiedSinceDate;
@@ -360,27 +385,15 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 Key = cmdletContext.Key
             };
 
-            if (!string.IsNullOrEmpty(cmdletContext.Version))
-                request.VersionId = cmdletContext.Version;
-            if (cmdletContext.UtcModifiedSinceDate.HasValue)
-                request.ModifiedSinceDateUtc = cmdletContext.UtcModifiedSinceDate.Value;
-            if (cmdletContext.UtcUnmodifiedSinceDate.HasValue)
-                request.UnmodifiedSinceDateUtc = cmdletContext.UtcUnmodifiedSinceDate.Value;
+            if (!string.IsNullOrEmpty(cmdletContext.VersionId))
+                request.VersionId = cmdletContext.VersionId;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ModifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcModifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters ModifiedSinceDate and UtcModifiedSinceDate are mutually exclusive.");
-                }
                 request.ModifiedSinceDate = cmdletContext.ModifiedSinceDate.Value;
             }
             if (cmdletContext.UnmodifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcUnmodifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters UnmodifiedSinceDate and UtcUnmodifiedSinceDate are mutually exclusive.");
-                }
                 request.UnmodifiedSinceDate = cmdletContext.UnmodifiedSinceDate.Value;
             }
 #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -398,7 +411,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 var runner = new ProgressRunner(this);
                 var tracker = new DownloadFileProgressTracker(runner, handler => request.WriteObjectProgressEvent += handler, cmdletContext.Key);
 
-                output = runner.SafeRun(() => tu.Download(request), tracker);
+                output = runner.SafeRun(() => tu.DownloadAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult(), tracker);
                 if (output.ErrorResponse == null)
                     output.PipelineOutput = new FileInfo(cmdletContext.File);
             }
@@ -416,25 +429,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 DisableSlashCorrection = cmdletContext.DisableSlashCorrection
             };
 
-            if (cmdletContext.UtcModifiedSinceDate.HasValue)
-                request.ModifiedSinceDateUtc = cmdletContext.UtcModifiedSinceDate.Value;
-            if (cmdletContext.UtcUnmodifiedSinceDate.HasValue)
-                request.UnmodifiedSinceDateUtc = cmdletContext.UtcUnmodifiedSinceDate.Value;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ModifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcModifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters ModifiedSinceDate and UtcModifiedSinceDate are mutually exclusive.");
-                }
                 request.ModifiedSinceDate = cmdletContext.ModifiedSinceDate.Value;
             }
             if (cmdletContext.UnmodifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcUnmodifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters UnmodifiedSinceDate and UtcUnmodifiedSinceDate are mutually exclusive.");
-                }
                 request.UnmodifiedSinceDate = cmdletContext.UnmodifiedSinceDate.Value;
             }
 #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -447,7 +448,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 var runner = new ProgressRunner(this);
                 var tracker = new DownloadFolderProgressTracker(runner, handler => request.DownloadedDirectoryProgressEvent += handler);
 
-                output = runner.SafeRun(() => tu.DownloadDirectory(request), tracker);
+                output = runner.SafeRun(() => tu.DownloadDirectoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult(), tracker);
                 if (output.ErrorResponse == null)
                     output.PipelineOutput = new DirectoryInfo(cmdletContext.Folder);
 
@@ -474,17 +475,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             public String Key { get; set; }
             public String File { get; set; }
-            public string Version { get; set; }
+            public string VersionId { get; set; }
 
             public String OriginalKeyPrefix { get; set; }
             public String KeyPrefix { get; set; }
             public String Folder { get; set; }
-            [System.ObsoleteAttribute]
             public DateTime? ModifiedSinceDate { get; set; }
-            [System.ObsoleteAttribute]
             public DateTime? UnmodifiedSinceDate { get; set; }
-            public DateTime? UtcModifiedSinceDate { get; set; }
-            public DateTime? UtcUnmodifiedSinceDate { get; set; }
 
             public ServerSideEncryptionCustomerMethod ServerSideEncryptionCustomerMethod { get; set; }
             public string ServerSideEncryptionCustomerProvidedKey { get; set; }

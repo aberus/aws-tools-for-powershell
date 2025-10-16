@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,42 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Updates a fleet's mutable attributes, including game session protection and resource
+    /// Updates a fleet's mutable attributes, such as game session protection and resource
     /// creation limits.
     /// 
     ///  
     /// <para>
     /// To update fleet attributes, specify the fleet ID and the property values that you
-    /// want to change. 
-    /// </para><para>
-    /// If successful, an updated <c>FleetAttributes</c> object is returned.
+    /// want to change. If successful, Amazon GameLift Servers returns the identifiers for
+    /// the updated fleet.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-intro.html">Setting
-    /// up Amazon GameLift fleets</a></para>
+    /// up Amazon GameLift Servers fleets</a></para>
     /// </summary>
     [Cmdlet("Update", "GMLFleetAttribute", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon GameLift Service UpdateFleetAttributes API operation.", Operation = new[] {"UpdateFleetAttributes"}, SelectReturnType = typeof(Amazon.GameLift.Model.UpdateFleetAttributesResponse))]
     [AWSCmdletOutput("System.String or Amazon.GameLift.Model.UpdateFleetAttributesResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GameLift.Model.UpdateFleetAttributesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.UpdateFleetAttributesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateGMLFleetAttributeCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnywhereConfiguration_Cost
         /// <summary>
         /// <para>
-        /// <para>The cost to run your fleet per hour. Amazon GameLift uses the provided cost of your
-        /// fleet to balance usage in queues. For more information about queues, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/queues-intro.html">Setting
-        /// up queues</a> in the <i>Amazon GameLift Developer Guide</i>.</para>
+        /// <para>The cost to run your fleet per hour. Amazon GameLift Servers uses the provided cost
+        /// of your fleet to balance usage in queues. For more information about queues, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/queues-intro.html">Setting
+        /// up queues</a> in the <i>Amazon GameLift Servers Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,7 +100,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>The name of a metric group to add this fleet to. Use a metric group in Amazon CloudWatch
         /// to aggregate the metrics from multiple fleets. Provide an existing metric group name,
         /// or create a new metric group by providing a new name. A fleet can only be in one metric
-        /// group at a time.</para>
+        /// group at a time.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,9 +144,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>A policy that puts limits on the number of game sessions that a player can create
         /// within a specified span of time. With this policy, you can control players' ability
         /// to consume available resources.</para><para>The policy is evaluated when a player tries to create a new game session. On receiving
-        /// a <c>CreateGameSession</c> request, Amazon GameLift checks that the player (identified
-        /// by <c>CreatorId</c>) has created fewer than game session limit in the specified time
-        /// period.</para>
+        /// a <c>CreateGameSession</c> request, Amazon GameLift Servers checks that the player
+        /// (identified by <c>CreatorId</c>) has created fewer than game session limit in the
+        /// specified time period.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,16 +175,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "FleetId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FleetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -189,9 +185,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FleetId), MyInvocation.BoundParameters);
@@ -205,21 +205,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.UpdateFleetAttributesResponse, UpdateGMLFleetAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FleetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnywhereConfiguration_Cost = this.AnywhereConfiguration_Cost;
             context.Description = this.Description;
             context.FleetId = this.FleetId;
@@ -359,13 +349,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "UpdateFleetAttributes");
             try
             {
-                #if DESKTOP
-                return client.UpdateFleetAttributes(request);
-                #elif CORECLR
-                return client.UpdateFleetAttributesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFleetAttributesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

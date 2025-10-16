@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LicenseManager;
 using Amazon.LicenseManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LICM
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.LICM
     [OutputType("Amazon.LicenseManager.Model.CreateLicenseResponse")]
     [AWSCmdlet("Calls the AWS License Manager CreateLicense API operation.", Operation = new[] {"CreateLicense"}, SelectReturnType = typeof(Amazon.LicenseManager.Model.CreateLicenseResponse))]
     [AWSCmdletOutput("Amazon.LicenseManager.Model.CreateLicenseResponse",
-        "This cmdlet returns an Amazon.LicenseManager.Model.CreateLicenseResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LicenseManager.Model.CreateLicenseResponse object containing multiple properties."
     )]
     public partial class NewLICMLicenseCmdlet : AmazonLicenseManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BorrowConfiguration_AllowEarlyCheckIn
         /// <summary>
@@ -99,7 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         #region Parameter Entitlement
         /// <summary>
         /// <para>
-        /// <para>License entitlements.</para>
+        /// <para>License entitlements.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -134,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         #region Parameter LicenseMetadata
         /// <summary>
         /// <para>
-        /// <para>Information about the license.</para>
+        /// <para>Information about the license.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -253,6 +264,23 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public System.String Issuer_SignKey { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>Tags to add to the license. For more information about tagging support in License
+        /// Manager, see the <a href="https://docs.aws.amazon.com/license-manager/latest/APIReference/API_TagResource.html">TagResource</a>
+        /// operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.LicenseManager.Model.Tag[] Tag { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
@@ -282,16 +310,6 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LicenseName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LicenseName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LicenseName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -302,9 +320,13 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LicenseName), MyInvocation.BoundParameters);
@@ -318,21 +340,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LicenseManager.Model.CreateLicenseResponse, NewLICMLicenseCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LicenseName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Beneficiary = this.Beneficiary;
             #if MODULAR
             if (this.Beneficiary == null && ParameterWasBound(nameof(this.Beneficiary)))
@@ -401,6 +413,10 @@ namespace Amazon.PowerShell.Cmdlets.LICM
                 WriteWarning("You are passing $null as a value for parameter ProductSKU which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.LicenseManager.Model.Tag>(this.Tag);
+            }
             context.Validity_Begin = this.Validity_Begin;
             #if MODULAR
             if (this.Validity_Begin == null && ParameterWasBound(nameof(this.Validity_Begin)))
@@ -565,6 +581,10 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             {
                 request.ProductSKU = cmdletContext.ProductSKU;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
              // populate Validity
             var requestValidityIsNull = true;
@@ -632,13 +652,7 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS License Manager", "CreateLicense");
             try
             {
-                #if DESKTOP
-                return client.CreateLicense(request);
-                #elif CORECLR
-                return client.CreateLicenseAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLicenseAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -669,6 +683,7 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             public System.String LicenseName { get; set; }
             public System.String ProductName { get; set; }
             public System.String ProductSKU { get; set; }
+            public List<Amazon.LicenseManager.Model.Tag> Tag { get; set; }
             public System.String Validity_Begin { get; set; }
             public System.String Validity_End { get; set; }
             public System.Func<Amazon.LicenseManager.Model.CreateLicenseResponse, NewLICMLicenseCmdlet, object> Select { get; set; } =

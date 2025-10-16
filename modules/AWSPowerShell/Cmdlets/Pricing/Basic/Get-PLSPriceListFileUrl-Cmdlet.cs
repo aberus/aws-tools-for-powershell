@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Pricing;
 using Amazon.Pricing.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PLS
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.PLS
     [AWSCmdlet("Calls the AWS Price List Service GetPriceListFileUrl API operation.", Operation = new[] {"GetPriceListFileUrl"}, SelectReturnType = typeof(Amazon.Pricing.Model.GetPriceListFileUrlResponse))]
     [AWSCmdletOutput("System.String or Amazon.Pricing.Model.GetPriceListFileUrlResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Pricing.Model.GetPriceListFileUrlResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Pricing.Model.GetPriceListFileUrlResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetPLSPriceListFileUrlCmdlet : AmazonPricingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FileFormat
         /// <summary>
@@ -99,9 +102,13 @@ namespace Amazon.PowerShell.Cmdlets.PLS
         public string Select { get; set; } = "Url";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -190,13 +197,7 @@ namespace Amazon.PowerShell.Cmdlets.PLS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Price List Service", "GetPriceListFileUrl");
             try
             {
-                #if DESKTOP
-                return client.GetPriceListFileUrl(request);
-                #elif CORECLR
-                return client.GetPriceListFileUrlAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPriceListFileUrlAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
-    /// Retrieves how many active member accounts in your Amazon Web Services organization
-    /// have each feature enabled within GuardDuty. Only a delegated GuardDuty administrator
-    /// of an organization can run this API.
+    /// Retrieves how many active member accounts have each feature enabled within GuardDuty.
+    /// Only a delegated GuardDuty administrator of an organization can run this API.
     /// 
     ///  
     /// <para>
-    /// When you create a new Amazon Web Services organization, it might take up to 24 hours
-    /// to generate the statistics for the entire organization.
+    /// When you create a new organization, it might take up to 24 hours to generate the statistics
+    /// for the entire organization.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "GDOrganizationStatistic")]
@@ -43,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
     [AWSCmdlet("Calls the Amazon GuardDuty GetOrganizationStatistics API operation.", Operation = new[] {"GetOrganizationStatistics"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.GetOrganizationStatisticsResponse))]
     [AWSCmdletOutput("Amazon.GuardDuty.Model.OrganizationDetails or Amazon.GuardDuty.Model.GetOrganizationStatisticsResponse",
         "This cmdlet returns an Amazon.GuardDuty.Model.OrganizationDetails object.",
-        "The service call response (type Amazon.GuardDuty.Model.GetOrganizationStatisticsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GuardDuty.Model.GetOrganizationStatisticsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGDOrganizationStatisticCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -61,9 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "OrganizationDetails";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -130,13 +136,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "GetOrganizationStatistics");
             try
             {
-                #if DESKTOP
-                return client.GetOrganizationStatistics(request);
-                #elif CORECLR
-                return client.GetOrganizationStatisticsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetOrganizationStatisticsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

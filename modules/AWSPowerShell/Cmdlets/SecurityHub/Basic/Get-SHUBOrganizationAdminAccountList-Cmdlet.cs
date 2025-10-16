@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
@@ -36,12 +38,25 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
     [AWSCmdlet("Calls the AWS Security Hub ListOrganizationAdminAccounts API operation.", Operation = new[] {"ListOrganizationAdminAccounts"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.ListOrganizationAdminAccountsResponse))]
     [AWSCmdletOutput("Amazon.SecurityHub.Model.AdminAccount or Amazon.SecurityHub.Model.ListOrganizationAdminAccountsResponse",
         "This cmdlet returns a collection of Amazon.SecurityHub.Model.AdminAccount objects.",
-        "The service call response (type Amazon.SecurityHub.Model.ListOrganizationAdminAccountsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SecurityHub.Model.ListOrganizationAdminAccountsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSHUBOrganizationAdminAccountListCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Feature
+        /// <summary>
+        /// <para>
+        /// <para>The feature where the delegated administrator account is listed. Defaults to Security
+        /// Hub if not specified.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SecurityHub.SecurityHubFeature")]
+        public Amazon.SecurityHub.SecurityHubFeature Feature { get; set; }
+        #endregion
         
         #region Parameter MaxResult
         /// <summary>
@@ -64,7 +79,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,9 +107,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,6 +126,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
                 context.Select = CreateSelectDelegate<Amazon.SecurityHub.Model.ListOrganizationAdminAccountsResponse, GetSHUBOrganizationAdminAccountListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.Feature = this.Feature;
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
             
@@ -127,6 +147,10 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             // create request and set iteration invariants
             var request = new Amazon.SecurityHub.Model.ListOrganizationAdminAccountsRequest();
             
+            if (cmdletContext.Feature != null)
+            {
+                request.Feature = cmdletContext.Feature;
+            }
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = cmdletContext.MaxResult.Value;
@@ -193,13 +217,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "ListOrganizationAdminAccounts");
             try
             {
-                #if DESKTOP
-                return client.ListOrganizationAdminAccounts(request);
-                #elif CORECLR
-                return client.ListOrganizationAdminAccountsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListOrganizationAdminAccountsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -216,6 +234,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.SecurityHub.SecurityHubFeature Feature { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.Func<Amazon.SecurityHub.Model.ListOrganizationAdminAccountsResponse, GetSHUBOrganizationAdminAccountListCmdlet, object> Select { get; set; } =

@@ -1,0 +1,1 @@
+Get-S3BucketAccelerateConfiguration -BucketName 'amzn-s3-demo-bucket'

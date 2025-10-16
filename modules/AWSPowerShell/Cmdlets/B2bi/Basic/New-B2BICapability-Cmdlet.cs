@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.B2bi;
 using Amazon.B2bi.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.B2BI
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
     [OutputType("Amazon.B2bi.Model.CreateCapabilityResponse")]
     [AWSCmdlet("Calls the AWS B2B Data Interchange CreateCapability API operation.", Operation = new[] {"CreateCapability"}, SelectReturnType = typeof(Amazon.B2bi.Model.CreateCapabilityResponse))]
     [AWSCmdletOutput("Amazon.B2bi.Model.CreateCapabilityResponse",
-        "This cmdlet returns an Amazon.B2bi.Model.CreateCapabilityResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.B2bi.Model.CreateCapabilityResponse object containing multiple properties."
     )]
     public partial class NewB2BICapabilityCmdlet : AmazonB2biClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InputLocation_BucketName
         /// <summary>
@@ -65,12 +68,28 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public System.String OutputLocation_BucketName { get; set; }
         #endregion
         
+        #region Parameter Edi_CapabilityDirection
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether this is capability is for inbound or outbound transformations.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Configuration_Edi_CapabilityDirection")]
+        [AWSConstantClassSource("Amazon.B2bi.CapabilityDirection")]
+        public Amazon.B2bi.CapabilityDirection Edi_CapabilityDirection { get; set; }
+        #endregion
+        
         #region Parameter InstructionsDocument
         /// <summary>
         /// <para>
         /// <para>Specifies one or more locations in Amazon S3, each specifying an EDI document that
         /// can be used with this capability. Each item contains the name of the bucket and the
-        /// key, to identify the document's location.</para>
+        /// key, to identify the document's location.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         /// <para>
         /// <para>Specifies the key-value pairs assigned to ARNs that you can use to group and search
         /// for resources by type. You can attach this metadata to resources (capabilities, partnerships,
-        /// and so on) for any purpose.</para>
+        /// and so on) for any purpose.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,8 +197,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         #region Parameter X12Details_Version
         /// <summary>
         /// <para>
-        /// <para>Returns the version to use for the specified X12 transaction set. Supported versions
-        /// are <c>4010</c>, <c>4030</c>, and <c>5010</c>.</para>
+        /// <para>Returns the version to use for the specified X12 transaction set.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,9 +237,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -237,6 +263,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.ClientToken = this.ClientToken;
+            context.Edi_CapabilityDirection = this.Edi_CapabilityDirection;
             context.InputLocation_BucketName = this.InputLocation_BucketName;
             context.InputLocation_Key = this.InputLocation_Key;
             context.OutputLocation_BucketName = this.OutputLocation_BucketName;
@@ -295,6 +322,16 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
              // populate Edi
             var requestConfiguration_configuration_EdiIsNull = true;
             requestConfiguration_configuration_Edi = new Amazon.B2bi.Model.EdiConfiguration();
+            Amazon.B2bi.CapabilityDirection requestConfiguration_configuration_Edi_edi_CapabilityDirection = null;
+            if (cmdletContext.Edi_CapabilityDirection != null)
+            {
+                requestConfiguration_configuration_Edi_edi_CapabilityDirection = cmdletContext.Edi_CapabilityDirection;
+            }
+            if (requestConfiguration_configuration_Edi_edi_CapabilityDirection != null)
+            {
+                requestConfiguration_configuration_Edi.CapabilityDirection = requestConfiguration_configuration_Edi_edi_CapabilityDirection;
+                requestConfiguration_configuration_EdiIsNull = false;
+            }
             System.String requestConfiguration_configuration_Edi_edi_TransformerId = null;
             if (cmdletContext.Edi_TransformerId != null)
             {
@@ -494,13 +531,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS B2B Data Interchange", "CreateCapability");
             try
             {
-                #if DESKTOP
-                return client.CreateCapability(request);
-                #elif CORECLR
-                return client.CreateCapabilityAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCapabilityAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -518,6 +549,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientToken { get; set; }
+            public Amazon.B2bi.CapabilityDirection Edi_CapabilityDirection { get; set; }
             public System.String InputLocation_BucketName { get; set; }
             public System.String InputLocation_Key { get; set; }
             public System.String OutputLocation_BucketName { get; set; }

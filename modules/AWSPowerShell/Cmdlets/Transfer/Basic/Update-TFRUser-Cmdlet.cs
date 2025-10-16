@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Transfer;
 using Amazon.Transfer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TFR
 {
     /// <summary>
@@ -35,18 +37,30 @@ namespace Amazon.PowerShell.Cmdlets.TFR
     ///  
     /// <para>
     /// The response returns the <c>ServerId</c> and the <c>UserName</c> for the updated user.
-    /// </para>
+    /// </para><para>
+    /// In the console, you can select <i>Restricted</i> when you create or update a user.
+    /// This ensures that the user can't access anything outside of their home directory.
+    /// The programmatic way to configure this behavior is to update the user. Set their <c>HomeDirectoryType</c>
+    /// to <c>LOGICAL</c>, and specify <c>HomeDirectoryMappings</c> with <c>Entry</c> as root
+    /// (<c>/</c>) and <c>Target</c> as their home directory.
+    /// </para><para>
+    /// For example, if the user's home directory is <c>/test/admin-user</c>, the following
+    /// command updates the user so that their configuration in the console shows the <i>Restricted</i>
+    /// flag as selected.
+    /// </para><para><c> aws transfer update-user --server-id &lt;server-id&gt; --user-name admin-user
+    /// --home-directory-type LOGICAL --home-directory-mappings "[{\"Entry\":\"/\", \"Target\":\"/test/admin-user\"}]"</c></para>
     /// </summary>
     [Cmdlet("Update", "TFRUser", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Transfer.Model.UpdateUserResponse")]
     [AWSCmdlet("Calls the AWS Transfer for SFTP UpdateUser API operation.", Operation = new[] {"UpdateUser"}, SelectReturnType = typeof(Amazon.Transfer.Model.UpdateUserResponse))]
     [AWSCmdletOutput("Amazon.Transfer.Model.UpdateUserResponse",
-        "This cmdlet returns an Amazon.Transfer.Model.UpdateUserResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Transfer.Model.UpdateUserResponse object containing multiple properties."
     )]
     public partial class UpdateTFRUserCmdlet : AmazonTransferClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PosixProfile_Gid
         /// <summary>
@@ -62,8 +76,8 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// <summary>
         /// <para>
         /// <para>The landing directory (folder) for a user when they log in to the server using the
-        /// client.</para><para>A <c>HomeDirectory</c> example is <c>/bucket_name/home/mydirectory</c>.</para><note><para>The <c>HomeDirectory</c> parameter is only used if <c>HomeDirectoryType</c> is set
-        /// to <c>PATH</c>.</para></note>
+        /// client.</para><para>A <c>HomeDirectory</c> example is <c>/bucket_name/home/mydirectory</c>.</para><note><para>You can use the <c>HomeDirectory</c> parameter for <c>HomeDirectoryType</c> when it
+        /// is set to either <c>PATH</c> or <c>LOGICAL</c>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,7 +95,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// and Access Management (IAM) role provides access to paths in <c>Target</c>. This value
         /// can be set only when <c>HomeDirectoryType</c> is set to <i>LOGICAL</i>.</para><para>The following is an <c>Entry</c> and <c>Target</c> pair example.</para><para><c>[ { "Entry": "/directory1", "Target": "/bucket_name/home/mydirectory" } ]</c></para><para>In most cases, you can use this value instead of the session policy to lock down your
         /// user to the designated home directory ("<c>chroot</c>"). To do this, you can set <c>Entry</c>
-        /// to '/' and set <c>Target</c> to the HomeDirectory parameter value.</para><para>The following is an <c>Entry</c> and <c>Target</c> pair example for <c>chroot</c>.</para><para><c>[ { "Entry": "/", "Target": "/bucket_name/home/mydirectory" } ]</c></para>
+        /// to '/' and set <c>Target</c> to the HomeDirectory parameter value.</para><para>The following is an <c>Entry</c> and <c>Target</c> pair example for <c>chroot</c>.</para><para><c>[ { "Entry": "/", "Target": "/bucket_name/home/mydirectory" } ]</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter PosixProfile_SecondaryGid
         /// <summary>
         /// <para>
-        /// <para>The secondary POSIX group IDs used for all EFS operations by this user.</para>
+        /// <para>The secondary POSIX group IDs used for all EFS operations by this user.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -212,16 +234,6 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -232,9 +244,13 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserName), MyInvocation.BoundParameters);
@@ -248,21 +264,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Transfer.Model.UpdateUserResponse, UpdateTFRUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HomeDirectory = this.HomeDirectory;
             if (this.HomeDirectoryMapping != null)
             {
@@ -412,13 +418,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Transfer for SFTP", "UpdateUser");
             try
             {
-                #if DESKTOP
-                return client.UpdateUser(request);
-                #elif CORECLR
-                return client.UpdateUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

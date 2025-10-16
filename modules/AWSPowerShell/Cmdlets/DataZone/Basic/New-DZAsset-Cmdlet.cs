@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
     /// Creates an asset in Amazon DataZone catalog.
+    /// 
+    ///  
+    /// <para>
+    /// Before creating assets, make sure that the following requirements are met:
+    /// </para><ul><li><para><c>--domain-identifier</c> must refer to an existing domain.
+    /// </para></li><li><para><c>--owning-project-identifier</c> must be a valid project within the domain.
+    /// </para></li><li><para>
+    /// Asset type must be created beforehand using <c>create-asset-type</c>, or be a supported
+    /// system-defined type. For more information, see <a href="https://docs.aws.amazon.com/cli/latest/reference/datazone/create-asset-type.html">create-asset-type</a>.
+    /// </para></li><li><para><c>--type-revision</c> (if used) must match a valid revision of the asset type.
+    /// </para></li><li><para><c>formsInput</c> is required when it is associated as required in the <c>asset-type</c>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/cli/latest/reference/datazone/create-form-type.html">create-form-type</a>.
+    /// </para></li><li><para>
+    /// Form content must include all required fields as per the form schema (e.g., <c>bucketArn</c>).
+    /// </para></li></ul><para>
+    /// You must invoke the following pre-requisite commands before invoking this API:
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/datazone/latest/APIReference/API_CreateFormType.html">CreateFormType</a></para></li><li><para><a href="https://docs.aws.amazon.com/datazone/latest/APIReference/API_CreateAssetType.html">CreateAssetType</a></para></li></ul>
     /// </summary>
     [Cmdlet("New", "DZAsset", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DataZone.Model.CreateAssetResponse")]
     [AWSCmdlet("Calls the Amazon DataZone CreateAsset API operation.", Operation = new[] {"CreateAsset"}, SelectReturnType = typeof(Amazon.DataZone.Model.CreateAssetResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.CreateAssetResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.CreateAssetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.CreateAssetResponse object containing multiple properties."
     )]
     public partial class NewDZAssetCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -86,7 +102,8 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter ExternalIdentifier
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The external identifier of the asset.</para><para>If the value for the <c>externalIdentifier</c> parameter is specified, it must be
+        /// a unique value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter FormsInput
         /// <summary>
         /// <para>
-        /// <para>Metadata forms attached to the asset.</para>
+        /// <para>Metadata forms attached to the asset.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter GlossaryTerm
         /// <summary>
         /// <para>
-        /// <para>Glossary terms attached to the asset.</para>
+        /// <para>Glossary terms attached to the asset.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -197,16 +222,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OwningProjectIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OwningProjectIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OwningProjectIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -217,9 +232,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.OwningProjectIdentifier), MyInvocation.BoundParameters);
@@ -233,21 +252,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.CreateAssetResponse, NewDZAssetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OwningProjectIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.DomainIdentifier = this.DomainIdentifier;
@@ -417,13 +426,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "CreateAsset");
             try
             {
-                #if DESKTOP
-                return client.CreateAsset(request);
-                #elif CORECLR
-                return client.CreateAssetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAssetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

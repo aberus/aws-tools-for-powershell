@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -32,12 +34,25 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// or filter using a time range.
     /// 
     ///  
-    /// <para>
-    /// By default, this operation returns as many log events as can fit in a response size
-    /// of 1MB (up to 10,000 log events). You can get additional log events by specifying
-    /// one of the tokens in a subsequent call. This operation can return empty results while
-    /// there are more log events available through the token.
+    /// <para><c>GetLogEvents</c> is a paginated operation. Each page returned can contain up to
+    /// 1 MB of log events or up to 10,000 log events. A returned page might only be partially
+    /// full, or even empty. For example, if the result of a query would return 15,000 log
+    /// events, the first page isn't guaranteed to have 10,000 log events even if they all
+    /// fit into 1 MB.
     /// </para><para>
+    /// Partially full or empty pages don't necessarily mean that pagination is finished.
+    /// As long as the <c>nextBackwardToken</c> or <c>nextForwardToken</c> returned is NOT
+    /// equal to the <c>nextToken</c> that you passed into the API call, there might be more
+    /// log events available. The token that you use depends on the direction you want to
+    /// move in along the log stream. The returned tokens are never null.
+    /// </para><note><para>
+    /// If you set <c>startFromHead</c> to <c>true</c> and you don’t include <c>endTime</c>
+    /// in your request, you can end up in a situation where the pagination doesn't terminate.
+    /// This can happen when the new log events are being added to the target log streams
+    /// faster than they are being read. This situation is a good use case for the CloudWatch
+    /// Logs <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogs_LiveTail.html">Live
+    /// Tail</a> feature.
+    /// </para></note><para>
     /// If you are using CloudWatch cross-account observability, you can use this operation
     /// in a monitoring account and view data from the linked source accounts. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Unified-Cross-Account.html">CloudWatch
@@ -46,18 +61,24 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// You can specify the log group to search by using either <c>logGroupIdentifier</c>
     /// or <c>logGroupName</c>. You must include one of these two parameters, but you can't
     /// include both. 
-    /// </para>
+    /// </para><note><para>
+    /// If you are using <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation.html">log
+    /// transformation</a>, the <c>GetLogEvents</c> operation returns only the original versions
+    /// of log events, before they were transformed. To view the transformed versions, you
+    /// must use a <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html">CloudWatch
+    /// Logs query.</a></para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "CWLLogEvent")]
     [OutputType("Amazon.CloudWatchLogs.Model.GetLogEventsResponse")]
     [AWSCmdlet("Calls the Amazon CloudWatch Logs GetLogEvents API operation.", Operation = new[] {"GetLogEvents"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.GetLogEventsResponse), LegacyAlias="Get-CWLLogEvents")]
     [AWSCmdletOutput("Amazon.CloudWatchLogs.Model.GetLogEventsResponse",
-        "This cmdlet returns an Amazon.CloudWatchLogs.Model.GetLogEventsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudWatchLogs.Model.GetLogEventsResponse object containing multiple properties."
     )]
     public partial class GetCWLLogEventCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndTime
         /// <summary>
@@ -154,9 +175,15 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <para>The maximum number of log events returned. If you don't specify a limit, the default
         /// is as many log events as can fit in a response size of 1 MB (up to 10,000 log events).</para>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.Int32? Limit { get; set; }
+        [Alias("MaxItems")]
+        public int? Limit { get; set; }
         #endregion
         
         #region Parameter NextToken
@@ -164,6 +191,10 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <para>
         /// <para>The token for the next set of items to return. (You received this token from a previous
         /// call.)</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,19 +212,24 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
+        #region Parameter NoAutoIteration
         /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogStreamName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogStreamName' instead. This parameter will be removed in a future version.
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
         /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogStreamName' instead. This parameter will be removed in a future version.")]
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -201,23 +237,22 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.GetLogEventsResponse, GetCWLLogEventCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LogStreamName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EndTime = this.EndTime;
             context.Limit = this.Limit;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.Limit)) && this.Limit.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the Limit parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing Limit" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             context.LogGroupIdentifier = this.LogGroupIdentifier;
             context.LogGroupName = this.LogGroupName;
             context.LogStreamName = this.LogStreamName;
@@ -244,7 +279,9 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.CloudWatchLogs.Model.GetLogEventsRequest();
             
             if (cmdletContext.EndTime != null)
@@ -253,7 +290,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             }
             if (cmdletContext.Limit != null)
             {
-                request.Limit = cmdletContext.Limit.Value;
+                request.Limit = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.Limit.Value);
             }
             if (cmdletContext.LogGroupIdentifier != null)
             {
@@ -266,10 +303,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             if (cmdletContext.LogStreamName != null)
             {
                 request.LogStreamName = cmdletContext.LogStreamName;
-            }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
             }
             if (cmdletContext.StartFromHead != null)
             {
@@ -284,27 +317,15 @@ namespace Amazon.PowerShell.Cmdlets.CWL
                 request.Unmask = cmdletContext.Unmask.Value;
             }
             
-            CmdletOutput output;
+            ProcessCustomAutoIteration(cmdletContext, request, useParameterSelect);
             
-            // issue call
-            var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            if (useParameterSelect)
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
-                {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
-            {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -321,13 +342,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "GetLogEvents");
             try
             {
-                #if DESKTOP
-                return client.GetLogEvents(request);
-                #elif CORECLR
-                return client.GetLogEventsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetLogEventsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -345,7 +360,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         internal partial class CmdletContext : ExecutorContext
         {
             public System.DateTime? EndTime { get; set; }
-            public System.Int32? Limit { get; set; }
+            public int? Limit { get; set; }
             public System.String LogGroupIdentifier { get; set; }
             public System.String LogGroupName { get; set; }
             public System.String LogStreamName { get; set; }

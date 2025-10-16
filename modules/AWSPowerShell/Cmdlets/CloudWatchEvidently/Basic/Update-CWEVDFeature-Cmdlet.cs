@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchEvidently;
 using Amazon.CloudWatchEvidently.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWEVD
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
     [AWSCmdlet("Calls the Amazon CloudWatch Evidently UpdateFeature API operation.", Operation = new[] {"UpdateFeature"}, SelectReturnType = typeof(Amazon.CloudWatchEvidently.Model.UpdateFeatureResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchEvidently.Model.Feature or Amazon.CloudWatchEvidently.Model.UpdateFeatureResponse",
         "This cmdlet returns an Amazon.CloudWatchEvidently.Model.Feature object.",
-        "The service call response (type Amazon.CloudWatchEvidently.Model.UpdateFeatureResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchEvidently.Model.UpdateFeatureResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCWEVDFeatureCmdlet : AmazonCloudWatchEvidentlyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddOrUpdateVariation
         /// <summary>
@@ -55,7 +58,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         /// <para>To update variation configurations for this feature, or add new ones, specify this
         /// structure. In this array, include any variations that you want to add or update. If
         /// the array includes a variation name that already exists for this feature, it is updated.
-        /// If it includes a new variation name, it is added as a new variation.</para>
+        /// If it includes a new variation name, it is added as a new variation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         /// user is specified by a key-value pair . For each key, specify a user by entering their
         /// user ID, account ID, or some other identifier. For the value, specify the name of
         /// the variation that they are to be served.</para><para>This parameter is limited to 2500 overrides or a total of 40KB. The 40KB limit includes
-        /// an overhead of 6 bytes per override.</para>
+        /// an overhead of 6 bytes per override.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         /// <para>
         /// <para>Removes a variation from the feature. If the variation you specify doesn't exist,
         /// then this makes no change and does not report an error.</para><para>This operation fails if you try to remove a variation that is part of an ongoing launch
-        /// or experiment.</para>
+        /// or experiment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,9 +196,13 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Feature), MyInvocation.BoundParameters);
@@ -321,13 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Evidently", "UpdateFeature");
             try
             {
-                #if DESKTOP
-                return client.UpdateFeature(request);
-                #elif CORECLR
-                return client.UpdateFeatureAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFeatureAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

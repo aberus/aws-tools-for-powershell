@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     [AWSCmdlet("Calls the Elastic Load Balancing V2 DescribeLoadBalancerAttributes API operation.", Operation = new[] {"DescribeLoadBalancerAttributes"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancerAttributesResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.LoadBalancerAttribute or Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancerAttributesResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.LoadBalancerAttribute objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancerAttributesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancerAttributesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetELB2LoadBalancerAttributeCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LoadBalancerArn
         /// <summary>
@@ -79,19 +82,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public string Select { get; set; } = "Attributes";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LoadBalancerArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LoadBalancerArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LoadBalancerArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -99,21 +96,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancerAttributesResponse, GetELB2LoadBalancerAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LoadBalancerArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LoadBalancerArn = this.LoadBalancerArn;
             #if MODULAR
             if (this.LoadBalancerArn == null && ParameterWasBound(nameof(this.LoadBalancerArn)))
@@ -179,13 +166,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "DescribeLoadBalancerAttributes");
             try
             {
-                #if DESKTOP
-                return client.DescribeLoadBalancerAttributes(request);
-                #elif CORECLR
-                return client.DescribeLoadBalancerAttributesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeLoadBalancerAttributesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

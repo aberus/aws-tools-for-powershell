@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB ImportTable API operation.", Operation = new[] {"ImportTable"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.ImportTableResponse))]
     [AWSCmdletOutput("Amazon.DynamoDBv2.Model.ImportTableDescription or Amazon.DynamoDBv2.Model.ImportTableResponse",
         "This cmdlet returns an Amazon.DynamoDBv2.Model.ImportTableDescription object.",
-        "The service call response (type Amazon.DynamoDBv2.Model.ImportTableResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.ImportTableResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportDDBTableCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TableCreationParameters_AttributeDefinition
         /// <summary>
         /// <para>
-        /// <para> The attributes of the table created as part of the import operation. </para>
+        /// <para> The attributes of the table created as part of the import operation. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <summary>
         /// <para>
         /// <para> The Global Secondary Indexes (GSI) of the table to be created as part of the import
-        /// operation. </para>
+        /// operation. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <para> List of the headers used to specify a common header for all source CSV files being
         /// imported. If this field is specified then the first line of each CSV file is treated
         /// as data instead of the header. If this field is not specified the the first line of
-        /// each CSV file is treated as the header. </para>
+        /// each CSV file is treated as the header. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <summary>
         /// <para>
         /// <para> The primary key and option sort key of the table created as part of the import operation.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -183,6 +202,32 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TableCreationParameters_SSESpecification_KMSMasterKeyId")]
         public System.String SSESpecification_KMSMasterKeyId { get; set; }
+        #endregion
+        
+        #region Parameter OnDemandThroughput_MaxReadRequestUnit
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of read request units for the specified table.</para><para>To specify a maximum <c>OnDemandThroughput</c> on your table, set the value of <c>MaxReadRequestUnits</c>
+        /// as greater than or equal to 1. To remove the maximum <c>OnDemandThroughput</c> that
+        /// is currently set on your table, set the value of <c>MaxReadRequestUnits</c> to -1.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TableCreationParameters_OnDemandThroughput_MaxReadRequestUnits")]
+        public System.Int64? OnDemandThroughput_MaxReadRequestUnit { get; set; }
+        #endregion
+        
+        #region Parameter OnDemandThroughput_MaxWriteRequestUnit
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of write request units for the specified table.</para><para>To specify a maximum <c>OnDemandThroughput</c> on your table, set the value of <c>MaxWriteRequestUnits</c>
+        /// as greater than or equal to 1. To remove the maximum <c>OnDemandThroughput</c> that
+        /// is currently set on your table, set the value of <c>MaxWriteRequestUnits</c> to -1.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TableCreationParameters_OnDemandThroughput_MaxWriteRequestUnits")]
+        public System.Int64? OnDemandThroughput_MaxWriteRequestUnit { get; set; }
         #endregion
         
         #region Parameter ProvisionedThroughput_ReadCapacityUnit
@@ -306,16 +351,6 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "ImportTableDescription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InputFormat parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InputFormat' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InputFormat' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -326,9 +361,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TableCreationParameters_TableName), MyInvocation.BoundParameters);
@@ -342,21 +381,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.ImportTableResponse, ImportDDBTableCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InputFormat;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.InputCompressionType = this.InputCompressionType;
             context.InputFormat = this.InputFormat;
@@ -405,6 +434,8 @@ namespace Amazon.PowerShell.Cmdlets.DDB
                 WriteWarning("You are passing $null as a value for parameter TableCreationParameters_KeySchema which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.OnDemandThroughput_MaxReadRequestUnit = this.OnDemandThroughput_MaxReadRequestUnit;
+            context.OnDemandThroughput_MaxWriteRequestUnit = this.OnDemandThroughput_MaxWriteRequestUnit;
             context.ProvisionedThroughput_ReadCapacityUnit = this.ProvisionedThroughput_ReadCapacityUnit;
             context.ProvisionedThroughput_WriteCapacityUnit = this.ProvisionedThroughput_WriteCapacityUnit;
             context.SSESpecification_Enabled = this.SSESpecification_Enabled;
@@ -582,6 +613,41 @@ namespace Amazon.PowerShell.Cmdlets.DDB
                 request.TableCreationParameters.TableName = requestTableCreationParameters_tableCreationParameters_TableName;
                 requestTableCreationParametersIsNull = false;
             }
+            Amazon.DynamoDBv2.Model.OnDemandThroughput requestTableCreationParameters_tableCreationParameters_OnDemandThroughput = null;
+            
+             // populate OnDemandThroughput
+            var requestTableCreationParameters_tableCreationParameters_OnDemandThroughputIsNull = true;
+            requestTableCreationParameters_tableCreationParameters_OnDemandThroughput = new Amazon.DynamoDBv2.Model.OnDemandThroughput();
+            System.Int64? requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxReadRequestUnit = null;
+            if (cmdletContext.OnDemandThroughput_MaxReadRequestUnit != null)
+            {
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxReadRequestUnit = cmdletContext.OnDemandThroughput_MaxReadRequestUnit.Value;
+            }
+            if (requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxReadRequestUnit != null)
+            {
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughput.MaxReadRequestUnits = requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxReadRequestUnit.Value;
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughputIsNull = false;
+            }
+            System.Int64? requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxWriteRequestUnit = null;
+            if (cmdletContext.OnDemandThroughput_MaxWriteRequestUnit != null)
+            {
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxWriteRequestUnit = cmdletContext.OnDemandThroughput_MaxWriteRequestUnit.Value;
+            }
+            if (requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxWriteRequestUnit != null)
+            {
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughput.MaxWriteRequestUnits = requestTableCreationParameters_tableCreationParameters_OnDemandThroughput_onDemandThroughput_MaxWriteRequestUnit.Value;
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughputIsNull = false;
+            }
+             // determine if requestTableCreationParameters_tableCreationParameters_OnDemandThroughput should be set to null
+            if (requestTableCreationParameters_tableCreationParameters_OnDemandThroughputIsNull)
+            {
+                requestTableCreationParameters_tableCreationParameters_OnDemandThroughput = null;
+            }
+            if (requestTableCreationParameters_tableCreationParameters_OnDemandThroughput != null)
+            {
+                request.TableCreationParameters.OnDemandThroughput = requestTableCreationParameters_tableCreationParameters_OnDemandThroughput;
+                requestTableCreationParametersIsNull = false;
+            }
             Amazon.DynamoDBv2.Model.ProvisionedThroughput requestTableCreationParameters_tableCreationParameters_ProvisionedThroughput = null;
             
              // populate ProvisionedThroughput
@@ -705,13 +771,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "ImportTable");
             try
             {
-                #if DESKTOP
-                return client.ImportTable(request);
-                #elif CORECLR
-                return client.ImportTableAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -740,6 +800,8 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             public Amazon.DynamoDBv2.BillingMode TableCreationParameters_BillingMode { get; set; }
             public List<Amazon.DynamoDBv2.Model.GlobalSecondaryIndex> TableCreationParameters_GlobalSecondaryIndex { get; set; }
             public List<Amazon.DynamoDBv2.Model.KeySchemaElement> TableCreationParameters_KeySchema { get; set; }
+            public System.Int64? OnDemandThroughput_MaxReadRequestUnit { get; set; }
+            public System.Int64? OnDemandThroughput_MaxWriteRequestUnit { get; set; }
             public System.Int64? ProvisionedThroughput_ReadCapacityUnit { get; set; }
             public System.Int64? ProvisionedThroughput_WriteCapacityUnit { get; set; }
             public System.Boolean? SSESpecification_Enabled { get; set; }

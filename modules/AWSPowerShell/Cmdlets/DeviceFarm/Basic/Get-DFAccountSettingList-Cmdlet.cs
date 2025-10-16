@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DeviceFarm;
 using Amazon.DeviceFarm.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DF
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.DF
     [AWSCmdlet("Calls the AWS Device Farm GetAccountSettings API operation.", Operation = new[] {"GetAccountSettings"}, SelectReturnType = typeof(Amazon.DeviceFarm.Model.GetAccountSettingsResponse))]
     [AWSCmdletOutput("Amazon.DeviceFarm.Model.AccountSettings or Amazon.DeviceFarm.Model.GetAccountSettingsResponse",
         "This cmdlet returns an Amazon.DeviceFarm.Model.AccountSettings object.",
-        "The service call response (type Amazon.DeviceFarm.Model.GetAccountSettingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DeviceFarm.Model.GetAccountSettingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDFAccountSettingListCmdlet : AmazonDeviceFarmClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -54,9 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.DF
         public string Select { get; set; } = "AccountSettings";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,13 +130,7 @@ namespace Amazon.PowerShell.Cmdlets.DF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Device Farm", "GetAccountSettings");
             try
             {
-                #if DESKTOP
-                return client.GetAccountSettings(request);
-                #elif CORECLR
-                return client.GetAccountSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAccountSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

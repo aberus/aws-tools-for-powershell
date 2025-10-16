@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.B2bi;
 using Amazon.B2bi.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.B2BI
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
     [AWSCmdlet("Calls the AWS B2B Data Interchange TestParsing API operation.", Operation = new[] {"TestParsing"}, SelectReturnType = typeof(Amazon.B2bi.Model.TestParsingResponse))]
     [AWSCmdletOutput("System.String or Amazon.B2bi.Model.TestParsingResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.B2bi.Model.TestParsingResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.B2bi.Model.TestParsingResponse) can be returned by specifying '-Select *'."
     )]
     public partial class TestB2BIParsingCmdlet : AmazonB2biClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InputFile_BucketName
         /// <summary>
@@ -81,6 +84,19 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public System.String InputFile_Key { get; set; }
         #endregion
         
+        #region Parameter SplitOptions_SplitBy
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the method used to split X12 EDI files. Valid values include <c>TRANSACTION</c>
+        /// (split by individual transaction sets), or <c>NONE</c> (no splitting).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedOptions_X12_SplitOptions_SplitBy")]
+        [AWSConstantClassSource("Amazon.B2bi.X12SplitBy")]
+        public Amazon.B2bi.X12SplitBy SplitOptions_SplitBy { get; set; }
+        #endregion
+        
         #region Parameter X12Details_TransactionSet
         /// <summary>
         /// <para>
@@ -94,11 +110,27 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public Amazon.B2bi.X12TransactionSet X12Details_TransactionSet { get; set; }
         #endregion
         
+        #region Parameter ValidationOptions_ValidationRule
+        /// <summary>
+        /// <para>
+        /// <para>Specifies a list of validation rules to apply during EDI document processing. These
+        /// rules can include code list modifications, element length constraints, and element
+        /// requirement changes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedOptions_X12_ValidationOptions_ValidationRules")]
+        public Amazon.B2bi.Model.X12ValidationRule[] ValidationOptions_ValidationRule { get; set; }
+        #endregion
+        
         #region Parameter X12Details_Version
         /// <summary>
         /// <para>
-        /// <para>Returns the version to use for the specified X12 transaction set. Supported versions
-        /// are <c>4010</c>, <c>4030</c>, and <c>5010</c>.</para>
+        /// <para>Returns the version to use for the specified X12 transaction set.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,19 +150,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public string Select { get; set; } = "ParsedFileContent";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileFormat parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileFormat' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileFormat' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -138,21 +164,16 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.B2bi.Model.TestParsingResponse, TestB2BIParsingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            context.SplitOptions_SplitBy = this.SplitOptions_SplitBy;
+            if (this.ValidationOptions_ValidationRule != null)
             {
-                context.Select = (response, cmdlet) => this.FileFormat;
+                context.ValidationOptions_ValidationRule = new List<Amazon.B2bi.Model.X12ValidationRule>(this.ValidationOptions_ValidationRule);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.X12Details_TransactionSet = this.X12Details_TransactionSet;
             context.X12Details_Version = this.X12Details_Version;
             context.FileFormat = this.FileFormat;
@@ -180,6 +201,80 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
             // create request
             var request = new Amazon.B2bi.Model.TestParsingRequest();
             
+            
+             // populate AdvancedOptions
+            var requestAdvancedOptionsIsNull = true;
+            request.AdvancedOptions = new Amazon.B2bi.Model.AdvancedOptions();
+            Amazon.B2bi.Model.X12AdvancedOptions requestAdvancedOptions_advancedOptions_X12 = null;
+            
+             // populate X12
+            var requestAdvancedOptions_advancedOptions_X12IsNull = true;
+            requestAdvancedOptions_advancedOptions_X12 = new Amazon.B2bi.Model.X12AdvancedOptions();
+            Amazon.B2bi.Model.X12SplitOptions requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions = null;
+            
+             // populate SplitOptions
+            var requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptionsIsNull = true;
+            requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions = new Amazon.B2bi.Model.X12SplitOptions();
+            Amazon.B2bi.X12SplitBy requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions_splitOptions_SplitBy = null;
+            if (cmdletContext.SplitOptions_SplitBy != null)
+            {
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions_splitOptions_SplitBy = cmdletContext.SplitOptions_SplitBy;
+            }
+            if (requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions_splitOptions_SplitBy != null)
+            {
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions.SplitBy = requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions_splitOptions_SplitBy;
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptionsIsNull = false;
+            }
+             // determine if requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions should be set to null
+            if (requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptionsIsNull)
+            {
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions = null;
+            }
+            if (requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions != null)
+            {
+                requestAdvancedOptions_advancedOptions_X12.SplitOptions = requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_SplitOptions;
+                requestAdvancedOptions_advancedOptions_X12IsNull = false;
+            }
+            Amazon.B2bi.Model.X12ValidationOptions requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions = null;
+            
+             // populate ValidationOptions
+            var requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptionsIsNull = true;
+            requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions = new Amazon.B2bi.Model.X12ValidationOptions();
+            List<Amazon.B2bi.Model.X12ValidationRule> requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions_validationOptions_ValidationRule = null;
+            if (cmdletContext.ValidationOptions_ValidationRule != null)
+            {
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions_validationOptions_ValidationRule = cmdletContext.ValidationOptions_ValidationRule;
+            }
+            if (requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions_validationOptions_ValidationRule != null)
+            {
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions.ValidationRules = requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions_validationOptions_ValidationRule;
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptionsIsNull = false;
+            }
+             // determine if requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions should be set to null
+            if (requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptionsIsNull)
+            {
+                requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions = null;
+            }
+            if (requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions != null)
+            {
+                requestAdvancedOptions_advancedOptions_X12.ValidationOptions = requestAdvancedOptions_advancedOptions_X12_advancedOptions_X12_ValidationOptions;
+                requestAdvancedOptions_advancedOptions_X12IsNull = false;
+            }
+             // determine if requestAdvancedOptions_advancedOptions_X12 should be set to null
+            if (requestAdvancedOptions_advancedOptions_X12IsNull)
+            {
+                requestAdvancedOptions_advancedOptions_X12 = null;
+            }
+            if (requestAdvancedOptions_advancedOptions_X12 != null)
+            {
+                request.AdvancedOptions.X12 = requestAdvancedOptions_advancedOptions_X12;
+                requestAdvancedOptionsIsNull = false;
+            }
+             // determine if request.AdvancedOptions should be set to null
+            if (requestAdvancedOptionsIsNull)
+            {
+                request.AdvancedOptions = null;
+            }
             
              // populate EdiType
             var requestEdiTypeIsNull = true;
@@ -295,13 +390,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS B2B Data Interchange", "TestParsing");
             try
             {
-                #if DESKTOP
-                return client.TestParsing(request);
-                #elif CORECLR
-                return client.TestParsingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TestParsingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -318,6 +407,8 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.B2bi.X12SplitBy SplitOptions_SplitBy { get; set; }
+            public List<Amazon.B2bi.Model.X12ValidationRule> ValidationOptions_ValidationRule { get; set; }
             public Amazon.B2bi.X12TransactionSet X12Details_TransactionSet { get; set; }
             public Amazon.B2bi.X12Version X12Details_Version { get; set; }
             public Amazon.B2bi.FileFormat FileFormat { get; set; }

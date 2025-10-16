@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Lists the tags for the specified delivery stream. This operation has a limit of five
+    /// Lists the tags for the specified Firehose stream. This operation has a limit of five
     /// transactions per second per account.
     /// </summary>
     [Cmdlet("Get", "KINFTagsForDeliveryStream")]
     [OutputType("Amazon.KinesisFirehose.Model.ListTagsForDeliveryStreamResponse")]
     [AWSCmdlet("Calls the Amazon Kinesis Firehose ListTagsForDeliveryStream API operation.", Operation = new[] {"ListTagsForDeliveryStream"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.ListTagsForDeliveryStreamResponse))]
     [AWSCmdletOutput("Amazon.KinesisFirehose.Model.ListTagsForDeliveryStreamResponse",
-        "This cmdlet returns an Amazon.KinesisFirehose.Model.ListTagsForDeliveryStreamResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KinesisFirehose.Model.ListTagsForDeliveryStreamResponse object containing multiple properties."
     )]
     public partial class GetKINFTagsForDeliveryStreamCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The name of the delivery stream whose tags you want to list.</para>
+        /// <para>The name of the Firehose stream whose tags you want to list.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -74,7 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <summary>
         /// <para>
         /// <para>The number of tags to return. If this number is less than the total number of tags
-        /// associated with the delivery stream, <c>HasMoreTags</c> is set to <c>true</c> in the
+        /// associated with the Firehose stream, <c>HasMoreTags</c> is set to <c>true</c> in the
         /// response. To list additional tags, set <c>ExclusiveStartTagKey</c> to the last key
         /// in the response. </para>
         /// </para>
@@ -94,19 +97,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeliveryStreamName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeliveryStreamName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeliveryStreamName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -114,21 +111,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KinesisFirehose.Model.ListTagsForDeliveryStreamResponse, GetKINFTagsForDeliveryStreamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeliveryStreamName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeliveryStreamName = this.DeliveryStreamName;
             #if MODULAR
             if (this.DeliveryStreamName == null && ParameterWasBound(nameof(this.DeliveryStreamName)))
@@ -204,13 +191,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "ListTagsForDeliveryStream");
             try
             {
-                #if DESKTOP
-                return client.ListTagsForDeliveryStream(request);
-                #elif CORECLR
-                return client.ListTagsForDeliveryStreamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTagsForDeliveryStreamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

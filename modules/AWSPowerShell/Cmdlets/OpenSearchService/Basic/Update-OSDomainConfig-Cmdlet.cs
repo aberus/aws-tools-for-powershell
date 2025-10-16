@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OpenSearchService;
 using Amazon.OpenSearchService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OS
 {
     /// <summary>
@@ -35,14 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.OS
     [AWSCmdlet("Calls the Amazon OpenSearch Service UpdateDomainConfig API operation.", Operation = new[] {"UpdateDomainConfig"}, SelectReturnType = typeof(Amazon.OpenSearchService.Model.UpdateDomainConfigResponse))]
     [AWSCmdletOutput("Amazon.OpenSearchService.Model.DomainConfig or Amazon.OpenSearchService.Model.UpdateDomainConfigResponse",
         "This cmdlet returns an Amazon.OpenSearchService.Model.DomainConfig object.",
-        "The service call response (type Amazon.OpenSearchService.Model.UpdateDomainConfigResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OpenSearchService.Model.UpdateDomainConfigResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateOSDomainConfigCmdlet : AmazonOpenSearchServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessPolicy
         /// <summary>
@@ -69,7 +70,11 @@ namespace Amazon.PowerShell.Cmdlets.OS
         /// than a boolean. Specifies the maximum number of clauses allowed in a Lucene boolean
         /// query. Default is 1,024. Queries with more than the permitted number of clauses result
         /// in a <c>TooManyClauses</c> error.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/createupdatedomains.html#createdomain-configure-advanced-options">Advanced
-        /// cluster parameters</a>.</para>
+        /// cluster parameters</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -187,6 +192,19 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public Amazon.OpenSearchService.OpenSearchPartitionInstanceType ClusterConfig_DedicatedMasterType { get; set; }
         #endregion
         
+        #region Parameter NaturalLanguageQueryGenerationOptions_DesiredState
+        /// <summary>
+        /// <para>
+        /// <para>The desired state of the natural language query generation feature. Valid values are
+        /// ENABLED and DISABLED.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AIMLOptions_NaturalLanguageQueryGenerationOptions_DesiredState")]
+        [AWSConstantClassSource("Amazon.OpenSearchService.NaturalLanguageQueryGenerationDesiredState")]
+        public Amazon.OpenSearchService.NaturalLanguageQueryGenerationDesiredState NaturalLanguageQueryGenerationOptions_DesiredState { get; set; }
+        #endregion
+        
         #region Parameter AutoTuneOptions_DesiredState
         /// <summary>
         /// <para>
@@ -262,6 +280,28 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.Boolean? AdvancedSecurityOptions_Enabled { get; set; }
         #endregion
         
+        #region Parameter IAMFederationOptions_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>True to enable IAM federation authentication for a domain.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_IAMFederationOptions_Enabled")]
+        public System.Boolean? IAMFederationOptions_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter JWTOptions_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>True to enable JWT authentication and authorization for a domain.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_JWTOptions_Enabled")]
+        public System.Boolean? JWTOptions_Enabled { get; set; }
+        #endregion
+        
         #region Parameter SAMLOptions_Enabled
         /// <summary>
         /// <para>
@@ -273,10 +313,22 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.Boolean? SAMLOptions_Enabled { get; set; }
         #endregion
         
+        #region Parameter S3VectorsEngine_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Enables S3 vectors engine features.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AIMLOptions_S3VectorsEngine_Enabled")]
+        public System.Boolean? S3VectorsEngine_Enabled { get; set; }
+        #endregion
+        
         #region Parameter ColdStorageOptions_Enabled
         /// <summary>
         /// <para>
-        /// <para>Whether to enable or disable cold storage on the domain.</para>
+        /// <para>Whether to enable or disable cold storage on the domain. You must enable UltraWarm
+        /// storage to enable cold storage.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -327,6 +379,17 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.Boolean? OffPeakWindowOptions_Enabled { get; set; }
         #endregion
         
+        #region Parameter IdentityCenterOptions_EnabledAPIAccess
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether IAM Identity Center is enabled for API access in Amazon OpenSearch
+        /// Service.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? IdentityCenterOptions_EnabledAPIAccess { get; set; }
+        #endregion
+        
         #region Parameter DomainEndpointOptions_EnforceHTTPS
         /// <summary>
         /// <para>
@@ -358,6 +421,17 @@ namespace Amazon.PowerShell.Cmdlets.OS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("OffPeakWindowOptions_OffPeakWindow_WindowStartTime_Hours")]
         public System.Int64? WindowStartTime_Hour { get; set; }
+        #endregion
+        
+        #region Parameter IdentityCenterOptions_IdentityCenterInstanceARN
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the IAM Identity Center instance used to create an OpenSearch UI application
+        /// that uses IAM Identity Center for authentication.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IdentityCenterOptions_IdentityCenterInstanceARN { get; set; }
         #endregion
         
         #region Parameter CognitoOptions_IdentityPoolId
@@ -441,7 +515,11 @@ namespace Amazon.PowerShell.Cmdlets.OS
         #region Parameter LogPublishingOption
         /// <summary>
         /// <para>
-        /// <para>Options to publish OpenSearch logs to Amazon CloudWatch Logs.</para>
+        /// <para>Options to publish OpenSearch logs to Amazon CloudWatch Logs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -453,7 +531,11 @@ namespace Amazon.PowerShell.Cmdlets.OS
         /// <summary>
         /// <para>
         /// <para>DEPRECATED. Use <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/off-peak.html">off-peak
-        /// window</a> instead.</para><para>A list of maintenance schedules during which Auto-Tune can deploy changes.</para>
+        /// window</a> instead.</para><para>A list of maintenance schedules during which Auto-Tune can deploy changes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -553,6 +635,32 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.Boolean? ClusterConfig_MultiAZWithStandbyEnabled { get; set; }
         #endregion
         
+        #region Parameter ClusterConfig_NodeOption
+        /// <summary>
+        /// <para>
+        /// <para>List of node options for the domain.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ClusterConfig_NodeOptions")]
+        public Amazon.OpenSearchService.Model.NodeOption[] ClusterConfig_NodeOption { get; set; }
+        #endregion
+        
+        #region Parameter JWTOptions_PublicKey
+        /// <summary>
+        /// <para>
+        /// <para>Element of the JWT assertion used by the cluster to verify JWT signatures.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_JWTOptions_PublicKey")]
+        public System.String JWTOptions_PublicKey { get; set; }
+        #endregion
+        
         #region Parameter CognitoOptions_RoleArn
         /// <summary>
         /// <para>
@@ -564,6 +672,28 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.String CognitoOptions_RoleArn { get; set; }
         #endregion
         
+        #region Parameter IAMFederationOptions_RolesKey
+        /// <summary>
+        /// <para>
+        /// <para>Element of the IAM federation assertion to use for backend roles. Default is <c>roles</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_IAMFederationOptions_RolesKey")]
+        public System.String IAMFederationOptions_RolesKey { get; set; }
+        #endregion
+        
+        #region Parameter JWTOptions_RolesKey
+        /// <summary>
+        /// <para>
+        /// <para>Element of the JWT assertion to use for roles.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_JWTOptions_RolesKey")]
+        public System.String JWTOptions_RolesKey { get; set; }
+        #endregion
+        
         #region Parameter SAMLOptions_RolesKey
         /// <summary>
         /// <para>
@@ -573,6 +703,18 @@ namespace Amazon.PowerShell.Cmdlets.OS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AdvancedSecurityOptions_SAMLOptions_RolesKey")]
         public System.String SAMLOptions_RolesKey { get; set; }
+        #endregion
+        
+        #region Parameter IdentityCenterOptions_RolesKey
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the attribute that contains the backend role identifier (such as group name
+        /// or group ID) in IAM Identity Center.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.OpenSearchService.RolesKeyIdCOption")]
+        public Amazon.OpenSearchService.RolesKeyIdCOption IdentityCenterOptions_RolesKey { get; set; }
         #endregion
         
         #region Parameter AutoTuneOptions_RollbackOnDisable
@@ -594,7 +736,11 @@ namespace Amazon.PowerShell.Cmdlets.OS
         /// <para>
         /// <para>The list of security group IDs associated with the VPC endpoints for the domain. If
         /// you do not provide a security group ID, OpenSearch Service uses the default security
-        /// group for the VPC.</para>
+        /// group for the VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -614,6 +760,28 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.Int32? SAMLOptions_SessionTimeoutMinute { get; set; }
         #endregion
         
+        #region Parameter IAMFederationOptions_SubjectKey
+        /// <summary>
+        /// <para>
+        /// <para>Element of the IAM federation assertion to use for the user name. Default is <c>sub</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_IAMFederationOptions_SubjectKey")]
+        public System.String IAMFederationOptions_SubjectKey { get; set; }
+        #endregion
+        
+        #region Parameter JWTOptions_SubjectKey
+        /// <summary>
+        /// <para>
+        /// <para>Element of the JWT assertion to use for the user name.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdvancedSecurityOptions_JWTOptions_SubjectKey")]
+        public System.String JWTOptions_SubjectKey { get; set; }
+        #endregion
+        
         #region Parameter SAMLOptions_SubjectKey
         /// <summary>
         /// <para>
@@ -625,12 +793,28 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.String SAMLOptions_SubjectKey { get; set; }
         #endregion
         
+        #region Parameter IdentityCenterOptions_SubjectKey
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the attribute that contains the subject identifier (such as username, user
+        /// ID, or email) in IAM Identity Center.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.OpenSearchService.SubjectKeyIdCOption")]
+        public Amazon.OpenSearchService.SubjectKeyIdCOption IdentityCenterOptions_SubjectKey { get; set; }
+        #endregion
+        
         #region Parameter VPCOptions_SubnetId
         /// <summary>
         /// <para>
         /// <para>A list of subnet IDs associated with the VPC endpoints for the domain. If your domain
         /// uses multiple Availability Zones, you need to provide two subnet IDs, one per zone.
-        /// Otherwise, provide only one.</para>
+        /// Otherwise, provide only one.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -772,9 +956,13 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainName), MyInvocation.BoundParameters);
@@ -804,7 +992,14 @@ namespace Amazon.PowerShell.Cmdlets.OS
             }
             context.AdvancedSecurityOptions_AnonymousAuthEnabled = this.AdvancedSecurityOptions_AnonymousAuthEnabled;
             context.AdvancedSecurityOptions_Enabled = this.AdvancedSecurityOptions_Enabled;
+            context.IAMFederationOptions_Enabled = this.IAMFederationOptions_Enabled;
+            context.IAMFederationOptions_RolesKey = this.IAMFederationOptions_RolesKey;
+            context.IAMFederationOptions_SubjectKey = this.IAMFederationOptions_SubjectKey;
             context.AdvancedSecurityOptions_InternalUserDatabaseEnabled = this.AdvancedSecurityOptions_InternalUserDatabaseEnabled;
+            context.JWTOptions_Enabled = this.JWTOptions_Enabled;
+            context.JWTOptions_PublicKey = this.JWTOptions_PublicKey;
+            context.JWTOptions_RolesKey = this.JWTOptions_RolesKey;
+            context.JWTOptions_SubjectKey = this.JWTOptions_SubjectKey;
             context.MasterUserOptions_MasterUserARN = this.MasterUserOptions_MasterUserARN;
             context.MasterUserOptions_MasterUserName = this.MasterUserOptions_MasterUserName;
             context.MasterUserOptions_MasterUserPassword = this.MasterUserOptions_MasterUserPassword;
@@ -816,6 +1011,8 @@ namespace Amazon.PowerShell.Cmdlets.OS
             context.SAMLOptions_RolesKey = this.SAMLOptions_RolesKey;
             context.SAMLOptions_SessionTimeoutMinute = this.SAMLOptions_SessionTimeoutMinute;
             context.SAMLOptions_SubjectKey = this.SAMLOptions_SubjectKey;
+            context.NaturalLanguageQueryGenerationOptions_DesiredState = this.NaturalLanguageQueryGenerationOptions_DesiredState;
+            context.S3VectorsEngine_Enabled = this.S3VectorsEngine_Enabled;
             context.AutoTuneOptions_DesiredState = this.AutoTuneOptions_DesiredState;
             if (this.AutoTuneOptions_MaintenanceSchedule != null)
             {
@@ -830,6 +1027,10 @@ namespace Amazon.PowerShell.Cmdlets.OS
             context.ClusterConfig_InstanceCount = this.ClusterConfig_InstanceCount;
             context.ClusterConfig_InstanceType = this.ClusterConfig_InstanceType;
             context.ClusterConfig_MultiAZWithStandbyEnabled = this.ClusterConfig_MultiAZWithStandbyEnabled;
+            if (this.ClusterConfig_NodeOption != null)
+            {
+                context.ClusterConfig_NodeOption = new List<Amazon.OpenSearchService.Model.NodeOption>(this.ClusterConfig_NodeOption);
+            }
             context.ClusterConfig_WarmCount = this.ClusterConfig_WarmCount;
             context.ClusterConfig_WarmEnabled = this.ClusterConfig_WarmEnabled;
             context.ClusterConfig_WarmType = this.ClusterConfig_WarmType;
@@ -860,6 +1061,10 @@ namespace Amazon.PowerShell.Cmdlets.OS
             context.EBSOptions_VolumeType = this.EBSOptions_VolumeType;
             context.EncryptionAtRestOptions_Enabled = this.EncryptionAtRestOptions_Enabled;
             context.EncryptionAtRestOptions_KmsKeyId = this.EncryptionAtRestOptions_KmsKeyId;
+            context.IdentityCenterOptions_EnabledAPIAccess = this.IdentityCenterOptions_EnabledAPIAccess;
+            context.IdentityCenterOptions_IdentityCenterInstanceARN = this.IdentityCenterOptions_IdentityCenterInstanceARN;
+            context.IdentityCenterOptions_RolesKey = this.IdentityCenterOptions_RolesKey;
+            context.IdentityCenterOptions_SubjectKey = this.IdentityCenterOptions_SubjectKey;
             context.IPAddressType = this.IPAddressType;
             if (this.LogPublishingOption != null)
             {
@@ -941,6 +1146,51 @@ namespace Amazon.PowerShell.Cmdlets.OS
                 request.AdvancedSecurityOptions.InternalUserDatabaseEnabled = requestAdvancedSecurityOptions_advancedSecurityOptions_InternalUserDatabaseEnabled.Value;
                 requestAdvancedSecurityOptionsIsNull = false;
             }
+            Amazon.OpenSearchService.Model.IAMFederationOptionsInput requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions = null;
+            
+             // populate IAMFederationOptions
+            var requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptionsIsNull = true;
+            requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions = new Amazon.OpenSearchService.Model.IAMFederationOptionsInput();
+            System.Boolean? requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_Enabled = null;
+            if (cmdletContext.IAMFederationOptions_Enabled != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_Enabled = cmdletContext.IAMFederationOptions_Enabled.Value;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_Enabled != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions.Enabled = requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_Enabled.Value;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptionsIsNull = false;
+            }
+            System.String requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_RolesKey = null;
+            if (cmdletContext.IAMFederationOptions_RolesKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_RolesKey = cmdletContext.IAMFederationOptions_RolesKey;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_RolesKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions.RolesKey = requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_RolesKey;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptionsIsNull = false;
+            }
+            System.String requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_SubjectKey = null;
+            if (cmdletContext.IAMFederationOptions_SubjectKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_SubjectKey = cmdletContext.IAMFederationOptions_SubjectKey;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_SubjectKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions.SubjectKey = requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions_iAMFederationOptions_SubjectKey;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptionsIsNull = false;
+            }
+             // determine if requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions should be set to null
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptionsIsNull)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions = null;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions != null)
+            {
+                request.AdvancedSecurityOptions.IAMFederationOptions = requestAdvancedSecurityOptions_advancedSecurityOptions_IAMFederationOptions;
+                requestAdvancedSecurityOptionsIsNull = false;
+            }
             Amazon.OpenSearchService.Model.MasterUserOptions requestAdvancedSecurityOptions_advancedSecurityOptions_MasterUserOptions = null;
             
              // populate MasterUserOptions
@@ -984,6 +1234,61 @@ namespace Amazon.PowerShell.Cmdlets.OS
             if (requestAdvancedSecurityOptions_advancedSecurityOptions_MasterUserOptions != null)
             {
                 request.AdvancedSecurityOptions.MasterUserOptions = requestAdvancedSecurityOptions_advancedSecurityOptions_MasterUserOptions;
+                requestAdvancedSecurityOptionsIsNull = false;
+            }
+            Amazon.OpenSearchService.Model.JWTOptionsInput requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions = null;
+            
+             // populate JWTOptions
+            var requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptionsIsNull = true;
+            requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions = new Amazon.OpenSearchService.Model.JWTOptionsInput();
+            System.Boolean? requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_Enabled = null;
+            if (cmdletContext.JWTOptions_Enabled != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_Enabled = cmdletContext.JWTOptions_Enabled.Value;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_Enabled != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions.Enabled = requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_Enabled.Value;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptionsIsNull = false;
+            }
+            System.String requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_PublicKey = null;
+            if (cmdletContext.JWTOptions_PublicKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_PublicKey = cmdletContext.JWTOptions_PublicKey;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_PublicKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions.PublicKey = requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_PublicKey;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptionsIsNull = false;
+            }
+            System.String requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_RolesKey = null;
+            if (cmdletContext.JWTOptions_RolesKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_RolesKey = cmdletContext.JWTOptions_RolesKey;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_RolesKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions.RolesKey = requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_RolesKey;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptionsIsNull = false;
+            }
+            System.String requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_SubjectKey = null;
+            if (cmdletContext.JWTOptions_SubjectKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_SubjectKey = cmdletContext.JWTOptions_SubjectKey;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_SubjectKey != null)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions.SubjectKey = requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions_jWTOptions_SubjectKey;
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptionsIsNull = false;
+            }
+             // determine if requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions should be set to null
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptionsIsNull)
+            {
+                requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions = null;
+            }
+            if (requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions != null)
+            {
+                request.AdvancedSecurityOptions.JWTOptions = requestAdvancedSecurityOptions_advancedSecurityOptions_JWTOptions;
                 requestAdvancedSecurityOptionsIsNull = false;
             }
             Amazon.OpenSearchService.Model.SAMLOptionsInput requestAdvancedSecurityOptions_advancedSecurityOptions_SAMLOptions = null;
@@ -1102,6 +1407,65 @@ namespace Amazon.PowerShell.Cmdlets.OS
                 request.AdvancedSecurityOptions = null;
             }
             
+             // populate AIMLOptions
+            var requestAIMLOptionsIsNull = true;
+            request.AIMLOptions = new Amazon.OpenSearchService.Model.AIMLOptionsInput();
+            Amazon.OpenSearchService.Model.NaturalLanguageQueryGenerationOptionsInput requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions = null;
+            
+             // populate NaturalLanguageQueryGenerationOptions
+            var requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptionsIsNull = true;
+            requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions = new Amazon.OpenSearchService.Model.NaturalLanguageQueryGenerationOptionsInput();
+            Amazon.OpenSearchService.NaturalLanguageQueryGenerationDesiredState requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions_naturalLanguageQueryGenerationOptions_DesiredState = null;
+            if (cmdletContext.NaturalLanguageQueryGenerationOptions_DesiredState != null)
+            {
+                requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions_naturalLanguageQueryGenerationOptions_DesiredState = cmdletContext.NaturalLanguageQueryGenerationOptions_DesiredState;
+            }
+            if (requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions_naturalLanguageQueryGenerationOptions_DesiredState != null)
+            {
+                requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions.DesiredState = requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions_naturalLanguageQueryGenerationOptions_DesiredState;
+                requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptionsIsNull = false;
+            }
+             // determine if requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions should be set to null
+            if (requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptionsIsNull)
+            {
+                requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions = null;
+            }
+            if (requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions != null)
+            {
+                request.AIMLOptions.NaturalLanguageQueryGenerationOptions = requestAIMLOptions_aIMLOptions_NaturalLanguageQueryGenerationOptions;
+                requestAIMLOptionsIsNull = false;
+            }
+            Amazon.OpenSearchService.Model.S3VectorsEngine requestAIMLOptions_aIMLOptions_S3VectorsEngine = null;
+            
+             // populate S3VectorsEngine
+            var requestAIMLOptions_aIMLOptions_S3VectorsEngineIsNull = true;
+            requestAIMLOptions_aIMLOptions_S3VectorsEngine = new Amazon.OpenSearchService.Model.S3VectorsEngine();
+            System.Boolean? requestAIMLOptions_aIMLOptions_S3VectorsEngine_s3VectorsEngine_Enabled = null;
+            if (cmdletContext.S3VectorsEngine_Enabled != null)
+            {
+                requestAIMLOptions_aIMLOptions_S3VectorsEngine_s3VectorsEngine_Enabled = cmdletContext.S3VectorsEngine_Enabled.Value;
+            }
+            if (requestAIMLOptions_aIMLOptions_S3VectorsEngine_s3VectorsEngine_Enabled != null)
+            {
+                requestAIMLOptions_aIMLOptions_S3VectorsEngine.Enabled = requestAIMLOptions_aIMLOptions_S3VectorsEngine_s3VectorsEngine_Enabled.Value;
+                requestAIMLOptions_aIMLOptions_S3VectorsEngineIsNull = false;
+            }
+             // determine if requestAIMLOptions_aIMLOptions_S3VectorsEngine should be set to null
+            if (requestAIMLOptions_aIMLOptions_S3VectorsEngineIsNull)
+            {
+                requestAIMLOptions_aIMLOptions_S3VectorsEngine = null;
+            }
+            if (requestAIMLOptions_aIMLOptions_S3VectorsEngine != null)
+            {
+                request.AIMLOptions.S3VectorsEngine = requestAIMLOptions_aIMLOptions_S3VectorsEngine;
+                requestAIMLOptionsIsNull = false;
+            }
+             // determine if request.AIMLOptions should be set to null
+            if (requestAIMLOptionsIsNull)
+            {
+                request.AIMLOptions = null;
+            }
+            
              // populate AutoTuneOptions
             var requestAutoTuneOptionsIsNull = true;
             request.AutoTuneOptions = new Amazon.OpenSearchService.Model.AutoTuneOptions();
@@ -1212,6 +1576,16 @@ namespace Amazon.PowerShell.Cmdlets.OS
             if (requestClusterConfig_clusterConfig_MultiAZWithStandbyEnabled != null)
             {
                 request.ClusterConfig.MultiAZWithStandbyEnabled = requestClusterConfig_clusterConfig_MultiAZWithStandbyEnabled.Value;
+                requestClusterConfigIsNull = false;
+            }
+            List<Amazon.OpenSearchService.Model.NodeOption> requestClusterConfig_clusterConfig_NodeOption = null;
+            if (cmdletContext.ClusterConfig_NodeOption != null)
+            {
+                requestClusterConfig_clusterConfig_NodeOption = cmdletContext.ClusterConfig_NodeOption;
+            }
+            if (requestClusterConfig_clusterConfig_NodeOption != null)
+            {
+                request.ClusterConfig.NodeOptions = requestClusterConfig_clusterConfig_NodeOption;
                 requestClusterConfigIsNull = false;
             }
             System.Int32? requestClusterConfig_clusterConfig_WarmCount = null;
@@ -1517,6 +1891,55 @@ namespace Amazon.PowerShell.Cmdlets.OS
             {
                 request.EncryptionAtRestOptions = null;
             }
+            
+             // populate IdentityCenterOptions
+            var requestIdentityCenterOptionsIsNull = true;
+            request.IdentityCenterOptions = new Amazon.OpenSearchService.Model.IdentityCenterOptionsInput();
+            System.Boolean? requestIdentityCenterOptions_identityCenterOptions_EnabledAPIAccess = null;
+            if (cmdletContext.IdentityCenterOptions_EnabledAPIAccess != null)
+            {
+                requestIdentityCenterOptions_identityCenterOptions_EnabledAPIAccess = cmdletContext.IdentityCenterOptions_EnabledAPIAccess.Value;
+            }
+            if (requestIdentityCenterOptions_identityCenterOptions_EnabledAPIAccess != null)
+            {
+                request.IdentityCenterOptions.EnabledAPIAccess = requestIdentityCenterOptions_identityCenterOptions_EnabledAPIAccess.Value;
+                requestIdentityCenterOptionsIsNull = false;
+            }
+            System.String requestIdentityCenterOptions_identityCenterOptions_IdentityCenterInstanceARN = null;
+            if (cmdletContext.IdentityCenterOptions_IdentityCenterInstanceARN != null)
+            {
+                requestIdentityCenterOptions_identityCenterOptions_IdentityCenterInstanceARN = cmdletContext.IdentityCenterOptions_IdentityCenterInstanceARN;
+            }
+            if (requestIdentityCenterOptions_identityCenterOptions_IdentityCenterInstanceARN != null)
+            {
+                request.IdentityCenterOptions.IdentityCenterInstanceARN = requestIdentityCenterOptions_identityCenterOptions_IdentityCenterInstanceARN;
+                requestIdentityCenterOptionsIsNull = false;
+            }
+            Amazon.OpenSearchService.RolesKeyIdCOption requestIdentityCenterOptions_identityCenterOptions_RolesKey = null;
+            if (cmdletContext.IdentityCenterOptions_RolesKey != null)
+            {
+                requestIdentityCenterOptions_identityCenterOptions_RolesKey = cmdletContext.IdentityCenterOptions_RolesKey;
+            }
+            if (requestIdentityCenterOptions_identityCenterOptions_RolesKey != null)
+            {
+                request.IdentityCenterOptions.RolesKey = requestIdentityCenterOptions_identityCenterOptions_RolesKey;
+                requestIdentityCenterOptionsIsNull = false;
+            }
+            Amazon.OpenSearchService.SubjectKeyIdCOption requestIdentityCenterOptions_identityCenterOptions_SubjectKey = null;
+            if (cmdletContext.IdentityCenterOptions_SubjectKey != null)
+            {
+                requestIdentityCenterOptions_identityCenterOptions_SubjectKey = cmdletContext.IdentityCenterOptions_SubjectKey;
+            }
+            if (requestIdentityCenterOptions_identityCenterOptions_SubjectKey != null)
+            {
+                request.IdentityCenterOptions.SubjectKey = requestIdentityCenterOptions_identityCenterOptions_SubjectKey;
+                requestIdentityCenterOptionsIsNull = false;
+            }
+             // determine if request.IdentityCenterOptions should be set to null
+            if (requestIdentityCenterOptionsIsNull)
+            {
+                request.IdentityCenterOptions = null;
+            }
             if (cmdletContext.IPAddressType != null)
             {
                 request.IPAddressType = cmdletContext.IPAddressType;
@@ -1718,13 +2141,7 @@ namespace Amazon.PowerShell.Cmdlets.OS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon OpenSearch Service", "UpdateDomainConfig");
             try
             {
-                #if DESKTOP
-                return client.UpdateDomainConfig(request);
-                #elif CORECLR
-                return client.UpdateDomainConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDomainConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1745,7 +2162,14 @@ namespace Amazon.PowerShell.Cmdlets.OS
             public Dictionary<System.String, System.String> AdvancedOption { get; set; }
             public System.Boolean? AdvancedSecurityOptions_AnonymousAuthEnabled { get; set; }
             public System.Boolean? AdvancedSecurityOptions_Enabled { get; set; }
+            public System.Boolean? IAMFederationOptions_Enabled { get; set; }
+            public System.String IAMFederationOptions_RolesKey { get; set; }
+            public System.String IAMFederationOptions_SubjectKey { get; set; }
             public System.Boolean? AdvancedSecurityOptions_InternalUserDatabaseEnabled { get; set; }
+            public System.Boolean? JWTOptions_Enabled { get; set; }
+            public System.String JWTOptions_PublicKey { get; set; }
+            public System.String JWTOptions_RolesKey { get; set; }
+            public System.String JWTOptions_SubjectKey { get; set; }
             public System.String MasterUserOptions_MasterUserARN { get; set; }
             public System.String MasterUserOptions_MasterUserName { get; set; }
             public System.String MasterUserOptions_MasterUserPassword { get; set; }
@@ -1757,6 +2181,8 @@ namespace Amazon.PowerShell.Cmdlets.OS
             public System.String SAMLOptions_RolesKey { get; set; }
             public System.Int32? SAMLOptions_SessionTimeoutMinute { get; set; }
             public System.String SAMLOptions_SubjectKey { get; set; }
+            public Amazon.OpenSearchService.NaturalLanguageQueryGenerationDesiredState NaturalLanguageQueryGenerationOptions_DesiredState { get; set; }
+            public System.Boolean? S3VectorsEngine_Enabled { get; set; }
             public Amazon.OpenSearchService.AutoTuneDesiredState AutoTuneOptions_DesiredState { get; set; }
             public List<Amazon.OpenSearchService.Model.AutoTuneMaintenanceSchedule> AutoTuneOptions_MaintenanceSchedule { get; set; }
             public Amazon.OpenSearchService.RollbackOnDisable AutoTuneOptions_RollbackOnDisable { get; set; }
@@ -1768,6 +2194,7 @@ namespace Amazon.PowerShell.Cmdlets.OS
             public System.Int32? ClusterConfig_InstanceCount { get; set; }
             public Amazon.OpenSearchService.OpenSearchPartitionInstanceType ClusterConfig_InstanceType { get; set; }
             public System.Boolean? ClusterConfig_MultiAZWithStandbyEnabled { get; set; }
+            public List<Amazon.OpenSearchService.Model.NodeOption> ClusterConfig_NodeOption { get; set; }
             public System.Int32? ClusterConfig_WarmCount { get; set; }
             public System.Boolean? ClusterConfig_WarmEnabled { get; set; }
             public Amazon.OpenSearchService.OpenSearchWarmPartitionInstanceType ClusterConfig_WarmType { get; set; }
@@ -1792,6 +2219,10 @@ namespace Amazon.PowerShell.Cmdlets.OS
             public Amazon.OpenSearchService.VolumeType EBSOptions_VolumeType { get; set; }
             public System.Boolean? EncryptionAtRestOptions_Enabled { get; set; }
             public System.String EncryptionAtRestOptions_KmsKeyId { get; set; }
+            public System.Boolean? IdentityCenterOptions_EnabledAPIAccess { get; set; }
+            public System.String IdentityCenterOptions_IdentityCenterInstanceARN { get; set; }
+            public Amazon.OpenSearchService.RolesKeyIdCOption IdentityCenterOptions_RolesKey { get; set; }
+            public Amazon.OpenSearchService.SubjectKeyIdCOption IdentityCenterOptions_SubjectKey { get; set; }
             public Amazon.OpenSearchService.IPAddressType IPAddressType { get; set; }
             public Dictionary<System.String, Amazon.OpenSearchService.Model.LogPublishingOption> LogPublishingOption { get; set; }
             public System.Boolean? NodeToNodeEncryptionOptions_Enabled { get; set; }

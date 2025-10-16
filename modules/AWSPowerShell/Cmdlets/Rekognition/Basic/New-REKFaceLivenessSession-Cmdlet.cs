@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [AWSCmdlet("Calls the Amazon Rekognition CreateFaceLivenessSession API operation.", Operation = new[] {"CreateFaceLivenessSession"}, SelectReturnType = typeof(Amazon.Rekognition.Model.CreateFaceLivenessSessionResponse))]
     [AWSCmdletOutput("System.String or Amazon.Rekognition.Model.CreateFaceLivenessSessionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Rekognition.Model.CreateFaceLivenessSessionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Rekognition.Model.CreateFaceLivenessSessionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewREKFaceLivenessSessionCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Settings_AuditImagesLimit
         /// <summary>
@@ -67,6 +70,22 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? Settings_AuditImagesLimit { get; set; }
+        #endregion
+        
+        #region Parameter Settings_ChallengePreference
+        /// <summary>
+        /// <para>
+        /// <para>Indicates preferred challenge types and versions for the Face Liveness session to
+        /// be created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_ChallengePreferences")]
+        public Amazon.Rekognition.Model.ChallengePreference[] Settings_ChallengePreference { get; set; }
         #endregion
         
         #region Parameter ClientRequestToken
@@ -136,9 +155,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KmsKeyId), MyInvocation.BoundParameters);
@@ -160,6 +183,10 @@ namespace Amazon.PowerShell.Cmdlets.REK
             context.ClientRequestToken = this.ClientRequestToken;
             context.KmsKeyId = this.KmsKeyId;
             context.Settings_AuditImagesLimit = this.Settings_AuditImagesLimit;
+            if (this.Settings_ChallengePreference != null)
+            {
+                context.Settings_ChallengePreference = new List<Amazon.Rekognition.Model.ChallengePreference>(this.Settings_ChallengePreference);
+            }
             context.OutputConfig_S3Bucket = this.OutputConfig_S3Bucket;
             context.OutputConfig_S3KeyPrefix = this.OutputConfig_S3KeyPrefix;
             
@@ -198,6 +225,16 @@ namespace Amazon.PowerShell.Cmdlets.REK
             if (requestSettings_settings_AuditImagesLimit != null)
             {
                 request.Settings.AuditImagesLimit = requestSettings_settings_AuditImagesLimit.Value;
+                requestSettingsIsNull = false;
+            }
+            List<Amazon.Rekognition.Model.ChallengePreference> requestSettings_settings_ChallengePreference = null;
+            if (cmdletContext.Settings_ChallengePreference != null)
+            {
+                requestSettings_settings_ChallengePreference = cmdletContext.Settings_ChallengePreference;
+            }
+            if (requestSettings_settings_ChallengePreference != null)
+            {
+                request.Settings.ChallengePreferences = requestSettings_settings_ChallengePreference;
                 requestSettingsIsNull = false;
             }
             Amazon.Rekognition.Model.LivenessOutputConfig requestSettings_settings_OutputConfig = null;
@@ -278,13 +315,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "CreateFaceLivenessSession");
             try
             {
-                #if DESKTOP
-                return client.CreateFaceLivenessSession(request);
-                #elif CORECLR
-                return client.CreateFaceLivenessSessionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFaceLivenessSessionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -304,6 +335,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             public System.String ClientRequestToken { get; set; }
             public System.String KmsKeyId { get; set; }
             public System.Int32? Settings_AuditImagesLimit { get; set; }
+            public List<Amazon.Rekognition.Model.ChallengePreference> Settings_ChallengePreference { get; set; }
             public System.String OutputConfig_S3Bucket { get; set; }
             public System.String OutputConfig_S3KeyPrefix { get; set; }
             public System.Func<Amazon.Rekognition.Model.CreateFaceLivenessSessionResponse, NewREKFaceLivenessSessionCmdlet, object> Select { get; set; } =

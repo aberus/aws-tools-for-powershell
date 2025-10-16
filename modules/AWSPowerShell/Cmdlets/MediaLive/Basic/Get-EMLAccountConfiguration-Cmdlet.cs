@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaLive;
 using Amazon.MediaLive.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EML
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
     [AWSCmdlet("Calls the AWS Elemental MediaLive DescribeAccountConfiguration API operation.", Operation = new[] {"DescribeAccountConfiguration"}, SelectReturnType = typeof(Amazon.MediaLive.Model.DescribeAccountConfigurationResponse))]
     [AWSCmdletOutput("Amazon.MediaLive.Model.AccountConfiguration or Amazon.MediaLive.Model.DescribeAccountConfigurationResponse",
         "This cmdlet returns an Amazon.MediaLive.Model.AccountConfiguration object.",
-        "The service call response (type Amazon.MediaLive.Model.DescribeAccountConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaLive.Model.DescribeAccountConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEMLAccountConfigurationCmdlet : AmazonMediaLiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
         public string Select { get; set; } = "AccountConfiguration";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaLive", "DescribeAccountConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DescribeAccountConfiguration(request);
-                #elif CORECLR
-                return client.DescribeAccountConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAccountConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

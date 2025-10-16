@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EKS;
 using Amazon.EKS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EKS
 {
     /// <summary>
     /// Updates an Amazon EKS managed node group configuration. Your node group continues
     /// to function during the update. The response output includes an update ID that you
-    /// can use to track the status of your node group update with the <a>DescribeUpdate</a>
-    /// API operation. Currently you can update the Kubernetes labels for a node group or
-    /// the scaling configuration.
+    /// can use to track the status of your node group update with the <a href="https://docs.aws.amazon.com/eks/latest/APIReference/API_DescribeUpdate.html"><c>DescribeUpdate</c></a> API operation. You can update the Kubernetes labels and
+    /// taints for a node group and the scaling and version update configuration.
     /// </summary>
     [Cmdlet("Update", "EKSNodegroupConfig", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EKS.Model.Update")]
     [AWSCmdlet("Calls the Amazon Elastic Container Service for Kubernetes UpdateNodegroupConfig API operation.", Operation = new[] {"UpdateNodegroupConfig"}, SelectReturnType = typeof(Amazon.EKS.Model.UpdateNodegroupConfigResponse))]
     [AWSCmdletOutput("Amazon.EKS.Model.Update or Amazon.EKS.Model.UpdateNodegroupConfigResponse",
         "This cmdlet returns an Amazon.EKS.Model.Update object.",
-        "The service call response (type Amazon.EKS.Model.UpdateNodegroupConfigResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EKS.Model.UpdateNodegroupConfigResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateEKSNodegroupConfigCmdlet : AmazonEKSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Labels_AddOrUpdateLabel
         /// <summary>
         /// <para>
-        /// <para>The Kubernetes <c>labels</c> to add or update.</para>
+        /// <para>The Kubernetes <c>labels</c> to add or update.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -60,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         #region Parameter Taints_AddOrUpdateTaint
         /// <summary>
         /// <para>
-        /// <para>Kubernetes taints to be added or updated.</para>
+        /// <para>Kubernetes taints to be added or updated.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,6 +128,43 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.Int32? ScalingConfig_DesiredSize { get; set; }
         #endregion
         
+        #region Parameter NodeRepairConfig_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to enable node auto repair for the node group. Node auto repair
+        /// is disabled by default.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? NodeRepairConfig_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter NodeRepairConfig_MaxParallelNodesRepairedCount
+        /// <summary>
+        /// <para>
+        /// <para>Specify the maximum number of nodes that can be repaired concurrently or in parallel,
+        /// expressed as a count of unhealthy nodes. This gives you finer-grained control over
+        /// the pace of node replacements. When using this, you cannot also set <c>maxParallelNodesRepairedPercentage</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedCount { get; set; }
+        #endregion
+        
+        #region Parameter NodeRepairConfig_MaxParallelNodesRepairedPercentage
+        /// <summary>
+        /// <para>
+        /// <para>Specify the maximum number of nodes that can be repaired concurrently or in parallel,
+        /// expressed as a percentage of unhealthy nodes. This gives you finer-grained control
+        /// over the pace of node replacements. When using this, you cannot also set <c>maxParallelNodesRepairedCount</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedPercentage { get; set; }
+        #endregion
+        
         #region Parameter ScalingConfig_MaxSize
         /// <summary>
         /// <para>
@@ -154,6 +201,30 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.Int32? UpdateConfig_MaxUnavailablePercentage { get; set; }
         #endregion
         
+        #region Parameter NodeRepairConfig_MaxUnhealthyNodeThresholdCount
+        /// <summary>
+        /// <para>
+        /// <para>Specify a count threshold of unhealthy nodes, above which node auto repair actions
+        /// will stop. When using this, you cannot also set <c>maxUnhealthyNodeThresholdPercentage</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdCount { get; set; }
+        #endregion
+        
+        #region Parameter NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage
+        /// <summary>
+        /// <para>
+        /// <para>Specify a percentage threshold of unhealthy nodes, above which node auto repair actions
+        /// will stop. When using this, you cannot also set <c>maxUnhealthyNodeThresholdCount</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage { get; set; }
+        #endregion
+        
         #region Parameter ScalingConfig_MinSize
         /// <summary>
         /// <para>
@@ -181,10 +252,31 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.String NodegroupName { get; set; }
         #endregion
         
+        #region Parameter NodeRepairConfig_NodeRepairConfigOverride
+        /// <summary>
+        /// <para>
+        /// <para>Specify granular overrides for specific repair actions. These overrides control the
+        /// repair action and the repair delay time before a node is considered eligible for repair.
+        /// If you use this, you must specify all the values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("NodeRepairConfig_NodeRepairConfigOverrides")]
+        public Amazon.EKS.Model.NodeRepairConfigOverrides[] NodeRepairConfig_NodeRepairConfigOverride { get; set; }
+        #endregion
+        
         #region Parameter Labels_RemoveLabel
         /// <summary>
         /// <para>
-        /// <para>The Kubernetes <c>labels</c> to remove.</para>
+        /// <para>The Kubernetes <c>labels</c> to remove.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -195,12 +287,36 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         #region Parameter Taints_RemoveTaint
         /// <summary>
         /// <para>
-        /// <para>Kubernetes taints to remove.</para>
+        /// <para>Kubernetes taints to remove.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Taints_RemoveTaints")]
         public Amazon.EKS.Model.Taint[] Taints_RemoveTaint { get; set; }
+        #endregion
+        
+        #region Parameter UpdateConfig_UpdateStrategy
+        /// <summary>
+        /// <para>
+        /// <para>The configuration for the behavior to follow during a node group version update of
+        /// this managed node group. You choose between two possible strategies for replacing
+        /// nodes during an <a href="https://docs.aws.amazon.com/eks/latest/APIReference/API_UpdateNodegroupVersion.html"><c>UpdateNodegroupVersion</c></a> action.</para><para>An Amazon EKS managed node group updates by replacing nodes with new nodes of newer
+        /// AMI versions in parallel. The <i>update strategy</i> changes the managed node update
+        /// behavior of the managed node group for each quantity. The <i>default</i> strategy
+        /// has guardrails to protect you from misconfiguration and launches the new instances
+        /// first, before terminating the old instances. The <i>minimal</i> strategy removes the
+        /// guardrails and terminates the old instances before launching the new instances. This
+        /// minimal strategy is useful in scenarios where you are constrained to resources or
+        /// costs (for example, with hardware accelerators such as GPUs).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EKS.NodegroupUpdateStrategies")]
+        public Amazon.EKS.NodegroupUpdateStrategies UpdateConfig_UpdateStrategy { get; set; }
         #endregion
         
         #region Parameter Select
@@ -214,16 +330,6 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public string Select { get; set; } = "Update";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NodegroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NodegroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NodegroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -234,9 +340,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NodegroupName), MyInvocation.BoundParameters);
@@ -250,21 +360,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EKS.Model.UpdateNodegroupConfigResponse, UpdateEKSNodegroupConfigCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NodegroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.ClusterName = this.ClusterName;
             #if MODULAR
@@ -292,6 +392,15 @@ namespace Amazon.PowerShell.Cmdlets.EKS
                 WriteWarning("You are passing $null as a value for parameter NodegroupName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.NodeRepairConfig_Enabled = this.NodeRepairConfig_Enabled;
+            context.NodeRepairConfig_MaxParallelNodesRepairedCount = this.NodeRepairConfig_MaxParallelNodesRepairedCount;
+            context.NodeRepairConfig_MaxParallelNodesRepairedPercentage = this.NodeRepairConfig_MaxParallelNodesRepairedPercentage;
+            context.NodeRepairConfig_MaxUnhealthyNodeThresholdCount = this.NodeRepairConfig_MaxUnhealthyNodeThresholdCount;
+            context.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage = this.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage;
+            if (this.NodeRepairConfig_NodeRepairConfigOverride != null)
+            {
+                context.NodeRepairConfig_NodeRepairConfigOverride = new List<Amazon.EKS.Model.NodeRepairConfigOverrides>(this.NodeRepairConfig_NodeRepairConfigOverride);
+            }
             context.ScalingConfig_DesiredSize = this.ScalingConfig_DesiredSize;
             context.ScalingConfig_MaxSize = this.ScalingConfig_MaxSize;
             context.ScalingConfig_MinSize = this.ScalingConfig_MinSize;
@@ -305,6 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             }
             context.UpdateConfig_MaxUnavailable = this.UpdateConfig_MaxUnavailable;
             context.UpdateConfig_MaxUnavailablePercentage = this.UpdateConfig_MaxUnavailablePercentage;
+            context.UpdateConfig_UpdateStrategy = this.UpdateConfig_UpdateStrategy;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -361,6 +471,75 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             if (cmdletContext.NodegroupName != null)
             {
                 request.NodegroupName = cmdletContext.NodegroupName;
+            }
+            
+             // populate NodeRepairConfig
+            var requestNodeRepairConfigIsNull = true;
+            request.NodeRepairConfig = new Amazon.EKS.Model.NodeRepairConfig();
+            System.Boolean? requestNodeRepairConfig_nodeRepairConfig_Enabled = null;
+            if (cmdletContext.NodeRepairConfig_Enabled != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_Enabled = cmdletContext.NodeRepairConfig_Enabled.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_Enabled != null)
+            {
+                request.NodeRepairConfig.Enabled = requestNodeRepairConfig_nodeRepairConfig_Enabled.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount = null;
+            if (cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedCount != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount = cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedCount.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount != null)
+            {
+                request.NodeRepairConfig.MaxParallelNodesRepairedCount = requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage = null;
+            if (cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedPercentage != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage = cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedPercentage.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage != null)
+            {
+                request.NodeRepairConfig.MaxParallelNodesRepairedPercentage = requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount = null;
+            if (cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdCount != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount = cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdCount.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount != null)
+            {
+                request.NodeRepairConfig.MaxUnhealthyNodeThresholdCount = requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage = null;
+            if (cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage = cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage != null)
+            {
+                request.NodeRepairConfig.MaxUnhealthyNodeThresholdPercentage = requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            List<Amazon.EKS.Model.NodeRepairConfigOverrides> requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride = null;
+            if (cmdletContext.NodeRepairConfig_NodeRepairConfigOverride != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride = cmdletContext.NodeRepairConfig_NodeRepairConfigOverride;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride != null)
+            {
+                request.NodeRepairConfig.NodeRepairConfigOverrides = requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride;
+                requestNodeRepairConfigIsNull = false;
+            }
+             // determine if request.NodeRepairConfig should be set to null
+            if (requestNodeRepairConfigIsNull)
+            {
+                request.NodeRepairConfig = null;
             }
             
              // populate ScalingConfig
@@ -454,6 +633,16 @@ namespace Amazon.PowerShell.Cmdlets.EKS
                 request.UpdateConfig.MaxUnavailablePercentage = requestUpdateConfig_updateConfig_MaxUnavailablePercentage.Value;
                 requestUpdateConfigIsNull = false;
             }
+            Amazon.EKS.NodegroupUpdateStrategies requestUpdateConfig_updateConfig_UpdateStrategy = null;
+            if (cmdletContext.UpdateConfig_UpdateStrategy != null)
+            {
+                requestUpdateConfig_updateConfig_UpdateStrategy = cmdletContext.UpdateConfig_UpdateStrategy;
+            }
+            if (requestUpdateConfig_updateConfig_UpdateStrategy != null)
+            {
+                request.UpdateConfig.UpdateStrategy = requestUpdateConfig_updateConfig_UpdateStrategy;
+                requestUpdateConfigIsNull = false;
+            }
              // determine if request.UpdateConfig should be set to null
             if (requestUpdateConfigIsNull)
             {
@@ -497,13 +686,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Container Service for Kubernetes", "UpdateNodegroupConfig");
             try
             {
-                #if DESKTOP
-                return client.UpdateNodegroupConfig(request);
-                #elif CORECLR
-                return client.UpdateNodegroupConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateNodegroupConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -525,6 +708,12 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             public Dictionary<System.String, System.String> Labels_AddOrUpdateLabel { get; set; }
             public List<System.String> Labels_RemoveLabel { get; set; }
             public System.String NodegroupName { get; set; }
+            public System.Boolean? NodeRepairConfig_Enabled { get; set; }
+            public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedCount { get; set; }
+            public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedPercentage { get; set; }
+            public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdCount { get; set; }
+            public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage { get; set; }
+            public List<Amazon.EKS.Model.NodeRepairConfigOverrides> NodeRepairConfig_NodeRepairConfigOverride { get; set; }
             public System.Int32? ScalingConfig_DesiredSize { get; set; }
             public System.Int32? ScalingConfig_MaxSize { get; set; }
             public System.Int32? ScalingConfig_MinSize { get; set; }
@@ -532,6 +721,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             public List<Amazon.EKS.Model.Taint> Taints_RemoveTaint { get; set; }
             public System.Int32? UpdateConfig_MaxUnavailable { get; set; }
             public System.Int32? UpdateConfig_MaxUnavailablePercentage { get; set; }
+            public Amazon.EKS.NodegroupUpdateStrategies UpdateConfig_UpdateStrategy { get; set; }
             public System.Func<Amazon.EKS.Model.UpdateNodegroupConfigResponse, UpdateEKSNodegroupConfigCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Update;
         }

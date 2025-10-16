@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyDBCluster API operation.", Operation = new[] {"ModifyDBCluster"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyDBClusterResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBCluster or Amazon.RDS.Model.ModifyDBClusterResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBCluster object.",
-        "The service call response (type Amazon.RDS.Model.ModifyDBClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyDBClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSDBClusterCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocatedStorage
         /// <summary>
@@ -90,10 +93,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter ApplyImmediately
         /// <summary>
         /// <para>
-        /// <para>Specifies whether the modifications in this request and any pending modifications
-        /// are asynchronously applied as soon as possible, regardless of the <c>PreferredMaintenanceWindow</c>
-        /// setting for the DB cluster. If this parameter is disabled, changes to the DB cluster
-        /// are applied during the next maintenance window.</para><para>Most modifications can be applied immediately or during the next scheduled maintenance
+        /// <para>Specifies whether the modifications in this request are asynchronously applied as
+        /// soon as possible, regardless of the <c>PreferredMaintenanceWindow</c> setting for
+        /// the DB cluster. If this parameter is disabled, changes to the DB cluster are applied
+        /// during the next maintenance window.</para><para>Most modifications can be applied immediately or during the next scheduled maintenance
         /// window. Some modifications, such as turning on deletion protection and changing the
         /// master password, are applied immediately—regardless of when you choose to apply them.</para><para>By default, this parameter is disabled.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para>
         /// </para>
@@ -106,7 +109,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>Specifies whether minor engine upgrades are applied automatically to the DB cluster
-        /// during the maintenance window. By default, minor engine upgrades are applied automatically.</para><para>Valid for Cluster Type: Multi-AZ DB clusters only</para>
+        /// during the maintenance window. By default, minor engine upgrades are applied automatically.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters.</para><para>For more information about automatic minor version upgrades, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.Upgrading.html#USER_UpgradeDBInstance.Upgrading.AutoMinorVersionUpgrades">Automatically
+        /// upgrading the minor engine version</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,6 +163,17 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Int32? BackupRetentionPeriod { get; set; }
         #endregion
         
+        #region Parameter CACertificateIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The CA certificate identifier to use for the DB cluster's server certificate.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html">Using
+        /// SSL/TLS to encrypt a connection to a DB instance</a> in the <i>Amazon RDS User Guide</i>.</para><para>Valid for Cluster Type: Multi-AZ DB clusters</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CACertificateIdentifier { get; set; }
+        #endregion
+        
         #region Parameter CopyTagsToSnapshot
         /// <summary>
         /// <para>
@@ -168,6 +183,20 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? CopyTagsToSnapshot { get; set; }
+        #endregion
+        
+        #region Parameter DatabaseInsightsMode
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the mode of Database Insights to enable for the DB cluster.</para><para>If you change the value from <c>standard</c> to <c>advanced</c>, you must set the
+        /// <c>PerformanceInsightsEnabled</c> parameter to <c>true</c> and the <c>PerformanceInsightsRetentionPeriod</c>
+        /// parameter to 465.</para><para>If you change the value from <c>advanced</c> to <c>standard</c>, you can set the <c>PerformanceInsightsEnabled</c>
+        /// parameter to <c>true</c> to collect detailed database counter and per-query metrics.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.DatabaseInsightsMode")]
+        public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
         #endregion
         
         #region Parameter DBClusterIdentifier
@@ -238,7 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter CloudwatchLogsExportConfiguration_DisableLogType
         /// <summary>
         /// <para>
-        /// <para>The list of log types to disable.</para>
+        /// <para>The list of log types to disable.</para><para>The following values are valid for each DB engine:</para><ul><li><para>Aurora MySQL - <c>audit | error | general | slowquery</c></para></li><li><para>Aurora PostgreSQL - <c>postgresql</c></para></li><li><para>RDS for MySQL - <c>error | general | slowquery</c></para></li><li><para>RDS for PostgreSQL - <c>postgresql | upgrade</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -295,8 +328,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// API) for running SQL queries on the Aurora Serverless v1 DB cluster. You can also
         /// query your database from inside the RDS console with the RDS query editor.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/data-api.html">Using
         /// RDS Data API</a> in the <i>Amazon Aurora User Guide</i>.</para><note><para>This parameter applies only to Aurora Serverless v1 DB clusters. To enable or disable
-        /// the HTTP endpoint for an Aurora PostgreSQL Serverless v2 or provisioned DB cluster,
-        /// use the <c>EnableHttpEndpoint</c> and <c>DisableHttpEndpoint</c> operations.</para></note><para>Valid for Cluster Type: Aurora DB clusters only</para>
+        /// the HTTP endpoint for an Aurora Serverless v2 or provisioned DB cluster, use the <c>EnableHttpEndpoint</c>
+        /// and <c>DisableHttpEndpoint</c> operations.</para></note><para>Valid for Cluster Type: Aurora DB clusters only</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -308,7 +341,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>Specifies whether to enable mapping of Amazon Web Services Identity and Access Management
         /// (IAM) accounts to database accounts. By default, mapping isn't enabled.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.IAMDBAuth.html">
-        /// IAM Database Authentication</a> in the <i>Amazon Aurora User Guide</i>.</para><para>Valid for Cluster Type: Aurora DB clusters only</para>
+        /// IAM Database Authentication</a> in the <i>Amazon Aurora User Guide</i> or <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.IAMDBAuth.html">IAM
+        /// database authentication for MariaDB, MySQL, and PostgreSQL</a> in the <i>Amazon RDS
+        /// User Guide</i>.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -319,7 +354,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>Specifies whether to enable Aurora Limitless Database. You must enable Aurora Limitless
-        /// Database to create a DB shard group.</para><para>Valid for: Aurora DB clusters only</para>
+        /// Database to create a DB shard group.</para><para>Valid for: Aurora DB clusters only</para><note><para>This setting is no longer used. Instead use the <c>ClusterScalabilityType</c> setting
+        /// when you create your Aurora Limitless Database DB cluster.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -340,7 +376,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter CloudwatchLogsExportConfiguration_EnableLogType
         /// <summary>
         /// <para>
-        /// <para>The list of log types to enable.</para>
+        /// <para>The list of log types to enable.</para><para>The following values are valid for each DB engine:</para><ul><li><para>Aurora MySQL - <c>audit | error | general | slowquery</c></para></li><li><para>Aurora PostgreSQL - <c>postgresql</c></para></li><li><para>RDS for MySQL - <c>error | general | slowquery</c></para></li><li><para>RDS for PostgreSQL - <c>postgresql | upgrade</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -352,7 +392,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>Specifies whether to turn on Performance Insights for the DB cluster.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.html">
-        /// Using Amazon Performance Insights</a> in the <i>Amazon RDS User Guide</i>.</para><para>Valid for Cluster Type: Multi-AZ DB clusters only</para>
+        /// Using Amazon Performance Insights</a> in the <i>Amazon RDS User Guide</i>.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -420,6 +460,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Boolean? ManageMasterUserPassword { get; set; }
         #endregion
         
+        #region Parameter MasterUserAuthenticationType
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the authentication type for the master user. With IAM master user authentication,
+        /// you can change the master DB user to use IAM database authentication.</para><para>You can specify one of the following values:</para><ul><li><para><c>password</c> - Use standard database authentication with a password.</para></li><li><para><c>iam-db-auth</c> - Use IAM database authentication for the master user.</para></li></ul><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para><para>This option is only valid for RDS for PostgreSQL and Aurora PostgreSQL engines.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.MasterUserAuthenticationType")]
+        public Amazon.RDS.MasterUserAuthenticationType MasterUserAuthenticationType { get; set; }
+        #endregion
+        
         #region Parameter MasterUserPassword
         /// <summary>
         /// <para>
@@ -467,7 +519,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>The maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora
         /// Serverless v2 cluster. You can specify ACU values in half-step increments, such as
-        /// 40, 40.5, 41, and so on. The largest value that you can use is 128.</para>
+        /// 32, 32.5, 33, and so on. The largest value that you can use is 256 for recent Aurora
+        /// versions, or 128 for older versions. You can check the attributes of your engine version
+        /// or platform version to determine the specific maximum capacity supported.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -491,7 +545,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>The minimum number of Aurora capacity units (ACUs) for a DB instance in an Aurora
         /// Serverless v2 cluster. You can specify ACU values in half-step increments, such as
-        /// 8, 8.5, 9, and so on. The smallest value that you can use is 0.5.</para>
+        /// 8, 8.5, 9, and so on. For Aurora versions that support the Aurora Serverless v2 auto-pause
+        /// feature, the smallest value that you can use is 0. For versions that don't support
+        /// Aurora Serverless v2 auto-pause, the smallest value that you can use is 0.5. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -567,7 +623,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// name for the KMS key.</para><para>If you don't specify a value for <c>PerformanceInsightsKMSKeyId</c>, then Amazon RDS
         /// uses your default KMS key. There is a default KMS key for your Amazon Web Services
         /// account. Your Amazon Web Services account has a different default KMS key for each
-        /// Amazon Web Services Region.</para><para>Valid for Cluster Type: Multi-AZ DB clusters only</para>
+        /// Amazon Web Services Region.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -577,7 +633,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter PerformanceInsightsRetentionPeriod
         /// <summary>
         /// <para>
-        /// <para>The number of days to retain Performance Insights data.</para><para>Valid for Cluster Type: Multi-AZ DB clusters only</para><para>Valid Values:</para><ul><li><para><c>7</c></para></li><li><para><i>month</i> * 31, where <i>month</i> is a number of months from 1-23. Examples:
+        /// <para>The number of days to retain Performance Insights data.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para><para>Valid Values:</para><ul><li><para><c>7</c></para></li><li><para><i>month</i> * 31, where <i>month</i> is a number of months from 1-23. Examples:
         /// <c>93</c> (3 months * 31), <c>341</c> (11 months * 31), <c>589</c> (19 months * 31)</para></li><li><para><c>731</c></para></li></ul><para>Default: <c>7</c> days</para><para>If you specify a retention period that isn't valid, such as <c>94</c>, Amazon RDS
         /// issues an error.</para>
         /// </para>
@@ -663,6 +719,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Int32? ScalingConfiguration_SecondsUntilAutoPause { get; set; }
         #endregion
         
+        #region Parameter ServerlessV2ScalingConfiguration_SecondsUntilAutoPause
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the number of seconds an Aurora Serverless v2 DB instance must be idle before
+        /// Aurora attempts to automatically pause it. </para><para>Specify a value between 300 seconds (five minutes) and 86,400 seconds (one day). The
+        /// default is 300 seconds.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ServerlessV2ScalingConfiguration_SecondsUntilAutoPause { get; set; }
+        #endregion
+        
         #region Parameter StorageType
         /// <summary>
         /// <para>
@@ -670,7 +738,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// configurations for Amazon Aurora DB clusters</a>. For information on storage types
         /// for Multi-AZ DB clusters, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/create-multi-az-db-cluster.html#create-multi-az-db-cluster-settings">Settings
         /// for creating Multi-AZ DB clusters</a>.</para><para>When specified for a Multi-AZ DB cluster, a value for the <c>Iops</c> parameter is
-        /// required.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para><para>Valid Values:</para><ul><li><para>Aurora DB clusters - <c>aurora | aurora-iopt1</c></para></li><li><para>Multi-AZ DB clusters - <c>io1</c></para></li></ul><para>Default:</para><ul><li><para>Aurora DB clusters - <c>aurora</c></para></li><li><para>Multi-AZ DB clusters - <c>io1</c></para></li></ul>
+        /// required.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para><para>Valid Values:</para><ul><li><para>Aurora DB clusters - <c>aurora | aurora-iopt1</c></para></li><li><para>Multi-AZ DB clusters - <c>io1 | io2 | gp3</c></para></li></ul><para>Default:</para><ul><li><para>Aurora DB clusters - <c>aurora</c></para></li><li><para>Multi-AZ DB clusters - <c>io1</c></para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -695,7 +763,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of EC2 VPC security groups to associate with this DB cluster.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para>
+        /// <para>A list of EC2 VPC security groups to associate with this DB cluster.</para><para>Valid for Cluster Type: Aurora DB clusters and Multi-AZ DB clusters</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -714,16 +786,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBCluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -734,9 +796,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBClusterIdentifier), MyInvocation.BoundParameters);
@@ -750,21 +816,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyDBClusterResponse, EditRDSDBClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocatedStorage = this.AllocatedStorage;
             context.AllowEngineModeChange = this.AllowEngineModeChange;
             context.AllowMajorVersionUpgrade = this.AllowMajorVersionUpgrade;
@@ -773,6 +829,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             context.AwsBackupRecoveryPointArn = this.AwsBackupRecoveryPointArn;
             context.BacktrackWindow = this.BacktrackWindow;
             context.BackupRetentionPeriod = this.BackupRetentionPeriod;
+            context.CACertificateIdentifier = this.CACertificateIdentifier;
             if (this.CloudwatchLogsExportConfiguration_DisableLogType != null)
             {
                 context.CloudwatchLogsExportConfiguration_DisableLogType = new List<System.String>(this.CloudwatchLogsExportConfiguration_DisableLogType);
@@ -782,6 +839,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 context.CloudwatchLogsExportConfiguration_EnableLogType = new List<System.String>(this.CloudwatchLogsExportConfiguration_EnableLogType);
             }
             context.CopyTagsToSnapshot = this.CopyTagsToSnapshot;
+            context.DatabaseInsightsMode = this.DatabaseInsightsMode;
             context.DBClusterIdentifier = this.DBClusterIdentifier;
             #if MODULAR
             if (this.DBClusterIdentifier == null && ParameterWasBound(nameof(this.DBClusterIdentifier)))
@@ -805,6 +863,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             context.EngineVersion = this.EngineVersion;
             context.Iops = this.Iops;
             context.ManageMasterUserPassword = this.ManageMasterUserPassword;
+            context.MasterUserAuthenticationType = this.MasterUserAuthenticationType;
             context.MasterUserPassword = this.MasterUserPassword;
             context.MasterUserSecretKmsKeyId = this.MasterUserSecretKmsKeyId;
             context.MonitoringInterval = this.MonitoringInterval;
@@ -826,6 +885,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             context.ScalingConfiguration_TimeoutAction = this.ScalingConfiguration_TimeoutAction;
             context.ServerlessV2ScalingConfiguration_MaxCapacity = this.ServerlessV2ScalingConfiguration_MaxCapacity;
             context.ServerlessV2ScalingConfiguration_MinCapacity = this.ServerlessV2ScalingConfiguration_MinCapacity;
+            context.ServerlessV2ScalingConfiguration_SecondsUntilAutoPause = this.ServerlessV2ScalingConfiguration_SecondsUntilAutoPause;
             context.StorageType = this.StorageType;
             if (this.VpcSecurityGroupId != null)
             {
@@ -879,6 +939,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.BackupRetentionPeriod = cmdletContext.BackupRetentionPeriod.Value;
             }
+            if (cmdletContext.CACertificateIdentifier != null)
+            {
+                request.CACertificateIdentifier = cmdletContext.CACertificateIdentifier;
+            }
             
              // populate CloudwatchLogsExportConfiguration
             var requestCloudwatchLogsExportConfigurationIsNull = true;
@@ -911,6 +975,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.CopyTagsToSnapshot != null)
             {
                 request.CopyTagsToSnapshot = cmdletContext.CopyTagsToSnapshot.Value;
+            }
+            if (cmdletContext.DatabaseInsightsMode != null)
+            {
+                request.DatabaseInsightsMode = cmdletContext.DatabaseInsightsMode;
             }
             if (cmdletContext.DBClusterIdentifier != null)
             {
@@ -979,6 +1047,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.ManageMasterUserPassword != null)
             {
                 request.ManageMasterUserPassword = cmdletContext.ManageMasterUserPassword.Value;
+            }
+            if (cmdletContext.MasterUserAuthenticationType != null)
+            {
+                request.MasterUserAuthenticationType = cmdletContext.MasterUserAuthenticationType;
             }
             if (cmdletContext.MasterUserPassword != null)
             {
@@ -1125,6 +1197,16 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 request.ServerlessV2ScalingConfiguration.MinCapacity = requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity.Value;
                 requestServerlessV2ScalingConfigurationIsNull = false;
             }
+            System.Int32? requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_SecondsUntilAutoPause = null;
+            if (cmdletContext.ServerlessV2ScalingConfiguration_SecondsUntilAutoPause != null)
+            {
+                requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_SecondsUntilAutoPause = cmdletContext.ServerlessV2ScalingConfiguration_SecondsUntilAutoPause.Value;
+            }
+            if (requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_SecondsUntilAutoPause != null)
+            {
+                request.ServerlessV2ScalingConfiguration.SecondsUntilAutoPause = requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_SecondsUntilAutoPause.Value;
+                requestServerlessV2ScalingConfigurationIsNull = false;
+            }
              // determine if request.ServerlessV2ScalingConfiguration should be set to null
             if (requestServerlessV2ScalingConfigurationIsNull)
             {
@@ -1176,13 +1258,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyDBCluster");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBCluster(request);
-                #elif CORECLR
-                return client.ModifyDBClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1207,9 +1283,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.String AwsBackupRecoveryPointArn { get; set; }
             public System.Int64? BacktrackWindow { get; set; }
             public System.Int32? BackupRetentionPeriod { get; set; }
+            public System.String CACertificateIdentifier { get; set; }
             public List<System.String> CloudwatchLogsExportConfiguration_DisableLogType { get; set; }
             public List<System.String> CloudwatchLogsExportConfiguration_EnableLogType { get; set; }
             public System.Boolean? CopyTagsToSnapshot { get; set; }
+            public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
             public System.String DBClusterIdentifier { get; set; }
             public System.String DBClusterInstanceClass { get; set; }
             public System.String DBClusterParameterGroupName { get; set; }
@@ -1227,6 +1305,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.String EngineVersion { get; set; }
             public System.Int32? Iops { get; set; }
             public System.Boolean? ManageMasterUserPassword { get; set; }
+            public Amazon.RDS.MasterUserAuthenticationType MasterUserAuthenticationType { get; set; }
             public System.String MasterUserPassword { get; set; }
             public System.String MasterUserSecretKmsKeyId { get; set; }
             public System.Int32? MonitoringInterval { get; set; }
@@ -1248,6 +1327,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.String ScalingConfiguration_TimeoutAction { get; set; }
             public System.Double? ServerlessV2ScalingConfiguration_MaxCapacity { get; set; }
             public System.Double? ServerlessV2ScalingConfiguration_MinCapacity { get; set; }
+            public System.Int32? ServerlessV2ScalingConfiguration_SecondsUntilAutoPause { get; set; }
             public System.String StorageType { get; set; }
             public List<System.String> VpcSecurityGroupId { get; set; }
             public System.Func<Amazon.RDS.Model.ModifyDBClusterResponse, EditRDSDBClusterCmdlet, object> Select { get; set; } =

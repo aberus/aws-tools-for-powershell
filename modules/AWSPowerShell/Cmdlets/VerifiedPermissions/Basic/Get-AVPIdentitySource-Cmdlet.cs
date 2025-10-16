@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AVP
 {
     /// <summary>
@@ -34,14 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
     [OutputType("Amazon.VerifiedPermissions.Model.GetIdentitySourceResponse")]
     [AWSCmdlet("Calls the Amazon Verified Permissions GetIdentitySource API operation.", Operation = new[] {"GetIdentitySource"}, SelectReturnType = typeof(Amazon.VerifiedPermissions.Model.GetIdentitySourceResponse))]
     [AWSCmdletOutput("Amazon.VerifiedPermissions.Model.GetIdentitySourceResponse",
-        "This cmdlet returns an Amazon.VerifiedPermissions.Model.GetIdentitySourceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VerifiedPermissions.Model.GetIdentitySourceResponse object containing multiple properties."
     )]
     public partial class GetAVPIdentitySourceCmdlet : AmazonVerifiedPermissionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IdentitySourceId
         /// <summary>
@@ -89,9 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -180,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Verified Permissions", "GetIdentitySource");
             try
             {
-                #if DESKTOP
-                return client.GetIdentitySource(request);
-                #elif CORECLR
-                return client.GetIdentitySourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetIdentitySourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

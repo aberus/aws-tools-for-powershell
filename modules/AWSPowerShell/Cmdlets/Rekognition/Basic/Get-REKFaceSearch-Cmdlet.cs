@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -65,12 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [OutputType("Amazon.Rekognition.Model.GetFaceSearchResponse")]
     [AWSCmdlet("Calls the Amazon Rekognition GetFaceSearch API operation.", Operation = new[] {"GetFaceSearch"}, SelectReturnType = typeof(Amazon.Rekognition.Model.GetFaceSearchResponse))]
     [AWSCmdletOutput("Amazon.Rekognition.Model.GetFaceSearchResponse",
-        "This cmdlet returns an Amazon.Rekognition.Model.GetFaceSearchResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Rekognition.Model.GetFaceSearchResponse object containing multiple properties."
     )]
     public partial class GetREKFaceSearchCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter JobId
         /// <summary>
@@ -125,7 +128,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.Rekognition module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,9 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -320,13 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "GetFaceSearch");
             try
             {
-                #if DESKTOP
-                return client.GetFaceSearch(request);
-                #elif CORECLR
-                return client.GetFaceSearchAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetFaceSearchAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

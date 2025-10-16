@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,38 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Creates a template either from a <c>TemplateDefinition</c> or from an existing Amazon
-    /// QuickSight analysis or template. You can use the resulting template to create additional
+    /// Creates a template either from a <c>TemplateDefinition</c> or from an existing Quick
+    /// Sight analysis or template. You can use the resulting template to create additional
     /// dashboards, templates, or analyses.
     /// 
     ///  
     /// <para>
-    /// A <i>template</i> is an entity in Amazon QuickSight that encapsulates the metadata
-    /// required to create an analysis and that you can use to create s dashboard. A template
-    /// adds a layer of abstraction by using placeholders to replace the dataset associated
-    /// with the analysis. You can use templates to create dashboards by replacing dataset
-    /// placeholders with datasets that follow the same schema that was used to create the
-    /// source analysis and template.
+    /// A <i>template</i> is an entity in Quick Sight that encapsulates the metadata required
+    /// to create an analysis and that you can use to create s dashboard. A template adds
+    /// a layer of abstraction by using placeholders to replace the dataset associated with
+    /// the analysis. You can use templates to create dashboards by replacing dataset placeholders
+    /// with datasets that follow the same schema that was used to create the source analysis
+    /// and template.
     /// </para>
     /// </summary>
     [Cmdlet("New", "QSTemplate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QuickSight.Model.CreateTemplateResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight CreateTemplate API operation.", Operation = new[] {"CreateTemplate"}, SelectReturnType = typeof(Amazon.QuickSight.Model.CreateTemplateResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.CreateTemplateResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.CreateTemplateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.CreateTemplateResponse object containing multiple properties."
     )]
     public partial class NewQSTemplateCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SourceAnalysis_Arn
         /// <summary>
@@ -81,7 +82,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The ID for the Amazon Web Services account that the group is in. You use the ID for
-        /// the Amazon Web Services account that contains your Amazon QuickSight account.</para>
+        /// the Amazon Web Services account that contains your Amazon Quick Sight account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Definition_CalculatedField
         /// <summary>
         /// <para>
-        /// <para>An array of calculated field definitions for the template.</para>
+        /// <para>An array of calculated field definitions for the template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,7 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para> An array of template-level column configurations. Column configurations are used
-        /// to set default formatting for a column that's used throughout a template. </para>
+        /// to set default formatting for a column that's used throughout a template. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>An array of dataset configurations. These configurations define the required columns
-        /// for each dataset used within a template.</para>
+        /// for each dataset used within a template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,7 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A structure containing information about the dataset references used as placeholders
-        /// in the template.</para>
+        /// in the template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,11 +170,30 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public Amazon.QuickSight.Model.DataSetReference[] SourceAnalysis_DataSetReference { get; set; }
         #endregion
         
+        #region Parameter Options_ExcludedDataSetArn
+        /// <summary>
+        /// <para>
+        /// <para>A list of dataset ARNS to exclude from Dashboard Q&amp;A.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Definition_Options_ExcludedDataSetArns")]
+        public System.String[] Options_ExcludedDataSetArn { get; set; }
+        #endregion
+        
         #region Parameter Definition_FilterGroup
         /// <summary>
         /// <para>
         /// <para>Filter definitions for a template.</para><para>For more information, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/filtering-visual-data.html">Filtering
-        /// Data</a> in the <i>Amazon QuickSight User Guide</i>. </para>
+        /// Data</a> in the <i>Amazon Quick Suite User Guide</i>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -250,7 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>An array of parameter declarations for a template.</para><para><i>Parameters</i> are named variables that can transfer a value for use by an action
         /// or an object.</para><para>For more information, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/parameters-in-quicksight.html">Parameters
-        /// in Amazon QuickSight</a> in the <i>Amazon QuickSight User Guide</i>. </para>
+        /// in Amazon Quick Sight</a> in the <i>Amazon Quick Suite User Guide</i>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -261,7 +301,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Permission
         /// <summary>
         /// <para>
-        /// <para>A list of resource permissions to be set on the template. </para>
+        /// <para>A list of resource permissions to be set on the template. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -269,12 +313,37 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public Amazon.QuickSight.Model.ResourcePermission[] Permission { get; set; }
         #endregion
         
+        #region Parameter Options_QBusinessInsightsStatus
+        /// <summary>
+        /// <para>
+        /// <para>Determines whether insight summaries from Amazon Q Business are allowed in Dashboard
+        /// Q&amp;A.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Definition_Options_QBusinessInsightsStatus")]
+        [AWSConstantClassSource("Amazon.QuickSight.QBusinessInsightsStatus")]
+        public Amazon.QuickSight.QBusinessInsightsStatus Options_QBusinessInsightsStatus { get; set; }
+        #endregion
+        
+        #region Parameter QueryExecutionOptions_QueryExecutionMode
+        /// <summary>
+        /// <para>
+        /// <para>A structure that describes the query execution mode.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Definition_QueryExecutionOptions_QueryExecutionMode")]
+        [AWSConstantClassSource("Amazon.QuickSight.QueryExecutionMode")]
+        public Amazon.QuickSight.QueryExecutionMode QueryExecutionOptions_QueryExecutionMode { get; set; }
+        #endregion
+        
         #region Parameter ScreenCanvasSizeOptions_ResizeOption
         /// <summary>
         /// <para>
-        /// <para>This value determines the layout behavior when the viewport is resized.</para><ul><li><para><c>FIXED</c>: A fixed width will be used when optimizing the layout. In the Amazon
-        /// QuickSight console, this option is called <c>Classic</c>.</para></li><li><para><c>RESPONSIVE</c>: The width of the canvas will be responsive and optimized to the
-        /// view port. In the Amazon QuickSight console, this option is called <c>Tiled</c>.</para></li></ul>
+        /// <para>This value determines the layout behavior when the viewport is resized.</para><ul><li><para><c>FIXED</c>: A fixed width will be used when optimizing the layout. In the Quick
+        /// Sight console, this option is called <c>Classic</c>.</para></li><li><para><c>RESPONSIVE</c>: The width of the canvas will be responsive and optimized to the
+        /// view port. In the Quick Sight console, this option is called <c>Tiled</c>.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -309,7 +378,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Definition_Sheet
         /// <summary>
         /// <para>
-        /// <para>An array of sheet definitions for a template.</para>
+        /// <para>An array of sheet definitions for a template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -317,11 +390,30 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public Amazon.QuickSight.Model.SheetDefinition[] Definition_Sheet { get; set; }
         #endregion
         
+        #region Parameter Definition_StaticFile
+        /// <summary>
+        /// <para>
+        /// <para>The static files for the definition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Definition_StaticFiles")]
+        public Amazon.QuickSight.Model.StaticFile[] Definition_StaticFile { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>Contains a map of the key-value pairs for the resource tag or tags assigned to the
-        /// resource.</para>
+        /// resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -369,6 +461,19 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public System.String PaperMargin_Top { get; set; }
         #endregion
         
+        #region Parameter HighlightOperation_Trigger
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether a highlight operation is initiated by a click or hover, or whether
+        /// it's disabled.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Definition_Options_CustomActionDefaults_HighlightOperation_Trigger")]
+        [AWSConstantClassSource("Amazon.QuickSight.VisualHighlightTrigger")]
+        public Amazon.QuickSight.VisualHighlightTrigger HighlightOperation_Trigger { get; set; }
+        #endregion
+        
         #region Parameter VersionDescription
         /// <summary>
         /// <para>
@@ -405,16 +510,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TemplateId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TemplateId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TemplateId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -425,9 +520,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TemplateId), MyInvocation.BoundParameters);
@@ -441,21 +540,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.CreateTemplateResponse, NewQSTemplateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TemplateId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -489,15 +578,26 @@ namespace Amazon.PowerShell.Cmdlets.QS
             {
                 context.Definition_FilterGroup = new List<Amazon.QuickSight.Model.FilterGroup>(this.Definition_FilterGroup);
             }
+            context.HighlightOperation_Trigger = this.HighlightOperation_Trigger;
+            if (this.Options_ExcludedDataSetArn != null)
+            {
+                context.Options_ExcludedDataSetArn = new List<System.String>(this.Options_ExcludedDataSetArn);
+            }
+            context.Options_QBusinessInsightsStatus = this.Options_QBusinessInsightsStatus;
             context.Options_Timezone = this.Options_Timezone;
             context.Options_WeekStart = this.Options_WeekStart;
             if (this.Definition_ParameterDeclaration != null)
             {
                 context.Definition_ParameterDeclaration = new List<Amazon.QuickSight.Model.ParameterDeclaration>(this.Definition_ParameterDeclaration);
             }
+            context.QueryExecutionOptions_QueryExecutionMode = this.QueryExecutionOptions_QueryExecutionMode;
             if (this.Definition_Sheet != null)
             {
                 context.Definition_Sheet = new List<Amazon.QuickSight.Model.SheetDefinition>(this.Definition_Sheet);
+            }
+            if (this.Definition_StaticFile != null)
+            {
+                context.Definition_StaticFile = new List<Amazon.QuickSight.Model.StaticFile>(this.Definition_StaticFile);
             }
             context.Name = this.Name;
             if (this.Permission != null)
@@ -605,6 +705,16 @@ namespace Amazon.PowerShell.Cmdlets.QS
             if (requestDefinition_definition_Sheet != null)
             {
                 request.Definition.Sheets = requestDefinition_definition_Sheet;
+                requestDefinitionIsNull = false;
+            }
+            List<Amazon.QuickSight.Model.StaticFile> requestDefinition_definition_StaticFile = null;
+            if (cmdletContext.Definition_StaticFile != null)
+            {
+                requestDefinition_definition_StaticFile = cmdletContext.Definition_StaticFile;
+            }
+            if (requestDefinition_definition_StaticFile != null)
+            {
+                request.Definition.StaticFiles = requestDefinition_definition_StaticFile;
                 requestDefinitionIsNull = false;
             }
             Amazon.QuickSight.Model.AnalysisDefaults requestDefinition_definition_AnalysisDefaults = null;
@@ -917,11 +1027,56 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 request.Definition.AnalysisDefaults = requestDefinition_definition_AnalysisDefaults;
                 requestDefinitionIsNull = false;
             }
+            Amazon.QuickSight.Model.QueryExecutionOptions requestDefinition_definition_QueryExecutionOptions = null;
+            
+             // populate QueryExecutionOptions
+            var requestDefinition_definition_QueryExecutionOptionsIsNull = true;
+            requestDefinition_definition_QueryExecutionOptions = new Amazon.QuickSight.Model.QueryExecutionOptions();
+            Amazon.QuickSight.QueryExecutionMode requestDefinition_definition_QueryExecutionOptions_queryExecutionOptions_QueryExecutionMode = null;
+            if (cmdletContext.QueryExecutionOptions_QueryExecutionMode != null)
+            {
+                requestDefinition_definition_QueryExecutionOptions_queryExecutionOptions_QueryExecutionMode = cmdletContext.QueryExecutionOptions_QueryExecutionMode;
+            }
+            if (requestDefinition_definition_QueryExecutionOptions_queryExecutionOptions_QueryExecutionMode != null)
+            {
+                requestDefinition_definition_QueryExecutionOptions.QueryExecutionMode = requestDefinition_definition_QueryExecutionOptions_queryExecutionOptions_QueryExecutionMode;
+                requestDefinition_definition_QueryExecutionOptionsIsNull = false;
+            }
+             // determine if requestDefinition_definition_QueryExecutionOptions should be set to null
+            if (requestDefinition_definition_QueryExecutionOptionsIsNull)
+            {
+                requestDefinition_definition_QueryExecutionOptions = null;
+            }
+            if (requestDefinition_definition_QueryExecutionOptions != null)
+            {
+                request.Definition.QueryExecutionOptions = requestDefinition_definition_QueryExecutionOptions;
+                requestDefinitionIsNull = false;
+            }
             Amazon.QuickSight.Model.AssetOptions requestDefinition_definition_Options = null;
             
              // populate Options
             var requestDefinition_definition_OptionsIsNull = true;
             requestDefinition_definition_Options = new Amazon.QuickSight.Model.AssetOptions();
+            List<System.String> requestDefinition_definition_Options_options_ExcludedDataSetArn = null;
+            if (cmdletContext.Options_ExcludedDataSetArn != null)
+            {
+                requestDefinition_definition_Options_options_ExcludedDataSetArn = cmdletContext.Options_ExcludedDataSetArn;
+            }
+            if (requestDefinition_definition_Options_options_ExcludedDataSetArn != null)
+            {
+                requestDefinition_definition_Options.ExcludedDataSetArns = requestDefinition_definition_Options_options_ExcludedDataSetArn;
+                requestDefinition_definition_OptionsIsNull = false;
+            }
+            Amazon.QuickSight.QBusinessInsightsStatus requestDefinition_definition_Options_options_QBusinessInsightsStatus = null;
+            if (cmdletContext.Options_QBusinessInsightsStatus != null)
+            {
+                requestDefinition_definition_Options_options_QBusinessInsightsStatus = cmdletContext.Options_QBusinessInsightsStatus;
+            }
+            if (requestDefinition_definition_Options_options_QBusinessInsightsStatus != null)
+            {
+                requestDefinition_definition_Options.QBusinessInsightsStatus = requestDefinition_definition_Options_options_QBusinessInsightsStatus;
+                requestDefinition_definition_OptionsIsNull = false;
+            }
             System.String requestDefinition_definition_Options_options_Timezone = null;
             if (cmdletContext.Options_Timezone != null)
             {
@@ -940,6 +1095,46 @@ namespace Amazon.PowerShell.Cmdlets.QS
             if (requestDefinition_definition_Options_options_WeekStart != null)
             {
                 requestDefinition_definition_Options.WeekStart = requestDefinition_definition_Options_options_WeekStart;
+                requestDefinition_definition_OptionsIsNull = false;
+            }
+            Amazon.QuickSight.Model.VisualCustomActionDefaults requestDefinition_definition_Options_definition_Options_CustomActionDefaults = null;
+            
+             // populate CustomActionDefaults
+            var requestDefinition_definition_Options_definition_Options_CustomActionDefaultsIsNull = true;
+            requestDefinition_definition_Options_definition_Options_CustomActionDefaults = new Amazon.QuickSight.Model.VisualCustomActionDefaults();
+            Amazon.QuickSight.Model.VisualHighlightOperation requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation = null;
+            
+             // populate HighlightOperation
+            var requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperationIsNull = true;
+            requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation = new Amazon.QuickSight.Model.VisualHighlightOperation();
+            Amazon.QuickSight.VisualHighlightTrigger requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation_highlightOperation_Trigger = null;
+            if (cmdletContext.HighlightOperation_Trigger != null)
+            {
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation_highlightOperation_Trigger = cmdletContext.HighlightOperation_Trigger;
+            }
+            if (requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation_highlightOperation_Trigger != null)
+            {
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation.Trigger = requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation_highlightOperation_Trigger;
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperationIsNull = false;
+            }
+             // determine if requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation should be set to null
+            if (requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperationIsNull)
+            {
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation = null;
+            }
+            if (requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation != null)
+            {
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaults.HighlightOperation = requestDefinition_definition_Options_definition_Options_CustomActionDefaults_definition_Options_CustomActionDefaults_HighlightOperation;
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaultsIsNull = false;
+            }
+             // determine if requestDefinition_definition_Options_definition_Options_CustomActionDefaults should be set to null
+            if (requestDefinition_definition_Options_definition_Options_CustomActionDefaultsIsNull)
+            {
+                requestDefinition_definition_Options_definition_Options_CustomActionDefaults = null;
+            }
+            if (requestDefinition_definition_Options_definition_Options_CustomActionDefaults != null)
+            {
+                requestDefinition_definition_Options.CustomActionDefaults = requestDefinition_definition_Options_definition_Options_CustomActionDefaults;
                 requestDefinition_definition_OptionsIsNull = false;
             }
              // determine if requestDefinition_definition_Options should be set to null
@@ -1103,13 +1298,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "CreateTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreateTemplate(request);
-                #elif CORECLR
-                return client.CreateTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1141,10 +1330,15 @@ namespace Amazon.PowerShell.Cmdlets.QS
             public List<Amazon.QuickSight.Model.ColumnConfiguration> Definition_ColumnConfiguration { get; set; }
             public List<Amazon.QuickSight.Model.DataSetConfiguration> Definition_DataSetConfiguration { get; set; }
             public List<Amazon.QuickSight.Model.FilterGroup> Definition_FilterGroup { get; set; }
+            public Amazon.QuickSight.VisualHighlightTrigger HighlightOperation_Trigger { get; set; }
+            public List<System.String> Options_ExcludedDataSetArn { get; set; }
+            public Amazon.QuickSight.QBusinessInsightsStatus Options_QBusinessInsightsStatus { get; set; }
             public System.String Options_Timezone { get; set; }
             public Amazon.QuickSight.DayOfTheWeek Options_WeekStart { get; set; }
             public List<Amazon.QuickSight.Model.ParameterDeclaration> Definition_ParameterDeclaration { get; set; }
+            public Amazon.QuickSight.QueryExecutionMode QueryExecutionOptions_QueryExecutionMode { get; set; }
             public List<Amazon.QuickSight.Model.SheetDefinition> Definition_Sheet { get; set; }
+            public List<Amazon.QuickSight.Model.StaticFile> Definition_StaticFile { get; set; }
             public System.String Name { get; set; }
             public List<Amazon.QuickSight.Model.ResourcePermission> Permission { get; set; }
             public System.String SourceAnalysis_Arn { get; set; }

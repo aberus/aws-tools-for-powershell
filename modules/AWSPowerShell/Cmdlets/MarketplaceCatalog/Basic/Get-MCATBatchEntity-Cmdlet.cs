@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MarketplaceCatalog;
 using Amazon.MarketplaceCatalog.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MCAT
 {
     /// <summary>
-    /// Returns metadata and content for multiple entities.
+    /// Returns metadata and content for multiple entities. This is the Batch version of the
+    /// <c>DescribeEntity</c> API and uses the same IAM permission action as <c>DescribeEntity</c>
+    /// API.
     /// </summary>
     [Cmdlet("Get", "MCATBatchEntity")]
     [OutputType("Amazon.MarketplaceCatalog.Model.BatchDescribeEntitiesResponse")]
     [AWSCmdlet("Calls the AWS Marketplace Catalog Service BatchDescribeEntities API operation.", Operation = new[] {"BatchDescribeEntities"}, SelectReturnType = typeof(Amazon.MarketplaceCatalog.Model.BatchDescribeEntitiesResponse))]
     [AWSCmdletOutput("Amazon.MarketplaceCatalog.Model.BatchDescribeEntitiesResponse",
-        "This cmdlet returns an Amazon.MarketplaceCatalog.Model.BatchDescribeEntitiesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MarketplaceCatalog.Model.BatchDescribeEntitiesResponse object containing multiple properties."
     )]
     public partial class GetMCATBatchEntityCmdlet : AmazonMarketplaceCatalogClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EntityRequestList
         /// <summary>
         /// <para>
-        /// <para>List of entity IDs and the catalogs the entities are present in.</para>
+        /// <para>List of entity IDs and the catalogs the entities are present in.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -69,19 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EntityRequestList parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EntityRequestList' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EntityRequestList' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -89,21 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MarketplaceCatalog.Model.BatchDescribeEntitiesResponse, GetMCATBatchEntityCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EntityRequestList;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.EntityRequestList != null)
             {
                 context.EntityRequestList = new List<Amazon.MarketplaceCatalog.Model.EntityRequest>(this.EntityRequestList);
@@ -172,13 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Catalog Service", "BatchDescribeEntities");
             try
             {
-                #if DESKTOP
-                return client.BatchDescribeEntities(request);
-                #elif CORECLR
-                return client.BatchDescribeEntitiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchDescribeEntitiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

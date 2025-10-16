@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.XRay;
 using Amazon.XRay.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.XR
 {
     /// <summary>
@@ -41,20 +43,21 @@ namespace Amazon.PowerShell.Cmdlets.XR
     /// the value <c>12345</c>:
     /// </para><para><c>annotation.account = "12345"</c></para><para>
     /// For a full list of indexed fields and keywords that you can use in filter expressions,
-    /// see <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-console-filters.html">Using
-    /// Filter Expressions</a> in the <i>Amazon Web Services X-Ray Developer Guide</i>.
+    /// see <a href="https://docs.aws.amazon.com/xray/latest/devguide/aws-xray-interface-console.html#xray-console-filters">Use
+    /// filter expressions</a> in the <i>Amazon Web Services X-Ray Developer Guide</i>.
     /// </para><br/><br/>In the AWS.Tools.XRay module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "XRTraceSummary")]
     [OutputType("Amazon.XRay.Model.GetTraceSummariesResponse")]
     [AWSCmdlet("Calls the AWS X-Ray GetTraceSummaries API operation.", Operation = new[] {"GetTraceSummaries"}, SelectReturnType = typeof(Amazon.XRay.Model.GetTraceSummariesResponse))]
     [AWSCmdletOutput("Amazon.XRay.Model.GetTraceSummariesResponse",
-        "This cmdlet returns an Amazon.XRay.Model.GetTraceSummariesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.XRay.Model.GetTraceSummariesResponse object containing multiple properties."
     )]
     public partial class GetXRTraceSummaryCmdlet : AmazonXRayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndTime
         /// <summary>
@@ -123,8 +126,8 @@ namespace Amazon.PowerShell.Cmdlets.XR
         #region Parameter TimeRangeType
         /// <summary>
         /// <para>
-        /// <para>A parameter to indicate whether to query trace summaries by TraceId, Event (trace
-        /// update time), or Service (segment end time).</para>
+        /// <para>Query trace summaries by TraceId (trace start time), Event (trace update time), or
+        /// Service (trace segment end time).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +153,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.XRay module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,16 +171,6 @@ namespace Amazon.PowerShell.Cmdlets.XR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StartTime parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StartTime' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StartTime' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -190,9 +183,13 @@ namespace Amazon.PowerShell.Cmdlets.XR
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -200,21 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.XR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.XRay.Model.GetTraceSummariesResponse, GetXRTraceSummaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StartTime;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EndTime = this.EndTime;
             #if MODULAR
             if (this.EndTime == null && ParameterWasBound(nameof(this.EndTime)))
@@ -249,9 +236,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.XRay.Model.GetTraceSummariesRequest();
@@ -451,13 +436,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS X-Ray", "GetTraceSummaries");
             try
             {
-                #if DESKTOP
-                return client.GetTraceSummaries(request);
-                #elif CORECLR
-                return client.GetTraceSummariesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTraceSummariesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

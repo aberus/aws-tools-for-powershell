@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkFirewall;
 using Amazon.NetworkFirewall.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NWFW
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
     [OutputType("Amazon.NetworkFirewall.Model.CreateFirewallPolicyResponse")]
     [AWSCmdlet("Calls the AWS Network Firewall CreateFirewallPolicy API operation.", Operation = new[] {"CreateFirewallPolicy"}, SelectReturnType = typeof(Amazon.NetworkFirewall.Model.CreateFirewallPolicyResponse))]
     [AWSCmdletOutput("Amazon.NetworkFirewall.Model.CreateFirewallPolicyResponse",
-        "This cmdlet returns an Amazon.NetworkFirewall.Model.CreateFirewallPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NetworkFirewall.Model.CreateFirewallPolicyResponse object containing multiple properties."
     )]
     public partial class NewNWFWFirewallPolicyCmdlet : AmazonNetworkFirewallClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -73,6 +76,18 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter FirewallPolicy_EnableTLSSessionHolding
+        /// <summary>
+        /// <para>
+        /// <para>When true, prevents TCP and TLS packets from reaching destination servers until TLS
+        /// Inspection has evaluated Server Name Indication (SNI) rules. Requires an associated
+        /// TLS Inspection configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? FirewallPolicy_EnableTLSSessionHolding { get; set; }
         #endregion
         
         #region Parameter FirewallPolicyName
@@ -111,14 +126,14 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <summary>
         /// <para>
         /// <para>Indicates how to manage the order of stateful rule evaluation for the policy. <c>STRICT_ORDER</c>
-        /// is the default and recommended option. With <c>STRICT_ORDER</c>, provide your rules
-        /// in the order that you want them to be evaluated. You can then choose one or more default
-        /// actions for packets that don't match any rules. Choose <c>STRICT_ORDER</c> to have
-        /// the stateful rules engine determine the evaluation order of your rules. The default
-        /// action for this rule order is <c>PASS</c>, followed by <c>DROP</c>, <c>REJECT</c>,
-        /// and <c>ALERT</c> actions. Stateful rules are provided to the rule engine as Suricata
-        /// compatible strings, and Suricata evaluates them based on your settings. For more information,
-        /// see <a href="https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html">Evaluation
+        /// is the recommended option, but <c>DEFAULT_ACTION_ORDER</c> is the default option.
+        /// With <c>STRICT_ORDER</c>, provide your rules in the order that you want them to be
+        /// evaluated. You can then choose one or more default actions for packets that don't
+        /// match any rules. Choose <c>STRICT_ORDER</c> to have the stateful rules engine determine
+        /// the evaluation order of your rules. The default action for this rule order is <c>PASS</c>,
+        /// followed by <c>DROP</c>, <c>REJECT</c>, and <c>ALERT</c> actions. Stateful rules are
+        /// provided to the rule engine as Suricata compatible strings, and Suricata evaluates
+        /// them based on your settings. For more information, see <a href="https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html">Evaluation
         /// order for stateful rules</a> in the <i>Network Firewall Developer Guide</i>. </para>
         /// </para>
         /// </summary>
@@ -135,7 +150,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// variable. If your firewall uses an inspection VPC, you might want to override the
         /// <c>HOME_NET</c> variable with the CIDRs of your home networks. If you don't override
         /// <c>HOME_NET</c> with your own CIDRs, Network Firewall by default uses the CIDR of
-        /// your inspection VPC.</para>
+        /// your inspection VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,7 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <para>The default actions to take on a packet that doesn't match any stateful rules. The
         /// stateful default action is optional, and is only valid when using the strict rule
         /// order.</para><para>Valid values of the stateful default action:</para><ul><li><para>aws:drop_strict</para></li><li><para>aws:drop_established</para></li><li><para>aws:alert_strict</para></li><li><para>aws:alert_established</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/network-firewall/latest/developerguide/suricata-rule-evaluation-order.html#suricata-strict-rule-evaluation-order.html">Strict
-        /// evaluation order</a> in the <i>Network Firewall Developer Guide</i>. </para>
+        /// evaluation order</a> in the <i>Network Firewall Developer Guide</i>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,7 +184,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <summary>
         /// <para>
         /// <para>References to the stateful rule groups that are used in the policy. These define the
-        /// inspection criteria in stateful rules. </para>
+        /// inspection criteria in stateful rules. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,7 +201,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <para>
         /// <para>The custom action definitions that are available for use in the firewall policy's
         /// <c>StatelessDefaultActions</c> setting. You name each custom action that you define,
-        /// and then you can use it by name in your default actions specifications.</para>
+        /// and then you can use it by name in your default actions specifications.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,7 +222,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <c>aws:forward_to_sfe</c>. In addition, you can specify custom actions that are compatible
         /// with your standard section choice.</para><para>For example, you could specify <c>["aws:pass"]</c> or you could specify <c>["aws:pass",
         /// “customActionName”]</c>. For information about compatibility, see the custom action
-        /// descriptions under <a>CustomAction</a>.</para>
+        /// descriptions under <a>CustomAction</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -217,7 +252,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <c>aws:forward_to_sfe</c>. In addition, you can specify custom actions that are compatible
         /// with your standard section choice.</para><para>For example, you could specify <c>["aws:pass"]</c> or you could specify <c>["aws:pass",
         /// “customActionName”]</c>. For information about compatibility, see the custom action
-        /// descriptions under <a>CustomAction</a>.</para>
+        /// descriptions under <a>CustomAction</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -236,7 +275,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <summary>
         /// <para>
         /// <para>References to the stateless rule groups that are used in the policy. These define
-        /// the matching criteria in stateless rules. </para>
+        /// the matching criteria in stateless rules. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -272,12 +315,32 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The key:value pairs to associate with the resource.</para>
+        /// <para>The key:value pairs to associate with the resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.NetworkFirewall.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter FlowTimeouts_TcpIdleTimeoutSecond
+        /// <summary>
+        /// <para>
+        /// <para>The number of seconds that can pass without any TCP traffic sent through the firewall
+        /// before the firewall determines that the connection is idle. After the idle timeout
+        /// passes, data packets are dropped, however, the next TCP SYN packet is considered a
+        /// new flow and is processed by the firewall. Clients or targets can use TCP keepalive
+        /// packets to reset the idle timeout. </para><para>You can define the <c>TcpIdleTimeoutSeconds</c> value to be between 60 and 6000 seconds.
+        /// If no value is provided, it defaults to 350 seconds. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FirewallPolicy_StatefulEngineOptions_FlowTimeouts_TcpIdleTimeoutSeconds")]
+        public System.Int32? FlowTimeouts_TcpIdleTimeoutSecond { get; set; }
         #endregion
         
         #region Parameter FirewallPolicy_TLSInspectionConfigurationArn
@@ -313,16 +376,6 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FirewallPolicyName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FirewallPolicyName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FirewallPolicyName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -333,9 +386,13 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FirewallPolicyName), MyInvocation.BoundParameters);
@@ -349,25 +406,16 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkFirewall.Model.CreateFirewallPolicyResponse, NewNWFWFirewallPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FirewallPolicyName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.DryRun = this.DryRun;
             context.EncryptionConfiguration_KeyId = this.EncryptionConfiguration_KeyId;
             context.EncryptionConfiguration_Type = this.EncryptionConfiguration_Type;
+            context.FirewallPolicy_EnableTLSSessionHolding = this.FirewallPolicy_EnableTLSSessionHolding;
             if (this.PolicyVariables_RuleVariable != null)
             {
                 context.PolicyVariables_RuleVariable = new Dictionary<System.String, Amazon.NetworkFirewall.Model.IPSet>(StringComparer.Ordinal);
@@ -380,6 +428,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             {
                 context.FirewallPolicy_StatefulDefaultAction = new List<System.String>(this.FirewallPolicy_StatefulDefaultAction);
             }
+            context.FlowTimeouts_TcpIdleTimeoutSecond = this.FlowTimeouts_TcpIdleTimeoutSecond;
             context.StatefulEngineOptions_RuleOrder = this.StatefulEngineOptions_RuleOrder;
             context.StatefulEngineOptions_StreamExceptionPolicy = this.StatefulEngineOptions_StreamExceptionPolicy;
             if (this.FirewallPolicy_StatefulRuleGroupReference != null)
@@ -483,6 +532,16 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
              // populate FirewallPolicy
             var requestFirewallPolicyIsNull = true;
             request.FirewallPolicy = new Amazon.NetworkFirewall.Model.FirewallPolicy();
+            System.Boolean? requestFirewallPolicy_firewallPolicy_EnableTLSSessionHolding = null;
+            if (cmdletContext.FirewallPolicy_EnableTLSSessionHolding != null)
+            {
+                requestFirewallPolicy_firewallPolicy_EnableTLSSessionHolding = cmdletContext.FirewallPolicy_EnableTLSSessionHolding.Value;
+            }
+            if (requestFirewallPolicy_firewallPolicy_EnableTLSSessionHolding != null)
+            {
+                request.FirewallPolicy.EnableTLSSessionHolding = requestFirewallPolicy_firewallPolicy_EnableTLSSessionHolding.Value;
+                requestFirewallPolicyIsNull = false;
+            }
             List<System.String> requestFirewallPolicy_firewallPolicy_StatefulDefaultAction = null;
             if (cmdletContext.FirewallPolicy_StatefulDefaultAction != null)
             {
@@ -603,6 +662,31 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
                 requestFirewallPolicy_firewallPolicy_StatefulEngineOptions.StreamExceptionPolicy = requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_statefulEngineOptions_StreamExceptionPolicy;
                 requestFirewallPolicy_firewallPolicy_StatefulEngineOptionsIsNull = false;
             }
+            Amazon.NetworkFirewall.Model.FlowTimeouts requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts = null;
+            
+             // populate FlowTimeouts
+            var requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeoutsIsNull = true;
+            requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts = new Amazon.NetworkFirewall.Model.FlowTimeouts();
+            System.Int32? requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts_flowTimeouts_TcpIdleTimeoutSecond = null;
+            if (cmdletContext.FlowTimeouts_TcpIdleTimeoutSecond != null)
+            {
+                requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts_flowTimeouts_TcpIdleTimeoutSecond = cmdletContext.FlowTimeouts_TcpIdleTimeoutSecond.Value;
+            }
+            if (requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts_flowTimeouts_TcpIdleTimeoutSecond != null)
+            {
+                requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts.TcpIdleTimeoutSeconds = requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts_flowTimeouts_TcpIdleTimeoutSecond.Value;
+                requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeoutsIsNull = false;
+            }
+             // determine if requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts should be set to null
+            if (requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeoutsIsNull)
+            {
+                requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts = null;
+            }
+            if (requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts != null)
+            {
+                requestFirewallPolicy_firewallPolicy_StatefulEngineOptions.FlowTimeouts = requestFirewallPolicy_firewallPolicy_StatefulEngineOptions_firewallPolicy_StatefulEngineOptions_FlowTimeouts;
+                requestFirewallPolicy_firewallPolicy_StatefulEngineOptionsIsNull = false;
+            }
              // determine if requestFirewallPolicy_firewallPolicy_StatefulEngineOptions should be set to null
             if (requestFirewallPolicy_firewallPolicy_StatefulEngineOptionsIsNull)
             {
@@ -664,13 +748,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Firewall", "CreateFirewallPolicy");
             try
             {
-                #if DESKTOP
-                return client.CreateFirewallPolicy(request);
-                #elif CORECLR
-                return client.CreateFirewallPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFirewallPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -691,8 +769,10 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             public System.Boolean? DryRun { get; set; }
             public System.String EncryptionConfiguration_KeyId { get; set; }
             public Amazon.NetworkFirewall.EncryptionType EncryptionConfiguration_Type { get; set; }
+            public System.Boolean? FirewallPolicy_EnableTLSSessionHolding { get; set; }
             public Dictionary<System.String, Amazon.NetworkFirewall.Model.IPSet> PolicyVariables_RuleVariable { get; set; }
             public List<System.String> FirewallPolicy_StatefulDefaultAction { get; set; }
+            public System.Int32? FlowTimeouts_TcpIdleTimeoutSecond { get; set; }
             public Amazon.NetworkFirewall.RuleOrder StatefulEngineOptions_RuleOrder { get; set; }
             public Amazon.NetworkFirewall.StreamExceptionPolicy StatefulEngineOptions_StreamExceptionPolicy { get; set; }
             public List<Amazon.NetworkFirewall.Model.StatefulRuleGroupReference> FirewallPolicy_StatefulRuleGroupReference { get; set; }

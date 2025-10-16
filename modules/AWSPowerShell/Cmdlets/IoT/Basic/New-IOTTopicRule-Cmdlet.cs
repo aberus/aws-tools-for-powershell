@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -42,17 +44,22 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [AWSCmdlet("Calls the AWS IoT CreateTopicRule API operation.", Operation = new[] {"CreateTopicRule"}, SelectReturnType = typeof(Amazon.IoT.Model.CreateTopicRuleResponse))]
     [AWSCmdletOutput("None or Amazon.IoT.Model.CreateTopicRuleResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IoT.Model.CreateTopicRuleResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IoT.Model.CreateTopicRuleResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewIOTTopicRuleCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TopicRulePayload_Action
         /// <summary>
         /// <para>
-        /// <para>The actions associated with the rule.</para>
+        /// <para>The actions associated with the rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -188,7 +195,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Kafka_ClientProperty
         /// <summary>
         /// <para>
-        /// <para>Properties of the Apache Kafka producer client.</para>
+        /// <para>Properties of the Apache Kafka producer client.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -296,7 +307,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Timestream_Dimension
         /// <summary>
         /// <para>
-        /// <para>Metadata attributes of the time series that are written in each measure record.</para>
+        /// <para>Metadata attributes of the time series that are written in each measure record.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -387,7 +402,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Http_Header
         /// <summary>
         /// <para>
-        /// <para>The HTTP headers to send with the message data.</para>
+        /// <para>The HTTP headers to send with the message data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -398,7 +417,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Kafka_Header
         /// <summary>
         /// <para>
-        /// <para>The list of Kafka headers that you specify.</para>
+        /// <para>The list of Kafka headers that you specify.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -685,7 +708,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter IotSiteWise_PutAssetPropertyValueEntry
         /// <summary>
         /// <para>
-        /// <para>A list of asset property value entries.</para>
+        /// <para>A list of asset property value entries.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1302,7 +1329,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Headers_UserProperty
         /// <summary>
         /// <para>
-        /// <para>An array of key-value pairs that you define in the MQTT5 header.</para>
+        /// <para>An array of key-value pairs that you define in the MQTT5 header.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1351,9 +1382,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RuleName), MyInvocation.BoundParameters);
@@ -3115,13 +3150,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "CreateTopicRule");
             try
             {
-                #if DESKTOP
-                return client.CreateTopicRule(request);
-                #elif CORECLR
-                return client.CreateTopicRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTopicRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

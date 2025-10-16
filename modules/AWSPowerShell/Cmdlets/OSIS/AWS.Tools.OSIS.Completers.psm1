@@ -75,6 +75,32 @@ function _awsArgumentCompleterRegistration()
 # Argument completions for service Amazon OpenSearch Ingestion
 
 
+$OSIS_Completers = {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+
+    switch ($("$commandName/$parameterName"))
+    {
+        # Amazon.OSIS.VpcEndpointManagement
+        "New-OSISPipeline/VpcOptions_VpcEndpointManagement"
+        {
+            $v = "CUSTOMER","SERVICE"
+            break
+        }
+
+
+    }
+
+    $v |
+        Where-Object { $_ -like "$wordToComplete*" } |
+        ForEach-Object { New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_ }
+}
+
+$OSIS_map = @{
+    "VpcOptions_VpcEndpointManagement"=@("New-OSISPipeline")
+}
+
+_awsArgumentCompleterRegistration $OSIS_Completers $OSIS_map
+
 $OSIS_SelectCompleters = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
 
@@ -124,13 +150,21 @@ $OSIS_SelectCompleters = {
 
 $OSIS_SelectMap = @{
     "Select"=@("New-OSISPipeline",
+               "New-OSISPipelineEndpoint",
                "Remove-OSISPipeline",
+               "Remove-OSISPipelineEndpoint",
+               "Remove-OSISResourcePolicy",
                "Get-OSISPipeline",
                "Get-OSISPipelineBlueprint",
                "Get-OSISPipelineChangeProgress",
+               "Get-OSISResourcePolicy",
                "Get-OSISPipelineBlueprintList",
+               "Get-OSISPipelineEndpointConnectionList",
+               "Get-OSISPipelineEndpointList",
                "Get-OSISPipelineList",
                "Get-OSISResourceTag",
+               "Write-OSISResourcePolicy",
+               "Revoke-OSISPipelineEndpointConnection",
                "Start-OSISPipeline",
                "Stop-OSISPipeline",
                "Add-OSISResourceTag",

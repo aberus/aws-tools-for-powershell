@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EMRServerless;
 using Amazon.EMRServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMRServerless
 {
     /// <summary>
@@ -36,16 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
     [AWSCmdlet("Calls the EMR Serverless UpdateApplication API operation.", Operation = new[] {"UpdateApplication"}, SelectReturnType = typeof(Amazon.EMRServerless.Model.UpdateApplicationResponse))]
     [AWSCmdletOutput("Amazon.EMRServerless.Model.Application or Amazon.EMRServerless.Model.UpdateApplicationResponse",
         "This cmdlet returns an Amazon.EMRServerless.Model.Application object.",
-        "The service call response (type Amazon.EMRServerless.Model.UpdateApplicationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EMRServerless.Model.UpdateApplicationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateEMRServerlessApplicationCmdlet : AmazonEMRServerlessClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -173,6 +172,16 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public System.String S3MonitoringConfiguration_EncryptionKeyArn { get; set; }
         #endregion
         
+        #region Parameter IdentityCenterConfiguration_IdentityCenterInstanceArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the IAM Identity Center instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IdentityCenterConfiguration_IdentityCenterInstanceArn { get; set; }
+        #endregion
+        
         #region Parameter AutoStopConfiguration_IdleTimeoutMinute
         /// <summary>
         /// <para>
@@ -200,11 +209,25 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         #region Parameter InitialCapacity
         /// <summary>
         /// <para>
-        /// <para>The capacity to initialize when the application is updated.</para>
+        /// <para>The capacity to initialize when the application is updated.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Collections.Hashtable InitialCapacity { get; set; }
+        #endregion
+        
+        #region Parameter InteractiveConfiguration_LivyEndpointEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Enables an Apache Livy endpoint that you can connect to and run interactive jobs.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? InteractiveConfiguration_LivyEndpointEnabled { get; set; }
         #endregion
         
         #region Parameter CloudWatchLoggingConfiguration_LogGroupName
@@ -239,7 +262,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         /// <a href="https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html#jobs-log-storage-cw">Logging
         /// for EMR Serverless with CloudWatch</a>.</para><ul><li><para><b>Key Valid Values</b>: <c>SPARK_DRIVER</c>, <c>SPARK_EXECUTOR</c>, <c>HIVE_DRIVER</c>,
         /// <c>TEZ_TASK</c></para></li><li><para><b>Array Members Valid Values</b>: <c>STDOUT</c>, <c>STDERR</c>, <c>HIVE_LOG</c>,
-        /// <c>TEZ_AM</c>, <c>SYSTEM_LOGS</c></para></li></ul>
+        /// <c>TEZ_AM</c>, <c>SYSTEM_LOGS</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -258,6 +285,18 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public System.String S3MonitoringConfiguration_LogUri { get; set; }
         #endregion
         
+        #region Parameter SchedulerConfiguration_MaxConcurrentRun
+        /// <summary>
+        /// <para>
+        /// <para>The maximum concurrent job runs on this application. If scheduler configuration is
+        /// enabled on your application, the default value is 15. The valid range is 1 to 1000.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SchedulerConfiguration_MaxConcurrentRuns")]
+        public System.Int32? SchedulerConfiguration_MaxConcurrentRun { get; set; }
+        #endregion
+        
         #region Parameter MaximumCapacity_Memory
         /// <summary>
         /// <para>
@@ -266,6 +305,19 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String MaximumCapacity_Memory { get; set; }
+        #endregion
+        
+        #region Parameter SchedulerConfiguration_QueueTimeoutMinute
+        /// <summary>
+        /// <para>
+        /// <para>The maximum duration in minutes for the job in QUEUED state. If scheduler configuration
+        /// is enabled on your application, the default value is 360 minutes (6 hours). The valid
+        /// range is from 15 to 720.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SchedulerConfiguration_QueueTimeoutMinutes")]
+        public System.Int32? SchedulerConfiguration_QueueTimeoutMinute { get; set; }
         #endregion
         
         #region Parameter ReleaseLabel
@@ -279,13 +331,29 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public System.String ReleaseLabel { get; set; }
         #endregion
         
+        #region Parameter PrometheusMonitoringConfiguration_RemoteWriteUrl
+        /// <summary>
+        /// <para>
+        /// <para>The remote write URL in the Amazon Managed Service for Prometheus workspace to send
+        /// metrics to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MonitoringConfiguration_PrometheusMonitoringConfiguration_RemoteWriteUrl")]
+        public System.String PrometheusMonitoringConfiguration_RemoteWriteUrl { get; set; }
+        #endregion
+        
         #region Parameter RuntimeConfiguration
         /// <summary>
         /// <para>
         /// <para>The <a href="https://docs.aws.amazon.com/emr-serverless/latest/APIReference/API_Configuration.html">Configuration</a>
         /// specifications to use when updating an application. Each configuration consists of
         /// a classification and properties. This configuration is applied across all the job
-        /// runs submitted under the application.</para>
+        /// runs submitted under the application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -295,7 +363,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         #region Parameter NetworkConfiguration_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The array of security group Ids for customer VPC connectivity.</para>
+        /// <para>The array of security group Ids for customer VPC connectivity.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -303,10 +375,25 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public System.String[] NetworkConfiguration_SecurityGroupId { get; set; }
         #endregion
         
+        #region Parameter InteractiveConfiguration_StudioEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Enables you to connect an application to Amazon EMR Studio to run interactive workloads
+        /// in a notebook.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? InteractiveConfiguration_StudioEnabled { get; set; }
+        #endregion
+        
         #region Parameter NetworkConfiguration_SubnetId
         /// <summary>
         /// <para>
-        /// <para>The array of subnet Ids for customer VPC connectivity.</para>
+        /// <para>The array of subnet Ids for customer VPC connectivity.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -322,7 +409,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         /// Valid worker types include <c>Driver</c> and <c>Executor</c> for Spark applications
         /// and <c>HiveDriver</c> and <c>TezTask</c> for Hive applications. You can either set
         /// image details in this parameter for each worker type, or in <c>imageConfiguration</c>
-        /// for all worker types.</para>
+        /// for all worker types.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -352,16 +443,6 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public string Select { get; set; } = "Application";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -372,9 +453,13 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -388,21 +473,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EMRServerless.Model.UpdateApplicationResponse, UpdateEMRServerlessApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -415,6 +490,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             context.AutoStopConfiguration_Enabled = this.AutoStopConfiguration_Enabled;
             context.AutoStopConfiguration_IdleTimeoutMinute = this.AutoStopConfiguration_IdleTimeoutMinute;
             context.ClientToken = this.ClientToken;
+            context.IdentityCenterConfiguration_IdentityCenterInstanceArn = this.IdentityCenterConfiguration_IdentityCenterInstanceArn;
             context.ImageConfiguration_ImageUri = this.ImageConfiguration_ImageUri;
             if (this.InitialCapacity != null)
             {
@@ -424,6 +500,8 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
                     context.InitialCapacity.Add((String)hashKey, (Amazon.EMRServerless.Model.InitialCapacityConfig)(this.InitialCapacity[hashKey]));
                 }
             }
+            context.InteractiveConfiguration_LivyEndpointEnabled = this.InteractiveConfiguration_LivyEndpointEnabled;
+            context.InteractiveConfiguration_StudioEnabled = this.InteractiveConfiguration_StudioEnabled;
             context.MaximumCapacity_Cpu = this.MaximumCapacity_Cpu;
             context.MaximumCapacity_Disk = this.MaximumCapacity_Disk;
             context.MaximumCapacity_Memory = this.MaximumCapacity_Memory;
@@ -453,6 +531,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             }
             context.ManagedPersistenceMonitoringConfiguration_Enabled = this.ManagedPersistenceMonitoringConfiguration_Enabled;
             context.ManagedPersistenceMonitoringConfiguration_EncryptionKeyArn = this.ManagedPersistenceMonitoringConfiguration_EncryptionKeyArn;
+            context.PrometheusMonitoringConfiguration_RemoteWriteUrl = this.PrometheusMonitoringConfiguration_RemoteWriteUrl;
             context.S3MonitoringConfiguration_EncryptionKeyArn = this.S3MonitoringConfiguration_EncryptionKeyArn;
             context.S3MonitoringConfiguration_LogUri = this.S3MonitoringConfiguration_LogUri;
             if (this.NetworkConfiguration_SecurityGroupId != null)
@@ -468,6 +547,8 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             {
                 context.RuntimeConfiguration = new List<Amazon.EMRServerless.Model.Configuration>(this.RuntimeConfiguration);
             }
+            context.SchedulerConfiguration_MaxConcurrentRun = this.SchedulerConfiguration_MaxConcurrentRun;
+            context.SchedulerConfiguration_QueueTimeoutMinute = this.SchedulerConfiguration_QueueTimeoutMinute;
             if (this.WorkerTypeSpecification != null)
             {
                 context.WorkerTypeSpecification = new Dictionary<System.String, Amazon.EMRServerless.Model.WorkerTypeSpecificationInput>(StringComparer.Ordinal);
@@ -553,6 +634,25 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
                 request.ClientToken = cmdletContext.ClientToken;
             }
             
+             // populate IdentityCenterConfiguration
+            var requestIdentityCenterConfigurationIsNull = true;
+            request.IdentityCenterConfiguration = new Amazon.EMRServerless.Model.IdentityCenterConfigurationInput();
+            System.String requestIdentityCenterConfiguration_identityCenterConfiguration_IdentityCenterInstanceArn = null;
+            if (cmdletContext.IdentityCenterConfiguration_IdentityCenterInstanceArn != null)
+            {
+                requestIdentityCenterConfiguration_identityCenterConfiguration_IdentityCenterInstanceArn = cmdletContext.IdentityCenterConfiguration_IdentityCenterInstanceArn;
+            }
+            if (requestIdentityCenterConfiguration_identityCenterConfiguration_IdentityCenterInstanceArn != null)
+            {
+                request.IdentityCenterConfiguration.IdentityCenterInstanceArn = requestIdentityCenterConfiguration_identityCenterConfiguration_IdentityCenterInstanceArn;
+                requestIdentityCenterConfigurationIsNull = false;
+            }
+             // determine if request.IdentityCenterConfiguration should be set to null
+            if (requestIdentityCenterConfigurationIsNull)
+            {
+                request.IdentityCenterConfiguration = null;
+            }
+            
              // populate ImageConfiguration
             var requestImageConfigurationIsNull = true;
             request.ImageConfiguration = new Amazon.EMRServerless.Model.ImageConfigurationInput();
@@ -574,6 +674,35 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             if (cmdletContext.InitialCapacity != null)
             {
                 request.InitialCapacity = cmdletContext.InitialCapacity;
+            }
+            
+             // populate InteractiveConfiguration
+            var requestInteractiveConfigurationIsNull = true;
+            request.InteractiveConfiguration = new Amazon.EMRServerless.Model.InteractiveConfiguration();
+            System.Boolean? requestInteractiveConfiguration_interactiveConfiguration_LivyEndpointEnabled = null;
+            if (cmdletContext.InteractiveConfiguration_LivyEndpointEnabled != null)
+            {
+                requestInteractiveConfiguration_interactiveConfiguration_LivyEndpointEnabled = cmdletContext.InteractiveConfiguration_LivyEndpointEnabled.Value;
+            }
+            if (requestInteractiveConfiguration_interactiveConfiguration_LivyEndpointEnabled != null)
+            {
+                request.InteractiveConfiguration.LivyEndpointEnabled = requestInteractiveConfiguration_interactiveConfiguration_LivyEndpointEnabled.Value;
+                requestInteractiveConfigurationIsNull = false;
+            }
+            System.Boolean? requestInteractiveConfiguration_interactiveConfiguration_StudioEnabled = null;
+            if (cmdletContext.InteractiveConfiguration_StudioEnabled != null)
+            {
+                requestInteractiveConfiguration_interactiveConfiguration_StudioEnabled = cmdletContext.InteractiveConfiguration_StudioEnabled.Value;
+            }
+            if (requestInteractiveConfiguration_interactiveConfiguration_StudioEnabled != null)
+            {
+                request.InteractiveConfiguration.StudioEnabled = requestInteractiveConfiguration_interactiveConfiguration_StudioEnabled.Value;
+                requestInteractiveConfigurationIsNull = false;
+            }
+             // determine if request.InteractiveConfiguration should be set to null
+            if (requestInteractiveConfigurationIsNull)
+            {
+                request.InteractiveConfiguration = null;
             }
             
              // populate MaximumCapacity
@@ -618,6 +747,31 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
              // populate MonitoringConfiguration
             var requestMonitoringConfigurationIsNull = true;
             request.MonitoringConfiguration = new Amazon.EMRServerless.Model.MonitoringConfiguration();
+            Amazon.EMRServerless.Model.PrometheusMonitoringConfiguration requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration = null;
+            
+             // populate PrometheusMonitoringConfiguration
+            var requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfigurationIsNull = true;
+            requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration = new Amazon.EMRServerless.Model.PrometheusMonitoringConfiguration();
+            System.String requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl = null;
+            if (cmdletContext.PrometheusMonitoringConfiguration_RemoteWriteUrl != null)
+            {
+                requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl = cmdletContext.PrometheusMonitoringConfiguration_RemoteWriteUrl;
+            }
+            if (requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl != null)
+            {
+                requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration.RemoteWriteUrl = requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl;
+                requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfigurationIsNull = false;
+            }
+             // determine if requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration should be set to null
+            if (requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfigurationIsNull)
+            {
+                requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration = null;
+            }
+            if (requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration != null)
+            {
+                request.MonitoringConfiguration.PrometheusMonitoringConfiguration = requestMonitoringConfiguration_monitoringConfiguration_PrometheusMonitoringConfiguration;
+                requestMonitoringConfigurationIsNull = false;
+            }
             Amazon.EMRServerless.Model.ManagedPersistenceMonitoringConfiguration requestMonitoringConfiguration_monitoringConfiguration_ManagedPersistenceMonitoringConfiguration = null;
             
              // populate ManagedPersistenceMonitoringConfiguration
@@ -795,6 +949,35 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             {
                 request.RuntimeConfiguration = cmdletContext.RuntimeConfiguration;
             }
+            
+             // populate SchedulerConfiguration
+            var requestSchedulerConfigurationIsNull = true;
+            request.SchedulerConfiguration = new Amazon.EMRServerless.Model.SchedulerConfiguration();
+            System.Int32? requestSchedulerConfiguration_schedulerConfiguration_MaxConcurrentRun = null;
+            if (cmdletContext.SchedulerConfiguration_MaxConcurrentRun != null)
+            {
+                requestSchedulerConfiguration_schedulerConfiguration_MaxConcurrentRun = cmdletContext.SchedulerConfiguration_MaxConcurrentRun.Value;
+            }
+            if (requestSchedulerConfiguration_schedulerConfiguration_MaxConcurrentRun != null)
+            {
+                request.SchedulerConfiguration.MaxConcurrentRuns = requestSchedulerConfiguration_schedulerConfiguration_MaxConcurrentRun.Value;
+                requestSchedulerConfigurationIsNull = false;
+            }
+            System.Int32? requestSchedulerConfiguration_schedulerConfiguration_QueueTimeoutMinute = null;
+            if (cmdletContext.SchedulerConfiguration_QueueTimeoutMinute != null)
+            {
+                requestSchedulerConfiguration_schedulerConfiguration_QueueTimeoutMinute = cmdletContext.SchedulerConfiguration_QueueTimeoutMinute.Value;
+            }
+            if (requestSchedulerConfiguration_schedulerConfiguration_QueueTimeoutMinute != null)
+            {
+                request.SchedulerConfiguration.QueueTimeoutMinutes = requestSchedulerConfiguration_schedulerConfiguration_QueueTimeoutMinute.Value;
+                requestSchedulerConfigurationIsNull = false;
+            }
+             // determine if request.SchedulerConfiguration should be set to null
+            if (requestSchedulerConfigurationIsNull)
+            {
+                request.SchedulerConfiguration = null;
+            }
             if (cmdletContext.WorkerTypeSpecification != null)
             {
                 request.WorkerTypeSpecifications = cmdletContext.WorkerTypeSpecification;
@@ -837,13 +1020,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EMR Serverless", "UpdateApplication");
             try
             {
-                #if DESKTOP
-                return client.UpdateApplication(request);
-                #elif CORECLR
-                return client.UpdateApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -866,8 +1043,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             public System.Boolean? AutoStopConfiguration_Enabled { get; set; }
             public System.Int32? AutoStopConfiguration_IdleTimeoutMinute { get; set; }
             public System.String ClientToken { get; set; }
+            public System.String IdentityCenterConfiguration_IdentityCenterInstanceArn { get; set; }
             public System.String ImageConfiguration_ImageUri { get; set; }
             public Dictionary<System.String, Amazon.EMRServerless.Model.InitialCapacityConfig> InitialCapacity { get; set; }
+            public System.Boolean? InteractiveConfiguration_LivyEndpointEnabled { get; set; }
+            public System.Boolean? InteractiveConfiguration_StudioEnabled { get; set; }
             public System.String MaximumCapacity_Cpu { get; set; }
             public System.String MaximumCapacity_Disk { get; set; }
             public System.String MaximumCapacity_Memory { get; set; }
@@ -878,12 +1058,15 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             public Dictionary<System.String, List<System.String>> CloudWatchLoggingConfiguration_LogType { get; set; }
             public System.Boolean? ManagedPersistenceMonitoringConfiguration_Enabled { get; set; }
             public System.String ManagedPersistenceMonitoringConfiguration_EncryptionKeyArn { get; set; }
+            public System.String PrometheusMonitoringConfiguration_RemoteWriteUrl { get; set; }
             public System.String S3MonitoringConfiguration_EncryptionKeyArn { get; set; }
             public System.String S3MonitoringConfiguration_LogUri { get; set; }
             public List<System.String> NetworkConfiguration_SecurityGroupId { get; set; }
             public List<System.String> NetworkConfiguration_SubnetId { get; set; }
             public System.String ReleaseLabel { get; set; }
             public List<Amazon.EMRServerless.Model.Configuration> RuntimeConfiguration { get; set; }
+            public System.Int32? SchedulerConfiguration_MaxConcurrentRun { get; set; }
+            public System.Int32? SchedulerConfiguration_QueueTimeoutMinute { get; set; }
             public Dictionary<System.String, Amazon.EMRServerless.Model.WorkerTypeSpecificationInput> WorkerTypeSpecification { get; set; }
             public System.Func<Amazon.EMRServerless.Model.UpdateApplicationResponse, UpdateEMRServerlessApplicationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Application;

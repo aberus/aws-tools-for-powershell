@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES2
 {
     /// <summary>
@@ -49,14 +51,71 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     [OutputType("Amazon.SimpleEmailV2.Model.PutEmailIdentityDkimSigningAttributesResponse")]
     [AWSCmdlet("Calls the Amazon Simple Email Service V2 (SES V2) PutEmailIdentityDkimSigningAttributes API operation.", Operation = new[] {"PutEmailIdentityDkimSigningAttributes"}, SelectReturnType = typeof(Amazon.SimpleEmailV2.Model.PutEmailIdentityDkimSigningAttributesResponse))]
     [AWSCmdletOutput("Amazon.SimpleEmailV2.Model.PutEmailIdentityDkimSigningAttributesResponse",
-        "This cmdlet returns an Amazon.SimpleEmailV2.Model.PutEmailIdentityDkimSigningAttributesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleEmailV2.Model.PutEmailIdentityDkimSigningAttributesResponse object containing multiple properties."
     )]
     public partial class WriteSES2EmailIdentityDkimSigningAttributeCmdlet : AmazonSimpleEmailServiceV2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter SigningAttributes_DomainSigningAttributesOrigin
+        /// <summary>
+        /// <para>
+        /// <para>The attribute to use for configuring DKIM for the identity depends on the operation:
+        /// </para><ol><li><para>For <c>PutEmailIdentityDkimSigningAttributes</c>: </para><ul><li><para>None of the values are allowed - use the <a href="https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_PutEmailIdentityDkimSigningAttributes.html#SES-PutEmailIdentityDkimSigningAttributes-request-SigningAttributesOrigin"><c>SigningAttributesOrigin</c></a> parameter instead </para></li></ul></li><li><para>For <c>CreateEmailIdentity</c> when replicating a parent identity's DKIM configuration:
+        /// </para><ul><li><para>Allowed values: All values except <c>AWS_SES</c> and <c>EXTERNAL</c></para></li></ul></li></ol><ul><li><para><c>AWS_SES</c> – Configure DKIM for the identity by using Easy DKIM. </para></li><li><para><c>EXTERNAL</c> – Configure DKIM for the identity by using Bring Your Own DKIM (BYODKIM).
+        /// </para></li><li><para><c>AWS_SES_AF_SOUTH_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Africa (Cape Town) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_EU_NORTH_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Europe (Stockholm) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_AP_SOUTH_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Asia Pacific (Mumbai) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_AP_SOUTH_2</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Asia Pacific (Hyderabad) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_EU_WEST_3</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Europe (Paris) region using Deterministic Easy-DKIM (DEED). </para></li><li><para><c>AWS_SES_EU_WEST_2</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Europe (London) region using Deterministic Easy-DKIM (DEED). </para></li><li><para><c>AWS_SES_EU_SOUTH_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Europe (Milan) region using Deterministic Easy-DKIM (DEED). </para></li><li><para><c>AWS_SES_EU_WEST_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Europe (Ireland) region using Deterministic Easy-DKIM (DEED). </para></li><li><para><c>AWS_SES_AP_NORTHEAST_3</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Asia Pacific (Osaka) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_AP_NORTHEAST_2</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Asia Pacific (Seoul) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_ME_CENTRAL_1</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Middle East (UAE) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_ME_SOUTH_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in Middle East (Bahrain) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_AP_NORTHEAST_1</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Asia Pacific (Tokyo) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_IL_CENTRAL_1</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Israel (Tel Aviv) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_SA_EAST_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in South America (São Paulo) region using Deterministic Easy-DKIM
+        /// (DEED). </para></li><li><para><c>AWS_SES_CA_CENTRAL_1</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Canada (Central) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_AP_SOUTHEAST_1</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Asia Pacific (Singapore) region using Deterministic Easy-DKIM
+        /// (DEED). </para></li><li><para><c>AWS_SES_AP_SOUTHEAST_2</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Asia Pacific (Sydney) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_AP_SOUTHEAST_3</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Asia Pacific (Jakarta) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_EU_CENTRAL_1</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Europe (Frankfurt) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_EU_CENTRAL_2</c> – Configure DKIM for the identity by replicating from
+        /// a parent identity in Europe (Zurich) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_US_EAST_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in US East (N. Virginia) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_US_EAST_2</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in US East (Ohio) region using Deterministic Easy-DKIM (DEED). </para></li><li><para><c>AWS_SES_US_WEST_1</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in US West (N. California) region using Deterministic Easy-DKIM (DEED).
+        /// </para></li><li><para><c>AWS_SES_US_WEST_2</c> – Configure DKIM for the identity by replicating from a
+        /// parent identity in US West (Oregon) region using Deterministic Easy-DKIM (DEED). </para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SimpleEmailV2.DkimSigningAttributesOrigin")]
+        public Amazon.SimpleEmailV2.DkimSigningAttributesOrigin SigningAttributes_DomainSigningAttributesOrigin { get; set; }
+        #endregion
         
         #region Parameter SigningAttributes_DomainSigningPrivateKey
         /// <summary>
@@ -139,16 +198,6 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EmailIdentity parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EmailIdentity' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EmailIdentity' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -159,9 +208,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.EmailIdentity), MyInvocation.BoundParameters);
@@ -175,21 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleEmailV2.Model.PutEmailIdentityDkimSigningAttributesResponse, WriteSES2EmailIdentityDkimSigningAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EmailIdentity;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EmailIdentity = this.EmailIdentity;
             #if MODULAR
             if (this.EmailIdentity == null && ParameterWasBound(nameof(this.EmailIdentity)))
@@ -197,6 +240,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
                 WriteWarning("You are passing $null as a value for parameter EmailIdentity which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SigningAttributes_DomainSigningAttributesOrigin = this.SigningAttributes_DomainSigningAttributesOrigin;
             context.SigningAttributes_DomainSigningPrivateKey = this.SigningAttributes_DomainSigningPrivateKey;
             context.SigningAttributes_DomainSigningSelector = this.SigningAttributes_DomainSigningSelector;
             context.SigningAttributes_NextSigningKeyLength = this.SigningAttributes_NextSigningKeyLength;
@@ -231,6 +275,16 @@ namespace Amazon.PowerShell.Cmdlets.SES2
              // populate SigningAttributes
             var requestSigningAttributesIsNull = true;
             request.SigningAttributes = new Amazon.SimpleEmailV2.Model.DkimSigningAttributes();
+            Amazon.SimpleEmailV2.DkimSigningAttributesOrigin requestSigningAttributes_signingAttributes_DomainSigningAttributesOrigin = null;
+            if (cmdletContext.SigningAttributes_DomainSigningAttributesOrigin != null)
+            {
+                requestSigningAttributes_signingAttributes_DomainSigningAttributesOrigin = cmdletContext.SigningAttributes_DomainSigningAttributesOrigin;
+            }
+            if (requestSigningAttributes_signingAttributes_DomainSigningAttributesOrigin != null)
+            {
+                request.SigningAttributes.DomainSigningAttributesOrigin = requestSigningAttributes_signingAttributes_DomainSigningAttributesOrigin;
+                requestSigningAttributesIsNull = false;
+            }
             System.String requestSigningAttributes_signingAttributes_DomainSigningPrivateKey = null;
             if (cmdletContext.SigningAttributes_DomainSigningPrivateKey != null)
             {
@@ -308,13 +362,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service V2 (SES V2)", "PutEmailIdentityDkimSigningAttributes");
             try
             {
-                #if DESKTOP
-                return client.PutEmailIdentityDkimSigningAttributes(request);
-                #elif CORECLR
-                return client.PutEmailIdentityDkimSigningAttributesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutEmailIdentityDkimSigningAttributesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -332,6 +380,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String EmailIdentity { get; set; }
+            public Amazon.SimpleEmailV2.DkimSigningAttributesOrigin SigningAttributes_DomainSigningAttributesOrigin { get; set; }
             public System.String SigningAttributes_DomainSigningPrivateKey { get; set; }
             public System.String SigningAttributes_DomainSigningSelector { get; set; }
             public Amazon.SimpleEmailV2.DkimSigningKeyLength SigningAttributes_NextSigningKeyLength { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
     [AWSCmdlet("Calls the Amazon Redshift DescribeClusterSnapshots API operation.", Operation = new[] {"DescribeClusterSnapshots"}, SelectReturnType = typeof(Amazon.Redshift.Model.DescribeClusterSnapshotsResponse), LegacyAlias="Get-RSClusterSnapshots")]
     [AWSCmdletOutput("Amazon.Redshift.Model.Snapshot or Amazon.Redshift.Model.DescribeClusterSnapshotsResponse",
         "This cmdlet returns a collection of Amazon.Redshift.Model.Snapshot objects.",
-        "The service call response (type Amazon.Redshift.Model.DescribeClusterSnapshotsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.DescribeClusterSnapshotsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetRSClusterSnapshotCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterExist
         /// <summary>
@@ -86,7 +89,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public System.String ClusterIdentifier { get; set; }
         #endregion
         
-        #region Parameter UtcEndTime
+        #region Parameter EndTime
         /// <summary>
         /// <para>
         /// <para>A time value that requests only snapshots created at or before the specified time.
@@ -95,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcEndTime { get; set; }
+        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter OwnerAccount
@@ -145,7 +148,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter SortingEntity
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,7 +160,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public Amazon.Redshift.Model.SnapshotSortingEntity[] SortingEntity { get; set; }
         #endregion
         
-        #region Parameter UtcStartTime
+        #region Parameter StartTime
         /// <summary>
         /// <para>
         /// <para>A value that requests only snapshots created at or after the specified time. The time
@@ -162,7 +169,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcStartTime { get; set; }
+        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter TagKey
@@ -172,7 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// are associated with the specified key or keys. For example, suppose that you have
         /// snapshots that are tagged with keys called <c>owner</c> and <c>environment</c>. If
         /// you specify both of these tag keys in the request, Amazon Redshift returns a response
-        /// with the snapshots that have either or both of these tag keys associated with them.</para>
+        /// with the snapshots that have either or both of these tag keys associated with them.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -188,31 +199,16 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// you have snapshots that are tagged with values called <c>admin</c> and <c>test</c>.
         /// If you specify both of these tag values in the request, Amazon Redshift returns a
         /// response with the snapshots that have either or both of these tag values associated
-        /// with them.</para>
+        /// with them.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TagValues")]
         public System.String[] TagValue { get; set; }
-        #endregion
-        
-        #region Parameter EndTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use EndTimeUtc instead. Setting either EndTime or EndTimeUtc
-        /// results in both EndTime and EndTimeUtc being assigned, the latest assignment to either
-        /// one of the two property is reflected in the value of both. EndTime is provided for
-        /// backwards compatibility only and assigning a non-Utc DateTime to it results in the
-        /// wrong timestamp being passed to the service.</para><para>A time value that requests only snapshots created at or before the specified time.
-        /// The time value is specified in ISO 8601 format. For more information about ISO 8601,
-        /// go to the <a href="http://en.wikipedia.org/wiki/ISO_8601">ISO8601 Wikipedia page.</a></para><para>Example: <c>2012-07-16T18:00:00Z</c></para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcEndTime instead.")]
-        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter Marker
@@ -227,7 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -255,25 +251,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public int? MaxRecord { get; set; }
         #endregion
         
-        #region Parameter StartTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use StartTimeUtc instead. Setting either StartTime or
-        /// StartTimeUtc results in both StartTime and StartTimeUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. StartTime
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>A value that requests only snapshots created at or after the specified time. The time
-        /// value is specified in ISO 8601 format. For more information about ISO 8601, go to
-        /// the <a href="http://en.wikipedia.org/wiki/ISO_8601">ISO8601 Wikipedia page.</a></para><para>Example: <c>2012-07-16T18:00:00Z</c></para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcStartTime instead.")]
-        public System.DateTime? StartTime { get; set; }
-        #endregion
-        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Snapshots'.
@@ -283,16 +260,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Snapshots";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter NoAutoIteration
@@ -305,9 +272,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -315,24 +286,14 @@ namespace Amazon.PowerShell.Cmdlets.RS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Redshift.Model.DescribeClusterSnapshotsResponse, GetRSClusterSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterExist = this.ClusterExist;
             context.ClusterIdentifier = this.ClusterIdentifier;
-            context.UtcEndTime = this.UtcEndTime;
+            context.EndTime = this.EndTime;
             context.Marker = this.Marker;
             context.MaxRecord = this.MaxRecord;
             #if MODULAR
@@ -359,7 +320,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 context.SortingEntity = new List<Amazon.Redshift.Model.SnapshotSortingEntity>(this.SortingEntity);
             }
-            context.UtcStartTime = this.UtcStartTime;
+            context.StartTime = this.StartTime;
             if (this.TagKey != null)
             {
                 context.TagKey = new List<System.String>(this.TagKey);
@@ -368,12 +329,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 context.TagValue = new List<System.String>(this.TagValue);
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.EndTime = this.EndTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.StartTime = this.StartTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -388,9 +343,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Redshift.Model.DescribeClusterSnapshotsRequest();
@@ -403,9 +356,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 request.ClusterIdentifier = cmdletContext.ClusterIdentifier;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.MaxRecord != null)
             {
@@ -431,9 +384,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 request.SortingEntities = cmdletContext.SortingEntity;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
             if (cmdletContext.TagKey != null)
             {
@@ -443,26 +396,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 request.TagValues = cmdletContext.TagValue;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variant and commence piping
             var _nextToken = cmdletContext.Marker;
@@ -514,7 +447,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Redshift.Model.DescribeClusterSnapshotsRequest();
@@ -526,9 +459,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 request.ClusterIdentifier = cmdletContext.ClusterIdentifier;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.OwnerAccount != null)
             {
@@ -550,9 +483,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 request.SortingEntities = cmdletContext.SortingEntity;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
             if (cmdletContext.TagKey != null)
             {
@@ -562,26 +495,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
             {
                 request.TagValues = cmdletContext.TagValue;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variants and commence piping
             System.String _nextToken = null;
@@ -633,7 +546,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Snapshots.Count;
+                    int _receivedThisCall = response.Snapshots?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -682,13 +595,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "DescribeClusterSnapshots");
             try
             {
-                #if DESKTOP
-                return client.DescribeClusterSnapshots(request);
-                #elif CORECLR
-                return client.DescribeClusterSnapshotsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeClusterSnapshotsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -707,7 +614,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         {
             public System.Boolean? ClusterExist { get; set; }
             public System.String ClusterIdentifier { get; set; }
-            public System.DateTime? UtcEndTime { get; set; }
+            public System.DateTime? EndTime { get; set; }
             public System.String Marker { get; set; }
             public int? MaxRecord { get; set; }
             public System.String OwnerAccount { get; set; }
@@ -715,13 +622,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
             public System.String SnapshotIdentifier { get; set; }
             public System.String SnapshotType { get; set; }
             public List<Amazon.Redshift.Model.SnapshotSortingEntity> SortingEntity { get; set; }
-            public System.DateTime? UtcStartTime { get; set; }
+            public System.DateTime? StartTime { get; set; }
             public List<System.String> TagKey { get; set; }
             public List<System.String> TagValue { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? EndTime { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? StartTime { get; set; }
             public System.Func<Amazon.Redshift.Model.DescribeClusterSnapshotsResponse, GetRSClusterSnapshotCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Snapshots;
         }

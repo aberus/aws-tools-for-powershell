@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SQS
 {
     /// <summary>
@@ -32,23 +34,26 @@ namespace Amazon.PowerShell.Cmdlets.SQS
     /// 
     ///  <important><para>
     /// A message can include only XML, JSON, and unformatted text. The following Unicode
-    /// characters are allowed:
+    /// characters are allowed. For more information, see the <a href="http://www.w3.org/TR/REC-xml/#charsets">W3C
+    /// specification for characters</a>.
     /// </para><para><c>#x9</c> | <c>#xA</c> | <c>#xD</c> | <c>#x20</c> to <c>#xD7FF</c> | <c>#xE000</c>
     /// to <c>#xFFFD</c> | <c>#x10000</c> to <c>#x10FFFF</c></para><para>
-    /// Any characters not included in this list will be rejected. For more information, see
-    /// the <a href="http://www.w3.org/TR/REC-xml/#charsets">W3C specification for characters</a>.
+    /// If a message contains characters outside the allowed set, Amazon SQS rejects the message
+    /// and returns an InvalidMessageContents error. Ensure that your message body includes
+    /// only valid characters to avoid this exception.
     /// </para></important>
     /// </summary>
     [Cmdlet("Send", "SQSMessage", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SQS.Model.SendMessageResponse")]
     [AWSCmdlet("Calls the Amazon Simple Queue Service (SQS) SendMessage API operation.", Operation = new[] {"SendMessage"}, SelectReturnType = typeof(Amazon.SQS.Model.SendMessageResponse))]
     [AWSCmdletOutput("Amazon.SQS.Model.SendMessageResponse",
-        "This cmdlet returns an Amazon.SQS.Model.SendMessageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SQS.Model.SendMessageResponse object containing multiple properties."
     )]
     public partial class SendSQSMessageCmdlet : AmazonSQSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DelayInSeconds
         /// <summary>
@@ -70,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// <para>
         /// <para>Each message attribute consists of a <c>Name</c>, <c>Type</c>, and <c>Value</c>. For
         /// more information, see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes">Amazon
-        /// SQS message attributes</a> in the <i>Amazon SQS Developer Guide</i>.</para>
+        /// SQS message attributes</a> in the <i>Amazon SQS Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,10 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         #region Parameter MessageBody
         /// <summary>
         /// <para>
-        /// <para>The message to send. The minimum size is one character. The maximum size is 256 KiB.</para><important><para>A message can include only XML, JSON, and unformatted text. The following Unicode
-        /// characters are allowed:</para><para><c>#x9</c> | <c>#xA</c> | <c>#xD</c> | <c>#x20</c> to <c>#xD7FF</c> | <c>#xE000</c>
-        /// to <c>#xFFFD</c> | <c>#x10000</c> to <c>#x10FFFF</c></para><para>Any characters not included in this list will be rejected. For more information, see
-        /// the <a href="http://www.w3.org/TR/REC-xml/#charsets">W3C specification for characters</a>.</para></important>
+        /// <para>The message to send. The minimum size is one character. The maximum size is 1 MiB
+        /// or 1,048,576 bytes</para><important><para>A message can include only XML, JSON, and unformatted text. The following Unicode
+        /// characters are allowed. For more information, see the <a href="http://www.w3.org/TR/REC-xml/#charsets">W3C
+        /// specification for characters</a>.</para><para><c>#x9</c> | <c>#xA</c> | <c>#xD</c> | <c>#x20</c> to <c>#xD7FF</c> | <c>#xE000</c>
+        /// to <c>#xFFFD</c> | <c>#x10000</c> to <c>#x10FFFF</c></para><para>If a message contains characters outside the allowed set, Amazon SQS rejects the message
+        /// and returns an InvalidMessageContents error. Ensure that your message body includes
+        /// only valid characters to avoid this exception.</para></important>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -131,18 +143,33 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         #region Parameter MessageGroupId
         /// <summary>
         /// <para>
-        /// <para>This parameter applies only to FIFO (first-in-first-out) queues.</para><para>The tag that specifies that a message belongs to a specific message group. Messages
-        /// that belong to the same message group are processed in a FIFO manner (however, messages
-        /// in different message groups might be processed out of order). To interleave multiple
-        /// ordered streams within a single queue, use <c>MessageGroupId</c> values (for example,
-        /// session data for multiple users). In this scenario, multiple consumers can process
-        /// the queue, but the session data of each user is processed in a FIFO fashion.</para><ul><li><para>You must associate a non-empty <c>MessageGroupId</c> with a message. If you don't
-        /// provide a <c>MessageGroupId</c>, the action fails.</para></li><li><para><c>ReceiveMessage</c> might return messages with multiple <c>MessageGroupId</c> values.
-        /// For each <c>MessageGroupId</c>, the messages are sorted by time sent. The caller can't
-        /// specify a <c>MessageGroupId</c>.</para></li></ul><para>The length of <c>MessageGroupId</c> is 128 characters. Valid values: alphanumeric
+        /// <para><c>MessageGroupId</c> is an attribute used in Amazon SQS FIFO (First-In-First-Out)
+        /// and standard queues. In FIFO queues, <c>MessageGroupId</c> organizes messages into
+        /// distinct groups. Messages within the same message group are always processed one at
+        /// a time, in strict order, ensuring that no two messages from the same group are processed
+        /// simultaneously. In standard queues, using <c>MessageGroupId</c> enables fair queues.
+        /// It is used to identify the tenant a message belongs to, helping maintain consistent
+        /// message dwell time across all tenants during noisy neighbor events. Unlike FIFO queues,
+        /// messages with the same <c>MessageGroupId</c> can be processed in parallel, maintaining
+        /// the high throughput of standard queues.</para><ul><li><para><b>FIFO queues:</b><c>MessageGroupId</c> acts as the tag that specifies that a message
+        /// belongs to a specific message group. Messages that belong to the same message group
+        /// are processed in a FIFO manner (however, messages in different message groups might
+        /// be processed out of order). To interleave multiple ordered streams within a single
+        /// queue, use <c>MessageGroupId</c> values (for example, session data for multiple users).
+        /// In this scenario, multiple consumers can process the queue, but the session data of
+        /// each user is processed in a FIFO fashion.</para><para>If you do not provide a <c>MessageGroupId</c> when sending a message to a FIFO queue,
+        /// the action fails.</para><para><c>ReceiveMessage</c> might return messages with multiple <c>MessageGroupId</c> values.
+        /// For each <c>MessageGroupId</c>, the messages are sorted by time sent.</para></li><li><para><b>Standard queues:</b>Use <c>MessageGroupId</c> in standard queues to enable fair
+        /// queues. The <c>MessageGroupId</c> identifies the tenant a message belongs to. A tenant
+        /// can be any entity that shares a queue with others, such as your customer, a client
+        /// application, or a request type. When one tenant sends a disproportionately large volume
+        /// of messages or has messages that require longer processing time, fair queues ensure
+        /// other tenants' messages maintain low dwell time. This preserves quality of service
+        /// for all tenants while maintaining the scalability and throughput of standard queues.
+        /// We recommend that you include a <c>MessageGroupId</c> in all messages when using fair
+        /// queues.</para></li></ul><para>The length of <c>MessageGroupId</c> is 128 characters. Valid values: alphanumeric
         /// characters and punctuation <c>(!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~)</c>.</para><para>For best practices of using <c>MessageGroupId</c>, see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/using-messagegroupid-property.html">Using
-        /// the MessageGroupId Property</a> in the <i>Amazon SQS Developer Guide</i>.</para><important><para><c>MessageGroupId</c> is required for FIFO queues. You can't use it for Standard
-        /// queues.</para></important>
+        /// the MessageGroupId Property</a> in the <i>Amazon SQS Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,7 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// <para>The message system attribute to send. Each message system attribute consists of a
         /// <c>Name</c>, <c>Type</c>, and <c>Value</c>.</para><important><ul><li><para>Currently, the only supported message system attribute is <c>AWSTraceHeader</c>. Its
         /// type must be <c>String</c> and its value must be a correctly formatted X-Ray trace
-        /// header string.</para></li><li><para>The size of a message system attribute doesn't count towards the total size of a message.</para></li></ul></important>
+        /// header string.</para></li><li><para>The size of a message system attribute doesn't count towards the total size of a message.</para></li></ul></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,16 +222,6 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueueUrl parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueueUrl' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueueUrl' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -211,9 +232,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MessageDeduplicationId), MyInvocation.BoundParameters);
@@ -227,21 +252,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SQS.Model.SendMessageResponse, SendSQSMessageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueueUrl;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DelayInSeconds = this.DelayInSeconds;
             if (this.MessageAttribute != null)
             {
@@ -357,13 +372,7 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Queue Service (SQS)", "SendMessage");
             try
             {
-                #if DESKTOP
-                return client.SendMessage(request);
-                #elif CORECLR
-                return client.SendMessageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendMessageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

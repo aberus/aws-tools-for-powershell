@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,70 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
-    /// Searches listings in Amazon DataZone.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Searches listings in Amazon DataZone.
+    /// 
+    ///  
+    /// <para>
+    /// SearchListings is a powerful capability that enables users to discover and explore
+    /// published assets and data products across their organization. It provides both basic
+    /// and advanced search functionality, allowing users to find resources based on names,
+    /// descriptions, metadata, and other attributes. SearchListings also supports filtering
+    /// using various criteria such as creation date, owner, or status. This API is essential
+    /// for making the wealth of data resources in an organization discoverable and usable,
+    /// helping users find the right data for their needs quickly and efficiently.
+    /// </para><para>
+    /// SearchListings returns results in a paginated format. When the result set is large,
+    /// the response will include a nextToken, which can be used to retrieve the next page
+    /// of results.
+    /// </para><para>
+    /// The SearchListings API gives users flexibility in specifying what kind of search is
+    /// run.
+    /// </para><para>
+    /// To run a free-text search, the <c>searchText</c> parameter must be supplied. By default,
+    /// all searchable fields are indexed for semantic search and will return semantic matches
+    /// for SearchListings queries. To prevent semantic search indexing for a custom form
+    /// attribute, see the <a href="https://docs.aws.amazon.com/datazone/latest/APIReference/API_CreateFormType.html">CreateFormType
+    /// API documentation</a>. To run a lexical search query, enclose the query with double
+    /// quotes (""). This will disable semantic search even for fields that have semantic
+    /// search enabled and will only return results that contain the keywords wrapped by double
+    /// quotes (order of tokens in the query is not enforced). Free-text search is supported
+    /// for all attributes annotated with @amazon.datazone#searchable.
+    /// </para><para>
+    /// To run a filtered search, provide filter clause using the filters parameter. To filter
+    /// on glossary terms, use the special attribute <c>__DataZoneGlossaryTerms</c>.
+    /// </para><para>
+    ///  To find out whether an attribute has been annotated and indexed for a given search
+    /// type, use the GetFormType API to retrieve the form containing the attribute.
+    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Search", "DZListing", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DataZone.Model.SearchListingsResponse")]
     [AWSCmdlet("Calls the Amazon DataZone SearchListings API operation.", Operation = new[] {"SearchListings"}, SelectReturnType = typeof(Amazon.DataZone.Model.SearchListingsResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.SearchListingsResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.SearchListingsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.SearchListingsResponse object containing multiple properties."
     )]
     public partial class SearchDZListingCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalAttribute
         /// <summary>
         /// <para>
-        /// <para>Specifies additional attributes for the search.</para>
+        /// <para>Specifies additional attributes for the search.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -54,10 +93,30 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public System.String[] AdditionalAttribute { get; set; }
         #endregion
         
+        #region Parameter Aggregation
+        /// <summary>
+        /// <para>
+        /// <para>Enables you to specify one or more attributes to compute and return counts grouped
+        /// by field values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Aggregations")]
+        public Amazon.DataZone.Model.AggregationListItem[] Aggregation { get; set; }
+        #endregion
+        
         #region Parameter Filters_And
         /// <summary>
         /// <para>
-        /// <para>The 'and' search filter clause in Amazon DataZone.</para>
+        /// <para>The 'and' search filter clause in Amazon DataZone.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,7 +164,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter Filters_Or
         /// <summary>
         /// <para>
-        /// <para>The 'or' search filter clause in Amazon DataZone.</para>
+        /// <para>The 'or' search filter clause in Amazon DataZone.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,7 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter SearchIn
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The details of the search.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,7 +246,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -195,16 +262,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -227,9 +284,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainIdentifier), MyInvocation.BoundParameters);
@@ -243,24 +304,18 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.SearchListingsResponse, SearchDZListingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AdditionalAttribute != null)
             {
                 context.AdditionalAttribute = new List<System.String>(this.AdditionalAttribute);
+            }
+            if (this.Aggregation != null)
+            {
+                context.Aggregation = new List<Amazon.DataZone.Model.AggregationListItem>(this.Aggregation);
             }
             context.DomainIdentifier = this.DomainIdentifier;
             #if MODULAR
@@ -301,9 +356,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.DataZone.Model.SearchListingsRequest();
@@ -311,6 +364,10 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             if (cmdletContext.AdditionalAttribute != null)
             {
                 request.AdditionalAttributes = cmdletContext.AdditionalAttribute;
+            }
+            if (cmdletContext.Aggregation != null)
+            {
+                request.Aggregations = cmdletContext.Aggregation;
             }
             if (cmdletContext.DomainIdentifier != null)
             {
@@ -483,13 +540,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "SearchListings");
             try
             {
-                #if DESKTOP
-                return client.SearchListings(request);
-                #elif CORECLR
-                return client.SearchListingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SearchListingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -507,6 +558,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> AdditionalAttribute { get; set; }
+            public List<Amazon.DataZone.Model.AggregationListItem> Aggregation { get; set; }
             public System.String DomainIdentifier { get; set; }
             public List<Amazon.DataZone.Model.FilterClause> Filters_And { get; set; }
             public System.String Filter_Attribute { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
@@ -35,19 +37,20 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [AWSCmdlet("Calls the Amazon QuickSight ListRoleMemberships API operation.", Operation = new[] {"ListRoleMemberships"}, SelectReturnType = typeof(Amazon.QuickSight.Model.ListRoleMembershipsResponse))]
     [AWSCmdletOutput("System.String or Amazon.QuickSight.Model.ListRoleMembershipsResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.QuickSight.Model.ListRoleMembershipsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.QuickSight.Model.ListRoleMembershipsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetQSRoleMembershipListCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
         /// <para>The ID for the Amazon Web Services account that you want to create a group in. The
         /// Amazon Web Services account ID that you provide must be the same Amazon Web Services
-        /// account that contains your Amazon QuickSight account.</para>
+        /// account that contains your Amazon Quick Sight account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,7 +116,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,9 +144,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -275,13 +282,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "ListRoleMemberships");
             try
             {
-                #if DESKTOP
-                return client.ListRoleMemberships(request);
-                #elif CORECLR
-                return client.ListRoleMembershipsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRoleMembershipsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

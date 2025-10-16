@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GreengrassV2;
 using Amazon.GreengrassV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GGV2
 {
     /// <summary>
@@ -55,12 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
     [OutputType("Amazon.GreengrassV2.Model.GetCoreDeviceResponse")]
     [AWSCmdlet("Calls the AWS GreengrassV2 GetCoreDevice API operation.", Operation = new[] {"GetCoreDevice"}, SelectReturnType = typeof(Amazon.GreengrassV2.Model.GetCoreDeviceResponse))]
     [AWSCmdletOutput("Amazon.GreengrassV2.Model.GetCoreDeviceResponse",
-        "This cmdlet returns an Amazon.GreengrassV2.Model.GetCoreDeviceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GreengrassV2.Model.GetCoreDeviceResponse object containing multiple properties."
     )]
     public partial class GetGGV2CoreDeviceCmdlet : AmazonGreengrassV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CoreDeviceThingName
         /// <summary>
@@ -90,19 +93,13 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CoreDeviceThingName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CoreDeviceThingName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CoreDeviceThingName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -110,21 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GreengrassV2.Model.GetCoreDeviceResponse, GetGGV2CoreDeviceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CoreDeviceThingName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CoreDeviceThingName = this.CoreDeviceThingName;
             #if MODULAR
             if (this.CoreDeviceThingName == null && ParameterWasBound(nameof(this.CoreDeviceThingName)))
@@ -190,13 +177,7 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS GreengrassV2", "GetCoreDevice");
             try
             {
-                #if DESKTOP
-                return client.GetCoreDevice(request);
-                #elif CORECLR
-                return client.GetCoreDeviceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetCoreDeviceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

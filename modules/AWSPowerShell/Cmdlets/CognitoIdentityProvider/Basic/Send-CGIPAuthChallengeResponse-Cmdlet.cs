@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
@@ -54,8 +56,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// their accounts, or sign in.
     /// </para><para>
     /// If you have never used SMS text messages with Amazon Cognito or any other Amazon Web
-    /// Service, Amazon Simple Notification Service might place your account in the SMS sandbox.
-    /// In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
+    /// Services service, Amazon Simple Notification Service might place your account in the
+    /// SMS sandbox. In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
     /// mode</a></i>, you can send messages only to verified phone numbers. After you test
     /// your app while in the sandbox environment, you can move out of the sandbox and into
     /// production. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-sms-settings.html">
@@ -67,21 +69,19 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [OutputType("Amazon.CognitoIdentityProvider.Model.RespondToAuthChallengeResponse")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider RespondToAuthChallenge API operation.", Operation = new[] {"RespondToAuthChallenge"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.RespondToAuthChallengeResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.RespondToAuthChallengeResponse",
-        "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.RespondToAuthChallengeResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.RespondToAuthChallengeResponse object containing multiple properties."
     )]
     public partial class SendCGIPAuthChallengeResponseCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnalyticsMetadata_AnalyticsEndpointId
         /// <summary>
         /// <para>
-        /// <para>The endpoint ID.</para>
+        /// <para>The endpoint ID. Information that you want to pass to Amazon Pinpoint about where
+        /// to send notifications.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,7 +91,43 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ChallengeName
         /// <summary>
         /// <para>
-        /// <para>The challenge name. For more information, see <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html">InitiateAuth</a>.</para><para><c>ADMIN_NO_SRP_AUTH</c> isn't a valid value.</para>
+        /// <para>The name of the challenge that you are responding to.</para><note><para>You can't respond to an <c>ADMIN_NO_SRP_AUTH</c> challenge with this operation.</para></note><para>Possible challenges include the following:</para><note><para>All of the following challenges require <c>USERNAME</c> and, when the app client has
+        /// a client secret, <c>SECRET_HASH</c> in the parameters. Include a <c>DEVICE_KEY</c>
+        /// for device authentication.</para></note><ul><li><para><c>WEB_AUTHN</c>: Respond to the challenge with the results of a successful authentication
+        /// with a WebAuthn authenticator, or passkey, as <c>CREDENTIAL</c>. Examples of WebAuthn
+        /// authenticators include biometric devices and security keys.</para></li><li><para><c>PASSWORD</c>: Respond with the user's password as <c>PASSWORD</c>.</para></li><li><para><c>PASSWORD_SRP</c>: Respond with the initial SRP secret as <c>SRP_A</c>.</para></li><li><para><c>SELECT_CHALLENGE</c>: Respond with a challenge selection as <c>ANSWER</c>. It
+        /// must be one of the challenge types in the <c>AvailableChallenges</c> response parameter.
+        /// Add the parameters of the selected challenge, for example <c>USERNAME</c> and <c>SMS_OTP</c>.</para></li><li><para><c>SMS_MFA</c>: Respond with the code that your user pool delivered in an SMS message,
+        /// as <c>SMS_MFA_CODE</c></para></li><li><para><c>EMAIL_MFA</c>: Respond with the code that your user pool delivered in an email
+        /// message, as <c>EMAIL_MFA_CODE</c></para></li><li><para><c>EMAIL_OTP</c>: Respond with the code that your user pool delivered in an email
+        /// message, as <c>EMAIL_OTP_CODE</c> .</para></li><li><para><c>SMS_OTP</c>: Respond with the code that your user pool delivered in an SMS message,
+        /// as <c>SMS_OTP_CODE</c>.</para></li><li><para><c>PASSWORD_VERIFIER</c>: Respond with the second stage of SRP secrets as <c>PASSWORD_CLAIM_SIGNATURE</c>,
+        /// <c>PASSWORD_CLAIM_SECRET_BLOCK</c>, and <c>TIMESTAMP</c>.</para></li><li><para><c>CUSTOM_CHALLENGE</c>: This is returned if your custom authentication flow determines
+        /// that the user should pass another challenge before tokens are issued. The parameters
+        /// of the challenge are determined by your Lambda function and issued in the <c>ChallengeParameters</c>
+        /// of a challenge response.</para></li><li><para><c>DEVICE_SRP_AUTH</c>: Respond with the initial parameters of device SRP authentication.
+        /// For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-device-tracking.html#user-pools-remembered-devices-signing-in-with-a-device">Signing
+        /// in with a device</a>.</para></li><li><para><c>DEVICE_PASSWORD_VERIFIER</c>: Respond with <c>PASSWORD_CLAIM_SIGNATURE</c>, <c>PASSWORD_CLAIM_SECRET_BLOCK</c>,
+        /// and <c>TIMESTAMP</c> after client-side SRP calculations. For more information, see
+        /// <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-device-tracking.html#user-pools-remembered-devices-signing-in-with-a-device">Signing
+        /// in with a device</a>.</para></li><li><para><c>NEW_PASSWORD_REQUIRED</c>: For users who are required to change their passwords
+        /// after successful first login. Respond to this challenge with <c>NEW_PASSWORD</c> and
+        /// any required attributes that Amazon Cognito returned in the <c>requiredAttributes</c>
+        /// parameter. You can also set values for attributes that aren't required by your user
+        /// pool and that your app client can write.</para><para>Amazon Cognito only returns this challenge for users who have temporary passwords.
+        /// When you create passwordless users, you must provide values for all required attributes.</para><note><para>In a <c>NEW_PASSWORD_REQUIRED</c> challenge response, you can't modify a required
+        /// attribute that already has a value. In <c>AdminRespondToAuthChallenge</c> or <c>RespondToAuthChallenge</c>,
+        /// set a value for any keys that Amazon Cognito returned in the <c>requiredAttributes</c>
+        /// parameter, then use the <c>AdminUpdateUserAttributes</c> or <c>UpdateUserAttributes</c>
+        /// API operation to modify the value of any additional attributes.</para></note></li><li><para><c>MFA_SETUP</c>: For users who are required to setup an MFA factor before they can
+        /// sign in. The MFA types activated for the user pool will be listed in the challenge
+        /// parameters <c>MFAS_CAN_SETUP</c> value. </para><para>To set up time-based one-time password (TOTP) MFA, use the session returned in this
+        /// challenge from <c>InitiateAuth</c> or <c>AdminInitiateAuth</c> as an input to <c>AssociateSoftwareToken</c>.
+        /// Then, use the session returned by <c>VerifySoftwareToken</c> as an input to <c>RespondToAuthChallenge</c>
+        /// or <c>AdminRespondToAuthChallenge</c> with challenge name <c>MFA_SETUP</c> to complete
+        /// sign-in. </para><para>To set up SMS or email MFA, collect a <c>phone_number</c> or <c>email</c> attribute
+        /// for the user. Then restart the authentication flow with an <c>InitiateAuth</c> or
+        /// <c>AdminInitiateAuth</c> request. </para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -111,27 +147,49 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <para>The responses to the challenge that you received in the previous request. Each challenge
         /// has its own required response parameters. The following examples are partial JSON
         /// request bodies that highlight challenge-response parameters.</para><important><para>You must provide a SECRET_HASH parameter in all challenge responses to an app client
-        /// that has a client secret.</para></important><dl><dt>SMS_MFA</dt><dd><para><c>"ChallengeName": "SMS_MFA", "ChallengeResponses": {"SMS_MFA_CODE": "[SMS_code]",
-        /// "USERNAME": "[username]"}</c></para></dd><dt>PASSWORD_VERIFIER</dt><dd><para><c>"ChallengeName": "PASSWORD_VERIFIER", "ChallengeResponses": {"PASSWORD_CLAIM_SIGNATURE":
+        /// that has a client secret. Include a <c>DEVICE_KEY</c> for device authentication.</para></important><dl><dt>SELECT_CHALLENGE</dt><dd><para><c>"ChallengeName": "SELECT_CHALLENGE", "ChallengeResponses": { "USERNAME": "[username]",
+        /// "ANSWER": "[Challenge name]"}</c></para><para>Available challenges are <c>PASSWORD</c>, <c>PASSWORD_SRP</c>, <c>EMAIL_OTP</c>, <c>SMS_OTP</c>,
+        /// and <c>WEB_AUTHN</c>.</para><para>Complete authentication in the <c>SELECT_CHALLENGE</c> response for <c>PASSWORD</c>,
+        /// <c>PASSWORD_SRP</c>, and <c>WEB_AUTHN</c>:</para><ul><li><para><c>"ChallengeName": "SELECT_CHALLENGE", "ChallengeResponses": { "ANSWER": "WEB_AUTHN",
+        /// "USERNAME": "[username]", "CREDENTIAL": "[AuthenticationResponseJSON]"}</c></para><para>See <a href="https://www.w3.org/TR/WebAuthn-3/#dictdef-authenticationresponsejson">
+        /// AuthenticationResponseJSON</a>.</para></li><li><para><c>"ChallengeName": "SELECT_CHALLENGE", "ChallengeResponses": { "ANSWER": "PASSWORD",
+        /// "USERNAME": "[username]", "PASSWORD": "[password]"}</c></para></li><li><para><c>"ChallengeName": "SELECT_CHALLENGE", "ChallengeResponses": { "ANSWER": "PASSWORD_SRP",
+        /// "USERNAME": "[username]", "SRP_A": "[SRP_A]"}</c></para></li></ul><para>For <c>SMS_OTP</c> and <c>EMAIL_OTP</c>, respond with the username and answer. Your
+        /// user pool will send a code for the user to submit in the next challenge response.</para><ul><li><para><c>"ChallengeName": "SELECT_CHALLENGE", "ChallengeResponses": { "ANSWER": "SMS_OTP",
+        /// "USERNAME": "[username]"}</c></para></li><li><para><c>"ChallengeName": "SELECT_CHALLENGE", "ChallengeResponses": { "ANSWER": "EMAIL_OTP",
+        /// "USERNAME": "[username]"}</c></para></li></ul></dd><dt>WEB_AUTHN</dt><dd><para><c>"ChallengeName": "WEB_AUTHN", "ChallengeResponses": { "USERNAME": "[username]",
+        /// "CREDENTIAL": "[AuthenticationResponseJSON]"}</c></para><para>See <a href="https://www.w3.org/TR/WebAuthn-3/#dictdef-authenticationresponsejson">
+        /// AuthenticationResponseJSON</a>.</para></dd><dt>PASSWORD</dt><dd><para><c>"ChallengeName": "PASSWORD", "ChallengeResponses": { "USERNAME": "[username]",
+        /// "PASSWORD": "[password]"}</c></para></dd><dt>PASSWORD_SRP</dt><dd><para><c>"ChallengeName": "PASSWORD_SRP", "ChallengeResponses": { "USERNAME": "[username]",
+        /// "SRP_A": "[SRP_A]"}</c></para></dd><dt>SMS_OTP</dt><dd><para><c>"ChallengeName": "SMS_OTP", "ChallengeResponses": {"SMS_OTP_CODE": "[code]", "USERNAME":
+        /// "[username]"}</c></para></dd><dt>EMAIL_OTP</dt><dd><para><c>"ChallengeName": "EMAIL_OTP", "ChallengeResponses": {"EMAIL_OTP_CODE": "[code]",
+        /// "USERNAME": "[username]"}</c></para></dd><dt>SMS_MFA</dt><dd><para><c>"ChallengeName": "SMS_MFA", "ChallengeResponses": {"SMS_MFA_CODE": "[code]", "USERNAME":
+        /// "[username]"}</c></para></dd><dt>PASSWORD_VERIFIER</dt><dd><para>This challenge response is part of the SRP flow. Amazon Cognito requires that your
+        /// application respond to this challenge within a few seconds. When the response time
+        /// exceeds this period, your user pool returns a <c>NotAuthorizedException</c> error.</para><para><c>"ChallengeName": "PASSWORD_VERIFIER", "ChallengeResponses": {"PASSWORD_CLAIM_SIGNATURE":
         /// "[claim_signature]", "PASSWORD_CLAIM_SECRET_BLOCK": "[secret_block]", "TIMESTAMP":
-        /// [timestamp], "USERNAME": "[username]"}</c></para><para>Add <c>"DEVICE_KEY"</c> when you sign in with a remembered device.</para></dd><dt>CUSTOM_CHALLENGE</dt><dd><para><c>"ChallengeName": "CUSTOM_CHALLENGE", "ChallengeResponses": {"USERNAME": "[username]",
-        /// "ANSWER": "[challenge_answer]"}</c></para><para>Add <c>"DEVICE_KEY"</c> when you sign in with a remembered device.</para></dd><dt>NEW_PASSWORD_REQUIRED</dt><dd><para><c>"ChallengeName": "NEW_PASSWORD_REQUIRED", "ChallengeResponses": {"NEW_PASSWORD":
+        /// [timestamp], "USERNAME": "[username]"}</c></para></dd><dt>CUSTOM_CHALLENGE</dt><dd><para><c>"ChallengeName": "CUSTOM_CHALLENGE", "ChallengeResponses": {"USERNAME": "[username]",
+        /// "ANSWER": "[challenge_answer]"}</c></para></dd><dt>NEW_PASSWORD_REQUIRED</dt><dd><para><c>"ChallengeName": "NEW_PASSWORD_REQUIRED", "ChallengeResponses": {"NEW_PASSWORD":
         /// "[new_password]", "USERNAME": "[username]"}</c></para><para>To set any required attributes that <c>InitiateAuth</c> returned in an <c>requiredAttributes</c>
         /// parameter, add <c>"userAttributes.[attribute_name]": "[attribute_value]"</c>. This
         /// parameter can also set values for writable attributes that aren't required by your
         /// user pool.</para><note><para>In a <c>NEW_PASSWORD_REQUIRED</c> challenge response, you can't modify a required
-        /// attribute that already has a value. In <c>RespondToAuthChallenge</c>, set a value
-        /// for any keys that Amazon Cognito returned in the <c>requiredAttributes</c> parameter,
-        /// then use the <c>UpdateUserAttributes</c> API operation to modify the value of any
-        /// additional attributes.</para></note></dd><dt>SOFTWARE_TOKEN_MFA</dt><dd><para><c>"ChallengeName": "SOFTWARE_TOKEN_MFA", "ChallengeResponses": {"USERNAME": "[username]",
+        /// attribute that already has a value. In <c>AdminRespondToAuthChallenge</c> or <c>RespondToAuthChallenge</c>,
+        /// set a value for any keys that Amazon Cognito returned in the <c>requiredAttributes</c>
+        /// parameter, then use the <c>AdminUpdateUserAttributes</c> or <c>UpdateUserAttributes</c>
+        /// API operation to modify the value of any additional attributes.</para></note></dd><dt>SOFTWARE_TOKEN_MFA</dt><dd><para><c>"ChallengeName": "SOFTWARE_TOKEN_MFA", "ChallengeResponses": {"USERNAME": "[username]",
         /// "SOFTWARE_TOKEN_MFA_CODE": [authenticator_code]}</c></para></dd><dt>DEVICE_SRP_AUTH</dt><dd><para><c>"ChallengeName": "DEVICE_SRP_AUTH", "ChallengeResponses": {"USERNAME": "[username]",
         /// "DEVICE_KEY": "[device_key]", "SRP_A": "[srp_a]"}</c></para></dd><dt>DEVICE_PASSWORD_VERIFIER</dt><dd><para><c>"ChallengeName": "DEVICE_PASSWORD_VERIFIER", "ChallengeResponses": {"DEVICE_KEY":
         /// "[device_key]", "PASSWORD_CLAIM_SIGNATURE": "[claim_signature]", "PASSWORD_CLAIM_SECRET_BLOCK":
         /// "[secret_block]", "TIMESTAMP": [timestamp], "USERNAME": "[username]"}</c></para></dd><dt>MFA_SETUP</dt><dd><para><c>"ChallengeName": "MFA_SETUP", "ChallengeResponses": {"USERNAME": "[username]"},
         /// "SESSION": "[Session ID from VerifySoftwareToken]"</c></para></dd><dt>SELECT_MFA_TYPE</dt><dd><para><c>"ChallengeName": "SELECT_MFA_TYPE", "ChallengeResponses": {"USERNAME": "[username]",
-        /// "ANSWER": "[SMS_MFA or SOFTWARE_TOKEN_MFA]"}</c></para></dd></dl><para>For more information about <c>SECRET_HASH</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash">Computing
+        /// "ANSWER": "[SMS_MFA|EMAIL_MFA|SOFTWARE_TOKEN_MFA]"}</c></para></dd></dl><para>For more information about <c>SECRET_HASH</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash">Computing
         /// secret hash values</a>. For information about <c>DEVICE_KEY</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-device-tracking.html">Working
-        /// with user devices in your user pool</a>.</para>
+        /// with user devices in your user pool</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,7 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ClientId
         /// <summary>
         /// <para>
-        /// <para>The app client ID.</para>
+        /// <para>The ID of the app client where the user is signing in.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -169,11 +227,15 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// attribute, which provides the data that you assigned to the ClientMetadata parameter
         /// in your RespondToAuthChallenge request. In your function code in Lambda, you can process
         /// the <c>clientMetadata</c> value to enhance your workflow for your specific needs.</para><para>For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html">
-        /// Customizing user pool Workflows with Lambda Triggers</a> in the <i>Amazon Cognito
-        /// Developer Guide</i>.</para><note><para>When you use the ClientMetadata parameter, remember that Amazon Cognito won't do the
-        /// following:</para><ul><li><para>Store the ClientMetadata value. This data is available only to Lambda triggers that
-        /// are assigned to a user pool to support custom workflows. If your user pool configuration
-        /// doesn't include triggers, the ClientMetadata parameter serves no purpose.</para></li><li><para>Validate the ClientMetadata value.</para></li><li><para>Encrypt the ClientMetadata value. Don't use Amazon Cognito to provide sensitive information.</para></li></ul></note>
+        /// Using Lambda triggers</a> in the <i>Amazon Cognito Developer Guide</i>.</para><note><para>When you use the <c>ClientMetadata</c> parameter, note that Amazon Cognito won't do
+        /// the following:</para><ul><li><para>Store the <c>ClientMetadata</c> value. This data is available only to Lambda triggers
+        /// that are assigned to a user pool to support custom workflows. If your user pool configuration
+        /// doesn't include triggers, the <c>ClientMetadata</c> parameter serves no purpose.</para></li><li><para>Validate the <c>ClientMetadata</c> value.</para></li><li><para>Encrypt the <c>ClientMetadata</c> value. Don't send sensitive information in this
+        /// parameter.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,11 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Session
         /// <summary>
         /// <para>
-        /// <para>The session that should be passed both ways in challenge-response calls to the service.
-        /// If <c>InitiateAuth</c> or <c>RespondToAuthChallenge</c> API call determines that the
-        /// caller must pass another challenge, they return a session with other challenge parameters.
-        /// This session should be passed as it is to the next <c>RespondToAuthChallenge</c> API
-        /// call.</para>
+        /// <para>The session identifier that maintains the state of authentication requests and challenge
+        /// responses. If an <c>AdminInitiateAuth</c> or <c>AdminRespondToAuthChallenge</c> API
+        /// request results in a determination that your application must pass another challenge,
+        /// Amazon Cognito returns a session with other challenge parameters. Send this session
+        /// identifier, unmodified, to the next <c>AdminRespondToAuthChallenge</c> request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -227,16 +289,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClientId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClientId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClientId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -247,9 +299,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClientId), MyInvocation.BoundParameters);
@@ -263,21 +319,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.RespondToAuthChallengeResponse, SendCGIPAuthChallengeResponseCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClientId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnalyticsMetadata_AnalyticsEndpointId = this.AnalyticsMetadata_AnalyticsEndpointId;
             context.ChallengeName = this.ChallengeName;
             #if MODULAR
@@ -434,13 +480,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "RespondToAuthChallenge");
             try
             {
-                #if DESKTOP
-                return client.RespondToAuthChallenge(request);
-                #elif CORECLR
-                return client.RespondToAuthChallengeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RespondToAuthChallengeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

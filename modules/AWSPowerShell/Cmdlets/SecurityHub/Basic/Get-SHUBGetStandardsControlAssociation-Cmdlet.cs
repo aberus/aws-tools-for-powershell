@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
     /// For a batch of security controls and standards, identifies whether each control is
-    /// currently enabled or disabled in a standard.
+    /// currently enabled or disabled in a standard. 
+    /// 
+    ///  
+    /// <para>
+    ///  Calls to this operation return a <c>RESOURCE_NOT_FOUND_EXCEPTION</c> error when the
+    /// standard subscription for the association has a <c>NOT_READY_FOR_UPDATES</c> value
+    /// for <c>StandardsControlsUpdatable</c>. 
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "SHUBGetStandardsControlAssociation")]
     [OutputType("Amazon.SecurityHub.Model.BatchGetStandardsControlAssociationsResponse")]
     [AWSCmdlet("Calls the AWS Security Hub BatchGetStandardsControlAssociations API operation.", Operation = new[] {"BatchGetStandardsControlAssociations"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.BatchGetStandardsControlAssociationsResponse))]
     [AWSCmdletOutput("Amazon.SecurityHub.Model.BatchGetStandardsControlAssociationsResponse",
-        "This cmdlet returns an Amazon.SecurityHub.Model.BatchGetStandardsControlAssociationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SecurityHub.Model.BatchGetStandardsControlAssociationsResponse object containing multiple properties."
     )]
     public partial class GetSHUBGetStandardsControlAssociationCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter StandardsControlAssociationId
         /// <summary>
@@ -49,7 +59,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <c>SecurityControlId</c>, <c>SecurityControlArn</c>, or a mix of both parameters)
         /// and the Amazon Resource Name (ARN) of a standard. This field is used to query the
         /// enablement status of a control in a specified standard. The security control ID or
-        /// ARN is the same across standards. </para>
+        /// ARN is the same across standards. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -75,9 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -158,13 +176,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "BatchGetStandardsControlAssociations");
             try
             {
-                #if DESKTOP
-                return client.BatchGetStandardsControlAssociations(request);
-                #elif CORECLR
-                return client.BatchGetStandardsControlAssociationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchGetStandardsControlAssociationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

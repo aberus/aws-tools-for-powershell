@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeGuruReviewer;
 using Amazon.CodeGuruReviewer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGR
 {
     /// <summary>
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.CGR
     [AWSCmdlet("Calls the Amazon CodeGuru Reviewer AssociateRepository API operation.", Operation = new[] {"AssociateRepository"}, SelectReturnType = typeof(Amazon.CodeGuruReviewer.Model.AssociateRepositoryResponse))]
     [AWSCmdletOutput("Amazon.CodeGuruReviewer.Model.RepositoryAssociation or Amazon.CodeGuruReviewer.Model.AssociateRepositoryResponse",
         "This cmdlet returns an Amazon.CodeGuruReviewer.Model.RepositoryAssociation object.",
-        "The service call response (type Amazon.CodeGuruReviewer.Model.AssociateRepositoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeGuruReviewer.Model.AssociateRepositoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterCGRRepositoryCmdlet : AmazonCodeGuruReviewerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3Bucket_BucketName
         /// <summary>
@@ -210,7 +213,11 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         /// attribute label with two parts:</para><ul><li><para>A <i>tag key</i> (for example, <c>CostCenter</c>, <c>Environment</c>, <c>Project</c>,
         /// or <c>Secret</c>). Tag keys are case sensitive.</para></li><li><para>An optional field known as a <i>tag value</i> (for example, <c>111122223333</c>, <c>Production</c>,
         /// or a team name). Omitting the tag value is the same as using an empty string. Like
-        /// tag keys, tag values are case sensitive.</para></li></ul>
+        /// tag keys, tag values are case sensitive.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,16 +236,6 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         public string Select { get; set; } = "RepositoryAssociation";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CodeCommit_Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CodeCommit_Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CodeCommit_Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -249,9 +246,13 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CodeCommit_Name), MyInvocation.BoundParameters);
@@ -265,21 +266,11 @@ namespace Amazon.PowerShell.Cmdlets.CGR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodeGuruReviewer.Model.AssociateRepositoryResponse, RegisterCGRRepositoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CodeCommit_Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.KMSKeyDetails_EncryptionOption = this.KMSKeyDetails_EncryptionOption;
             context.KMSKeyDetails_KMSKeyId = this.KMSKeyDetails_KMSKeyId;
@@ -550,13 +541,7 @@ namespace Amazon.PowerShell.Cmdlets.CGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CodeGuru Reviewer", "AssociateRepository");
             try
             {
-                #if DESKTOP
-                return client.AssociateRepository(request);
-                #elif CORECLR
-                return client.AssociateRepositoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateRepositoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Repostspace;
 using Amazon.Repostspace.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RESP
 {
     /// <summary>
@@ -35,14 +37,28 @@ namespace Amazon.PowerShell.Cmdlets.RESP
     [AWSCmdlet("Calls the AWS re:Post Private UpdateSpace API operation.", Operation = new[] {"UpdateSpace"}, SelectReturnType = typeof(Amazon.Repostspace.Model.UpdateSpaceResponse))]
     [AWSCmdletOutput("None or Amazon.Repostspace.Model.UpdateSpaceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Repostspace.Model.UpdateSpaceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Repostspace.Model.UpdateSpaceResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateRESPSpaceCmdlet : AmazonRepostspaceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter SupportedEmailDomains_AllowedDomain
+        /// <summary>
+        /// <para>
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SupportedEmailDomains_AllowedDomains")]
+        public System.String[] SupportedEmailDomains_AllowedDomain { get; set; }
+        #endregion
         
         #region Parameter Description
         /// <summary>
@@ -53,6 +69,17 @@ namespace Amazon.PowerShell.Cmdlets.RESP
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter SupportedEmailDomains_Enabled
+        /// <summary>
+        /// <para>
+        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Repostspace.FeatureEnableParameter")]
+        public Amazon.Repostspace.FeatureEnableParameter SupportedEmailDomains_Enabled { get; set; }
         #endregion
         
         #region Parameter RoleArn
@@ -104,16 +131,6 @@ namespace Amazon.PowerShell.Cmdlets.RESP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SpaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SpaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SpaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -124,9 +141,13 @@ namespace Amazon.PowerShell.Cmdlets.RESP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SpaceId), MyInvocation.BoundParameters);
@@ -140,21 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.RESP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Repostspace.Model.UpdateSpaceResponse, UpdateRESPSpaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SpaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.RoleArn = this.RoleArn;
             context.SpaceId = this.SpaceId;
@@ -164,6 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.RESP
                 WriteWarning("You are passing $null as a value for parameter SpaceId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.SupportedEmailDomains_AllowedDomain != null)
+            {
+                context.SupportedEmailDomains_AllowedDomain = new List<System.String>(this.SupportedEmailDomains_AllowedDomain);
+            }
+            context.SupportedEmailDomains_Enabled = this.SupportedEmailDomains_Enabled;
             context.Tier = this.Tier;
             
             // allow further manipulation of loaded context prior to processing
@@ -192,6 +208,35 @@ namespace Amazon.PowerShell.Cmdlets.RESP
             if (cmdletContext.SpaceId != null)
             {
                 request.SpaceId = cmdletContext.SpaceId;
+            }
+            
+             // populate SupportedEmailDomains
+            var requestSupportedEmailDomainsIsNull = true;
+            request.SupportedEmailDomains = new Amazon.Repostspace.Model.SupportedEmailDomainsParameters();
+            List<System.String> requestSupportedEmailDomains_supportedEmailDomains_AllowedDomain = null;
+            if (cmdletContext.SupportedEmailDomains_AllowedDomain != null)
+            {
+                requestSupportedEmailDomains_supportedEmailDomains_AllowedDomain = cmdletContext.SupportedEmailDomains_AllowedDomain;
+            }
+            if (requestSupportedEmailDomains_supportedEmailDomains_AllowedDomain != null)
+            {
+                request.SupportedEmailDomains.AllowedDomains = requestSupportedEmailDomains_supportedEmailDomains_AllowedDomain;
+                requestSupportedEmailDomainsIsNull = false;
+            }
+            Amazon.Repostspace.FeatureEnableParameter requestSupportedEmailDomains_supportedEmailDomains_Enabled = null;
+            if (cmdletContext.SupportedEmailDomains_Enabled != null)
+            {
+                requestSupportedEmailDomains_supportedEmailDomains_Enabled = cmdletContext.SupportedEmailDomains_Enabled;
+            }
+            if (requestSupportedEmailDomains_supportedEmailDomains_Enabled != null)
+            {
+                request.SupportedEmailDomains.Enabled = requestSupportedEmailDomains_supportedEmailDomains_Enabled;
+                requestSupportedEmailDomainsIsNull = false;
+            }
+             // determine if request.SupportedEmailDomains should be set to null
+            if (requestSupportedEmailDomainsIsNull)
+            {
+                request.SupportedEmailDomains = null;
             }
             if (cmdletContext.Tier != null)
             {
@@ -235,13 +280,7 @@ namespace Amazon.PowerShell.Cmdlets.RESP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS re:Post Private", "UpdateSpace");
             try
             {
-                #if DESKTOP
-                return client.UpdateSpace(request);
-                #elif CORECLR
-                return client.UpdateSpaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSpaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -261,6 +300,8 @@ namespace Amazon.PowerShell.Cmdlets.RESP
             public System.String Description { get; set; }
             public System.String RoleArn { get; set; }
             public System.String SpaceId { get; set; }
+            public List<System.String> SupportedEmailDomains_AllowedDomain { get; set; }
+            public Amazon.Repostspace.FeatureEnableParameter SupportedEmailDomains_Enabled { get; set; }
             public Amazon.Repostspace.TierLevel Tier { get; set; }
             public System.Func<Amazon.Repostspace.Model.UpdateSpaceResponse, UpdateRESPSpaceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

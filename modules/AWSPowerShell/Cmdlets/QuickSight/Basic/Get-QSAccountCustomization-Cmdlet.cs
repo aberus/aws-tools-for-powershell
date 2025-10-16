@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,17 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
     /// Describes the customizations associated with the provided Amazon Web Services account
-    /// and Amazon Amazon QuickSight namespace in an Amazon Web Services Region. The Amazon
-    /// QuickSight console evaluates which customizations to apply by running this API operation
-    /// with the <c>Resolved</c> flag included. 
+    /// and Amazon Quick Sight namespace. The Quick Sight console evaluates which customizations
+    /// to apply by running this API operation with the <c>Resolved</c> flag included. 
     /// 
     ///  
     /// <para>
@@ -39,16 +40,14 @@ namespace Amazon.PowerShell.Cmdlets.QS
     /// visualize the relationship of the entities involved. 
     /// </para><ul><li><para><c>Amazon Web Services account</c> - The Amazon Web Services account exists at the
     /// top of the hierarchy. It has the potential to use all of the Amazon Web Services Regions
-    /// and Amazon Web Services Services. When you subscribe to Amazon QuickSight, you choose
-    /// one Amazon Web Services Region to use as your home Region. That's where your free
-    /// SPICE capacity is located. You can use Amazon QuickSight in any supported Amazon Web
-    /// Services Region. 
-    /// </para></li><li><para><c>Amazon Web Services Region</c> - In each Amazon Web Services Region where you
-    /// sign in to Amazon QuickSight at least once, Amazon QuickSight acts as a separate instance
-    /// of the same service. If you have a user directory, it resides in us-east-1, which
-    /// is the US East (N. Virginia). Generally speaking, these users have access to Amazon
-    /// QuickSight in any Amazon Web Services Region, unless they are constrained to a namespace.
-    /// 
+    /// and Amazon Web Services Services. When you subscribe to Quick Sight, you choose one
+    /// Amazon Web Services Region to use as your home Region. That's where your free SPICE
+    /// capacity is located. You can use Quick Sight in any supported Amazon Web Services
+    /// Region. 
+    /// </para></li><li><para><c>Amazon Web Services Region</c> - You can sign in to Quick Sight in any Amazon
+    /// Web Services Region. If you have a user directory, it resides in us-east-1, which
+    /// is US East (N. Virginia). Generally speaking, these users have access to Quick Sight
+    /// in any Amazon Web Services Region, unless they are constrained to a namespace. 
     /// </para><para>
     /// To run the command in a different Amazon Web Services Region, you change your Region
     /// settings. If you're using the CLI, you can use one of the following options:
@@ -62,37 +61,34 @@ namespace Amazon.PowerShell.Cmdlets.QS
     /// Run <c>aws configure</c> to change your default Amazon Web Services Region. Use Enter
     /// to key the same settings for your keys. For more information, see <a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html">Configuring
     /// the CLI</a>.
-    /// </para></li></ul></li><li><para><c>Namespace</c> - A QuickSight namespace is a partition that contains users and
+    /// </para></li></ul></li><li><para><c>Namespace</c> - A Quick Sight namespace is a partition that contains users and
     /// assets (data sources, datasets, dashboards, and so on). To access assets that are
     /// in a specific namespace, users and groups must also be part of the same namespace.
     /// People who share a namespace are completely isolated from users and assets in other
     /// namespaces, even if they are in the same Amazon Web Services account and Amazon Web
     /// Services Region.
-    /// </para></li><li><para><c>Applied customizations</c> - Within an Amazon Web Services Region, a set of Amazon
-    /// QuickSight customizations can apply to an Amazon Web Services account or to a namespace.
-    /// Settings that you apply to a namespace override settings that you apply to an Amazon
-    /// Web Services account. All settings are isolated to a single Amazon Web Services Region.
-    /// To apply them in other Amazon Web Services Regions, run the <c>CreateAccountCustomization</c>
-    /// command in each Amazon Web Services Region where you want to apply the same customizations.
-    /// 
+    /// </para></li><li><para><c>Applied customizations</c> - Quick Sight customizations can apply to an Amazon
+    /// Web Services account or to a namespace. Settings that you apply to a namespace override
+    /// settings that you apply to an Amazon Web Services account.
     /// </para></li></ul>
     /// </summary>
     [Cmdlet("Get", "QSAccountCustomization")]
     [OutputType("Amazon.QuickSight.Model.DescribeAccountCustomizationResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight DescribeAccountCustomization API operation.", Operation = new[] {"DescribeAccountCustomization"}, SelectReturnType = typeof(Amazon.QuickSight.Model.DescribeAccountCustomizationResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.DescribeAccountCustomizationResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.DescribeAccountCustomizationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.DescribeAccountCustomizationResponse object containing multiple properties."
     )]
     public partial class GetQSAccountCustomizationCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
-        /// <para>The ID for the Amazon Web Services account that you want to describe Amazon QuickSight
-        /// customizations for.</para>
+        /// <para>The ID for the Amazon Web Services account that you want to describe Quick Sight customizations
+        /// for.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,8 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Namespace
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight namespace that you want to describe Amazon QuickSight customizations
-        /// for.</para>
+        /// <para>The Quick Sight namespace that you want to describe Quick Sight customizations for.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,10 +116,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The <c>Resolved</c> flag works with the other parameters to determine which view of
-        /// Amazon QuickSight customizations is returned. You can add this flag to your command
-        /// to use the same view that Amazon QuickSight uses to identify which customizations
-        /// to apply to the console. Omit this flag, or set it to <c>no-resolved</c>, to reveal
-        /// customizations that are configured at different levels. </para>
+        /// Quick Sight customizations is returned. You can add this flag to your command to use
+        /// the same view that Quick Sight uses to identify which customizations to apply to the
+        /// console. Omit this flag, or set it to <c>no-resolved</c>, to reveal customizations
+        /// that are configured at different levels. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,19 +137,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AwsAccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -162,21 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.DescribeAccountCustomizationResponse, GetQSAccountCustomizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AwsAccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -252,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "DescribeAccountCustomization");
             try
             {
-                #if DESKTOP
-                return client.DescribeAccountCustomization(request);
-                #elif CORECLR
-                return client.DescribeAccountCustomizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAccountCustomizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

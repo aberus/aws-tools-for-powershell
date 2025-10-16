@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue DeletePartitionIndex API operation.", Operation = new[] {"DeletePartitionIndex"}, SelectReturnType = typeof(Amazon.Glue.Model.DeletePartitionIndexResponse))]
     [AWSCmdletOutput("None or Amazon.Glue.Model.DeletePartitionIndexResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Glue.Model.DeletePartitionIndexResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Glue.Model.DeletePartitionIndexResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveGLUEPartitionIndexCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CatalogId
         /// <summary>
@@ -123,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TableName), MyInvocation.BoundParameters);
@@ -236,13 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "DeletePartitionIndex");
             try
             {
-                #if DESKTOP
-                return client.DeletePartitionIndex(request);
-                #elif CORECLR
-                return client.DeletePartitionIndexAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeletePartitionIndexAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

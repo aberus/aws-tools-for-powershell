@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConvert;
 using Amazon.MediaConvert.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMC
 {
     /// <summary>
@@ -36,21 +38,21 @@ namespace Amazon.PowerShell.Cmdlets.EMC
     [AWSCmdlet("Calls the AWS Elemental MediaConvert CreateJob API operation.", Operation = new[] {"CreateJob"}, SelectReturnType = typeof(Amazon.MediaConvert.Model.CreateJobResponse))]
     [AWSCmdletOutput("Amazon.MediaConvert.Model.Job or Amazon.MediaConvert.Model.CreateJobResponse",
         "This cmdlet returns an Amazon.MediaConvert.Model.Job object.",
-        "The service call response (type Amazon.MediaConvert.Model.CreateJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaConvert.Model.CreateJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEMCJobCmdlet : AmazonMediaConvertClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BillingTagsSource
         /// <summary>
         /// <para>
-        /// Optional. Choose a tag type that AWS
-        /// Billing and Cost Management will use to sort your AWS Elemental MediaConvert costs
-        /// on any billing report that you set up. Any transcoding outputs that don't have an
-        /// associated tag will appear in your billing report unsorted. If you don't choose a
-        /// valid value for this field, your job outputs will appear on the billing report unsorted.
+        /// Optionally choose a Billing tags source
+        /// that AWS Billing and Cost Management will use to display tags for individual output
+        /// costs on any billing report that you set up. Leave blank to use the default value,
+        /// Job.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -79,11 +81,30 @@ namespace Amazon.PowerShell.Cmdlets.EMC
         /// long waits in the backlog of the queue that you submit your job to. Specify an alternate
         /// queue and the maximum time that your job will wait in the initial queue before hopping.
         /// For more information about this feature, see the AWS Elemental MediaConvert User Guide.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("HopDestinations")]
         public Amazon.MediaConvert.Model.HopDestination[] HopDestination { get; set; }
+        #endregion
+        
+        #region Parameter JobEngineVersion
+        /// <summary>
+        /// <para>
+        /// Use Job engine versions to run jobs for
+        /// your production workflow on one version, while you test and validate the latest version.
+        /// To specify a Job engine version: Enter a date in a YYYY-MM-DD format. For a list of
+        /// valid Job engine versions, submit a ListVersions request. To not specify a Job engine
+        /// version: Leave blank.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String JobEngineVersion { get; set; }
         #endregion
         
         #region Parameter JobTemplate
@@ -209,6 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.EMC
         /// You can tag resources with a key-value pair or with only a key.  Use standard AWS
         /// tags on your job for automatic integration with AWS services and for custom integrations
         /// and workflows.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -223,6 +249,11 @@ namespace Amazon.PowerShell.Cmdlets.EMC
         /// want to associate with an MediaConvert job. You specify metadata in key/value pairs.
         ///  Use only for existing integrations or workflows that rely on job metadata tags. Otherwise,
         /// we recommend that you use standard AWS tags.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -240,16 +271,6 @@ namespace Amazon.PowerShell.Cmdlets.EMC
         public string Select { get; set; } = "Job";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobTemplate parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobTemplate' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobTemplate' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -260,9 +281,13 @@ namespace Amazon.PowerShell.Cmdlets.EMC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.JobTemplate), MyInvocation.BoundParameters);
@@ -276,21 +301,11 @@ namespace Amazon.PowerShell.Cmdlets.EMC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConvert.Model.CreateJobResponse, NewEMCJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobTemplate;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccelerationSettings_Mode = this.AccelerationSettings_Mode;
             context.BillingTagsSource = this.BillingTagsSource;
             context.ClientRequestToken = this.ClientRequestToken;
@@ -298,6 +313,7 @@ namespace Amazon.PowerShell.Cmdlets.EMC
             {
                 context.HopDestination = new List<Amazon.MediaConvert.Model.HopDestination>(this.HopDestination);
             }
+            context.JobEngineVersion = this.JobEngineVersion;
             context.JobTemplate = this.JobTemplate;
             context.Priority = this.Priority;
             context.Queue = this.Queue;
@@ -380,6 +396,10 @@ namespace Amazon.PowerShell.Cmdlets.EMC
             {
                 request.HopDestinations = cmdletContext.HopDestination;
             }
+            if (cmdletContext.JobEngineVersion != null)
+            {
+                request.JobEngineVersion = cmdletContext.JobEngineVersion;
+            }
             if (cmdletContext.JobTemplate != null)
             {
                 request.JobTemplate = cmdletContext.JobTemplate;
@@ -454,13 +474,7 @@ namespace Amazon.PowerShell.Cmdlets.EMC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConvert", "CreateJob");
             try
             {
-                #if DESKTOP
-                return client.CreateJob(request);
-                #elif CORECLR
-                return client.CreateJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -481,6 +495,7 @@ namespace Amazon.PowerShell.Cmdlets.EMC
             public Amazon.MediaConvert.BillingTagsSource BillingTagsSource { get; set; }
             public System.String ClientRequestToken { get; set; }
             public List<Amazon.MediaConvert.Model.HopDestination> HopDestination { get; set; }
+            public System.String JobEngineVersion { get; set; }
             public System.String JobTemplate { get; set; }
             public System.Int32? Priority { get; set; }
             public System.String Queue { get; set; }

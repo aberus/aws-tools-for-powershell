@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The CloudTrail module of AWS Tools for PowerShell lets developers and administrators manage AWS CloudTrail from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.CloudTrail.dll'
     )
@@ -92,6 +93,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Find-CTEvent', 
         'Get-CTChannel', 
         'Get-CTChannelSummary', 
+        'Get-CTDashboard', 
+        'Get-CTDashboardSummary', 
+        'Get-CTEventConfiguration', 
         'Get-CTEventDataStore', 
         'Get-CTEventDataStoreSummary', 
         'Get-CTEventSelector', 
@@ -110,16 +114,21 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CTTrailByName', 
         'Get-CTTrailStatus', 
         'Get-CTTrailSummary', 
+        'Invoke-CTGenerateQuery', 
         'New-CTChannel', 
+        'New-CTDashboard', 
         'New-CTEventDataStore', 
         'New-CTTrail', 
         'Register-CTOrganizationDelegatedAdmin', 
         'Remove-CTChannel', 
+        'Remove-CTDashboard', 
         'Remove-CTEventDataStore', 
         'Remove-CTResourcePolicy', 
         'Remove-CTResourceTag', 
         'Remove-CTTrail', 
         'Restore-CTEventDataStore', 
+        'Search-CTSampleQuery', 
+        'Start-CTDashboardRefresh', 
         'Start-CTEventDataStoreIngestion', 
         'Start-CTImport', 
         'Start-CTLogging', 
@@ -130,8 +139,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Stop-CTQuery', 
         'Unregister-CTOrganizationDelegatedAdmin', 
         'Update-CTChannel', 
+        'Update-CTDashboard', 
         'Update-CTEventDataStore', 
         'Update-CTTrail', 
+        'Write-CTEventConfiguration', 
         'Write-CTEventSelector', 
         'Write-CTInsightSelector', 
         'Write-CTResourcePolicy')
@@ -164,7 +175,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

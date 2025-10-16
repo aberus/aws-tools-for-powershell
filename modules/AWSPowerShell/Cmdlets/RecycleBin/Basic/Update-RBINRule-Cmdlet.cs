@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RecycleBin;
 using Amazon.RecycleBin.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RBIN
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
     [OutputType("Amazon.RecycleBin.Model.UpdateRuleResponse")]
     [AWSCmdlet("Calls the Amazon Recycle Bin UpdateRule API operation.", Operation = new[] {"UpdateRule"}, SelectReturnType = typeof(Amazon.RecycleBin.Model.UpdateRuleResponse))]
     [AWSCmdletOutput("Amazon.RecycleBin.Model.UpdateRuleResponse",
-        "This cmdlet returns an Amazon.RecycleBin.Model.UpdateRuleResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RecycleBin.Model.UpdateRuleResponse object containing multiple properties."
     )]
     public partial class UpdateRBINRuleCmdlet : AmazonRecycleBinClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -54,6 +57,23 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter ExcludeResourceTag
+        /// <summary>
+        /// <para>
+        /// <para>[Region-level retention rules only] Specifies the exclusion tags to use to identify
+        /// resources that are to be excluded, or ignored, by a Region-level retention rule. Resources
+        /// that have any of these tags are not retained by the retention rule upon deletion.</para><para>You can't specify exclusion tags for tag-level retention rules.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExcludeResourceTags")]
+        public Amazon.RecycleBin.Model.ResourceTag[] ExcludeResourceTag { get; set; }
         #endregion
         
         #region Parameter Identifier
@@ -76,15 +96,19 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         #region Parameter ResourceTag
         /// <summary>
         /// <para>
-        /// <para>Specifies the resource tags to use to identify resources that are to be retained by
-        /// a tag-level retention rule. For tag-level retention rules, only deleted resources,
-        /// of the specified resource type, that have one or more of the specified tag key and
-        /// value pairs are retained. If a resource is deleted, but it does not have any of the
-        /// specified tag key and value pairs, it is immediately deleted without being retained
-        /// by the retention rule.</para><para>You can add the same tag key and value pair to a maximum or five retention rules.</para><para>To create a Region-level retention rule, omit this parameter. A Region-level retention
+        /// <para>[Tag-level retention rules only] Specifies the resource tags to use to identify resources
+        /// that are to be retained by a tag-level retention rule. For tag-level retention rules,
+        /// only deleted resources, of the specified resource type, that have one or more of the
+        /// specified tag key and value pairs are retained. If a resource is deleted, but it does
+        /// not have any of the specified tag key and value pairs, it is immediately deleted without
+        /// being retained by the retention rule.</para><para>You can add the same tag key and value pair to a maximum or five retention rules.</para><para>To create a Region-level retention rule, omit this parameter. A Region-level retention
         /// rule does not have any resource tags specified. It retains all deleted resources of
         /// the specified resource type in the Region in which the rule is created, even if the
-        /// resources are not tagged.</para>
+        /// resources are not tagged.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,16 +162,6 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Identifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -158,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Identifier), MyInvocation.BoundParameters);
@@ -174,22 +192,16 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RecycleBin.Model.UpdateRuleResponse, UpdateRBINRuleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Identifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
+            if (this.ExcludeResourceTag != null)
+            {
+                context.ExcludeResourceTag = new List<Amazon.RecycleBin.Model.ResourceTag>(this.ExcludeResourceTag);
+            }
             context.Identifier = this.Identifier;
             #if MODULAR
             if (this.Identifier == null && ParameterWasBound(nameof(this.Identifier)))
@@ -223,6 +235,10 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.ExcludeResourceTag != null)
+            {
+                request.ExcludeResourceTags = cmdletContext.ExcludeResourceTag;
             }
             if (cmdletContext.Identifier != null)
             {
@@ -303,13 +319,7 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Recycle Bin", "UpdateRule");
             try
             {
-                #if DESKTOP
-                return client.UpdateRule(request);
-                #elif CORECLR
-                return client.UpdateRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -327,6 +337,7 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String Description { get; set; }
+            public List<Amazon.RecycleBin.Model.ResourceTag> ExcludeResourceTag { get; set; }
             public System.String Identifier { get; set; }
             public List<Amazon.RecycleBin.Model.ResourceTag> ResourceTag { get; set; }
             public Amazon.RecycleBin.ResourceType ResourceType { get; set; }

@@ -113,7 +113,7 @@ $PERS_Completers = {
         }
 
         # Amazon.Personalize.ObjectiveSensitivity
-        "New-PERSSolution/SolutionConfig_OptimizationObjective_ObjectiveSensitivity"
+        "New-PERSSolution/OptimizationObjective_ObjectiveSensitivity"
         {
             $v = "HIGH","LOW","MEDIUM","OFF"
             break
@@ -129,7 +129,7 @@ $PERS_Completers = {
         # Amazon.Personalize.TrainingMode
         "New-PERSSolutionVersion/TrainingMode"
         {
-            $v = "FULL","UPDATE"
+            $v = "AUTOTRAIN","FULL","UPDATE"
             break
         }
 
@@ -146,8 +146,8 @@ $PERS_map = @{
     "Domain"=@("Get-PERSRecipeList","New-PERSDatasetGroup","New-PERSSchema")
     "ImportMode"=@("New-PERSDatasetImportJob")
     "IngestionMode"=@("New-PERSDatasetExportJob")
+    "OptimizationObjective_ObjectiveSensitivity"=@("New-PERSSolution")
     "RecipeProvider"=@("Get-PERSRecipeList")
-    "SolutionConfig_OptimizationObjective_ObjectiveSensitivity"=@("New-PERSSolution")
     "TrainingMode"=@("New-PERSSolutionVersion")
 }
 
@@ -204,6 +204,7 @@ $PERS_SelectMap = @{
     "Select"=@("New-PERSBatchInferenceJob",
                "New-PERSBatchSegmentJob",
                "New-PERSCampaign",
+               "New-PERSDataDeletionJob",
                "New-PERSDataset",
                "New-PERSDatasetExportJob",
                "New-PERSDatasetGroup",
@@ -228,6 +229,7 @@ $PERS_SelectMap = @{
                "Get-PERSBatchInferenceJob",
                "Get-PERSBatchSegmentJob",
                "Get-PERSCampaign",
+               "Get-PERSDataDeletionJob",
                "Get-PERSDataset",
                "Get-PERSDatasetExportJob",
                "Get-PERSDatasetGroup",
@@ -245,6 +247,7 @@ $PERS_SelectMap = @{
                "Get-PERSBatchInferenceJobList",
                "Get-PERSBatchSegmentJobList",
                "Get-PERSCampaignList",
+               "Get-PERSDataDeletionJobList",
                "Get-PERSDatasetExportJobList",
                "Get-PERSDatasetGroupList",
                "Get-PERSDatasetImportJobList",
@@ -267,7 +270,8 @@ $PERS_SelectMap = @{
                "Update-PERSCampaign",
                "Update-PERSDataset",
                "Update-PERSMetricAttribution",
-               "Update-PERSRecommender")
+               "Update-PERSRecommender",
+               "Update-PERSSolution")
 }
 
 _awsArgumentCompleterRegistration $PERS_SelectCompleters $PERS_SelectMap

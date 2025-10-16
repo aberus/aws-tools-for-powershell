@@ -1,0 +1,19 @@
+---
+Common_Enable-AWSMetricsLogging:
+  title: Use Enable-AWSMetricsLogging
+  title_abbrev: Enable-AWSMetricsLogging
+  synopsis: use Enable-AWSMetricsLogging
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: Turns on logging of performance metrics for service calls.</emphasis>'
+          snippet_files: []
+        - description: 
+          snippet_files:
+          - .doc_gen/snippet_files/common_Enable-AWSMetricsLogging.1.1.ps1
+  services:
+    Common:
+      Enable-AWSMetricsLogging: 
+

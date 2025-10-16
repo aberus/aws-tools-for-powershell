@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataExchange;
 using Amazon.DataExchange.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTEX
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
     [AWSCmdlet("Calls the AWS Data Exchange CancelJob API operation.", Operation = new[] {"CancelJob"}, SelectReturnType = typeof(Amazon.DataExchange.Model.CancelJobResponse))]
     [AWSCmdletOutput("None or Amazon.DataExchange.Model.CancelJobResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DataExchange.Model.CancelJobResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DataExchange.Model.CancelJobResponse) be returned by specifying '-Select *'."
     )]
     public partial class StopDTEXJobCmdlet : AmazonDataExchangeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter JobId
         /// <summary>
@@ -70,16 +73,6 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -90,9 +83,13 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.JobId), MyInvocation.BoundParameters);
@@ -106,21 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataExchange.Model.CancelJobResponse, StopDTEXJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.JobId = this.JobId;
             #if MODULAR
             if (this.JobId == null && ParameterWasBound(nameof(this.JobId)))
@@ -186,13 +173,7 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Data Exchange", "CancelJob");
             try
             {
-                #if DESKTOP
-                return client.CancelJob(request);
-                #elif CORECLR
-                return client.CancelJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CancelJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -44,8 +46,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// Not all instance types support IPv6 addresses. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">Instance
     /// types</a>.
     /// </para></li><li><para>
-    /// If you don't specify a security group ID, we use the default security group. For more
-    /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html">Security
+    /// If you don't specify a security group ID, we use the default security group for the
+    /// VPC. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-network-security.html">Security
     /// groups</a>.
     /// </para></li><li><para>
     /// If any of the AMIs have a product code attached for which the user has not subscribed,
@@ -59,6 +61,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// To ensure faster instance launches, break up large requests into smaller batches.
     /// For example, create five separate launch requests for 100 instances each instead of
     /// one launch request for 500 instances.
+    /// </para><para><c>RunInstances</c> is subject to both request rate limiting and resource rate limiting.
+    /// For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-throttling.html">Request
+    /// throttling</a>.
     /// </para><para>
     /// An instance is ready for you to use when it's in the <c>running</c> state. You can
     /// check the state of your instance using <a>DescribeInstances</a>. You can tag instances
@@ -81,14 +86,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) RunInstances API operation.", Operation = new[] {"RunInstances"}, SelectReturnType = typeof(Amazon.EC2.Model.RunInstancesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Reservation or Amazon.EC2.Model.RunInstancesResponse",
         "This cmdlet returns an Amazon.EC2.Model.Reservation object.",
-        "The service call response (type Amazon.EC2.Model.RunInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.RunInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2InstanceCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalInfo
         /// <summary>
@@ -139,8 +143,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Placement_AvailabilityZone
         /// <summary>
         /// <para>
-        /// <para>The Availability Zone of the instance.</para><para>If not specified, an Availability Zone will be automatically chosen for you based
-        /// on the load balancing criteria for the Region.</para><para>This parameter is not supported for <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateFleet">CreateFleet</a>.</para>
+        /// <para>The Availability Zone of the instance.</para><para>On input, you can specify <c>AvailabilityZone</c> or <c>AvailabilityZoneId</c>, but
+        /// not both. If you specify neither one, Amazon EC2 automatically selects an Availability
+        /// Zone for you.</para><para>This parameter is not supported for <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateFleet">CreateFleet</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,12 +153,42 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String Placement_AvailabilityZone { get; set; }
         #endregion
         
+        #region Parameter Placement_AvailabilityZoneId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the Availability Zone of the instance.</para><para>On input, you can specify <c>AvailabilityZone</c> or <c>AvailabilityZoneId</c>, but
+        /// not both. If you specify neither one, Amazon EC2 automatically selects an Availability
+        /// Zone for you.</para><para>This parameter is not supported for <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateFleet">CreateFleet</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Placement_AvailabilityZoneId { get; set; }
+        #endregion
+        
+        #region Parameter NetworkPerformanceOptions_BandwidthWeighting
+        /// <summary>
+        /// <para>
+        /// <para>Specify the bandwidth weighting option to boost the associated type of baseline bandwidth,
+        /// as follows:</para><dl><dt>default</dt><dd><para>This option uses the standard bandwidth configuration for your instance type.</para></dd><dt>vpc-1</dt><dd><para>This option boosts your networking baseline bandwidth and reduces your EBS baseline
+        /// bandwidth.</para></dd><dt>ebs-1</dt><dd><para>This option boosts your EBS baseline bandwidth and reduces your networking baseline
+        /// bandwidth.</para></dd></dl>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EC2.InstanceBandwidthWeighting")]
+        public Amazon.EC2.InstanceBandwidthWeighting NetworkPerformanceOptions_BandwidthWeighting { get; set; }
+        #endregion
+        
         #region Parameter BlockDeviceMapping
         /// <summary>
         /// <para>
         /// <para>The block device mapping, which defines the EBS volumes and instance store volumes
         /// to attach to the instance at launch. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-device-mapping-concepts.html">Block
-        /// device mappings</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// device mappings</a> in the <i>Amazon EC2 User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,9 +210,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter CapacityReservationSpecification_CapacityReservationPreference
         /// <summary>
         /// <para>
-        /// <para>Indicates the instance's Capacity Reservation preferences. Possible preferences include:</para><ul><li><para><c>open</c> - The instance can run in any <c>open</c> Capacity Reservation that has
-        /// matching attributes (instance type, platform, Availability Zone).</para></li><li><para><c>none</c> - The instance avoids running in a Capacity Reservation even if one is
-        /// available. The instance runs as an On-Demand Instance.</para></li></ul>
+        /// <para>Indicates the instance's Capacity Reservation preferences. Possible preferences include:</para><ul><li><para><c>capacity-reservations-only</c> - The instance will only run in a Capacity Reservation
+        /// or Capacity Reservation group. If capacity isn't available, the instance will fail
+        /// to launch.</para></li><li><para><c>open</c> - The instance can run in any <c>open</c> Capacity Reservation that has
+        /// matching attributes (instance type, platform, Availability Zone, and tenancy). If
+        /// capacity isn't available, the instance runs as an On-Demand Instance.</para></li><li><para><c>none</c> - The instance doesn't run in a Capacity Reservation even if one is available.
+        /// The instance runs as an On-Demand Instance.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -236,8 +274,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Indicates whether an instance is enabled for stop protection. For more information,
-        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html#Using_StopProtection">Stop
-        /// protection</a>. </para>
+        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-stop-protection.html">Enable
+        /// stop protection for your EC2 instances</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -247,15 +285,26 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter DisableApiTermination
         /// <summary>
         /// <para>
-        /// <para>If you set this parameter to <c>true</c>, you can't terminate the instance using the
-        /// Amazon EC2 console, CLI, or API; otherwise, you can. To change this attribute after
-        /// launch, use <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifyInstanceAttribute.html">ModifyInstanceAttribute</a>.
-        /// Alternatively, if you set <c>InstanceInitiatedShutdownBehavior</c> to <c>terminate</c>,
-        /// you can terminate the instance by running the shutdown command from the instance.</para><para>Default: <c>false</c></para>
+        /// <para>Indicates whether termination protection is enabled for the instance. The default
+        /// is <c>false</c>, which means that you can terminate the instance using the Amazon
+        /// EC2 console, command line tools, or API. You can enable termination protection when
+        /// you launch an instance, while the instance is running, or while the instance is stopped.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? DisableApiTermination { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the operation, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EbsOptimized
@@ -269,37 +318,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? EbsOptimized { get; set; }
-        #endregion
-        
-        #region Parameter ElasticGpuSpecification
-        /// <summary>
-        /// <para>
-        /// <para>Deprecated.</para><note><para>Amazon Elastic Graphics reached end of life on January 8, 2024. For workloads that
-        /// require graphics acceleration, we recommend that you use Amazon EC2 G4ad, G4dn, or
-        /// G5 instances.</para></note>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public Amazon.EC2.Model.ElasticGpuSpecification[] ElasticGpuSpecification { get; set; }
-        #endregion
-        
-        #region Parameter ElasticInferenceAccelerator
-        /// <summary>
-        /// <para>
-        /// <para>An elastic inference accelerator to associate with the instance. Elastic inference
-        /// accelerators are a resource you can attach to your Amazon EC2 instances to accelerate
-        /// your Deep Learning (DL) inference workloads.</para><para>You cannot specify accelerators from different generations in the same request.</para><note><para>Starting April 15, 2023, Amazon Web Services will not onboard new customers to Amazon
-        /// Elastic Inference (EI), and will help current customers migrate their workloads to
-        /// options that offer better price and performance. After April 15, 2023, new customers
-        /// will not be able to launch instances with Amazon EI accelerators in Amazon SageMaker,
-        /// Amazon ECS, or Amazon EC2. However, customers who have used Amazon EI at least once
-        /// during the past 30-day period are considered current customers and will be able to
-        /// continue using the service.</para></note>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("ElasticInferenceAccelerators")]
-        public Amazon.EC2.Model.ElasticInferenceAccelerator[] ElasticInferenceAccelerator { get; set; }
         #endregion
         
         #region Parameter EnclaveOptions_Enabled
@@ -357,8 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Placement_GroupId
         /// <summary>
         /// <para>
-        /// <para>The ID of the placement group that the instance is in. If you specify <c>GroupId</c>,
-        /// you can't specify <c>GroupName</c>.</para>
+        /// <para>The ID of the placement group that the instance is in.</para><para>On input, you can specify <c>GroupId</c> or <c>GroupName</c>, but not both.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -368,8 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Placement_GroupName
         /// <summary>
         /// <para>
-        /// <para>The name of the placement group that the instance is in. If you specify <c>GroupName</c>,
-        /// you can't specify <c>GroupId</c>.</para>
+        /// <para>The name of the placement group that the instance is in.</para><para>On input, you can specify <c>GroupId</c> or <c>GroupName</c>, but not both.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -406,8 +422,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Placement_HostResourceGroupArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the host resource group in which to launch the instances.</para><para>If you specify this parameter, either omit the <b>Tenancy</b> parameter or set it
-        /// to <c>host</c>.</para><para>This parameter is not supported for <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateFleet">CreateFleet</a>.</para>
+        /// <para>The ARN of the host resource group in which to launch the instances.</para><para>On input, if you specify this parameter, either omit the <b>Tenancy</b> parameter
+        /// or set it to <c>host</c>.</para><para>This parameter is not supported for <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateFleet">CreateFleet</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -428,7 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter MetadataOptions_HttpProtocolIpv6
         /// <summary>
         /// <para>
-        /// <para>Enables or disables the IPv6 endpoint for the instance metadata service.</para>
+        /// <para>Enables or disables the IPv6 endpoint for the instance metadata service.</para><para>Default: <c>disabled</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -439,8 +455,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter MetadataOptions_HttpPutResponseHopLimit
         /// <summary>
         /// <para>
-        /// <para>The desired HTTP PUT response hop limit for instance metadata requests. The larger
-        /// the number, the further instance metadata requests can travel.</para><para>Default: 1</para><para>Possible values: Integers from 1 to 64</para>
+        /// <para>The maximum number of hops that the metadata token can travel.</para><para>Possible values: Integers from 1 to 64</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -450,13 +465,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter MetadataOptions_HttpToken
         /// <summary>
         /// <para>
-        /// <para>Indicates whether IMDSv2 is required.</para><ul><li><para><c>optional</c> - IMDSv2 is optional. You can choose whether to send a session token
-        /// in your instance metadata retrieval requests. If you retrieve IAM role credentials
-        /// without a session token, you receive the IMDSv1 role credentials. If you retrieve
-        /// IAM role credentials using a valid session token, you receive the IMDSv2 role credentials.</para></li><li><para><c>required</c> - IMDSv2 is required. You must send a session token in your instance
-        /// metadata retrieval requests. With this option, retrieving the IAM role credentials
-        /// always returns IMDSv2 credentials; IMDSv1 credentials are not available.</para></li></ul><para>Default: If the value of <c>ImdsSupport</c> for the Amazon Machine Image (AMI) for
-        /// your instance is <c>v2.0</c>, the default is <c>required</c>.</para>
+        /// <para>Indicates whether IMDSv2 is required.</para><ul><li><para><c>optional</c> - IMDSv2 is optional, which means that you can use either IMDSv2
+        /// or IMDSv1.</para></li><li><para><c>required</c> - IMDSv2 is required, which means that IMDSv1 is disabled, and you
+        /// must use IMDSv2.</para></li></ul><para>Default:</para><ul><li><para>If the value of <c>ImdsSupport</c> for the Amazon Machine Image (AMI) for your instance
+        /// is <c>v2.0</c> and the account level default is set to <c>no-preference</c>, the default
+        /// is <c>required</c>.</para></li><li><para>If the value of <c>ImdsSupport</c> for the Amazon Machine Image (AMI) for your instance
+        /// is <c>v2.0</c>, but the account level default is set to <c>V1 or V2</c>, the default
+        /// is <c>optional</c>.</para></li></ul><para>The default value can also be affected by other combinations of parameters. For more
+        /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-options.html#instance-metadata-options-order-of-precedence">Order
+        /// of precedence for instance metadata options</a> in the <i>Amazon EC2 User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -518,8 +535,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceType
         /// <summary>
         /// <para>
-        /// <para>The instance type. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">Instance
-        /// types</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// <para>The instance type. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/instance-types.html">Amazon
+        /// EC2 Instance Types Guide</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -546,7 +563,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The IPv6 addresses from the range of the subnet to associate with the primary network
         /// interface. You cannot specify this option and the option to assign a number of IPv6
         /// addresses in the same request. You cannot specify this option if you've specified
-        /// a minimum number of instances to launch.</para><para>You cannot specify this option and the network interfaces option in the same request.</para>
+        /// a minimum number of instances to launch.</para><para>You cannot specify this option and the network interfaces option in the same request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -569,8 +590,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter KeyName
         /// <summary>
         /// <para>
-        /// <para>The name of the key pair. You can create a key pair using <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateKeyPair.html">CreateKeyPair</a>
-        /// or <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ImportKeyPair.html">ImportKeyPair</a>.</para><important><para>If you do not specify a key pair, you can't connect to the instance unless you choose
+        /// <para>The name of the key pair. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html">Create
+        /// a key pair for your EC2 instance</a>.</para><important><para>If you do not specify a key pair, you can't connect to the instance unless you choose
         /// an AMI that is configured to allow users another way to log in.</para></important>
         /// </para>
         /// </summary>
@@ -581,9 +602,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchTemplate
         /// <summary>
         /// <para>
-        /// <para>The launch template to use to launch the instances. Any parameters that you specify
-        /// in <a>RunInstances</a> override the same parameters in the launch template. You can
-        /// specify either the name or ID of a launch template, but not both.</para>
+        /// <para>The launch template. Any additional parameters that you specify for the new instance
+        /// overwrite the corresponding parameters included in the launch template.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -593,7 +613,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LicenseSpecification
         /// <summary>
         /// <para>
-        /// <para>The license configurations.</para>
+        /// <para>The license configurations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -604,12 +628,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter MaxCount
         /// <summary>
         /// <para>
-        /// <para>The maximum number of instances to launch. If you specify more instances than Amazon
-        /// EC2 can launch in the target Availability Zone, Amazon EC2 launches the largest possible
-        /// number of instances above <c>MinCount</c>.</para><para>Constraints: Between 1 and the maximum number you're allowed for the specified instance
-        /// type. For more information about the default limits, and how to request an increase,
-        /// see <a href="http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2">How
-        /// many instances can I run in Amazon EC2</a> in the Amazon EC2 FAQ.</para>
+        /// <para>The maximum number of instances to launch. If you specify a value that is more capacity
+        /// than Amazon EC2 can launch in the target Availability Zone, Amazon EC2 launches the
+        /// largest possible number of instances above the specified minimum count.</para><para>Constraints: Between 1 and the quota for the specified instance type for your account
+        /// for this Region. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html">Amazon
+        /// EC2 instance type quotas</a>.</para>
         /// </para>
         /// <para>If a value for this parameter is not specified the cmdlet will use a default value of '<b>1</b>'.</para>
         /// </summary>
@@ -620,12 +643,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter MinCount
         /// <summary>
         /// <para>
-        /// <para>The minimum number of instances to launch. If you specify a minimum that is more instances
-        /// than Amazon EC2 can launch in the target Availability Zone, Amazon EC2 launches no
-        /// instances.</para><para>Constraints: Between 1 and the maximum number you're allowed for the specified instance
-        /// type. For more information about the default limits, and how to request an increase,
-        /// see <a href="http://aws.amazon.com/ec2/faqs/#How_many_instances_can_I_run_in_Amazon_EC2">How
-        /// many instances can I run in Amazon EC2</a> in the Amazon EC2 General FAQ.</para>
+        /// <para>The minimum number of instances to launch. If you specify a value that is more capacity
+        /// than Amazon EC2 can provide in the target Availability Zone, Amazon EC2 does not launch
+        /// any instances.</para><para>Constraints: Between 1 and the quota for the specified instance type for your account
+        /// for this Region. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-instance-quotas.html">Amazon
+        /// EC2 instance type quotas</a>.</para>
         /// </para>
         /// <para>If a value for this parameter is not specified the cmdlet will use a default value of '<b>1</b>'.</para>
         /// </summary>
@@ -658,8 +680,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter NetworkInterface
         /// <summary>
         /// <para>
-        /// <para>The network interfaces to associate with the instance. If you specify a network interface,
-        /// you must specify any security groups and subnets as part of the network interface.</para>
+        /// <para>The network interfaces to associate with the instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -676,6 +701,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? Placement_PartitionNumber { get; set; }
+        #endregion
+        
+        #region Parameter Operator_Principal
+        /// <summary>
+        /// <para>
+        /// <para>The service provider that manages the resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Operator_Principal { get; set; }
         #endregion
         
         #region Parameter PrivateIpAddress
@@ -710,8 +745,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the security groups. You can create a security group using <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateSecurityGroup.html">CreateSecurityGroup</a>.</para><para>If you specify a network interface, you must specify any security groups as part of
-        /// the network interface.</para>
+        /// <para>The IDs of the security groups.</para><para>If you specify a network interface, you must specify any security groups as part of
+        /// the network interface instead of using this parameter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -723,7 +762,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>[Default VPC] The names of the security groups.</para><para>If you specify a network interface, you must specify any security groups as part of
-        /// the network interface.</para><para>Default: Amazon EC2 uses the default security group.</para>
+        /// the network interface instead of using this parameter.</para><para>Default: Amazon EC2 uses the default security group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -745,7 +788,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The ID of the subnet to launch the instance into.</para><para>If you specify a network interface, you must specify any subnets as part of the network
-        /// interface.</para>
+        /// interface instead of using this parameter.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -755,7 +798,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the resources that are created during instance launch.</para><para>You can specify tags for the following resources only:</para><ul><li><para>Instances</para></li><li><para>Volumes</para></li><li><para>Spot Instance requests</para></li><li><para>Network interfaces</para></li></ul><para>To tag a resource after it has been created, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html">CreateTags</a>.</para>
+        /// <para>The tags to apply to the resources that are created during instance launch.</para><para>You can specify tags for the following resources only:</para><ul><li><para>Instances</para></li><li><para>Volumes</para></li><li><para>Spot Instance requests</para></li><li><para>Network interfaces</para></li></ul><para>To tag a resource after it has been created, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html">CreateTags</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -791,12 +838,45 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>Unique, case-sensitive identifier you provide to ensure the idempotency of the request.
         /// If you do not specify a client token, a randomly generated token is used for the request
-        /// to ensure idempotency.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
-        /// Idempotency</a>.</para><para>Constraints: Maximum 64 ASCII characters</para>
+        /// to ensure idempotency.</para><para>For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency in Amazon EC2 API requests</a>.</para><para>Constraints: Maximum 64 ASCII characters</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ClientToken { get; set; }
+        #endregion
+        
+        #region Parameter ElasticGpuSpecification
+        /// <summary>
+        /// <para>
+        /// <para>An elastic GPU to associate with the instance.</para><note><para>Amazon Elastic Graphics reached end of life on January 8, 2024.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("Specifying Elastic Graphics accelerators is no longer supported on the RunInstances API.")]
+        public Amazon.EC2.Model.ElasticGpuSpecification[] ElasticGpuSpecification { get; set; }
+        #endregion
+        
+        #region Parameter ElasticInferenceAccelerator
+        /// <summary>
+        /// <para>
+        /// <para>An elastic inference accelerator to associate with the instance.</para><note><para>Amazon Elastic Inference is no longer available.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("Specifying Elastic Inference accelerators is no longer supported on the RunInstances API.")]
+        [Alias("ElasticInferenceAccelerators")]
+        public Amazon.EC2.Model.ElasticInferenceAccelerator[] ElasticInferenceAccelerator { get; set; }
         #endregion
         
         #region Parameter Select
@@ -810,16 +890,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Reservation";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -830,9 +900,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageId), MyInvocation.BoundParameters);
@@ -846,21 +920,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.RunInstancesResponse, NewEC2InstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdditionalInfo = this.AdditionalInfo;
             if (this.BlockDeviceMapping != null)
             {
@@ -874,15 +938,20 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.CreditSpecification_CpuCredit = this.CreditSpecification_CpuCredit;
             context.DisableApiStop = this.DisableApiStop;
             context.DisableApiTermination = this.DisableApiTermination;
+            context.DryRun = this.DryRun;
             context.EbsOptimized = this.EbsOptimized;
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ElasticGpuSpecification != null)
             {
                 context.ElasticGpuSpecification = new List<Amazon.EC2.Model.ElasticGpuSpecification>(this.ElasticGpuSpecification);
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ElasticInferenceAccelerator != null)
             {
                 context.ElasticInferenceAccelerator = new List<Amazon.EC2.Model.ElasticInferenceAccelerator>(this.ElasticInferenceAccelerator);
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EnablePrimaryIpv6 = this.EnablePrimaryIpv6;
             context.EnclaveOptions_Enabled = this.EnclaveOptions_Enabled;
             context.HibernationOptions_Configured = this.HibernationOptions_Configured;
@@ -939,8 +1008,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 context.NetworkInterface = new List<Amazon.EC2.Model.InstanceNetworkInterfaceSpecification>(this.NetworkInterface);
             }
+            context.NetworkPerformanceOptions_BandwidthWeighting = this.NetworkPerformanceOptions_BandwidthWeighting;
+            context.Operator_Principal = this.Operator_Principal;
             context.Placement_Affinity = this.Placement_Affinity;
             context.Placement_AvailabilityZone = this.Placement_AvailabilityZone;
+            context.Placement_AvailabilityZoneId = this.Placement_AvailabilityZoneId;
             context.Placement_GroupId = this.Placement_GroupId;
             context.Placement_GroupName = this.Placement_GroupName;
             context.Placement_HostId = this.Placement_HostId;
@@ -1080,18 +1152,26 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.DisableApiTermination = cmdletContext.DisableApiTermination.Value;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.EbsOptimized != null)
             {
                 request.EbsOptimized = cmdletContext.EbsOptimized.Value;
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ElasticGpuSpecification != null)
             {
                 request.ElasticGpuSpecification = cmdletContext.ElasticGpuSpecification;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ElasticInferenceAccelerator != null)
             {
                 request.ElasticInferenceAccelerators = cmdletContext.ElasticInferenceAccelerator;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.EnablePrimaryIpv6 != null)
             {
                 request.EnablePrimaryIpv6 = cmdletContext.EnablePrimaryIpv6.Value;
@@ -1298,6 +1378,44 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 request.NetworkInterfaces = cmdletContext.NetworkInterface;
             }
             
+             // populate NetworkPerformanceOptions
+            var requestNetworkPerformanceOptionsIsNull = true;
+            request.NetworkPerformanceOptions = new Amazon.EC2.Model.InstanceNetworkPerformanceOptionsRequest();
+            Amazon.EC2.InstanceBandwidthWeighting requestNetworkPerformanceOptions_networkPerformanceOptions_BandwidthWeighting = null;
+            if (cmdletContext.NetworkPerformanceOptions_BandwidthWeighting != null)
+            {
+                requestNetworkPerformanceOptions_networkPerformanceOptions_BandwidthWeighting = cmdletContext.NetworkPerformanceOptions_BandwidthWeighting;
+            }
+            if (requestNetworkPerformanceOptions_networkPerformanceOptions_BandwidthWeighting != null)
+            {
+                request.NetworkPerformanceOptions.BandwidthWeighting = requestNetworkPerformanceOptions_networkPerformanceOptions_BandwidthWeighting;
+                requestNetworkPerformanceOptionsIsNull = false;
+            }
+             // determine if request.NetworkPerformanceOptions should be set to null
+            if (requestNetworkPerformanceOptionsIsNull)
+            {
+                request.NetworkPerformanceOptions = null;
+            }
+            
+             // populate Operator
+            var requestOperatorIsNull = true;
+            request.Operator = new Amazon.EC2.Model.OperatorRequest();
+            System.String requestOperator_operator_Principal = null;
+            if (cmdletContext.Operator_Principal != null)
+            {
+                requestOperator_operator_Principal = cmdletContext.Operator_Principal;
+            }
+            if (requestOperator_operator_Principal != null)
+            {
+                request.Operator.Principal = requestOperator_operator_Principal;
+                requestOperatorIsNull = false;
+            }
+             // determine if request.Operator should be set to null
+            if (requestOperatorIsNull)
+            {
+                request.Operator = null;
+            }
+            
              // populate Placement
             var requestPlacementIsNull = true;
             request.Placement = new Amazon.EC2.Model.Placement();
@@ -1319,6 +1437,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (requestPlacement_placement_AvailabilityZone != null)
             {
                 request.Placement.AvailabilityZone = requestPlacement_placement_AvailabilityZone;
+                requestPlacementIsNull = false;
+            }
+            System.String requestPlacement_placement_AvailabilityZoneId = null;
+            if (cmdletContext.Placement_AvailabilityZoneId != null)
+            {
+                requestPlacement_placement_AvailabilityZoneId = cmdletContext.Placement_AvailabilityZoneId;
+            }
+            if (requestPlacement_placement_AvailabilityZoneId != null)
+            {
+                request.Placement.AvailabilityZoneId = requestPlacement_placement_AvailabilityZoneId;
                 requestPlacementIsNull = false;
             }
             System.String requestPlacement_placement_GroupId = null;
@@ -1501,13 +1629,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "RunInstances");
             try
             {
-                #if DESKTOP
-                return client.RunInstances(request);
-                #elif CORECLR
-                return client.RunInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RunInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1534,8 +1656,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String CreditSpecification_CpuCredit { get; set; }
             public System.Boolean? DisableApiStop { get; set; }
             public System.Boolean? DisableApiTermination { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? EbsOptimized { get; set; }
+            [System.ObsoleteAttribute]
             public List<Amazon.EC2.Model.ElasticGpuSpecification> ElasticGpuSpecification { get; set; }
+            [System.ObsoleteAttribute]
             public List<Amazon.EC2.Model.ElasticInferenceAccelerator> ElasticInferenceAccelerator { get; set; }
             public System.Boolean? EnablePrimaryIpv6 { get; set; }
             public System.Boolean? EnclaveOptions_Enabled { get; set; }
@@ -1562,8 +1687,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.Int32? MinCount { get; set; }
             public System.Boolean? Monitoring { get; set; }
             public List<Amazon.EC2.Model.InstanceNetworkInterfaceSpecification> NetworkInterface { get; set; }
+            public Amazon.EC2.InstanceBandwidthWeighting NetworkPerformanceOptions_BandwidthWeighting { get; set; }
+            public System.String Operator_Principal { get; set; }
             public System.String Placement_Affinity { get; set; }
             public System.String Placement_AvailabilityZone { get; set; }
+            public System.String Placement_AvailabilityZoneId { get; set; }
             public System.String Placement_GroupId { get; set; }
             public System.String Placement_GroupName { get; set; }
             public System.String Placement_HostId { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OpenSearchServerless;
 using Amazon.OpenSearchServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OSS
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.OSS
     [AWSCmdlet("Calls the OpenSearch Serverless UpdateSecurityConfig API operation.", Operation = new[] {"UpdateSecurityConfig"}, SelectReturnType = typeof(Amazon.OpenSearchServerless.Model.UpdateSecurityConfigResponse))]
     [AWSCmdletOutput("Amazon.OpenSearchServerless.Model.SecurityConfigDetail or Amazon.OpenSearchServerless.Model.UpdateSecurityConfigResponse",
         "This cmdlet returns an Amazon.OpenSearchServerless.Model.SecurityConfigDetail object.",
-        "The service call response (type Amazon.OpenSearchServerless.Model.UpdateSecurityConfigResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OpenSearchServerless.Model.UpdateSecurityConfigResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateOSSSecurityConfigCmdlet : AmazonOpenSearchServerlessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigVersion
         /// <summary>
@@ -70,6 +73,28 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter IamFederationOptions_GroupAttribute
+        /// <summary>
+        /// <para>
+        /// <para>The group attribute for this IAM federation integration. This attribute is used to
+        /// map identity provider groups to OpenSearch Serverless permissions.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IamFederationOptions_GroupAttribute { get; set; }
+        #endregion
+        
+        #region Parameter IamIdentityCenterOptionsUpdates_GroupAttribute
+        /// <summary>
+        /// <para>
+        /// <para>The group attribute for this IAM Identity Center integration. Defaults to <c>GroupId</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.OpenSearchServerless.IamIdentityCenterGroupAttribute")]
+        public Amazon.OpenSearchServerless.IamIdentityCenterGroupAttribute IamIdentityCenterOptionsUpdates_GroupAttribute { get; set; }
         #endregion
         
         #region Parameter SamlOptions_GroupAttribute
@@ -110,6 +135,16 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         public System.String SamlOptions_Metadata { get; set; }
         #endregion
         
+        #region Parameter SamlOptions_OpenSearchServerlessEntityId
+        /// <summary>
+        /// <para>
+        /// <para>Custom entity ID attribute to override the default entity ID for this SAML integration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SamlOptions_OpenSearchServerlessEntityId { get; set; }
+        #endregion
+        
         #region Parameter SamlOptions_SessionTimeout
         /// <summary>
         /// <para>
@@ -118,6 +153,28 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? SamlOptions_SessionTimeout { get; set; }
+        #endregion
+        
+        #region Parameter IamFederationOptions_UserAttribute
+        /// <summary>
+        /// <para>
+        /// <para>The user attribute for this IAM federation integration. This attribute is used to
+        /// identify users in the federated authentication process.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IamFederationOptions_UserAttribute { get; set; }
+        #endregion
+        
+        #region Parameter IamIdentityCenterOptionsUpdates_UserAttribute
+        /// <summary>
+        /// <para>
+        /// <para>The user attribute for this IAM Identity Center integration. Defaults to <c>UserId</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.OpenSearchServerless.IamIdentityCenterUserAttribute")]
+        public Amazon.OpenSearchServerless.IamIdentityCenterUserAttribute IamIdentityCenterOptionsUpdates_UserAttribute { get; set; }
         #endregion
         
         #region Parameter SamlOptions_UserAttribute
@@ -161,9 +218,13 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -191,6 +252,10 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             }
             #endif
             context.Description = this.Description;
+            context.IamFederationOptions_GroupAttribute = this.IamFederationOptions_GroupAttribute;
+            context.IamFederationOptions_UserAttribute = this.IamFederationOptions_UserAttribute;
+            context.IamIdentityCenterOptionsUpdates_GroupAttribute = this.IamIdentityCenterOptionsUpdates_GroupAttribute;
+            context.IamIdentityCenterOptionsUpdates_UserAttribute = this.IamIdentityCenterOptionsUpdates_UserAttribute;
             context.Id = this.Id;
             #if MODULAR
             if (this.Id == null && ParameterWasBound(nameof(this.Id)))
@@ -200,6 +265,7 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             #endif
             context.SamlOptions_GroupAttribute = this.SamlOptions_GroupAttribute;
             context.SamlOptions_Metadata = this.SamlOptions_Metadata;
+            context.SamlOptions_OpenSearchServerlessEntityId = this.SamlOptions_OpenSearchServerlessEntityId;
             context.SamlOptions_SessionTimeout = this.SamlOptions_SessionTimeout;
             context.SamlOptions_UserAttribute = this.SamlOptions_UserAttribute;
             
@@ -230,6 +296,64 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             {
                 request.Description = cmdletContext.Description;
             }
+            
+             // populate IamFederationOptions
+            var requestIamFederationOptionsIsNull = true;
+            request.IamFederationOptions = new Amazon.OpenSearchServerless.Model.IamFederationConfigOptions();
+            System.String requestIamFederationOptions_iamFederationOptions_GroupAttribute = null;
+            if (cmdletContext.IamFederationOptions_GroupAttribute != null)
+            {
+                requestIamFederationOptions_iamFederationOptions_GroupAttribute = cmdletContext.IamFederationOptions_GroupAttribute;
+            }
+            if (requestIamFederationOptions_iamFederationOptions_GroupAttribute != null)
+            {
+                request.IamFederationOptions.GroupAttribute = requestIamFederationOptions_iamFederationOptions_GroupAttribute;
+                requestIamFederationOptionsIsNull = false;
+            }
+            System.String requestIamFederationOptions_iamFederationOptions_UserAttribute = null;
+            if (cmdletContext.IamFederationOptions_UserAttribute != null)
+            {
+                requestIamFederationOptions_iamFederationOptions_UserAttribute = cmdletContext.IamFederationOptions_UserAttribute;
+            }
+            if (requestIamFederationOptions_iamFederationOptions_UserAttribute != null)
+            {
+                request.IamFederationOptions.UserAttribute = requestIamFederationOptions_iamFederationOptions_UserAttribute;
+                requestIamFederationOptionsIsNull = false;
+            }
+             // determine if request.IamFederationOptions should be set to null
+            if (requestIamFederationOptionsIsNull)
+            {
+                request.IamFederationOptions = null;
+            }
+            
+             // populate IamIdentityCenterOptionsUpdates
+            var requestIamIdentityCenterOptionsUpdatesIsNull = true;
+            request.IamIdentityCenterOptionsUpdates = new Amazon.OpenSearchServerless.Model.UpdateIamIdentityCenterConfigOptions();
+            Amazon.OpenSearchServerless.IamIdentityCenterGroupAttribute requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_GroupAttribute = null;
+            if (cmdletContext.IamIdentityCenterOptionsUpdates_GroupAttribute != null)
+            {
+                requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_GroupAttribute = cmdletContext.IamIdentityCenterOptionsUpdates_GroupAttribute;
+            }
+            if (requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_GroupAttribute != null)
+            {
+                request.IamIdentityCenterOptionsUpdates.GroupAttribute = requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_GroupAttribute;
+                requestIamIdentityCenterOptionsUpdatesIsNull = false;
+            }
+            Amazon.OpenSearchServerless.IamIdentityCenterUserAttribute requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_UserAttribute = null;
+            if (cmdletContext.IamIdentityCenterOptionsUpdates_UserAttribute != null)
+            {
+                requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_UserAttribute = cmdletContext.IamIdentityCenterOptionsUpdates_UserAttribute;
+            }
+            if (requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_UserAttribute != null)
+            {
+                request.IamIdentityCenterOptionsUpdates.UserAttribute = requestIamIdentityCenterOptionsUpdates_iamIdentityCenterOptionsUpdates_UserAttribute;
+                requestIamIdentityCenterOptionsUpdatesIsNull = false;
+            }
+             // determine if request.IamIdentityCenterOptionsUpdates should be set to null
+            if (requestIamIdentityCenterOptionsUpdatesIsNull)
+            {
+                request.IamIdentityCenterOptionsUpdates = null;
+            }
             if (cmdletContext.Id != null)
             {
                 request.Id = cmdletContext.Id;
@@ -256,6 +380,16 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             if (requestSamlOptions_samlOptions_Metadata != null)
             {
                 request.SamlOptions.Metadata = requestSamlOptions_samlOptions_Metadata;
+                requestSamlOptionsIsNull = false;
+            }
+            System.String requestSamlOptions_samlOptions_OpenSearchServerlessEntityId = null;
+            if (cmdletContext.SamlOptions_OpenSearchServerlessEntityId != null)
+            {
+                requestSamlOptions_samlOptions_OpenSearchServerlessEntityId = cmdletContext.SamlOptions_OpenSearchServerlessEntityId;
+            }
+            if (requestSamlOptions_samlOptions_OpenSearchServerlessEntityId != null)
+            {
+                request.SamlOptions.OpenSearchServerlessEntityId = requestSamlOptions_samlOptions_OpenSearchServerlessEntityId;
                 requestSamlOptionsIsNull = false;
             }
             System.Int32? requestSamlOptions_samlOptions_SessionTimeout = null;
@@ -321,13 +455,7 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "OpenSearch Serverless", "UpdateSecurityConfig");
             try
             {
-                #if DESKTOP
-                return client.UpdateSecurityConfig(request);
-                #elif CORECLR
-                return client.UpdateSecurityConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSecurityConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -347,9 +475,14 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             public System.String ClientToken { get; set; }
             public System.String ConfigVersion { get; set; }
             public System.String Description { get; set; }
+            public System.String IamFederationOptions_GroupAttribute { get; set; }
+            public System.String IamFederationOptions_UserAttribute { get; set; }
+            public Amazon.OpenSearchServerless.IamIdentityCenterGroupAttribute IamIdentityCenterOptionsUpdates_GroupAttribute { get; set; }
+            public Amazon.OpenSearchServerless.IamIdentityCenterUserAttribute IamIdentityCenterOptionsUpdates_UserAttribute { get; set; }
             public System.String Id { get; set; }
             public System.String SamlOptions_GroupAttribute { get; set; }
             public System.String SamlOptions_Metadata { get; set; }
+            public System.String SamlOptions_OpenSearchServerlessEntityId { get; set; }
             public System.Int32? SamlOptions_SessionTimeout { get; set; }
             public System.String SamlOptions_UserAttribute { get; set; }
             public System.Func<Amazon.OpenSearchServerless.Model.UpdateSecurityConfigResponse, UpdateOSSSecurityConfigCmdlet, object> Select { get; set; } =

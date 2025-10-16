@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,22 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
-    /// Activates a public third-party extension, making it available for use in stack templates.
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-public.html">Using
-    /// public extensions</a> in the <i>CloudFormation User Guide</i>.
+    /// Activates a public third-party extension, such as a resource or module, to make it
+    /// available for use in stack templates in your current account and Region. It can also
+    /// create CloudFormation Hooks, which allow you to evaluate resource configurations before
+    /// CloudFormation provisions them. Hooks integrate with both CloudFormation and Cloud
+    /// Control API operations.
     /// 
     ///  
     /// <para>
-    /// Once you have activated a public third-party extension in your account and Region,
-    /// use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_SetTypeConfiguration.html">SetTypeConfiguration</a>
-    /// to specify configuration properties for the extension. For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-register.html#registry-set-configuration">Configuring
-    /// extensions at the account level</a> in the <i>CloudFormation User Guide</i>.
+    /// After you activate an extension, you can use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_SetTypeConfiguration.html">SetTypeConfiguration</a>
+    /// to set specific properties for the extension.
+    /// </para><para>
+    /// To see which extensions have been activated, use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_ListTypes.html">ListTypes</a>.
+    /// To see configuration details for an extension, use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DescribeType.html">DescribeType</a>.
+    /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-public-activate-extension.html">Activate
+    /// a third-party public extension in your account</a> in the <i>CloudFormation User Guide</i>.
+    /// For information about creating Hooks, see the <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/hooks-userguide/what-is-cloudformation-hooks.html">CloudFormation
+    /// Hooks User Guide</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Enable", "CFNType")]
@@ -45,12 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation ActivateType API operation.", Operation = new[] {"ActivateType"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.ActivateTypeResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudFormation.Model.ActivateTypeResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudFormation.Model.ActivateTypeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.ActivateTypeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EnableCFNTypeCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoUpdate
         /// <summary>
@@ -156,7 +167,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TypeNameAlias
         /// <summary>
         /// <para>
-        /// <para>An alias to assign to the public extension, in this account and Region. If you specify
+        /// <para>An alias to assign to the public extension in this account and Region. If you specify
         /// an alias for the extension, CloudFormation treats the alias as the extension type
         /// name within this account and Region. You must use the alias to refer to the extension
         /// in your templates, API calls, and CloudFormation console.</para><para>An extension alias must be unique within a given account and Region. You can activate
@@ -193,9 +204,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "Arn";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -338,13 +353,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "ActivateType");
             try
             {
-                #if DESKTOP
-                return client.ActivateType(request);
-                #elif CORECLR
-                return client.ActivateTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ActivateTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

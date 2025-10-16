@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,36 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
     /// Returns configuration data for the specified CloudFormation extensions, from the CloudFormation
-    /// registry for the account and Region.
+    /// registry in your current account and Region.
     /// 
     ///  
     /// <para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-register.html#registry-set-configuration">Configuring
-    /// extensions at the account level</a> in the <i>CloudFormation User Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-set-configuration.html">Edit
+    /// configuration data for extensions in your account</a> in the <i>CloudFormation User
+    /// Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "CFNDescribeTypeConfiguration")]
     [OutputType("Amazon.CloudFormation.Model.BatchDescribeTypeConfigurationsResponse")]
     [AWSCmdlet("Calls the AWS CloudFormation BatchDescribeTypeConfigurations API operation.", Operation = new[] {"BatchDescribeTypeConfigurations"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.BatchDescribeTypeConfigurationsResponse))]
     [AWSCmdletOutput("Amazon.CloudFormation.Model.BatchDescribeTypeConfigurationsResponse",
-        "This cmdlet returns an Amazon.CloudFormation.Model.BatchDescribeTypeConfigurationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudFormation.Model.BatchDescribeTypeConfigurationsResponse object containing multiple properties."
     )]
     public partial class GetCFNDescribeTypeConfigurationCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TypeConfigurationIdentifier
         /// <summary>
         /// <para>
-        /// <para>The list of identifiers for the desired extension configurations.</para>
+        /// <para>The list of identifiers for the desired extension configurations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -77,9 +85,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -160,13 +172,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "BatchDescribeTypeConfigurations");
             try
             {
-                #if DESKTOP
-                return client.BatchDescribeTypeConfigurations(request);
-                #elif CORECLR
-                return client.BatchDescribeTypeConfigurationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchDescribeTypeConfigurationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchRUM;
 using Amazon.CloudWatchRUM.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWRUM
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
     [AWSCmdlet("Calls the CloudWatch RUM UpdateRumMetricDefinition API operation.", Operation = new[] {"UpdateRumMetricDefinition"}, SelectReturnType = typeof(Amazon.CloudWatchRUM.Model.UpdateRumMetricDefinitionResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchRUM.Model.UpdateRumMetricDefinitionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchRUM.Model.UpdateRumMetricDefinitionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchRUM.Model.UpdateRumMetricDefinitionResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateCWRUMRumMetricDefinitionCmdlet : AmazonCloudWatchRUMClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppMonitorName
         /// <summary>
@@ -99,7 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// <para>Use this field only if you are sending the metric to CloudWatch.</para><para>This field is a map of field paths to dimension names. It defines the dimensions to
         /// associate with this metric in CloudWatch. For extended metrics, valid values for the
         /// entries in this field are the following:</para><ul><li><para><c>"metadata.pageId": "PageId"</c></para></li><li><para><c>"metadata.browserName": "BrowserName"</c></para></li><li><para><c>"metadata.deviceType": "DeviceType"</c></para></li><li><para><c>"metadata.osName": "OSName"</c></para></li><li><para><c>"metadata.countryCode": "CountryCode"</c></para></li><li><para><c>"event_details.fileType": "FileType"</c></para></li></ul><para> For both extended metrics and custom metrics, all dimensions listed in this field
-        /// must also be included in <c>EventPattern</c>.</para>
+        /// must also be included in <c>EventPattern</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,7 +125,7 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// { "browserName": [ "Chrome", "Firefox" ] }, "event_details": { "duration": [{ "numeric":
         /// [ "&lt;", 2000 ] }] } }'</c></para></li><li><para><c>'{ "event_type": ["com.amazon.rum.performance_navigation_event"], "metadata":
         /// { "browserName": [ "Chrome", "Safari" ], "countryCode": [ "US" ] }, "event_details":
-        /// { "duration": [{ "numeric": [ "&gt;=", 2000, "&lt;", 8000 ] }] } }'</c></para></li></ul><para>If the metrics destination' is <c>CloudWatch</c> and the event also matches a value
+        /// { "duration": [{ "numeric": [ "&gt;=", 2000, "&lt;", 8000 ] }] } }'</c></para></li></ul><para>If the metrics destination is <c>CloudWatch</c> and the event also matches a value
         /// in <c>DimensionKeys</c>, then the metric is published with the specified dimensions.
         /// </para>
         /// </para>
@@ -189,9 +196,8 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// <summary>
         /// <para>
         /// <para>The field within the event object that the metric value is sourced from.</para><para>If you omit this field, a hardcoded value of 1 is pushed as the metric value. This
-        /// is useful if you just want to count the number of events that the filter catches.
-        /// </para><para>If this metric is sent to CloudWatch Evidently, this field will be passed to Evidently
-        /// raw and Evidently will handle data extraction from the event.</para>
+        /// is useful if you want to count the number of events that the filter catches. </para><para>If this metric is sent to CloudWatch Evidently, this field will be passed to Evidently
+        /// raw. Evidently will handle data extraction from the event.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -208,16 +214,6 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MetricDefinitionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MetricDefinitionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MetricDefinitionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -228,9 +224,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MetricDefinitionId), MyInvocation.BoundParameters);
@@ -244,21 +244,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchRUM.Model.UpdateRumMetricDefinitionResponse, UpdateCWRUMRumMetricDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MetricDefinitionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppMonitorName = this.AppMonitorName;
             #if MODULAR
             if (this.AppMonitorName == null && ParameterWasBound(nameof(this.AppMonitorName)))
@@ -439,13 +429,7 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "CloudWatch RUM", "UpdateRumMetricDefinition");
             try
             {
-                #if DESKTOP
-                return client.UpdateRumMetricDefinition(request);
-                #elif CORECLR
-                return client.UpdateRumMetricDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRumMetricDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

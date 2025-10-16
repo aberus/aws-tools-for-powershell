@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchRUM;
 using Amazon.CloudWatchRUM.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWRUM
 {
     /// <summary>
@@ -37,20 +39,20 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
     /// are listed in <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-metrics.html">CloudWatch
     /// metrics that you can collect with CloudWatch RUM</a>.
     /// </para><para>
-    /// In addition to these default metrics, you can choose to send extended metrics or custom
-    /// metrics or both.
+    /// In addition to these default metrics, you can choose to send extended metrics, custom
+    /// metrics, or both.
     /// </para><ul><li><para>
-    /// Extended metrics enable you to send metrics with additional dimensions not included
-    /// in the default metrics. You can also send extended metrics to Evidently as well as
-    /// CloudWatch. The valid dimension names for the additional dimensions for extended metrics
-    /// are <c>BrowserName</c>, <c>CountryCode</c>, <c>DeviceType</c>, <c>FileType</c>, <c>OSName</c>,
-    /// and <c>PageId</c>. For more information, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-vended-metrics.html">
+    /// Extended metrics let you send metrics with additional dimensions that aren't included
+    /// in the default metrics. You can also send extended metrics to both Evidently and CloudWatch.
+    /// The valid dimension names for the additional dimensions for extended metrics are <c>BrowserName</c>,
+    /// <c>CountryCode</c>, <c>DeviceType</c>, <c>FileType</c>, <c>OSName</c>, and <c>PageId</c>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-vended-metrics.html">
     /// Extended metrics that you can send to CloudWatch and CloudWatch Evidently</a>.
     /// </para></li><li><para>
-    /// Custom metrics are metrics that you define. You can send custom metrics to CloudWatch
-    /// or to CloudWatch Evidently or to both. With custom metrics, you can use any metric
-    /// name and namespace, and to derive the metrics you can use any custom events, built-in
-    /// events, custom attributes, or default attributes. 
+    /// Custom metrics are metrics that you define. You can send custom metrics to CloudWatch.
+    /// CloudWatch Evidently, or both. With custom metrics, you can use any metric name and
+    /// namespace. To derive the metrics, you can use any custom events, built-in events,
+    /// custom attributes, or default attributes. 
     /// </para><para>
     /// You can't send custom metrics to the <c>AWS/RUM</c> namespace. You must send custom
     /// metrics to a custom namespace that you define. The namespace that you use can't start
@@ -80,12 +82,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
     [OutputType("Amazon.CloudWatchRUM.Model.BatchCreateRumMetricDefinitionsResponse")]
     [AWSCmdlet("Calls the CloudWatch RUM BatchCreateRumMetricDefinitions API operation.", Operation = new[] {"BatchCreateRumMetricDefinitions"}, SelectReturnType = typeof(Amazon.CloudWatchRUM.Model.BatchCreateRumMetricDefinitionsResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchRUM.Model.BatchCreateRumMetricDefinitionsResponse",
-        "This cmdlet returns an Amazon.CloudWatchRUM.Model.BatchCreateRumMetricDefinitionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudWatchRUM.Model.BatchCreateRumMetricDefinitionsResponse object containing multiple properties."
     )]
     public partial class AddCWRUMCreateRumMetricDefinitionCmdlet : AmazonCloudWatchRUMClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppMonitorName
         /// <summary>
@@ -108,9 +111,9 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// <summary>
         /// <para>
         /// <para>The destination to send the metrics to. Valid values are <c>CloudWatch</c> and <c>Evidently</c>.
-        /// If you specify <c>Evidently</c>, you must also specify the ARN of the CloudWatchEvidently
-        /// experiment that will receive the metrics and an IAM role that has permission to write
-        /// to the experiment.</para>
+        /// If you specify <c>Evidently</c>, you must also specify the Amazon Resource Name (ARN)
+        /// of the CloudWatchEvidently experiment that will receive the metrics and an IAM role
+        /// that has permission to write to the experiment.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -140,7 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         #region Parameter MetricDefinition
         /// <summary>
         /// <para>
-        /// <para>An array of structures which define the metrics that you want to send.</para>
+        /// <para>An array of structures which define the metrics that you want to send.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -166,16 +173,6 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Destination parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Destination' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Destination' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -186,9 +183,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AppMonitorName), MyInvocation.BoundParameters);
@@ -202,21 +203,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchRUM.Model.BatchCreateRumMetricDefinitionsResponse, AddCWRUMCreateRumMetricDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Destination;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppMonitorName = this.AppMonitorName;
             #if MODULAR
             if (this.AppMonitorName == null && ParameterWasBound(nameof(this.AppMonitorName)))
@@ -312,13 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "CloudWatch RUM", "BatchCreateRumMetricDefinitions");
             try
             {
-                #if DESKTOP
-                return client.BatchCreateRumMetricDefinitions(request);
-                #elif CORECLR
-                return client.BatchCreateRumMetricDefinitionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchCreateRumMetricDefinitionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

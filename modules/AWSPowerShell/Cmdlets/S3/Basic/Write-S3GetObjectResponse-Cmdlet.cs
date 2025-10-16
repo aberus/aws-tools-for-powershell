@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
     /// <note><para>
-    /// This operation is not supported by directory buckets.
+    /// This operation is not supported for directory buckets.
     /// </para></note><para>
     /// Passes transformed objects to a <c>GetObject</c> operation when using Object Lambda
     /// access points. For information about Object Lambda access points, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/transforming-objects.html">Transforming
@@ -78,12 +80,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) WriteGetObjectResponse API operation.", Operation = new[] {"WriteGetObjectResponse"}, SelectReturnType = typeof(Amazon.S3.Model.WriteGetObjectResponseResponse))]
     [AWSCmdletOutput("None or Amazon.S3.Model.WriteGetObjectResponseResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.S3.Model.WriteGetObjectResponseResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.S3.Model.WriteGetObjectResponseResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteS3GetObjectResponseCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceptRange
         /// <summary>
@@ -132,8 +135,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>This header can be used as a data integrity check to verify that the data received
-        /// is the same data that was originally sent. This specifies the base64-encoded, 32-bit
-        /// CRC32 checksum of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
+        /// is the same data that was originally sent. This specifies the Base64 encoded, 32-bit
+        /// <c>CRC-32</c> checksum of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
         /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -145,8 +148,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>This header can be used as a data integrity check to verify that the data received
-        /// is the same data that was originally sent. This specifies the base64-encoded, 32-bit
-        /// CRC32C checksum of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
+        /// is the same data that was originally sent. This specifies the Base64 encoded, 32-bit
+        /// <c>CRC-32C</c> checksum of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
         /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -154,12 +157,25 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public System.String ChecksumCRC32C { get; set; }
         #endregion
         
+        #region Parameter ChecksumCRC64NVME
+        /// <summary>
+        /// <para>
+        /// <para>This header can be used as a data integrity check to verify that the data received
+        /// is the same data that was originally sent. This specifies the Base64 encoded, 32-bit
+        /// <c>CRC-64NVME</c> checksum of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
+        /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ChecksumCRC64NVME { get; set; }
+        #endregion
+        
         #region Parameter ChecksumSHA1
         /// <summary>
         /// <para>
         /// <para>This header can be used as a data integrity check to verify that the data received
-        /// is the same data that was originally sent. This specifies the base64-encoded, 160-bit
-        /// SHA-1 digest of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
+        /// is the same data that was originally sent. This specifies the Base64 encoded, 160-bit
+        /// <c>SHA-1</c> digest of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
         /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -171,8 +187,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>This header can be used as a data integrity check to verify that the data received
-        /// is the same data that was originally sent. This specifies the base64-encoded, 256-bit
-        /// SHA-256 digest of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
+        /// is the same data that was originally sent. This specifies the Base64 encoded, 256-bit
+        /// <c>SHA-256</c> digest of the object. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">
         /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -325,7 +341,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter ObjectLockMode
         /// <summary>
         /// <para>
-        /// Amazon.S3.Model.WriteGetObjectResponseRequest.ObjectLockMode
+        /// Indicates whether an object stored in Amazon S3 has Object Lock enabled. For more information about S3 Object Lock, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html">Object Lock</a>.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -356,7 +372,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter ReplicationStatus
         /// <summary>
         /// <para>
-        /// Amazon.S3.Model.WriteGetObjectResponseRequest.ReplicationStatus
+        /// Indicates if request involves bucket that is either a source or destination in a Replication rule. For more information about S3 Replication, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication.html">Replication</a>.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -408,8 +424,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter ServerSideEncryptionMethod
         /// <summary>
         /// <para>
-        /// The server-side encryption algorithm used when storing requested object in Amazon
-        /// S3 (for example, AES256, <code>aws:kms</code>).
+        /// <para>The server-side encryption algorithm used when storing requested object in Amazon S3 or Amazon FSx.</para><note><para>When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <c>aws:fsx</c>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -431,7 +446,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter SSECustomerKeyMD5
         /// <summary>
         /// <para>
-        /// Amazon.S3.Model.WriteGetObjectResponseRequest.SSECustomerKeyMD5
+        /// 128-bit MD5 digest of customer-provided encryption key used in Amazon S3 to encrypt data stored in S3. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerSideEncryptionCustomerKeys.html">Server-Side Encryption (Using Customer-Provided Encryption Keys</a>.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -522,9 +537,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -552,6 +571,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             context.CacheControl = this.CacheControl;
             context.ChecksumCRC32 = this.ChecksumCRC32;
             context.ChecksumCRC32C = this.ChecksumCRC32C;
+            context.ChecksumCRC64NVME = this.ChecksumCRC64NVME;
             context.ChecksumSHA1 = this.ChecksumSHA1;
             context.ChecksumSHA256 = this.ChecksumSHA256;
             context.ContentDisposition = this.ContentDisposition;
@@ -637,6 +657,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 if (cmdletContext.ChecksumCRC32C != null)
                 {
                     request.ChecksumCRC32C = cmdletContext.ChecksumCRC32C;
+                }
+                if (cmdletContext.ChecksumCRC64NVME != null)
+                {
+                    request.ChecksumCRC64NVME = cmdletContext.ChecksumCRC64NVME;
                 }
                 if (cmdletContext.ChecksumSHA1 != null)
                 {
@@ -805,13 +829,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "WriteGetObjectResponse");
             try
             {
-                #if DESKTOP
-                return client.WriteGetObjectResponse(request);
-                #elif CORECLR
-                return client.WriteGetObjectResponseAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.WriteGetObjectResponseAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -837,6 +855,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             public System.String CacheControl { get; set; }
             public System.String ChecksumCRC32 { get; set; }
             public System.String ChecksumCRC32C { get; set; }
+            public System.String ChecksumCRC64NVME { get; set; }
             public System.String ChecksumSHA1 { get; set; }
             public System.String ChecksumSHA256 { get; set; }
             public System.String ContentDisposition { get; set; }

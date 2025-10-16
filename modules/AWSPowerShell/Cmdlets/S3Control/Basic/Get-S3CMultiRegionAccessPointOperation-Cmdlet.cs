@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -33,23 +35,28 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// </para></note><para>
     /// Retrieves the status of an asynchronous request to manage a Multi-Region Access Point.
     /// For more information about managing Multi-Region Access Points and how asynchronous
-    /// requests work, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/ManagingMultiRegionAccessPoints.html">Managing
+    /// requests work, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/MrapOperations.html">Using
     /// Multi-Region Access Points</a> in the <i>Amazon S3 User Guide</i>.
     /// </para><para>
     /// The following actions are related to <c>GetMultiRegionAccessPoint</c>:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_CreateMultiRegionAccessPoint.html">CreateMultiRegionAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeleteMultiRegionAccessPoint.html">DeleteMultiRegionAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_GetMultiRegionAccessPoint.html">GetMultiRegionAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListMultiRegionAccessPoints.html">ListMultiRegionAccessPoints</a></para></li></ul>
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_CreateMultiRegionAccessPoint.html">CreateMultiRegionAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeleteMultiRegionAccessPoint.html">DeleteMultiRegionAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_GetMultiRegionAccessPoint.html">GetMultiRegionAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListMultiRegionAccessPoints.html">ListMultiRegionAccessPoints</a></para></li></ul><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Get", "S3CMultiRegionAccessPointOperation")]
     [OutputType("Amazon.S3Control.Model.AsyncOperation")]
     [AWSCmdlet("Calls the Amazon S3 Control DescribeMultiRegionAccessPointOperation API operation.", Operation = new[] {"DescribeMultiRegionAccessPointOperation"}, SelectReturnType = typeof(Amazon.S3Control.Model.DescribeMultiRegionAccessPointOperationResponse))]
     [AWSCmdletOutput("Amazon.S3Control.Model.AsyncOperation or Amazon.S3Control.Model.DescribeMultiRegionAccessPointOperationResponse",
         "This cmdlet returns an Amazon.S3Control.Model.AsyncOperation object.",
-        "The service call response (type Amazon.S3Control.Model.DescribeMultiRegionAccessPointOperationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3Control.Model.DescribeMultiRegionAccessPointOperationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetS3CMultiRegionAccessPointOperationCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -98,19 +105,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public string Select { get; set; } = "AsyncOperation";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RequestTokenARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RequestTokenARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RequestTokenARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -118,21 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3Control.Model.DescribeMultiRegionAccessPointOperationResponse, GetS3CMultiRegionAccessPointOperationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RequestTokenARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             #if MODULAR
             if (this.AccountId == null && ParameterWasBound(nameof(this.AccountId)))
@@ -209,13 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "DescribeMultiRegionAccessPointOperation");
             try
             {
-                #if DESKTOP
-                return client.DescribeMultiRegionAccessPointOperation(request);
-                #elif CORECLR
-                return client.DescribeMultiRegionAccessPointOperationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeMultiRegionAccessPointOperationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

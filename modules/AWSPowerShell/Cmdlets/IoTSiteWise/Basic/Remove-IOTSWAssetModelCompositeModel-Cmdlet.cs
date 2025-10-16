@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [AWSCmdlet("Calls the AWS IoT SiteWise DeleteAssetModelCompositeModel API operation.", Operation = new[] {"DeleteAssetModelCompositeModel"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.DeleteAssetModelCompositeModelResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.AssetModelStatus or Amazon.IoTSiteWise.Model.DeleteAssetModelCompositeModelResponse",
         "This cmdlet returns an Amazon.IoTSiteWise.Model.AssetModelStatus object.",
-        "The service call response (type Amazon.IoTSiteWise.Model.DeleteAssetModelCompositeModelResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTSiteWise.Model.DeleteAssetModelCompositeModelResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveIOTSWAssetModelCompositeModelCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetModelCompositeModelId
         /// <summary>
@@ -81,6 +84,43 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public System.String AssetModelId { get; set; }
         #endregion
         
+        #region Parameter IfMatch
+        /// <summary>
+        /// <para>
+        /// <para>The expected current entity tag (ETag) for the asset model’s latest or active version
+        /// (specified using <c>matchForVersionType</c>). The delete request is rejected if the
+        /// tag does not match the latest or active version's current entity tag. See <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/opt-locking-for-model.html">Optimistic
+        /// locking for asset model writes</a> in the <i>IoT SiteWise User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IfMatch { get; set; }
+        #endregion
+        
+        #region Parameter IfNoneMatch
+        /// <summary>
+        /// <para>
+        /// <para>Accepts <b>*</b> to reject the delete request if an active version (specified using
+        /// <c>matchForVersionType</c> as <c>ACTIVE</c>) already exists for the asset model.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IfNoneMatch { get; set; }
+        #endregion
+        
+        #region Parameter MatchForVersionType
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the asset model version type (<c>LATEST</c> or <c>ACTIVE</c>) used in conjunction
+        /// with <c>If-Match</c> or <c>If-None-Match</c> headers to determine the target ETag
+        /// for the delete operation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IoTSiteWise.AssetModelVersionType")]
+        public Amazon.IoTSiteWise.AssetModelVersionType MatchForVersionType { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
@@ -113,9 +153,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -149,6 +193,9 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             }
             #endif
             context.ClientToken = this.ClientToken;
+            context.IfMatch = this.IfMatch;
+            context.IfNoneMatch = this.IfNoneMatch;
+            context.MatchForVersionType = this.MatchForVersionType;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -176,6 +223,18 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.IfMatch != null)
+            {
+                request.IfMatch = cmdletContext.IfMatch;
+            }
+            if (cmdletContext.IfNoneMatch != null)
+            {
+                request.IfNoneMatch = cmdletContext.IfNoneMatch;
+            }
+            if (cmdletContext.MatchForVersionType != null)
+            {
+                request.MatchForVersionType = cmdletContext.MatchForVersionType;
             }
             
             CmdletOutput output;
@@ -215,13 +274,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "DeleteAssetModelCompositeModel");
             try
             {
-                #if DESKTOP
-                return client.DeleteAssetModelCompositeModel(request);
-                #elif CORECLR
-                return client.DeleteAssetModelCompositeModelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteAssetModelCompositeModelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -241,6 +294,9 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             public System.String AssetModelCompositeModelId { get; set; }
             public System.String AssetModelId { get; set; }
             public System.String ClientToken { get; set; }
+            public System.String IfMatch { get; set; }
+            public System.String IfNoneMatch { get; set; }
+            public Amazon.IoTSiteWise.AssetModelVersionType MatchForVersionType { get; set; }
             public System.Func<Amazon.IoTSiteWise.Model.DeleteAssetModelCompositeModelResponse, RemoveIOTSWAssetModelCompositeModelCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.AssetModelStatus;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityLake;
 using Amazon.SecurityLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SLK
 {
     /// <summary>
     /// Creates the specified notification subscription in Amazon Security Lake for the organization
-    /// you specify.
+    /// you specify. The notification subscription is created for exceptions that cannot be
+    /// resolved by Security Lake automatically.
     /// </summary>
     [Cmdlet("New", "SLKDataLakeExceptionSubscription", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon Security Lake CreateDataLakeExceptionSubscription API operation.", Operation = new[] {"CreateDataLakeExceptionSubscription"}, SelectReturnType = typeof(Amazon.SecurityLake.Model.CreateDataLakeExceptionSubscriptionResponse))]
     [AWSCmdletOutput("None or Amazon.SecurityLake.Model.CreateDataLakeExceptionSubscriptionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SecurityLake.Model.CreateDataLakeExceptionSubscriptionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SecurityLake.Model.CreateDataLakeExceptionSubscriptionResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewSLKDataLakeExceptionSubscriptionCmdlet : AmazonSecurityLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExceptionTimeToLive
         /// <summary>
         /// <para>
-        /// <para>The expiration period and time-to-live (TTL).</para>
+        /// <para>The expiration period and time-to-live (TTL). It is the duration of time until which
+        /// the exception message remains.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,16 +102,6 @@ namespace Amazon.PowerShell.Cmdlets.SLK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NotificationEndpoint parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NotificationEndpoint' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NotificationEndpoint' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -117,9 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.SLK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NotificationEndpoint), MyInvocation.BoundParameters);
@@ -133,21 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.SLK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SecurityLake.Model.CreateDataLakeExceptionSubscriptionResponse, NewSLKDataLakeExceptionSubscriptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NotificationEndpoint;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ExceptionTimeToLive = this.ExceptionTimeToLive;
             context.NotificationEndpoint = this.NotificationEndpoint;
             #if MODULAR
@@ -229,13 +218,7 @@ namespace Amazon.PowerShell.Cmdlets.SLK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Security Lake", "CreateDataLakeExceptionSubscription");
             try
             {
-                #if DESKTOP
-                return client.CreateDataLakeExceptionSubscription(request);
-                #elif CORECLR
-                return client.CreateDataLakeExceptionSubscriptionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDataLakeExceptionSubscriptionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

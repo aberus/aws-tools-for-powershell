@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,17 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Updates the specified group with the specified attributes.
+    /// Given the name of a user pool group, updates any of the properties for precedence,
+    /// IAM role, or description. For more information about user pool groups, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-user-groups.html">Adding
+    /// groups to a user pool</a>.
     /// 
     ///  <note><para>
     /// Amazon Cognito evaluates Identity and Access Management (IAM) policies in requests
@@ -43,17 +47,18 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider UpdateGroup API operation.", Operation = new[] {"UpdateGroup"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.UpdateGroupResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.GroupType or Amazon.CognitoIdentityProvider.Model.UpdateGroupResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.GroupType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.UpdateGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.UpdateGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCGIPGroupCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// <para>A string containing the new description of the group.</para>
+        /// <para>A new description of the existing group.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,7 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter GroupName
         /// <summary>
         /// <para>
-        /// <para>The name of the group.</para>
+        /// <para>The name of the group that you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -80,8 +85,17 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Precedence
         /// <summary>
         /// <para>
-        /// <para>The new precedence value for the group. For more information about this parameter,
-        /// see <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_CreateGroup.html">CreateGroup</a>.</para>
+        /// <para>A non-negative integer value that specifies the precedence of this group relative
+        /// to the other groups that a user can belong to in the user pool. Zero is the highest
+        /// precedence value. Groups with lower <c>Precedence</c> values take precedence over
+        /// groups with higher or null <c>Precedence</c> values. If a user belongs to two or more
+        /// groups, it is the group with the lowest precedence value whose role ARN is given in
+        /// the user's tokens for the <c>cognito:roles</c> and <c>cognito:preferred_role</c> claims.</para><para>Two groups can have the same <c>Precedence</c> value. If this happens, neither group
+        /// takes precedence over the other. If two groups with the same <c>Precedence</c> have
+        /// the same role ARN, that role is used in the <c>cognito:preferred_role</c> claim in
+        /// tokens for users in each group. If the two groups have different role ARNs, the <c>cognito:preferred_role</c>
+        /// claim isn't set in users' tokens.</para><para>The default <c>Precedence</c> value is null. The maximum <c>Precedence</c> value is
+        /// <c>2^31-1</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,8 +105,9 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter RoleArn
         /// <summary>
         /// <para>
-        /// <para>The new role Amazon Resource Name (ARN) for the group. This is used for setting the
-        /// <c>cognito:roles</c> and <c>cognito:preferred_role</c> claims in the token.</para>
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that you want to associate with the
+        /// group. The role assignment contributes to the <c>cognito:roles</c> and <c>cognito:preferred_role</c>
+        /// claims in group members' tokens.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,7 +117,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool.</para>
+        /// <para>The ID of the user pool that contains the group you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -127,16 +142,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "Group";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -147,9 +152,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GroupName), MyInvocation.BoundParameters);
@@ -163,21 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.UpdateGroupResponse, UpdateCGIPGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.GroupName = this.GroupName;
             #if MODULAR
@@ -269,13 +268,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "UpdateGroup");
             try
             {
-                #if DESKTOP
-                return client.UpdateGroup(request);
-                #elif CORECLR
-                return client.UpdateGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -68,24 +70,23 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// 5958</a>.
     /// </para><para><c>GenerateDataKeyPair</c> also supports <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/nitro-enclave.html">Amazon
     /// Web Services Nitro Enclaves</a>, which provide an isolated compute environment in
-    /// Amazon EC2. To call <c>GenerateDataKeyPair</c> for an Amazon Web Services Nitro enclave,
-    /// use the <a href="https://docs.aws.amazon.com/enclaves/latest/user/developing-applications.html#sdk">Amazon
+    /// Amazon EC2. To call <c>GenerateDataKeyPair</c> for an Amazon Web Services Nitro enclave
+    /// or NitroTPM, use the <a href="https://docs.aws.amazon.com/enclaves/latest/user/developing-applications.html#sdk">Amazon
     /// Web Services Nitro Enclaves SDK</a> or any Amazon Web Services SDK. Use the <c>Recipient</c>
-    /// parameter to provide the attestation document for the enclave. <c>GenerateDataKeyPair</c>
+    /// parameter to provide the attestation document for the attested environment. <c>GenerateDataKeyPair</c>
     /// returns the public data key and a copy of the private data key encrypted under the
     /// specified KMS key, as usual. But instead of a plaintext copy of the private data key
     /// (<c>PrivateKeyPlaintext</c>), the response includes a copy of the private data key
     /// encrypted under the public key from the attestation document (<c>CiphertextForRecipient</c>).
-    /// For information about the interaction between KMS and Amazon Web Services Nitro Enclaves,
-    /// see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/services-nitro-enclaves.html">How
-    /// Amazon Web Services Nitro Enclaves uses KMS</a> in the <i>Key Management Service Developer
-    /// Guide</i>..
+    /// For information about the interaction between KMS and Amazon Web Services Nitro Enclaves
+    /// or Amazon Web Services NitroTPM, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/cryptographic-attestation.html">Cryptographic
+    /// attestation support in KMS</a> in the <i>Key Management Service Developer Guide</i>.
     /// </para><para>
     /// You can use an optional encryption context to add additional security to the encryption
     /// operation. If you specify an <c>EncryptionContext</c>, you must specify the same encryption
     /// context (a case-sensitive exact match) when decrypting the encrypted data key. Otherwise,
     /// the request to decrypt fails with an <c>InvalidCiphertextException</c>. For more information,
-    /// see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#encrypt_context">Encryption
+    /// see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html">Encryption
     /// Context</a> in the <i>Key Management Service Developer Guide</i>.
     /// </para><para>
     /// The KMS key that you use for this operation must be in a compatible key state. For
@@ -97,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><para><b>Required permissions</b>: <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-api-permissions-reference.html">kms:GenerateDataKeyPair</a>
     /// (key policy)
     /// </para><para><b>Related operations:</b></para><ul><li><para><a>Decrypt</a></para></li><li><para><a>Encrypt</a></para></li><li><para><a>GenerateDataKey</a></para></li><li><para><a>GenerateDataKeyPairWithoutPlaintext</a></para></li><li><para><a>GenerateDataKeyWithoutPlaintext</a></para></li></ul><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -105,20 +106,19 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [OutputType("Amazon.KeyManagementService.Model.GenerateDataKeyPairResponse")]
     [AWSCmdlet("Calls the AWS Key Management Service GenerateDataKeyPair API operation.", Operation = new[] {"GenerateDataKeyPair"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.GenerateDataKeyPairResponse))]
     [AWSCmdletOutput("Amazon.KeyManagementService.Model.GenerateDataKeyPairResponse",
-        "This cmdlet returns an Amazon.KeyManagementService.Model.GenerateDataKeyPairResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KeyManagementService.Model.GenerateDataKeyPairResponse object containing multiple properties."
     )]
     public partial class NewKMSDataKeyPairCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Recipient_AttestationDocument
         /// <summary>
         /// <para>
-        /// <para>The attestation document for an Amazon Web Services Nitro Enclave. This document includes
-        /// the enclave's public key.</para>
+        /// <para>The attestation document for an Amazon Web Services Nitro Enclave or a NitroTPM. This
+        /// document includes the enclave's public key.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -130,8 +130,8 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         #region Parameter DryRun
         /// <summary>
         /// <para>
-        /// <para>Checks if your request will succeed. <c>DryRun</c> is an optional parameter. </para><para>To learn more about how to use this parameter, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-dryrun.html">Testing
-        /// your KMS API calls</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// <para>Checks if your request will succeed. <c>DryRun</c> is an optional parameter. </para><para>To learn more about how to use this parameter, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/testing-permissions.html">Testing
+        /// your permissions</a> in the <i>Key Management Service Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,8 +148,12 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// you must specify the same (an exact case-sensitive match) encryption context to decrypt
         /// the data. An encryption context is supported only on operations with symmetric encryption
         /// KMS keys. On operations with symmetric encryption KMS keys, an encryption context
-        /// is optional, but it is strongly recommended.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#encrypt_context">Encryption
-        /// context</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// is optional, but it is strongly recommended.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html">Encryption
+        /// context</a> in the <i>Key Management Service Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,8 +165,12 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <para>
         /// <para>A list of grant tokens.</para><para>Use a grant token when your permission to call this operation comes from a new grant
         /// that has not yet achieved <i>eventual consistency</i>. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/grants.html#grant_token">Grant
-        /// token</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/grant-manage.html#using-grant-token">Using
-        /// a grant token</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// token</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/using-grant-token.html">Using
+        /// a grant token</a> in the <i>Key Management Service Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,8 +182,8 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <summary>
         /// <para>
         /// <para>The encryption algorithm that KMS should use with the public key for an Amazon Web
-        /// Services Nitro Enclave to encrypt plaintext values for the response. The only valid
-        /// value is <c>RSAES_OAEP_SHA_256</c>.</para>
+        /// Services Nitro Enclave or NitroTPM to encrypt plaintext values for the response. The
+        /// only valid value is <c>RSAES_OAEP_SHA_256</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,9 +217,10 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <summary>
         /// <para>
         /// <para>Determines the type of data key pair that is generated. </para><para>The KMS rule that restricts the use of asymmetric RSA and SM2 KMS keys to encrypt
-        /// and decrypt or to sign and verify (but not both), and the rule that permits you to
-        /// use ECC KMS keys only to sign and verify, are not effective on data key pairs, which
-        /// are used outside of KMS. The SM2 key spec is only available in China Regions.</para>
+        /// and decrypt or to sign and verify (but not both), the rule that permits you to use
+        /// ECC KMS keys only to sign and verify, and the rule that permits you to use ML-DSA
+        /// key pairs to sign and verify only are not effective on data key pairs, which are used
+        /// outside of KMS. The SM2 key spec is only available in China Regions.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -236,16 +245,6 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -256,9 +255,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KeyId), MyInvocation.BoundParameters);
@@ -272,21 +275,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.GenerateDataKeyPairResponse, NewKMSDataKeyPairCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DryRun = this.DryRun;
             if (this.EncryptionContext != null)
             {
@@ -432,13 +425,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "GenerateDataKeyPair");
             try
             {
-                #if DESKTOP
-                return client.GenerateDataKeyPair(request);
-                #elif CORECLR
-                return client.GenerateDataKeyPairAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GenerateDataKeyPairAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,68 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConnectParticipant;
 using Amazon.ConnectParticipant.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONNP
 {
     /// <summary>
     /// Creates the participant's connection. 
     /// 
-    ///  <note><para><c>ParticipantToken</c> is used for invoking this API instead of <c>ConnectionToken</c>.
+    ///  
+    /// <para>
+    /// For security recommendations, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/security-best-practices.html#bp-security-chat">Amazon
+    /// Connect Chat security best practices</a>. 
+    /// </para><para>
+    /// For WebRTC security recommendations, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/security-best-practices.html#bp-webrtc-security">Amazon
+    /// Connect WebRTC security best practices</a>. 
+    /// </para><note><para><c>ParticipantToken</c> is used for invoking this API instead of <c>ConnectionToken</c>.
     /// </para></note><para>
     /// The participant token is valid for the lifetime of the participant – until they are
-    /// part of a contact.
+    /// part of a contact. For WebRTC participants, if they leave or are disconnected for
+    /// 60 seconds, a new participant needs to be created using the <a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_CreateParticipant.html">CreateParticipant</a>
+    /// API. 
+    /// </para><para><b>For <c>WEBSOCKET</c> Type</b>: 
     /// </para><para>
-    /// The response URL for <c>WEBSOCKET</c> Type has a connect expiry timeout of 100s. Clients
-    /// must manually connect to the returned websocket URL and subscribe to the desired topic.
-    /// 
+    /// The response URL for has a connect expiry timeout of 100s. Clients must manually connect
+    /// to the returned websocket URL and subscribe to the desired topic. 
     /// </para><para>
     /// For chat, you need to publish the following on the established websocket connection:
     /// </para><para><c>{"topic":"aws/subscribe","content":{"topics":["aws/chat"]}}</c></para><para>
     /// Upon websocket URL expiry, as specified in the response ConnectionExpiry parameter,
     /// clients need to call this API again to obtain a new websocket URL and perform the
     /// same steps as before.
+    /// </para><para>
+    /// The expiry time for the connection token is different than the <c>ChatDurationInMinutes</c>.
+    /// Expiry time for the connection token is 1 day.
+    /// </para><para><b>For <c>WEBRTC_CONNECTION</c> Type</b>: 
+    /// </para><para>
+    /// The response includes connection data required for the client application to join
+    /// the call using the Amazon Chime SDK client libraries. The WebRTCConnection response
+    /// contains Meeting and Attendee information needed to establish the media connection.
+    /// 
+    /// </para><para>
+    /// The attendee join token in WebRTCConnection response is valid for the lifetime of
+    /// the participant in the call. If a participant leaves or is disconnected for 60 seconds,
+    /// their participant credentials will no longer be valid, and a new participant will
+    /// need to be created to rejoin the call. 
     /// </para><para><b>Message streaming support</b>: This API can also be used together with the <a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_StartContactStreaming.html">StartContactStreaming</a>
     /// API to create a participant connection for chat contacts that are not using a websocket.
     /// For more information about message streaming, <a href="https://docs.aws.amazon.com/connect/latest/adminguide/chat-message-streaming.html">Enable
     /// real-time chat message streaming</a> in the <i>Amazon Connect Administrator Guide</i>.
+    /// </para><para><b>Multi-user web, in-app, video calling support</b>: 
+    /// </para><para>
+    /// For WebRTC calls, this API is used in conjunction with the CreateParticipant API to
+    /// enable multi-party calling. The StartWebRTCContact API creates the initial contact
+    /// and routes it to an agent, while CreateParticipant adds additional participants to
+    /// the ongoing call. For more information about multi-party WebRTC calls, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/enable-multiuser-inapp.html">Enable
+    /// multi-user web, in-app, and video calling</a> in the <i>Amazon Connect Administrator
+    /// Guide</i>. 
     /// </para><para><b>Feature specifications</b>: For information about feature specifications, such
-    /// as the allowed number of open websocket connections per participant, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/amazon-connect-service-limits.html#feature-limits">Feature
+    /// as the allowed number of open websocket connections per participant or maximum number
+    /// of WebRTC participants, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/amazon-connect-service-limits.html#feature-limits">Feature
     /// specifications</a> in the <i>Amazon Connect Administrator Guide</i>. 
     /// </para><note><para>
     /// The Amazon Connect Participant Service APIs do not use <a href="https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html">Signature
@@ -60,12 +94,13 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
     [OutputType("Amazon.ConnectParticipant.Model.CreateParticipantConnectionResponse")]
     [AWSCmdlet("Calls the Amazon Connect Participant Service CreateParticipantConnection API operation.", Operation = new[] {"CreateParticipantConnection"}, SelectReturnType = typeof(Amazon.ConnectParticipant.Model.CreateParticipantConnectionResponse))]
     [AWSCmdletOutput("Amazon.ConnectParticipant.Model.CreateParticipantConnectionResponse",
-        "This cmdlet returns an Amazon.ConnectParticipant.Model.CreateParticipantConnectionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ConnectParticipant.Model.CreateParticipantConnectionResponse object containing multiple properties."
     )]
     public partial class NewCONNPParticipantConnectionCmdlet : AmazonConnectParticipantClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConnectParticipant
         /// <summary>
@@ -102,7 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         /// <para>
         /// <para>Type of connection information required. If you need <c>CONNECTION_CREDENTIALS</c>
         /// along with marking participant as connected, pass <c>CONNECTION_CREDENTIALS</c> in
-        /// <c>Type</c>.</para>
+        /// <c>Type</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -120,16 +159,6 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ParticipantToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ParticipantToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ParticipantToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -140,9 +169,13 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -156,21 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConnectParticipant.Model.CreateParticipantConnectionResponse, NewCONNPParticipantConnectionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ParticipantToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConnectParticipant = this.ConnectParticipant;
             context.ParticipantToken = this.ParticipantToken;
             #if MODULAR
@@ -249,13 +272,7 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Participant Service", "CreateParticipantConnection");
             try
             {
-                #if DESKTOP
-                return client.CreateParticipantConnection(request);
-                #elif CORECLR
-                return client.CreateParticipantConnectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateParticipantConnectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

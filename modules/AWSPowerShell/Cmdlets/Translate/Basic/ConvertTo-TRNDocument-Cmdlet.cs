@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Translate;
 using Amazon.Translate.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRN
 {
     /// <summary>
@@ -46,16 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.TRN
     [OutputType("Amazon.Translate.Model.TranslateDocumentResponse")]
     [AWSCmdlet("Calls the Amazon Translate TranslateDocument API operation.", Operation = new[] {"TranslateDocument"}, SelectReturnType = typeof(Amazon.Translate.Model.TranslateDocumentResponse))]
     [AWSCmdletOutput("Amazon.Translate.Model.TranslateDocumentResponse",
-        "This cmdlet returns an Amazon.Translate.Model.TranslateDocumentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Translate.Model.TranslateDocumentResponse object containing multiple properties."
     )]
     public partial class ConvertToTRNDocumentCmdlet : AmazonTranslateClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Settings_Brevity
         /// <summary>
@@ -199,7 +198,11 @@ namespace Amazon.PowerShell.Cmdlets.TRN
         /// source terms and the desired translation for each term. A terminology list can contain
         /// a maximum of 256 terms. You can use one custom terminology resource in your translation
         /// request.</para><para>Use the <a>ListTerminologies</a> operation to get the available terminology lists.</para><para>For more information about custom terminology lists, see <a href="https://docs.aws.amazon.com/translate/latest/dg/how-custom-terminology.html">Custom
-        /// terminology</a>.</para>
+        /// terminology</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -228,9 +231,13 @@ namespace Amazon.PowerShell.Cmdlets.TRN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TargetLanguageCode), MyInvocation.BoundParameters);
@@ -431,13 +438,7 @@ namespace Amazon.PowerShell.Cmdlets.TRN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Translate", "TranslateDocument");
             try
             {
-                #if DESKTOP
-                return client.TranslateDocument(request);
-                #elif CORECLR
-                return client.TranslateDocumentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TranslateDocumentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

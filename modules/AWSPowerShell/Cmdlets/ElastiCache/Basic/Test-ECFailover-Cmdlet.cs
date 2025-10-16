@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
-    /// Represents the input of a <c>TestFailover</c> operation which test automatic failover
+    /// Represents the input of a <c>TestFailover</c> operation which tests automatic failover
     /// on a specified node group (called shard in the console) in a replication group (called
     /// cluster in the console).
     /// 
@@ -39,15 +41,15 @@ namespace Amazon.PowerShell.Cmdlets.EC
     /// overcome a problem you may have with the cluster. Moreover, in certain conditions
     /// such as large-scale operational events, Amazon may block this API. 
     /// </para><para><b>Note the following</b></para><ul><li><para>
-    /// A customer can use this operation to test automatic failover on up to 5 shards (called
+    /// A customer can use this operation to test automatic failover on up to 15 shards (called
     /// node groups in the ElastiCache API and Amazon CLI) in any rolling 24-hour period.
     /// </para></li><li><para>
     /// If calling this operation on shards in different clusters (called replication groups
     /// in the API and CLI), the calls can be made concurrently.
     /// </para><para></para></li><li><para>
-    /// If calling this operation multiple times on different shards in the same Redis (cluster
-    /// mode enabled) replication group, the first node replacement must complete before a
-    /// subsequent call can be made.
+    /// If calling this operation multiple times on different shards in the same Valkey or
+    /// Redis OSS (cluster mode enabled) replication group, the first node replacement must
+    /// complete before a subsequent call can be made.
     /// </para></li><li><para>
     /// To determine whether the node replacement is complete you can check Events using the
     /// Amazon ElastiCache console, the Amazon CLI, or the ElastiCache API. Look for the following
@@ -61,11 +63,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
     /// Cache cluster message: <c>Recovering cache nodes &lt;node-id&gt;</c></para></li><li><para>
     /// Cache cluster message: <c>Finished recovery for cache nodes &lt;node-id&gt;</c></para></li></ol><para>
     /// For more information see:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/ECEvents.Viewing.html">Viewing
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/ECEvents.Viewing.html">Viewing
     /// ElastiCache Events</a> in the <i>ElastiCache User Guide</i></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_DescribeEvents.html">DescribeEvents</a>
     /// in the ElastiCache API Reference
     /// </para></li></ul></li></ul><para>
-    /// Also see, <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/AutoFailover.html#auto-failover-test">Testing
+    /// Also see, <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/AutoFailover.html#auto-failover-test">Testing
     /// Multi-AZ </a> in the <i>ElastiCache User Guide</i>.
     /// </para>
     /// </summary>
@@ -74,19 +76,20 @@ namespace Amazon.PowerShell.Cmdlets.EC
     [AWSCmdlet("Calls the Amazon ElastiCache TestFailover API operation.", Operation = new[] {"TestFailover"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.TestFailoverResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.ReplicationGroup or Amazon.ElastiCache.Model.TestFailoverResponse",
         "This cmdlet returns an Amazon.ElastiCache.Model.ReplicationGroup object.",
-        "The service call response (type Amazon.ElastiCache.Model.TestFailoverResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.TestFailoverResponse) can be returned by specifying '-Select *'."
     )]
     public partial class TestECFailoverCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NodeGroupId
         /// <summary>
         /// <para>
         /// <para>The name of the node group (called shard in the console) in this replication group
         /// on which automatic failover is to be tested. You may test automatic failover on up
-        /// to 5 node groups in any rolling 24-hour period.</para>
+        /// to 15 node groups in any rolling 24-hour period.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -129,19 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "ReplicationGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NodeGroupId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NodeGroupId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NodeGroupId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -149,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.TestFailoverResponse, TestECFailoverCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NodeGroupId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.NodeGroupId = this.NodeGroupId;
             #if MODULAR
             if (this.NodeGroupId == null && ParameterWasBound(nameof(this.NodeGroupId)))
@@ -240,13 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "TestFailover");
             try
             {
-                #if DESKTOP
-                return client.TestFailover(request);
-                #elif CORECLR
-                return client.TestFailoverAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TestFailoverAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

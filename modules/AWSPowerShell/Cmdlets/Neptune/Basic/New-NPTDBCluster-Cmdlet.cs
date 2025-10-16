@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Neptune;
 using Amazon.Neptune.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NPT
 {
     /// <summary>
@@ -46,17 +48,22 @@ namespace Amazon.PowerShell.Cmdlets.NPT
     [AWSCmdlet("Calls the Amazon Neptune CreateDBCluster API operation.", Operation = new[] {"CreateDBCluster"}, SelectReturnType = typeof(Amazon.Neptune.Model.CreateDBClusterResponse))]
     [AWSCmdletOutput("Amazon.Neptune.Model.DBCluster or Amazon.Neptune.Model.CreateDBClusterResponse",
         "This cmdlet returns an Amazon.Neptune.Model.DBCluster object.",
-        "The service call response (type Amazon.Neptune.Model.CreateDBClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Neptune.Model.CreateDBClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewNPTDBClusterCmdlet : AmazonNeptuneClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AvailabilityZone
         /// <summary>
         /// <para>
-        /// <para>A list of EC2 Availability Zones that instances in the DB cluster can be created in.</para>
+        /// <para>A list of EC2 Availability Zones that instances in the DB cluster can be created in.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +170,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         /// <para>A list of the log types that this DB cluster should export to CloudWatch Logs. Valid
         /// log types are: <c>audit</c> (to publish audit logs) and <c>slowquery</c> (to publish
         /// slow-query logs). See <a href="https://docs.aws.amazon.com/neptune/latest/userguide/cloudwatch-logs.html">Publishing
-        /// Neptune logs to Amazon CloudWatch logs</a>.</para>
+        /// Neptune logs to Amazon CloudWatch logs</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,7 +213,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         #region Parameter EngineVersion
         /// <summary>
         /// <para>
-        /// <para>The version number of the database engine to use for the new DB cluster.</para><para>Example: <c>1.0.2.1</c></para>
+        /// <para>The version number of the database engine to use for the new DB cluster.</para><para>Example: <c>1.2.1.0</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -375,9 +386,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         #region Parameter StorageType
         /// <summary>
         /// <para>
-        /// <para>The storage type to associate with the DB cluster.</para><para>Valid Values:</para><ul><li><para><c>standard | iopt1</c></para></li></ul><para>Default:</para><ul><li><para><c>standard</c></para></li></ul><note><para>When you create a Neptune cluster with the storage type set to <c>iopt1</c>, the storage
-        /// type is returned in the response. The storage type isn't returned when you set it
-        /// to <c>standard</c>.</para></note>
+        /// <para>The storage type for the new DB cluster.</para><para>Valid Values:</para><ul><li><para><b><c>standard</c></b>   –   ( <i>the default</i> ) Configures cost-effective database
+        /// storage for applications with moderate to small I/O usage. When set to <c>standard</c>,
+        /// the storage type is not returned in the response.</para></li><li><para><b><c>iopt1</c></b>   –   Enables <a href="https://docs.aws.amazon.com/neptune/latest/userguide/storage-types.html#provisioned-iops-storage">I/O-Optimized
+        /// storage</a> that's designed to meet the needs of I/O-intensive graph workloads that
+        /// require predictable pricing with low I/O latency and consistent I/O throughput.</para><para>Neptune I/O-Optimized storage is only available starting with engine release 1.3.0.0.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -387,7 +400,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to assign to the new DB cluster.</para>
+        /// <para>The tags to assign to the new DB cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -398,7 +415,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of EC2 VPC security groups to associate with this DB cluster.</para>
+        /// <para>A list of EC2 VPC security groups to associate with this DB cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -417,16 +438,6 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         public string Select { get; set; } = "DBCluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -437,9 +448,13 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBClusterIdentifier), MyInvocation.BoundParameters);
@@ -453,21 +468,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Neptune.Model.CreateDBClusterResponse, NewNPTDBClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SourceRegion = this.SourceRegion;
             if (this.AvailabilityZone != null)
             {
@@ -717,13 +722,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Neptune", "CreateDBCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateDBCluster(request);
-                #elif CORECLR
-                return client.CreateDBClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDBClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

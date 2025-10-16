@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,22 +22,24 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
     /// Gets a list of all of the context keys referenced in the input policies. The policies
     /// are supplied as a list of one or more strings. To get the context keys from policies
-    /// associated with an IAM user, group, or role, use <a>GetContextKeysForPrincipalPolicy</a>.
+    /// associated with an IAM user, group, or role, use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetContextKeysForPrincipalPolicy.html">GetContextKeysForPrincipalPolicy</a>.
     /// 
     ///  
     /// <para>
     /// Context keys are variables maintained by Amazon Web Services and its services that
     /// provide details about the context of an API query request. Context keys can be evaluated
     /// by testing against a value specified in an IAM policy. Use <c>GetContextKeysForCustomPolicy</c>
-    /// to understand what key names and values you must supply when you call <a>SimulateCustomPolicy</a>.
+    /// to understand what key names and values you must supply when you call <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulateCustomPolicy.html">SimulateCustomPolicy</a>.
     /// Note that all parameters are shown in unencoded form here for clarity but must be
     /// URL encoded to be included as a part of a real HTML request.
     /// </para>
@@ -47,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management GetContextKeysForCustomPolicy API operation.", Operation = new[] {"GetContextKeysForCustomPolicy"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.GetContextKeysForCustomPolicyResponse))]
     [AWSCmdletOutput("System.String or Amazon.IdentityManagement.Model.GetContextKeysForCustomPolicyResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.IdentityManagement.Model.GetContextKeysForCustomPolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.GetContextKeysForCustomPolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIAMContextKeysForCustomPolicyCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PolicyInputList
         /// <summary>
@@ -63,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// parameter is a string of characters consisting of the following:</para><ul><li><para>Any printable ASCII character ranging from the space character (<c>\u0020</c>) through
         /// the end of the ASCII character range</para></li><li><para>The printable characters in the Basic Latin and Latin-1 Supplement character set (through
         /// <c>\u00FF</c>)</para></li><li><para>The special characters tab (<c>\u0009</c>), line feed (<c>\u000A</c>), and carriage
-        /// return (<c>\u000D</c>)</para></li></ul>
+        /// return (<c>\u000D</c>)</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -88,19 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "ContextKeyNames";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PolicyInputList parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PolicyInputList' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PolicyInputList' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -108,21 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.GetContextKeysForCustomPolicyResponse, GetIAMContextKeysForCustomPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PolicyInputList;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.PolicyInputList != null)
             {
                 context.PolicyInputList = new List<System.String>(this.PolicyInputList);
@@ -191,13 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "GetContextKeysForCustomPolicy");
             try
             {
-                #if DESKTOP
-                return client.GetContextKeysForCustomPolicy(request);
-                #elif CORECLR
-                return client.GetContextKeysForCustomPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetContextKeysForCustomPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

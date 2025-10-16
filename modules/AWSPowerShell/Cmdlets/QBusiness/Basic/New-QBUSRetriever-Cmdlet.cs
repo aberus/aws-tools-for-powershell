@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QBusiness;
 using Amazon.QBusiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QBUS
 {
     /// <summary>
-    /// Adds a retriever to your Amazon Q application.
+    /// Adds a retriever to your Amazon Q Business application.
     /// </summary>
     [Cmdlet("New", "QBUSRetriever", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QBusiness.Model.CreateRetrieverResponse")]
     [AWSCmdlet("Calls the Amazon QBusiness CreateRetriever API operation.", Operation = new[] {"CreateRetriever"}, SelectReturnType = typeof(Amazon.QBusiness.Model.CreateRetrieverResponse))]
     [AWSCmdletOutput("Amazon.QBusiness.Model.CreateRetrieverResponse",
-        "This cmdlet returns an Amazon.QBusiness.Model.CreateRetrieverResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QBusiness.Model.CreateRetrieverResponse object containing multiple properties."
     )]
     public partial class NewQBUSRetrieverCmdlet : AmazonQBusinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
         /// <para>
-        /// <para>The identifier of your Amazon Q application.</para>
+        /// <para>The identifier of your Amazon Q Business application.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -56,6 +59,22 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ApplicationId { get; set; }
+        #endregion
+        
+        #region Parameter NativeIndexConfiguration_BoostingOverride
+        /// <summary>
+        /// <para>
+        /// <para>Overrides the default boosts applied by Amazon Q Business to supported document attribute
+        /// data types.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Configuration_NativeIndexConfiguration_BoostingOverride")]
+        public System.Collections.Hashtable NativeIndexConfiguration_BoostingOverride { get; set; }
         #endregion
         
         #region Parameter DisplayName
@@ -89,7 +108,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter NativeIndexConfiguration_IndexId
         /// <summary>
         /// <para>
-        /// <para>The identifier for the Amazon Q index.</para>
+        /// <para>The identifier for the Amazon Q Business index.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,8 +119,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter RoleArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of an IAM role used by Amazon Q to access the basic authentication credentials
-        /// stored in a Secrets Manager secret.</para>
+        /// <para>The ARN of an IAM role used by Amazon Q Business to access the basic authentication
+        /// credentials stored in a Secrets Manager secret.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,7 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <para>A list of key-value pairs that identify or categorize the retriever. You can also
         /// use tags to help control access to the retriever. Tag keys and values can consist
         /// of Unicode letters, digits, white space, and any of the following symbols: _ . : /
-        /// = + - @.</para>
+        /// = + - @.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,11 +162,27 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public Amazon.QBusiness.RetrieverType Type { get; set; }
         #endregion
         
+        #region Parameter NativeIndexConfiguration_Version
+        /// <summary>
+        /// <para>
+        /// <para>A read-only field that specifies the version of the <c>NativeIndexConfiguration</c>.</para><para>Amazon Q Business introduces enhanced document retrieval capabilities in version 2
+        /// of <c>NativeIndexConfiguration</c>, focusing on streamlined metadata boosting that
+        /// prioritizes recency and source relevance to deliver more accurate responses to your
+        /// queries. Version 2 has the following differences from version 1:</para><ul><li><para>Version 2 supports a single Date field (created_at OR last_updated_at) for recency
+        /// boosting</para></li><li><para>Version 2 supports a single String field with an ordered list of up to 5 values</para></li><li><para>Version 2 introduces number-based boost levels (ONE, TWO) alongside the text-based
+        /// levels</para></li><li><para>Version 2 allows specifying prioritization between Date and String fields</para></li><li><para>Version 2 maintains backward compatibility with existing configurations</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Configuration_NativeIndexConfiguration_Version")]
+        public System.Int64? NativeIndexConfiguration_Version { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>A token that you provide to identify the request to create your Amazon Q application
-        /// retriever.</para>
+        /// <para>A token that you provide to identify the request to create your Amazon Q Business
+        /// application retriever.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,16 +200,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -181,9 +210,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -197,21 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QBusiness.Model.CreateRetrieverResponse, NewQBUSRetrieverCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -221,7 +244,16 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             #endif
             context.ClientToken = this.ClientToken;
             context.KendraIndexConfiguration_IndexId = this.KendraIndexConfiguration_IndexId;
+            if (this.NativeIndexConfiguration_BoostingOverride != null)
+            {
+                context.NativeIndexConfiguration_BoostingOverride = new Dictionary<System.String, Amazon.QBusiness.Model.DocumentAttributeBoostingConfiguration>(StringComparer.Ordinal);
+                foreach (var hashKey in this.NativeIndexConfiguration_BoostingOverride.Keys)
+                {
+                    context.NativeIndexConfiguration_BoostingOverride.Add((String)hashKey, (Amazon.QBusiness.Model.DocumentAttributeBoostingConfiguration)(this.NativeIndexConfiguration_BoostingOverride[hashKey]));
+                }
+            }
             context.NativeIndexConfiguration_IndexId = this.NativeIndexConfiguration_IndexId;
+            context.NativeIndexConfiguration_Version = this.NativeIndexConfiguration_Version;
             context.DisplayName = this.DisplayName;
             #if MODULAR
             if (this.DisplayName == null && ParameterWasBound(nameof(this.DisplayName)))
@@ -299,6 +331,16 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
              // populate NativeIndexConfiguration
             var requestConfiguration_configuration_NativeIndexConfigurationIsNull = true;
             requestConfiguration_configuration_NativeIndexConfiguration = new Amazon.QBusiness.Model.NativeIndexConfiguration();
+            Dictionary<System.String, Amazon.QBusiness.Model.DocumentAttributeBoostingConfiguration> requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_BoostingOverride = null;
+            if (cmdletContext.NativeIndexConfiguration_BoostingOverride != null)
+            {
+                requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_BoostingOverride = cmdletContext.NativeIndexConfiguration_BoostingOverride;
+            }
+            if (requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_BoostingOverride != null)
+            {
+                requestConfiguration_configuration_NativeIndexConfiguration.BoostingOverride = requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_BoostingOverride;
+                requestConfiguration_configuration_NativeIndexConfigurationIsNull = false;
+            }
             System.String requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_IndexId = null;
             if (cmdletContext.NativeIndexConfiguration_IndexId != null)
             {
@@ -307,6 +349,16 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             if (requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_IndexId != null)
             {
                 requestConfiguration_configuration_NativeIndexConfiguration.IndexId = requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_IndexId;
+                requestConfiguration_configuration_NativeIndexConfigurationIsNull = false;
+            }
+            System.Int64? requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_Version = null;
+            if (cmdletContext.NativeIndexConfiguration_Version != null)
+            {
+                requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_Version = cmdletContext.NativeIndexConfiguration_Version.Value;
+            }
+            if (requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_Version != null)
+            {
+                requestConfiguration_configuration_NativeIndexConfiguration.Version = requestConfiguration_configuration_NativeIndexConfiguration_nativeIndexConfiguration_Version.Value;
                 requestConfiguration_configuration_NativeIndexConfigurationIsNull = false;
             }
              // determine if requestConfiguration_configuration_NativeIndexConfiguration should be set to null
@@ -378,13 +430,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QBusiness", "CreateRetriever");
             try
             {
-                #if DESKTOP
-                return client.CreateRetriever(request);
-                #elif CORECLR
-                return client.CreateRetrieverAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRetrieverAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -404,7 +450,9 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             public System.String ApplicationId { get; set; }
             public System.String ClientToken { get; set; }
             public System.String KendraIndexConfiguration_IndexId { get; set; }
+            public Dictionary<System.String, Amazon.QBusiness.Model.DocumentAttributeBoostingConfiguration> NativeIndexConfiguration_BoostingOverride { get; set; }
             public System.String NativeIndexConfiguration_IndexId { get; set; }
+            public System.Int64? NativeIndexConfiguration_Version { get; set; }
             public System.String DisplayName { get; set; }
             public System.String RoleArn { get; set; }
             public List<Amazon.QBusiness.Model.Tag> Tag { get; set; }

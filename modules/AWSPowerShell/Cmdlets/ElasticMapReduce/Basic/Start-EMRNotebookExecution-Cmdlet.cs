@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticMapReduce;
 using Amazon.ElasticMapReduce.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMR
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
     [AWSCmdlet("Calls the Amazon Elastic MapReduce StartNotebookExecution API operation.", Operation = new[] {"StartNotebookExecution"}, SelectReturnType = typeof(Amazon.ElasticMapReduce.Model.StartNotebookExecutionResponse))]
     [AWSCmdletOutput("System.String or Amazon.ElasticMapReduce.Model.StartNotebookExecutionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ElasticMapReduce.Model.StartNotebookExecutionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticMapReduce.Model.StartNotebookExecutionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartEMRNotebookExecutionCmdlet : AmazonElasticMapReduceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NotebookS3Location_Bucket
         /// <summary>
@@ -75,7 +78,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter EnvironmentVariable
         /// <summary>
         /// <para>
-        /// <para>The environment variables associated with the notebook execution.</para>
+        /// <para>The environment variables associated with the notebook execution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -224,7 +231,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <para>
         /// <para>A list of tags associated with a notebook execution. Tags are user-defined key-value
         /// pairs that consist of a required key string with a maximum of 128 characters and an
-        /// optional value string with a maximum of 256 characters.</para>
+        /// optional value string with a maximum of 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -264,9 +275,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.EditorId), MyInvocation.BoundParameters);
@@ -521,13 +536,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic MapReduce", "StartNotebookExecution");
             try
             {
-                #if DESKTOP
-                return client.StartNotebookExecution(request);
-                #elif CORECLR
-                return client.StartNotebookExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartNotebookExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

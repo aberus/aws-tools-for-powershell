@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRoomsML;
 using Amazon.CleanRoomsML.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRML
 {
     /// <summary>
@@ -35,12 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.CRML
     [AWSCmdlet("Calls the CleanRoomsML StartAudienceGenerationJob API operation.", Operation = new[] {"StartAudienceGenerationJob"}, SelectReturnType = typeof(Amazon.CleanRoomsML.Model.StartAudienceGenerationJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.CleanRoomsML.Model.StartAudienceGenerationJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CleanRoomsML.Model.StartAudienceGenerationJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRoomsML.Model.StartAudienceGenerationJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCRMLAudienceGenerationJobCmdlet : AmazonCleanRoomsMLClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter SqlParameters_AnalysisTemplateArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) associated with the analysis template within a collaboration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SeedAudience_SqlParameters_AnalysisTemplateArn")]
+        public System.String SqlParameters_AnalysisTemplateArn { get; set; }
+        #endregion
         
         #region Parameter CollaborationId
         /// <summary>
@@ -107,10 +121,47 @@ namespace Amazon.PowerShell.Cmdlets.CRML
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter Worker_Number
+        /// <summary>
+        /// <para>
+        /// <para>The number of compute workers that are used.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SeedAudience_SqlComputeConfiguration_Worker_Number")]
+        public System.Int32? Worker_Number { get; set; }
+        #endregion
+        
+        #region Parameter SqlParameters_Parameter
+        /// <summary>
+        /// <para>
+        /// <para>The protected query SQL parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SeedAudience_SqlParameters_Parameters")]
+        public System.Collections.Hashtable SqlParameters_Parameter { get; set; }
+        #endregion
+        
+        #region Parameter SqlParameters_QueryString
+        /// <summary>
+        /// <para>
+        /// <para>The query string to be submitted.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SeedAudience_SqlParameters_QueryString")]
+        public System.String SqlParameters_QueryString { get; set; }
+        #endregion
+        
         #region Parameter SeedAudience_RoleArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the IAM role that can read the Amazon S3 bucket where the training data
+        /// <para>The ARN of the IAM role that can read the Amazon S3 bucket where the seed audience
         /// is stored.</para>
         /// </para>
         /// </summary>
@@ -131,14 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.CRML
         /// <para>The Amazon S3 location URI.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("SeedAudience_DataSource_S3Uri")]
         public System.String DataSource_S3Uri { get; set; }
         #endregion
@@ -154,14 +198,30 @@ namespace Amazon.PowerShell.Cmdlets.CRML
         /// + - = . _ : / @.</para></li><li><para>Tag keys and values are case sensitive.</para></li><li><para>Do not use aws:, AWS:, or any upper or lowercase combination of such as a prefix for
         /// keys as it is reserved for AWS use. You cannot edit or delete tag keys with this prefix.
         /// Values can have this prefix. If a tag value has aws as its prefix but the key does
-        /// not, then Forecast considers it to be a user tag and will count against the limit
-        /// of 50 tags. Tags with only the key prefix of aws do not count against your tags per
-        /// resource limit.</para></li></ul>
+        /// not, then Clean Rooms ML considers it to be a user tag and will count against the
+        /// limit of 50 tags. Tags with only the key prefix of aws do not count against your tags
+        /// per resource limit.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter Worker_Type
+        /// <summary>
+        /// <para>
+        /// <para>The instance type of the compute workers that are used.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SeedAudience_SqlComputeConfiguration_Worker_Type")]
+        [AWSConstantClassSource("Amazon.CleanRoomsML.WorkerComputeType")]
+        public Amazon.CleanRoomsML.WorkerComputeType Worker_Type { get; set; }
         #endregion
         
         #region Parameter Select
@@ -175,16 +235,6 @@ namespace Amazon.PowerShell.Cmdlets.CRML
         public string Select { get; set; } = "AudienceGenerationJobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -195,9 +245,13 @@ namespace Amazon.PowerShell.Cmdlets.CRML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -211,21 +265,11 @@ namespace Amazon.PowerShell.Cmdlets.CRML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CleanRoomsML.Model.StartAudienceGenerationJobResponse, StartCRMLAudienceGenerationJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CollaborationId = this.CollaborationId;
             context.ConfiguredAudienceModelArn = this.ConfiguredAudienceModelArn;
             #if MODULAR
@@ -244,12 +288,6 @@ namespace Amazon.PowerShell.Cmdlets.CRML
             }
             #endif
             context.DataSource_S3Uri = this.DataSource_S3Uri;
-            #if MODULAR
-            if (this.DataSource_S3Uri == null && ParameterWasBound(nameof(this.DataSource_S3Uri)))
-            {
-                WriteWarning("You are passing $null as a value for parameter DataSource_S3Uri which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.SeedAudience_RoleArn = this.SeedAudience_RoleArn;
             #if MODULAR
             if (this.SeedAudience_RoleArn == null && ParameterWasBound(nameof(this.SeedAudience_RoleArn)))
@@ -257,6 +295,18 @@ namespace Amazon.PowerShell.Cmdlets.CRML
                 WriteWarning("You are passing $null as a value for parameter SeedAudience_RoleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Worker_Number = this.Worker_Number;
+            context.Worker_Type = this.Worker_Type;
+            context.SqlParameters_AnalysisTemplateArn = this.SqlParameters_AnalysisTemplateArn;
+            if (this.SqlParameters_Parameter != null)
+            {
+                context.SqlParameters_Parameter = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.SqlParameters_Parameter.Keys)
+                {
+                    context.SqlParameters_Parameter.Add((String)hashKey, (System.String)(this.SqlParameters_Parameter[hashKey]));
+                }
+            }
+            context.SqlParameters_QueryString = this.SqlParameters_QueryString;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -340,6 +390,101 @@ namespace Amazon.PowerShell.Cmdlets.CRML
                 request.SeedAudience.DataSource = requestSeedAudience_seedAudience_DataSource;
                 requestSeedAudienceIsNull = false;
             }
+            Amazon.CleanRoomsML.Model.ComputeConfiguration requestSeedAudience_seedAudience_SqlComputeConfiguration = null;
+            
+             // populate SqlComputeConfiguration
+            var requestSeedAudience_seedAudience_SqlComputeConfigurationIsNull = true;
+            requestSeedAudience_seedAudience_SqlComputeConfiguration = new Amazon.CleanRoomsML.Model.ComputeConfiguration();
+            Amazon.CleanRoomsML.Model.WorkerComputeConfiguration requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker = null;
+            
+             // populate Worker
+            var requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_WorkerIsNull = true;
+            requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker = new Amazon.CleanRoomsML.Model.WorkerComputeConfiguration();
+            System.Int32? requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Number = null;
+            if (cmdletContext.Worker_Number != null)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Number = cmdletContext.Worker_Number.Value;
+            }
+            if (requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Number != null)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker.Number = requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Number.Value;
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_WorkerIsNull = false;
+            }
+            Amazon.CleanRoomsML.WorkerComputeType requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Type = null;
+            if (cmdletContext.Worker_Type != null)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Type = cmdletContext.Worker_Type;
+            }
+            if (requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Type != null)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker.Type = requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker_worker_Type;
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_WorkerIsNull = false;
+            }
+             // determine if requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker should be set to null
+            if (requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_WorkerIsNull)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker = null;
+            }
+            if (requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker != null)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration.Worker = requestSeedAudience_seedAudience_SqlComputeConfiguration_seedAudience_SqlComputeConfiguration_Worker;
+                requestSeedAudience_seedAudience_SqlComputeConfigurationIsNull = false;
+            }
+             // determine if requestSeedAudience_seedAudience_SqlComputeConfiguration should be set to null
+            if (requestSeedAudience_seedAudience_SqlComputeConfigurationIsNull)
+            {
+                requestSeedAudience_seedAudience_SqlComputeConfiguration = null;
+            }
+            if (requestSeedAudience_seedAudience_SqlComputeConfiguration != null)
+            {
+                request.SeedAudience.SqlComputeConfiguration = requestSeedAudience_seedAudience_SqlComputeConfiguration;
+                requestSeedAudienceIsNull = false;
+            }
+            Amazon.CleanRoomsML.Model.ProtectedQuerySQLParameters requestSeedAudience_seedAudience_SqlParameters = null;
+            
+             // populate SqlParameters
+            var requestSeedAudience_seedAudience_SqlParametersIsNull = true;
+            requestSeedAudience_seedAudience_SqlParameters = new Amazon.CleanRoomsML.Model.ProtectedQuerySQLParameters();
+            System.String requestSeedAudience_seedAudience_SqlParameters_sqlParameters_AnalysisTemplateArn = null;
+            if (cmdletContext.SqlParameters_AnalysisTemplateArn != null)
+            {
+                requestSeedAudience_seedAudience_SqlParameters_sqlParameters_AnalysisTemplateArn = cmdletContext.SqlParameters_AnalysisTemplateArn;
+            }
+            if (requestSeedAudience_seedAudience_SqlParameters_sqlParameters_AnalysisTemplateArn != null)
+            {
+                requestSeedAudience_seedAudience_SqlParameters.AnalysisTemplateArn = requestSeedAudience_seedAudience_SqlParameters_sqlParameters_AnalysisTemplateArn;
+                requestSeedAudience_seedAudience_SqlParametersIsNull = false;
+            }
+            Dictionary<System.String, System.String> requestSeedAudience_seedAudience_SqlParameters_sqlParameters_Parameter = null;
+            if (cmdletContext.SqlParameters_Parameter != null)
+            {
+                requestSeedAudience_seedAudience_SqlParameters_sqlParameters_Parameter = cmdletContext.SqlParameters_Parameter;
+            }
+            if (requestSeedAudience_seedAudience_SqlParameters_sqlParameters_Parameter != null)
+            {
+                requestSeedAudience_seedAudience_SqlParameters.Parameters = requestSeedAudience_seedAudience_SqlParameters_sqlParameters_Parameter;
+                requestSeedAudience_seedAudience_SqlParametersIsNull = false;
+            }
+            System.String requestSeedAudience_seedAudience_SqlParameters_sqlParameters_QueryString = null;
+            if (cmdletContext.SqlParameters_QueryString != null)
+            {
+                requestSeedAudience_seedAudience_SqlParameters_sqlParameters_QueryString = cmdletContext.SqlParameters_QueryString;
+            }
+            if (requestSeedAudience_seedAudience_SqlParameters_sqlParameters_QueryString != null)
+            {
+                requestSeedAudience_seedAudience_SqlParameters.QueryString = requestSeedAudience_seedAudience_SqlParameters_sqlParameters_QueryString;
+                requestSeedAudience_seedAudience_SqlParametersIsNull = false;
+            }
+             // determine if requestSeedAudience_seedAudience_SqlParameters should be set to null
+            if (requestSeedAudience_seedAudience_SqlParametersIsNull)
+            {
+                requestSeedAudience_seedAudience_SqlParameters = null;
+            }
+            if (requestSeedAudience_seedAudience_SqlParameters != null)
+            {
+                request.SeedAudience.SqlParameters = requestSeedAudience_seedAudience_SqlParameters;
+                requestSeedAudienceIsNull = false;
+            }
              // determine if request.SeedAudience should be set to null
             if (requestSeedAudienceIsNull)
             {
@@ -387,13 +532,7 @@ namespace Amazon.PowerShell.Cmdlets.CRML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "CleanRoomsML", "StartAudienceGenerationJob");
             try
             {
-                #if DESKTOP
-                return client.StartAudienceGenerationJob(request);
-                #elif CORECLR
-                return client.StartAudienceGenerationJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartAudienceGenerationJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -417,6 +556,11 @@ namespace Amazon.PowerShell.Cmdlets.CRML
             public System.String Name { get; set; }
             public System.String DataSource_S3Uri { get; set; }
             public System.String SeedAudience_RoleArn { get; set; }
+            public System.Int32? Worker_Number { get; set; }
+            public Amazon.CleanRoomsML.WorkerComputeType Worker_Type { get; set; }
+            public System.String SqlParameters_AnalysisTemplateArn { get; set; }
+            public Dictionary<System.String, System.String> SqlParameters_Parameter { get; set; }
+            public System.String SqlParameters_QueryString { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.CleanRoomsML.Model.StartAudienceGenerationJobResponse, StartCRMLAudienceGenerationJobCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.AudienceGenerationJobArn;

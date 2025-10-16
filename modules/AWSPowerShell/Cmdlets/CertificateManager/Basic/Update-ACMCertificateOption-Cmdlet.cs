@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACM
 {
     /// <summary>
-    /// Updates a certificate. Currently, you can use this function to specify whether to
-    /// opt in to or out of recording your certificate in a certificate transparency log.
+    /// Updates a certificate. You can use this function to specify whether to opt in to or
+    /// out of recording your certificate in a certificate transparency log and exporting.
     /// For more information, see <a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-bestpractices.html#best-practices-transparency">
-    /// Opting Out of Certificate Transparency Logging</a>.
+    /// Opting Out of Certificate Transparency Logging</a> and <a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-exportable-certificates.html">Certificate
+    /// Manager Exportable Managed Certificates</a>.
     /// </summary>
     [Cmdlet("Update", "ACMCertificateOption", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Certificate Manager UpdateCertificateOptions API operation.", Operation = new[] {"UpdateCertificateOptions"}, SelectReturnType = typeof(Amazon.CertificateManager.Model.UpdateCertificateOptionsResponse))]
     [AWSCmdletOutput("None or Amazon.CertificateManager.Model.UpdateCertificateOptionsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CertificateManager.Model.UpdateCertificateOptionsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CertificateManager.Model.UpdateCertificateOptionsResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateACMCertificateOptionCmdlet : AmazonCertificateManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateArn
         /// <summary>
@@ -74,6 +78,17 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public Amazon.CertificateManager.CertificateTransparencyLoggingPreference Options_CertificateTransparencyLoggingPreference { get; set; }
         #endregion
         
+        #region Parameter Options_Export
+        /// <summary>
+        /// <para>
+        /// <para>You can opt in to allow the export of your certificates by specifying <c>ENABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CertificateManager.CertificateExport")]
+        public Amazon.CertificateManager.CertificateExport Options_Export { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -82,16 +97,6 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CertificateArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CertificateArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CertificateArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -104,9 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CertificateArn), MyInvocation.BoundParameters);
@@ -120,21 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CertificateManager.Model.UpdateCertificateOptionsResponse, UpdateACMCertificateOptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CertificateArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CertificateArn = this.CertificateArn;
             #if MODULAR
             if (this.CertificateArn == null && ParameterWasBound(nameof(this.CertificateArn)))
@@ -143,6 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             }
             #endif
             context.Options_CertificateTransparencyLoggingPreference = this.Options_CertificateTransparencyLoggingPreference;
+            context.Options_Export = this.Options_Export;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -175,6 +175,16 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             if (requestOptions_options_CertificateTransparencyLoggingPreference != null)
             {
                 request.Options.CertificateTransparencyLoggingPreference = requestOptions_options_CertificateTransparencyLoggingPreference;
+                requestOptionsIsNull = false;
+            }
+            Amazon.CertificateManager.CertificateExport requestOptions_options_Export = null;
+            if (cmdletContext.Options_Export != null)
+            {
+                requestOptions_options_Export = cmdletContext.Options_Export;
+            }
+            if (requestOptions_options_Export != null)
+            {
+                request.Options.Export = requestOptions_options_Export;
                 requestOptionsIsNull = false;
             }
              // determine if request.Options should be set to null
@@ -220,13 +230,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager", "UpdateCertificateOptions");
             try
             {
-                #if DESKTOP
-                return client.UpdateCertificateOptions(request);
-                #elif CORECLR
-                return client.UpdateCertificateOptionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateCertificateOptionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -245,6 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         {
             public System.String CertificateArn { get; set; }
             public Amazon.CertificateManager.CertificateTransparencyLoggingPreference Options_CertificateTransparencyLoggingPreference { get; set; }
+            public Amazon.CertificateManager.CertificateExport Options_Export { get; set; }
             public System.Func<Amazon.CertificateManager.Model.UpdateCertificateOptionsResponse, UpdateACMCertificateOptionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,43 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.XRay;
 using Amazon.XRay.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.XR
 {
     /// <summary>
+    /// <note><para>
+    /// You cannot find traces through this API if Transaction Search is enabled since trace
+    /// is not indexed in X-Ray.
+    /// </para></note><para>
     /// Retrieves a list of traces specified by ID. Each trace is a collection of segment
     /// documents that originates from a single request. Use <c>GetTraceSummaries</c> to get
-    /// a list of trace IDs.<br/><br/>In the AWS.Tools.XRay module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// a list of trace IDs.
+    /// </para><br/><br/>In the AWS.Tools.XRay module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "XRTraceBatch")]
     [OutputType("Amazon.XRay.Model.BatchGetTracesResponse")]
     [AWSCmdlet("Calls the AWS X-Ray BatchGetTraces API operation.", Operation = new[] {"BatchGetTraces"}, SelectReturnType = typeof(Amazon.XRay.Model.BatchGetTracesResponse))]
     [AWSCmdletOutput("Amazon.XRay.Model.BatchGetTracesResponse",
-        "This cmdlet returns an Amazon.XRay.Model.BatchGetTracesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.XRay.Model.BatchGetTracesResponse object containing multiple properties."
     )]
     public partial class GetXRTraceBatchCmdlet : AmazonXRayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TraceId
         /// <summary>
         /// <para>
-        /// <para>Specify the trace IDs of requests for which to retrieve segments.</para>
+        /// <para>Specify the trace IDs of requests for which to retrieve segments.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -68,7 +80,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.XRay module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,9 +110,13 @@ namespace Amazon.PowerShell.Cmdlets.XR
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -248,13 +264,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS X-Ray", "BatchGetTraces");
             try
             {
-                #if DESKTOP
-                return client.BatchGetTraces(request);
-                #elif CORECLR
-                return client.BatchGetTracesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchGetTracesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

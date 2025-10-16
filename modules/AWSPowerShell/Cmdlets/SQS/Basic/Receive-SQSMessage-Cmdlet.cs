@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SQS
 {
     /// <summary>
@@ -35,12 +37,12 @@ namespace Amazon.PowerShell.Cmdlets.SQS
     ///  
     /// <para>
     /// Short poll is the default behavior where a weighted random set of machines is sampled
-    /// on a <c>ReceiveMessage</c> call. Thus, only the messages on the sampled machines are
-    /// returned. If the number of messages in the queue is small (fewer than 1,000), you
-    /// most likely get fewer messages than you requested per <c>ReceiveMessage</c> call.
+    /// on a <c>ReceiveMessage</c> call. Therefore, only the messages on the sampled machines
+    /// are returned. If the number of messages in the queue is small (fewer than 1,000),
+    /// you most likely get fewer messages than you requested per <c>ReceiveMessage</c> call.
     /// If the number of messages in the queue is extremely small, you might not receive any
     /// messages in a particular <c>ReceiveMessage</c> response. If this happens, repeat the
-    /// request. 
+    /// request.
     /// </para><para>
     /// For each message returned, the response includes the following:
     /// </para><ul><li><para>
@@ -63,12 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.SQS
     /// You can provide the <c>VisibilityTimeout</c> parameter in your request. The parameter
     /// is applied to the messages that Amazon SQS returns in the response. If you don't include
     /// the parameter, the overall visibility timeout for the queue is used for the returned
-    /// messages. For more information, see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html">Visibility
-    /// Timeout</a> in the <i>Amazon SQS Developer Guide</i>.
-    /// </para><para>
-    /// A message that isn't deleted or a message whose visibility isn't extended before the
-    /// visibility timeout expires counts as a failed receive. Depending on the configuration
-    /// of the queue, the message might be sent to the dead-letter queue.
+    /// messages. The default visibility timeout for a queue is 30 seconds. 
     /// </para><note><para>
     /// In the future, new attributes might be added. If you write code that calls this action,
     /// we recommend that you structure your code so that it can handle new attributes gracefully.
@@ -79,34 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
     [AWSCmdlet("Calls the Amazon Simple Queue Service (SQS) ReceiveMessage API operation.", Operation = new[] {"ReceiveMessage"}, SelectReturnType = typeof(Amazon.SQS.Model.ReceiveMessageResponse))]
     [AWSCmdletOutput("Amazon.SQS.Model.Message or Amazon.SQS.Model.ReceiveMessageResponse",
         "This cmdlet returns a collection of Amazon.SQS.Model.Message objects.",
-        "The service call response (type Amazon.SQS.Model.ReceiveMessageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SQS.Model.ReceiveMessageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ReceiveSQSMessageCmdlet : AmazonSQSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
-        
-        #region Parameter AttributeName
-        /// <summary>
-        /// <para>
-        /// <para>A list of attributes that need to be returned along with each message. These attributes
-        /// include:</para><ul><li><para><c>All</c> – Returns all values.</para></li><li><para><c>ApproximateFirstReceiveTimestamp</c> – Returns the time the message was first
-        /// received from the queue (<a href="http://en.wikipedia.org/wiki/Unix_time">epoch time</a>
-        /// in milliseconds).</para></li><li><para><c>ApproximateReceiveCount</c> – Returns the number of times a message has been received
-        /// across all queues but not deleted.</para></li><li><para><c>AWSTraceHeader</c> – Returns the X-Ray trace header string. </para></li><li><para><c>SenderId</c></para><ul><li><para>For a user, returns the user ID, for example <c>ABCDEFGHI1JKLMNOPQ23R</c>.</para></li><li><para>For an IAM role, returns the IAM role ID, for example <c>ABCDE1F2GH3I4JK5LMNOP:i-a123b456</c>.</para></li></ul></li><li><para><c>SentTimestamp</c> – Returns the time the message was sent to the queue (<a href="http://en.wikipedia.org/wiki/Unix_time">epoch
-        /// time</a> in milliseconds).</para></li><li><para><c>SqsManagedSseEnabled</c> – Enables server-side queue encryption using SQS owned
-        /// encryption keys. Only one server-side encryption option is supported per queue (for
-        /// example, <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sse-existing-queue.html">SSE-KMS</a>
-        /// or <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sqs-sse-queue.html">SSE-SQS</a>).</para></li><li><para><c>MessageDeduplicationId</c> – Returns the value provided by the producer that calls
-        /// the <c><a>SendMessage</a></c> action.</para></li><li><para><c>MessageGroupId</c> – Returns the value provided by the producer that calls the
-        /// <c><a>SendMessage</a></c> action. Messages with the same <c>MessageGroupId</c> are
-        /// returned in sequence.</para></li><li><para><c>SequenceNumber</c> – Returns the value provided by Amazon SQS.</para></li></ul>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
-        [Alias("AttributeNames")]
-        public System.String[] AttributeName { get; set; }
-        #endregion
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MessageCount
         /// <summary>
@@ -130,12 +106,41 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// in succession (<c>..</c>).</para></li><li><para>The name can be up to 256 characters long.</para></li></ul><para>When using <c>ReceiveMessage</c>, you can send a list of attribute names to receive,
         /// or you can return all of the attributes by specifying <c>All</c> or <c>.*</c> in your
         /// request. You can also use all message attributes starting with a prefix, for example
-        /// <c>bar.*</c>.</para>
+        /// <c>bar.*</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("MessageAttributeNames")]
         public System.String[] MessageAttributeName { get; set; }
+        #endregion
+        
+        #region Parameter MessageSystemAttributeName
+        /// <summary>
+        /// <para>
+        /// <para>A list of attributes that need to be returned along with each message. These attributes
+        /// include:</para><ul><li><para><c>All</c> – Returns all values.</para></li><li><para><c>ApproximateFirstReceiveTimestamp</c> – Returns the time the message was first
+        /// received from the queue (<a href="http://en.wikipedia.org/wiki/Unix_time">epoch time</a>
+        /// in milliseconds).</para></li><li><para><c>ApproximateReceiveCount</c> – Returns the number of times a message has been received
+        /// across all queues but not deleted.</para></li><li><para><c>AWSTraceHeader</c> – Returns the X-Ray trace header string. </para></li><li><para><c>SenderId</c></para><ul><li><para>For a user, returns the user ID, for example <c>ABCDEFGHI1JKLMNOPQ23R</c>.</para></li><li><para>For an IAM role, returns the IAM role ID, for example <c>ABCDE1F2GH3I4JK5LMNOP:i-a123b456</c>.</para></li></ul></li><li><para><c>SentTimestamp</c> – Returns the time the message was sent to the queue (<a href="http://en.wikipedia.org/wiki/Unix_time">epoch
+        /// time</a> in milliseconds).</para></li><li><para><c>SqsManagedSseEnabled</c> – Enables server-side queue encryption using SQS owned
+        /// encryption keys. Only one server-side encryption option is supported per queue (for
+        /// example, <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sse-existing-queue.html">SSE-KMS</a>
+        /// or <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sqs-sse-queue.html">SSE-SQS</a>).</para></li><li><para><c>MessageDeduplicationId</c> – Returns the value provided by the producer that calls
+        /// the <c><a>SendMessage</a></c> action.</para></li><li><para><c>MessageGroupId</c> – Returns the value provided by the producer that calls the
+        /// <c><a>SendMessage</a></c> action.</para></li><li><para><c>SequenceNumber</c> – Returns the value provided by Amazon SQS.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MessageSystemAttributeNames")]
+        public System.String[] MessageSystemAttributeName { get; set; }
         #endregion
         
         #region Parameter QueueUrl
@@ -164,8 +169,7 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// to retrieve the same set of messages, even if their visibility timeout has not yet
         /// expired.</para><ul><li><para>You can use <c>ReceiveRequestAttemptId</c> only for 5 minutes after a <c>ReceiveMessage</c>
         /// action.</para></li><li><para>When you set <c>FifoQueue</c>, a caller of the <c>ReceiveMessage</c> action can provide
-        /// a <c>ReceiveRequestAttemptId</c> explicitly.</para></li><li><para>If a caller of the <c>ReceiveMessage</c> action doesn't provide a <c>ReceiveRequestAttemptId</c>,
-        /// Amazon SQS generates a <c>ReceiveRequestAttemptId</c>.</para></li><li><para>It is possible to retry the <c>ReceiveMessage</c> action with the same <c>ReceiveRequestAttemptId</c>
+        /// a <c>ReceiveRequestAttemptId</c> explicitly.</para></li><li><para>It is possible to retry the <c>ReceiveMessage</c> action with the same <c>ReceiveRequestAttemptId</c>
         /// if none of the messages have been modified (deleted or had their visibility changes).</para></li><li><para>During a visibility timeout, subsequent calls with the same <c>ReceiveRequestAttemptId</c>
         /// return the same messages and receipt handles. If a retry occurs within the deduplication
         /// interval, it resets the visibility timeout. For more information, see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html">Visibility
@@ -176,8 +180,8 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// tries to delete the processed messages, the action fails with an error.</para><para>To mitigate this effect, ensure that your application observes a safe threshold before
         /// the visibility timeout expires and extend the visibility timeout as necessary.</para></important></li><li><para>While messages with a particular <c>MessageGroupId</c> are invisible, no more messages
         /// belonging to the same <c>MessageGroupId</c> are returned until the visibility timeout
-        /// expires. You can still receive messages with another <c>MessageGroupId</c> as long
-        /// as it is also visible.</para></li><li><para>If a caller of <c>ReceiveMessage</c> can't track the <c>ReceiveRequestAttemptId</c>,
+        /// expires. You can still receive messages with another <c>MessageGroupId</c> from your
+        /// FIFO queue as long as they are visible.</para></li><li><para>If a caller of <c>ReceiveMessage</c> can't track the <c>ReceiveRequestAttemptId</c>,
         /// no retries work until the original visibility timeout expires. As a result, delays
         /// might occur but the messages in the queue remain in a strict order.</para></li></ul><para>The maximum length of <c>ReceiveRequestAttemptId</c> is 128 characters. <c>ReceiveRequestAttemptId</c>
         /// can contain alphanumeric characters (<c>a-z</c>, <c>A-Z</c>, <c>0-9</c>) and punctuation
@@ -193,7 +197,20 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// <summary>
         /// <para>
         /// <para>The duration (in seconds) that the received messages are hidden from subsequent retrieve
-        /// requests after being retrieved by a <c>ReceiveMessage</c> request.</para>
+        /// requests after being retrieved by a <c>ReceiveMessage</c> request. If not specified,
+        /// the default visibility timeout for the queue is used, which is 30 seconds.</para><para>Understanding <c>VisibilityTimeout</c>:</para><ul><li><para>When a message is received from a queue, it becomes temporarily invisible to other
+        /// consumers for the duration of the visibility timeout. This prevents multiple consumers
+        /// from processing the same message simultaneously. If the message is not deleted or
+        /// its visibility timeout is not extended before the timeout expires, it becomes visible
+        /// again and can be retrieved by other consumers.</para></li><li><para>Setting an appropriate visibility timeout is crucial. If it's too short, the message
+        /// might become visible again before processing is complete, leading to duplicate processing.
+        /// If it's too long, it delays the reprocessing of messages if the initial processing
+        /// fails.</para></li><li><para>You can adjust the visibility timeout using the <c>--visibility-timeout</c> parameter
+        /// in the <c>receive-message</c> command to match the processing time required by your
+        /// application.</para></li><li><para>A message that isn't deleted or a message whose visibility isn't extended before the
+        /// visibility timeout expires counts as a failed receive. Depending on the configuration
+        /// of the queue, the message might be sent to the dead-letter queue.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html">Visibility
+        /// Timeout</a> in the <i>Amazon SQS Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
@@ -205,8 +222,9 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// <para>
         /// <para>The duration (in seconds) for which the call waits for a message to arrive in the
         /// queue before returning. If a message is available, the call returns sooner than <c>WaitTimeSeconds</c>.
-        /// If no messages are available and the wait time expires, the call returns successfully
-        /// with an empty list of messages.</para><important><para>To avoid HTTP errors, ensure that the HTTP response timeout for <c>ReceiveMessage</c>
+        /// If no messages are available and the wait time expires, the call does not return a
+        /// message list. If you are using the Java SDK, it returns a <c>ReceiveMessageResponse</c>
+        /// object, which has a empty list instead of a Null object.</para><important><para>To avoid HTTP errors, ensure that the HTTP response timeout for <c>ReceiveMessage</c>
         /// requests is longer than the <c>WaitTimeSeconds</c> parameter. For example, with the
         /// Java SDK, you can set HTTP transport settings using the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/http/nio/netty/NettyNioAsyncHttpClient.html">
         /// NettyNioAsyncHttpClient</a> for asynchronous clients, or the <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/http/apache/ApacheHttpClient.html">
@@ -216,6 +234,35 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         [System.Management.Automation.Parameter(Position = 4, ValueFromPipelineByPropertyName = true)]
         [Alias("WaitTimeSeconds")]
         public System.Int32? WaitTimeInSeconds { get; set; }
+        #endregion
+        
+        #region Parameter AttributeName
+        /// <summary>
+        /// <para>
+        /// <important><para>This parameter has been discontinued but will be supported for backward compatibility.
+        /// To provide attribute names, you are encouraged to use <c>MessageSystemAttributeNames</c>.
+        /// </para></important><para>A list of attributes that need to be returned along with each message. These attributes
+        /// include:</para><ul><li><para><c>All</c> – Returns all values.</para></li><li><para><c>ApproximateFirstReceiveTimestamp</c> – Returns the time the message was first
+        /// received from the queue (<a href="http://en.wikipedia.org/wiki/Unix_time">epoch time</a>
+        /// in milliseconds).</para></li><li><para><c>ApproximateReceiveCount</c> – Returns the number of times a message has been received
+        /// across all queues but not deleted.</para></li><li><para><c>AWSTraceHeader</c> – Returns the X-Ray trace header string. </para></li><li><para><c>SenderId</c></para><ul><li><para>For a user, returns the user ID, for example <c>ABCDEFGHI1JKLMNOPQ23R</c>.</para></li><li><para>For an IAM role, returns the IAM role ID, for example <c>ABCDE1F2GH3I4JK5LMNOP:i-a123b456</c>.</para></li></ul></li><li><para><c>SentTimestamp</c> – Returns the time the message was sent to the queue (<a href="http://en.wikipedia.org/wiki/Unix_time">epoch
+        /// time</a> in milliseconds).</para></li><li><para><c>SqsManagedSseEnabled</c> – Enables server-side queue encryption using SQS owned
+        /// encryption keys. Only one server-side encryption option is supported per queue (for
+        /// example, <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sse-existing-queue.html">SSE-KMS</a>
+        /// or <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-configure-sqs-sse-queue.html">SSE-SQS</a>).</para></li><li><para><c>MessageDeduplicationId</c> – Returns the value provided by the producer that calls
+        /// the <c><a>SendMessage</a></c> action.</para></li><li><para><c>MessageGroupId</c> – Returns the value provided by the producer that calls the
+        /// <c><a>SendMessage</a></c> action. </para></li><li><para><c>SequenceNumber</c> – Returns the value provided by Amazon SQS.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("AttributeNames has been replaced by MessageSystemAttributeNames")]
+        [Alias("AttributeNames")]
+        public System.String[] AttributeName { get; set; }
         #endregion
         
         #region Parameter Select
@@ -229,16 +276,6 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public string Select { get; set; } = "Messages";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueueUrl parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueueUrl' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueueUrl' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -249,9 +286,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.QueueUrl), MyInvocation.BoundParameters);
@@ -265,29 +306,25 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SQS.Model.ReceiveMessageResponse, ReceiveSQSMessageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueueUrl;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AttributeName != null)
             {
                 context.AttributeName = new List<System.String>(this.AttributeName);
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MessageCount = this.MessageCount;
             if (this.MessageAttributeName != null)
             {
                 context.MessageAttributeName = new List<System.String>(this.MessageAttributeName);
+            }
+            if (this.MessageSystemAttributeName != null)
+            {
+                context.MessageSystemAttributeName = new List<System.String>(this.MessageSystemAttributeName);
             }
             context.QueueUrl = this.QueueUrl;
             #if MODULAR
@@ -315,10 +352,12 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             // create request
             var request = new Amazon.SQS.Model.ReceiveMessageRequest();
             
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.AttributeName != null)
             {
                 request.AttributeNames = cmdletContext.AttributeName;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.MessageCount != null)
             {
                 request.MaxNumberOfMessages = cmdletContext.MessageCount.Value;
@@ -326,6 +365,10 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             if (cmdletContext.MessageAttributeName != null)
             {
                 request.MessageAttributeNames = cmdletContext.MessageAttributeName;
+            }
+            if (cmdletContext.MessageSystemAttributeName != null)
+            {
+                request.MessageSystemAttributeNames = cmdletContext.MessageSystemAttributeName;
             }
             if (cmdletContext.QueueUrl != null)
             {
@@ -381,13 +424,7 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Queue Service (SQS)", "ReceiveMessage");
             try
             {
-                #if DESKTOP
-                return client.ReceiveMessage(request);
-                #elif CORECLR
-                return client.ReceiveMessageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ReceiveMessageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -404,9 +441,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            [System.ObsoleteAttribute]
             public List<System.String> AttributeName { get; set; }
             public System.Int32? MessageCount { get; set; }
             public List<System.String> MessageAttributeName { get; set; }
+            public List<System.String> MessageSystemAttributeName { get; set; }
             public System.String QueueUrl { get; set; }
             public System.String ReceiveRequestAttemptId { get; set; }
             public System.Int32? VisibilityTimeout { get; set; }

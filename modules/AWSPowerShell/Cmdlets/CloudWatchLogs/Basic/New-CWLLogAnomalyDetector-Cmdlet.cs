@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -62,12 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs CreateLogAnomalyDetector API operation.", Operation = new[] {"CreateLogAnomalyDetector"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.CreateLogAnomalyDetectorResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudWatchLogs.Model.CreateLogAnomalyDetectorResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.CreateLogAnomalyDetectorResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.CreateLogAnomalyDetectorResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCWLLogAnomalyDetectorCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnomalyVisibilityTime
         /// <summary>
@@ -126,8 +129,8 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// a key is assigned, the anomalies found and the model used by this detector are encrypted
         /// at rest with the key. If a key is assigned to an anomaly detector, a user must have
         /// permissions for both this key and for the anomaly detector to retrieve information
-        /// about the anomalies that it finds.</para><para>For more information about using a KMS key and to see the required IAM policy, see
-        /// <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/LogsAnomalyDetection-KMS.html">Use
+        /// about the anomalies that it finds.</para><para> Make sure the value provided is a valid KMS key ARN. For more information about using
+        /// a KMS key and to see the required IAM policy, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/LogsAnomalyDetection-KMS.html">Use
         /// a KMS key with an anomaly detector</a>.</para>
         /// </para>
         /// </summary>
@@ -139,7 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <summary>
         /// <para>
         /// <para>An array containing the ARN of the log group that this anomaly detector will watch.
-        /// You can specify only one log group ARN.</para>
+        /// You can specify only one log group ARN.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -157,7 +164,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <summary>
         /// <para>
         /// <para>An optional list of key-value pairs to associate with the resource.</para><para>For more information about tagging, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services resources</a></para>
+        /// Amazon Web Services resources</a></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,9 +197,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -312,13 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "CreateLogAnomalyDetector");
             try
             {
-                #if DESKTOP
-                return client.CreateLogAnomalyDetector(request);
-                #elif CORECLR
-                return client.CreateLogAnomalyDetectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLogAnomalyDetectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

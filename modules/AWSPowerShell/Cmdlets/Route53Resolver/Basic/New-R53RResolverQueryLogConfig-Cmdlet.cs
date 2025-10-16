@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53Resolver;
 using Amazon.Route53Resolver.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53R
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.R53R
     [AWSCmdlet("Calls the Amazon Route 53 Resolver CreateResolverQueryLogConfig API operation.", Operation = new[] {"CreateResolverQueryLogConfig"}, SelectReturnType = typeof(Amazon.Route53Resolver.Model.CreateResolverQueryLogConfigResponse))]
     [AWSCmdletOutput("Amazon.Route53Resolver.Model.ResolverQueryLogConfig or Amazon.Route53Resolver.Model.CreateResolverQueryLogConfigResponse",
         "This cmdlet returns an Amazon.Route53Resolver.Model.ResolverQueryLogConfig object.",
-        "The service call response (type Amazon.Route53Resolver.Model.CreateResolverQueryLogConfigResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Route53Resolver.Model.CreateResolverQueryLogConfigResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewR53RResolverQueryLogConfigCmdlet : AmazonRoute53ResolverClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CreatorRequestId
         /// <summary>
@@ -73,7 +76,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         /// <para>
         /// <para>The ARN of the resource that you want Resolver to send query logs. You can send query
         /// logs to an S3 bucket, a CloudWatch Logs log group, or a Kinesis Data Firehose delivery
-        /// stream. Examples of valid values include the following:</para><ul><li><para><b>S3 bucket</b>: </para><para><c>arn:aws:s3:::examplebucket</c></para><para>You can optionally append a file prefix to the end of the ARN.</para><para><c>arn:aws:s3:::examplebucket/development/</c></para></li><li><para><b>CloudWatch Logs log group</b>: </para><para><c>arn:aws:logs:us-west-1:123456789012:log-group:/mystack-testgroup-12ABC1AB12A1:*</c></para></li><li><para><b>Kinesis Data Firehose delivery stream</b>:</para><para><c>arn:aws:kinesis:us-east-2:0123456789:stream/my_stream_name</c></para></li></ul>
+        /// stream. Examples of valid values include the following:</para><ul><li><para><b>S3 bucket</b>: </para><para><c>arn:aws:s3:::amzn-s3-demo-bucket</c></para><para>You can optionally append a file prefix to the end of the ARN.</para><para><c>arn:aws:s3:::amzn-s3-demo-bucket/development/</c></para></li><li><para><b>CloudWatch Logs log group</b>: </para><para><c>arn:aws:logs:us-west-1:123456789012:log-group:/mystack-testgroup-12ABC1AB12A1:*</c></para></li><li><para><b>Kinesis Data Firehose delivery stream</b>:</para><para><c>arn:aws:kinesis:us-east-2:0123456789:stream/my_stream_name</c></para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,7 +111,11 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         /// <summary>
         /// <para>
         /// <para>A list of the tag keys and values that you want to associate with the query logging
-        /// configuration.</para>
+        /// configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,9 +144,13 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -247,13 +258,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53 Resolver", "CreateResolverQueryLogConfig");
             try
             {
-                #if DESKTOP
-                return client.CreateResolverQueryLogConfig(request);
-                #elif CORECLR
-                return client.CreateResolverQueryLogConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateResolverQueryLogConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

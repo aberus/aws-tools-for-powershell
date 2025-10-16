@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResourceGroups;
 using Amazon.ResourceGroups.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RG
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.RG
     [OutputType("Amazon.ResourceGroups.Model.CreateGroupResponse")]
     [AWSCmdlet("Calls the AWS Resource Groups CreateGroup API operation.", Operation = new[] {"CreateGroup"}, SelectReturnType = typeof(Amazon.ResourceGroups.Model.CreateGroupResponse))]
     [AWSCmdletOutput("Amazon.ResourceGroups.Model.CreateGroupResponse",
-        "This cmdlet returns an Amazon.ResourceGroups.Model.CreateGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ResourceGroups.Model.CreateGroupResponse object containing multiple properties."
     )]
     public partial class NewRGGroupCmdlet : AmazonResourceGroupsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Configuration
         /// <summary>
@@ -59,11 +62,26 @@ namespace Amazon.PowerShell.Cmdlets.RG
         /// is an array of <a>GroupConfigurationItem</a> elements. For details about the syntax
         /// of service configurations, see <a href="https://docs.aws.amazon.com/ARG/latest/APIReference/about-slg.html">Service
         /// configurations for Resource Groups</a>.</para><note><para>A resource group can contain either a <c>Configuration</c> or a <c>ResourceQuery</c>,
-        /// but not both.</para></note>
+        /// but not both.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.ResourceGroups.Model.GroupConfigurationItem[] Configuration { get; set; }
+        #endregion
+        
+        #region Parameter Criticality
+        /// <summary>
+        /// <para>
+        /// <para>The critical rank of the application group on a scale of 1 to 10, with a rank of 1
+        /// being the most critical, and a rank of 10 being least critical.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? Criticality { get; set; }
         #endregion
         
         #region Parameter Description
@@ -77,14 +95,25 @@ namespace Amazon.PowerShell.Cmdlets.RG
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DisplayName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the application group, which you can change at any time. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DisplayName { get; set; }
+        #endregion
+        
         #region Parameter Name
         /// <summary>
         /// <para>
         /// <para>The name of the group, which is the identifier of the group in other operations. You
         /// can't change the name of a resource group after you create it. A resource group name
         /// can consist of letters, numbers, hyphens, periods, and underscores. The name cannot
-        /// start with <c>AWS</c> or <c>aws</c>; these are reserved. A resource group name must
-        /// be unique within each Amazon Web Services Region in your Amazon Web Services account.</para>
+        /// start with <c>AWS</c>, <c>aws</c>, or any other possible capitalization; these are
+        /// reserved. A resource group name must be unique within each Amazon Web Services Region
+        /// in your Amazon Web Services account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -114,12 +143,27 @@ namespace Amazon.PowerShell.Cmdlets.RG
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to add to the group. A tag is key-value pair string.</para>
+        /// <para>The tags to add to the group. A tag is key-value pair string.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter Owner
+        /// <summary>
+        /// <para>
+        /// <para>A name, email address or other identifier for the person or group who is considered
+        /// as the owner of this application group within your organization. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Owner { get; set; }
         #endregion
         
         #region Parameter Select
@@ -133,16 +177,6 @@ namespace Amazon.PowerShell.Cmdlets.RG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceQuery parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceQuery' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceQuery' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -153,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.RG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -169,26 +207,18 @@ namespace Amazon.PowerShell.Cmdlets.RG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ResourceGroups.Model.CreateGroupResponse, NewRGGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceQuery;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Configuration != null)
             {
                 context.Configuration = new List<Amazon.ResourceGroups.Model.GroupConfigurationItem>(this.Configuration);
             }
+            context.Criticality = this.Criticality;
             context.Description = this.Description;
+            context.DisplayName = this.DisplayName;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -196,6 +226,7 @@ namespace Amazon.PowerShell.Cmdlets.RG
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Owner = this.Owner;
             context.ResourceQuery = this.ResourceQuery;
             if (this.Tag != null)
             {
@@ -225,13 +256,25 @@ namespace Amazon.PowerShell.Cmdlets.RG
             {
                 request.Configuration = cmdletContext.Configuration;
             }
+            if (cmdletContext.Criticality != null)
+            {
+                request.Criticality = cmdletContext.Criticality.Value;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DisplayName != null)
+            {
+                request.DisplayName = cmdletContext.DisplayName;
+            }
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.Owner != null)
+            {
+                request.Owner = cmdletContext.Owner;
             }
             if (cmdletContext.ResourceQuery != null)
             {
@@ -279,13 +322,7 @@ namespace Amazon.PowerShell.Cmdlets.RG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resource Groups", "CreateGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateGroup(request);
-                #elif CORECLR
-                return client.CreateGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -303,8 +340,11 @@ namespace Amazon.PowerShell.Cmdlets.RG
         internal partial class CmdletContext : ExecutorContext
         {
             public List<Amazon.ResourceGroups.Model.GroupConfigurationItem> Configuration { get; set; }
+            public System.Int32? Criticality { get; set; }
             public System.String Description { get; set; }
+            public System.String DisplayName { get; set; }
             public System.String Name { get; set; }
+            public System.String Owner { get; set; }
             public Amazon.ResourceGroups.Model.ResourceQuery ResourceQuery { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.ResourceGroups.Model.CreateGroupResponse, NewRGGroupCmdlet, object> Select { get; set; } =

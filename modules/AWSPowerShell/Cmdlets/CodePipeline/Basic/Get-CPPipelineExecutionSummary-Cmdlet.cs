@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodePipeline;
 using Amazon.CodePipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CP
 {
     /// <summary>
-    /// Gets a summary of the most recent executions for a pipeline.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Gets a summary of the most recent executions for a pipeline.
+    /// 
+    ///  <note><para>
+    /// When applying the filter for pipeline executions that have succeeded in the stage,
+    /// the operation returns all executions in the current pipeline version beginning on
+    /// February 1, 2024.
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "CPPipelineExecutionSummary")]
     [OutputType("Amazon.CodePipeline.Model.PipelineExecutionSummary")]
     [AWSCmdlet("Calls the AWS CodePipeline ListPipelineExecutions API operation.", Operation = new[] {"ListPipelineExecutions"}, SelectReturnType = typeof(Amazon.CodePipeline.Model.ListPipelineExecutionsResponse))]
     [AWSCmdletOutput("Amazon.CodePipeline.Model.PipelineExecutionSummary or Amazon.CodePipeline.Model.ListPipelineExecutionsResponse",
         "This cmdlet returns a collection of Amazon.CodePipeline.Model.PipelineExecutionSummary objects.",
-        "The service call response (type Amazon.CodePipeline.Model.ListPipelineExecutionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodePipeline.Model.ListPipelineExecutionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCPPipelineExecutionSummaryCmdlet : AmazonCodePipelineClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PipelineName
         /// <summary>
@@ -57,6 +66,18 @@ namespace Amazon.PowerShell.Cmdlets.CP
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String PipelineName { get; set; }
+        #endregion
+        
+        #region Parameter SucceededInStage_StageName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the stage for filtering for pipeline executions where the stage was successful
+        /// in the current pipeline version.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Filter_SucceededInStage_StageName")]
+        public System.String SucceededInStage_StageName { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -86,7 +107,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,16 +125,6 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public string Select { get; set; } = "PipelineExecutionSummaries";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PipelineName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PipelineName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PipelineName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -124,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -134,21 +149,12 @@ namespace Amazon.PowerShell.Cmdlets.CP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodePipeline.Model.ListPipelineExecutionsResponse, GetCPPipelineExecutionSummaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PipelineName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.SucceededInStage_StageName = this.SucceededInStage_StageName;
             context.MaxResult = this.MaxResult;
             #if !MODULAR
             if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
@@ -181,13 +187,45 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CodePipeline.Model.ListPipelineExecutionsRequest();
             
+            
+             // populate Filter
+            var requestFilterIsNull = true;
+            request.Filter = new Amazon.CodePipeline.Model.PipelineExecutionFilter();
+            Amazon.CodePipeline.Model.SucceededInStageFilter requestFilter_filter_SucceededInStage = null;
+            
+             // populate SucceededInStage
+            var requestFilter_filter_SucceededInStageIsNull = true;
+            requestFilter_filter_SucceededInStage = new Amazon.CodePipeline.Model.SucceededInStageFilter();
+            System.String requestFilter_filter_SucceededInStage_succeededInStage_StageName = null;
+            if (cmdletContext.SucceededInStage_StageName != null)
+            {
+                requestFilter_filter_SucceededInStage_succeededInStage_StageName = cmdletContext.SucceededInStage_StageName;
+            }
+            if (requestFilter_filter_SucceededInStage_succeededInStage_StageName != null)
+            {
+                requestFilter_filter_SucceededInStage.StageName = requestFilter_filter_SucceededInStage_succeededInStage_StageName;
+                requestFilter_filter_SucceededInStageIsNull = false;
+            }
+             // determine if requestFilter_filter_SucceededInStage should be set to null
+            if (requestFilter_filter_SucceededInStageIsNull)
+            {
+                requestFilter_filter_SucceededInStage = null;
+            }
+            if (requestFilter_filter_SucceededInStage != null)
+            {
+                request.Filter.SucceededInStage = requestFilter_filter_SucceededInStage;
+                requestFilterIsNull = false;
+            }
+             // determine if request.Filter should be set to null
+            if (requestFilterIsNull)
+            {
+                request.Filter = null;
+            }
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
@@ -247,10 +285,44 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CodePipeline.Model.ListPipelineExecutionsRequest();
+            
+             // populate Filter
+            var requestFilterIsNull = true;
+            request.Filter = new Amazon.CodePipeline.Model.PipelineExecutionFilter();
+            Amazon.CodePipeline.Model.SucceededInStageFilter requestFilter_filter_SucceededInStage = null;
+            
+             // populate SucceededInStage
+            var requestFilter_filter_SucceededInStageIsNull = true;
+            requestFilter_filter_SucceededInStage = new Amazon.CodePipeline.Model.SucceededInStageFilter();
+            System.String requestFilter_filter_SucceededInStage_succeededInStage_StageName = null;
+            if (cmdletContext.SucceededInStage_StageName != null)
+            {
+                requestFilter_filter_SucceededInStage_succeededInStage_StageName = cmdletContext.SucceededInStage_StageName;
+            }
+            if (requestFilter_filter_SucceededInStage_succeededInStage_StageName != null)
+            {
+                requestFilter_filter_SucceededInStage.StageName = requestFilter_filter_SucceededInStage_succeededInStage_StageName;
+                requestFilter_filter_SucceededInStageIsNull = false;
+            }
+             // determine if requestFilter_filter_SucceededInStage should be set to null
+            if (requestFilter_filter_SucceededInStageIsNull)
+            {
+                requestFilter_filter_SucceededInStage = null;
+            }
+            if (requestFilter_filter_SucceededInStage != null)
+            {
+                request.Filter.SucceededInStage = requestFilter_filter_SucceededInStage;
+                requestFilterIsNull = false;
+            }
+             // determine if request.Filter should be set to null
+            if (requestFilterIsNull)
+            {
+                request.Filter = null;
+            }
             if (cmdletContext.PipelineName != null)
             {
                 request.PipelineName = cmdletContext.PipelineName;
@@ -302,7 +374,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.PipelineExecutionSummaries.Count;
+                    int _receivedThisCall = response.PipelineExecutionSummaries?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -351,13 +423,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodePipeline", "ListPipelineExecutions");
             try
             {
-                #if DESKTOP
-                return client.ListPipelineExecutions(request);
-                #elif CORECLR
-                return client.ListPipelineExecutionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListPipelineExecutionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -374,6 +440,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String SucceededInStage_StageName { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.String PipelineName { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
     [AWSCmdlet("Calls the AWS Database Migration Service ModifyReplicationInstance API operation.", Operation = new[] {"ModifyReplicationInstance"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.ModifyReplicationInstanceResponse))]
     [AWSCmdletOutput("Amazon.DatabaseMigrationService.Model.ReplicationInstance or Amazon.DatabaseMigrationService.Model.ModifyReplicationInstanceResponse",
         "This cmdlet returns an Amazon.DatabaseMigrationService.Model.ReplicationInstance object.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.ModifyReplicationInstanceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.ModifyReplicationInstanceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditDMSReplicationInstanceCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocatedStorage
         /// <summary>
@@ -104,6 +107,39 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EngineVersion { get; set; }
+        #endregion
+        
+        #region Parameter KerberosAuthenticationSettings_KeyCacheSecretIamArn
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the Amazon Resource Name (ARN) of the IAM role that grants Amazon Web Services
+        /// DMS access to the secret containing key cache file for the kerberos authentication.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KerberosAuthenticationSettings_KeyCacheSecretIamArn { get; set; }
+        #endregion
+        
+        #region Parameter KerberosAuthenticationSettings_KeyCacheSecretId
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the ID of the secret that stores the key cache file required for kerberos
+        /// authentication.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KerberosAuthenticationSettings_KeyCacheSecretId { get; set; }
+        #endregion
+        
+        #region Parameter KerberosAuthenticationSettings_Krb5FileContent
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the contents of krb5 configuration file required for kerberos authentication.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KerberosAuthenticationSettings_Krb5FileContents")]
+        public System.String KerberosAuthenticationSettings_Krb5FileContent { get; set; }
         #endregion
         
         #region Parameter MultiAZ
@@ -188,7 +224,11 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         /// <summary>
         /// <para>
         /// <para> Specifies the VPC security group to be used with the replication instance. The VPC
-        /// security group must work with the VPC containing the replication instance. </para>
+        /// security group must work with the VPC containing the replication instance. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -207,16 +247,6 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public string Select { get; set; } = "ReplicationInstance";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReplicationInstanceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReplicationInstanceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReplicationInstanceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -227,9 +257,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ReplicationInstanceArn), MyInvocation.BoundParameters);
@@ -243,26 +277,19 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DatabaseMigrationService.Model.ModifyReplicationInstanceResponse, EditDMSReplicationInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReplicationInstanceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocatedStorage = this.AllocatedStorage;
             context.AllowMajorVersionUpgrade = this.AllowMajorVersionUpgrade;
             context.ApplyImmediately = this.ApplyImmediately;
             context.AutoMinorVersionUpgrade = this.AutoMinorVersionUpgrade;
             context.EngineVersion = this.EngineVersion;
+            context.KerberosAuthenticationSettings_KeyCacheSecretIamArn = this.KerberosAuthenticationSettings_KeyCacheSecretIamArn;
+            context.KerberosAuthenticationSettings_KeyCacheSecretId = this.KerberosAuthenticationSettings_KeyCacheSecretId;
+            context.KerberosAuthenticationSettings_Krb5FileContent = this.KerberosAuthenticationSettings_Krb5FileContent;
             context.MultiAZ = this.MultiAZ;
             context.NetworkType = this.NetworkType;
             context.PreferredMaintenanceWindow = this.PreferredMaintenanceWindow;
@@ -314,6 +341,45 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             if (cmdletContext.EngineVersion != null)
             {
                 request.EngineVersion = cmdletContext.EngineVersion;
+            }
+            
+             // populate KerberosAuthenticationSettings
+            var requestKerberosAuthenticationSettingsIsNull = true;
+            request.KerberosAuthenticationSettings = new Amazon.DatabaseMigrationService.Model.KerberosAuthenticationSettings();
+            System.String requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretIamArn = null;
+            if (cmdletContext.KerberosAuthenticationSettings_KeyCacheSecretIamArn != null)
+            {
+                requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretIamArn = cmdletContext.KerberosAuthenticationSettings_KeyCacheSecretIamArn;
+            }
+            if (requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretIamArn != null)
+            {
+                request.KerberosAuthenticationSettings.KeyCacheSecretIamArn = requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretIamArn;
+                requestKerberosAuthenticationSettingsIsNull = false;
+            }
+            System.String requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretId = null;
+            if (cmdletContext.KerberosAuthenticationSettings_KeyCacheSecretId != null)
+            {
+                requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretId = cmdletContext.KerberosAuthenticationSettings_KeyCacheSecretId;
+            }
+            if (requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretId != null)
+            {
+                request.KerberosAuthenticationSettings.KeyCacheSecretId = requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_KeyCacheSecretId;
+                requestKerberosAuthenticationSettingsIsNull = false;
+            }
+            System.String requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_Krb5FileContent = null;
+            if (cmdletContext.KerberosAuthenticationSettings_Krb5FileContent != null)
+            {
+                requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_Krb5FileContent = cmdletContext.KerberosAuthenticationSettings_Krb5FileContent;
+            }
+            if (requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_Krb5FileContent != null)
+            {
+                request.KerberosAuthenticationSettings.Krb5FileContents = requestKerberosAuthenticationSettings_kerberosAuthenticationSettings_Krb5FileContent;
+                requestKerberosAuthenticationSettingsIsNull = false;
+            }
+             // determine if request.KerberosAuthenticationSettings should be set to null
+            if (requestKerberosAuthenticationSettingsIsNull)
+            {
+                request.KerberosAuthenticationSettings = null;
             }
             if (cmdletContext.MultiAZ != null)
             {
@@ -381,13 +447,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "ModifyReplicationInstance");
             try
             {
-                #if DESKTOP
-                return client.ModifyReplicationInstance(request);
-                #elif CORECLR
-                return client.ModifyReplicationInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyReplicationInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -409,6 +469,9 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             public System.Boolean? ApplyImmediately { get; set; }
             public System.Boolean? AutoMinorVersionUpgrade { get; set; }
             public System.String EngineVersion { get; set; }
+            public System.String KerberosAuthenticationSettings_KeyCacheSecretIamArn { get; set; }
+            public System.String KerberosAuthenticationSettings_KeyCacheSecretId { get; set; }
+            public System.String KerberosAuthenticationSettings_Krb5FileContent { get; set; }
             public System.Boolean? MultiAZ { get; set; }
             public System.String NetworkType { get; set; }
             public System.String PreferredMaintenanceWindow { get; set; }

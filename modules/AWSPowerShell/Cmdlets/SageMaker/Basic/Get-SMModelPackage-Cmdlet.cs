@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
     /// Returns a description of the specified model package, which is used to create SageMaker
     /// models or list them on Amazon Web Services Marketplace.
     /// 
-    ///  
-    /// <para>
+    ///  <important><para>
+    /// If you provided a KMS Key ID when you created your model package, you will see the
+    /// <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html">KMS
+    /// Decrypt</a> API call in your CloudTrail logs when you use this API.
+    /// </para></important><para>
     /// To create models in SageMaker, buyers can subscribe to model packages listed on Amazon
     /// Web Services Marketplace.
     /// </para>
@@ -41,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [OutputType("Amazon.SageMaker.Model.DescribeModelPackageResponse")]
     [AWSCmdlet("Calls the Amazon SageMaker Service DescribeModelPackage API operation.", Operation = new[] {"DescribeModelPackage"}, SelectReturnType = typeof(Amazon.SageMaker.Model.DescribeModelPackageResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.DescribeModelPackageResponse",
-        "This cmdlet returns an Amazon.SageMaker.Model.DescribeModelPackageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SageMaker.Model.DescribeModelPackageResponse object containing multiple properties."
     )]
     public partial class GetSMModelPackageCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ModelPackageName
         /// <summary>
@@ -77,19 +83,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ModelPackageName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ModelPackageName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ModelPackageName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -97,21 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.DescribeModelPackageResponse, GetSMModelPackageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ModelPackageName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ModelPackageName = this.ModelPackageName;
             #if MODULAR
             if (this.ModelPackageName == null && ParameterWasBound(nameof(this.ModelPackageName)))
@@ -177,13 +167,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "DescribeModelPackage");
             try
             {
-                #if DESKTOP
-                return client.DescribeModelPackage(request);
-                #elif CORECLR
-                return client.DescribeModelPackageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeModelPackageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

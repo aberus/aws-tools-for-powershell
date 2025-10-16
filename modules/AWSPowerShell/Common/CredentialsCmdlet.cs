@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -59,7 +59,15 @@ namespace Amazon.PowerShell.Common
             }
 
             if (currentCredentials != null)
+            {
+                if (currentCredentials.Credentials is SSOAWSCredentials ssoAWSCredentials)
+                {
+                    // Setting SupportsGettingNewToken to false ensures that the sso login flow is not initiated when
+                    // sso token has expired.
+                    ssoAWSCredentials.Options.SupportsGettingNewToken = false;
+                }
                 WriteObject(currentCredentials.Credentials);
+            }
         }
     }
 
@@ -177,15 +185,6 @@ namespace Amazon.PowerShell.Common
         private void SetUpIfFederatedCredentials(AWSPSCredentials currentCredentials)
         {
             var callbackState = (currentCredentials.Credentials as FederatedAWSCredentials)?.Options.CustomCallbackState as SAMLCredentialCallbackState;
-
-#if DESKTOP
-            if (callbackState == null)
-            {
-#pragma warning disable CS0618 //A class was marked with the Obsolete attribute
-                callbackState = (currentCredentials.Credentials as StoredProfileFederatedCredentials)?.CustomCallbackState as SAMLCredentialCallbackState;
-#pragma warning restore CS0618 //A class was marked with the Obsolete attribute
-            }
-#endif
 
             if (callbackState != null) // is our callback that's attached
             {
@@ -351,32 +350,19 @@ namespace Amazon.PowerShell.Common
         public string ProfileLocation { get; set; }
 #endregion
 
-#region Parameter ListProfile
-        /// <summary>
-        /// Lists the names of all CredentialProfiles saved in local storage
-        /// </summary>
-        [Parameter(ParameterSetName = "ListName", ValueFromPipelineByPropertyName = true)]
-        [Alias("ListStoredCredentials", "ListProfiles")]
-        public SwitchParameter ListProfile { get; set; }
-#endregion
-
 #region Parameter ListProfileDetail
         /// <summary>
         /// List the name, type, and location of all CredentialProfiles saved in local storage
         /// </summary>
+        /// Have added Alias for backward compatibility as ListProfile was a parameter in v4
         [Parameter(ParameterSetName = "ListDetail", ValueFromPipelineByPropertyName = true)]
+        [Alias("ListProfile")]
         public SwitchParameter ListProfileDetail { get; set; }
 #endregion
 
         protected override void ProcessRecord()
         {
-            if (ListProfile.IsPresent)
-            {
-                WriteWarning("The ListProfile switch is deprecated and will be removed from a future release.  Please use ListProfileDetail instead.");
-                WriteObject(SettingsStore.GetProfileInfo(ProfileLocation).Select(pi => pi.ProfileName), true);
-                return;
-            }
-            else if (ListProfileDetail.IsPresent)
+            if (ListProfileDetail.IsPresent)
             {
                 WriteObject(SettingsStore.GetProfileInfo(ProfileLocation), true);
                 return;
@@ -384,16 +370,31 @@ namespace Amazon.PowerShell.Common
 
             if (string.IsNullOrEmpty(ProfileName))
             {
+                // Setting SupportsGettingNewToken to false ensures that the sso login flow is not initiated when
+                // sso token has expired.
+
                 var creds = this.SessionState.PSVariable.Get(SessionKeys.AWSCredentialsVariableName);
                 if (creds != null && creds.Value != null && creds.Value is AWSPSCredentials)
+                {
+                    if (creds.Value is SSOAWSCredentials ssoAWSCredentials)
+                    {
+                        ssoAWSCredentials.Options.SupportsGettingNewToken = false;
+                    }
+
                     WriteObject((creds.Value as AWSPSCredentials).Credentials);
+                }
             }
             else
             {
                 CredentialProfile profile;
                 if (SettingsStore.TryGetProfile(ProfileName, ProfileLocation, out profile))
                 {
-                    WriteObject(profile.GetAWSCredentials(profile.CredentialProfileStore));
+                    var profileCreds = profile.GetAWSCredentials(profile.CredentialProfileStore);
+                    if (profileCreds is SSOAWSCredentials ssoAWSCredentials)
+                    {
+                        ssoAWSCredentials.Options.SupportsGettingNewToken = false;
+                    }
+                    WriteObject(profileCreds);
                 }
             }
         }

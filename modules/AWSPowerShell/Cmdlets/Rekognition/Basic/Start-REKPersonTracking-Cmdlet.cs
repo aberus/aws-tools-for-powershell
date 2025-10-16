@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
+    /// <note><para><i>End of support notice:</i> On October 31, 2025, AWS will discontinue support for
+    /// Amazon Rekognition People Pathing. After October 31, 2025, you will no longer be able
+    /// to use the Rekognition People Pathing capability. For more information, visit this
+    /// <a href="https://aws.amazon.com/blogs/machine-learning/transitioning-from-amazon-rekognition-people-pathing-exploring-other-alternatives/">blog
+    /// post</a>.
+    /// </para></note><para>
     /// Starts the asynchronous tracking of a person's path in a stored video.
-    /// 
-    ///  
-    /// <para>
+    /// </para><para>
     /// Amazon Rekognition Video can track the path of people in a video stored in an Amazon
     /// S3 bucket. Use <a>Video</a> to specify the bucket name and the filename of the video.
     /// <c>StartPersonTracking</c> returns a job identifier (<c>JobId</c>) which you use to
@@ -49,12 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [AWSCmdlet("Calls the Amazon Rekognition StartPersonTracking API operation.", Operation = new[] {"StartPersonTracking"}, SelectReturnType = typeof(Amazon.Rekognition.Model.StartPersonTrackingResponse))]
     [AWSCmdletOutput("System.String or Amazon.Rekognition.Model.StartPersonTrackingResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Rekognition.Model.StartPersonTrackingResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Rekognition.Model.StartPersonTrackingResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartREKPersonTrackingCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -140,9 +147,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -267,13 +278,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "StartPersonTracking");
             try
             {
-                #if DESKTOP
-                return client.StartPersonTracking(request);
-                #elif CORECLR
-                return client.StartPersonTrackingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartPersonTrackingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

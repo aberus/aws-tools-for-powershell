@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -55,7 +57,9 @@ namespace Amazon.PowerShell.Cmdlets.R53
     /// </para></dd><dt>If you specify both Name and Type</dt><dd><para>
     /// The results begin with the first resource record set in the list whose name is greater
     /// than or equal to <c>Name</c>, and whose type is greater than or equal to <c>Type</c>.
-    /// </para></dd></dl><para><b>Resource record sets that are PENDING</b></para><para>
+    /// </para><note><para>
+    /// Type is only used to sort between records with the same record Name.
+    /// </para></note></dd></dl><para><b>Resource record sets that are PENDING</b></para><para>
     /// This action returns the most current version of the records. This includes records
     /// that are <c>PENDING</c>, and that are not yet available on all Route 53 DNS servers.
     /// </para><para><b>Changing resource record sets</b></para><para>
@@ -70,18 +74,19 @@ namespace Amazon.PowerShell.Cmdlets.R53
     /// get the values of <c>NextRecordName</c>, <c>NextRecordType</c>, and <c>NextRecordIdentifier</c>
     /// (if any) from the response. Then submit another <c>ListResourceRecordSets</c> request,
     /// and specify those values for <c>StartRecordName</c>, <c>StartRecordType</c>, and <c>StartRecordIdentifier</c>.
-    /// </para>
+    /// </para><br/><br/>In the AWS.Tools.Route53 module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "R53ResourceRecordSet")]
     [OutputType("Amazon.Route53.Model.ListResourceRecordSetsResponse")]
     [AWSCmdlet("Calls the Amazon Route 53 ListResourceRecordSets API operation.", Operation = new[] {"ListResourceRecordSets"}, SelectReturnType = typeof(Amazon.Route53.Model.ListResourceRecordSetsResponse))]
     [AWSCmdletOutput("Amazon.Route53.Model.ListResourceRecordSetsResponse",
-        "This cmdlet returns an Amazon.Route53.Model.ListResourceRecordSetsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53.Model.ListResourceRecordSetsResponse object containing multiple properties."
     )]
     public partial class GetR53ResourceRecordSetCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HostedZoneId
         /// <summary>
@@ -115,18 +120,6 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public System.String StartRecordIdentifier { get; set; }
         #endregion
         
-        #region Parameter StartRecordName
-        /// <summary>
-        /// <para>
-        /// <para>The first name in the lexicographic ordering of resource record sets that you want
-        /// to list. If the specified record name doesn't exist, the results begin with the first
-        /// resource record set that has a name greater than the value of <c>name</c>.</para>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
-        public System.String StartRecordName { get; set; }
-        #endregion
-        
         #region Parameter StartRecordType
         /// <summary>
         /// <para>
@@ -154,10 +147,32 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// the response identify the first resource record set in the next group of <c>maxitems</c>
         /// resource record sets.</para>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("MaxItems")]
-        public System.String MaxItem { get; set; }
+        public int? MaxItem { get; set; }
+        #endregion
+        
+        #region Parameter StartRecordName
+        /// <summary>
+        /// <para>
+        /// <para>The first name in the lexicographic ordering of resource record sets that you want
+        /// to list. If the specified record name doesn't exist, the results begin with the first
+        /// resource record set that has a name greater than the value of <c>name</c>.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In the AWS.Tools.Route53 module, this parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'StartRecordName' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-StartRecordName' to null for the first call then set the 'StartRecordName' using the same property output from the previous call for subsequent calls.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
+        [Alias("NextToken")]
+        public System.String StartRecordName { get; set; }
         #endregion
         
         #region Parameter Select
@@ -171,19 +186,26 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
+        #region Parameter NoAutoIteration
+        #if MODULAR
         /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the HostedZoneId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^HostedZoneId' instead. This parameter will be removed in a future version.
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of StartRecordName
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
         /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^HostedZoneId' instead. This parameter will be removed in a future version.")]
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public SwitchParameter NoAutoIteration { get; set; }
+        #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -191,21 +213,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Route53.Model.ListResourceRecordSetsResponse, GetR53ResourceRecordSetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.HostedZoneId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HostedZoneId = this.HostedZoneId;
             #if MODULAR
             if (this.HostedZoneId == null && ParameterWasBound(nameof(this.HostedZoneId)))
@@ -217,6 +229,15 @@ namespace Amazon.PowerShell.Cmdlets.R53
             context.StartRecordType = this.StartRecordType;
             context.StartRecordIdentifier = this.StartRecordIdentifier;
             context.MaxItem = this.MaxItem;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.MaxItem)) && this.MaxItem.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the MaxItem parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing MaxItem" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -227,6 +248,80 @@ namespace Amazon.PowerShell.Cmdlets.R53
         
         #region IExecutor Members
         
+        #if MODULAR
+        public object Execute(ExecutorContext context)
+        {
+            var cmdletContext = context as CmdletContext;
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
+            var request = new Amazon.Route53.Model.ListResourceRecordSetsRequest();
+            
+            if (cmdletContext.HostedZoneId != null)
+            {
+                request.HostedZoneId = cmdletContext.HostedZoneId;
+            }
+            if (cmdletContext.StartRecordType != null)
+            {
+                request.StartRecordType = cmdletContext.StartRecordType;
+            }
+            if (cmdletContext.StartRecordIdentifier != null)
+            {
+                request.StartRecordIdentifier = cmdletContext.StartRecordIdentifier;
+            }
+            if (cmdletContext.MaxItem != null)
+            {
+                request.MaxItems = AutoIterationHelpers.ConvertEmitLimitToServiceTypeString(cmdletContext.MaxItem.Value);
+            }
+            
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.StartRecordName;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.StartRecordName));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
+            
+            var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
+            do
+            {
+                request.StartRecordName = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
+                {
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextRecordName;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
+            {
+                WriteObject(cmdletContext.Select(null, this));
+            }
+            
+            
+            return null;
+        }
+        #else
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
@@ -251,7 +346,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             }
             if (cmdletContext.MaxItem != null)
             {
-                request.MaxItems = cmdletContext.MaxItem;
+                request.MaxItems = AutoIterationHelpers.ConvertEmitLimitToServiceTypeString(cmdletContext.MaxItem.Value);
             }
             
             CmdletOutput output;
@@ -276,6 +371,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             
             return output;
         }
+        #endif
         
         public ExecutorContext CreateContext()
         {
@@ -291,13 +387,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "ListResourceRecordSets");
             try
             {
-                #if DESKTOP
-                return client.ListResourceRecordSets(request);
-                #elif CORECLR
-                return client.ListResourceRecordSetsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListResourceRecordSetsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -318,7 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             public System.String StartRecordName { get; set; }
             public Amazon.Route53.RRType StartRecordType { get; set; }
             public System.String StartRecordIdentifier { get; set; }
-            public System.String MaxItem { get; set; }
+            public int? MaxItem { get; set; }
             public System.Func<Amazon.Route53.Model.ListResourceRecordSetsResponse, GetR53ResourceRecordSetCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

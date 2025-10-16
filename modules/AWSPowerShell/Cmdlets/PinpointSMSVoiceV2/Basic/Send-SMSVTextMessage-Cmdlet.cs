@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,37 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
-    /// Creates a new text message and sends it to a recipient's phone number.
+    /// Creates a new text message and sends it to a recipient's phone number. SendTextMessage
+    /// only sends an SMS message to one recipient each time it is invoked.
     /// 
     ///  
     /// <para>
     /// SMS throughput limits are measured in Message Parts per Second (MPS). Your MPS limit
     /// depends on the destination country of your messages, as well as the type of phone
-    /// number (origination number) that you use to send the message. For more information,
-    /// see <a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/channels-sms-limitations-mps.html">Message
-    /// Parts per Second (MPS) limits</a> in the <i>Amazon Pinpoint User Guide</i>.
+    /// number (origination number) that you use to send the message. For more information
+    /// about MPS, see <a href="https://docs.aws.amazon.com/sms-voice/latest/userguide/sms-limitations-mps.html">Message
+    /// Parts per Second (MPS) limits</a> in the <i>AWS End User Messaging SMS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Send", "SMSVTextMessage", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.SendTextMessageResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 SendTextMessage API operation.", Operation = new[] {"SendTextMessage"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.SendTextMessageResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.SendTextMessageResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.SendTextMessageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.SendTextMessageResponse object containing multiple properties."
     )]
     public partial class SendSMSVTextMessageCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigurationSetName
         /// <summary>
@@ -65,7 +69,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>You can specify custom data in this field. If you do, that data is logged to the event
-        /// destination.</para>
+        /// destination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +86,15 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <para>This field is used for any country-specific registration requirements. Currently,
         /// this setting is only used when you send messages to recipients in India using a sender
         /// ID. For more information see <a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/channels-sms-senderid-india.html">Special
-        /// requirements for sending SMS messages to recipients in India</a>. </para>
+        /// requirements for sending SMS messages to recipients in India</a>. </para><ul><li><para><c>IN_ENTITY_ID</c> The entity ID or Principal Entity (PE) ID that you received after
+        /// completing the sender ID registration process.</para></li><li><para><c>IN_TEMPLATE_ID</c> The template ID that you received after completing the sender
+        /// ID registration process.</para><important><para>Make sure that the Template ID that you specify matches your message template exactly.
+        /// If your message doesn't match the template that you provided during the registration
+        /// process, the mobile carriers might reject your message.</para></important></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,7 +123,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>When set to true, the message is checked and validated, but isn't sent to the end
-        /// recipient.</para>
+        /// recipient. You are not charged for using <c>DryRun</c>.</para><para>The Message Parts per Second (MPS) limit when using <c>DryRun</c> is five. If your
+        /// origination identity has a lower MPS limit then the lower MPS limit is used. For more
+        /// information about MPS limits, see <a href="https://docs.aws.amazon.com/sms-voice/latest/userguide/sms-limitations-mps.html">Message
+        /// Parts per Second (MPS) limits</a> in the <i>AWS End User Messaging SMS User Guide</i>..</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,8 +147,9 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter MaxPrice
         /// <summary>
         /// <para>
-        /// <para>The maximum amount that you want to spend, in US dollars, per each text message part.
-        /// A text message can contain multiple parts.</para>
+        /// <para>The maximum amount that you want to spend, in US dollars, per each text message. If
+        /// the calculated amount to send the text message is greater than <c>MaxPrice</c>, the
+        /// message is not sent and an error is returned.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,6 +164,17 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String MessageBody { get; set; }
+        #endregion
+        
+        #region Parameter MessageFeedbackEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Set to true to enable message feedback for the message. When a user receives the message
+        /// you need to update the message status using <a>PutMessageFeedback</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? MessageFeedbackEnabled { get; set; }
         #endregion
         
         #region Parameter MessageType
@@ -162,17 +193,30 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>The origination identity of the message. This can be either the PhoneNumber, PhoneNumberId,
-        /// PhoneNumberArn, SenderId, SenderIdArn, PoolId, or PoolArn.</para>
+        /// PhoneNumberArn, SenderId, SenderIdArn, PoolId, or PoolArn.</para><important><para>If you are using a shared AWS End User Messaging SMS and Voice resource then you must
+        /// use the full Amazon Resource Name(ARN).</para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OriginationIdentity { get; set; }
         #endregion
         
+        #region Parameter ProtectConfigurationId
+        /// <summary>
+        /// <para>
+        /// <para>The unique identifier for the protect configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ProtectConfigurationId { get; set; }
+        #endregion
+        
         #region Parameter TimeToLive
         /// <summary>
         /// <para>
-        /// <para>How long the text message is valid for. By default this is 72 hours.</para>
+        /// <para>How long the text message is valid for, in seconds. By default this is 72 hours. If
+        /// the messages isn't handed off before the TTL expires we stop attempting to hand off
+        /// the message and return <c>TTL_EXPIRED</c> event.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,9 +244,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DestinationPhoneNumber), MyInvocation.BoundParameters);
@@ -249,8 +297,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             context.Keyword = this.Keyword;
             context.MaxPrice = this.MaxPrice;
             context.MessageBody = this.MessageBody;
+            context.MessageFeedbackEnabled = this.MessageFeedbackEnabled;
             context.MessageType = this.MessageType;
             context.OriginationIdentity = this.OriginationIdentity;
+            context.ProtectConfigurationId = this.ProtectConfigurationId;
             context.TimeToLive = this.TimeToLive;
             
             // allow further manipulation of loaded context prior to processing
@@ -300,6 +350,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             {
                 request.MessageBody = cmdletContext.MessageBody;
             }
+            if (cmdletContext.MessageFeedbackEnabled != null)
+            {
+                request.MessageFeedbackEnabled = cmdletContext.MessageFeedbackEnabled.Value;
+            }
             if (cmdletContext.MessageType != null)
             {
                 request.MessageType = cmdletContext.MessageType;
@@ -307,6 +361,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             if (cmdletContext.OriginationIdentity != null)
             {
                 request.OriginationIdentity = cmdletContext.OriginationIdentity;
+            }
+            if (cmdletContext.ProtectConfigurationId != null)
+            {
+                request.ProtectConfigurationId = cmdletContext.ProtectConfigurationId;
             }
             if (cmdletContext.TimeToLive != null)
             {
@@ -350,13 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "SendTextMessage");
             try
             {
-                #if DESKTOP
-                return client.SendTextMessage(request);
-                #elif CORECLR
-                return client.SendTextMessageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendTextMessageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -381,8 +433,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             public System.String Keyword { get; set; }
             public System.String MaxPrice { get; set; }
             public System.String MessageBody { get; set; }
+            public System.Boolean? MessageFeedbackEnabled { get; set; }
             public Amazon.PinpointSMSVoiceV2.MessageType MessageType { get; set; }
             public System.String OriginationIdentity { get; set; }
+            public System.String ProtectConfigurationId { get; set; }
             public System.Int32? TimeToLive { get; set; }
             public System.Func<Amazon.PinpointSMSVoiceV2.Model.SendTextMessageResponse, SendSMSVTextMessageCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

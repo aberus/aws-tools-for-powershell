@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 
 $releaseBitPath = "bin/$configuration/netstandard2.0"
 
-$generatorAssemblyPath ="$rootFolder/generator/AWSPSGenerator/bin/$configuration/netcoreapp3.1/AWSPSGenerator.dll"
+$generatorAssemblyPath ="$rootFolder/generator/AWSPSGenerator/bin/$configuration/net8.0/AWSPSGenerator.dll"
 $modularDeploymentFolder = "$rootFolder/Deployment/AWS.Tools"
 $commonModuleFolder = "$rootFolder/modules/ModularAWSPowerShell"
 $installerModuleFolder = "$rootFolder/modules/Installer"
@@ -21,6 +21,8 @@ $assembliesFolder = "$rootFolder/Include/sdk/assemblies"
 
 $moduleFilesSuffixes = @@('.Completers.psm1', '.Aliases.psm1', '.psd1')
 $binFilesSuffixes = @@('.dll', '.XML', '.dll-Help.xml', '.Format.ps1xml')
+
+$transitiveDependencies = @@('BouncyCastle.Cryptography.dll','Microsoft.Bcl.AsyncInterfaces.dll','Microsoft.Bcl.HashCode.dll','System.Buffers.dll','System.Memory.dll','System.Numerics.Vectors.dll','System.Runtime.CompilerServices.Unsafe.dll','System.Text.Json.dll','System.Threading.Tasks.Extensions.dll','System.Text.Encodings.Web.dll','System.Formats.Cbor.dll','AWSSDK.Extensions.CborProtocol.dll')
 
 If (Test-Path $modularDeploymentFolder)
 {
@@ -45,8 +47,13 @@ foreach ($suffix in $binFilesSuffixes)
 {
     Copy-Item -Path "$commonModuleFolder/$releaseBitPath/AWS.Tools.Common$suffix" -Destination "$modularDeploymentFolder/AWS.Tools.Common/AWS.Tools.Common$suffix"
 }
+foreach($transitiveDependency in $transitiveDependencies){
+  Copy-Item -Path "$assembliesFolder/netstandard2.0/$transitiveDependency" -Destination "$modularDeploymentFolder/AWS.Tools.Common/"
+}
 Copy-Item -Path "$commonModuleFolder/$releaseBitPath/AWSSDK.Core.dll" -Destination "$modularDeploymentFolder/AWS.Tools.Common/AWSSDK.Core.dll"
 Copy-Item -Path "$commonModuleFolder/$releaseBitPath/AWSSDK.SecurityToken.dll" -Destination "$modularDeploymentFolder/AWS.Tools.Common/AWSSDK.SecurityToken.dll"
+Copy-Item -Path "$commonModuleFolder/$releaseBitPath/AWSSDK.SSOOIDC.dll" -Destination "$modularDeploymentFolder/AWS.Tools.Common/AWSSDK.SSOOIDC.dll"
+Copy-Item -Path "$commonModuleFolder/$releaseBitPath/AWSSDK.SSO.dll" -Destination "$modularDeploymentFolder/AWS.Tools.Common/AWSSDK.SSO.dll"
 Copy-Item -Path "$monolithicModuleFolder/ImportGuard.ps1" -Destination "$modularDeploymentFolder/AWS.Tools.Common/ImportGuard.ps1"
 Copy-Item -Path "$assembliesFolder/netstandard2.0/aws-crt.dll" -Destination "$modularDeploymentFolder/AWS.Tools.Common/aws-crt.dll"
 Copy-Item -Path "$assembliesFolder/netstandard2.0/aws-crt-auth.dll" -Destination "$modularDeploymentFolder/AWS.Tools.Common/aws-crt-auth.dll"
@@ -86,6 +93,15 @@ foreach ($project in $projectNameList)
 
     Copy-Item -Path "$rootFolder/LICENSE" -Destination "$projectDeploymentFolder/LICENSE"
     Copy-Item -Path "$rootFolder/NOTICE" -Destination "$projectDeploymentFolder/NOTICE"
+}
+
+@foreach (var service in Projects.Where(p => p.AdditionalServiceAssemblies.Any()))
+{
+    var assemblyName = service.AssemblyName;
+    foreach (var serviceAssembly in service.AdditionalServiceAssemblies)
+    {
+@:Copy-Item -Path "$assembliesFolder/netstandard2.0/@(serviceAssembly).dll" -Destination "$modularDeploymentFolder/AWS.Tools.@(assemblyName)/@(serviceAssembly).dll"
+    }
 }
 
 New-Item -Path "$modularDeploymentFolder/AWS.Tools.Installer" -ItemType Directory

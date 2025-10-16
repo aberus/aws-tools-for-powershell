@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RedshiftServerless;
 using Amazon.RedshiftServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RSS
 {
     /// <summary>
@@ -35,24 +37,25 @@ namespace Amazon.PowerShell.Cmdlets.RSS
     /// <para>
     /// By default, the temporary credentials expire in 900 seconds. You can optionally specify
     /// a duration between 900 seconds (15 minutes) and 3600 seconds (60 minutes).
-    /// </para><pre><c> &lt;p&gt;The Identity and Access Management (IAM) user or role that runs
-    /// GetCredentials must have an IAM policy attached that allows access to all necessary
-    /// actions and resources.&lt;/p&gt; &lt;p&gt;If the &lt;code&gt;DbName&lt;/code&gt; parameter
-    /// is specified, the IAM policy must allow access to the resource dbname for the specified
-    /// database name.&lt;/p&gt; </c></pre>
+    /// </para><para>
+    /// The Identity and Access Management (IAM) user or role that runs GetCredentials must
+    /// have an IAM policy attached that allows access to all necessary actions and resources.
+    /// </para><para>
+    /// If the <c>DbName</c> parameter is specified, the IAM policy must allow access to the
+    /// resource dbname for the specified database name.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "RSSCredential")]
     [OutputType("Amazon.RedshiftServerless.Model.GetCredentialsResponse")]
     [AWSCmdlet("Calls the Redshift Serverless GetCredentials API operation.", Operation = new[] {"GetCredentials"}, SelectReturnType = typeof(Amazon.RedshiftServerless.Model.GetCredentialsResponse))]
     [AWSCmdletOutput("Amazon.RedshiftServerless.Model.GetCredentialsResponse",
-        "This cmdlet returns an Amazon.RedshiftServerless.Model.GetCredentialsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RedshiftServerless.Model.GetCredentialsResponse object containing multiple properties."
     )]
     public partial class GetRSSCredentialCmdlet : AmazonRedshiftServerlessClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CustomDomainName
         /// <summary>
@@ -110,19 +113,13 @@ namespace Amazon.PowerShell.Cmdlets.RSS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkgroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkgroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkgroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -130,21 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.RSS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RedshiftServerless.Model.GetCredentialsResponse, GetRSSCredentialCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkgroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CustomDomainName = this.CustomDomainName;
             context.DbName = this.DbName;
             context.DurationSecond = this.DurationSecond;
@@ -219,13 +206,7 @@ namespace Amazon.PowerShell.Cmdlets.RSS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Redshift Serverless", "GetCredentials");
             try
             {
-                #if DESKTOP
-                return client.GetCredentials(request);
-                #elif CORECLR
-                return client.GetCredentialsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetCredentialsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

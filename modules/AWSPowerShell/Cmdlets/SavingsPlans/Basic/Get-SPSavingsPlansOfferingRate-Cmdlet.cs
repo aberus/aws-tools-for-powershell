@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,37 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SavingsPlans;
 using Amazon.SavingsPlans.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SP
 {
     /// <summary>
-    /// Describes the specified Savings Plans offering rates.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Describes the offering rates for the specified Savings Plans.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "SPSavingsPlansOfferingRate")]
     [OutputType("Amazon.SavingsPlans.Model.SavingsPlanOfferingRate")]
     [AWSCmdlet("Calls the AWS Savings Plans DescribeSavingsPlansOfferingRates API operation.", Operation = new[] {"DescribeSavingsPlansOfferingRates"}, SelectReturnType = typeof(Amazon.SavingsPlans.Model.DescribeSavingsPlansOfferingRatesResponse))]
     [AWSCmdletOutput("Amazon.SavingsPlans.Model.SavingsPlanOfferingRate or Amazon.SavingsPlans.Model.DescribeSavingsPlansOfferingRatesResponse",
         "This cmdlet returns a collection of Amazon.SavingsPlans.Model.SavingsPlanOfferingRate objects.",
-        "The service call response (type Amazon.SavingsPlans.Model.DescribeSavingsPlansOfferingRatesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SavingsPlans.Model.DescribeSavingsPlansOfferingRatesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSPSavingsPlansOfferingRateCmdlet : AmazonSavingsPlansClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>The filters.</para>
+        /// <para>The filters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +63,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter Operation
         /// <summary>
         /// <para>
-        /// <para>The specific AWS operation for the line item in the billing report.</para>
+        /// <para>The specific Amazon Web Services operation for the line item in the billing report.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,7 +78,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter Product
         /// <summary>
         /// <para>
-        /// <para>The AWS products.</para>
+        /// <para>The Amazon Web Services products.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +93,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter SavingsPlanOfferingId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the offerings.</para>
+        /// <para>The IDs of the offerings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -89,7 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter SavingsPlanPaymentOption
         /// <summary>
         /// <para>
-        /// <para>The payment options.</para>
+        /// <para>The payment options.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter SavingsPlanType
         /// <summary>
         /// <para>
-        /// <para>The plan types.</para>
+        /// <para>The plan types.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter ServiceCode
         /// <summary>
         /// <para>
-        /// <para>The services.</para>
+        /// <para>The services.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.SP
         #region Parameter UsageType
         /// <summary>
         /// <para>
-        /// <para>The usage details of the line item in the billing report.</para>
+        /// <para>The usage details of the line item in the billing report.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,7 +184,7 @@ namespace Amazon.PowerShell.Cmdlets.SP
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -177,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.SP
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -342,13 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.SP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Savings Plans", "DescribeSavingsPlansOfferingRates");
             try
             {
-                #if DESKTOP
-                return client.DescribeSavingsPlansOfferingRates(request);
-                #elif CORECLR
-                return client.DescribeSavingsPlansOfferingRatesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeSavingsPlansOfferingRatesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

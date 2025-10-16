@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector2;
 using Amazon.Inspector2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS2
 {
     /// <summary>
@@ -35,18 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.INS2
     [OutputType("Amazon.Inspector2.Model.BatchGetAccountStatusResponse")]
     [AWSCmdlet("Calls the Inspector2 BatchGetAccountStatus API operation.", Operation = new[] {"BatchGetAccountStatus"}, SelectReturnType = typeof(Amazon.Inspector2.Model.BatchGetAccountStatusResponse))]
     [AWSCmdletOutput("Amazon.Inspector2.Model.BatchGetAccountStatusResponse",
-        "This cmdlet returns an Amazon.Inspector2.Model.BatchGetAccountStatusResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Inspector2.Model.BatchGetAccountStatusResponse object containing multiple properties."
     )]
     public partial class GetINS2GetAccountStatusCmdlet : AmazonInspector2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
         /// <para>The 12-digit Amazon Web Services account IDs of the accounts to retrieve Amazon Inspector
-        /// status for.</para>
+        /// status for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -65,9 +72,13 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -142,13 +153,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Inspector2", "BatchGetAccountStatus");
             try
             {
-                #if DESKTOP
-                return client.BatchGetAccountStatus(request);
-                #elif CORECLR
-                return client.BatchGetAccountStatusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchGetAccountStatusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

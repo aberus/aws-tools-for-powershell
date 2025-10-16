@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -46,9 +48,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
     /// object in an array (<c>CustomLabels</c>). Each <c>CustomLabel</c> object provides
     /// the label name (<c>Name</c>), the level of confidence that the image contains the
     /// object (<c>Confidence</c>), and object location information, if it exists, for the
-    /// label on the image (<c>Geometry</c>). Note that for the <c>DetectCustomLabelsLabels</c>
-    /// operation, <c>Polygons</c> are not returned in the <c>Geometry</c> section of the
-    /// response.
+    /// label on the image (<c>Geometry</c>). 
     /// </para><para>
     /// To filter labels that are returned, specify a value for <c>MinConfidence</c>. <c>DetectCustomLabelsLabels</c>
     /// only returns labels with a confidence that's higher than the specified value. The
@@ -78,12 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [AWSCmdlet("Calls the Amazon Rekognition DetectCustomLabels API operation.", Operation = new[] {"DetectCustomLabels"}, SelectReturnType = typeof(Amazon.Rekognition.Model.DetectCustomLabelsResponse))]
     [AWSCmdletOutput("Amazon.Rekognition.Model.CustomLabel or Amazon.Rekognition.Model.DetectCustomLabelsResponse",
         "This cmdlet returns a collection of Amazon.Rekognition.Model.CustomLabel objects.",
-        "The service call response (type Amazon.Rekognition.Model.DetectCustomLabelsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Rekognition.Model.DetectCustomLabelsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class FindREKCustomLabelCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3Object_Bucket
         /// <summary>
@@ -191,19 +192,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public string Select { get; set; } = "CustomLabels";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProjectVersionArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProjectVersionArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProjectVersionArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -211,21 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Rekognition.Model.DetectCustomLabelsResponse, FindREKCustomLabelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProjectVersionArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Image_Byte = this.Image_Byte;
             context.S3Object_Bucket = this.S3Object_Bucket;
             context.S3Object_Name = this.S3Object_Name;
@@ -382,13 +367,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "DetectCustomLabels");
             try
             {
-                #if DESKTOP
-                return client.DetectCustomLabels(request);
-                #elif CORECLR
-                return client.DetectCustomLabelsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DetectCustomLabelsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

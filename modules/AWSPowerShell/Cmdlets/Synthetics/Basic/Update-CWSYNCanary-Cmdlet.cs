@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Synthetics;
 using Amazon.Synthetics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWSYN
 {
     /// <summary>
@@ -32,21 +34,33 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
     /// 
     ///  
     /// <para>
+    /// For multibrowser canaries, you can add or remove browsers by updating the browserConfig
+    /// list in the update call. For example:
+    /// </para><ul><li><para>
+    /// To add Firefox to a canary that currently uses Chrome, specify browserConfigs as [CHROME,
+    /// FIREFOX]
+    /// </para></li><li><para>
+    /// To remove Firefox and keep only Chrome, specify browserConfigs as [CHROME]
+    /// </para></li></ul><para>
     /// You can't use this operation to update the tags of an existing canary. To change the
     /// tags of an existing canary, use <a href="https://docs.aws.amazon.com/AmazonSynthetics/latest/APIReference/API_TagResource.html">TagResource</a>.
-    /// </para>
+    /// </para><note><para>
+    /// When you use the <c>dryRunId</c> field when updating a canary, the only other field
+    /// you can provide is the <c>Schedule</c>. Adding any other field will thrown an exception.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Update", "CWSYNCanary", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon CloudWatch Synthetics UpdateCanary API operation.", Operation = new[] {"UpdateCanary"}, SelectReturnType = typeof(Amazon.Synthetics.Model.UpdateCanaryResponse))]
     [AWSCmdletOutput("None or Amazon.Synthetics.Model.UpdateCanaryResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Synthetics.Model.UpdateCanaryResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Synthetics.Model.UpdateCanaryResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateCWSYNCanaryCmdlet : AmazonSyntheticsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RunConfig_ActiveTracing
         /// <summary>
@@ -68,7 +82,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// <para>
         /// <para>The location in Amazon S3 where Synthetics stores artifacts from the test runs of
         /// this canary. Artifacts include the log file, screenshots, and HAR files. The name
-        /// of the S3 bucket can't include a period (.).</para>
+        /// of the Amazon S3 bucket can't include a period (.).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,7 +97,9 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// from the next run after this update is made, <c>lastrun</c> to use the screenshots
         /// from the most recent run before this update was made, or the value of <c>Id</c> in
         /// the <a href="https://docs.aws.amazon.com/AmazonSynthetics/latest/APIReference/API_CanaryRun.html">
-        /// CanaryRun</a> from any past run of this canary.</para>
+        /// CanaryRun</a> from a run of this a canary in the past 31 days. If you specify the
+        /// <c>Id</c> of a canary run older than 31 days, the operation returns a 400 validation
+        /// exception error..</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,12 +111,93 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// <para>
         /// <para>An array of screenshots that will be used as the baseline for visual monitoring in
         /// future runs of this canary. If there is a screenshot that you don't want to be used
-        /// for visual monitoring, remove it from this array.</para>
+        /// for visual monitoring, remove it from this array.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("VisualReference_BaseScreenshots")]
         public Amazon.Synthetics.Model.BaseScreenshot[] VisualReference_BaseScreenshot { get; set; }
+        #endregion
+        
+        #region Parameter Code_BlueprintType
+        /// <summary>
+        /// <para>
+        /// <para><c>BlueprintTypes</c> is a list of templates that enable simplified canary creation.
+        /// You can create canaries for common monitoring scenarios by providing only a JSON configuration
+        /// file instead of writing custom scripts. The only supported value is <c>multi-checks</c>.</para><para>Multi-checks monitors HTTP/DNS/SSL/TCP endpoints with built-in authentication schemes
+        /// (Basic, API Key, OAuth, SigV4) and assertion capabilities. When you specify <c>BlueprintTypes</c>,
+        /// the Handler field cannot be specified since the blueprint provides a pre-defined entry
+        /// point.</para><para><c>BlueprintTypes</c> is supported only on canaries for syn-nodejs-3.0 runtime or
+        /// later.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Code_BlueprintTypes")]
+        public System.String[] Code_BlueprintType { get; set; }
+        #endregion
+        
+        #region Parameter BrowserConfig
+        /// <summary>
+        /// <para>
+        /// <para>A structure that specifies the browser type to use for a canary run. CloudWatch Synthetics
+        /// supports running canaries on both <c>CHROME</c> and <c>FIREFOX</c> browsers.</para><note><para>If not specified, <c>browserConfigs</c> defaults to Chrome.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BrowserConfigs")]
+        public Amazon.Synthetics.Model.BrowserConfig[] BrowserConfig { get; set; }
+        #endregion
+        
+        #region Parameter VisualReference_BrowserType
+        /// <summary>
+        /// <para>
+        /// <para>The browser type associated with this visual reference.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Synthetics.BrowserType")]
+        public Amazon.Synthetics.BrowserType VisualReference_BrowserType { get; set; }
+        #endregion
+        
+        #region Parameter Code_Dependency
+        /// <summary>
+        /// <para>
+        /// <para>A list of dependencies that should be used for running this canary. Specify the dependencies
+        /// as a key-value pair, where the key is the type of dependency and the value is the
+        /// dependency reference.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Code_Dependencies")]
+        public Amazon.Synthetics.Model.Dependency[] Code_Dependency { get; set; }
+        #endregion
+        
+        #region Parameter DryRunId
+        /// <summary>
+        /// <para>
+        /// <para>Update the existing canary using the updated configurations from the DryRun associated
+        /// with the DryRunId.</para><note><para>When you use the <c>dryRunId</c> field when updating a canary, the only other field
+        /// you can provide is the <c>Schedule</c>. Adding any other field will thrown an exception.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DryRunId { get; set; }
         #endregion
         
         #region Parameter Schedule_DurationInSecond
@@ -138,13 +235,32 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// environment variables cannot exceed 4 KB. You can't specify any Lambda reserved environment
         /// variables as the keys for your environment variables. For more information about reserved
         /// keys, see <a href="https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-runtime">
-        /// Runtime environment variables</a>.</para><important><para>The environment variables keys and values are not encrypted. Do not store sensitive
-        /// information in this field.</para></important>
+        /// Runtime environment variables</a>.</para><important><para>Environment variable keys and values are encrypted at rest using Amazon Web Services
+        /// owned KMS keys. However, the environment variables are not encrypted on the client
+        /// side. Do not store sensitive information in them.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("RunConfig_EnvironmentVariables")]
         public System.Collections.Hashtable RunConfig_EnvironmentVariable { get; set; }
+        #endregion
+        
+        #region Parameter RunConfig_EphemeralStorage
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the amount of ephemeral storage (in MB) to allocate for the canary run during
+        /// execution. This temporary storage is used for storing canary run artifacts (which
+        /// are uploaded to an Amazon S3 bucket at the end of the run), and any canary browser
+        /// operations. This temporary storage is cleared after the run is completed. Default
+        /// storage value is 1024 MB.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? RunConfig_EphemeralStorage { get; set; }
         #endregion
         
         #region Parameter ExecutionRoleArn
@@ -180,7 +296,8 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter FailureRetentionPeriodInDay
         /// <summary>
         /// <para>
-        /// <para>The number of days to retain data about failed runs of this canary.</para>
+        /// <para>The number of days to retain data about failed runs of this canary.</para><para>This setting affects the range of information returned by <a href="https://docs.aws.amazon.com/AmazonSynthetics/latest/APIReference/API_GetCanaryRuns.html">GetCanaryRuns</a>,
+        /// as well as the range of information displayed in the Synthetics console. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -194,11 +311,23 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// <para>The entry point to use for the source code when running the canary. For canaries that
         /// use the <c>syn-python-selenium-1.0</c> runtime or a <c>syn-nodejs.puppeteer</c> runtime
         /// earlier than <c>syn-nodejs.puppeteer-3.4</c>, the handler must be specified as <c><i>fileName</i>.handler</c>. For <c>syn-python-selenium-1.1</c>, <c>syn-nodejs.puppeteer-3.4</c>,
-        /// and later runtimes, the handler can be specified as <c><i>fileName</i>.<i>functionName</i></c>, or you can specify a folder where canary scripts reside as <c><i>folder</i>/<i>fileName</i>.<i>functionName</i></c>.</para>
+        /// and later runtimes, the handler can be specified as <c><i>fileName</i>.<i>functionName</i></c>, or you can specify a folder where canary scripts reside as <c><i>folder</i>/<i>fileName</i>.<i>functionName</i></c>.</para><para>This field is required when you don't specify <c>BlueprintTypes</c> and is not allowed
+        /// when you specify <c>BlueprintTypes</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Code_Handler { get; set; }
+        #endregion
+        
+        #region Parameter VpcConfig_Ipv6AllowedForDualStack
+        /// <summary>
+        /// <para>
+        /// <para>Set this to <c>true</c> to allow outbound IPv6 traffic on VPC canaries that are connected
+        /// to dual-stack subnets. The default is <c>false</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? VpcConfig_Ipv6AllowedForDualStack { get; set; }
         #endregion
         
         #region Parameter S3Encryption_KmsKeyArn
@@ -211,6 +340,17 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ArtifactConfig_S3Encryption_KmsKeyArn")]
         public System.String S3Encryption_KmsKeyArn { get; set; }
+        #endregion
+        
+        #region Parameter RetryConfig_MaxRetry
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of retries. The value must be less than or equal to 2.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Schedule_RetryConfig_MaxRetries")]
+        public System.Int32? RetryConfig_MaxRetry { get; set; }
         #endregion
         
         #region Parameter RunConfig_MemoryInMB
@@ -242,6 +382,20 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter ProvisionedResourceCleanup
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to also delete the Lambda functions and layers used by this canary
+        /// when the canary is deleted.</para><para>If the value of this parameter is <c>OFF</c>, then the value of the <c>DeleteLambda</c>
+        /// parameter of the <a href="https://docs.aws.amazon.com/AmazonSynthetics/latest/APIReference/API_DeleteCanary.html">DeleteCanary</a>
+        /// operation determines whether the Lambda functions and layers will be deleted.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Synthetics.ProvisionedResourceCleanupSetting")]
+        public Amazon.Synthetics.ProvisionedResourceCleanupSetting ProvisionedResourceCleanup { get; set; }
+        #endregion
+        
         #region Parameter RuntimeVersion
         /// <summary>
         /// <para>
@@ -257,8 +411,8 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter Code_S3Bucket
         /// <summary>
         /// <para>
-        /// <para>If your canary script is located in S3, specify the bucket name here. Do not include
-        /// <c>s3://</c> as the start of the bucket name.</para>
+        /// <para>If your canary script is located in Amazon S3, specify the bucket name here. Do not
+        /// include <c>s3://</c> as the start of the bucket name.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -268,7 +422,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter Code_S3Key
         /// <summary>
         /// <para>
-        /// <para>The S3 key of your script. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingObjects.html">Working
+        /// <para>The Amazon S3 key of your script. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingObjects.html">Working
         /// with Amazon S3 Objects</a>.</para>
         /// </para>
         /// </summary>
@@ -279,7 +433,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter Code_S3Version
         /// <summary>
         /// <para>
-        /// <para>The S3 version ID of your script.</para>
+        /// <para>The Amazon S3 version ID of your script.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -289,7 +443,11 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter VpcConfig_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the security groups for this canary.</para>
+        /// <para>The IDs of the security groups for this canary.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -300,7 +458,11 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter VpcConfig_SubnetId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the subnets where this canary is to run.</para>
+        /// <para>The IDs of the subnets where this canary is to run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -311,7 +473,8 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         #region Parameter SuccessRetentionPeriodInDay
         /// <summary>
         /// <para>
-        /// <para>The number of days to retain data about successful runs of this canary.</para>
+        /// <para>The number of days to retain data about successful runs of this canary.</para><para>This setting affects the range of information returned by <a href="https://docs.aws.amazon.com/AmazonSynthetics/latest/APIReference/API_GetCanaryRuns.html">GetCanaryRuns</a>,
+        /// as well as the range of information displayed in the Synthetics console. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -332,13 +495,39 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public System.Int32? RunConfig_TimeoutInSecond { get; set; }
         #endregion
         
+        #region Parameter VisualReference
+        /// <summary>
+        /// <para>
+        /// <para>A list of visual reference configurations for the canary, one for each browser type
+        /// that the canary is configured to run on. Visual references are used for visual monitoring
+        /// comparisons.</para><para><c>syn-nodejs-puppeteer-11.0</c> and above, and <c>syn-nodejs-playwright-3.0</c>
+        /// and above, only supports <c>visualReferences</c>. <c>visualReference</c> field is
+        /// not supported.</para><para>Versions older than <c>syn-nodejs-puppeteer-11.0</c> supports both <c>visualReference</c>
+        /// and <c>visualReferences</c> for backward compatibility. It is recommended to use <c>visualReferences</c>
+        /// for consistency and future compatibility.</para><para>For multibrowser visual monitoring, you can update the baseline for all configured
+        /// browsers in a single update call by specifying a list of VisualReference objects,
+        /// one per browser. Each VisualReference object maps to a specific browser configuration,
+        /// allowing you to manage visual baselines for multiple browsers simultaneously.</para><para>For single configuration canaries using Chrome browser (default browser), use visualReferences
+        /// for <c>syn-nodejs-puppeteer-11.0</c> and above, and <c>syn-nodejs-playwright-3.0</c>
+        /// and above canaries. The browserType in the visualReference object is not mandatory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VisualReferences")]
+        public Amazon.Synthetics.Model.VisualReferenceInput[] VisualReference { get; set; }
+        #endregion
+        
         #region Parameter Code_ZipFile
         /// <summary>
         /// <para>
         /// <para>If you input your canary script directly into the canary instead of referring to an
-        /// S3 location, the value of this parameter is the base64-encoded contents of the .zip
-        /// file that contains the script. It must be smaller than 225 Kb.</para><para>For large canary scripts, we recommend that you use an S3 location instead of inputting
-        /// it directly with this parameter.</para>
+        /// Amazon S3 location, the value of this parameter is the base64-encoded contents of
+        /// the .zip file that contains the script. It must be smaller than 225 Kb.</para><para>For large canary scripts, we recommend that you use an Amazon S3 location instead
+        /// of inputting it directly with this parameter.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -357,16 +546,6 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -377,9 +556,13 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -393,29 +576,32 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Synthetics.Model.UpdateCanaryResponse, UpdateCWSYNCanaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.S3Encryption_EncryptionMode = this.S3Encryption_EncryptionMode;
             context.S3Encryption_KmsKeyArn = this.S3Encryption_KmsKeyArn;
             context.ArtifactS3Location = this.ArtifactS3Location;
+            if (this.BrowserConfig != null)
+            {
+                context.BrowserConfig = new List<Amazon.Synthetics.Model.BrowserConfig>(this.BrowserConfig);
+            }
+            if (this.Code_BlueprintType != null)
+            {
+                context.Code_BlueprintType = new List<System.String>(this.Code_BlueprintType);
+            }
+            if (this.Code_Dependency != null)
+            {
+                context.Code_Dependency = new List<Amazon.Synthetics.Model.Dependency>(this.Code_Dependency);
+            }
             context.Code_Handler = this.Code_Handler;
             context.Code_S3Bucket = this.Code_S3Bucket;
             context.Code_S3Key = this.Code_S3Key;
             context.Code_S3Version = this.Code_S3Version;
             context.Code_ZipFile = this.Code_ZipFile;
+            context.DryRunId = this.DryRunId;
             context.ExecutionRoleArn = this.ExecutionRoleArn;
             context.FailureRetentionPeriodInDay = this.FailureRetentionPeriodInDay;
             context.Name = this.Name;
@@ -425,6 +611,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ProvisionedResourceCleanup = this.ProvisionedResourceCleanup;
             context.RunConfig_ActiveTracing = this.RunConfig_ActiveTracing;
             if (this.RunConfig_EnvironmentVariable != null)
             {
@@ -434,17 +621,25 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                     context.RunConfig_EnvironmentVariable.Add((String)hashKey, (System.String)(this.RunConfig_EnvironmentVariable[hashKey]));
                 }
             }
+            context.RunConfig_EphemeralStorage = this.RunConfig_EphemeralStorage;
             context.RunConfig_MemoryInMB = this.RunConfig_MemoryInMB;
             context.RunConfig_TimeoutInSecond = this.RunConfig_TimeoutInSecond;
             context.RuntimeVersion = this.RuntimeVersion;
             context.Schedule_DurationInSecond = this.Schedule_DurationInSecond;
             context.Schedule_Expression = this.Schedule_Expression;
+            context.RetryConfig_MaxRetry = this.RetryConfig_MaxRetry;
             context.SuccessRetentionPeriodInDay = this.SuccessRetentionPeriodInDay;
             context.VisualReference_BaseCanaryRunId = this.VisualReference_BaseCanaryRunId;
             if (this.VisualReference_BaseScreenshot != null)
             {
                 context.VisualReference_BaseScreenshot = new List<Amazon.Synthetics.Model.BaseScreenshot>(this.VisualReference_BaseScreenshot);
             }
+            context.VisualReference_BrowserType = this.VisualReference_BrowserType;
+            if (this.VisualReference != null)
+            {
+                context.VisualReference = new List<Amazon.Synthetics.Model.VisualReferenceInput>(this.VisualReference);
+            }
+            context.VpcConfig_Ipv6AllowedForDualStack = this.VpcConfig_Ipv6AllowedForDualStack;
             if (this.VpcConfig_SecurityGroupId != null)
             {
                 context.VpcConfig_SecurityGroupId = new List<System.String>(this.VpcConfig_SecurityGroupId);
@@ -521,10 +716,34 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                 {
                     request.ArtifactS3Location = cmdletContext.ArtifactS3Location;
                 }
+                if (cmdletContext.BrowserConfig != null)
+                {
+                    request.BrowserConfigs = cmdletContext.BrowserConfig;
+                }
                 
                  // populate Code
                 var requestCodeIsNull = true;
                 request.Code = new Amazon.Synthetics.Model.CanaryCodeInput();
+                List<System.String> requestCode_code_BlueprintType = null;
+                if (cmdletContext.Code_BlueprintType != null)
+                {
+                    requestCode_code_BlueprintType = cmdletContext.Code_BlueprintType;
+                }
+                if (requestCode_code_BlueprintType != null)
+                {
+                    request.Code.BlueprintTypes = requestCode_code_BlueprintType;
+                    requestCodeIsNull = false;
+                }
+                List<Amazon.Synthetics.Model.Dependency> requestCode_code_Dependency = null;
+                if (cmdletContext.Code_Dependency != null)
+                {
+                    requestCode_code_Dependency = cmdletContext.Code_Dependency;
+                }
+                if (requestCode_code_Dependency != null)
+                {
+                    request.Code.Dependencies = requestCode_code_Dependency;
+                    requestCodeIsNull = false;
+                }
                 System.String requestCode_code_Handler = null;
                 if (cmdletContext.Code_Handler != null)
                 {
@@ -581,6 +800,10 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                 {
                     request.Code = null;
                 }
+                if (cmdletContext.DryRunId != null)
+                {
+                    request.DryRunId = cmdletContext.DryRunId;
+                }
                 if (cmdletContext.ExecutionRoleArn != null)
                 {
                     request.ExecutionRoleArn = cmdletContext.ExecutionRoleArn;
@@ -592,6 +815,10 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                 if (cmdletContext.Name != null)
                 {
                     request.Name = cmdletContext.Name;
+                }
+                if (cmdletContext.ProvisionedResourceCleanup != null)
+                {
+                    request.ProvisionedResourceCleanup = cmdletContext.ProvisionedResourceCleanup;
                 }
                 
                  // populate RunConfig
@@ -615,6 +842,16 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                 if (requestRunConfig_runConfig_EnvironmentVariable != null)
                 {
                     request.RunConfig.EnvironmentVariables = requestRunConfig_runConfig_EnvironmentVariable;
+                    requestRunConfigIsNull = false;
+                }
+                System.Int32? requestRunConfig_runConfig_EphemeralStorage = null;
+                if (cmdletContext.RunConfig_EphemeralStorage != null)
+                {
+                    requestRunConfig_runConfig_EphemeralStorage = cmdletContext.RunConfig_EphemeralStorage.Value;
+                }
+                if (requestRunConfig_runConfig_EphemeralStorage != null)
+                {
+                    request.RunConfig.EphemeralStorage = requestRunConfig_runConfig_EphemeralStorage.Value;
                     requestRunConfigIsNull = false;
                 }
                 System.Int32? requestRunConfig_runConfig_MemoryInMB = null;
@@ -670,6 +907,31 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                     request.Schedule.Expression = requestSchedule_schedule_Expression;
                     requestScheduleIsNull = false;
                 }
+                Amazon.Synthetics.Model.RetryConfigInput requestSchedule_schedule_RetryConfig = null;
+                
+                 // populate RetryConfig
+                var requestSchedule_schedule_RetryConfigIsNull = true;
+                requestSchedule_schedule_RetryConfig = new Amazon.Synthetics.Model.RetryConfigInput();
+                System.Int32? requestSchedule_schedule_RetryConfig_retryConfig_MaxRetry = null;
+                if (cmdletContext.RetryConfig_MaxRetry != null)
+                {
+                    requestSchedule_schedule_RetryConfig_retryConfig_MaxRetry = cmdletContext.RetryConfig_MaxRetry.Value;
+                }
+                if (requestSchedule_schedule_RetryConfig_retryConfig_MaxRetry != null)
+                {
+                    requestSchedule_schedule_RetryConfig.MaxRetries = requestSchedule_schedule_RetryConfig_retryConfig_MaxRetry.Value;
+                    requestSchedule_schedule_RetryConfigIsNull = false;
+                }
+                 // determine if requestSchedule_schedule_RetryConfig should be set to null
+                if (requestSchedule_schedule_RetryConfigIsNull)
+                {
+                    requestSchedule_schedule_RetryConfig = null;
+                }
+                if (requestSchedule_schedule_RetryConfig != null)
+                {
+                    request.Schedule.RetryConfig = requestSchedule_schedule_RetryConfig;
+                    requestScheduleIsNull = false;
+                }
                  // determine if request.Schedule should be set to null
                 if (requestScheduleIsNull)
                 {
@@ -703,15 +965,39 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
                     request.VisualReference.BaseScreenshots = requestVisualReference_visualReference_BaseScreenshot;
                     requestVisualReferenceIsNull = false;
                 }
+                Amazon.Synthetics.BrowserType requestVisualReference_visualReference_BrowserType = null;
+                if (cmdletContext.VisualReference_BrowserType != null)
+                {
+                    requestVisualReference_visualReference_BrowserType = cmdletContext.VisualReference_BrowserType;
+                }
+                if (requestVisualReference_visualReference_BrowserType != null)
+                {
+                    request.VisualReference.BrowserType = requestVisualReference_visualReference_BrowserType;
+                    requestVisualReferenceIsNull = false;
+                }
                  // determine if request.VisualReference should be set to null
                 if (requestVisualReferenceIsNull)
                 {
                     request.VisualReference = null;
                 }
+                if (cmdletContext.VisualReference != null)
+                {
+                    request.VisualReferences = cmdletContext.VisualReference;
+                }
                 
                  // populate VpcConfig
                 var requestVpcConfigIsNull = true;
                 request.VpcConfig = new Amazon.Synthetics.Model.VpcConfigInput();
+                System.Boolean? requestVpcConfig_vpcConfig_Ipv6AllowedForDualStack = null;
+                if (cmdletContext.VpcConfig_Ipv6AllowedForDualStack != null)
+                {
+                    requestVpcConfig_vpcConfig_Ipv6AllowedForDualStack = cmdletContext.VpcConfig_Ipv6AllowedForDualStack.Value;
+                }
+                if (requestVpcConfig_vpcConfig_Ipv6AllowedForDualStack != null)
+                {
+                    request.VpcConfig.Ipv6AllowedForDualStack = requestVpcConfig_vpcConfig_Ipv6AllowedForDualStack.Value;
+                    requestVpcConfigIsNull = false;
+                }
                 List<System.String> requestVpcConfig_vpcConfig_SecurityGroupId = null;
                 if (cmdletContext.VpcConfig_SecurityGroupId != null)
                 {
@@ -783,13 +1069,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Synthetics", "UpdateCanary");
             try
             {
-                #if DESKTOP
-                return client.UpdateCanary(request);
-                #elif CORECLR
-                return client.UpdateCanaryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateCanaryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -809,24 +1089,34 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
             public Amazon.Synthetics.EncryptionMode S3Encryption_EncryptionMode { get; set; }
             public System.String S3Encryption_KmsKeyArn { get; set; }
             public System.String ArtifactS3Location { get; set; }
+            public List<Amazon.Synthetics.Model.BrowserConfig> BrowserConfig { get; set; }
+            public List<System.String> Code_BlueprintType { get; set; }
+            public List<Amazon.Synthetics.Model.Dependency> Code_Dependency { get; set; }
             public System.String Code_Handler { get; set; }
             public System.String Code_S3Bucket { get; set; }
             public System.String Code_S3Key { get; set; }
             public System.String Code_S3Version { get; set; }
             public byte[] Code_ZipFile { get; set; }
+            public System.String DryRunId { get; set; }
             public System.String ExecutionRoleArn { get; set; }
             public System.Int32? FailureRetentionPeriodInDay { get; set; }
             public System.String Name { get; set; }
+            public Amazon.Synthetics.ProvisionedResourceCleanupSetting ProvisionedResourceCleanup { get; set; }
             public System.Boolean? RunConfig_ActiveTracing { get; set; }
             public Dictionary<System.String, System.String> RunConfig_EnvironmentVariable { get; set; }
+            public System.Int32? RunConfig_EphemeralStorage { get; set; }
             public System.Int32? RunConfig_MemoryInMB { get; set; }
             public System.Int32? RunConfig_TimeoutInSecond { get; set; }
             public System.String RuntimeVersion { get; set; }
             public System.Int64? Schedule_DurationInSecond { get; set; }
             public System.String Schedule_Expression { get; set; }
+            public System.Int32? RetryConfig_MaxRetry { get; set; }
             public System.Int32? SuccessRetentionPeriodInDay { get; set; }
             public System.String VisualReference_BaseCanaryRunId { get; set; }
             public List<Amazon.Synthetics.Model.BaseScreenshot> VisualReference_BaseScreenshot { get; set; }
+            public Amazon.Synthetics.BrowserType VisualReference_BrowserType { get; set; }
+            public List<Amazon.Synthetics.Model.VisualReferenceInput> VisualReference { get; set; }
+            public System.Boolean? VpcConfig_Ipv6AllowedForDualStack { get; set; }
             public List<System.String> VpcConfig_SecurityGroupId { get; set; }
             public List<System.String> VpcConfig_SubnetId { get; set; }
             public System.Func<Amazon.Synthetics.Model.UpdateCanaryResponse, UpdateCWSYNCanaryCmdlet, object> Select { get; set; } =

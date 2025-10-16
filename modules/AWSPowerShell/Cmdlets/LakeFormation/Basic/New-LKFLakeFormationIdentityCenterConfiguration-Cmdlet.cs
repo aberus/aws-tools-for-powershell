@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LakeFormation;
 using Amazon.LakeFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LKF
 {
     /// <summary>
@@ -36,17 +38,22 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     [AWSCmdlet("Calls the AWS Lake Formation CreateLakeFormationIdentityCenterConfiguration API operation.", Operation = new[] {"CreateLakeFormationIdentityCenterConfiguration"}, SelectReturnType = typeof(Amazon.LakeFormation.Model.CreateLakeFormationIdentityCenterConfigurationResponse))]
     [AWSCmdletOutput("System.String or Amazon.LakeFormation.Model.CreateLakeFormationIdentityCenterConfigurationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.LakeFormation.Model.CreateLakeFormationIdentityCenterConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.LakeFormation.Model.CreateLakeFormationIdentityCenterConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewLKFLakeFormationIdentityCenterConfigurationCmdlet : AmazonLakeFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExternalFiltering_AuthorizedTarget
         /// <summary>
         /// <para>
-        /// <para>List of third-party application <c>ARNs</c> integrated with Lake Formation.</para>
+        /// <para>List of third-party application <c>ARNs</c> integrated with Lake Formation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,6 +85,24 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public System.String InstanceArn { get; set; }
         #endregion
         
+        #region Parameter ShareRecipient
+        /// <summary>
+        /// <para>
+        /// <para>A list of Amazon Web Services account IDs and/or Amazon Web Services organization/organizational
+        /// unit ARNs that are allowed to access data managed by Lake Formation. </para><para>If the <c>ShareRecipients</c> list includes valid values, a resource share is created
+        /// with the principals you want to have access to the resources.</para><para>If the <c>ShareRecipients</c> value is null or the list is empty, no resource share
+        /// is created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ShareRecipients")]
+        public Amazon.LakeFormation.Model.DataLakePrincipal[] ShareRecipient { get; set; }
+        #endregion
+        
         #region Parameter ExternalFiltering_Status
         /// <summary>
         /// <para>
@@ -101,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public string Select { get; set; } = "ApplicationArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CatalogId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CatalogId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CatalogId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -121,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CatalogId), MyInvocation.BoundParameters);
@@ -137,21 +156,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LakeFormation.Model.CreateLakeFormationIdentityCenterConfigurationResponse, NewLKFLakeFormationIdentityCenterConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CatalogId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CatalogId = this.CatalogId;
             if (this.ExternalFiltering_AuthorizedTarget != null)
             {
@@ -159,6 +168,10 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             }
             context.ExternalFiltering_Status = this.ExternalFiltering_Status;
             context.InstanceArn = this.InstanceArn;
+            if (this.ShareRecipient != null)
+            {
+                context.ShareRecipient = new List<Amazon.LakeFormation.Model.DataLakePrincipal>(this.ShareRecipient);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -212,6 +225,10 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             {
                 request.InstanceArn = cmdletContext.InstanceArn;
             }
+            if (cmdletContext.ShareRecipient != null)
+            {
+                request.ShareRecipients = cmdletContext.ShareRecipient;
+            }
             
             CmdletOutput output;
             
@@ -250,13 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lake Formation", "CreateLakeFormationIdentityCenterConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateLakeFormationIdentityCenterConfiguration(request);
-                #elif CORECLR
-                return client.CreateLakeFormationIdentityCenterConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLakeFormationIdentityCenterConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -277,6 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             public List<System.String> ExternalFiltering_AuthorizedTarget { get; set; }
             public Amazon.LakeFormation.EnableStatus ExternalFiltering_Status { get; set; }
             public System.String InstanceArn { get; set; }
+            public List<Amazon.LakeFormation.Model.DataLakePrincipal> ShareRecipient { get; set; }
             public System.Func<Amazon.LakeFormation.Model.CreateLakeFormationIdentityCenterConfigurationResponse, NewLKFLakeFormationIdentityCenterConfigurationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ApplicationArn;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SsmSap;
 using Amazon.SsmSap.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSAP
 {
     /// <summary>
@@ -47,14 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
     [OutputType("Amazon.SsmSap.Model.RegisterApplicationResponse")]
     [AWSCmdlet("Calls the AWS Systems Manager for SAP RegisterApplication API operation.", Operation = new[] {"RegisterApplication"}, SelectReturnType = typeof(Amazon.SsmSap.Model.RegisterApplicationResponse))]
     [AWSCmdletOutput("Amazon.SsmSap.Model.RegisterApplicationResponse",
-        "This cmdlet returns an Amazon.SsmSap.Model.RegisterApplicationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SsmSap.Model.RegisterApplicationResponse object containing multiple properties."
     )]
     public partial class RegisterSMSAPApplicationCmdlet : AmazonSsmSapClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -90,10 +91,29 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
         public Amazon.SsmSap.ApplicationType ApplicationType { get; set; }
         #endregion
         
+        #region Parameter ComponentsInfo
+        /// <summary>
+        /// <para>
+        /// <para>This is an optional parameter for component details to which the SAP ABAP application
+        /// is attached, such as Web Dispatcher.</para><para>This is an array of ApplicationComponent objects. You may input 0 to 5 items.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.SsmSap.Model.ComponentInfo[] ComponentsInfo { get; set; }
+        #endregion
+        
         #region Parameter ApplicationCredentials
         /// <summary>
         /// <para>
-        /// <para>The credentials of the SAP application.</para>
+        /// <para>The credentials of the SAP application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,7 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
         #region Parameter Instance
         /// <summary>
         /// <para>
-        /// <para>The Amazon EC2 instances on which your SAP application is running.</para>
+        /// <para>The Amazon EC2 instances on which your SAP application is running.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -151,7 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be attached to the SAP application.</para>
+        /// <para>The tags to be attached to the SAP application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,9 +208,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -215,6 +247,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
                 WriteWarning("You are passing $null as a value for parameter ApplicationType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.ComponentsInfo != null)
+            {
+                context.ComponentsInfo = new List<Amazon.SsmSap.Model.ComponentInfo>(this.ComponentsInfo);
+            }
             if (this.ApplicationCredentials != null)
             {
                 context.ApplicationCredentials = new List<Amazon.SsmSap.Model.ApplicationCredential>(this.ApplicationCredentials);
@@ -263,6 +299,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
             if (cmdletContext.ApplicationType != null)
             {
                 request.ApplicationType = cmdletContext.ApplicationType;
+            }
+            if (cmdletContext.ComponentsInfo != null)
+            {
+                request.ComponentsInfo = cmdletContext.ComponentsInfo;
             }
             if (cmdletContext.ApplicationCredentials != null)
             {
@@ -326,13 +366,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager for SAP", "RegisterApplication");
             try
             {
-                #if DESKTOP
-                return client.RegisterApplication(request);
-                #elif CORECLR
-                return client.RegisterApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -351,6 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
         {
             public System.String ApplicationId { get; set; }
             public Amazon.SsmSap.ApplicationType ApplicationType { get; set; }
+            public List<Amazon.SsmSap.Model.ComponentInfo> ComponentsInfo { get; set; }
             public List<Amazon.SsmSap.Model.ApplicationCredential> ApplicationCredentials { get; set; }
             public System.String DatabaseArn { get; set; }
             public List<System.String> Instance { get; set; }

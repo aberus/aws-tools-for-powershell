@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Amplify;
 using Amazon.Amplify.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMP
 {
     /// <summary>
     /// Creates a deployment for a manually deployed Amplify app. Manually deployed apps are
-    /// not connected to a repository. 
+    /// not connected to a Git repository. 
     /// 
     ///  
     /// <para>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
     [OutputType("Amazon.Amplify.Model.CreateDeploymentResponse")]
     [AWSCmdlet("Calls the AWS Amplify CreateDeployment API operation.", Operation = new[] {"CreateDeployment"}, SelectReturnType = typeof(Amazon.Amplify.Model.CreateDeploymentResponse))]
     [AWSCmdletOutput("Amazon.Amplify.Model.CreateDeploymentResponse",
-        "This cmdlet returns an Amazon.Amplify.Model.CreateDeploymentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Amplify.Model.CreateDeploymentResponse object containing multiple properties."
     )]
     public partial class NewAMPDeploymentCmdlet : AmazonAmplifyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppId
         /// <summary>
@@ -89,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         /// <para> An optional file map that contains the file name as the key and the file content
         /// md5 hash as the value. If this argument is provided, the service will generate a unique
         /// upload URL per file. Otherwise, the service will only generate a single upload URL
-        /// for the zipped files. </para>
+        /// for the zipped files. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,16 +114,6 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AppId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AppId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AppId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -127,9 +124,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AppId), MyInvocation.BoundParameters);
@@ -143,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Amplify.Model.CreateDeploymentResponse, NewAMPDeploymentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AppId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppId = this.AppId;
             #if MODULAR
             if (this.AppId == null && ParameterWasBound(nameof(this.AppId)))
@@ -246,13 +237,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify", "CreateDeployment");
             try
             {
-                #if DESKTOP
-                return client.CreateDeployment(request);
-                #elif CORECLR
-                return client.CreateDeploymentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDeploymentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

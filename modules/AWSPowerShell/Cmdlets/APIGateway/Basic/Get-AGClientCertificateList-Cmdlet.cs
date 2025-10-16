@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.APIGateway;
 using Amazon.APIGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AG
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
     [AWSCmdlet("Calls the Amazon API Gateway GetClientCertificates API operation.", Operation = new[] {"GetClientCertificates"}, SelectReturnType = typeof(Amazon.APIGateway.Model.GetClientCertificatesResponse))]
     [AWSCmdletOutput("Amazon.APIGateway.Model.ClientCertificate or Amazon.APIGateway.Model.GetClientCertificatesResponse",
         "This cmdlet returns a collection of Amazon.APIGateway.Model.ClientCertificate objects.",
-        "The service call response (type Amazon.APIGateway.Model.GetClientCertificatesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.APIGateway.Model.GetClientCertificatesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAGClientCertificateListCmdlet : AmazonAPIGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Limit
         /// <summary>
@@ -66,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Position $null' for the first call and '-Position $AWSHistory.LastServiceResponse.Position' for subsequent calls.
+        /// <br/>'Position' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Position' to null for the first call then set the 'Position' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,9 +98,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -239,7 +246,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Items.Count;
+                    int _receivedThisCall = response.Items?.Count ?? 0;
                     
                     _nextToken = response.Position;
                     _retrievedSoFar += _receivedThisCall;
@@ -288,13 +295,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon API Gateway", "GetClientCertificates");
             try
             {
-                #if DESKTOP
-                return client.GetClientCertificates(request);
-                #elif CORECLR
-                return client.GetClientCertificatesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetClientCertificatesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

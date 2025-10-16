@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Bedrock;
 using Amazon.Bedrock.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BDR
 {
     /// <summary>
-    /// List of Amazon Bedrock foundation models that you can use. For more information, see
-    /// <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/foundation-models.html">Foundation
-    /// models</a> in the Bedrock User Guide.
+    /// Lists Amazon Bedrock foundation models that you can use. You can filter the results
+    /// with the request parameters. For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/foundation-models.html">Foundation
+    /// models</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+    /// Bedrock User Guide</a>.
     /// </summary>
     [Cmdlet("Get", "BDRFoundationModelList")]
     [OutputType("Amazon.Bedrock.Model.FoundationModelSummary")]
     [AWSCmdlet("Calls the Amazon Bedrock ListFoundationModels API operation.", Operation = new[] {"ListFoundationModels"}, SelectReturnType = typeof(Amazon.Bedrock.Model.ListFoundationModelsResponse))]
     [AWSCmdletOutput("Amazon.Bedrock.Model.FoundationModelSummary or Amazon.Bedrock.Model.ListFoundationModelsResponse",
         "This cmdlet returns a collection of Amazon.Bedrock.Model.FoundationModelSummary objects.",
-        "The service call response (type Amazon.Bedrock.Model.ListFoundationModelsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Bedrock.Model.ListFoundationModelsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBDRFoundationModelListCmdlet : AmazonBedrockClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ByCustomizationType
         /// <summary>
         /// <para>
-        /// <para>List by customization type.</para>
+        /// <para>Return models that support the customization type that you specify. For more information,
+        /// see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/custom-models.html">Custom
+        /// models</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+        /// Bedrock User Guide</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -58,7 +65,10 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter ByInferenceType
         /// <summary>
         /// <para>
-        /// <para>List by inference type.</para>
+        /// <para>Return models that support the inference type that you specify. For more information,
+        /// see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prov-throughput.html">Provisioned
+        /// Throughput</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+        /// Bedrock User Guide</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -69,7 +79,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter ByOutputModality
         /// <summary>
         /// <para>
-        /// <para>List by output modality type.</para>
+        /// <para>Return models that support the output modality that you specify.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -80,7 +90,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter ByProvider
         /// <summary>
         /// <para>
-        /// <para>A Amazon Bedrock model provider.</para>
+        /// <para>Return models belonging to the model provider that you specify.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,9 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         public string Select { get; set; } = "ModelSummaries";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -187,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Bedrock", "ListFoundationModels");
             try
             {
-                #if DESKTOP
-                return client.ListFoundationModels(request);
-                #elif CORECLR
-                return client.ListFoundationModelsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListFoundationModelsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

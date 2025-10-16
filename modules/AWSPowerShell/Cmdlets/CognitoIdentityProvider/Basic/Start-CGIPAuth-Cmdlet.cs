@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Initiates sign-in for a user in the Amazon Cognito user directory. You can't sign
-    /// in a user with a federated IdP with <c>InitiateAuth</c>. For more information, see
-    /// <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-identity-federation.html">
-    /// Adding user pool sign-in through a third party</a>.
+    /// Declares an authentication flow and initiates sign-in for a user in the Amazon Cognito
+    /// user directory. Amazon Cognito might respond with an additional challenge or an <c>AuthenticationResult</c>
+    /// that contains the outcome of a successful authentication. You can't sign in a user
+    /// with a federated IdP with <c>InitiateAuth</c>. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/authentication.html">Authentication</a>.
     /// 
     ///  <note><para>
     /// Amazon Cognito doesn't evaluate Identity and Access Management (IAM) policies in requests
@@ -49,8 +51,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// their accounts, or sign in.
     /// </para><para>
     /// If you have never used SMS text messages with Amazon Cognito or any other Amazon Web
-    /// Service, Amazon Simple Notification Service might place your account in the SMS sandbox.
-    /// In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
+    /// Services service, Amazon Simple Notification Service might place your account in the
+    /// SMS sandbox. In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
     /// mode</a></i>, you can send messages only to verified phone numbers. After you test
     /// your app while in the sandbox environment, you can move out of the sandbox and into
     /// production. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-sms-settings.html">
@@ -62,21 +64,19 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [OutputType("Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider InitiateAuth API operation.", Operation = new[] {"InitiateAuth"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse",
-        "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse object containing multiple properties."
     )]
     public partial class StartCGIPAuthCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnalyticsMetadata_AnalyticsEndpointId
         /// <summary>
         /// <para>
-        /// <para>The endpoint ID.</para>
+        /// <para>The endpoint ID. Information that you want to pass to Amazon Pinpoint about where
+        /// to send notifications.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,13 +86,24 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter AuthFlow
         /// <summary>
         /// <para>
-        /// <para>The authentication flow for this call to run. The API action will depend on this value.
-        /// For example:</para><ul><li><para><c>REFRESH_TOKEN_AUTH</c> takes in a valid refresh token and returns new tokens.</para></li><li><para><c>USER_SRP_AUTH</c> takes in <c>USERNAME</c> and <c>SRP_A</c> and returns the SRP
-        /// variables to be used for next challenge execution.</para></li><li><para><c>USER_PASSWORD_AUTH</c> takes in <c>USERNAME</c> and <c>PASSWORD</c> and returns
-        /// the next challenge or tokens.</para></li></ul><para>Valid values include:</para><ul><li><para><c>USER_SRP_AUTH</c>: Authentication flow for the Secure Remote Password (SRP) protocol.</para></li><li><para><c>REFRESH_TOKEN_AUTH</c>/<c>REFRESH_TOKEN</c>: Authentication flow for refreshing
-        /// the access token and ID token by supplying a valid refresh token.</para></li><li><para><c>CUSTOM_AUTH</c>: Custom authentication flow.</para></li><li><para><c>USER_PASSWORD_AUTH</c>: Non-SRP authentication flow; user name and password are
-        /// passed directly. If a user migration Lambda trigger is set, this flow will invoke
-        /// the user migration Lambda if it doesn't find the user name in the user pool. </para></li></ul><para><c>ADMIN_NO_SRP_AUTH</c> isn't a valid value.</para>
+        /// <para>The authentication flow that you want to initiate. Each <c>AuthFlow</c> has linked
+        /// <c>AuthParameters</c> that you must submit. The following are some example flows.</para><dl><dt>USER_AUTH</dt><dd><para>The entry point for <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/authentication-flows-selection-sdk.html#authentication-flows-selection-choice">choice-based
+        /// authentication</a> with passwords, one-time passwords, and WebAuthn authenticators.
+        /// Request a preferred authentication type or review available authentication types.
+        /// From the offered authentication types, select one in a challenge response and then
+        /// authenticate with that method in an additional challenge response. To activate this
+        /// setting, your user pool must be in the <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/feature-plans-features-essentials.html">
+        /// Essentials tier</a> or higher.</para></dd><dt>USER_SRP_AUTH</dt><dd><para>Username-password authentication with the Secure Remote Password (SRP) protocol. For
+        /// more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-authentication-flow.html#Using-SRP-password-verification-in-custom-authentication-flow">Use
+        /// SRP password verification in custom authentication flow</a>.</para></dd><dt>REFRESH_TOKEN_AUTH and REFRESH_TOKEN</dt><dd><para>Receive new ID and access tokens when you pass a <c>REFRESH_TOKEN</c> parameter with
+        /// a valid refresh token as the value. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-the-refresh-token.html">Using
+        /// the refresh token</a>.</para></dd><dt>CUSTOM_AUTH</dt><dd><para>Custom authentication with Lambda triggers. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-challenge.html">Custom
+        /// authentication challenge Lambda triggers</a>.</para></dd><dt>USER_PASSWORD_AUTH</dt><dd><para>Client-side username-password authentication with the password sent directly in the
+        /// request. For more information about client-side and server-side authentication, see
+        /// <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/authentication-flows-public-server-side.html">SDK
+        /// authorization models</a>.</para></dd></dl><para><c>ADMIN_USER_PASSWORD_AUTH</c> is a flow type of <c>AdminInitiateAuth</c> and isn't
+        /// valid for InitiateAuth. <c>ADMIN_NO_SRP_AUTH</c> is a legacy server-side username-password
+        /// flow and isn't valid for InitiateAuth.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -110,16 +121,17 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <summary>
         /// <para>
         /// <para>The authentication parameters. These are inputs corresponding to the <c>AuthFlow</c>
-        /// that you're invoking. The required values depend on the value of <c>AuthFlow</c>:</para><ul><li><para>For <c>USER_SRP_AUTH</c>: <c>USERNAME</c> (required), <c>SRP_A</c> (required), <c>SECRET_HASH</c>
-        /// (required if the app client is configured with a client secret), <c>DEVICE_KEY</c>.</para></li><li><para>For <c>USER_PASSWORD_AUTH</c>: <c>USERNAME</c> (required), <c>PASSWORD</c> (required),
-        /// <c>SECRET_HASH</c> (required if the app client is configured with a client secret),
-        /// <c>DEVICE_KEY</c>.</para></li><li><para>For <c>REFRESH_TOKEN_AUTH/REFRESH_TOKEN</c>: <c>REFRESH_TOKEN</c> (required), <c>SECRET_HASH</c>
-        /// (required if the app client is configured with a client secret), <c>DEVICE_KEY</c>.</para></li><li><para>For <c>CUSTOM_AUTH</c>: <c>USERNAME</c> (required), <c>SECRET_HASH</c> (if app client
-        /// is configured with client secret), <c>DEVICE_KEY</c>. To start the authentication
-        /// flow with password verification, include <c>ChallengeName: SRP_A</c> and <c>SRP_A:
-        /// (The SRP_A Value)</c>.</para></li></ul><para>For more information about <c>SECRET_HASH</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash">Computing
+        /// that you're invoking.</para><para>The following are some authentication flows and their parameters. Add a <c>SECRET_HASH</c>
+        /// parameter if your app client has a client secret. Add <c>DEVICE_KEY</c> if you want
+        /// to bypass multi-factor authentication with a remembered device. </para><dl><dt>USER_AUTH</dt><dd><ul><li><para><c>USERNAME</c> (required)</para></li><li><para><c>PREFERRED_CHALLENGE</c>. If you don't provide a value for <c>PREFERRED_CHALLENGE</c>,
+        /// Amazon Cognito responds with the <c>AvailableChallenges</c> parameter that specifies
+        /// the available sign-in methods.</para></li></ul></dd><dt>USER_SRP_AUTH</dt><dd><ul><li><para><c>USERNAME</c> (required)</para></li><li><para><c>SRP_A</c> (required)</para></li></ul></dd><dt>USER_PASSWORD_AUTH</dt><dd><ul><li><para><c>USERNAME</c> (required)</para></li><li><para><c>PASSWORD</c> (required)</para></li></ul></dd><dt>REFRESH_TOKEN_AUTH/REFRESH_TOKEN</dt><dd><ul><li><para><c>REFRESH_TOKEN</c>(required)</para></li></ul></dd><dt>CUSTOM_AUTH</dt><dd><ul><li><para><c>USERNAME</c> (required)</para></li><li><para><c>ChallengeName: SRP_A</c> (when doing SRP authentication before custom challenges)</para></li><li><para><c>SRP_A: (An SRP_A value)</c> (when doing SRP authentication before custom challenges)</para></li></ul></dd></dl><para>For more information about <c>SECRET_HASH</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash">Computing
         /// secret hash values</a>. For information about <c>DEVICE_KEY</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-device-tracking.html">Working
-        /// with user devices in your user pool</a>.</para>
+        /// with user devices in your user pool</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -130,7 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ClientId
         /// <summary>
         /// <para>
-        /// <para>The app client ID.</para>
+        /// <para>The ID of the app client that your user wants to sign in to.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -149,19 +161,23 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <para>
         /// <para>A map of custom key-value pairs that you can provide as input for certain custom workflows
         /// that this action triggers.</para><para>You create custom workflows by assigning Lambda functions to user pool triggers. When
-        /// you use the InitiateAuth API action, Amazon Cognito invokes the Lambda functions that
-        /// are specified for various triggers. The ClientMetadata value is passed as input to
-        /// the functions for only the following triggers:</para><ul><li><para>Pre signup</para></li><li><para>Pre authentication</para></li><li><para>User migration</para></li></ul><para>When Amazon Cognito invokes the functions for these triggers, it passes a JSON payload,
-        /// which the function receives as input. This payload contains a <c>validationData</c>
-        /// attribute, which provides the data that you assigned to the ClientMetadata parameter
-        /// in your InitiateAuth request. In your function code in Lambda, you can process the
-        /// <c>validationData</c> value to enhance your workflow for your specific needs.</para><para>When you use the InitiateAuth API action, Amazon Cognito also invokes the functions
-        /// for the following triggers, but it doesn't provide the ClientMetadata value as input:</para><ul><li><para>Post authentication</para></li><li><para>Custom message</para></li><li><para>Pre token generation</para></li><li><para>Create auth challenge</para></li><li><para>Define auth challenge</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html">
-        /// Customizing user pool Workflows with Lambda Triggers</a> in the <i>Amazon Cognito
-        /// Developer Guide</i>.</para><note><para>When you use the ClientMetadata parameter, remember that Amazon Cognito won't do the
-        /// following:</para><ul><li><para>Store the ClientMetadata value. This data is available only to Lambda triggers that
-        /// are assigned to a user pool to support custom workflows. If your user pool configuration
-        /// doesn't include triggers, the ClientMetadata parameter serves no purpose.</para></li><li><para>Validate the ClientMetadata value.</para></li><li><para>Encrypt the ClientMetadata value. Don't use Amazon Cognito to provide sensitive information.</para></li></ul></note>
+        /// you send an <c>InitiateAuth</c> request, Amazon Cognito invokes the Lambda functions
+        /// that are specified for various triggers. The <c>ClientMetadata</c> value is passed
+        /// as input to the functions for only the following triggers.</para><ul><li><para>Pre sign-up</para></li><li><para>Pre authentication</para></li><li><para>User migration</para></li></ul><para>When Amazon Cognito invokes the functions for these triggers, it passes a JSON payload
+        /// as input to the function. This payload contains a <c>validationData</c> attribute
+        /// with the data that you assigned to the <c>ClientMetadata</c> parameter in your <c>InitiateAuth</c>
+        /// request. In your function, <c>validationData</c> can contribute to operations that
+        /// require data that isn't in the default payload.</para><para><c>InitiateAuth</c> requests invokes the following triggers without <c>ClientMetadata</c>
+        /// as input.</para><ul><li><para>Post authentication</para></li><li><para>Custom message</para></li><li><para>Pre token generation</para></li><li><para>Create auth challenge</para></li><li><para>Define auth challenge</para></li><li><para>Custom email sender</para></li><li><para>Custom SMS sender</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html">
+        /// Using Lambda triggers</a> in the <i>Amazon Cognito Developer Guide</i>.</para><note><para>When you use the <c>ClientMetadata</c> parameter, note that Amazon Cognito won't do
+        /// the following:</para><ul><li><para>Store the <c>ClientMetadata</c> value. This data is available only to Lambda triggers
+        /// that are assigned to a user pool to support custom workflows. If your user pool configuration
+        /// doesn't include triggers, the <c>ClientMetadata</c> parameter serves no purpose.</para></li><li><para>Validate the <c>ClientMetadata</c> value.</para></li><li><para>Encrypt the <c>ClientMetadata</c> value. Don't send sensitive information in this
+        /// parameter.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -190,6 +206,23 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public System.String UserContextData_IpAddress { get; set; }
         #endregion
         
+        #region Parameter Session
+        /// <summary>
+        /// <para>
+        /// <para>The optional session ID from a <c>ConfirmSignUp</c> API request. You can sign in a
+        /// user directly from the sign-up process with the <c>USER_AUTH</c> authentication flow.
+        /// When you pass the session ID to <c>InitiateAuth</c>, Amazon Cognito assumes the SMS
+        /// or email message one-time verification password from <c>ConfirmSignUp</c> as the primary
+        /// authentication factor. You're not required to submit this code a second time. This
+        /// option is only valid for users who have confirmed their sign-up and are signing in
+        /// for the first time within the authentication flow session duration of the session
+        /// ID.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Session { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -199,16 +232,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClientId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClientId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClientId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -221,9 +244,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClientId), MyInvocation.BoundParameters);
@@ -237,21 +264,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse, StartCGIPAuthCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClientId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnalyticsMetadata_AnalyticsEndpointId = this.AnalyticsMetadata_AnalyticsEndpointId;
             context.AuthFlow = this.AuthFlow;
             #if MODULAR
@@ -283,6 +300,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
                     context.ClientMetadata.Add((String)hashKey, (System.String)(this.ClientMetadata[hashKey]));
                 }
             }
+            context.Session = this.Session;
             context.UserContextData_EncodedData = this.UserContextData_EncodedData;
             context.UserContextData_IpAddress = this.UserContextData_IpAddress;
             
@@ -335,6 +353,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             if (cmdletContext.ClientMetadata != null)
             {
                 request.ClientMetadata = cmdletContext.ClientMetadata;
+            }
+            if (cmdletContext.Session != null)
+            {
+                request.Session = cmdletContext.Session;
             }
             
              // populate UserContextData
@@ -403,13 +425,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "InitiateAuth");
             try
             {
-                #if DESKTOP
-                return client.InitiateAuth(request);
-                #elif CORECLR
-                return client.InitiateAuthAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.InitiateAuthAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -431,6 +447,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             public Dictionary<System.String, System.String> AuthParameter { get; set; }
             public System.String ClientId { get; set; }
             public Dictionary<System.String, System.String> ClientMetadata { get; set; }
+            public System.String Session { get; set; }
             public System.String UserContextData_EncodedData { get; set; }
             public System.String UserContextData_IpAddress { get; set; }
             public System.Func<Amazon.CognitoIdentityProvider.Model.InitiateAuthResponse, StartCGIPAuthCmdlet, object> Select { get; set; } =

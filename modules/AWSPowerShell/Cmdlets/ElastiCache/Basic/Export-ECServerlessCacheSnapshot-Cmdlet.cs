@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
     /// Provides the functionality to export the serverless cache snapshot data to Amazon
-    /// S3. Available for Redis only.
+    /// S3. Available for Valkey and Redis OSS only.
     /// </summary>
     [Cmdlet("Export", "ECServerlessCacheSnapshot", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ElastiCache.Model.ServerlessCacheSnapshot")]
     [AWSCmdlet("Calls the Amazon ElastiCache ExportServerlessCacheSnapshot API operation.", Operation = new[] {"ExportServerlessCacheSnapshot"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.ExportServerlessCacheSnapshotResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.ServerlessCacheSnapshot or Amazon.ElastiCache.Model.ExportServerlessCacheSnapshotResponse",
         "This cmdlet returns an Amazon.ElastiCache.Model.ServerlessCacheSnapshot object.",
-        "The service call response (type Amazon.ElastiCache.Model.ExportServerlessCacheSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.ExportServerlessCacheSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ExportECServerlessCacheSnapshotCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3BucketName
         /// <summary>
         /// <para>
         /// <para>Name of the Amazon S3 bucket to export the snapshot to. The Amazon S3 bucket must
-        /// also be in same region as the snapshot. Available for Redis only.</para>
+        /// also be in same region as the snapshot. Available for Valkey and Redis OSS only.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -65,7 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The identifier of the serverless cache snapshot to be exported to S3. Available for
-        /// Redis only.</para>
+        /// Valkey and Redis OSS only.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -90,16 +93,6 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "ServerlessCacheSnapshot";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServerlessCacheSnapshotName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServerlessCacheSnapshotName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServerlessCacheSnapshotName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -110,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ServerlessCacheSnapshotName), MyInvocation.BoundParameters);
@@ -126,21 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.ExportServerlessCacheSnapshotResponse, ExportECServerlessCacheSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServerlessCacheSnapshotName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.S3BucketName = this.S3BucketName;
             #if MODULAR
             if (this.S3BucketName == null && ParameterWasBound(nameof(this.S3BucketName)))
@@ -217,13 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "ExportServerlessCacheSnapshot");
             try
             {
-                #if DESKTOP
-                return client.ExportServerlessCacheSnapshot(request);
-                #elif CORECLR
-                return client.ExportServerlessCacheSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExportServerlessCacheSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

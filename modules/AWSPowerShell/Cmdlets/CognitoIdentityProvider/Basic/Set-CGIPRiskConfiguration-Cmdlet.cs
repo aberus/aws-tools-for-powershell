@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Configures actions on detected risks. To delete the risk configuration for <c>UserPoolId</c>
-    /// or <c>ClientId</c>, pass null values for all four configuration types.
+    /// Configures threat protection for a user pool or app client. Sets configuration for
+    /// the following.
     /// 
-    ///  
-    /// <para>
-    /// To activate Amazon Cognito advanced security features, update the user pool to include
-    /// the <c>UserPoolAddOns</c> key<c>AdvancedSecurityMode</c>.
+    ///  <ul><li><para>
+    /// Responses to risks with adaptive authentication
+    /// </para></li><li><para>
+    /// Responses to vulnerable passwords with compromised-credentials detection
+    /// </para></li><li><para>
+    /// Notifications to users who have had risky activity detected
+    /// </para></li><li><para>
+    /// IP-address denylist and allowlist
+    /// </para></li></ul><para>
+    /// To set the risk configuration for the user pool to defaults, send this request with
+    /// only the <c>UserPoolId</c> parameter. To reset the threat protection settings of an
+    /// app client to be inherited from the user pool, send <c>UserPoolId</c> and <c>ClientId</c>
+    /// parameters only. To change threat protection to audit-only or off, update the value
+    /// of <c>UserPoolAddOns</c> in an <c>UpdateUserPool</c> request. To activate this setting,
+    /// your user pool must be on the <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/feature-plans-features-plus.html">
+    /// Plus tier</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Set", "CGIPRiskConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -42,23 +56,23 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider SetRiskConfiguration API operation.", Operation = new[] {"SetRiskConfiguration"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.SetRiskConfigurationResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.RiskConfigurationType or Amazon.CognitoIdentityProvider.Model.SetRiskConfigurationResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.RiskConfigurationType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.SetRiskConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.SetRiskConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetCGIPRiskConfigurationCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RiskExceptionConfiguration_BlockedIPRangeList
         /// <summary>
         /// <para>
-        /// <para>Overrides the risk decision to always block the pre-authentication requests. The IP
-        /// range is in CIDR notation, a compact representation of an IP address and its routing
-        /// prefix.</para>
+        /// <para>An always-block IP address list. Overrides the risk decision and always blocks authentication
+        /// requests. This parameter is displayed and set in CIDR notation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,11 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ClientId
         /// <summary>
         /// <para>
-        /// <para>The app client ID. If <c>ClientId</c> is null, then the risk configuration is mapped
-        /// to <c>userPoolId</c>. When the client ID is null, the same risk configuration is applied
-        /// to all the clients in the userPool.</para><para>Otherwise, <c>ClientId</c> is mapped to the client. When the client ID isn't null,
-        /// the user pool configuration is overridden and the risk configuration for the client
-        /// is used instead.</para>
+        /// <para>The ID of the app client where you want to set a risk configuration. If <c>ClientId</c>
+        /// is null, then the risk configuration is mapped to <c>UserPoolId</c>. When the client
+        /// ID is null, the same risk configuration is applied to all the clients in the userPool.</para><para>When you include a <c>ClientId</c> parameter, Amazon Cognito maps the configuration
+        /// to the app client. When you include both <c>ClientId</c> and <c>UserPoolId</c>, Amazon
+        /// Cognito maps the configuration to the app client only.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,10 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter HighAction_EventAction
         /// <summary>
         /// <para>
-        /// <para>The action to take in response to the account takeover action. Valid values are as
-        /// follows:</para><ul><li><para><c>BLOCK</c> Choosing this action will block the request.</para></li><li><para><c>MFA_IF_CONFIGURED</c> Present an MFA challenge if user has configured it, else
-        /// allow the request.</para></li><li><para><c>MFA_REQUIRED</c> Present an MFA challenge if user has configured it, else block
-        /// the request.</para></li><li><para><c>NO_ACTION</c> Allow the user to sign in.</para></li></ul>
+        /// <para>The action to take for the attempted account takeover action for the associated risk
+        /// level. Valid values are as follows:</para><ul><li><para><c>BLOCK</c>: Block the request.</para></li><li><para><c>MFA_IF_CONFIGURED</c>: Present an MFA challenge if possible. MFA is possible if
+        /// the user pool has active MFA methods that the user can set up. For example, if the
+        /// user pool only supports SMS message MFA but the user doesn't have a phone number attribute,
+        /// MFA setup isn't possible. If MFA setup isn't possible, allow the request.</para></li><li><para><c>MFA_REQUIRED</c>: Present an MFA challenge if possible. Block the request if a
+        /// user hasn't set up MFA. To sign in with required MFA, users must have an email address
+        /// or phone number attribute, or a registered TOTP factor.</para></li><li><para><c>NO_ACTION</c>: Take no action. Permit sign-in.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,10 +114,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter LowAction_EventAction
         /// <summary>
         /// <para>
-        /// <para>The action to take in response to the account takeover action. Valid values are as
-        /// follows:</para><ul><li><para><c>BLOCK</c> Choosing this action will block the request.</para></li><li><para><c>MFA_IF_CONFIGURED</c> Present an MFA challenge if user has configured it, else
-        /// allow the request.</para></li><li><para><c>MFA_REQUIRED</c> Present an MFA challenge if user has configured it, else block
-        /// the request.</para></li><li><para><c>NO_ACTION</c> Allow the user to sign in.</para></li></ul>
+        /// <para>The action to take for the attempted account takeover action for the associated risk
+        /// level. Valid values are as follows:</para><ul><li><para><c>BLOCK</c>: Block the request.</para></li><li><para><c>MFA_IF_CONFIGURED</c>: Present an MFA challenge if possible. MFA is possible if
+        /// the user pool has active MFA methods that the user can set up. For example, if the
+        /// user pool only supports SMS message MFA but the user doesn't have a phone number attribute,
+        /// MFA setup isn't possible. If MFA setup isn't possible, allow the request.</para></li><li><para><c>MFA_REQUIRED</c>: Present an MFA challenge if possible. Block the request if a
+        /// user hasn't set up MFA. To sign in with required MFA, users must have an email address
+        /// or phone number attribute, or a registered TOTP factor.</para></li><li><para><c>NO_ACTION</c>: Take no action. Permit sign-in.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,10 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter MediumAction_EventAction
         /// <summary>
         /// <para>
-        /// <para>The action to take in response to the account takeover action. Valid values are as
-        /// follows:</para><ul><li><para><c>BLOCK</c> Choosing this action will block the request.</para></li><li><para><c>MFA_IF_CONFIGURED</c> Present an MFA challenge if user has configured it, else
-        /// allow the request.</para></li><li><para><c>MFA_REQUIRED</c> Present an MFA challenge if user has configured it, else block
-        /// the request.</para></li><li><para><c>NO_ACTION</c> Allow the user to sign in.</para></li></ul>
+        /// <para>The action to take for the attempted account takeover action for the associated risk
+        /// level. Valid values are as follows:</para><ul><li><para><c>BLOCK</c>: Block the request.</para></li><li><para><c>MFA_IF_CONFIGURED</c>: Present an MFA challenge if possible. MFA is possible if
+        /// the user pool has active MFA methods that the user can set up. For example, if the
+        /// user pool only supports SMS message MFA but the user doesn't have a phone number attribute,
+        /// MFA setup isn't possible. If MFA setup isn't possible, allow the request.</para></li><li><para><c>MFA_REQUIRED</c>: Present an MFA challenge if possible. Block the request if a
+        /// user hasn't set up MFA. To sign in with required MFA, users must have an email address
+        /// or phone number attribute, or a registered TOTP factor.</para></li><li><para><c>NO_ACTION</c>: Take no action. Permit sign-in.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +150,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Actions_EventAction
         /// <summary>
         /// <para>
-        /// <para>The event action.</para>
+        /// <para>The action that Amazon Cognito takes when it detects compromised credentials.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,8 +162,12 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter CompromisedCredentialsRiskConfiguration_EventFilter
         /// <summary>
         /// <para>
-        /// <para>Perform the action for these events. The default is to perform all events if no event
-        /// filter is specified.</para>
+        /// <para>Settings for the sign-in activity where you want to configure compromised-credentials
+        /// actions. Defaults to all events.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +177,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter NotifyConfiguration_From
         /// <summary>
         /// <para>
-        /// <para>The email address that is sending the email. The address must be either individually
+        /// <para>The email address that sends the email message. The address must be either individually
         /// verified with Amazon Simple Email Service, or from a domain that has been verified
         /// with Amazon SES.</para>
         /// </para>
@@ -163,7 +190,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter BlockEmail_HtmlBody
         /// <summary>
         /// <para>
-        /// <para>The email HTML body.</para>
+        /// <para>The body of an email notification formatted in HTML. Choose an <c>HtmlBody</c> or
+        /// a <c>TextBody</c> to send an HTML-formatted or plaintext message, respectively.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,7 +202,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter MfaEmail_HtmlBody
         /// <summary>
         /// <para>
-        /// <para>The email HTML body.</para>
+        /// <para>The body of an email notification formatted in HTML. Choose an <c>HtmlBody</c> or
+        /// a <c>TextBody</c> to send an HTML-formatted or plaintext message, respectively.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,7 +214,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter NoActionEmail_HtmlBody
         /// <summary>
         /// <para>
-        /// <para>The email HTML body.</para>
+        /// <para>The body of an email notification formatted in HTML. Choose an <c>HtmlBody</c> or
+        /// a <c>TextBody</c> to send an HTML-formatted or plaintext message, respectively.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,7 +226,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter HighAction_Notify
         /// <summary>
         /// <para>
-        /// <para>Flag specifying whether to send a notification.</para>
+        /// <para>Determines whether Amazon Cognito sends a user a notification message when your user
+        /// pools assesses a user's session at the associated risk level.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -207,7 +238,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter LowAction_Notify
         /// <summary>
         /// <para>
-        /// <para>Flag specifying whether to send a notification.</para>
+        /// <para>Determines whether Amazon Cognito sends a user a notification message when your user
+        /// pools assesses a user's session at the associated risk level.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -218,7 +250,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter MediumAction_Notify
         /// <summary>
         /// <para>
-        /// <para>Flag specifying whether to send a notification.</para>
+        /// <para>Determines whether Amazon Cognito sends a user a notification message when your user
+        /// pools assesses a user's session at the associated risk level.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,7 +262,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter NotifyConfiguration_ReplyTo
         /// <summary>
         /// <para>
-        /// <para>The destination to which the receiver of an email should reply to.</para>
+        /// <para>The reply-to email address of an email template.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -240,8 +273,12 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter RiskExceptionConfiguration_SkippedIPRangeList
         /// <summary>
         /// <para>
-        /// <para>Risk detection isn't performed on the IP addresses in this range list. The IP range
-        /// is in CIDR notation.</para>
+        /// <para>An always-allow IP address list. Risk detection isn't performed on the IP addresses
+        /// in this range list. This parameter is displayed and set in CIDR notation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -264,7 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter BlockEmail_Subject
         /// <summary>
         /// <para>
-        /// <para>The email subject.</para>
+        /// <para>The subject of the threat protection email notification.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -275,7 +312,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter MfaEmail_Subject
         /// <summary>
         /// <para>
-        /// <para>The email subject.</para>
+        /// <para>The subject of the threat protection email notification.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -286,7 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter NoActionEmail_Subject
         /// <summary>
         /// <para>
-        /// <para>The email subject.</para>
+        /// <para>The subject of the threat protection email notification.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -297,7 +334,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter BlockEmail_TextBody
         /// <summary>
         /// <para>
-        /// <para>The email text body.</para>
+        /// <para>The body of an email notification formatted in plaintext. Choose an <c>HtmlBody</c>
+        /// or a <c>TextBody</c> to send an HTML-formatted or plaintext message, respectively.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -308,7 +346,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter MfaEmail_TextBody
         /// <summary>
         /// <para>
-        /// <para>The email text body.</para>
+        /// <para>The body of an email notification formatted in plaintext. Choose an <c>HtmlBody</c>
+        /// or a <c>TextBody</c> to send an HTML-formatted or plaintext message, respectively.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -319,7 +358,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter NoActionEmail_TextBody
         /// <summary>
         /// <para>
-        /// <para>The email text body.</para>
+        /// <para>The body of an email notification formatted in plaintext. Choose an <c>HtmlBody</c>
+        /// or a <c>TextBody</c> to send an HTML-formatted or plaintext message, respectively.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -330,7 +370,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID. </para>
+        /// <para>The ID of the user pool where you want to set a risk configuration. If you include
+        /// <c>UserPoolId</c> in your request, don't include <c>ClientId</c>. When the client
+        /// ID is null, the same risk configuration is applied to all the clients in the userPool.
+        /// When you include both <c>ClientId</c> and <c>UserPoolId</c>, Amazon Cognito maps the
+        /// configuration to the app client only.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -355,16 +399,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "RiskConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserPoolId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -375,9 +409,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserPoolId), MyInvocation.BoundParameters);
@@ -391,21 +429,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.SetRiskConfigurationResponse, SetCGIPRiskConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserPoolId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HighAction_EventAction = this.HighAction_EventAction;
             context.HighAction_Notify = this.HighAction_Notify;
             context.LowAction_EventAction = this.LowAction_EventAction;
@@ -889,13 +917,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "SetRiskConfiguration");
             try
             {
-                #if DESKTOP
-                return client.SetRiskConfiguration(request);
-                #elif CORECLR
-                return client.SetRiskConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetRiskConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

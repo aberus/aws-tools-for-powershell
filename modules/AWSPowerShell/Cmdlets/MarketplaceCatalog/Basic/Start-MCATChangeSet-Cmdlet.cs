@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MarketplaceCatalog;
 using Amazon.MarketplaceCatalog.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MCAT
 {
     /// <summary>
@@ -47,18 +49,23 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
     /// with single-AMI products</a>. Also, for more information about change types available
     /// for container-based products, see <a href="https://docs.aws.amazon.com/marketplace-catalog/latest/api-reference/container-products.html#working-with-container-products">Working
     /// with container products</a>.
+    /// </para><para>
+    /// To download "DetailsDocument" shapes, see <a href="https://github.com/awslabs/aws-marketplace-catalog-api-shapes-for-python">Python</a>
+    /// and <a href="https://github.com/awslabs/aws-marketplace-catalog-api-shapes-for-java/tree/main">Java</a>
+    /// shapes on GitHub.
     /// </para>
     /// </summary>
     [Cmdlet("Start", "MCATChangeSet", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.MarketplaceCatalog.Model.StartChangeSetResponse")]
     [AWSCmdlet("Calls the AWS Marketplace Catalog Service StartChangeSet API operation.", Operation = new[] {"StartChangeSet"}, SelectReturnType = typeof(Amazon.MarketplaceCatalog.Model.StartChangeSetResponse))]
     [AWSCmdletOutput("Amazon.MarketplaceCatalog.Model.StartChangeSetResponse",
-        "This cmdlet returns an Amazon.MarketplaceCatalog.Model.StartChangeSetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MarketplaceCatalog.Model.StartChangeSetResponse object containing multiple properties."
     )]
     public partial class StartMCATChangeSetCmdlet : AmazonMarketplaceCatalogClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Catalog
         /// <summary>
@@ -80,7 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter ChangeSet
         /// <summary>
         /// <para>
-        /// <para>Array of <c>change</c> object.</para>
+        /// <para>Array of <c>change</c> object.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,7 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>A list of objects specifying each key name and value for the <c>ChangeSetTags</c>
-        /// property.</para>
+        /// property.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,6 +142,20 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public System.String ClientRequestToken { get; set; }
         #endregion
         
+        #region Parameter Intent
+        /// <summary>
+        /// <para>
+        /// <para>The intent related to the request. The default is <c>APPLY</c>. To test your request
+        /// before applying changes to your entities, use <c>VALIDATE</c>. This feature is currently
+        /// available for adding versions to single-AMI products. For more information, see <a href="https://docs.aws.amazon.com/marketplace-catalog/latest/api-reference/ami-products.html#ami-add-version">Add
+        /// a new version</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MarketplaceCatalog.Intent")]
+        public Amazon.MarketplaceCatalog.Intent Intent { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -136,16 +165,6 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Catalog parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Catalog' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Catalog' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -158,9 +177,13 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ChangeSetName), MyInvocation.BoundParameters);
@@ -174,21 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MarketplaceCatalog.Model.StartChangeSetResponse, StartMCATChangeSetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Catalog;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Catalog = this.Catalog;
             #if MODULAR
             if (this.Catalog == null && ParameterWasBound(nameof(this.Catalog)))
@@ -212,6 +225,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
                 context.ChangeSetTag = new List<Amazon.MarketplaceCatalog.Model.Tag>(this.ChangeSetTag);
             }
             context.ClientRequestToken = this.ClientRequestToken;
+            context.Intent = this.Intent;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -247,6 +261,10 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             if (cmdletContext.ClientRequestToken != null)
             {
                 request.ClientRequestToken = cmdletContext.ClientRequestToken;
+            }
+            if (cmdletContext.Intent != null)
+            {
+                request.Intent = cmdletContext.Intent;
             }
             
             CmdletOutput output;
@@ -286,13 +304,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Catalog Service", "StartChangeSet");
             try
             {
-                #if DESKTOP
-                return client.StartChangeSet(request);
-                #elif CORECLR
-                return client.StartChangeSetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartChangeSetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -314,6 +326,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             public System.String ChangeSetName { get; set; }
             public List<Amazon.MarketplaceCatalog.Model.Tag> ChangeSetTag { get; set; }
             public System.String ClientRequestToken { get; set; }
+            public Amazon.MarketplaceCatalog.Intent Intent { get; set; }
             public System.Func<Amazon.MarketplaceCatalog.Model.StartChangeSetResponse, StartMCATChangeSetCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

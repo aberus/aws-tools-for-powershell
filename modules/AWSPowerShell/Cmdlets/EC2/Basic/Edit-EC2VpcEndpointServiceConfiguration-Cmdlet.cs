@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Modifies the attributes of your VPC endpoint service configuration. You can change
-    /// the Network Load Balancers or Gateway Load Balancers for your service, and you can
-    /// specify whether acceptance is required for requests to connect to your endpoint service
-    /// through an interface VPC endpoint.
+    /// Modifies the attributes of the specified VPC endpoint service configuration.
     /// 
     ///  
     /// <para>
@@ -43,18 +42,19 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [OutputType("System.Boolean")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyVpcEndpointServiceConfiguration API operation.", Operation = new[] {"ModifyVpcEndpointServiceConfiguration"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyVpcEndpointServiceConfigurationResponse))]
     [AWSCmdletOutput("System.Boolean or Amazon.EC2.Model.ModifyVpcEndpointServiceConfigurationResponse",
-        "This cmdlet returns a System.Boolean object.",
-        "The service call response (type Amazon.EC2.Model.ModifyVpcEndpointServiceConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Boolean objects.",
+        "The service call response (type Amazon.EC2.Model.ModifyVpcEndpointServiceConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2VpcEndpointServiceConfigurationCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceptanceRequired
         /// <summary>
         /// <para>
-        /// <para>Indicates whether requests to create an endpoint to your service must be accepted.</para>
+        /// <para>Indicates whether requests to create an endpoint to the service must be accepted.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -64,8 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter AddGatewayLoadBalancerArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of Gateway Load Balancers to add to your service
-        /// configuration.</para>
+        /// <para>The Amazon Resource Names (ARNs) of Gateway Load Balancers to add to the service configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,8 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter AddNetworkLoadBalancerArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of Network Load Balancers to add to your service
-        /// configuration.</para>
+        /// <para>The Amazon Resource Names (ARNs) of Network Load Balancers to add to the service configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,12 +94,43 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter AddSupportedIpAddressType
         /// <summary>
         /// <para>
-        /// <para>The IP address types to add to your service configuration.</para>
+        /// <para>The IP address types to add to the service configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AddSupportedIpAddressTypes")]
         public System.String[] AddSupportedIpAddressType { get; set; }
+        #endregion
+        
+        #region Parameter AddSupportedRegion
+        /// <summary>
+        /// <para>
+        /// <para>The supported Regions to add to the service configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AddSupportedRegions")]
+        public System.String[] AddSupportedRegion { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter PrivateDnsName
@@ -110,8 +147,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter RemoveGatewayLoadBalancerArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of Gateway Load Balancers to remove from your service
-        /// configuration.</para>
+        /// <para>The Amazon Resource Names (ARNs) of Gateway Load Balancers to remove from the service
+        /// configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,8 +163,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter RemoveNetworkLoadBalancerArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of Network Load Balancers to remove from your service
-        /// configuration.</para>
+        /// <para>The Amazon Resource Names (ARNs) of Network Load Balancers to remove from the service
+        /// configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,12 +189,31 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter RemoveSupportedIpAddressType
         /// <summary>
         /// <para>
-        /// <para>The IP address types to remove from your service configuration.</para>
+        /// <para>The IP address types to remove from the service configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("RemoveSupportedIpAddressTypes")]
         public System.String[] RemoveSupportedIpAddressType { get; set; }
+        #endregion
+        
+        #region Parameter RemoveSupportedRegion
+        /// <summary>
+        /// <para>
+        /// <para>The supported Regions to remove from the service configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RemoveSupportedRegions")]
+        public System.String[] RemoveSupportedRegion { get; set; }
         #endregion
         
         #region Parameter ServiceId
@@ -180,16 +244,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Return";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServiceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServiceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServiceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -200,9 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ServiceId), MyInvocation.BoundParameters);
@@ -216,21 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyVpcEndpointServiceConfigurationResponse, EditEC2VpcEndpointServiceConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServiceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AcceptanceRequired = this.AcceptanceRequired;
             if (this.AddGatewayLoadBalancerArn != null)
             {
@@ -244,6 +292,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 context.AddSupportedIpAddressType = new List<System.String>(this.AddSupportedIpAddressType);
             }
+            if (this.AddSupportedRegion != null)
+            {
+                context.AddSupportedRegion = new List<System.String>(this.AddSupportedRegion);
+            }
+            context.DryRun = this.DryRun;
             context.PrivateDnsName = this.PrivateDnsName;
             if (this.RemoveGatewayLoadBalancerArn != null)
             {
@@ -257,6 +310,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (this.RemoveSupportedIpAddressType != null)
             {
                 context.RemoveSupportedIpAddressType = new List<System.String>(this.RemoveSupportedIpAddressType);
+            }
+            if (this.RemoveSupportedRegion != null)
+            {
+                context.RemoveSupportedRegion = new List<System.String>(this.RemoveSupportedRegion);
             }
             context.ServiceId = this.ServiceId;
             #if MODULAR
@@ -297,6 +354,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.AddSupportedIpAddressTypes = cmdletContext.AddSupportedIpAddressType;
             }
+            if (cmdletContext.AddSupportedRegion != null)
+            {
+                request.AddSupportedRegions = cmdletContext.AddSupportedRegion;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.PrivateDnsName != null)
             {
                 request.PrivateDnsName = cmdletContext.PrivateDnsName;
@@ -316,6 +381,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.RemoveSupportedIpAddressType != null)
             {
                 request.RemoveSupportedIpAddressTypes = cmdletContext.RemoveSupportedIpAddressType;
+            }
+            if (cmdletContext.RemoveSupportedRegion != null)
+            {
+                request.RemoveSupportedRegions = cmdletContext.RemoveSupportedRegion;
             }
             if (cmdletContext.ServiceId != null)
             {
@@ -359,13 +428,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyVpcEndpointServiceConfiguration");
             try
             {
-                #if DESKTOP
-                return client.ModifyVpcEndpointServiceConfiguration(request);
-                #elif CORECLR
-                return client.ModifyVpcEndpointServiceConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyVpcEndpointServiceConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -386,11 +449,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public List<System.String> AddGatewayLoadBalancerArn { get; set; }
             public List<System.String> AddNetworkLoadBalancerArn { get; set; }
             public List<System.String> AddSupportedIpAddressType { get; set; }
+            public List<System.String> AddSupportedRegion { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String PrivateDnsName { get; set; }
             public List<System.String> RemoveGatewayLoadBalancerArn { get; set; }
             public List<System.String> RemoveNetworkLoadBalancerArn { get; set; }
             public System.Boolean? RemovePrivateDnsName { get; set; }
             public List<System.String> RemoveSupportedIpAddressType { get; set; }
+            public List<System.String> RemoveSupportedRegion { get; set; }
             public System.String ServiceId { get; set; }
             public System.Func<Amazon.EC2.Model.ModifyVpcEndpointServiceConfigurationResponse, EditEC2VpcEndpointServiceConfigurationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Return;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodePipeline;
 using Amazon.CodePipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CP
 {
     /// <summary>
@@ -45,21 +47,20 @@ namespace Amazon.PowerShell.Cmdlets.CP
     [AWSCmdlet("Calls the AWS CodePipeline PollForJobs API operation.", Operation = new[] {"PollForJobs"}, SelectReturnType = typeof(Amazon.CodePipeline.Model.PollForJobsResponse), LegacyAlias="Get-CPActionableJobs")]
     [AWSCmdletOutput("Amazon.CodePipeline.Model.Job or Amazon.CodePipeline.Model.PollForJobsResponse",
         "This cmdlet returns a collection of Amazon.CodePipeline.Model.Job objects.",
-        "The service call response (type Amazon.CodePipeline.Model.PollForJobsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodePipeline.Model.PollForJobsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCPActionableJobListCmdlet : AmazonCodePipelineClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionTypeId_Category
         /// <summary>
         /// <para>
         /// <para>A category defines what kind of action can be taken in the stage, and constrains the
         /// provider type for the action. Valid categories are limited to one of the following
-        /// values. </para><ul><li><para>Source</para></li><li><para>Build</para></li><li><para>Test</para></li><li><para>Deploy</para></li><li><para>Invoke</para></li><li><para>Approval</para></li></ul>
+        /// values. </para><ul><li><para>Source</para></li><li><para>Build</para></li><li><para>Test</para></li><li><para>Deploy</para></li><li><para>Invoke</para></li><li><para>Approval</para></li><li><para>Compute</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -130,7 +131,11 @@ namespace Amazon.PowerShell.Cmdlets.CP
         /// <para>A map of property names and values. For an action type with no queryable properties,
         /// this value must be null or an empty map. For an action type with a queryable property,
         /// you must supply that property as a key in the map. Only jobs whose action configuration
-        /// matches the mapped value are returned.</para>
+        /// matches the mapped value are returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -165,9 +170,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public string Select { get; set; } = "Jobs";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -328,13 +337,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodePipeline", "PollForJobs");
             try
             {
-                #if DESKTOP
-                return client.PollForJobs(request);
-                #elif CORECLR
-                return client.PollForJobsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PollForJobsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TranscribeService;
 using Amazon.TranscribeService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRS
 {
     /// <summary>
@@ -65,12 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
     [AWSCmdlet("Calls the Amazon Transcribe Service StartMedicalTranscriptionJob API operation.", Operation = new[] {"StartMedicalTranscriptionJob"}, SelectReturnType = typeof(Amazon.TranscribeService.Model.StartMedicalTranscriptionJobResponse))]
     [AWSCmdletOutput("Amazon.TranscribeService.Model.MedicalTranscriptionJob or Amazon.TranscribeService.Model.StartMedicalTranscriptionJobResponse",
         "This cmdlet returns an Amazon.TranscribeService.Model.MedicalTranscriptionJob object.",
-        "The service call response (type Amazon.TranscribeService.Model.StartMedicalTranscriptionJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.TranscribeService.Model.StartMedicalTranscriptionJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartTRSMedicalTranscriptionJobCmdlet : AmazonTranscribeServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Settings_ChannelIdentification
         /// <summary>
@@ -105,7 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// <para>A map of plain text, non-secret key:value pairs, known as encryption context pairs,
         /// that provide an added layer of security for your data. For more information, see <a href="https://docs.aws.amazon.com/transcribe/latest/dg/key-management.html#kms-context">KMS
         /// encryption context</a> and <a href="https://docs.aws.amazon.com/transcribe/latest/dg/symmetric-asymmetric.html">Asymmetric
-        /// keys in KMS</a>.</para>
+        /// keys in KMS</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -246,12 +253,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         #region Parameter OutputEncryptionKMSKeyId
         /// <summary>
         /// <para>
-        /// <para>The KMS key you want to use to encrypt your medical transcription output.</para><para>If using a key located in the <b>current</b> Amazon Web Services account, you can
-        /// specify your KMS key in one of four ways:</para><ol><li><para>Use the KMS key ID itself. For example, <c>1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use an alias for the KMS key ID. For example, <c>alias/ExampleAlias</c>.</para></li><li><para>Use the Amazon Resource Name (ARN) for the KMS key ID. For example, <c>arn:aws:kms:region:account-ID:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use the ARN for the KMS key alias. For example, <c>arn:aws:kms:region:account-ID:alias/ExampleAlias</c>.</para></li></ol><para>If using a key located in a <b>different</b> Amazon Web Services account than the
-        /// current Amazon Web Services account, you can specify your KMS key in one of two ways:</para><ol><li><para>Use the ARN for the KMS key ID. For example, <c>arn:aws:kms:region:account-ID:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use the ARN for the KMS key alias. For example, <c>arn:aws:kms:region:account-ID:alias/ExampleAlias</c>.</para></li></ol><para>If you do not specify an encryption key, your output is encrypted with the default
-        /// Amazon S3 key (SSE-S3).</para><para>If you specify a KMS key to encrypt your output, you must also specify an output location
-        /// using the <c>OutputLocation</c> parameter.</para><para>Note that the role making the request must have permission to use the specified KMS
-        /// key.</para>
+        /// <para>The Amazon Resource Name (ARN) of a KMS key that you want to use to encrypt your medical
+        /// transcription output.</para><para>KMS key ARNs have the format <c>arn:partition:kms:region:account:key/key-id</c>. For
+        /// example: <c>arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.
+        /// For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#key-id-key-ARN">
+        /// KMS key ARNs</a>.</para><para>If you do not specify an encryption key, your output is encrypted with the default
+        /// Amazon S3 key (SSE-S3).</para><para>Note that the role making the request and the role specified in the <c>DataAccessRoleArn</c>
+        /// request parameter (if present) must have permission to use the specified KMS key.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -343,7 +351,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// <para>
         /// <para>Adds one or more custom tags, each in the form of a key:value pair, to a new medical
         /// transcription job at the time you start this new job.</para><para>To learn more about using tags with Amazon Transcribe, refer to <a href="https://docs.aws.amazon.com/transcribe/latest/dg/tagging.html">Tagging
-        /// resources</a>.</para>
+        /// resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -397,16 +409,6 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public string Select { get; set; } = "MedicalTranscriptionJob";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MedicalTranscriptionJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MedicalTranscriptionJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MedicalTranscriptionJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -417,9 +419,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -433,21 +439,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.TranscribeService.Model.StartMedicalTranscriptionJobResponse, StartTRSMedicalTranscriptionJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MedicalTranscriptionJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContentIdentificationType = this.ContentIdentificationType;
             if (this.KMSEncryptionContext != null)
             {
@@ -708,13 +704,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Transcribe Service", "StartMedicalTranscriptionJob");
             try
             {
-                #if DESKTOP
-                return client.StartMedicalTranscriptionJob(request);
-                #elif CORECLR
-                return client.StartMedicalTranscriptionJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartMedicalTranscriptionJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

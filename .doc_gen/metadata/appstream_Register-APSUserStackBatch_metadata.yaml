@@ -1,0 +1,20 @@
+---
+appstream_BatchAssociateUserStack:
+  title: Use Register-APSUserStackBatch
+  title_abbrev: Register-APSUserStackBatch
+  synopsis: use Register-APSUserStackBatch
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Register-APSUserStackBatch
+        excerpts:
+        - snippet_files: []
+          description: '<emphasis role="bold">Example 1: This sample assigns stack to a user in USERPOOL</emphasis>'
+        - snippet_files:
+          - .doc_gen/snippet_files/appstream_Register-APSUserStackBatch.1.1.ps1
+          description:
+  services:
+    appstream:
+      BatchAssociateUserStack:
+

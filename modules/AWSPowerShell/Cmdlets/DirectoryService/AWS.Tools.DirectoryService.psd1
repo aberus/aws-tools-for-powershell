@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The DirectoryService module of AWS Tools for PowerShell lets developers and administrators manage AWS Directory Service from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.DirectoryService.dll'
     )
@@ -93,24 +94,33 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Confirm-DSSharedDirectory', 
         'Connect-DSDirectory', 
         'Deny-DSSharedDirectory', 
+        'Disable-DSCAEnrollmentPolicy', 
         'Disable-DSClientAuthentication', 
+        'Disable-DSDirectoryDataAccess', 
         'Disable-DSDirectoryShare', 
         'Disable-DSLDAPS', 
         'Disable-DSRadius', 
         'Disable-DSSso', 
+        'Enable-DSCAEnrollmentPolicy', 
         'Enable-DSClientAuthentication', 
+        'Enable-DSDirectoryDataAccess', 
         'Enable-DSDirectoryShare', 
         'Enable-DSLDAPS', 
         'Enable-DSRadius', 
         'Enable-DSSso', 
+        'Get-DSADAssessment', 
+        'Get-DSADAssessmentList', 
+        'Get-DSCAEnrollmentPolicy', 
         'Get-DSCertificate', 
         'Get-DSCertificateList', 
         'Get-DSClientAuthenticationSetting', 
         'Get-DSConditionalForwarder', 
         'Get-DSDirectory', 
+        'Get-DSDirectoryDataAccess', 
         'Get-DSDirectoryLimit', 
         'Get-DSDomainControllerList', 
         'Get-DSEventTopic', 
+        'Get-DSHybridADUpdate', 
         'Get-DSIpRouteList', 
         'Get-DSLDAPSSetting', 
         'Get-DSLogSubscriptionList', 
@@ -127,12 +137,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-DSComputer', 
         'New-DSConditionalForwarder', 
         'New-DSDirectory', 
+        'New-DSHybridAD', 
         'New-DSLogSubscription', 
         'New-DSMicrosoftAD', 
         'New-DSSnapshot', 
         'New-DSTrust', 
         'Register-DSCertificate', 
         'Register-DSEventTopic', 
+        'Remove-DSADAssessment', 
         'Remove-DSConditionalForwarder', 
         'Remove-DSDirectory', 
         'Remove-DSIpRoute', 
@@ -144,12 +156,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Reset-DSUserPassword', 
         'Restore-DSFromSnapshot', 
         'Set-DSDomainControllerCount', 
+        'Start-DSADAssessment', 
         'Start-DSSchemaExtension', 
         'Stop-DSSchemaExtension', 
         'Unregister-DSCertificate', 
         'Unregister-DSEventTopic', 
         'Update-DSConditionalForwarder', 
         'Update-DSDirectorySetup', 
+        'Update-DSHybridAD', 
         'Update-DSRadius', 
         'Update-DSSetting', 
         'Update-DSTrust')
@@ -179,7 +193,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

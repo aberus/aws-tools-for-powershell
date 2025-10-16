@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
@@ -42,17 +44,18 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
     [AWSCmdlet("Calls the AWS DataSync CreateLocationFsxLustre API operation.", Operation = new[] {"CreateLocationFsxLustre"}, SelectReturnType = typeof(Amazon.DataSync.Model.CreateLocationFsxLustreResponse))]
     [AWSCmdletOutput("System.String or Amazon.DataSync.Model.CreateLocationFsxLustreResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DataSync.Model.CreateLocationFsxLustreResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataSync.Model.CreateLocationFsxLustreResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDSYNLocationFsxLustreCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FsxFilesystemArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) for the FSx for Lustre file system.</para>
+        /// <para>Specifies the Amazon Resource Name (ARN) of the FSx for Lustre file system.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -69,8 +72,14 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter SecurityGroupArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of the security groups that are used to configure
-        /// the FSx for Lustre file system.</para>
+        /// <para>Specifies the Amazon Resource Names (ARNs) of up to five security groups that provide
+        /// access to your FSx for Lustre file system.</para><para>The security groups must be able to access the file system's ports. The file system
+        /// must also allow access from the security groups. For information about file system
+        /// access, see the <a href="https://docs.aws.amazon.com/fsx/latest/LustreGuide/limit-access-security-groups.html"><i>Amazon FSx for Lustre User Guide</i></a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -88,9 +97,9 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Subdirectory
         /// <summary>
         /// <para>
-        /// <para>A subdirectory in the location's path. This subdirectory in the FSx for Lustre file
-        /// system is used to read data from the FSx for Lustre source location or write data
-        /// to the FSx for Lustre destination.</para>
+        /// <para>Specifies a mount path for your FSx for Lustre file system. The path can include subdirectories.</para><para>When the location is used as a source, DataSync reads data from the mount path. When
+        /// the location is used as a destination, DataSync writes data to the mount path. If
+        /// you don't include this parameter, DataSync uses the file system's root directory (<c>/</c>).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,9 +109,12 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The key-value pair that represents a tag that you want to add to the resource. The
-        /// value can be an empty string. This value helps you manage, filter, and search for
-        /// your resources. We recommend that you create a name tag for your location.</para>
+        /// <para>Specifies labels that help you categorize, filter, and search for your Amazon Web
+        /// Services resources. We recommend creating at least a name tag for your location.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,16 +133,6 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public string Select { get; set; } = "LocationArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FsxFilesystemArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FsxFilesystemArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FsxFilesystemArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -141,9 +143,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FsxFilesystemArn), MyInvocation.BoundParameters);
@@ -157,21 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataSync.Model.CreateLocationFsxLustreResponse, NewDSYNLocationFsxLustreCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FsxFilesystemArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FsxFilesystemArn = this.FsxFilesystemArn;
             #if MODULAR
             if (this.FsxFilesystemArn == null && ParameterWasBound(nameof(this.FsxFilesystemArn)))
@@ -264,13 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "CreateLocationFsxLustre");
             try
             {
-                #if DESKTOP
-                return client.CreateLocationFsxLustre(request);
-                #elif CORECLR
-                return client.CreateLocationFsxLustreAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLocationFsxLustreAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

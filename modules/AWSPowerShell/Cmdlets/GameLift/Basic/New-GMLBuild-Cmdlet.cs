@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,35 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Creates a new Amazon GameLift build resource for your game server binary files. Combine
-    /// game server binaries into a zip file for use with Amazon GameLift. 
+    /// Creates a new Amazon GameLift Servers build resource for your game server binary files.
+    /// Combine game server binaries into a zip file for use with Amazon GameLift Servers.
+    /// 
     /// 
     ///  <important><para>
-    /// When setting up a new game build for Amazon GameLift, we recommend using the CLI command
-    /// <b><a href="https://docs.aws.amazon.com/cli/latest/reference/gamelift/upload-build.html">upload-build</a></b>. This helper command combines two tasks: (1) it uploads your build files from
-    /// a file directory to an Amazon GameLift Amazon S3 location, and (2) it creates a new
-    /// build resource.
+    /// When setting up a new game build for Amazon GameLift Servers, we recommend using the
+    /// CLI command <b><a href="https://docs.aws.amazon.com/cli/latest/reference/gamelift/upload-build.html">upload-build</a></b>. This helper command combines two tasks: (1) it uploads your build files from
+    /// a file directory to an Amazon GameLift Servers Amazon S3 location, and (2) it creates
+    /// a new build resource.
     /// </para></important><para>
     /// You can use the <c>CreateBuild</c> operation in the following scenarios:
     /// </para><ul><li><para>
     /// Create a new game build with build files that are in an Amazon S3 location under an
     /// Amazon Web Services account that you control. To use this option, you give Amazon
-    /// GameLift access to the Amazon S3 bucket. With permissions in place, specify a build
-    /// name, operating system, and the Amazon S3 storage location of your game build.
+    /// GameLift Servers access to the Amazon S3 bucket. With permissions in place, specify
+    /// a build name, operating system, and the Amazon S3 storage location of your game build.
     /// </para></li><li><para>
-    /// Upload your build files to a Amazon GameLift Amazon S3 location. To use this option,
-    /// specify a build name and operating system. This operation creates a new build resource
-    /// and also returns an Amazon S3 location with temporary access credentials. Use the
-    /// credentials to manually upload your build files to the specified Amazon S3 location.
-    /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html">Uploading
+    /// Upload your build files to a Amazon GameLift Servers Amazon S3 location. To use this
+    /// option, specify a build name and operating system. This operation creates a new build
+    /// resource and also returns an Amazon S3 location with temporary access credentials.
+    /// Use the credentials to manually upload your build files to the specified Amazon S3
+    /// location. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html">Uploading
     /// Objects</a> in the <i>Amazon S3 Developer Guide</i>. After you upload build files
-    /// to the Amazon GameLift Amazon S3 location, you can't update them. 
+    /// to the Amazon GameLift Servers Amazon S3 location, you can't update them. 
     /// </para></li></ul><para>
     /// If successful, this operation creates a new build resource with a unique build ID
     /// and places it in <c>INITIALIZED</c> status. A build must be in <c>READY</c> status
@@ -64,20 +67,19 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [OutputType("Amazon.GameLift.Model.CreateBuildResponse")]
     [AWSCmdlet("Calls the Amazon GameLift Service CreateBuild API operation.", Operation = new[] {"CreateBuild"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreateBuildResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.CreateBuildResponse",
-        "This cmdlet returns an Amazon.GameLift.Model.CreateBuildResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GameLift.Model.CreateBuildResponse object containing multiple properties."
     )]
     public partial class NewGMLBuildCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter StorageLocation_Bucket
         /// <summary>
         /// <para>
-        /// <para>An Amazon S3 bucket identifier. Thename of the S3 bucket.</para><note><para>Amazon GameLift doesn't support uploading from Amazon S3 buckets with names that contain
-        /// a dot (.).</para></note>
+        /// <para>An Amazon S3 bucket identifier. Thename of the S3 bucket.</para><note><para>Amazon GameLift Servers doesn't support uploading from Amazon S3 buckets with names
+        /// that contain a dot (.).</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,8 +99,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>A descriptive label associated with a build. Build names don't need to be unique.
-        /// You can change this value later. </para>
+        /// <para>A descriptive label that is associated with a build. Build names do not need to be
+        /// unique. You can change this value later. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -109,9 +111,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The version of the file, if object versioning is turned on for the bucket. Amazon
-        /// GameLift uses this information when retrieving files from an S3 bucket that you own.
-        /// Use this parameter to specify a specific version of the file. If not set, the latest
-        /// version of the file is retrieved. </para>
+        /// GameLift Servers uses this information when retrieving files from an S3 bucket that
+        /// you own. Use this parameter to specify a specific version of the file. If not set,
+        /// the latest version of the file is retrieved. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,10 +127,12 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// the type of fleet resources that you use for this build. If your game build contains
         /// multiple executables, they all must run on the same operating system. You must specify
         /// a valid operating system in this request. There is no default value. You can't change
-        /// a build's operating system later.</para><note><para>If you have active fleets using the Windows Server 2012 operating system, you can
-        /// continue to create new builds using this OS until October 10, 2023, when Microsoft
-        /// ends its support. All others must use Windows Server 2016 when creating new Windows-based
-        /// builds.</para></note>
+        /// a build's operating system later.</para><note><para>Amazon Linux 2 (AL2) will reach end of support on 6/30/2025. See more details in the
+        /// <a href="http://aws.amazon.com/amazon-linux-2/faqs/">Amazon Linux 2 FAQs</a>. For
+        /// game servers that are hosted on AL2 and use server SDK version 4.x for Amazon GameLift
+        /// Servers, first update the game server build to server SDK 5.x, and then deploy to
+        /// AL2023 instances. See <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/reference-serversdk5-migration.html">
+        /// Migrate to server SDK version 5.</a></para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,7 +144,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (<a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-arn-format.html">ARN</a>)
-        /// for an IAM role that allows Amazon GameLift to access the S3 bucket.</para>
+        /// for an IAM role that allows Amazon GameLift Servers to access the S3 bucket.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,9 +155,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A server SDK version you used when integrating your game server build with Amazon
-        /// GameLift. For more information see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/integration-custom-intro.html">Integrate
-        /// games with custom game servers</a>. By default Amazon GameLift sets this value to
-        /// <c>4.0.2</c>.</para>
+        /// GameLift Servers. For more information see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/integration-custom-intro.html">Integrate
+        /// games with custom game servers</a>. By default Amazon GameLift Servers sets this value
+        /// to <c>4.0.2</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,7 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_UntagResource.html">UntagResource</a>,
         /// and <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_ListTagsForResource.html">ListTagsForResource</a>
         /// to add, remove, and view tags. The maximum tag limit may be lower than stated. See
-        /// the Amazon Web Services General Reference for actual tagging limits.</para>
+        /// the Amazon Web Services General Reference for actual tagging limits.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,8 +190,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter Version
         /// <summary>
         /// <para>
-        /// <para>Version information associated with a build or script. Version strings don't need
-        /// to be unique. You can change this value later. </para>
+        /// <para>Version information that is associated with a build or script. Version strings do
+        /// not need to be unique. You can change this value later. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -201,16 +209,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -221,9 +219,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -237,21 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreateBuildResponse, NewGMLBuildCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Name = this.Name;
             context.OperatingSystem = this.OperatingSystem;
             context.ServerSdkVersion = this.ServerSdkVersion;
@@ -387,13 +379,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreateBuild");
             try
             {
-                #if DESKTOP
-                return client.CreateBuild(request);
-                #elif CORECLR
-                return client.CreateBuildAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBuildAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

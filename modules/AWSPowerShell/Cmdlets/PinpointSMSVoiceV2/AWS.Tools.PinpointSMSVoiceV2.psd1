@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The PinpointSMSVoiceV2 module of AWS Tools for PowerShell lets developers and administrators manage Amazon Pinpoint SMS Voice V2 from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.PinpointSMSVoiceV2.dll'
     )
@@ -98,6 +99,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMSVPhoneNumber', 
         'Get-SMSVPool', 
         'Get-SMSVPoolOriginationIdentityList', 
+        'Get-SMSVProtectConfiguration', 
+        'Get-SMSVProtectConfigurationCountryRuleSet', 
+        'Get-SMSVProtectConfigurationRuleSetNumberOverrideList', 
         'Get-SMSVRegistration', 
         'Get-SMSVRegistrationAssociationList', 
         'Get-SMSVRegistrationAttachment', 
@@ -106,6 +110,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMSVRegistrationSectionDefinition', 
         'Get-SMSVRegistrationTypeDefinition', 
         'Get-SMSVRegistrationVersion', 
+        'Get-SMSVResourcePolicy', 
         'Get-SMSVResourceTagList', 
         'Get-SMSVSenderId', 
         'Get-SMSVSpendLimit', 
@@ -115,24 +120,31 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-SMSVOptOutList', 
         'New-SMSVPhoneNumber', 
         'New-SMSVPool', 
+        'New-SMSVProtectConfiguration', 
         'New-SMSVRegistration', 
         'New-SMSVRegistrationAssociation', 
         'New-SMSVRegistrationAttachment', 
         'New-SMSVRegistrationVersion', 
         'New-SMSVVerifiedDestinationNumber', 
         'Register-SMSVOriginationIdentity', 
+        'Register-SMSVProtectConfiguration', 
+        'Remove-SMSVAccountDefaultProtectConfiguration', 
         'Remove-SMSVConfigurationSet', 
         'Remove-SMSVDefaultMessageType', 
         'Remove-SMSVDefaultSenderId', 
         'Remove-SMSVEventDestination', 
         'Remove-SMSVKeyword', 
+        'Remove-SMSVMediaMessageSpendLimitOverride', 
         'Remove-SMSVOptedOutNumber', 
         'Remove-SMSVOptOutList', 
         'Remove-SMSVPhoneNumber', 
         'Remove-SMSVPool', 
+        'Remove-SMSVProtectConfiguration', 
+        'Remove-SMSVProtectConfigurationRuleSetNumberOverride', 
         'Remove-SMSVRegistration', 
         'Remove-SMSVRegistrationAttachment', 
         'Remove-SMSVRegistrationFieldValue', 
+        'Remove-SMSVResourcePolicy', 
         'Remove-SMSVResourceTag', 
         'Remove-SMSVSenderId', 
         'Remove-SMSVTextMessageSpendLimitOverride', 
@@ -140,21 +152,31 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-SMSVVoiceMessageSpendLimitOverride', 
         'Request-SMSVSenderId', 
         'Send-SMSVDestinationNumberVerificationCode', 
+        'Send-SMSVMediaMessage', 
         'Send-SMSVTextMessage', 
         'Send-SMSVVoiceMessage', 
+        'Set-SMSVAccountDefaultProtectConfiguration', 
+        'Set-SMSVDefaultMessageFeedbackEnabled', 
         'Set-SMSVDefaultMessageType', 
         'Set-SMSVDefaultSenderId', 
         'Set-SMSVKeyword', 
+        'Set-SMSVMediaMessageSpendLimitOverride', 
         'Set-SMSVOptedOutNumber', 
         'Set-SMSVRegistrationFieldValue', 
         'Set-SMSVTextMessageSpendLimitOverride', 
         'Set-SMSVVoiceMessageSpendLimitOverride', 
         'Submit-SMSVRegistrationVersion', 
         'Unregister-SMSVOriginationIdentity', 
+        'Unregister-SMSVProtectConfiguration', 
         'Update-SMSVEventDestination', 
         'Update-SMSVPhoneNumber', 
         'Update-SMSVPool', 
-        'Update-SMSVSenderId')
+        'Update-SMSVProtectConfiguration', 
+        'Update-SMSVProtectConfigurationCountryRuleSet', 
+        'Update-SMSVSenderId', 
+        'Write-SMSVMessageFeedback', 
+        'Write-SMSVProtectConfigurationRuleSetNumberOverride', 
+        'Write-SMSVResourcePolicy')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -178,7 +200,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

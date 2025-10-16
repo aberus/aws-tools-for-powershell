@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Creates Amazon QuickSight customizations for the current Amazon Web Services Region.
-    /// Currently, you can add a custom default theme by using the <c>CreateAccountCustomization</c>
-    /// or <c>UpdateAccountCustomization</c> API operation. To further customize Amazon QuickSight
-    /// by removing Amazon QuickSight sample assets and videos for all new users, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/customizing-quicksight.html">Customizing
-    /// Amazon QuickSight</a> in the <i>Amazon QuickSight User Guide.</i><para>
+    /// Creates Amazon Quick Sight customizations. Currently, you can add a custom default
+    /// theme by using the <c>CreateAccountCustomization</c> or <c>UpdateAccountCustomization</c>
+    /// API operation. To further customize Amazon Quick Sight by removing Amazon Quick Sight
+    /// sample assets and videos for all new users, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/customizing-quicksight.html">Customizing
+    /// Quick Sight</a> in the <i>Amazon Quick Sight User Guide.</i><para>
     /// You can create customizations for your Amazon Web Services account or, if you specify
-    /// a namespace, for a QuickSight namespace instead. Customizations that apply to a namespace
+    /// a namespace, for a Quick Sight namespace instead. Customizations that apply to a namespace
     /// always override customizations that apply to an Amazon Web Services account. To find
     /// out which customizations apply, use the <c>DescribeAccountCustomization</c> API operation.
     /// </para><para>
@@ -49,17 +51,18 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [OutputType("Amazon.QuickSight.Model.CreateAccountCustomizationResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight CreateAccountCustomization API operation.", Operation = new[] {"CreateAccountCustomization"}, SelectReturnType = typeof(Amazon.QuickSight.Model.CreateAccountCustomizationResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.CreateAccountCustomizationResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.CreateAccountCustomizationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.CreateAccountCustomizationResponse object containing multiple properties."
     )]
     public partial class NewQSAccountCustomizationCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
-        /// <para>The ID for the Amazon Web Services account that you want to customize Amazon QuickSight
+        /// <para>The ID for the Amazon Web Services account that you want to customize Quick Sight
         /// for.</para>
         /// </para>
         /// </summary>
@@ -87,7 +90,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter AccountCustomization_DefaultTheme
         /// <summary>
         /// <para>
-        /// <para>The default theme for this Amazon QuickSight subscription.</para>
+        /// <para>The default theme for this Quick Sight subscription.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +100,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Namespace
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight namespace that you want to add customizations to.</para>
+        /// <para>The Quick Sight namespace that you want to add customizations to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of the tags that you want to attach to this resource.</para>
+        /// <para>A list of the tags that you want to attach to this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,16 +133,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AwsAccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -146,9 +143,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AwsAccountId), MyInvocation.BoundParameters);
@@ -162,21 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.CreateAccountCustomizationResponse, NewQSAccountCustomizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AwsAccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountCustomization_DefaultEmailCustomizationTemplate = this.AccountCustomization_DefaultEmailCustomizationTemplate;
             context.AccountCustomization_DefaultTheme = this.AccountCustomization_DefaultTheme;
             context.AwsAccountId = this.AwsAccountId;
@@ -286,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "CreateAccountCustomization");
             try
             {
-                #if DESKTOP
-                return client.CreateAccountCustomization(request);
-                #elif CORECLR
-                return client.CreateAccountCustomizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAccountCustomizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

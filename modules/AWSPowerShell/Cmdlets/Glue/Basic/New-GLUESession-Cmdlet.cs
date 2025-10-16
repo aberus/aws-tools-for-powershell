@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue CreateSession API operation.", Operation = new[] {"CreateSession"}, SelectReturnType = typeof(Amazon.Glue.Model.CreateSessionResponse))]
     [AWSCmdletOutput("Amazon.Glue.Model.Session or Amazon.Glue.Model.CreateSessionResponse",
         "This cmdlet returns an Amazon.Glue.Model.Session object.",
-        "The service call response (type Amazon.Glue.Model.CreateSessionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Glue.Model.CreateSessionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGLUESessionCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Connections_Connection
         /// <summary>
         /// <para>
-        /// <para>A list of connections used by the job.</para>
+        /// <para>A list of connections used by the job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +63,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #region Parameter DefaultArgument
         /// <summary>
         /// <para>
-        /// <para>A map array of key-value pairs. Max is 75 pairs. </para>
+        /// <para>A map array of key-value pairs. Max is 75 pairs. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -197,7 +208,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The map of key value pairs (tags) belonging to the session.</para>
+        /// <para>The map of key value pairs (tags) belonging to the session.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,8 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <summary>
         /// <para>
         /// <para> The number of minutes before session times out. Default for Spark ETL jobs is 48
-        /// hours (2880 minutes), the maximum session lifetime for this job type. Consult the
-        /// documentation for other job types. </para>
+        /// hours (2880 minutes). Consult the documentation for other job types. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -222,26 +236,25 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <para>
         /// <para>The type of predefined worker that is allocated when a job runs. Accepts a value of
         /// G.1X, G.2X, G.4X, or G.8X for Spark jobs. Accepts the value Z.2X for Ray notebooks.</para><ul><li><para>For the <c>G.1X</c> worker type, each worker maps to 1 DPU (4 vCPUs, 16 GB of memory)
-        /// with 84GB disk (approximately 34GB free), and provides 1 executor per worker. We recommend
-        /// this worker type for workloads such as data transforms, joins, and queries, to offers
-        /// a scalable and cost effective way to run most jobs.</para></li><li><para>For the <c>G.2X</c> worker type, each worker maps to 2 DPU (8 vCPUs, 32 GB of memory)
-        /// with 128GB disk (approximately 77GB free), and provides 1 executor per worker. We
-        /// recommend this worker type for workloads such as data transforms, joins, and queries,
-        /// to offers a scalable and cost effective way to run most jobs.</para></li><li><para>For the <c>G.4X</c> worker type, each worker maps to 4 DPU (16 vCPUs, 64 GB of memory)
-        /// with 256GB disk (approximately 235GB free), and provides 1 executor per worker. We
-        /// recommend this worker type for jobs whose workloads contain your most demanding transforms,
-        /// aggregations, joins, and queries. This worker type is available only for Glue version
-        /// 3.0 or later Spark ETL jobs in the following Amazon Web Services Regions: US East
-        /// (Ohio), US East (N. Virginia), US West (Oregon), Asia Pacific (Singapore), Asia Pacific
-        /// (Sydney), Asia Pacific (Tokyo), Canada (Central), Europe (Frankfurt), Europe (Ireland),
-        /// and Europe (Stockholm).</para></li><li><para>For the <c>G.8X</c> worker type, each worker maps to 8 DPU (32 vCPUs, 128 GB of memory)
-        /// with 512GB disk (approximately 487GB free), and provides 1 executor per worker. We
-        /// recommend this worker type for jobs whose workloads contain your most demanding transforms,
-        /// aggregations, joins, and queries. This worker type is available only for Glue version
-        /// 3.0 or later Spark ETL jobs, in the same Amazon Web Services Regions as supported
-        /// for the <c>G.4X</c> worker type.</para></li><li><para>For the <c>Z.2X</c> worker type, each worker maps to 2 M-DPU (8vCPUs, 64 GB of memory)
-        /// with 128 GB disk (approximately 120GB free), and provides up to 8 Ray workers based
-        /// on the autoscaler.</para></li></ul>
+        /// with 94GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for workloads such as data transforms, joins, and queries, to offers a scalable and
+        /// cost effective way to run most jobs.</para></li><li><para>For the <c>G.2X</c> worker type, each worker maps to 2 DPU (8 vCPUs, 32 GB of memory)
+        /// with 138GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for workloads such as data transforms, joins, and queries, to offers a scalable and
+        /// cost effective way to run most jobs.</para></li><li><para>For the <c>G.4X</c> worker type, each worker maps to 4 DPU (16 vCPUs, 64 GB of memory)
+        /// with 256GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for jobs whose workloads contain your most demanding transforms, aggregations, joins,
+        /// and queries. This worker type is available only for Glue version 3.0 or later Spark
+        /// ETL jobs in the following Amazon Web Services Regions: US East (Ohio), US East (N.
+        /// Virginia), US West (Oregon), Asia Pacific (Singapore), Asia Pacific (Sydney), Asia
+        /// Pacific (Tokyo), Canada (Central), Europe (Frankfurt), Europe (Ireland), and Europe
+        /// (Stockholm).</para></li><li><para>For the <c>G.8X</c> worker type, each worker maps to 8 DPU (32 vCPUs, 128 GB of memory)
+        /// with 512GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for jobs whose workloads contain your most demanding transforms, aggregations, joins,
+        /// and queries. This worker type is available only for Glue version 3.0 or later Spark
+        /// ETL jobs, in the same Amazon Web Services Regions as supported for the <c>G.4X</c>
+        /// worker type.</para></li><li><para>For the <c>Z.2X</c> worker type, each worker maps to 2 M-DPU (8vCPUs, 64 GB of memory)
+        /// with 128 GB disk, and provides up to 8 Ray workers based on the autoscaler.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -260,16 +273,6 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "Session";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -280,9 +283,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -296,21 +303,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.CreateSessionResponse, NewGLUESessionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Command_Name = this.Command_Name;
             context.Command_PythonVersion = this.Command_PythonVersion;
             if (this.Connections_Connection != null)
@@ -510,13 +507,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "CreateSession");
             try
             {
-                #if DESKTOP
-                return client.CreateSession(request);
-                #elif CORECLR
-                return client.CreateSessionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSessionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,47 +22,49 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Sets the user interface (UI) customization information for a user pool's built-in
-    /// app UI.
+    /// Configures UI branding settings for domains with the hosted UI (classic) branding
+    /// version. Your user pool must have a domain. Configure a domain with .
     /// 
     ///  
     /// <para>
-    /// You can specify app UI customization settings for a single client (with a specific
-    /// <c>clientId</c>) or for all clients (by setting the <c>clientId</c> to <c>ALL</c>).
-    /// If you specify <c>ALL</c>, the default configuration is used for every client that
-    /// has no previously set UI customization. If you specify UI customization settings for
-    /// a particular client, it will no longer return to the <c>ALL</c> configuration.
+    /// Set the default configuration for all clients with a <c>ClientId</c> of <c>ALL</c>.
+    /// When the <c>ClientId</c> value is an app client ID, the settings you pass in this
+    /// request apply to that app client and override the default <c>ALL</c> configuration.
     /// </para><note><para>
-    /// To use this API, your user pool must have a domain associated with it. Otherwise,
-    /// there is no place to host the app's pages, and the service will throw an error.
-    /// </para></note>
+    /// Amazon Cognito evaluates Identity and Access Management (IAM) policies in requests
+    /// for this API operation. For this operation, you must use IAM credentials to authorize
+    /// requests, and you must grant yourself the corresponding IAM permission in a policy.
+    /// </para><para><b>Learn more</b></para><ul><li><para><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html">Signing
+    /// Amazon Web Services API Requests</a></para></li><li><para><a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html">Using
+    /// the Amazon Cognito user pools API and user pool endpoints</a></para></li></ul></note>
     /// </summary>
     [Cmdlet("Set", "CGIPUICustomization", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CognitoIdentityProvider.Model.UICustomizationType")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider SetUICustomization API operation.", Operation = new[] {"SetUICustomization"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.SetUICustomizationResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.UICustomizationType or Amazon.CognitoIdentityProvider.Model.SetUICustomizationResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.UICustomizationType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.SetUICustomizationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.SetUICustomizationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetCGIPUICustomizationCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientId
         /// <summary>
         /// <para>
-        /// <para>The client ID for the client app.</para>
+        /// <para>The ID of the app client that you want to customize. To apply a default style to all
+        /// app clients not configured with client-level branding, set this parameter value to
+        /// <c>ALL</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,7 +74,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter CSS
         /// <summary>
         /// <para>
-        /// <para>The CSS values in the UI customization.</para>
+        /// <para>A plaintext CSS file that contains the custom fields that you want to apply to your
+        /// user pool or app client. To download a template, go to the Amazon Cognito console.
+        /// Navigate to your user pool <i>App clients</i> tab, select <i>Login pages</i>, edit
+        /// <i>Hosted UI (classic) style</i>, and select the link to <c>CSS template.css</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +87,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ImageFile
         /// <summary>
         /// <para>
-        /// <para>The uploaded logo image for the UI customization.</para>
+        /// <para>The image that you want to set as your login in the classic hosted UI, as a Base64-formatted
+        /// binary object.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -94,7 +100,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool.</para>
+        /// <para>The ID of the user pool where you want to apply branding to the classic hosted UI.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -119,16 +125,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "UICustomization";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserPoolId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -139,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserPoolId), MyInvocation.BoundParameters);
@@ -155,21 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.SetUICustomizationResponse, SetCGIPUICustomizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserPoolId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientId = this.ClientId;
             context.CSS = this.CSS;
             context.ImageFile = this.ImageFile;
@@ -263,13 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "SetUICustomization");
             try
             {
-                #if DESKTOP
-                return client.SetUICustomization(request);
-                #elif CORECLR
-                return client.SetUICustomizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetUICustomizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

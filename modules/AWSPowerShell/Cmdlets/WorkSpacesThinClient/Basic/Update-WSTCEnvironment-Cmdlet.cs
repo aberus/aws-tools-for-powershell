@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpacesThinClient;
 using Amazon.WorkSpacesThinClient.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WSTC
 {
     /// <summary>
@@ -35,16 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
     [AWSCmdlet("Calls the Amazon WorkSpaces Thin Client UpdateEnvironment API operation.", Operation = new[] {"UpdateEnvironment"}, SelectReturnType = typeof(Amazon.WorkSpacesThinClient.Model.UpdateEnvironmentResponse))]
     [AWSCmdletOutput("Amazon.WorkSpacesThinClient.Model.EnvironmentSummary or Amazon.WorkSpacesThinClient.Model.UpdateEnvironmentResponse",
         "This cmdlet returns an Amazon.WorkSpacesThinClient.Model.EnvironmentSummary object.",
-        "The service call response (type Amazon.WorkSpacesThinClient.Model.UpdateEnvironmentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkSpacesThinClient.Model.UpdateEnvironmentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateWSTCEnvironmentCmdlet : AmazonWorkSpacesThinClientClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaintenanceWindow_ApplyTimeOf
         /// <summary>
@@ -61,7 +60,11 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
         #region Parameter MaintenanceWindow_DaysOfTheWeek
         /// <summary>
         /// <para>
-        /// <para>The days of the week during which the maintenance window is open.</para>
+        /// <para>The days of the week during which the maintenance window is open.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +85,7 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of the desktop to stream from Amazon WorkSpaces, WorkSpaces
-        /// Web, or AppStream 2.0.</para>
+        /// Secure Browser, or AppStream 2.0.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,6 +101,22 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DesktopEndpoint { get; set; }
+        #endregion
+        
+        #region Parameter DeviceCreationTag
+        /// <summary>
+        /// <para>
+        /// <para>A map of the key-value pairs of the tag or tags to assign to the newly created devices
+        /// for this environment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DeviceCreationTags")]
+        public System.Collections.Hashtable DeviceCreationTag { get; set; }
         #endregion
         
         #region Parameter MaintenanceWindow_EndTimeHour
@@ -211,16 +230,6 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
         public string Select { get; set; } = "Environment";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -231,9 +240,13 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -247,24 +260,22 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpacesThinClient.Model.UpdateEnvironmentResponse, UpdateWSTCEnvironmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DesiredSoftwareSetId = this.DesiredSoftwareSetId;
             context.DesktopArn = this.DesktopArn;
             context.DesktopEndpoint = this.DesktopEndpoint;
+            if (this.DeviceCreationTag != null)
+            {
+                context.DeviceCreationTag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.DeviceCreationTag.Keys)
+                {
+                    context.DeviceCreationTag.Add((String)hashKey, (System.String)(this.DeviceCreationTag[hashKey]));
+                }
+            }
             context.Id = this.Id;
             #if MODULAR
             if (this.Id == null && ParameterWasBound(nameof(this.Id)))
@@ -312,6 +323,10 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
             if (cmdletContext.DesktopEndpoint != null)
             {
                 request.DesktopEndpoint = cmdletContext.DesktopEndpoint;
+            }
+            if (cmdletContext.DeviceCreationTag != null)
+            {
+                request.DeviceCreationTags = cmdletContext.DeviceCreationTag;
             }
             if (cmdletContext.Id != null)
             {
@@ -446,13 +461,7 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces Thin Client", "UpdateEnvironment");
             try
             {
-                #if DESKTOP
-                return client.UpdateEnvironment(request);
-                #elif CORECLR
-                return client.UpdateEnvironmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateEnvironmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -472,6 +481,7 @@ namespace Amazon.PowerShell.Cmdlets.WSTC
             public System.String DesiredSoftwareSetId { get; set; }
             public System.String DesktopArn { get; set; }
             public System.String DesktopEndpoint { get; set; }
+            public Dictionary<System.String, System.String> DeviceCreationTag { get; set; }
             public System.String Id { get; set; }
             public Amazon.WorkSpacesThinClient.ApplyTimeOf MaintenanceWindow_ApplyTimeOf { get; set; }
             public List<System.String> MaintenanceWindow_DaysOfTheWeek { get; set; }

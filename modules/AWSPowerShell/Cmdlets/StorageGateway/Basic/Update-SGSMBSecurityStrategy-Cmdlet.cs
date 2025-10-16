@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,23 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StorageGateway;
 using Amazon.StorageGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SG
 {
     /// <summary>
-    /// Updates the SMB security strategy on a file gateway. This action is only supported
-    /// in file gateways.
+    /// Updates the SMB security strategy level for an Amazon S3 file gateway. This action
+    /// is only supported for Amazon S3 file gateways.
     /// 
     ///  <note><para>
-    /// This API is called Security level in the User Guide.
+    /// For information about configuring this setting using the Amazon Web Services console,
+    /// see <a href="https://docs.aws.amazon.com/filegateway/latest/files3/security-strategy.html">Setting
+    /// a security level for your gateway</a> in the <i>Amazon S3 File Gateway User Guide</i>.
     /// </para><para>
-    /// A higher security level can affect performance of the gateway.
+    /// A higher security strategy level can affect performance of the gateway.
     /// </para></note>
     /// </summary>
     [Cmdlet("Update", "SGSMBSecurityStrategy", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -42,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
     [AWSCmdlet("Calls the AWS Storage Gateway UpdateSMBSecurityStrategy API operation.", Operation = new[] {"UpdateSMBSecurityStrategy"}, SelectReturnType = typeof(Amazon.StorageGateway.Model.UpdateSMBSecurityStrategyResponse))]
     [AWSCmdletOutput("System.String or Amazon.StorageGateway.Model.UpdateSMBSecurityStrategyResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.StorageGateway.Model.UpdateSMBSecurityStrategyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.StorageGateway.Model.UpdateSMBSecurityStrategyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateSGSMBSecurityStrategyCmdlet : AmazonStorageGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GatewayARN
         /// <summary>
@@ -69,14 +74,19 @@ namespace Amazon.PowerShell.Cmdlets.SG
         #region Parameter SMBSecurityStrategy
         /// <summary>
         /// <para>
-        /// <para>Specifies the type of security strategy.</para><para>ClientSpecified: if you use this option, requests are established based on what is
-        /// negotiated by the client. This option is recommended when you want to maximize compatibility
-        /// across different clients in your environment. Supported only in S3 File Gateway.</para><para>MandatorySigning: if you use this option, file gateway only allows connections from
-        /// SMBv2 or SMBv3 clients that have signing enabled. This option works with SMB clients
-        /// on Microsoft Windows Vista, Windows Server 2008 or newer.</para><para>MandatoryEncryption: if you use this option, file gateway only allows connections
-        /// from SMBv3 clients that have encryption enabled. This option is highly recommended
-        /// for environments that handle sensitive data. This option works with SMB clients on
-        /// Microsoft Windows 8, Windows Server 2012 or newer.</para>
+        /// <para>Specifies the type of security strategy.</para><para><c>ClientSpecified</c>: If you choose this option, requests are established based
+        /// on what is negotiated by the client. This option is recommended when you want to maximize
+        /// compatibility across different clients in your environment. Supported only for S3
+        /// File Gateway.</para><para><c>MandatorySigning</c>: If you choose this option, File Gateway only allows connections
+        /// from SMBv2 or SMBv3 clients that have signing enabled. This option works with SMB
+        /// clients on Microsoft Windows Vista, Windows Server 2008 or newer.</para><para><c>MandatoryEncryption</c>: If you choose this option, File Gateway only allows connections
+        /// from SMBv3 clients that have encryption enabled. This option is recommended for environments
+        /// that handle sensitive data. This option works with SMB clients on Microsoft Windows
+        /// 8, Windows Server 2012 or newer.</para><para><c>MandatoryEncryptionNoAes128</c>: If you choose this option, File Gateway only
+        /// allows connections from SMBv3 clients that use 256-bit AES encryption algorithms.
+        /// 128-bit algorithms are not allowed. This option is recommended for environments that
+        /// handle sensitive data. It works with SMB clients on Microsoft Windows 8, Windows Server
+        /// 2012, or later.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -101,16 +111,6 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public string Select { get; set; } = "GatewayARN";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GatewayARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GatewayARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GatewayARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -121,9 +121,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GatewayARN), MyInvocation.BoundParameters);
@@ -137,21 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StorageGateway.Model.UpdateSMBSecurityStrategyResponse, UpdateSGSMBSecurityStrategyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GatewayARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.GatewayARN = this.GatewayARN;
             #if MODULAR
             if (this.GatewayARN == null && ParameterWasBound(nameof(this.GatewayARN)))
@@ -228,13 +222,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Storage Gateway", "UpdateSMBSecurityStrategy");
             try
             {
-                #if DESKTOP
-                return client.UpdateSMBSecurityStrategy(request);
-                #elif CORECLR
-                return client.UpdateSMBSecurityStrategyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSMBSecurityStrategyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

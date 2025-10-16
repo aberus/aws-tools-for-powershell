@@ -81,7 +81,7 @@ $CCAS_Completers = {
     switch ($("$commandName/$parameterName"))
     {
         # Amazon.ConnectCases.CommentBodyTextType
-        "New-CCASRelatedItem/Content_Comment_ContentType"
+        "New-CCASRelatedItem/Comment_ContentType"
         {
             $v = "Text/Plain"
             break
@@ -97,7 +97,14 @@ $CCAS_Completers = {
         # Amazon.ConnectCases.RelatedItemType
         "New-CCASRelatedItem/Type"
         {
-            $v = "Comment","Contact"
+            $v = "Comment","ConnectCase","Contact","Custom","File","Sla"
+            break
+        }
+
+        # Amazon.ConnectCases.SlaType
+        "New-CCASRelatedItem/SlaInputConfiguration_Type"
+        {
+            $v = "CaseField"
             break
         }
 
@@ -120,7 +127,8 @@ $CCAS_Completers = {
 }
 
 $CCAS_map = @{
-    "Content_Comment_ContentType"=@("New-CCASRelatedItem")
+    "Comment_ContentType"=@("New-CCASRelatedItem")
+    "SlaInputConfiguration_Type"=@("New-CCASRelatedItem")
     "Status"=@("New-CCASTemplate","Update-CCASTemplate")
     "Type"=@("New-CCASField","New-CCASRelatedItem")
 }
@@ -175,21 +183,30 @@ $CCAS_SelectCompleters = {
 }
 
 $CCAS_SelectMap = @{
-    "Select"=@("Group-CCASGetField",
+    "Select"=@("Group-CCASGetCaseRule",
+               "Group-CCASGetField",
                "Group-CCASPutFieldOption",
                "New-CCASCase",
+               "New-CCASCaseRule",
                "New-CCASDomain",
                "New-CCASField",
                "New-CCASLayout",
                "New-CCASRelatedItem",
                "New-CCASTemplate",
+               "Remove-CCASCase",
+               "Remove-CCASCaseRule",
                "Remove-CCASDomain",
+               "Remove-CCASField",
+               "Remove-CCASLayout",
+               "Remove-CCASRelatedItem",
+               "Remove-CCASTemplate",
                "Get-CCASCase",
                "Get-CCASCaseAuditEvent",
                "Get-CCASCaseEventConfiguration",
                "Get-CCASDomain",
                "Get-CCASLayout",
                "Get-CCASTemplate",
+               "Get-CCASCaseRuleList",
                "Get-CCASCasesForContactList",
                "Get-CCASDomainList",
                "Get-CCASFieldOptionList",
@@ -198,11 +215,13 @@ $CCAS_SelectMap = @{
                "Get-CCASResourceTag",
                "Get-CCASTemplateList",
                "Write-CCASCaseEventConfiguration",
+               "Search-CCASAllRelatedItem",
                "Search-CCASCase",
                "Search-CCASRelatedItem",
                "Add-CCASResourceTag",
                "Remove-CCASResourceTag",
                "Update-CCASCase",
+               "Update-CCASCaseRule",
                "Update-CCASField",
                "Update-CCASLayout",
                "Update-CCASTemplate")

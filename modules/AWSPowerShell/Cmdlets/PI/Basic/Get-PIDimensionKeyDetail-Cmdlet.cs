@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PI;
 using Amazon.PI.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PI
 {
     /// <summary>
@@ -32,24 +34,25 @@ namespace Amazon.PowerShell.Cmdlets.PI
     /// For example, if you specify a SQL ID, <c>GetDimensionKeyDetails</c> retrieves the
     /// full text of the dimension <c>db.sql.statement</c> associated with this ID. This operation
     /// is useful because <c>GetResourceMetrics</c> and <c>DescribeDimensionKeys</c> don't
-    /// support retrieval of large SQL statement text.
+    /// support retrieval of large SQL statement text, lock snapshots, and execution plans.
     /// </summary>
     [Cmdlet("Get", "PIDimensionKeyDetail")]
     [OutputType("Amazon.PI.Model.GetDimensionKeyDetailsResponse")]
     [AWSCmdlet("Calls the AWS Performance Insights GetDimensionKeyDetails API operation.", Operation = new[] {"GetDimensionKeyDetails"}, SelectReturnType = typeof(Amazon.PI.Model.GetDimensionKeyDetailsResponse))]
     [AWSCmdletOutput("Amazon.PI.Model.GetDimensionKeyDetailsResponse",
-        "This cmdlet returns an Amazon.PI.Model.GetDimensionKeyDetailsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PI.Model.GetDimensionKeyDetailsResponse object containing multiple properties."
     )]
     public partial class GetPIDimensionKeyDetailCmdlet : AmazonPIClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Group
         /// <summary>
         /// <para>
         /// <para>The name of the dimension group. Performance Insights searches the specified group
-        /// for the dimension group ID. The following group name values are valid:</para><ul><li><para><c>db.query</c> (Amazon DocumentDB only)</para></li><li><para><c>db.sql</c> (Amazon RDS and Aurora only)</para></li></ul>
+        /// for the dimension group ID. The following group name values are valid:</para><ul><li><para><c>db.execution_plan</c> (Amazon RDS and Aurora only)</para></li><li><para><c>db.lock_snapshot</c> (Aurora only)</para></li><li><para><c>db.query</c> (Amazon DocumentDB only)</para></li><li><para><c>db.sql</c> (Amazon RDS and Aurora only)</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -68,7 +71,10 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>
         /// <para>The ID of the dimension group from which to retrieve dimension details. For dimension
         /// group <c>db.sql</c>, the group ID is <c>db.sql.id</c>. The following group ID values
-        /// are valid:</para><ul><li><para><c>db.sql.id</c> for dimension group <c>db.sql</c> (Aurora and RDS only)</para></li><li><para><c>db.query.id</c> for dimension group <c>db.query</c> (DocumentDB only)</para></li></ul>
+        /// are valid:</para><ul><li><para><c>db.execution_plan.id</c> for dimension group <c>db.execution_plan</c> (Aurora
+        /// and RDS only)</para></li><li><para><c>db.sql.id</c> for dimension group <c>db.sql</c> (Aurora and RDS only)</para></li><li><para><c>db.query.id</c> for dimension group <c>db.query</c> (DocumentDB only)</para></li><li><para>For the dimension group <c>db.lock_snapshot</c>, the <c>GroupIdentifier</c> is the
+        /// epoch timestamp when Performance Insights captured the snapshot, in seconds. You can
+        /// retrieve this value with the <c>GetResourceMetrics</c> operation for a 1 second period.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,9 +114,15 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>A list of dimensions to retrieve the detail data for within the given dimension group.
         /// If you don't specify this parameter, Performance Insights returns all dimension data
         /// within the specified dimension group. Specify dimension names for the following dimension
-        /// groups:</para><ul><li><para><c>db.sql</c> - Specify either the full dimension name <c>db.sql.statement</c> or
+        /// groups:</para><ul><li><para><c>db.execution_plan</c> - Specify the dimension name <c>db.execution_plan.raw_plan</c>
+        /// or the short dimension name <c>raw_plan</c> (Amazon RDS and Aurora only)</para></li><li><para><c>db.lock_snapshot</c> - Specify the dimension name <c>db.lock_snapshot.lock_trees</c>
+        /// or the short dimension name <c>lock_trees</c>. (Aurora only)</para></li><li><para><c>db.sql</c> - Specify either the full dimension name <c>db.sql.statement</c> or
         /// the short dimension name <c>statement</c> (Aurora and RDS only).</para></li><li><para><c>db.query</c> - Specify either the full dimension name <c>db.query.statement</c>
-        /// or the short dimension name <c>statement</c> (DocumentDB only).</para></li></ul>
+        /// or the short dimension name <c>statement</c> (DocumentDB only).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,9 +159,13 @@ namespace Amazon.PowerShell.Cmdlets.PI
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -268,13 +284,7 @@ namespace Amazon.PowerShell.Cmdlets.PI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Performance Insights", "GetDimensionKeyDetails");
             try
             {
-                #if DESKTOP
-                return client.GetDimensionKeyDetails(request);
-                #elif CORECLR
-                return client.GetDimensionKeyDetailsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDimensionKeyDetailsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

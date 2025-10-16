@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
-    /// Used to enable finding aggregation. Must be called from the aggregation Region.
+    /// <note><para>
+    /// The <i>aggregation Region</i> is now called the <i>home Region</i>.
+    /// </para></note><para>
+    /// Used to enable cross-Region aggregation. This operation can be invoked from the home
+    /// Region only.
+    /// </para><para>
+    /// For information about how cross-Region aggregation works, see <a href="https://docs.aws.amazon.com/securityhub/latest/userguide/finding-aggregation.html">Understanding
+    /// cross-Region aggregation in Security Hub</a> in the <i>Security Hub User Guide</i>.
     /// 
-    ///  
-    /// <para>
-    /// For more details about cross-Region replication, see <a href="https://docs.aws.amazon.com/securityhub/latest/userguide/finding-aggregation.html">Configuring
-    /// finding aggregation</a> in the <i>Security Hub User Guide</i>. 
     /// </para>
     /// </summary>
     [Cmdlet("New", "SHUBFindingAggregator", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SecurityHub.Model.CreateFindingAggregatorResponse")]
     [AWSCmdlet("Calls the AWS Security Hub CreateFindingAggregator API operation.", Operation = new[] {"CreateFindingAggregator"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.CreateFindingAggregatorResponse))]
     [AWSCmdletOutput("Amazon.SecurityHub.Model.CreateFindingAggregatorResponse",
-        "This cmdlet returns an Amazon.SecurityHub.Model.CreateFindingAggregatorResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SecurityHub.Model.CreateFindingAggregatorResponse object containing multiple properties."
     )]
     public partial class NewSHUBFindingAggregatorCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RegionLinkingMode
         /// <summary>
@@ -53,15 +59,15 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <para>Indicates whether to aggregate findings from all of the available Regions in the current
         /// partition. Also determines whether to automatically aggregate findings from new Regions
         /// as Security Hub supports them and you opt into them.</para><para>The selected option also determines how to use the Regions provided in the Regions
-        /// list.</para><para>The options are as follows:</para><ul><li><para><c>ALL_REGIONS</c> - Indicates to aggregate findings from all of the Regions where
-        /// Security Hub is enabled. When you choose this option, Security Hub also automatically
-        /// aggregates findings from new Regions as Security Hub supports them and you opt into
-        /// them. </para></li><li><para><c>ALL_REGIONS_EXCEPT_SPECIFIED</c> - Indicates to aggregate findings from all of
-        /// the Regions where Security Hub is enabled, except for the Regions listed in the <c>Regions</c>
+        /// list.</para><para>The options are as follows:</para><ul><li><para><c>ALL_REGIONS</c> - Aggregates findings from all of the Regions where Security Hub
+        /// is enabled. When you choose this option, Security Hub also automatically aggregates
+        /// findings from new Regions as Security Hub supports them and you opt into them. </para></li><li><para><c>ALL_REGIONS_EXCEPT_SPECIFIED</c> - Aggregates findings from all of the Regions
+        /// where Security Hub is enabled, except for the Regions listed in the <c>Regions</c>
         /// parameter. When you choose this option, Security Hub also automatically aggregates
-        /// findings from new Regions as Security Hub supports them and you opt into them. </para></li><li><para><c>SPECIFIED_REGIONS</c> - Indicates to aggregate findings only from the Regions
-        /// listed in the <c>Regions</c> parameter. Security Hub does not automatically aggregate
-        /// findings from new Regions. </para></li></ul>
+        /// findings from new Regions as Security Hub supports them and you opt into them. </para></li><li><para><c>SPECIFIED_REGIONS</c> - Aggregates findings only from the Regions listed in the
+        /// <c>Regions</c> parameter. Security Hub does not automatically aggregate findings from
+        /// new Regions. </para></li><li><para><c>NO_REGIONS</c> - Aggregates no data because no Regions are selected as linked
+        /// Regions. </para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -79,9 +85,14 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <summary>
         /// <para>
         /// <para>If <c>RegionLinkingMode</c> is <c>ALL_REGIONS_EXCEPT_SPECIFIED</c>, then this is a
-        /// space-separated list of Regions that do not aggregate findings to the aggregation
+        /// space-separated list of Regions that don't replicate and send findings to the home
         /// Region.</para><para>If <c>RegionLinkingMode</c> is <c>SPECIFIED_REGIONS</c>, then this is a space-separated
-        /// list of Regions that do aggregate findings to the aggregation Region. </para>
+        /// list of Regions that do replicate and send findings to the home Region. </para><para>An <c>InvalidInputException</c> error results if you populate this field while <c>RegionLinkingMode</c>
+        /// is <c>NO_REGIONS</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,16 +111,6 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RegionLinkingMode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RegionLinkingMode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RegionLinkingMode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -120,9 +121,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RegionLinkingMode), MyInvocation.BoundParameters);
@@ -136,21 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SecurityHub.Model.CreateFindingAggregatorResponse, NewSHUBFindingAggregatorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RegionLinkingMode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.RegionLinkingMode = this.RegionLinkingMode;
             #if MODULAR
             if (this.RegionLinkingMode == null && ParameterWasBound(nameof(this.RegionLinkingMode)))
@@ -224,13 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "CreateFindingAggregator");
             try
             {
-                #if DESKTOP
-                return client.CreateFindingAggregator(request);
-                #elif CORECLR
-                return client.CreateFindingAggregatorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFindingAggregatorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

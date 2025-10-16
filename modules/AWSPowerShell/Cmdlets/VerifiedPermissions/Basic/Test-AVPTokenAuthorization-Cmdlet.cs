@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AVP
 {
     /// <summary>
@@ -37,42 +39,35 @@ namespace Amazon.PowerShell.Cmdlets.AVP
     /// is either <c>Allow</c> or <c>Deny</c>, along with a list of the policies that resulted
     /// in the decision.
     /// 
-    ///  <important><para>
-    /// If you specify the <c>identityToken</c> parameter, then this operation derives the
-    /// principal from that token. You must not also include that principal in the <c>entities</c>
-    /// parameter or the operation fails and reports a conflict between the two entity sources.
-    /// </para><para>
-    /// If you provide only an <c>accessToken</c>, then you can include the entity as part
-    /// of the <c>entities</c> parameter to provide additional attributes.
-    /// </para></important><para>
-    /// At this time, Verified Permissions accepts tokens from only Amazon Cognito.
-    /// </para><para>
+    ///  
+    /// <para>
     /// Verified Permissions validates each token that is specified in a request by checking
     /// its expiration date and its signature.
     /// </para><important><para>
-    /// If you delete a Amazon Cognito user pool or user, tokens from that deleted pool or
-    /// that deleted user continue to be usable until they expire.
+    /// Tokens from an identity source user continue to be usable until they expire. Token
+    /// revocation and resource deletion have no effect on the validity of a token in your
+    /// policy store
     /// </para></important>
     /// </summary>
     [Cmdlet("Test", "AVPTokenAuthorization")]
     [OutputType("Amazon.VerifiedPermissions.Model.IsAuthorizedWithTokenResponse")]
     [AWSCmdlet("Calls the Amazon Verified Permissions IsAuthorizedWithToken API operation.", Operation = new[] {"IsAuthorizedWithToken"}, SelectReturnType = typeof(Amazon.VerifiedPermissions.Model.IsAuthorizedWithTokenResponse))]
     [AWSCmdletOutput("Amazon.VerifiedPermissions.Model.IsAuthorizedWithTokenResponse",
-        "This cmdlet returns an Amazon.VerifiedPermissions.Model.IsAuthorizedWithTokenResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VerifiedPermissions.Model.IsAuthorizedWithTokenResponse object containing multiple properties."
     )]
     public partial class TestAVPTokenAuthorizationCmdlet : AmazonVerifiedPermissionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessToken
         /// <summary>
         /// <para>
         /// <para>Specifies an access token for the principal to be authorized. This token is provided
         /// to you by the identity provider (IdP) associated with the specified identity source.
-        /// You must specify either an <c>AccessToken</c>, or an <c>IdentityToken</c>, or both.</para>
+        /// You must specify either an <c>accessToken</c>, an <c>identityToken</c>, or both.</para><para>Must be an access token. Verified Permissions returns an error if the <c>token_use</c>
+        /// claim in the submitted token isn't <c>access</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,11 +94,38 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public System.String Action_ActionType { get; set; }
         #endregion
         
+        #region Parameter Context_CedarJson
+        /// <summary>
+        /// <para>
+        /// <para>A Cedar JSON string representation of the context needed to successfully evaluate
+        /// an authorization request.</para><para>Example: <c>{"cedarJson":"{\"&lt;KeyName1&gt;\": true, \"&lt;KeyName2&gt;\": 1234}"
+        /// }</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Context_CedarJson { get; set; }
+        #endregion
+        
+        #region Parameter Entities_CedarJson
+        /// <summary>
+        /// <para>
+        /// <para>A Cedar JSON string representation of the entities needed to successfully evaluate
+        /// an authorization request.</para><para>Example: <c>{"cedarJson": "[{\"uid\":{\"type\":\"Photo\",\"id\":\"VacationPhoto94.jpg\"},\"attrs\":{\"accessLevel\":\"public\"},\"parents\":[]}]"}</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Entities_CedarJson { get; set; }
+        #endregion
+        
         #region Parameter Context_ContextMap
         /// <summary>
         /// <para>
         /// <para>An list of attributes that are needed to successfully evaluate an authorization request.
-        /// Each attribute in this array must include a map of a data type and its value.</para><para>Example: <c>"contextMap":{"&lt;KeyName1&gt;":{"boolean":true},"&lt;KeyName2&gt;":{"long":1234}}</c></para>
+        /// Each attribute in this array must include a map of a data type and its value.</para><para>Example: <c>"contextMap":{"&lt;KeyName1&gt;":{"boolean":true},"&lt;KeyName2&gt;":{"long":1234}}</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,7 +147,12 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         /// <para>
         /// <para>An array of entities that are needed to successfully evaluate an authorization request.
         /// Each entity in this array must include an identifier for the entity, the attributes
-        /// of the entity, and a list of any parent entities.</para>
+        /// of the entity, and a list of any parent entities.</para><note><para>If you include multiple entities with the same <c>identifier</c>, only the last one
+        /// is processed in the request.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,7 +174,8 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         /// <para>
         /// <para>Specifies an identity token for the principal to be authorized. This token is provided
         /// to you by the identity provider (IdP) associated with the specified identity source.
-        /// You must specify either an <c>AccessToken</c> or an <c>IdentityToken</c>, or both.</para>
+        /// You must specify either an <c>accessToken</c>, an <c>identityToken</c>, or both.</para><para>Must be an ID token. Verified Permissions returns an error if the <c>token_use</c>
+        /// claim in the submitted token isn't <c>id</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,19 +211,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PolicyStoreId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PolicyStoreId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PolicyStoreId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -203,24 +225,15 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.VerifiedPermissions.Model.IsAuthorizedWithTokenResponse, TestAVPTokenAuthorizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PolicyStoreId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessToken = this.AccessToken;
             context.Action_ActionId = this.Action_ActionId;
             context.Action_ActionType = this.Action_ActionType;
+            context.Context_CedarJson = this.Context_CedarJson;
             if (this.Context_ContextMap != null)
             {
                 context.Context_ContextMap = new Dictionary<System.String, Amazon.VerifiedPermissions.Model.AttributeValue>(StringComparer.Ordinal);
@@ -229,6 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
                     context.Context_ContextMap.Add((String)hashKey, (Amazon.VerifiedPermissions.Model.AttributeValue)(this.Context_ContextMap[hashKey]));
                 }
             }
+            context.Entities_CedarJson = this.Entities_CedarJson;
             if (this.Entities_EntityList != null)
             {
                 context.Entities_EntityList = new List<Amazon.VerifiedPermissions.Model.EntityItem>(this.Entities_EntityList);
@@ -296,6 +310,16 @@ namespace Amazon.PowerShell.Cmdlets.AVP
              // populate Context
             var requestContextIsNull = true;
             request.Context = new Amazon.VerifiedPermissions.Model.ContextDefinition();
+            System.String requestContext_context_CedarJson = null;
+            if (cmdletContext.Context_CedarJson != null)
+            {
+                requestContext_context_CedarJson = cmdletContext.Context_CedarJson;
+            }
+            if (requestContext_context_CedarJson != null)
+            {
+                request.Context.CedarJson = requestContext_context_CedarJson;
+                requestContextIsNull = false;
+            }
             Dictionary<System.String, Amazon.VerifiedPermissions.Model.AttributeValue> requestContext_context_ContextMap = null;
             if (cmdletContext.Context_ContextMap != null)
             {
@@ -315,6 +339,16 @@ namespace Amazon.PowerShell.Cmdlets.AVP
              // populate Entities
             var requestEntitiesIsNull = true;
             request.Entities = new Amazon.VerifiedPermissions.Model.EntitiesDefinition();
+            System.String requestEntities_entities_CedarJson = null;
+            if (cmdletContext.Entities_CedarJson != null)
+            {
+                requestEntities_entities_CedarJson = cmdletContext.Entities_CedarJson;
+            }
+            if (requestEntities_entities_CedarJson != null)
+            {
+                request.Entities.CedarJson = requestEntities_entities_CedarJson;
+                requestEntitiesIsNull = false;
+            }
             List<Amazon.VerifiedPermissions.Model.EntityItem> requestEntities_entities_EntityList = null;
             if (cmdletContext.Entities_EntityList != null)
             {
@@ -405,13 +439,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Verified Permissions", "IsAuthorizedWithToken");
             try
             {
-                #if DESKTOP
-                return client.IsAuthorizedWithToken(request);
-                #elif CORECLR
-                return client.IsAuthorizedWithTokenAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.IsAuthorizedWithTokenAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -431,7 +459,9 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             public System.String AccessToken { get; set; }
             public System.String Action_ActionId { get; set; }
             public System.String Action_ActionType { get; set; }
+            public System.String Context_CedarJson { get; set; }
             public Dictionary<System.String, Amazon.VerifiedPermissions.Model.AttributeValue> Context_ContextMap { get; set; }
+            public System.String Entities_CedarJson { get; set; }
             public List<Amazon.VerifiedPermissions.Model.EntityItem> Entities_EntityList { get; set; }
             public System.String IdentityToken { get; set; }
             public System.String PolicyStoreId { get; set; }

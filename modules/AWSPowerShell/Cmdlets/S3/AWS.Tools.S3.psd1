@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The S3 module of AWS Tools for PowerShell lets developers and administrators manage Amazon Simple Storage Service (S3) from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.S3.dll'
     )
@@ -91,6 +92,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-S3ACL', 
         'Get-S3Bucket', 
         'Get-S3BucketAccelerateConfiguration', 
+        'Get-S3BucketACL', 
         'Get-S3BucketAnalyticsConfiguration', 
         'Get-S3BucketAnalyticsConfigurationList', 
         'Get-S3BucketEncryption', 
@@ -100,6 +102,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-S3BucketInventoryConfigurationList', 
         'Get-S3BucketLocation', 
         'Get-S3BucketLogging', 
+        'Get-S3BucketMetadataConfiguration', 
+        'Get-S3BucketMetadataTableConfiguration', 
         'Get-S3BucketMetricsConfiguration', 
         'Get-S3BucketMetricsConfigurationList', 
         'Get-S3BucketNotification', 
@@ -113,9 +117,11 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-S3BucketWebsite', 
         'Get-S3CORSConfiguration', 
         'Get-S3DirectoryBucket', 
+        'Get-S3HeadBucket', 
         'Get-S3LifecycleConfiguration', 
         'Get-S3MultipartUpload', 
         'Get-S3Object', 
+        'Get-S3ObjectACL', 
         'Get-S3ObjectAttribute', 
         'Get-S3ObjectLegalHold', 
         'Get-S3ObjectLockConfiguration', 
@@ -127,6 +133,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-S3PublicAccessBlock', 
         'Get-S3Version', 
         'New-S3Bucket', 
+        'New-S3BucketMetadataConfiguration', 
+        'New-S3BucketMetadataTableConfiguration', 
         'New-S3Session', 
         'Read-S3Object', 
         'Remove-S3Bucket', 
@@ -134,6 +142,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-S3BucketEncryption', 
         'Remove-S3BucketIntelligentTieringConfiguration', 
         'Remove-S3BucketInventoryConfiguration', 
+        'Remove-S3BucketMetadataConfiguration', 
+        'Remove-S3BucketMetadataTableConfiguration', 
         'Remove-S3BucketMetricsConfiguration', 
         'Remove-S3BucketOwnershipControl', 
         'Remove-S3BucketPolicy', 
@@ -146,11 +156,16 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-S3Object', 
         'Remove-S3ObjectTagSet', 
         'Remove-S3PublicAccessBlock', 
+        'Rename-S3Object', 
         'Restore-S3Object', 
         'Select-S3ObjectContent', 
         'Set-S3ACL', 
+        'Set-S3BucketACL', 
         'Set-S3BucketEncryption', 
+        'Set-S3ObjectACL', 
         'Test-S3Bucket', 
+        'Update-S3BucketMetadataInventoryTableConfiguration', 
+        'Update-S3BucketMetadataJournalTableConfiguration', 
         'Write-S3BucketAccelerateConfiguration', 
         'Write-S3BucketAnalyticsConfiguration', 
         'Write-S3BucketIntelligentTieringConfiguration', 
@@ -197,7 +212,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

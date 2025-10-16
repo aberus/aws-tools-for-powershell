@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,23 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
     /// <important><para>
     /// For accurate reporting on the compliance status, you must record the <c>AWS::Config::ResourceCompliance</c>
-    /// resource type. For more information, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/select-resources.html">Selecting
-    /// Which Resources Config Records</a>.
-    /// </para></important><para>
-    /// Returns a list of <c>ConfigurationItems</c> for the specified resource. The list contains
-    /// details about each state of the resource during the specified time interval. If you
-    /// specified a retention period to retain your <c>ConfigurationItems</c> between a minimum
-    /// of 30 days and a maximum of 7 years (2557 days), Config returns the <c>ConfigurationItems</c>
-    /// for the specified retention period. 
+    /// resource type.
     /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/select-resources.html">Recording
+    /// Amazon Web Services Resources</a> in the <i>Config Resources Developer Guide</i>.
+    /// </para></important><para>
+    /// Returns a list of configurations items (CIs) for the specified resource.
+    /// </para><para><b>Contents</b></para><para>
+    /// The list contains details about each state of the resource during the specified time
+    /// interval. If you specified a retention period to retain your CIs between a minimum
+    /// of 30 days and a maximum of 7 years (2557 days), Config returns the CIs for the specified
+    /// retention period. 
+    /// </para><para><b>Pagination</b></para><para>
     /// The response is paginated. By default, Config returns a limit of 10 configuration
     /// items per page. You can customize this number with the <c>limit</c> parameter. The
     /// response includes a <c>nextToken</c> string. To get the next page of results, run
@@ -54,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config GetResourceConfigHistory API operation.", Operation = new[] {"GetResourceConfigHistory"}, SelectReturnType = typeof(Amazon.ConfigService.Model.GetResourceConfigHistoryResponse))]
     [AWSCmdletOutput("Amazon.ConfigService.Model.ConfigurationItem or Amazon.ConfigService.Model.GetResourceConfigHistoryResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.ConfigurationItem objects.",
-        "The service call response (type Amazon.ConfigService.Model.GetResourceConfigHistoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.GetResourceConfigHistoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFGResourceConfigHistoryCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChronologicalOrder
         /// <summary>
@@ -155,7 +161,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,9 +189,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -391,7 +401,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ConfigurationItems.Count;
+                    int _receivedThisCall = response.ConfigurationItems?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -440,13 +450,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "GetResourceConfigHistory");
             try
             {
-                #if DESKTOP
-                return client.GetResourceConfigHistory(request);
-                #elif CORECLR
-                return client.GetResourceConfigHistoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetResourceConfigHistoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

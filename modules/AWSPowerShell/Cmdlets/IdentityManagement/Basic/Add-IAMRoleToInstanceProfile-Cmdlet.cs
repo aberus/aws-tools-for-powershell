@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -39,7 +41,14 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     ///  <note><para>
     /// The caller of this operation must be granted the <c>PassRole</c> permission on the
     /// IAM role by a permissions policy.
-    /// </para></note><para>
+    /// </para></note><important><para>
+    /// When using the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_iam-condition-keys.html#available-keys-for-iam">iam:AssociatedResourceArn</a>
+    /// condition in a policy to restrict the <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_passrole.html">PassRole</a>
+    /// IAM action, special considerations apply if the policy is intended to define access
+    /// for the <c>AddRoleToInstanceProfile</c> action. In this case, you cannot specify a
+    /// Region or instance ID in the EC2 instance ARN. The ARN value must be <c>arn:aws:ec2:*:CallerAccountId:instance/*</c>.
+    /// Using any other ARN value may lead to unexpected evaluation results.
+    /// </para></important><para>
     ///  For more information about roles, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html">IAM
     /// roles</a> in the <i>IAM User Guide</i>. For more information about instance profiles,
     /// see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-ec2_instance-profiles.html">Using
@@ -51,12 +60,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management AddRoleToInstanceProfile API operation.", Operation = new[] {"AddRoleToInstanceProfile"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.AddRoleToInstanceProfileResponse))]
     [AWSCmdletOutput("None or Amazon.IdentityManagement.Model.AddRoleToInstanceProfileResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IdentityManagement.Model.AddRoleToInstanceProfileResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IdentityManagement.Model.AddRoleToInstanceProfileResponse) be returned by specifying '-Select *'."
     )]
     public partial class AddIAMRoleToInstanceProfileCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InstanceProfileName
         /// <summary>
@@ -106,16 +116,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceProfileName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceProfileName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceProfileName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -126,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceProfileName), MyInvocation.BoundParameters);
@@ -142,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.AddRoleToInstanceProfileResponse, AddIAMRoleToInstanceProfileCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceProfileName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.InstanceProfileName = this.InstanceProfileName;
             #if MODULAR
             if (this.InstanceProfileName == null && ParameterWasBound(nameof(this.InstanceProfileName)))
@@ -233,13 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "AddRoleToInstanceProfile");
             try
             {
-                #if DESKTOP
-                return client.AddRoleToInstanceProfile(request);
-                #elif CORECLR
-                return client.AddRoleToInstanceProfileAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AddRoleToInstanceProfileAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

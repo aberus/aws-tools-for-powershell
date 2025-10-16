@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Transfer;
 using Amazon.Transfer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TFR
 {
     /// <summary>
     /// Updates some of the parameters for an existing agreement. Provide the <c>AgreementId</c>
     /// and the <c>ServerId</c> for the agreement that you want to update, along with the
     /// new values for the parameters to update.
+    /// 
+    ///  <note><para>
+    /// Specify <i>either</i><c>BaseDirectory</c> or <c>CustomDirectories</c>, but not both.
+    /// Specifying both causes the command to fail.
+    /// </para><para>
+    /// If you update an agreement from using base directory to custom directories, the base
+    /// directory is no longer used. Similarly, if you change from custom directories to a
+    /// base directory, the custom directories are no longer used.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Update", "TFRAgreement", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Transfer for SFTP UpdateAgreement API operation.", Operation = new[] {"UpdateAgreement"}, SelectReturnType = typeof(Amazon.Transfer.Model.UpdateAgreementResponse))]
     [AWSCmdletOutput("System.String or Amazon.Transfer.Model.UpdateAgreementResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Transfer.Model.UpdateAgreementResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Transfer.Model.UpdateAgreementResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateTFRAgreementCmdlet : AmazonTransferClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessRole
         /// <summary>
@@ -93,7 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// <summary>
         /// <para>
         /// <para>To change the landing directory (folder) for files that are transferred, provide the
-        /// bucket folder that you want to use; for example, <c>/<i>DOC-EXAMPLE-BUCKET</i>/<i>home</i>/<i>mydirectory</i></c>.</para>
+        /// bucket folder that you want to use; for example, <c>/<i>amzn-s3-demo-bucket</i>/<i>home</i>/<i>mydirectory</i></c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,6 +123,29 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter EnforceMessageSigning
+        /// <summary>
+        /// <para>
+        /// <para> Determines whether or not unsigned messages from your trading partners will be accepted.
+        /// </para><ul><li><para><c>ENABLED</c>: Transfer Family rejects unsigned messages from your trading partner.</para></li><li><para><c>DISABLED</c> (default value): Transfer Family accepts unsigned messages from your
+        /// trading partner.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Transfer.EnforceMessageSigningType")]
+        public Amazon.Transfer.EnforceMessageSigningType EnforceMessageSigning { get; set; }
+        #endregion
+        
+        #region Parameter CustomDirectories_FailedFilesDirectory
+        /// <summary>
+        /// <para>
+        /// <para>Specifies a location to store failed AS2 message files.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomDirectories_FailedFilesDirectory { get; set; }
+        #endregion
+        
         #region Parameter LocalProfileId
         /// <summary>
         /// <para>
@@ -119,6 +154,16 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String LocalProfileId { get; set; }
+        #endregion
+        
+        #region Parameter CustomDirectories_MdnFilesDirectory
+        /// <summary>
+        /// <para>
+        /// <para>Specifies a location to store MDN files.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomDirectories_MdnFilesDirectory { get; set; }
         #endregion
         
         #region Parameter PartnerProfileId
@@ -130,6 +175,31 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String PartnerProfileId { get; set; }
+        #endregion
+        
+        #region Parameter CustomDirectories_PayloadFilesDirectory
+        /// <summary>
+        /// <para>
+        /// <para>Specifies a location to store the payload for AS2 message files.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomDirectories_PayloadFilesDirectory { get; set; }
+        #endregion
+        
+        #region Parameter PreserveFilename
+        /// <summary>
+        /// <para>
+        /// <para> Determines whether or not Transfer Family appends a unique string of characters to
+        /// the end of the AS2 message payload filename when saving it. </para><ul><li><para><c>ENABLED</c>: the filename provided by your trading parter is preserved when the
+        /// file is saved.</para></li><li><para><c>DISABLED</c> (default value): when Transfer Family saves the file, the filename
+        /// is adjusted, as described in <a href="https://docs.aws.amazon.com/transfer/latest/userguide/send-as2-messages.html#file-names-as2">File
+        /// names and locations</a>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Transfer.PreserveFilenameType")]
+        public Amazon.Transfer.PreserveFilenameType PreserveFilename { get; set; }
         #endregion
         
         #region Parameter ServerId
@@ -162,6 +232,26 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public Amazon.Transfer.AgreementStatusType Status { get; set; }
         #endregion
         
+        #region Parameter CustomDirectories_StatusFilesDirectory
+        /// <summary>
+        /// <para>
+        /// <para>Specifies a location to store AS2 status messages.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomDirectories_StatusFilesDirectory { get; set; }
+        #endregion
+        
+        #region Parameter CustomDirectories_TemporaryFilesDirectory
+        /// <summary>
+        /// <para>
+        /// <para>Specifies a location to store temporary AS2 message files.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomDirectories_TemporaryFilesDirectory { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'AgreementId'.
@@ -171,16 +261,6 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "AgreementId";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AgreementId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AgreementId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AgreementId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -193,9 +273,13 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AgreementId), MyInvocation.BoundParameters);
@@ -209,21 +293,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Transfer.Model.UpdateAgreementResponse, UpdateTFRAgreementCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AgreementId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessRole = this.AccessRole;
             context.AgreementId = this.AgreementId;
             #if MODULAR
@@ -233,9 +307,16 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             }
             #endif
             context.BaseDirectory = this.BaseDirectory;
+            context.CustomDirectories_FailedFilesDirectory = this.CustomDirectories_FailedFilesDirectory;
+            context.CustomDirectories_MdnFilesDirectory = this.CustomDirectories_MdnFilesDirectory;
+            context.CustomDirectories_PayloadFilesDirectory = this.CustomDirectories_PayloadFilesDirectory;
+            context.CustomDirectories_StatusFilesDirectory = this.CustomDirectories_StatusFilesDirectory;
+            context.CustomDirectories_TemporaryFilesDirectory = this.CustomDirectories_TemporaryFilesDirectory;
             context.Description = this.Description;
+            context.EnforceMessageSigning = this.EnforceMessageSigning;
             context.LocalProfileId = this.LocalProfileId;
             context.PartnerProfileId = this.PartnerProfileId;
+            context.PreserveFilename = this.PreserveFilename;
             context.ServerId = this.ServerId;
             #if MODULAR
             if (this.ServerId == null && ParameterWasBound(nameof(this.ServerId)))
@@ -272,9 +353,72 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             {
                 request.BaseDirectory = cmdletContext.BaseDirectory;
             }
+            
+             // populate CustomDirectories
+            var requestCustomDirectoriesIsNull = true;
+            request.CustomDirectories = new Amazon.Transfer.Model.CustomDirectoriesType();
+            System.String requestCustomDirectories_customDirectories_FailedFilesDirectory = null;
+            if (cmdletContext.CustomDirectories_FailedFilesDirectory != null)
+            {
+                requestCustomDirectories_customDirectories_FailedFilesDirectory = cmdletContext.CustomDirectories_FailedFilesDirectory;
+            }
+            if (requestCustomDirectories_customDirectories_FailedFilesDirectory != null)
+            {
+                request.CustomDirectories.FailedFilesDirectory = requestCustomDirectories_customDirectories_FailedFilesDirectory;
+                requestCustomDirectoriesIsNull = false;
+            }
+            System.String requestCustomDirectories_customDirectories_MdnFilesDirectory = null;
+            if (cmdletContext.CustomDirectories_MdnFilesDirectory != null)
+            {
+                requestCustomDirectories_customDirectories_MdnFilesDirectory = cmdletContext.CustomDirectories_MdnFilesDirectory;
+            }
+            if (requestCustomDirectories_customDirectories_MdnFilesDirectory != null)
+            {
+                request.CustomDirectories.MdnFilesDirectory = requestCustomDirectories_customDirectories_MdnFilesDirectory;
+                requestCustomDirectoriesIsNull = false;
+            }
+            System.String requestCustomDirectories_customDirectories_PayloadFilesDirectory = null;
+            if (cmdletContext.CustomDirectories_PayloadFilesDirectory != null)
+            {
+                requestCustomDirectories_customDirectories_PayloadFilesDirectory = cmdletContext.CustomDirectories_PayloadFilesDirectory;
+            }
+            if (requestCustomDirectories_customDirectories_PayloadFilesDirectory != null)
+            {
+                request.CustomDirectories.PayloadFilesDirectory = requestCustomDirectories_customDirectories_PayloadFilesDirectory;
+                requestCustomDirectoriesIsNull = false;
+            }
+            System.String requestCustomDirectories_customDirectories_StatusFilesDirectory = null;
+            if (cmdletContext.CustomDirectories_StatusFilesDirectory != null)
+            {
+                requestCustomDirectories_customDirectories_StatusFilesDirectory = cmdletContext.CustomDirectories_StatusFilesDirectory;
+            }
+            if (requestCustomDirectories_customDirectories_StatusFilesDirectory != null)
+            {
+                request.CustomDirectories.StatusFilesDirectory = requestCustomDirectories_customDirectories_StatusFilesDirectory;
+                requestCustomDirectoriesIsNull = false;
+            }
+            System.String requestCustomDirectories_customDirectories_TemporaryFilesDirectory = null;
+            if (cmdletContext.CustomDirectories_TemporaryFilesDirectory != null)
+            {
+                requestCustomDirectories_customDirectories_TemporaryFilesDirectory = cmdletContext.CustomDirectories_TemporaryFilesDirectory;
+            }
+            if (requestCustomDirectories_customDirectories_TemporaryFilesDirectory != null)
+            {
+                request.CustomDirectories.TemporaryFilesDirectory = requestCustomDirectories_customDirectories_TemporaryFilesDirectory;
+                requestCustomDirectoriesIsNull = false;
+            }
+             // determine if request.CustomDirectories should be set to null
+            if (requestCustomDirectoriesIsNull)
+            {
+                request.CustomDirectories = null;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.EnforceMessageSigning != null)
+            {
+                request.EnforceMessageSigning = cmdletContext.EnforceMessageSigning;
             }
             if (cmdletContext.LocalProfileId != null)
             {
@@ -283,6 +427,10 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             if (cmdletContext.PartnerProfileId != null)
             {
                 request.PartnerProfileId = cmdletContext.PartnerProfileId;
+            }
+            if (cmdletContext.PreserveFilename != null)
+            {
+                request.PreserveFilename = cmdletContext.PreserveFilename;
             }
             if (cmdletContext.ServerId != null)
             {
@@ -330,13 +478,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Transfer for SFTP", "UpdateAgreement");
             try
             {
-                #if DESKTOP
-                return client.UpdateAgreement(request);
-                #elif CORECLR
-                return client.UpdateAgreementAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateAgreementAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -356,9 +498,16 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             public System.String AccessRole { get; set; }
             public System.String AgreementId { get; set; }
             public System.String BaseDirectory { get; set; }
+            public System.String CustomDirectories_FailedFilesDirectory { get; set; }
+            public System.String CustomDirectories_MdnFilesDirectory { get; set; }
+            public System.String CustomDirectories_PayloadFilesDirectory { get; set; }
+            public System.String CustomDirectories_StatusFilesDirectory { get; set; }
+            public System.String CustomDirectories_TemporaryFilesDirectory { get; set; }
             public System.String Description { get; set; }
+            public Amazon.Transfer.EnforceMessageSigningType EnforceMessageSigning { get; set; }
             public System.String LocalProfileId { get; set; }
             public System.String PartnerProfileId { get; set; }
+            public Amazon.Transfer.PreserveFilenameType PreserveFilename { get; set; }
             public System.String ServerId { get; set; }
             public Amazon.Transfer.AgreementStatusType Status { get; set; }
             public System.Func<Amazon.Transfer.Model.UpdateAgreementResponse, UpdateTFRAgreementCmdlet, object> Select { get; set; } =

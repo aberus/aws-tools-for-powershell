@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateAlgorithm API operation.", Operation = new[] {"CreateAlgorithm"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateAlgorithmResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateAlgorithmResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateAlgorithmResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateAlgorithmResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMAlgorithmCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlgorithmDescription
         /// <summary>
@@ -96,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_Container
         /// <summary>
         /// <para>
-        /// <para>The Amazon ECR registry path of the Docker image that contains the inference code.</para>
+        /// <para>The Amazon ECR registry path of the Docker image that contains the inference code.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,11 +111,26 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public Amazon.SageMaker.Model.ModelPackageContainerDefinition[] InferenceSpecification_Container { get; set; }
         #endregion
         
+        #region Parameter AdditionalS3DataSource_ETag
+        /// <summary>
+        /// <para>
+        /// <para>The ETag associated with S3 URI.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TrainingSpecification_AdditionalS3DataSource_ETag")]
+        public System.String AdditionalS3DataSource_ETag { get; set; }
+        #endregion
+        
         #region Parameter TrainingSpecification_MetricDefinition
         /// <summary>
         /// <para>
         /// <para>A list of <c>MetricDefinition</c> objects, which are used for parsing metrics generated
-        /// by the algorithm.</para>
+        /// by the algorithm.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,7 +166,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_SupportedContentType
         /// <summary>
         /// <para>
-        /// <para>The supported MIME types for the input data.</para>
+        /// <para>The supported MIME types for the input data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,7 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of the <c>HyperParameterSpecification</c> objects, that define the supported
-        /// hyperparameters. This is required if the algorithm supports automatic model tuning.&gt;</para>
+        /// hyperparameters. This is required if the algorithm supports automatic model tuning.&gt;</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,7 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_SupportedRealtimeInferenceInstanceType
         /// <summary>
         /// <para>
-        /// <para>A list of the instance types that are used to generate inferences in real-time.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para>
+        /// <para>A list of the instance types that are used to generate inferences in real-time.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -178,7 +212,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_SupportedResponseMIMEType
         /// <summary>
         /// <para>
-        /// <para>The supported MIME types for the output data.</para>
+        /// <para>The supported MIME types for the output data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -189,7 +227,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter TrainingSpecification_SupportedTrainingInstanceType
         /// <summary>
         /// <para>
-        /// <para>A list of the instance types that this algorithm can use for training.</para>
+        /// <para>A list of the instance types that this algorithm can use for training.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -208,7 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of the instance types on which a transformation job can be run or on which
-        /// an endpoint can be deployed.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para>
+        /// an endpoint can be deployed.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -220,7 +266,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of the metrics that the algorithm emits that can be used as the objective metric
-        /// in a hyperparameter tuning job.</para>
+        /// in a hyperparameter tuning job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -245,7 +295,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>An array of key-value pairs. You can use tags to categorize your Amazon Web Services
         /// resources in different ways, for example, by purpose, owner, or environment. For more
         /// information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services Resources</a>.</para>
+        /// Amazon Web Services Resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -257,7 +311,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of <c>ChannelSpecification</c> objects, which specify the input sources to
-        /// be used by the algorithm.</para>
+        /// be used by the algorithm.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -303,7 +361,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>An array of <c>AlgorithmValidationProfile</c> objects, each of which specifies a training
-        /// job and batch transform job that SageMaker runs to validate your algorithm.</para>
+        /// job and batch transform job that SageMaker runs to validate your algorithm.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -332,16 +394,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "AlgorithmArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AlgorithmName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AlgorithmName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AlgorithmName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -352,9 +404,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AlgorithmName), MyInvocation.BoundParameters);
@@ -368,21 +424,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateAlgorithmResponse, NewSMAlgorithmCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AlgorithmName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AlgorithmDescription = this.AlgorithmDescription;
             context.AlgorithmName = this.AlgorithmName;
             #if MODULAR
@@ -417,6 +463,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 context.Tag = new List<Amazon.SageMaker.Model.Tag>(this.Tag);
             }
             context.AdditionalS3DataSource_CompressionType = this.AdditionalS3DataSource_CompressionType;
+            context.AdditionalS3DataSource_ETag = this.AdditionalS3DataSource_ETag;
             context.AdditionalS3DataSource_S3DataType = this.AdditionalS3DataSource_S3DataType;
             context.AdditionalS3DataSource_S3Uri = this.AdditionalS3DataSource_S3Uri;
             if (this.TrainingSpecification_MetricDefinition != null)
@@ -655,6 +702,16 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource.CompressionType = requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource_additionalS3DataSource_CompressionType;
                 requestTrainingSpecification_trainingSpecification_AdditionalS3DataSourceIsNull = false;
             }
+            System.String requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource_additionalS3DataSource_ETag = null;
+            if (cmdletContext.AdditionalS3DataSource_ETag != null)
+            {
+                requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource_additionalS3DataSource_ETag = cmdletContext.AdditionalS3DataSource_ETag;
+            }
+            if (requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource_additionalS3DataSource_ETag != null)
+            {
+                requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource.ETag = requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource_additionalS3DataSource_ETag;
+                requestTrainingSpecification_trainingSpecification_AdditionalS3DataSourceIsNull = false;
+            }
             Amazon.SageMaker.AdditionalS3DataSourceDataType requestTrainingSpecification_trainingSpecification_AdditionalS3DataSource_additionalS3DataSource_S3DataType = null;
             if (cmdletContext.AdditionalS3DataSource_S3DataType != null)
             {
@@ -757,13 +814,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateAlgorithm");
             try
             {
-                #if DESKTOP
-                return client.CreateAlgorithm(request);
-                #elif CORECLR
-                return client.CreateAlgorithmAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAlgorithmAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -790,6 +841,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public List<System.String> InferenceSpecification_SupportedTransformInstanceType { get; set; }
             public List<Amazon.SageMaker.Model.Tag> Tag { get; set; }
             public Amazon.SageMaker.CompressionType AdditionalS3DataSource_CompressionType { get; set; }
+            public System.String AdditionalS3DataSource_ETag { get; set; }
             public Amazon.SageMaker.AdditionalS3DataSourceDataType AdditionalS3DataSource_S3DataType { get; set; }
             public System.String AdditionalS3DataSource_S3Uri { get; set; }
             public List<Amazon.SageMaker.Model.MetricDefinition> TrainingSpecification_MetricDefinition { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [OutputType("Amazon.Backup.Model.ListBackupJobSummariesResponse")]
     [AWSCmdlet("Calls the AWS Backup ListBackupJobSummaries API operation.", Operation = new[] {"ListBackupJobSummaries"}, SelectReturnType = typeof(Amazon.Backup.Model.ListBackupJobSummariesResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.ListBackupJobSummariesResponse",
-        "This cmdlet returns an Amazon.Backup.Model.ListBackupJobSummariesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Backup.Model.ListBackupJobSummariesResponse object containing multiple properties."
     )]
     public partial class GetBAKBackupJobSummaryListCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -65,7 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter AggregationPeriod
         /// <summary>
         /// <para>
-        /// <para>This is the period that sets the boundaries for returned results.</para><para>Acceptable values include</para><ul><li><para><c>ONE_DAY</c> for daily job count for the prior 14 days.</para></li><li><para><c>SEVEN_DAYS</c> for the aggregated job count for the prior 7 days.</para></li><li><para><c>FOURTEEN_DAYS</c> for aggregated job count for prior 14 days.</para></li></ul>
+        /// <para>The period for the returned results.</para><ul><li><para><c>ONE_DAY</c> - The daily job count for the prior 14 days.</para></li><li><para><c>SEVEN_DAYS</c> - The aggregated job count for the prior 7 days.</para></li><li><para><c>FOURTEEN_DAYS</c> - The aggregated job count for prior 14 days.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter State
         /// <summary>
         /// <para>
-        /// <para>This parameter returns the job count for jobs with the specified state.</para><para>The the value ANY returns count of all states.</para><para><c>AGGREGATE_ALL</c> aggregates job counts for all states and returns the sum.</para>
+        /// <para>This parameter returns the job count for jobs with the specified state.</para><para>The the value ANY returns count of all states.</para><para><c>AGGREGATE_ALL</c> aggregates job counts for all states and returns the sum.</para><para><c>Completed with issues</c> is a status found only in the Backup console. For API,
+        /// this status refers to jobs with a state of <c>COMPLETED</c> and a <c>MessageCategory</c>
+        /// with a value other than <c>SUCCESS</c>; that is, the status is completed but comes
+        /// with a status message. To obtain the job count for <c>Completed with issues</c>, run
+        /// two GET requests, and subtract the second, smaller number:</para><para>GET /audit/backup-job-summaries?AggregationPeriod=FOURTEEN_DAYS&amp;State=COMPLETED</para><para>GET /audit/backup-job-summaries?AggregationPeriod=FOURTEEN_DAYS&amp;MessageCategory=SUCCESS&amp;State=COMPLETED</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,7 +121,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>This parameter sets the maximum number of items to be returned.</para><para>The value is an integer. Range of accepted values is from 1 to 500.</para>
+        /// <para>The maximum number of items to be returned.</para><para>The value is an integer. Range of accepted values is from 1 to 500.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,7 +139,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -160,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -286,13 +297,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "ListBackupJobSummaries");
             try
             {
-                #if DESKTOP
-                return client.ListBackupJobSummaries(request);
-                #elif CORECLR
-                return client.ListBackupJobSummariesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListBackupJobSummariesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

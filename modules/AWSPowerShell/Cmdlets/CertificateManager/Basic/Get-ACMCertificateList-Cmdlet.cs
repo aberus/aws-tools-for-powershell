@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACM
 {
     /// <summary>
@@ -38,17 +40,22 @@ namespace Amazon.PowerShell.Cmdlets.ACM
     [AWSCmdlet("Calls the AWS Certificate Manager ListCertificates API operation.", Operation = new[] {"ListCertificates"}, SelectReturnType = typeof(Amazon.CertificateManager.Model.ListCertificatesResponse))]
     [AWSCmdletOutput("Amazon.CertificateManager.Model.CertificateSummary or Amazon.CertificateManager.Model.ListCertificatesResponse",
         "This cmdlet returns a collection of Amazon.CertificateManager.Model.CertificateSummary objects.",
-        "The service call response (type Amazon.CertificateManager.Model.ListCertificatesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CertificateManager.Model.ListCertificatesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetACMCertificateListCmdlet : AmazonCertificateManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateStatus
         /// <summary>
         /// <para>
-        /// <para>Filter the certificate list by status value.</para>
+        /// <para>Filter the certificate list by status value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,10 +63,25 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public System.String[] CertificateStatus { get; set; }
         #endregion
         
+        #region Parameter Includes_ExportOption
+        /// <summary>
+        /// <para>
+        /// <para>Specify <c>ENABLED</c> or <c>DISABLED</c> to identify certificates that can be exported.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CertificateManager.CertificateExport")]
+        public Amazon.CertificateManager.CertificateExport Includes_ExportOption { get; set; }
+        #endregion
+        
         #region Parameter Includes_ExtendedKeyUsage
         /// <summary>
         /// <para>
-        /// <para>Specify one or more <a>ExtendedKeyUsage</a> extension values.</para>
+        /// <para>Specify one or more <a>ExtendedKeyUsage</a> extension values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         /// <para>Specify one or more algorithms that can be used to generate key pairs.</para><para>Default filtering returns only <c>RSA_1024</c> and <c>RSA_2048</c> certificates that
         /// have at least one domain. To return other certificate types, provide the desired type
         /// signatures in a comma-separated list. For example, <c>"keyTypes": ["RSA_2048","RSA_4096"]</c>
-        /// returns both <c>RSA_2048</c> and <c>RSA_4096</c> certificates.</para>
+        /// returns both <c>RSA_2048</c> and <c>RSA_4096</c> certificates.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,11 +109,27 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         #region Parameter Includes_KeyUsage
         /// <summary>
         /// <para>
-        /// <para>Specify one or more <a>KeyUsage</a> extension values.</para>
+        /// <para>Specify one or more <a>KeyUsage</a> extension values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String[] Includes_KeyUsage { get; set; }
+        #endregion
+        
+        #region Parameter Includes_ManagedBy
+        /// <summary>
+        /// <para>
+        /// <para>Identifies the Amazon Web Services service that manages the certificate issued by
+        /// ACM.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CertificateManager.CertificateManagedBy")]
+        public Amazon.CertificateManager.CertificateManagedBy Includes_ManagedBy { get; set; }
         #endregion
         
         #region Parameter SortBy
@@ -142,7 +184,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -189,6 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             {
                 context.CertificateStatus = new List<System.String>(this.CertificateStatus);
             }
+            context.Includes_ExportOption = this.Includes_ExportOption;
             if (this.Includes_ExtendedKeyUsage != null)
             {
                 context.Includes_ExtendedKeyUsage = new List<System.String>(this.Includes_ExtendedKeyUsage);
@@ -201,6 +248,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             {
                 context.Includes_KeyUsage = new List<System.String>(this.Includes_KeyUsage);
             }
+            context.Includes_ManagedBy = this.Includes_ManagedBy;
             context.MaxItem = this.MaxItem;
             #if !MODULAR
             if (ParameterWasBound(nameof(this.MaxItem)) && this.MaxItem.HasValue)
@@ -241,6 +289,16 @@ namespace Amazon.PowerShell.Cmdlets.ACM
              // populate Includes
             var requestIncludesIsNull = true;
             request.Includes = new Amazon.CertificateManager.Model.Filters();
+            Amazon.CertificateManager.CertificateExport requestIncludes_includes_ExportOption = null;
+            if (cmdletContext.Includes_ExportOption != null)
+            {
+                requestIncludes_includes_ExportOption = cmdletContext.Includes_ExportOption;
+            }
+            if (requestIncludes_includes_ExportOption != null)
+            {
+                request.Includes.ExportOption = requestIncludes_includes_ExportOption;
+                requestIncludesIsNull = false;
+            }
             List<System.String> requestIncludes_includes_ExtendedKeyUsage = null;
             if (cmdletContext.Includes_ExtendedKeyUsage != null)
             {
@@ -269,6 +327,16 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             if (requestIncludes_includes_KeyUsage != null)
             {
                 request.Includes.KeyUsage = requestIncludes_includes_KeyUsage;
+                requestIncludesIsNull = false;
+            }
+            Amazon.CertificateManager.CertificateManagedBy requestIncludes_includes_ManagedBy = null;
+            if (cmdletContext.Includes_ManagedBy != null)
+            {
+                requestIncludes_includes_ManagedBy = cmdletContext.Includes_ManagedBy;
+            }
+            if (requestIncludes_includes_ManagedBy != null)
+            {
+                request.Includes.ManagedBy = requestIncludes_includes_ManagedBy;
                 requestIncludesIsNull = false;
             }
              // determine if request.Includes should be set to null
@@ -351,6 +419,16 @@ namespace Amazon.PowerShell.Cmdlets.ACM
              // populate Includes
             var requestIncludesIsNull = true;
             request.Includes = new Amazon.CertificateManager.Model.Filters();
+            Amazon.CertificateManager.CertificateExport requestIncludes_includes_ExportOption = null;
+            if (cmdletContext.Includes_ExportOption != null)
+            {
+                requestIncludes_includes_ExportOption = cmdletContext.Includes_ExportOption;
+            }
+            if (requestIncludes_includes_ExportOption != null)
+            {
+                request.Includes.ExportOption = requestIncludes_includes_ExportOption;
+                requestIncludesIsNull = false;
+            }
             List<System.String> requestIncludes_includes_ExtendedKeyUsage = null;
             if (cmdletContext.Includes_ExtendedKeyUsage != null)
             {
@@ -379,6 +457,16 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             if (requestIncludes_includes_KeyUsage != null)
             {
                 request.Includes.KeyUsage = requestIncludes_includes_KeyUsage;
+                requestIncludesIsNull = false;
+            }
+            Amazon.CertificateManager.CertificateManagedBy requestIncludes_includes_ManagedBy = null;
+            if (cmdletContext.Includes_ManagedBy != null)
+            {
+                requestIncludes_includes_ManagedBy = cmdletContext.Includes_ManagedBy;
+            }
+            if (requestIncludes_includes_ManagedBy != null)
+            {
+                request.Includes.ManagedBy = requestIncludes_includes_ManagedBy;
                 requestIncludesIsNull = false;
             }
              // determine if request.Includes should be set to null
@@ -441,7 +529,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.CertificateSummaryList.Count;
+                    int _receivedThisCall = response.CertificateSummaryList?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -490,13 +578,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager", "ListCertificates");
             try
             {
-                #if DESKTOP
-                return client.ListCertificates(request);
-                #elif CORECLR
-                return client.ListCertificatesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListCertificatesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -514,9 +596,11 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> CertificateStatus { get; set; }
+            public Amazon.CertificateManager.CertificateExport Includes_ExportOption { get; set; }
             public List<System.String> Includes_ExtendedKeyUsage { get; set; }
             public List<System.String> Includes_KeyType { get; set; }
             public List<System.String> Includes_KeyUsage { get; set; }
+            public Amazon.CertificateManager.CertificateManagedBy Includes_ManagedBy { get; set; }
             public int? MaxItem { get; set; }
             public System.String NextToken { get; set; }
             public Amazon.CertificateManager.SortBy SortBy { get; set; }

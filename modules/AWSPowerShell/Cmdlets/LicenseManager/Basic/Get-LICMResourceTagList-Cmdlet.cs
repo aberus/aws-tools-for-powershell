@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LicenseManager;
 using Amazon.LicenseManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LICM
 {
     /// <summary>
-    /// Lists the tags for the specified license configuration.
+    /// Lists the tags for the specified resource. For more information about tagging support
+    /// in License Manager, see the <a href="https://docs.aws.amazon.com/license-manager/latest/APIReference/API_TagResource.html">TagResource</a>
+    /// operation.
     /// </summary>
     [Cmdlet("Get", "LICMResourceTagList")]
     [OutputType("Amazon.LicenseManager.Model.Tag")]
     [AWSCmdlet("Calls the AWS License Manager ListTagsForResource API operation.", Operation = new[] {"ListTagsForResource"}, SelectReturnType = typeof(Amazon.LicenseManager.Model.ListTagsForResourceResponse))]
     [AWSCmdletOutput("Amazon.LicenseManager.Model.Tag or Amazon.LicenseManager.Model.ListTagsForResourceResponse",
         "This cmdlet returns a collection of Amazon.LicenseManager.Model.Tag objects.",
-        "The service call response (type Amazon.LicenseManager.Model.ListTagsForResourceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.LicenseManager.Model.ListTagsForResourceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetLICMResourceTagListCmdlet : AmazonLicenseManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceArn
         /// <summary>
         /// <para>
-        /// <para>Amazon Resource Name (ARN) of the license configuration.</para>
+        /// <para>Amazon Resource Name (ARN) of the resource.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -70,19 +75,13 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public string Select { get; set; } = "Tags";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +89,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LicenseManager.Model.ListTagsForResourceResponse, GetLICMResourceTagListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceArn = this.ResourceArn;
             #if MODULAR
             if (this.ResourceArn == null && ParameterWasBound(nameof(this.ResourceArn)))
@@ -170,13 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS License Manager", "ListTagsForResource");
             try
             {
-                #if DESKTOP
-                return client.ListTagsForResource(request);
-                #elif CORECLR
-                return client.ListTagsForResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTagsForResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

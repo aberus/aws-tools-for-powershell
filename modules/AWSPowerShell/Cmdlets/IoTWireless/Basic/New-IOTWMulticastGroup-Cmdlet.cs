@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
@@ -34,20 +36,25 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
     [OutputType("Amazon.IoTWireless.Model.CreateMulticastGroupResponse")]
     [AWSCmdlet("Calls the AWS IoT Wireless CreateMulticastGroup API operation.", Operation = new[] {"CreateMulticastGroup"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.CreateMulticastGroupResponse))]
     [AWSCmdletOutput("Amazon.IoTWireless.Model.CreateMulticastGroupResponse",
-        "This cmdlet returns an Amazon.IoTWireless.Model.CreateMulticastGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTWireless.Model.CreateMulticastGroupResponse object containing multiple properties."
     )]
     public partial class NewIOTWMulticastGroupCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
         /// <para>
-        /// <para>Each resource must have a unique client request token. If you try to create a new
-        /// resource with the same token as a resource that already exists, an exception occurs.
-        /// If you omit this value, AWS SDKs will automatically generate a unique client request.
-        /// </para>
+        /// <para>Each resource must have a unique client request token. The client token is used to
+        /// implement idempotency. It ensures that the request completes no more than one time.
+        /// If you retry a request with the same token and the same parameters, the request will
+        /// complete successfully. However, if you try to create a new resource using the same
+        /// token but different parameters, an HTTP 409 conflict occurs. If you omit this value,
+        /// AWS SDKs will automatically generate a unique client request. For more information
+        /// about idempotency, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency in Amazon EC2 API requests</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,6 +82,24 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public Amazon.IoTWireless.DlClass LoRaWAN_DlClass { get; set; }
         #endregion
         
+        #region Parameter ParticipatingGateways_GatewayList
+        /// <summary>
+        /// <para>
+        /// <para>The list of gateways that you want to use for sending the multicast downlink message.
+        /// Each downlink message will be sent to all the gateways in the list in the order that
+        /// you provided. If the gateway list is empty, then AWS IoT Core for LoRaWAN chooses
+        /// the gateways that were most recently used by the devices to send an uplink message.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("LoRaWAN_ParticipatingGateways_GatewayList")]
+        public System.String[] ParticipatingGateways_GatewayList { get; set; }
+        #endregion
+        
         #region Parameter Name
         /// <summary>
         /// <para>
@@ -99,12 +124,28 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.IoTWireless.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter ParticipatingGateways_TransmissionInterval
+        /// <summary>
+        /// <para>
+        /// <para>The duration of time in milliseconds for which AWS IoT Core for LoRaWAN will wait
+        /// before transmitting the multicast payload to the next gateway in the list.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("LoRaWAN_ParticipatingGateways_TransmissionInterval")]
+        public System.Int32? ParticipatingGateways_TransmissionInterval { get; set; }
         #endregion
         
         #region Parameter Select
@@ -128,9 +169,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -152,6 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             context.ClientRequestToken = this.ClientRequestToken;
             context.Description = this.Description;
             context.LoRaWAN_DlClass = this.LoRaWAN_DlClass;
+            if (this.ParticipatingGateways_GatewayList != null)
+            {
+                context.ParticipatingGateways_GatewayList = new List<System.String>(this.ParticipatingGateways_GatewayList);
+            }
+            context.ParticipatingGateways_TransmissionInterval = this.ParticipatingGateways_TransmissionInterval;
             context.LoRaWAN_RfRegion = this.LoRaWAN_RfRegion;
             context.Name = this.Name;
             if (this.Tag != null)
@@ -206,6 +256,41 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
                 request.LoRaWAN.RfRegion = requestLoRaWAN_loRaWAN_RfRegion;
                 requestLoRaWANIsNull = false;
             }
+            Amazon.IoTWireless.Model.ParticipatingGatewaysMulticast requestLoRaWAN_loRaWAN_ParticipatingGateways = null;
+            
+             // populate ParticipatingGateways
+            var requestLoRaWAN_loRaWAN_ParticipatingGatewaysIsNull = true;
+            requestLoRaWAN_loRaWAN_ParticipatingGateways = new Amazon.IoTWireless.Model.ParticipatingGatewaysMulticast();
+            List<System.String> requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_GatewayList = null;
+            if (cmdletContext.ParticipatingGateways_GatewayList != null)
+            {
+                requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_GatewayList = cmdletContext.ParticipatingGateways_GatewayList;
+            }
+            if (requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_GatewayList != null)
+            {
+                requestLoRaWAN_loRaWAN_ParticipatingGateways.GatewayList = requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_GatewayList;
+                requestLoRaWAN_loRaWAN_ParticipatingGatewaysIsNull = false;
+            }
+            System.Int32? requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_TransmissionInterval = null;
+            if (cmdletContext.ParticipatingGateways_TransmissionInterval != null)
+            {
+                requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_TransmissionInterval = cmdletContext.ParticipatingGateways_TransmissionInterval.Value;
+            }
+            if (requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_TransmissionInterval != null)
+            {
+                requestLoRaWAN_loRaWAN_ParticipatingGateways.TransmissionInterval = requestLoRaWAN_loRaWAN_ParticipatingGateways_participatingGateways_TransmissionInterval.Value;
+                requestLoRaWAN_loRaWAN_ParticipatingGatewaysIsNull = false;
+            }
+             // determine if requestLoRaWAN_loRaWAN_ParticipatingGateways should be set to null
+            if (requestLoRaWAN_loRaWAN_ParticipatingGatewaysIsNull)
+            {
+                requestLoRaWAN_loRaWAN_ParticipatingGateways = null;
+            }
+            if (requestLoRaWAN_loRaWAN_ParticipatingGateways != null)
+            {
+                request.LoRaWAN.ParticipatingGateways = requestLoRaWAN_loRaWAN_ParticipatingGateways;
+                requestLoRaWANIsNull = false;
+            }
              // determine if request.LoRaWAN should be set to null
             if (requestLoRaWANIsNull)
             {
@@ -257,13 +342,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "CreateMulticastGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateMulticastGroup(request);
-                #elif CORECLR
-                return client.CreateMulticastGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMulticastGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -283,6 +362,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             public System.String ClientRequestToken { get; set; }
             public System.String Description { get; set; }
             public Amazon.IoTWireless.DlClass LoRaWAN_DlClass { get; set; }
+            public List<System.String> ParticipatingGateways_GatewayList { get; set; }
+            public System.Int32? ParticipatingGateways_TransmissionInterval { get; set; }
             public Amazon.IoTWireless.SupportedRfRegion LoRaWAN_RfRegion { get; set; }
             public System.String Name { get; set; }
             public List<Amazon.IoTWireless.Model.Tag> Tag { get; set; }

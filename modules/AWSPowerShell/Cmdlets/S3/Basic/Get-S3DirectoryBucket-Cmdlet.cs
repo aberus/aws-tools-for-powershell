@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
@@ -34,8 +36,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
     /// 
     ///  <note><para><b>Directory buckets </b> - For directory buckets, you must make requests for this
     /// API operation to the Regional endpoint. These endpoints support path-style requests
-    /// in the format <c>https://s3express-control.<i>region_code</i>.amazonaws.com/<i>bucket-name</i></c>. Virtual-hosted-style requests aren't supported. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-Regions-and-Zones.html">Regional
-    /// and Zonal endpoints</a> in the <i>Amazon S3 User Guide</i>.
+    /// in the format <c>https://s3express-control.<i>region-code</i>.amazonaws.com/<i>bucket-name</i></c>. Virtual-hosted-style requests aren't supported. For more information about endpoints
+    /// in Availability Zones, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html">Regional
+    /// and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon
+    /// S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html">Concepts
+    /// for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.
     /// </para></note><dl><dt>Permissions</dt><dd><para>
     /// You must have the <c>s3express:ListAllMyDirectoryBuckets</c> permission in an IAM
     /// identity-based policy instead of a bucket policy. Cross-account access to this API
@@ -45,26 +50,30 @@ namespace Amazon.PowerShell.Cmdlets.S3
     /// Web Services Identity and Access Management (IAM) for S3 Express One Zone</a> in the
     /// <i>Amazon S3 User Guide</i>.
     /// </para></dd><dt>HTTP Host header syntax</dt><dd><para><b>Directory buckets </b> - The HTTP Host header syntax is <c>s3express-control.<i>region</i>.amazonaws.com</c>.
-    /// </para></dd></dl>
+    /// </para></dd></dl><note><para>
+    ///  The <c>BucketRegion</c> response element is not part of the <c>ListDirectoryBuckets</c>
+    /// Response Syntax.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Get", "S3DirectoryBucket")]
     [OutputType("Amazon.S3.Model.ListDirectoryBucketsResponse")]
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) ListDirectoryBuckets API operation.", Operation = new[] {"ListDirectoryBuckets"}, SelectReturnType = typeof(Amazon.S3.Model.ListDirectoryBucketsResponse))]
     [AWSCmdletOutput("Amazon.S3.Model.ListDirectoryBucketsResponse",
-        "This cmdlet returns an Amazon.S3.Model.ListDirectoryBucketsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.S3.Model.ListDirectoryBucketsResponse object containing multiple properties."
     )]
     public partial class GetS3DirectoryBucketCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContinuationToken
         /// <summary>
         /// <para>
-        /// <para><code>ContinuationToken</code> indicates to Amazon S3 that the list is being continued
-        /// on this bucket with a token. <code>ContinuationToken</code> is obfuscated and is not
-        /// a real key. You can use this <code>ContinuationToken</code> for pagination of the
-        /// list results. </para>
+        /// <para><c>ContinuationToken</c> indicates to Amazon S3 that the list is being continued
+        /// on buckets in this account with a token. <c>ContinuationToken</c> is obfuscated and
+        /// is not a real bucket name. You can use this <c>ContinuationToken</c> for the pagination
+        /// of the list results. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,9 +104,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -174,13 +187,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "ListDirectoryBuckets");
             try
             {
-                #if DESKTOP
-                return client.ListDirectoryBuckets(request);
-                #elif CORECLR
-                return client.ListDirectoryBucketsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListDirectoryBucketsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PaymentCryptography;
 using Amazon.PaymentCryptography.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PAYCC
 {
     /// <summary>
@@ -41,24 +43,26 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// Amazon Web Services Region, but you can create another alias with the same name in
     /// a different Amazon Web Services Region.
     /// </para><para>
-    /// To change the key that's associated with the alias, call <a>UpdateAlias</a>. To delete
-    /// the alias, call <a>DeleteAlias</a>. These operations don't affect the underlying key.
-    /// To get the alias that you created, call <a>ListAliases</a>.
+    /// To change the key that's associated with the alias, call <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_UpdateAlias.html">UpdateAlias</a>.
+    /// To delete the alias, call <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_DeleteAlias.html">DeleteAlias</a>.
+    /// These operations don't affect the underlying key. To get the alias that you created,
+    /// call <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_ListAliases.html">ListAliases</a>.
     /// </para><para><b>Cross-account use</b>: This operation can't be used across different Amazon Web
     /// Services accounts.
-    /// </para><para><b>Related operations:</b></para><ul><li><para><a>DeleteAlias</a></para></li><li><para><a>GetAlias</a></para></li><li><para><a>ListAliases</a></para></li><li><para><a>UpdateAlias</a></para></li></ul>
+    /// </para><para><b>Related operations:</b></para><ul><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_DeleteAlias.html">DeleteAlias</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_GetAlias.html">GetAlias</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_ListAliases.html">ListAliases</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_UpdateAlias.html">UpdateAlias</a></para></li></ul>
     /// </summary>
     [Cmdlet("New", "PAYCCAlias", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PaymentCryptography.Model.Alias")]
     [AWSCmdlet("Calls the Payment Cryptography Control Plane CreateAlias API operation.", Operation = new[] {"CreateAlias"}, SelectReturnType = typeof(Amazon.PaymentCryptography.Model.CreateAliasResponse))]
     [AWSCmdletOutput("Amazon.PaymentCryptography.Model.Alias or Amazon.PaymentCryptography.Model.CreateAliasResponse",
         "This cmdlet returns an Amazon.PaymentCryptography.Model.Alias object.",
-        "The service call response (type Amazon.PaymentCryptography.Model.CreateAliasResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PaymentCryptography.Model.CreateAliasResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPAYCCAliasCmdlet : AmazonPaymentCryptographyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AliasName
         /// <summary>
@@ -101,16 +105,6 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public string Select { get; set; } = "Alias";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AliasName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AliasName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AliasName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -121,9 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AliasName), MyInvocation.BoundParameters);
@@ -137,21 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PaymentCryptography.Model.CreateAliasResponse, NewPAYCCAliasCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AliasName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AliasName = this.AliasName;
             #if MODULAR
             if (this.AliasName == null && ParameterWasBound(nameof(this.AliasName)))
@@ -222,13 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Payment Cryptography Control Plane", "CreateAlias");
             try
             {
-                #if DESKTOP
-                return client.CreateAlias(request);
-                #elif CORECLR
-                return client.CreateAliasAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAliasAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

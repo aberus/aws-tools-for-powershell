@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRooms;
 using Amazon.CleanRooms.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
     [AWSCmdlet("Calls the AWS Clean Rooms Service CreateConfiguredAudienceModelAssociation API operation.", Operation = new[] {"CreateConfiguredAudienceModelAssociation"}, SelectReturnType = typeof(Amazon.CleanRooms.Model.CreateConfiguredAudienceModelAssociationResponse))]
     [AWSCmdletOutput("Amazon.CleanRooms.Model.ConfiguredAudienceModelAssociation or Amazon.CleanRooms.Model.CreateConfiguredAudienceModelAssociationResponse",
         "This cmdlet returns an Amazon.CleanRooms.Model.ConfiguredAudienceModelAssociation object.",
-        "The service call response (type Amazon.CleanRooms.Model.CreateConfiguredAudienceModelAssociationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRooms.Model.CreateConfiguredAudienceModelAssociationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCRSConfiguredAudienceModelAssociationCmdlet : AmazonCleanRoomsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfiguredAudienceModelArn
         /// <summary>
@@ -134,7 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <para>
         /// <para>An optional label that you can assign to a resource when you create it. Each tag consists
         /// of a key and an optional value, both of which you define. When you use tagging, you
-        /// can also use tag-based access control in IAM policies to control access to this resource.</para>
+        /// can also use tag-based access control in IAM policies to control access to this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,9 +170,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfiguredAudienceModelArn), MyInvocation.BoundParameters);
@@ -299,13 +310,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Clean Rooms Service", "CreateConfiguredAudienceModelAssociation");
             try
             {
-                #if DESKTOP
-                return client.CreateConfiguredAudienceModelAssociation(request);
-                #elif CORECLR
-                return client.CreateConfiguredAudienceModelAssociationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConfiguredAudienceModelAssociationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

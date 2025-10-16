@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -36,23 +38,22 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     /// To release phone numbers from a traffic distribution group, use the <c>ReleasePhoneNumber</c>
     /// API, not the Amazon Connect admin website.
     /// </para><para>
-    /// After releasing a phone number, the phone number enters into a cooldown period of
-    /// 30 days. It cannot be searched for or claimed again until the period has ended. If
-    /// you accidentally release a phone number, contact Amazon Web Services Support.
+    /// After releasing a phone number, the phone number enters into a cooldown period for
+    /// up to 180 days. It cannot be searched for or claimed again until the period has ended.
+    /// If you accidentally release a phone number, contact Amazon Web Services Support.
     /// </para></important><para>
-    /// If you plan to claim and release numbers frequently during a 30 day period, contact
-    /// us for a service quota exception. Otherwise, it is possible you will be blocked from
-    /// claiming and releasing any more numbers until 30 days past the oldest number released
-    /// has expired.
+    /// If you plan to claim and release numbers frequently, contact us for a service quota
+    /// exception. Otherwise, it is possible you will be blocked from claiming and releasing
+    /// any more numbers until up to 180 days past the oldest number released has expired.
     /// </para><para>
     /// By default you can claim and release up to 200% of your maximum number of active phone
-    /// numbers during any 30 day period. If you claim and release phone numbers using the
-    /// UI or API during a rolling 30 day cycle that exceeds 200% of your phone number service
-    /// level quota, you will be blocked from claiming any more numbers until 30 days past
-    /// the oldest number released has expired. 
+    /// numbers. If you claim and release phone numbers using the UI or API during a rolling
+    /// 180 day cycle that exceeds 200% of your phone number service level quota, you will
+    /// be blocked from claiming any more numbers until 180 days past the oldest number released
+    /// has expired. 
     /// </para><para>
     /// For example, if you already have 99 claimed numbers and a service level quota of 99
-    /// phone numbers, and in any 30 day period you release 99, claim 99, and then release
+    /// phone numbers, and in any 180 day period you release 99, claim 99, and then release
     /// 99, you will have exceeded the 200% limit. At that point you are blocked from claiming
     /// any more numbers until you open an Amazon Web Services support ticket.
     /// </para>
@@ -62,12 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     [AWSCmdlet("Calls the Amazon Connect Service ReleasePhoneNumber API operation.", Operation = new[] {"ReleasePhoneNumber"}, SelectReturnType = typeof(Amazon.Connect.Model.ReleasePhoneNumberResponse))]
     [AWSCmdletOutput("None or Amazon.Connect.Model.ReleasePhoneNumberResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Connect.Model.ReleasePhoneNumberResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Connect.Model.ReleasePhoneNumberResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveCONNPhoneNumberCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PhoneNumberId
         /// <summary>
@@ -109,16 +111,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PhoneNumberId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PhoneNumberId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PhoneNumberId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -129,9 +121,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PhoneNumberId), MyInvocation.BoundParameters);
@@ -145,21 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.ReleasePhoneNumberResponse, RemoveCONNPhoneNumberCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PhoneNumberId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.PhoneNumberId = this.PhoneNumberId;
             #if MODULAR
@@ -230,13 +216,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "ReleasePhoneNumber");
             try
             {
-                #if DESKTOP
-                return client.ReleasePhoneNumber(request);
-                #elif CORECLR
-                return client.ReleasePhoneNumberAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ReleasePhoneNumberAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDSDataService;
 using Amazon.RDSDataService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDSD
 {
     /// <summary>
@@ -55,12 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.RDSD
     [AWSCmdlet("Calls the AWS RDS DataService BatchExecuteStatement API operation.", Operation = new[] {"BatchExecuteStatement"}, SelectReturnType = typeof(Amazon.RDSDataService.Model.BatchExecuteStatementResponse))]
     [AWSCmdletOutput("Amazon.RDSDataService.Model.UpdateResult or Amazon.RDSDataService.Model.BatchExecuteStatementResponse",
         "This cmdlet returns a collection of Amazon.RDSDataService.Model.UpdateResult objects.",
-        "The service call response (type Amazon.RDSDataService.Model.BatchExecuteStatementResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDSDataService.Model.BatchExecuteStatementResponse) can be returned by specifying '-Select *'."
     )]
     public partial class InvokeRDSDStatementBatchCmdlet : AmazonRDSDataServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Database
         /// <summary>
@@ -77,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.RDSD
         /// <para>
         /// <para>The parameter set for the batch operation.</para><para>The SQL statement is executed as many times as the number of parameter sets provided.
         /// To execute a SQL statement with no parameters, use one of the following options:</para><ul><li><para>Specify one or more empty parameter sets.</para></li><li><para>Use the <c>ExecuteStatement</c> operation instead of the <c>BatchExecuteStatement</c>
-        /// operation.</para></li></ul><note><para>Array parameters are not supported.</para></note>
+        /// operation.</para></li></ul><note><para>Array parameters are not supported.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,16 +178,6 @@ namespace Amazon.PowerShell.Cmdlets.RDSD
         public string Select { get; set; } = "UpdateResults";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Sql parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Sql' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Sql' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -191,9 +188,13 @@ namespace Amazon.PowerShell.Cmdlets.RDSD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceArn), MyInvocation.BoundParameters);
@@ -207,21 +208,11 @@ namespace Amazon.PowerShell.Cmdlets.RDSD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDSDataService.Model.BatchExecuteStatementResponse, InvokeRDSDStatementBatchCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Sql;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Database = this.Database;
             if (this.ParameterSet != null)
             {
@@ -336,13 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.RDSD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS RDS DataService", "BatchExecuteStatement");
             try
             {
-                #if DESKTOP
-                return client.BatchExecuteStatement(request);
-                #elif CORECLR
-                return client.BatchExecuteStatementAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchExecuteStatementAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,42 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Cloud9;
 using Amazon.Cloud9.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.C9
 {
     /// <summary>
     /// Gets information about Cloud9 development environments.
+    /// 
+    ///  <important><para>
+    /// Cloud9 is no longer available to new customers. Existing customers of Cloud9 can continue
+    /// to use the service as normal. <a href="http://aws.amazon.com/blogs/devops/how-to-migrate-from-aws-cloud9-to-aws-ide-toolkits-or-aws-cloudshell/">Learn
+    /// more"</a></para></important>
     /// </summary>
     [Cmdlet("Get", "C9EnvironmentData")]
     [OutputType("Amazon.Cloud9.Model.Environment")]
     [AWSCmdlet("Calls the AWS Cloud9 DescribeEnvironments API operation.", Operation = new[] {"DescribeEnvironments"}, SelectReturnType = typeof(Amazon.Cloud9.Model.DescribeEnvironmentsResponse))]
     [AWSCmdletOutput("Amazon.Cloud9.Model.Environment or Amazon.Cloud9.Model.DescribeEnvironmentsResponse",
         "This cmdlet returns a collection of Amazon.Cloud9.Model.Environment objects.",
-        "The service call response (type Amazon.Cloud9.Model.DescribeEnvironmentsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Cloud9.Model.DescribeEnvironmentsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetC9EnvironmentDataCmdlet : AmazonCloud9ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EnvironmentId
         /// <summary>
         /// <para>
-        /// <para>The IDs of individual environments to get information about.</para>
+        /// <para>The IDs of individual environments to get information about.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,19 +83,13 @@ namespace Amazon.PowerShell.Cmdlets.C9
         public string Select { get; set; } = "Environments";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EnvironmentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EnvironmentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EnvironmentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -93,21 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.C9
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Cloud9.Model.DescribeEnvironmentsResponse, GetC9EnvironmentDataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EnvironmentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.EnvironmentId != null)
             {
                 context.EnvironmentId = new List<System.String>(this.EnvironmentId);
@@ -176,13 +170,7 @@ namespace Amazon.PowerShell.Cmdlets.C9
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cloud9", "DescribeEnvironments");
             try
             {
-                #if DESKTOP
-                return client.DescribeEnvironments(request);
-                #elif CORECLR
-                return client.DescribeEnvironmentsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeEnvironmentsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

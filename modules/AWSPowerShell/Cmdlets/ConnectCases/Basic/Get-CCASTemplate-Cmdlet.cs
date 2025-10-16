@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConnectCases;
 using Amazon.ConnectCases.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CCAS
 {
     /// <summary>
-    /// Returns the details for the requested template.
+    /// Returns the details for the requested template. Other template APIs are: 
+    /// 
+    ///  <ul><li><para><a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-cases_CreateTemplate.html">CreateTemplate</a></para></li><li><para><a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-cases_DeleteTemplate.html">DeleteTemplate</a></para></li><li><para><a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-cases_ListTemplates.html">ListTemplates</a></para></li><li><para><a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_connect-cases_UpdateTemplate.html">UpdateTemplate</a></para></li></ul>
     /// </summary>
     [Cmdlet("Get", "CCASTemplate")]
     [OutputType("Amazon.ConnectCases.Model.GetTemplateResponse")]
     [AWSCmdlet("Calls the Amazon Connect Cases GetTemplate API operation.", Operation = new[] {"GetTemplate"}, SelectReturnType = typeof(Amazon.ConnectCases.Model.GetTemplateResponse))]
     [AWSCmdletOutput("Amazon.ConnectCases.Model.GetTemplateResponse",
-        "This cmdlet returns an Amazon.ConnectCases.Model.GetTemplateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ConnectCases.Model.GetTemplateResponse object containing multiple properties."
     )]
     public partial class GetCCASTemplateCmdlet : AmazonConnectCasesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DomainId
         /// <summary>
@@ -86,19 +91,13 @@ namespace Amazon.PowerShell.Cmdlets.CCAS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -106,21 +105,11 @@ namespace Amazon.PowerShell.Cmdlets.CCAS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConnectCases.Model.GetTemplateResponse, GetCCASTemplateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainId = this.DomainId;
             #if MODULAR
             if (this.DomainId == null && ParameterWasBound(nameof(this.DomainId)))
@@ -197,13 +186,7 @@ namespace Amazon.PowerShell.Cmdlets.CCAS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Cases", "GetTemplate");
             try
             {
-                #if DESKTOP
-                return client.GetTemplate(request);
-                #elif CORECLR
-                return client.GetTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

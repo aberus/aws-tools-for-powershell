@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -37,27 +39,48 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     /// </para><para>
     /// You can cancel the transfer until it is acknowledged by the recipient.
     /// </para><para>
-    /// No notification is sent to the transfer destination's account. It is up to the caller
+    /// No notification is sent to the transfer destination's account. It's up to the caller
     /// to notify the transfer target.
     /// </para><para>
-    /// The certificate being transferred must not be in the ACTIVE state. You can use the
-    /// <a>UpdateCertificate</a> action to deactivate it.
+    /// The certificate being transferred must not be in the <c>ACTIVE</c> state. You can
+    /// use the <a>UpdateCertificate</a> action to deactivate it.
     /// </para><para>
     /// The certificate must not have any policies attached to it. You can use the <a>DetachPolicy</a>
     /// action to detach them.
-    /// </para>
+    /// </para><para><b>Customer managed key behavior:</b> When you use a customer managed key to secure
+    /// your data and then transfer the key to a customer in a different account using the
+    /// <a>TransferCertificate</a> operation, the certificates will no longer be protected
+    /// by their customer managed key configuration. During the transfer process, certificates
+    /// are encrypted using IoT owned keys.
+    /// </para><para>
+    /// While a certificate is in the <b>PENDING_TRANSFER</b> state, it's always protected
+    /// by IoT owned keys, regardless of the customer managed key configuration of either
+    /// the source or destination account. 
+    /// </para><para>
+    /// Once the transfer is completed through <a>AcceptCertificateTransfer</a>, <a>RejectCertificateTransfer</a>,
+    /// or <a>CancelCertificateTransfer</a>, the certificate will be protected by the customer
+    /// managed key configuration of the account that owns the certificate after the transfer
+    /// operation:
+    /// </para><ul><li><para>
+    /// If the transfer is accepted: The certificate is protected by the destination account's
+    /// customer managed key configuration.
+    /// </para></li><li><para>
+    /// If the transfer is rejected or cancelled: The certificate is protected by the source
+    /// account's customer managed key configuration.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Request", "IOTCertificateTransfer", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS IoT TransferCertificate API operation.", Operation = new[] {"TransferCertificate"}, SelectReturnType = typeof(Amazon.IoT.Model.TransferCertificateResponse))]
     [AWSCmdletOutput("System.String or Amazon.IoT.Model.TransferCertificateResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.IoT.Model.TransferCertificateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoT.Model.TransferCertificateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RequestIOTCertificateTransferCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateId
         /// <summary>
@@ -115,16 +138,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public string Select { get; set; } = "TransferredCertificateArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CertificateId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CertificateId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CertificateId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -135,9 +148,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CertificateId), MyInvocation.BoundParameters);
@@ -151,21 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoT.Model.TransferCertificateResponse, RequestIOTCertificateTransferCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CertificateId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CertificateId = this.CertificateId;
             #if MODULAR
             if (this.CertificateId == null && ParameterWasBound(nameof(this.CertificateId)))
@@ -247,13 +254,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "TransferCertificate");
             try
             {
-                #if DESKTOP
-                return client.TransferCertificate(request);
-                #elif CORECLR
-                return client.TransferCertificateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TransferCertificateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

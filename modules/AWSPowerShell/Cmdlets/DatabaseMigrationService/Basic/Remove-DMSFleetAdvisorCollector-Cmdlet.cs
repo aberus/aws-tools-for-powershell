@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
+    /// <important><para>
+    ///  End of support notice: On May 20, 2026, Amazon Web Services will end support for
+    /// Amazon Web Services DMS Fleet Advisor;. After May 20, 2026, you will no longer be
+    /// able to access the Amazon Web Services DMS Fleet Advisor; console or Amazon Web Services
+    /// DMS Fleet Advisor; resources. For more information, see <a href="https://docs.aws.amazon.com/dms/latest/userguide/dms_fleet.advisor-end-of-support.html">Amazon
+    /// Web Services DMS Fleet Advisor end of support</a>. 
+    /// </para></important><para>
     /// Deletes the specified Fleet Advisor collector.
+    /// </para>
     /// </summary>
     [Cmdlet("Remove", "DMSFleetAdvisorCollector", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Database Migration Service DeleteFleetAdvisorCollector API operation.", Operation = new[] {"DeleteFleetAdvisorCollector"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorCollectorResponse))]
     [AWSCmdletOutput("None or Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorCollectorResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorCollectorResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorCollectorResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveDMSFleetAdvisorCollectorCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CollectorReferencedId
         /// <summary>
@@ -79,9 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CollectorReferencedId), MyInvocation.BoundParameters);
@@ -165,13 +180,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "DeleteFleetAdvisorCollector");
             try
             {
-                #if DESKTOP
-                return client.DeleteFleetAdvisorCollector(request);
-                #elif CORECLR
-                return client.DeleteFleetAdvisorCollectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteFleetAdvisorCollectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

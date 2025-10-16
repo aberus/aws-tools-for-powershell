@@ -478,7 +478,7 @@ namespace Amazon.PowerShell.Common
         {
             base.ProcessRecord();
 
-            var powershellAssembly = TypeFactory.GetTypeInfo(typeof(BaseCmdlet)).Assembly;
+            var powershellAssembly = typeof(BaseCmdlet).Assembly;
 
             using (var sw = new StringWriter())
             {
@@ -488,7 +488,7 @@ namespace Amazon.PowerShell.Common
                 sw.WriteLine("Version {0}", powershellInfo.FileVersion);
                 sw.WriteLine(powershellInfo.LegalCopyright);
 
-                var sdkAssembly = TypeFactory.GetTypeInfo(typeof(AWSCredentials)).Assembly;
+                var sdkAssembly = typeof(AWSCredentials).Assembly;
                 var sdkInfo = FileVersionInfo.GetVersionInfo(sdkAssembly.Location);
                 sw.WriteLine();
                 sw.WriteLine(sdkInfo.ProductName);
@@ -496,7 +496,7 @@ namespace Amazon.PowerShell.Common
                 sw.WriteLine(sdkInfo.LegalCopyright);
                 sw.WriteLine();
 
-                sw.WriteLine("Release notes: {0}", "https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md");
+                sw.WriteLine("Release notes: {0}", "https://github.com/aws/aws-tools-for-powershell/blob/main/changelogs/CHANGELOG.ALL.md");
                 sw.WriteLine();
 
                 // recognise 3rd party libraries
@@ -524,6 +524,155 @@ namespace Amazon.PowerShell.Common
                     WriteObject(result);
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Controls the display of sensitive information in the PowerShell console output.
+    /// When set to false (default), sensitive data is masked in the console display.
+    /// When set to true, sensitive data is shown in plain text.
+    /// Note: This setting only affects console display - stored variables retain the original unmasked data regardless of this setting.
+    /// This cmdlet sets a shell variable AWSPowerShell_Show_Sensitive_Data using the scope.
+    /// </summary>
+    [Cmdlet("Set", "AWSSensitiveDataConfiguration")]
+    [AWSCmdlet("Controls the display of sensitive information in the PowerShell console output. When set to true, sensitive data is shown in plain text in the console output.")]
+    [OutputType("None")]
+    public class SetAWSSensitiveDataConfigurationCmdlet : PSCmdlet
+    {
+        #region Parameter ShowSensitiveData
+
+        /// <summary>
+        /// Controls whether sensitive data appears in PowerShell console output.
+        /// When set to true, displays un-redacted sensitive data in the console.
+        /// When set to false (default), automatically masks sensitive data in console output.
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        public bool ShowSensitiveData { get; set; }
+
+        #endregion
+
+        #region Parameter Scope
+        /// <summary>
+        /// <para>
+        /// Sets the scope of the shell variable AWSPowerShell_Show_Sensitive_Data.
+        /// For details about variables scopes, see https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_scopes.
+        /// </para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public VariableScope Scope { get; set; }
+        #endregion
+
+        protected override void ProcessRecord()
+        {
+            base.ProcessRecord();
+            WriteVerbose($"Setting AWSShowSensitiveData to {ShowSensitiveData}");
+            string scope = MyInvocation.BoundParameters.ContainsKey("Scope") ? Scope.ToString() + ":" : "";
+
+            this.SessionState.PSVariable.Set(scope+ SessionKeys.AWSShowSensitiveData, ShowSensitiveData);
+        }
+    }
+
+    /// <summary>
+    /// Returns the current configuration value that controls how sensitive data is displayed in the PowerShell console.
+    /// This cmdlet returns a Boolean value for ShowSensitiveData indicating whether sensitive data is shown or redacted in console output.
+    /// </summary>
+    [Cmdlet("Get", "AWSSensitiveDataConfiguration")]
+    [AWSCmdlet("Gets the current configuration settings for sensitive data display in PowerShell output.")]
+    [OutputType("PSObject")]
+    public class GetAWSSensitiveDataConfigurationCmdlet : PSCmdlet
+    {
+        protected override void ProcessRecord()
+        {
+            base.ProcessRecord();
+            var showSensitiveData = this.SessionState.PSVariable.Get(SessionKeys.AWSShowSensitiveData);
+            var result = new PSObject();
+
+            // in v5 default ShowSensitiveData is false
+            const bool defaultShowSensitiveData = false;
+
+            var noteProperty = new PSNoteProperty("ShowSensitiveData", defaultShowSensitiveData);
+
+            if (showSensitiveData != null)
+            {
+                noteProperty.Value = (bool)showSensitiveData.Value;
+            }
+            
+            result.Properties.Add(noteProperty);
+            WriteObject(result);
+        }
+    }
+
+/// <summary>
+/// Controls the auto-iteration behavior for AWS PowerShell cmdlets.
+/// Sets a shell variable that determines whether cmdlets use standard or v4 auto-iteration mode.
+/// In standard mode, all operations with pagination support will auto-iterate by default.
+/// In v4 mode, only operations that had auto-iteration in v4 will auto-iterate, maintaining backward compatibility.
+/// </summary>
+    [Cmdlet("Set", "AWSAutoIterationMode")]
+    [AWSCmdlet("Controls the auto-iteration behavior for AWS PowerShell cmdlets. Sets whether to use standard mode (all operations with pagination support auto-iterate) or v4 mode (only operations that had auto-iteration in v4 will auto-iterate).")]
+    [OutputType("None")]
+    public class SetAWSAutoIterationModeCmdlet : PSCmdlet
+    {
+        #region Parameter IterationMode
+
+        /// <summary>
+        /// Controls the auto-iteration behavior for AWS PowerShell cmdlets.
+        /// When set to 'standard' (default), all operations with pagination support will auto-iterate.
+        /// When set to 'v4', only operations that had auto-iteration in v4 will auto-iterate, maintaining backward compatibility.
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [ValidateSet("standard", "v4")]
+        public string IterationMode { get; set; }
+
+        #endregion
+
+        #region Parameter Scope
+        /// <summary>
+        /// <para>
+        /// Sets the scope of the shell variable AWSPowerShell_AutoIteration_Mode.
+        /// For details about variables scopes, see https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_scopes.
+        /// </para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public VariableScope Scope { get; set; }
+        #endregion
+
+        protected override void ProcessRecord()
+        {
+            base.ProcessRecord();
+            WriteVerbose($"Setting IterationMode to {IterationMode}");
+            string scope = MyInvocation.BoundParameters.ContainsKey("Scope") ? Scope.ToString() + ":" : "";
+
+            this.SessionState.PSVariable.Set(scope + SessionKeys.AWSAutoIterationMode, IterationMode);
+        }
+    }
+
+    /// <summary>
+    /// Returns the current auto-iteration mode setting that controls how cmdlets handle pagination.
+    /// This cmdlet returns the current value ('standard' or 'v4') indicating which auto-iteration mode is active.
+    /// </summary>
+    [Cmdlet("Get", "AWSAutoIterationMode")]
+    [AWSCmdlet("Gets the current auto-iteration mode setting that controls how cmdlets handle pagination.")]
+    [OutputType("PSObject")]
+    public class GetAWSAutoIterationModeCmdlet : PSCmdlet
+    {
+        protected override void ProcessRecord()
+        {
+            base.ProcessRecord();
+            var autoIterationMode= this.SessionState.PSVariable.Get(SessionKeys.AWSAutoIterationMode);
+            var result = new PSObject();
+
+            const string defaultAutoIterationMode = "standard";
+
+            var noteProperty = new PSNoteProperty("AutoIterationMode", defaultAutoIterationMode);
+
+            if (autoIterationMode != null)
+            {
+                noteProperty.Value = autoIterationMode.Value.ToString();
+            }
+            
+            result.Properties.Add(noteProperty);
+            WriteObject(result);
         }
     }
 }

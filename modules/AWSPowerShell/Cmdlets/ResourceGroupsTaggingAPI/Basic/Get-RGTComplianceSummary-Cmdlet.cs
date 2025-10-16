@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResourceGroupsTaggingAPI;
 using Amazon.ResourceGroupsTaggingAPI.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RGT
 {
     /// <summary>
@@ -51,18 +53,23 @@ namespace Amazon.PowerShell.Cmdlets.RGT
     [AWSCmdlet("Calls the AWS Resource Groups Tagging API GetComplianceSummary API operation.", Operation = new[] {"GetComplianceSummary"}, SelectReturnType = typeof(Amazon.ResourceGroupsTaggingAPI.Model.GetComplianceSummaryResponse))]
     [AWSCmdletOutput("Amazon.ResourceGroupsTaggingAPI.Model.Summary or Amazon.ResourceGroupsTaggingAPI.Model.GetComplianceSummaryResponse",
         "This cmdlet returns a collection of Amazon.ResourceGroupsTaggingAPI.Model.Summary objects.",
-        "The service call response (type Amazon.ResourceGroupsTaggingAPI.Model.GetComplianceSummaryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ResourceGroupsTaggingAPI.Model.GetComplianceSummaryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetRGTComplianceSummaryCmdlet : AmazonResourceGroupsTaggingAPIClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GroupBy
         /// <summary>
         /// <para>
         /// <para>Specifies a list of attributes to group the counts of noncompliant resources by. If
-        /// supplied, the counts are sorted by those attributes.</para>
+        /// supplied, the counts are sorted by those attributes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -74,7 +81,11 @@ namespace Amazon.PowerShell.Cmdlets.RGT
         /// <para>
         /// <para>Specifies a list of Amazon Web Services Regions to limit the output to. If you use
         /// this parameter, the count of returned noncompliant resources includes only resources
-        /// in the specified Regions.</para>
+        /// in the specified Regions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.RGT
         /// ARNs</a>.</para></li><li><para>For more information about ARNs, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
         /// Resource Names (ARNs) and Amazon Web Services Service Namespaces</a>.</para></li></ul><para>You can specify multiple resource types by using a comma separated array. The array
         /// can include up to 100 items. Note that the length constraint requirement applies to
-        /// each resource type filter. </para>
+        /// each resource type filter. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,7 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.RGT
         /// <para>
         /// <para>Specifies that you want the response to include information for only resources that
         /// have tags with the specified tag keys. If you use this parameter, the count of returned
-        /// noncompliant resources includes only resources that have the specified tag keys.</para>
+        /// noncompliant resources includes only resources that have the specified tag keys.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.RGT
         /// <para>
         /// <para>Specifies target identifiers (usually, specific account IDs) to limit the output by.
         /// If you use this parameter, the count of returned noncompliant resources includes only
-        /// resources with the specified target IDs.</para>
+        /// resources with the specified target IDs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,7 +176,7 @@ namespace Amazon.PowerShell.Cmdlets.RGT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-PaginationToken $null' for the first call and '-PaginationToken $AWSHistory.LastServiceResponse.PaginationToken' for subsequent calls.
+        /// <br/>'PaginationToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-PaginationToken' to null for the first call then set the 'PaginationToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,9 +205,13 @@ namespace Amazon.PowerShell.Cmdlets.RGT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -323,13 +350,7 @@ namespace Amazon.PowerShell.Cmdlets.RGT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resource Groups Tagging API", "GetComplianceSummary");
             try
             {
-                #if DESKTOP
-                return client.GetComplianceSummary(request);
-                #elif CORECLR
-                return client.GetComplianceSummaryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetComplianceSummaryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

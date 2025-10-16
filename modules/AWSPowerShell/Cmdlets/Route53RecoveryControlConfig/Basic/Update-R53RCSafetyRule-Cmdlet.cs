@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53RecoveryControlConfig;
 using Amazon.Route53RecoveryControlConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53RC
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.R53RC
     [OutputType("Amazon.Route53RecoveryControlConfig.Model.UpdateSafetyRuleResponse")]
     [AWSCmdlet("Calls the AWS Route53 Recovery Control Config UpdateSafetyRule API operation.", Operation = new[] {"UpdateSafetyRule"}, SelectReturnType = typeof(Amazon.Route53RecoveryControlConfig.Model.UpdateSafetyRuleResponse))]
     [AWSCmdletOutput("Amazon.Route53RecoveryControlConfig.Model.UpdateSafetyRuleResponse",
-        "This cmdlet returns an Amazon.Route53RecoveryControlConfig.Model.UpdateSafetyRuleResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53RecoveryControlConfig.Model.UpdateSafetyRuleResponse object containing multiple properties."
     )]
     public partial class UpdateR53RCSafetyRuleCmdlet : AmazonRoute53RecoveryControlConfigClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssertionRuleUpdate_Name
         /// <summary>
@@ -128,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.R53RC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -287,13 +294,7 @@ namespace Amazon.PowerShell.Cmdlets.R53RC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Route53 Recovery Control Config", "UpdateSafetyRule");
             try
             {
-                #if DESKTOP
-                return client.UpdateSafetyRule(request);
-                #elif CORECLR
-                return client.UpdateSafetyRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSafetyRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

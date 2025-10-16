@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB ExportTableToPointInTime API operation.", Operation = new[] {"ExportTableToPointInTime"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.ExportTableToPointInTimeResponse))]
     [AWSCmdletOutput("Amazon.DynamoDBv2.Model.ExportDescription or Amazon.DynamoDBv2.Model.ExportTableToPointInTimeResponse",
         "This cmdlet returns an Amazon.DynamoDBv2.Model.ExportDescription object.",
-        "The service call response (type Amazon.DynamoDBv2.Model.ExportTableToPointInTimeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.ExportTableToPointInTimeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ExportDDBTableToPointInTimeCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExportFormat
         /// <summary>
@@ -138,7 +141,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <summary>
         /// <para>
         /// <para>The ID of the Amazon Web Services account that owns the bucket the export will be
-        /// stored in.</para>
+        /// stored in.</para><note><para>S3BucketOwner is a required parameter when exporting to a S3 bucket in another account.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,9 +235,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TableArn), MyInvocation.BoundParameters);
@@ -411,13 +418,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "ExportTableToPointInTime");
             try
             {
-                #if DESKTOP
-                return client.ExportTableToPointInTime(request);
-                #elif CORECLR
-                return client.ExportTableToPointInTimeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExportTableToPointInTimeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

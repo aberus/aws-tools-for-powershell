@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StorageGateway;
 using Amazon.StorageGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SG
 {
     /// <summary>
-    /// Sends you notification through CloudWatch Events when all files written to your file
+    /// Sends you notification through Amazon EventBridge when all files written to your file
     /// share have been uploaded to Amazon S3.
     /// 
     ///  
     /// <para>
-    /// Storage Gateway can send a notification through Amazon CloudWatch Events when all
-    /// files written to your file share up to that point in time have been uploaded to Amazon
-    /// S3. These files include files written to the file share up to the time that you make
-    /// a request for notification. When the upload is done, Storage Gateway sends you notification
-    /// through an Amazon CloudWatch Event. You can configure CloudWatch Events to send the
-    /// notification through event targets such as Amazon SNS or Lambda function. This operation
-    /// is only supported for S3 File Gateways.
+    /// Storage Gateway can send a notification through Amazon EventBridge when all files
+    /// written to your file share up to that point in time have been uploaded to Amazon S3.
+    /// These files include files written to the file share up to the time that you make a
+    /// request for notification. When the upload is done, Storage Gateway sends you notification
+    /// through EventBridge. You can configure EventBridge to send the notification through
+    /// event targets such as Amazon SNS or Lambda function. This operation is only supported
+    /// for S3 File Gateways.
     /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/filegateway/latest/files3/monitoring-file-gateway.html#get-notification">Getting
     /// file upload notification</a> in the <i>Amazon S3 File Gateway User Guide</i>.
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
     [OutputType("Amazon.StorageGateway.Model.NotifyWhenUploadedResponse")]
     [AWSCmdlet("Calls the AWS Storage Gateway NotifyWhenUploaded API operation.", Operation = new[] {"NotifyWhenUploaded"}, SelectReturnType = typeof(Amazon.StorageGateway.Model.NotifyWhenUploadedResponse))]
     [AWSCmdletOutput("Amazon.StorageGateway.Model.NotifyWhenUploadedResponse",
-        "This cmdlet returns an Amazon.StorageGateway.Model.NotifyWhenUploadedResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.StorageGateway.Model.NotifyWhenUploadedResponse object containing multiple properties."
     )]
     public partial class SendSGUploadedNotificationCmdlet : AmazonStorageGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FileShareARN
         /// <summary>
@@ -84,16 +87,6 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileShareARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileShareARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileShareARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -104,9 +97,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FileShareARN), MyInvocation.BoundParameters);
@@ -120,21 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StorageGateway.Model.NotifyWhenUploadedResponse, SendSGUploadedNotificationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FileShareARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FileShareARN = this.FileShareARN;
             #if MODULAR
             if (this.FileShareARN == null && ParameterWasBound(nameof(this.FileShareARN)))
@@ -200,13 +187,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Storage Gateway", "NotifyWhenUploaded");
             try
             {
-                #if DESKTOP
-                return client.NotifyWhenUploaded(request);
-                #elif CORECLR
-                return client.NotifyWhenUploadedAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.NotifyWhenUploadedAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

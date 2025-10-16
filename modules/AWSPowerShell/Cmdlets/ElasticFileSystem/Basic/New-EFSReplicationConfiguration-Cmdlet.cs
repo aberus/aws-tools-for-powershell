@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,82 +22,58 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticFileSystem;
 using Amazon.ElasticFileSystem.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EFS
 {
     /// <summary>
-    /// Creates a replication configuration that replicates an existing EFS file system to
-    /// a new, read-only file system. For more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-replication.html">Amazon
+    /// Creates a replication conﬁguration to either a new or existing EFS file system. For
+    /// more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-replication.html">Amazon
     /// EFS replication</a> in the <i>Amazon EFS User Guide</i>. The replication configuration
     /// specifies the following:
     /// 
-    ///  <ul><li><para><b>Source file system</b> – The EFS file system that you want replicated. The source
-    /// file system cannot be a destination file system in an existing replication configuration.
-    /// </para></li><li><para><b>Amazon Web Services Region</b> – The Amazon Web Services Region in which the destination
-    /// file system is created. Amazon EFS replication is available in all Amazon Web Services
-    /// Regions in which EFS is available. The Region must be enabled. For more information,
-    /// see <a href="https://docs.aws.amazon.com/general/latest/gr/rande-manage.html#rande-manage-enable">Managing
-    /// Amazon Web Services Regions</a> in the <i>Amazon Web Services General Reference Reference
-    /// Guide</i>.
-    /// </para></li><li><para><b>Destination file system configuration</b> – The configuration of the destination
-    /// file system to which the source file system will be replicated. There can only be
-    /// one destination file system in a replication configuration. 
-    /// </para><para>
-    /// Parameters for the replication configuration include:
-    /// </para><ul><li><para><b>File system ID</b> – The ID of the destination file system for the replication.
-    /// If no ID is provided, then EFS creates a new file system with the default settings.
-    /// For existing file systems, the file system's replication overwrite protection must
-    /// be disabled. For more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-replication#replicate-existing-destination">
-    /// Replicating to an existing file system</a>.
-    /// </para></li><li><para><b>Availability Zone</b> – If you want the destination file system to use One Zone
-    /// storage, you must specify the Availability Zone to create the file system in. For
-    /// more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/storage-classes.html">
-    /// EFS file system types</a> in the <i>Amazon EFS User Guide</i>.
-    /// </para></li><li><para><b>Encryption</b> – All destination file systems are created with encryption at rest
-    /// enabled. You can specify the Key Management Service (KMS) key that is used to encrypt
-    /// the destination file system. If you don't specify a KMS key, your service-managed
-    /// KMS key for Amazon EFS is used. 
+    ///  <ul><li><para><b>Source file system</b> – The EFS file system that you want to replicate. 
+    /// </para></li><li><para><b>Destination file system</b> – The destination file system to which the source
+    /// file system is replicated. There can only be one destination file system in a replication
+    /// configuration. 
     /// </para><note><para>
-    /// After the file system is created, you cannot change the KMS key.
-    /// </para></note></li></ul></li></ul><note><para>
-    /// After the file system is created, you cannot change the KMS key.
+    /// A file system can be part of only one replication configuration. 
     /// </para></note><para>
-    /// For new destination file systems, the following properties are set by default:
-    /// </para><ul><li><para><b>Performance mode</b> - The destination file system's performance mode matches
-    /// that of the source file system, unless the destination file system uses EFS One Zone
-    /// storage. In that case, the General Purpose performance mode is used. The performance
-    /// mode cannot be changed.
-    /// </para></li><li><para><b>Throughput mode</b> - The destination file system's throughput mode matches that
-    /// of the source file system. After the file system is created, you can modify the throughput
-    /// mode.
-    /// </para></li></ul><ul><li><para><b>Lifecycle management</b> – Lifecycle management is not enabled on the destination
-    /// file system. After the destination file system is created, you can enable lifecycle
-    /// management.
-    /// </para></li><li><para><b>Automatic backups</b> – Automatic daily backups are enabled on the destination
-    /// file system. After the file system is created, you can change this setting.
+    /// The destination parameters for the replication configuration depend on whether you
+    /// are replicating to a new file system or to an existing file system, and if you are
+    /// replicating across Amazon Web Services accounts. See <a>DestinationToCreate</a> for
+    /// more information.
     /// </para></li></ul><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-replication.html">Amazon
-    /// EFS replication</a> in the <i>Amazon EFS User Guide</i>.
+    /// This operation requires permissions for the <c>elasticfilesystem:CreateReplicationConfiguration</c>
+    /// action. Additionally, other permissions are required depending on how you are replicating
+    /// file systems. For more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-replication.html#efs-replication-permissions">Required
+    /// permissions for replication</a> in the <i>Amazon EFS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EFSReplicationConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ElasticFileSystem.Model.CreateReplicationConfigurationResponse")]
     [AWSCmdlet("Calls the Amazon Elastic File System CreateReplicationConfiguration API operation.", Operation = new[] {"CreateReplicationConfiguration"}, SelectReturnType = typeof(Amazon.ElasticFileSystem.Model.CreateReplicationConfigurationResponse))]
     [AWSCmdletOutput("Amazon.ElasticFileSystem.Model.CreateReplicationConfigurationResponse",
-        "This cmdlet returns an Amazon.ElasticFileSystem.Model.CreateReplicationConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ElasticFileSystem.Model.CreateReplicationConfigurationResponse object containing multiple properties."
     )]
     public partial class NewEFSReplicationConfigurationCmdlet : AmazonElasticFileSystemClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Destination
         /// <summary>
         /// <para>
         /// <para>An array of destination configuration objects. Only one destination configuration
-        /// object is supported.</para>
+        /// object is supported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -141,16 +117,6 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SourceFileSystemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SourceFileSystemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SourceFileSystemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -161,9 +127,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceFileSystemId), MyInvocation.BoundParameters);
@@ -177,21 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticFileSystem.Model.CreateReplicationConfigurationResponse, NewEFSReplicationConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SourceFileSystemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Destination != null)
             {
                 context.Destination = new List<Amazon.ElasticFileSystem.Model.DestinationToCreate>(this.Destination);
@@ -271,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic File System", "CreateReplicationConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateReplicationConfiguration(request);
-                #elif CORECLR
-                return client.CreateReplicationConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateReplicationConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

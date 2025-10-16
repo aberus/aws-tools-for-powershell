@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResourceExplorer2;
 using Amazon.ResourceExplorer2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AREX
 {
     /// <summary>
@@ -47,16 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.AREX
     [AWSCmdlet("Calls the AWS Resource Explorer CreateView API operation.", Operation = new[] {"CreateView"}, SelectReturnType = typeof(Amazon.ResourceExplorer2.Model.CreateViewResponse))]
     [AWSCmdletOutput("Amazon.ResourceExplorer2.Model.View or Amazon.ResourceExplorer2.Model.CreateViewResponse",
         "This cmdlet returns an Amazon.ResourceExplorer2.Model.View object.",
-        "The service call response (type Amazon.ResourceExplorer2.Model.CreateViewResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ResourceExplorer2.Model.CreateViewResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAREXViewCmdlet : AmazonResourceExplorer2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filters_FilterString
         /// <summary>
@@ -74,7 +73,11 @@ namespace Amazon.PowerShell.Cmdlets.AREX
         /// <summary>
         /// <para>
         /// <para>Specifies optional fields that you want included in search results from this view.
-        /// It is a list of objects that each describe a field to include.</para><para>The default is an empty list, with no optional fields included in the results.</para>
+        /// It is a list of objects that each describe a field to include.</para><para>The default is an empty list, with no optional fields included in the results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.AREX
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tag key and value pairs that are attached to the view.</para>
+        /// <para>Tag key and value pairs that are attached to the view.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -146,16 +153,6 @@ namespace Amazon.PowerShell.Cmdlets.AREX
         public string Select { get; set; } = "View";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ViewName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ViewName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ViewName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -166,9 +163,13 @@ namespace Amazon.PowerShell.Cmdlets.AREX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ViewName), MyInvocation.BoundParameters);
@@ -182,21 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.AREX
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ResourceExplorer2.Model.CreateViewResponse, NewAREXViewCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ViewName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Filters_FilterString = this.Filters_FilterString;
             if (this.IncludedProperty != null)
@@ -312,13 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.AREX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resource Explorer", "CreateView");
             try
             {
-                #if DESKTOP
-                return client.CreateView(request);
-                #elif CORECLR
-                return client.CreateViewAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateViewAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

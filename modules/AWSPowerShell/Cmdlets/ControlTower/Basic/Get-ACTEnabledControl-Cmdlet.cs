@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ControlTower;
 using Amazon.ControlTower.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACT
 {
     /// <summary>
-    /// Retrieves details about an enabled control. For usage examples, see <a href="https://docs.aws.amazon.com/controltower/latest/userguide/control-api-examples-short.html"><i>the Amazon Web Services Control Tower User Guide</i></a>.
+    /// Retrieves details about an enabled control. For usage examples, see the <a href="https://docs.aws.amazon.com/controltower/latest/controlreference/control-api-examples-short.html"><i>Controls Reference Guide</i></a>.
     /// </summary>
     [Cmdlet("Get", "ACTEnabledControl")]
     [OutputType("Amazon.ControlTower.Model.EnabledControlDetails")]
     [AWSCmdlet("Calls the AWS Control Tower GetEnabledControl API operation.", Operation = new[] {"GetEnabledControl"}, SelectReturnType = typeof(Amazon.ControlTower.Model.GetEnabledControlResponse))]
     [AWSCmdletOutput("Amazon.ControlTower.Model.EnabledControlDetails or Amazon.ControlTower.Model.GetEnabledControlResponse",
         "This cmdlet returns an Amazon.ControlTower.Model.EnabledControlDetails object.",
-        "The service call response (type Amazon.ControlTower.Model.GetEnabledControlResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ControlTower.Model.GetEnabledControlResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetACTEnabledControlCmdlet : AmazonControlTowerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EnabledControlIdentifier
         /// <summary>
@@ -70,19 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.ACT
         public string Select { get; set; } = "EnabledControlDetails";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EnabledControlIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EnabledControlIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EnabledControlIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.ACT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ControlTower.Model.GetEnabledControlResponse, GetACTEnabledControlCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EnabledControlIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EnabledControlIdentifier = this.EnabledControlIdentifier;
             #if MODULAR
             if (this.EnabledControlIdentifier == null && ParameterWasBound(nameof(this.EnabledControlIdentifier)))
@@ -170,13 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.ACT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Control Tower", "GetEnabledControl");
             try
             {
-                #if DESKTOP
-                return client.GetEnabledControl(request);
-                #elif CORECLR
-                return client.GetEnabledControlAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetEnabledControlAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

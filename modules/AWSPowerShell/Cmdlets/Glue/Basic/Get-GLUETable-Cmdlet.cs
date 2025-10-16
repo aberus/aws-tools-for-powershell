@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -35,12 +37,33 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue GetTable API operation.", Operation = new[] {"GetTable"}, SelectReturnType = typeof(Amazon.Glue.Model.GetTableResponse))]
     [AWSCmdletOutput("Amazon.Glue.Model.Table or Amazon.Glue.Model.GetTableResponse",
         "This cmdlet returns an Amazon.Glue.Model.Table object.",
-        "The service call response (type Amazon.Glue.Model.GetTableResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Glue.Model.GetTableResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGLUETableCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AuditContext_AdditionalAuditContext
+        /// <summary>
+        /// <para>
+        /// <para>A string containing the additional audit context information.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AuditContext_AdditionalAuditContext { get; set; }
+        #endregion
+        
+        #region Parameter AuditContext_AllColumnsRequested
+        /// <summary>
+        /// <para>
+        /// <para>All columns request for audit.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? AuditContext_AllColumnsRequested { get; set; }
+        #endregion
         
         #region Parameter CatalogId
         /// <summary>
@@ -69,6 +92,18 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String DatabaseName { get; set; }
+        #endregion
+        
+        #region Parameter IncludeStatusDetail
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to include status details related to a request to create or update
+        /// an Glue Data Catalog view.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeStatusDetails")]
+        public System.Boolean? IncludeStatusDetail { get; set; }
         #endregion
         
         #region Parameter Name
@@ -100,6 +135,21 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.DateTime? QueryAsOfTime { get; set; }
         #endregion
         
+        #region Parameter AuditContext_RequestedColumn
+        /// <summary>
+        /// <para>
+        /// <para>The requested columns for audit.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AuditContext_RequestedColumns")]
+        public System.String[] AuditContext_RequestedColumn { get; set; }
+        #endregion
+        
         #region Parameter TransactionId
         /// <summary>
         /// <para>
@@ -121,19 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "Table";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -141,21 +185,17 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.GetTableResponse, GetGLUETableCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            context.AuditContext_AdditionalAuditContext = this.AuditContext_AdditionalAuditContext;
+            context.AuditContext_AllColumnsRequested = this.AuditContext_AllColumnsRequested;
+            if (this.AuditContext_RequestedColumn != null)
             {
-                context.Select = (response, cmdlet) => this.Name;
+                context.AuditContext_RequestedColumn = new List<System.String>(this.AuditContext_RequestedColumn);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CatalogId = this.CatalogId;
             context.DatabaseName = this.DatabaseName;
             #if MODULAR
@@ -164,6 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
                 WriteWarning("You are passing $null as a value for parameter DatabaseName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.IncludeStatusDetail = this.IncludeStatusDetail;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -189,6 +230,45 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // create request
             var request = new Amazon.Glue.Model.GetTableRequest();
             
+            
+             // populate AuditContext
+            var requestAuditContextIsNull = true;
+            request.AuditContext = new Amazon.Glue.Model.AuditContext();
+            System.String requestAuditContext_auditContext_AdditionalAuditContext = null;
+            if (cmdletContext.AuditContext_AdditionalAuditContext != null)
+            {
+                requestAuditContext_auditContext_AdditionalAuditContext = cmdletContext.AuditContext_AdditionalAuditContext;
+            }
+            if (requestAuditContext_auditContext_AdditionalAuditContext != null)
+            {
+                request.AuditContext.AdditionalAuditContext = requestAuditContext_auditContext_AdditionalAuditContext;
+                requestAuditContextIsNull = false;
+            }
+            System.Boolean? requestAuditContext_auditContext_AllColumnsRequested = null;
+            if (cmdletContext.AuditContext_AllColumnsRequested != null)
+            {
+                requestAuditContext_auditContext_AllColumnsRequested = cmdletContext.AuditContext_AllColumnsRequested.Value;
+            }
+            if (requestAuditContext_auditContext_AllColumnsRequested != null)
+            {
+                request.AuditContext.AllColumnsRequested = requestAuditContext_auditContext_AllColumnsRequested.Value;
+                requestAuditContextIsNull = false;
+            }
+            List<System.String> requestAuditContext_auditContext_RequestedColumn = null;
+            if (cmdletContext.AuditContext_RequestedColumn != null)
+            {
+                requestAuditContext_auditContext_RequestedColumn = cmdletContext.AuditContext_RequestedColumn;
+            }
+            if (requestAuditContext_auditContext_RequestedColumn != null)
+            {
+                request.AuditContext.RequestedColumns = requestAuditContext_auditContext_RequestedColumn;
+                requestAuditContextIsNull = false;
+            }
+             // determine if request.AuditContext should be set to null
+            if (requestAuditContextIsNull)
+            {
+                request.AuditContext = null;
+            }
             if (cmdletContext.CatalogId != null)
             {
                 request.CatalogId = cmdletContext.CatalogId;
@@ -196,6 +276,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             if (cmdletContext.DatabaseName != null)
             {
                 request.DatabaseName = cmdletContext.DatabaseName;
+            }
+            if (cmdletContext.IncludeStatusDetail != null)
+            {
+                request.IncludeStatusDetails = cmdletContext.IncludeStatusDetail.Value;
             }
             if (cmdletContext.Name != null)
             {
@@ -247,13 +331,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "GetTable");
             try
             {
-                #if DESKTOP
-                return client.GetTable(request);
-                #elif CORECLR
-                return client.GetTableAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -270,8 +348,12 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String AuditContext_AdditionalAuditContext { get; set; }
+            public System.Boolean? AuditContext_AllColumnsRequested { get; set; }
+            public List<System.String> AuditContext_RequestedColumn { get; set; }
             public System.String CatalogId { get; set; }
             public System.String DatabaseName { get; set; }
+            public System.Boolean? IncludeStatusDetail { get; set; }
             public System.String Name { get; set; }
             public System.DateTime? QueryAsOfTime { get; set; }
             public System.String TransactionId { get; set; }

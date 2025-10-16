@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -58,15 +60,14 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// You get all of this information from the OIDC IdP you want to use to access Amazon
     /// Web Services.
     /// </para><note><para>
-    /// Amazon Web Services secures communication with some OIDC identity providers (IdPs)
-    /// through our library of trusted root certificate authorities (CAs) instead of using
-    /// a certificate thumbprint to verify your IdP server certificate. In these cases, your
-    /// legacy thumbprint remains in your configuration, but is no longer used for validation.
-    /// These OIDC IdPs include Auth0, GitHub, GitLab, Google, and those that use an Amazon
-    /// S3 bucket to host a JSON Web Key Set (JWKS) endpoint.
+    /// Amazon Web Services secures communication with OIDC identity providers (IdPs) using
+    /// our library of trusted root certificate authorities (CAs) to verify the JSON Web Key
+    /// Set (JWKS) endpoint's TLS certificate. If your OIDC IdP relies on a certificate that
+    /// is not signed by one of these trusted CAs, only then we secure communication using
+    /// the thumbprints set in the IdP's configuration.
     /// </para></note><note><para>
     /// The trust for the OIDC provider is derived from the IAM provider that this operation
-    /// creates. Therefore, it is best to limit access to the <a>CreateOpenIDConnectProvider</a>
+    /// creates. Therefore, it is best to limit access to the <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateOpenIDConnectProvider.html">CreateOpenIDConnectProvider</a>
     /// operation to highly privileged users.
     /// </para></note>
     /// </summary>
@@ -75,12 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management CreateOpenIDConnectProvider API operation.", Operation = new[] {"CreateOpenIDConnectProvider"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.CreateOpenIDConnectProviderResponse))]
     [AWSCmdletOutput("System.String or Amazon.IdentityManagement.Model.CreateOpenIDConnectProviderResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.IdentityManagement.Model.CreateOpenIDConnectProviderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.CreateOpenIDConnectProviderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewIAMOpenIDConnectProviderCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientIDList
         /// <summary>
@@ -90,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// This is the value that's sent as the <c>client_id</c> parameter on OAuth requests.</para><para>You can register multiple client IDs with the same provider. For example, you might
         /// have multiple applications that use the same OIDC provider. You cannot register more
         /// than 100 client IDs with a single IAM OIDC provider.</para><para>There is no defined format for a client ID. The <c>CreateOpenIDConnectProviderRequest</c>
-        /// operation accepts client IDs up to 255 characters long.</para>
+        /// operation accepts client IDs up to 255 characters long.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// Each tag consists of a key name and an associated value. For more information about
         /// tagging, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_tags.html">Tagging
         /// IAM resources</a> in the <i>IAM User Guide</i>.</para><note><para>If any one of the tags is invalid or if you exceed the allowed maximum number of tags,
-        /// then the entire request fails and the resource is not created.</para></note>
+        /// then the entire request fails and the resource is not created.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,23 +128,22 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// <para>A list of server certificate thumbprints for the OpenID Connect (OIDC) identity provider's
         /// server certificates. Typically this list includes only one entry. However, IAM lets
         /// you have up to five thumbprints for an OIDC provider. This lets you maintain multiple
-        /// thumbprints if the identity provider is rotating certificates.</para><para>The server certificate thumbprint is the hex-encoded SHA-1 hash value of the X.509
+        /// thumbprints if the identity provider is rotating certificates.</para><para>This parameter is optional. If it is not included, IAM will retrieve and use the top
+        /// intermediate certificate authority (CA) thumbprint of the OpenID Connect identity
+        /// provider server certificate.</para><para>The server certificate thumbprint is the hex-encoded SHA-1 hash value of the X.509
         /// certificate used by the domain where the OpenID Connect provider makes its keys available.
-        /// It is always a 40-character string.</para><para>You must provide at least one thumbprint when creating an IAM OIDC provider. For example,
-        /// assume that the OIDC provider is <c>server.example.com</c> and the provider stores
-        /// its keys at https://keys.server.example.com/openid-connect. In that case, the thumbprint
-        /// string would be the hex-encoded SHA-1 hash value of the certificate used by <c>https://keys.server.example.com.</c></para><para>For more information about obtaining the OIDC provider thumbprint, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/identity-providers-oidc-obtain-thumbprint.html">Obtaining
-        /// the thumbprint for an OpenID Connect provider</a> in the <i>IAM user Guide</i>.</para>
+        /// It is always a 40-character string.</para><para>For example, assume that the OIDC provider is <c>server.example.com</c> and the provider
+        /// stores its keys at https://keys.server.example.com/openid-connect. In that case, the
+        /// thumbprint string would be the hex-encoded SHA-1 hash value of the certificate used
+        /// by <c>https://keys.server.example.com.</c></para><para>For more information about obtaining the OIDC provider thumbprint, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/identity-providers-oidc-obtain-thumbprint.html">Obtaining
+        /// the thumbprint for an OpenID Connect provider</a> in the <i>IAM user Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String[] ThumbprintList { get; set; }
         #endregion
         
@@ -172,16 +181,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "OpenIDConnectProviderArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Url parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Url' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Url' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -192,9 +191,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Url), MyInvocation.BoundParameters);
@@ -208,21 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.CreateOpenIDConnectProviderResponse, NewIAMOpenIDConnectProviderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Url;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ClientIDList != null)
             {
                 context.ClientIDList = new List<System.String>(this.ClientIDList);
@@ -235,12 +228,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             {
                 context.ThumbprintList = new List<System.String>(this.ThumbprintList);
             }
-            #if MODULAR
-            if (this.ThumbprintList == null && ParameterWasBound(nameof(this.ThumbprintList)))
-            {
-                WriteWarning("You are passing $null as a value for parameter ThumbprintList which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.Url = this.Url;
             #if MODULAR
             if (this.Url == null && ParameterWasBound(nameof(this.Url)))
@@ -318,13 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "CreateOpenIDConnectProvider");
             try
             {
-                #if DESKTOP
-                return client.CreateOpenIDConnectProvider(request);
-                #elif CORECLR
-                return client.CreateOpenIDConnectProviderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateOpenIDConnectProviderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

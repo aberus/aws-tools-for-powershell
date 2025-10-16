@@ -1,0 +1,20 @@
+---
+cloudformation_ListStackResources:
+  title: Use Get-CFNStackResourceSummary
+  title_abbrev: Get-CFNStackResourceSummary
+  synopsis: use Get-CFNStackResourceSummary
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Get-CFNStackResourceSummary
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: Returns descriptions of all the resources associated with the specified stack.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudformation_Get-CFNStackResourceSummary.1.1.ps1
+  services:
+    cloudformation:
+      ListStackResources:
+

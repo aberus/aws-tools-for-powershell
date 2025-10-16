@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -34,7 +36,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// <para>
     /// A distribution is a globally distributed network of caching servers that improve the
     /// performance of your website or web application hosted on a Lightsail instance. For
-    /// more information, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-content-delivery-network-distributions">Content
+    /// more information, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-content-delivery-network-distributions">Content
     /// delivery networks in Amazon Lightsail</a>.
     /// </para>
     /// </summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [OutputType("Amazon.Lightsail.Model.CreateDistributionResponse")]
     [AWSCmdlet("Calls the Amazon Lightsail CreateDistribution API operation.", Operation = new[] {"CreateDistribution"}, SelectReturnType = typeof(Amazon.Lightsail.Model.CreateDistributionResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.CreateDistributionResponse",
-        "This cmdlet returns an Amazon.Lightsail.Model.CreateDistributionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Lightsail.Model.CreateDistributionResponse object containing multiple properties."
     )]
     public partial class NewLSDistributionCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CacheBehaviorSettings_AllowedHTTPMethod
         /// <summary>
@@ -106,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter CacheBehavior
         /// <summary>
         /// <para>
-        /// <para>An array of objects that describe the per-path cache behavior for the distribution.</para>
+        /// <para>An array of objects that describe the per-path cache behavior for the distribution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,10 +134,25 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public System.String CacheBehaviorSettings_CachedHTTPMethod { get; set; }
         #endregion
         
+        #region Parameter CertificateName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the SSL/TLS certificate that you want to attach to the distribution.</para><para>Use the <a href="https://docs.aws.amazon.com/lightsail/2016-11-28/api-reference/API_GetCertificates.html">GetCertificates</a>
+        /// action to get a list of certificate names that you can specify.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CertificateName { get; set; }
+        #endregion
+        
         #region Parameter ForwardedCookies_CookiesAllowList
         /// <summary>
         /// <para>
-        /// <para>The specific cookies to forward to your distribution's origin.</para>
+        /// <para>The specific cookies to forward to your distribution's origin.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,7 +194,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter ForwardedHeaders_HeadersAllowList
         /// <summary>
         /// <para>
-        /// <para>The specific headers to forward to your distribution's origin.</para>
+        /// <para>The specific headers to forward to your distribution's origin.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -283,7 +309,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <summary>
         /// <para>
         /// <para>The specific query strings that the distribution forwards to the origin.</para><para>Your distribution will cache content based on the specified query strings.</para><para>If the <c>option</c> parameter is true, then your distribution forwards all query
-        /// strings, regardless of what you specify using the <c>queryStringsAllowList</c> parameter.</para>
+        /// strings, regardless of what you specify using the <c>queryStringsAllowList</c> parameter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -302,15 +332,42 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public Amazon.Lightsail.RegionName Origin_RegionName { get; set; }
         #endregion
         
+        #region Parameter Origin_ResponseTimeout
+        /// <summary>
+        /// <para>
+        /// <para>The amount of time, in seconds, that the distribution waits for a response after forwarding
+        /// a request to the origin. The minimum timeout is 1 second, the maximum is 60 seconds,
+        /// and the default (if you don't specify otherwise) is 30 seconds.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? Origin_ResponseTimeout { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tag keys and optional values to add to the distribution during create.</para><para>Use the <c>TagResource</c> action to tag a resource after it's created.</para>
+        /// <para>The tag keys and optional values to add to the distribution during create.</para><para>Use the <c>TagResource</c> action to tag a resource after it's created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.Lightsail.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter ViewerMinimumTlsProtocolVersion
+        /// <summary>
+        /// <para>
+        /// <para>The minimum TLS protocol version for the SSL/TLS certificate.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Lightsail.ViewerMinimumTlsProtocolVersionEnum")]
+        public Amazon.Lightsail.ViewerMinimumTlsProtocolVersionEnum ViewerMinimumTlsProtocolVersion { get; set; }
         #endregion
         
         #region Parameter Select
@@ -324,16 +381,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DistributionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DistributionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DistributionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -344,9 +391,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DistributionName), MyInvocation.BoundParameters);
@@ -360,21 +411,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.CreateDistributionResponse, NewLSDistributionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DistributionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BundleId = this.BundleId;
             #if MODULAR
             if (this.BundleId == null && ParameterWasBound(nameof(this.BundleId)))
@@ -406,6 +447,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             }
             context.CacheBehaviorSettings_MaximumTTL = this.CacheBehaviorSettings_MaximumTTL;
             context.CacheBehaviorSettings_MinimumTTL = this.CacheBehaviorSettings_MinimumTTL;
+            context.CertificateName = this.CertificateName;
             context.DefaultCacheBehavior_Behavior = this.DefaultCacheBehavior_Behavior;
             context.DistributionName = this.DistributionName;
             #if MODULAR
@@ -418,10 +460,12 @@ namespace Amazon.PowerShell.Cmdlets.LS
             context.Origin_Name = this.Origin_Name;
             context.Origin_ProtocolPolicy = this.Origin_ProtocolPolicy;
             context.Origin_RegionName = this.Origin_RegionName;
+            context.Origin_ResponseTimeout = this.Origin_ResponseTimeout;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.Lightsail.Model.Tag>(this.Tag);
             }
+            context.ViewerMinimumTlsProtocolVersion = this.ViewerMinimumTlsProtocolVersion;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -610,6 +654,10 @@ namespace Amazon.PowerShell.Cmdlets.LS
             {
                 request.CacheBehaviorSettings = null;
             }
+            if (cmdletContext.CertificateName != null)
+            {
+                request.CertificateName = cmdletContext.CertificateName;
+            }
             
              // populate DefaultCacheBehavior
             var requestDefaultCacheBehaviorIsNull = true;
@@ -671,6 +719,16 @@ namespace Amazon.PowerShell.Cmdlets.LS
                 request.Origin.RegionName = requestOrigin_origin_RegionName;
                 requestOriginIsNull = false;
             }
+            System.Int32? requestOrigin_origin_ResponseTimeout = null;
+            if (cmdletContext.Origin_ResponseTimeout != null)
+            {
+                requestOrigin_origin_ResponseTimeout = cmdletContext.Origin_ResponseTimeout.Value;
+            }
+            if (requestOrigin_origin_ResponseTimeout != null)
+            {
+                request.Origin.ResponseTimeout = requestOrigin_origin_ResponseTimeout.Value;
+                requestOriginIsNull = false;
+            }
              // determine if request.Origin should be set to null
             if (requestOriginIsNull)
             {
@@ -679,6 +737,10 @@ namespace Amazon.PowerShell.Cmdlets.LS
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
+            }
+            if (cmdletContext.ViewerMinimumTlsProtocolVersion != null)
+            {
+                request.ViewerMinimumTlsProtocolVersion = cmdletContext.ViewerMinimumTlsProtocolVersion;
             }
             
             CmdletOutput output;
@@ -718,13 +780,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "CreateDistribution");
             try
             {
-                #if DESKTOP
-                return client.CreateDistribution(request);
-                #elif CORECLR
-                return client.CreateDistributionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDistributionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -754,13 +810,16 @@ namespace Amazon.PowerShell.Cmdlets.LS
             public List<System.String> ForwardedQueryStrings_QueryStringsAllowList { get; set; }
             public System.Int64? CacheBehaviorSettings_MaximumTTL { get; set; }
             public System.Int64? CacheBehaviorSettings_MinimumTTL { get; set; }
+            public System.String CertificateName { get; set; }
             public Amazon.Lightsail.BehaviorEnum DefaultCacheBehavior_Behavior { get; set; }
             public System.String DistributionName { get; set; }
             public Amazon.Lightsail.IpAddressType IpAddressType { get; set; }
             public System.String Origin_Name { get; set; }
             public Amazon.Lightsail.OriginProtocolPolicyEnum Origin_ProtocolPolicy { get; set; }
             public Amazon.Lightsail.RegionName Origin_RegionName { get; set; }
+            public System.Int32? Origin_ResponseTimeout { get; set; }
             public List<Amazon.Lightsail.Model.Tag> Tag { get; set; }
+            public Amazon.Lightsail.ViewerMinimumTlsProtocolVersionEnum ViewerMinimumTlsProtocolVersion { get; set; }
             public System.Func<Amazon.Lightsail.Model.CreateDistributionResponse, NewLSDistributionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
@@ -32,7 +34,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
     /// tags to categorize and track all your ElastiCache resources, with the exception of
     /// global replication group. When you add or remove tags on replication groups, those
     /// actions will be replicated to all nodes in the replication group. For more information,
-    /// see <a href="http://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/IAM.ResourceLevelPermissions.html">Resource-level
+    /// see <a href="http://docs.aws.amazon.com/AmazonElastiCache/latest/dg/IAM.ResourceLevelPermissions.html">Resource-level
     /// permissions</a>.
     /// 
     ///  
@@ -43,7 +45,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
     /// categories (such as cost centers, application names, or owners) to organize your costs
     /// across multiple services.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/Tagging.html">Using
+    /// For more information, see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/Tagging.html">Using
     /// Cost Allocation Tags in Amazon ElastiCache</a> in the <i>ElastiCache User Guide</i>.
     /// </para>
     /// </summary>
@@ -52,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
     [AWSCmdlet("Calls the Amazon ElastiCache AddTagsToResource API operation.", Operation = new[] {"AddTagsToResource"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.AddTagsToResourceResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.Tag or Amazon.ElastiCache.Model.AddTagsToResourceResponse",
         "This cmdlet returns a collection of Amazon.ElastiCache.Model.Tag objects.",
-        "The service call response (type Amazon.ElastiCache.Model.AddTagsToResourceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.AddTagsToResourceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class AddECTagCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceName
         /// <summary>
@@ -83,7 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>A list of tags to be added to this resource. A tag is a key-value pair. A tag key
-        /// must be accompanied by a tag value, although null is accepted.</para>
+        /// must be accompanied by a tag value, although null is accepted.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,16 +116,6 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "TagList";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -129,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceName), MyInvocation.BoundParameters);
@@ -145,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.AddTagsToResourceResponse, AddECTagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceName = this.ResourceName;
             #if MODULAR
             if (this.ResourceName == null && ParameterWasBound(nameof(this.ResourceName)))
@@ -239,13 +230,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "AddTagsToResource");
             try
             {
-                #if DESKTOP
-                return client.AddTagsToResource(request);
-                #elif CORECLR
-                return client.AddTagsToResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AddTagsToResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

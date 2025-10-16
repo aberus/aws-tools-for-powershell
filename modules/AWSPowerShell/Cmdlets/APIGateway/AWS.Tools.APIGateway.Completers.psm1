@@ -80,6 +80,13 @@ $AG_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.APIGateway.AccessAssociationSourceType
+        "New-AGDomainNameAccessAssociation/AccessAssociationSourceType"
+        {
+            $v = "VPCE"
+            break
+        }
+
         # Amazon.APIGateway.ApiKeysFormat
         "Import-AGApiKey/Format"
         {
@@ -157,6 +164,16 @@ $AG_Completers = {
             break
         }
 
+        # Amazon.APIGateway.IpAddressType
+        {
+            ($_ -eq "New-AGDomainName/EndpointConfiguration_IpAddressType") -Or
+            ($_ -eq "New-AGRestApi/EndpointConfiguration_IpAddressType")
+        }
+        {
+            $v = "dualstack","ipv4"
+            break
+        }
+
         # Amazon.APIGateway.LocationStatusType
         "Get-AGDocumentationPartList/LocationStatus"
         {
@@ -181,6 +198,23 @@ $AG_Completers = {
             break
         }
 
+        # Amazon.APIGateway.ResourceOwner
+        {
+            ($_ -eq "Get-AGDomainNameAccessAssociation/ResourceOwner") -Or
+            ($_ -eq "Get-AGDomainNameList/ResourceOwner")
+        }
+        {
+            $v = "OTHER_ACCOUNTS","SELF"
+            break
+        }
+
+        # Amazon.APIGateway.RoutingMode
+        "New-AGDomainName/RoutingMode"
+        {
+            $v = "BASE_PATH_MAPPING_ONLY","ROUTING_RULE_ONLY","ROUTING_RULE_THEN_BASE_PATH_MAPPING"
+            break
+        }
+
         # Amazon.APIGateway.SecurityPolicy
         "New-AGDomainName/SecurityPolicy"
         {
@@ -197,16 +231,20 @@ $AG_Completers = {
 }
 
 $AG_map = @{
+    "AccessAssociationSourceType"=@("New-AGDomainNameAccessAssociation")
     "ApiKeySource"=@("New-AGRestApi")
     "CacheClusterSize"=@("New-AGDeployment","New-AGStage")
     "ConnectionType"=@("Write-AGIntegration")
     "ContentHandling"=@("Write-AGIntegration","Write-AGIntegrationResponse")
+    "EndpointConfiguration_IpAddressType"=@("New-AGDomainName","New-AGRestApi")
     "Format"=@("Import-AGApiKey")
     "Location_Type"=@("New-AGDocumentationPart")
     "LocationStatus"=@("Get-AGDocumentationPartList")
     "Mode"=@("Import-AGDocumentationPartList","Write-AGRestApi")
     "Quota_Period"=@("New-AGUsagePlan")
+    "ResourceOwner"=@("Get-AGDomainNameAccessAssociation","Get-AGDomainNameList")
     "ResponseType"=@("Get-AGGatewayResponse","Remove-AGGatewayResponse","Update-AGGatewayResponse","Write-AGGatewayResponse")
+    "RoutingMode"=@("New-AGDomainName")
     "SecurityPolicy"=@("New-AGDomainName")
     "Type"=@("Get-AGDocumentationPartList","New-AGAuthorizer","Write-AGIntegration")
 }
@@ -268,6 +306,7 @@ $AG_SelectMap = @{
                "New-AGDocumentationPart",
                "New-AGDocumentationVersion",
                "New-AGDomainName",
+               "New-AGDomainNameAccessAssociation",
                "New-AGModel",
                "New-AGRequestValidator",
                "New-AGResource",
@@ -284,6 +323,7 @@ $AG_SelectMap = @{
                "Remove-AGDocumentationPart",
                "Remove-AGDocumentationVersion",
                "Remove-AGDomainName",
+               "Remove-AGDomainNameAccessAssociation",
                "Remove-AGGatewayResponse",
                "Remove-AGIntegration",
                "Remove-AGIntegrationResponse",
@@ -316,6 +356,7 @@ $AG_SelectMap = @{
                "Get-AGDocumentationVersion",
                "Get-AGDocumentationVersionList",
                "Get-AGDomainName",
+               "Get-AGDomainNameAccessAssociation",
                "Get-AGDomainNameList",
                "Get-AGExport",
                "Get-AGGatewayResponse",
@@ -355,6 +396,7 @@ $AG_SelectMap = @{
                "Write-AGMethod",
                "Write-AGMethodResponse",
                "Write-AGRestApi",
+               "Disable-AGDomainNameAccessAssociation",
                "Add-AGResourceTag",
                "Test-AGInvokeAuthorizer",
                "Test-AGInvokeMethod",

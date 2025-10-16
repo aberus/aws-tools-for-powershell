@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeGuruReviewer;
 using Amazon.CodeGuruReviewer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGR
 {
     /// <summary>
@@ -40,17 +42,22 @@ namespace Amazon.PowerShell.Cmdlets.CGR
     [AWSCmdlet("Calls the Amazon CodeGuru Reviewer ListRepositoryAssociations API operation.", Operation = new[] {"ListRepositoryAssociations"}, SelectReturnType = typeof(Amazon.CodeGuruReviewer.Model.ListRepositoryAssociationsResponse))]
     [AWSCmdletOutput("Amazon.CodeGuruReviewer.Model.RepositoryAssociationSummary or Amazon.CodeGuruReviewer.Model.ListRepositoryAssociationsResponse",
         "This cmdlet returns a collection of Amazon.CodeGuruReviewer.Model.RepositoryAssociationSummary objects.",
-        "The service call response (type Amazon.CodeGuruReviewer.Model.ListRepositoryAssociationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeGuruReviewer.Model.ListRepositoryAssociationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGRRepositoryAssociationListCmdlet : AmazonCodeGuruReviewerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>List of repository names to use as a filter.</para>
+        /// <para>List of repository names to use as a filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -64,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         /// <para>List of owners to use as a filter. For Amazon Web Services CodeCommit, it is the name
         /// of the CodeCommit account that was used to associate the repository. For other repository
         /// source providers, such as Bitbucket and GitHub Enterprise Server, this is name of
-        /// the account that was used to associate the repository. </para>
+        /// the account that was used to associate the repository. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,7 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         #region Parameter ProviderType
         /// <summary>
         /// <para>
-        /// <para>List of provider types to use as a filter.</para>
+        /// <para>List of provider types to use as a filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         /// code in it later. You can control access to code reviews created in anassociated repository
         /// with tags after it has been disassociated. For more information, see <a href="https://docs.aws.amazon.com/codeguru/latest/reviewer-ug/auth-and-access-control-using-tags.html">Using
         /// tags to control access to associated repositories</a> in the <i>Amazon CodeGuru Reviewer
-        /// User Guide</i>.</para></li></ul>
+        /// User Guide</i>.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +152,7 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,9 +180,13 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -294,13 +317,7 @@ namespace Amazon.PowerShell.Cmdlets.CGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CodeGuru Reviewer", "ListRepositoryAssociations");
             try
             {
-                #if DESKTOP
-                return client.ListRepositoryAssociations(request);
-                #elif CORECLR
-                return client.ListRepositoryAssociationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRepositoryAssociationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

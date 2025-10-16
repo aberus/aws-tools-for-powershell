@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -45,8 +47,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// pass, the overall status of the volume is <c>ok</c>. If the check fails, the overall
     /// status is <c>impaired</c>. If the status is <c>insufficient-data</c>, then the checks
     /// might still be taking place on your volume at the time. We recommend that you retry
-    /// the request. For more information about volume status, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/monitoring-volume-status.html">Monitor
-    /// the status of your volumes</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// the request. For more information about volume status, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/monitoring-volume-status.html">Monitor
+    /// the status of your volumes</a> in the <i>Amazon EBS User Guide</i>.
     /// </para><para><i>Events</i>: Reflect the cause of a volume status and might require you to take
     /// action. For example, if your volume returns an <c>impaired</c> status, then the volume
     /// event might be <c>potential-data-inconsistency</c>. This means that your volume has
@@ -55,25 +57,42 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// </para><para><i>Actions</i>: Reflect the actions you might have to take in response to an event.
     /// For example, if the status of the volume is <c>impaired</c> and the volume event shows
     /// <c>potential-data-inconsistency</c>, then the action shows <c>enable-volume-io</c>.
-    /// This means that you may want to enable the I/O operations for the volume by calling
-    /// the <a>EnableVolumeIO</a> action and then check the volume for data consistency.
+    /// This means that you may want to enable the I/O operations for the volume and then
+    /// check the volume for data consistency. For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/work_volumes_impaired.html">Work
+    /// with an impaired EBS volume</a>.
     /// </para><para>
     /// Volume status is based on the volume status checks, and does not reflect the volume
     /// state. Therefore, volume status does not indicate volumes in the <c>error</c> state
     /// (for example, when a volume is incapable of accepting I/O.)
-    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// </para><note><para>
+    /// The order of the elements in the response, including those within nested structures,
+    /// might vary. Applications should not assume the elements appear in a particular order.
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2VolumeStatus")]
     [OutputType("Amazon.EC2.Model.VolumeStatusItem")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeVolumeStatus API operation.", Operation = new[] {"DescribeVolumeStatus"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeVolumeStatusResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.VolumeStatusItem or Amazon.EC2.Model.DescribeVolumeStatusResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.VolumeStatusItem objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeVolumeStatusResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeVolumeStatusResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2VolumeStatusCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -84,7 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// | <c>io-performance</c>).</para></li><li><para><c>volume-status.details-status</c> - The status of <c>volume-status.details-name</c>
         /// (for <c>io-enabled</c>: <c>passed</c> | <c>failed</c>; for <c>io-performance</c>:
         /// <c>normal</c> | <c>degraded</c> | <c>severely-degraded</c> | <c>stalled</c>).</para></li><li><para><c>volume-status.status</c> - The status of the volume (<c>ok</c> | <c>impaired</c>
-        /// | <c>warning</c> | <c>insufficient-data</c>).</para></li></ul>
+        /// | <c>warning</c> | <c>insufficient-data</c>).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -95,7 +118,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter VolumeId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the volumes.</para><para>Default: Describes all your volumes.</para>
+        /// <para>The IDs of the volumes.</para><para>Default: Describes all your volumes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -107,10 +134,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The maximum number of items to return for this request. To get the next page of items,
-        /// make another request with the token returned in the output. This value can be between
-        /// 5 and 1,000; if the value is larger than 1,000, only 1,000 results are returned. If
-        /// this parameter is not used, then all items are returned. You cannot specify this parameter
-        /// and the volume IDs parameter in the same request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination">Pagination</a>.</para>
+        /// make another request with the token returned in the output. For more information,
+        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination">Pagination</a>.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
@@ -131,7 +156,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,16 +174,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "VolumeStatuses";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VolumeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -169,9 +184,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -179,21 +198,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeVolumeStatusResponse, GetEC2VolumeStatusCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VolumeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -227,13 +237,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeVolumeStatusRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -297,10 +309,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeVolumeStatusRequest();
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -349,7 +365,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.VolumeStatuses.Count;
+                    int _receivedThisCall = response.VolumeStatuses?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -398,13 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeVolumeStatus");
             try
             {
-                #if DESKTOP
-                return client.DescribeVolumeStatus(request);
-                #elif CORECLR
-                return client.DescribeVolumeStatusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeVolumeStatusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -421,6 +431,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }

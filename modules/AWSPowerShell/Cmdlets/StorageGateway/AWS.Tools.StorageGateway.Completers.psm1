@@ -80,6 +80,13 @@ $SG_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.StorageGateway.AutomaticUpdatePolicy
+        "Update-SGMaintenanceStartTime/SoftwareUpdatePreferences_AutomaticUpdatePolicy"
+        {
+            $v = "ALL_VERSIONS","EMERGENCY_VERSIONS_ONLY"
+            break
+        }
+
         # Amazon.StorageGateway.CaseSensitivity
         {
             ($_ -eq "New-SGSMBFileShare/CaseSensitivity") -Or
@@ -87,6 +94,18 @@ $SG_Completers = {
         }
         {
             $v = "CaseSensitive","ClientSpecified"
+            break
+        }
+
+        # Amazon.StorageGateway.EncryptionType
+        {
+            ($_ -eq "New-SGNFSFileShare/EncryptionType") -Or
+            ($_ -eq "New-SGSMBFileShare/EncryptionType") -Or
+            ($_ -eq "Update-SGNFSFileShare/EncryptionType") -Or
+            ($_ -eq "Update-SGSMBFileShare/EncryptionType")
+        }
+        {
+            $v = "DsseKms","SseKms","SseS3"
             break
         }
 
@@ -119,7 +138,7 @@ $SG_Completers = {
         # Amazon.StorageGateway.SMBSecurityStrategy
         "Update-SGSMBSecurityStrategy/SMBSecurityStrategy"
         {
-            $v = "ClientSpecified","MandatoryEncryption","MandatorySigning"
+            $v = "ClientSpecified","MandatoryEncryption","MandatoryEncryptionNoAes128","MandatorySigning"
             break
         }
 
@@ -140,10 +159,12 @@ $SG_Completers = {
 
 $SG_map = @{
     "CaseSensitivity"=@("New-SGSMBFileShare","Update-SGSMBFileShare")
+    "EncryptionType"=@("New-SGNFSFileShare","New-SGSMBFileShare","Update-SGNFSFileShare","Update-SGSMBFileShare")
     "GatewayCapacity"=@("Update-SGGatewayInformation")
     "ObjectACL"=@("New-SGNFSFileShare","New-SGSMBFileShare","Update-SGNFSFileShare","Update-SGSMBFileShare")
     "RetentionLockType"=@("New-SGTapePool")
     "SMBSecurityStrategy"=@("Update-SGSMBSecurityStrategy")
+    "SoftwareUpdatePreferences_AutomaticUpdatePolicy"=@("Update-SGMaintenanceStartTime")
     "StorageClass"=@("New-SGTapePool")
 }
 
@@ -206,6 +227,7 @@ $SG_SelectMap = @{
                "New-SGSGFileSystemAssociation",
                "Mount-SGVolume",
                "Stop-SGArchival",
+               "Stop-SGCacheReport",
                "Stop-SGRetrieval",
                "New-SGCachediSCSIVolume",
                "New-SGNFSFileShare",
@@ -218,6 +240,7 @@ $SG_SelectMap = @{
                "New-SGTapeWithBarcode",
                "Remove-SGAutomaticTapeCreationPolicy",
                "Remove-SGBandwidthRateLimit",
+               "Remove-SGCacheReport",
                "Remove-SGChapCredential",
                "Remove-SGFileShare",
                "Remove-SGGateway",
@@ -231,6 +254,7 @@ $SG_SelectMap = @{
                "Get-SGBandwidthRateLimitSchedule",
                "Get-SGCache",
                "Get-SGCachediSCSIVolume",
+               "Get-SGCacheReport",
                "Get-SGChapCredential",
                "Get-SGSGFileSystemAssociation",
                "Get-SGGatewayInformation",
@@ -249,8 +273,10 @@ $SG_SelectMap = @{
                "Dismount-SGVolume",
                "Disable-SGGateway",
                "Remove-SGSGFileSystemAssociation",
+               "Invoke-SGEvictFilesFailingUpload",
                "Join-SGDomain",
                "Get-SGAutomaticTapeCreationPolicy",
+               "Get-SGCacheReportList",
                "Get-SGFileShareList",
                "Get-SGSGFileSystemAssociationList",
                "Get-SGGateway",
@@ -271,6 +297,7 @@ $SG_SelectMap = @{
                "Set-SGSMBGuestPassword",
                "Stop-SGGateway",
                "Start-SGAvailabilityMonitorTest",
+               "Start-SGCacheReport",
                "Start-SGGateway",
                "Update-SGAutomaticTapeCreationPolicy",
                "Update-SGBandwidthRateLimit",

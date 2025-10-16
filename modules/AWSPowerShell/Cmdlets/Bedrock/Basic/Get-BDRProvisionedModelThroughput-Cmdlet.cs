@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Bedrock;
 using Amazon.Bedrock.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BDR
 {
     /// <summary>
-    /// Get details for a provisioned throughput. For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Provisioned
-    /// throughput</a> in the Bedrock User Guide.
+    /// Returns details for a Provisioned Throughput. For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prov-throughput.html">Provisioned
+    /// Throughput</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+    /// Bedrock User Guide</a>.
     /// </summary>
     [Cmdlet("Get", "BDRProvisionedModelThroughput")]
     [OutputType("Amazon.Bedrock.Model.GetProvisionedModelThroughputResponse")]
     [AWSCmdlet("Calls the Amazon Bedrock GetProvisionedModelThroughput API operation.", Operation = new[] {"GetProvisionedModelThroughput"}, SelectReturnType = typeof(Amazon.Bedrock.Model.GetProvisionedModelThroughputResponse))]
     [AWSCmdletOutput("Amazon.Bedrock.Model.GetProvisionedModelThroughputResponse",
-        "This cmdlet returns an Amazon.Bedrock.Model.GetProvisionedModelThroughputResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Bedrock.Model.GetProvisionedModelThroughputResponse object containing multiple properties."
     )]
     public partial class GetBDRProvisionedModelThroughputCmdlet : AmazonBedrockClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ProvisionedModelId
         /// <summary>
         /// <para>
-        /// <para>The ARN or name of the provisioned throughput.</para>
+        /// <para>The Amazon Resource Name (ARN) or name of the Provisioned Throughput.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -70,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProvisionedModelId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProvisionedModelId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProvisionedModelId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Bedrock.Model.GetProvisionedModelThroughputResponse, GetBDRProvisionedModelThroughputCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProvisionedModelId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ProvisionedModelId = this.ProvisionedModelId;
             #if MODULAR
             if (this.ProvisionedModelId == null && ParameterWasBound(nameof(this.ProvisionedModelId)))
@@ -170,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Bedrock", "GetProvisionedModelThroughput");
             try
             {
-                #if DESKTOP
-                return client.GetProvisionedModelThroughput(request);
-                #elif CORECLR
-                return client.GetProvisionedModelThroughputAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetProvisionedModelThroughputAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

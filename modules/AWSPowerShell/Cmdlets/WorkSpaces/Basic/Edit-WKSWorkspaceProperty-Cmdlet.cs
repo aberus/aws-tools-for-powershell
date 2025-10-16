@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     [AWSCmdlet("Calls the Amazon WorkSpaces ModifyWorkspaceProperties API operation.", Operation = new[] {"ModifyWorkspaceProperties"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.ModifyWorkspacePropertiesResponse))]
     [AWSCmdletOutput("None or Amazon.WorkSpaces.Model.ModifyWorkspacePropertiesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkSpaces.Model.ModifyWorkspacePropertiesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WorkSpaces.Model.ModifyWorkspacePropertiesResponse) be returned by specifying '-Select *'."
     )]
     public partial class EditWKSWorkspacePropertyCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WorkspaceProperties_ComputeTypeName
         /// <summary>
@@ -73,6 +76,19 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public Amazon.WorkSpaces.DataReplication DataReplication { get; set; }
         #endregion
         
+        #region Parameter GlobalAccelerator_Mode
+        /// <summary>
+        /// <para>
+        /// <para>Indicates if Global Accelerator for WorkSpaces is enabled, disabled, or the same mode
+        /// as the associated directory.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WorkspaceProperties_GlobalAccelerator_Mode")]
+        [AWSConstantClassSource("Amazon.WorkSpaces.AGAModeForWorkSpaceEnum")]
+        public Amazon.WorkSpaces.AGAModeForWorkSpaceEnum GlobalAccelerator_Mode { get; set; }
+        #endregion
+        
         #region Parameter WorkspaceProperties_OperatingSystemName
         /// <summary>
         /// <para>
@@ -84,12 +100,29 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public Amazon.WorkSpaces.OperatingSystemName WorkspaceProperties_OperatingSystemName { get; set; }
         #endregion
         
+        #region Parameter GlobalAccelerator_PreferredProtocol
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the preferred protocol for Global Accelerator.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WorkspaceProperties_GlobalAccelerator_PreferredProtocol")]
+        [AWSConstantClassSource("Amazon.WorkSpaces.AGAPreferredProtocolForWorkSpace")]
+        public Amazon.WorkSpaces.AGAPreferredProtocolForWorkSpace GlobalAccelerator_PreferredProtocol { get; set; }
+        #endregion
+        
         #region Parameter WorkspaceProperties_Protocol
         /// <summary>
         /// <para>
         /// <para>The protocol. For more information, see <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/amazon-workspaces-protocols.html">
-        /// Protocols for Amazon WorkSpaces</a>.</para><note><ul><li><para>Only available for WorkSpaces created with PCoIP bundles.</para></li><li><para>The <c>Protocols</c> property is case sensitive. Ensure you use <c>PCOIP</c> or <c>WSP</c>.</para></li><li><para>Unavailable for Windows 7 WorkSpaces and WorkSpaces using GPU-based bundles (Graphics,
-        /// GraphicsPro, Graphics.g4dn, and GraphicsPro.g4dn).</para></li></ul></note>
+        /// Protocols for Amazon WorkSpaces</a>.</para><note><ul><li><para>Only available for WorkSpaces created with PCoIP bundles.</para></li><li><para>The <c>Protocols</c> property is case sensitive. Ensure you use <c>PCOIP</c> or <c>DCV</c>
+        /// (formerly WSP).</para></li><li><para>Unavailable for Windows 7 WorkSpaces and WorkSpaces using GPU-based bundles (Graphics,
+        /// GraphicsPro, Graphics.g4dn, and GraphicsPro.g4dn).</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,7 +148,9 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         /// <para>The running mode. For more information, see <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/running-mode.html">Manage
         /// the WorkSpace Running Mode</a>.</para><note><para>The <c>MANUAL</c> value is only supported by Amazon WorkSpaces Core. Contact your
         /// account team to be allow-listed to use this value. For more information, see <a href="http://aws.amazon.com/workspaces/core/">Amazon
-        /// WorkSpaces Core</a>.</para></note>
+        /// WorkSpaces Core</a>.</para></note><para>Review your running mode to ensure you are using one that is optimal for your needs
+        /// and budget. For more information on switching running modes, see <a href="http://aws.amazon.com/workspaces-family/workspaces/faqs/#:~:text=Can%20I%20switch%20between%20hourly%20and%20monthly%20billing%20on%20WorkSpaces%20Personal%3F">
+        /// Can I switch between hourly and monthly billing?</a></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,16 +209,6 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkspaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkspaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkspaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -194,9 +219,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.WorkspaceId), MyInvocation.BoundParameters);
@@ -210,21 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpaces.Model.ModifyWorkspacePropertiesResponse, EditWKSWorkspacePropertyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkspaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DataReplication = this.DataReplication;
             context.WorkspaceId = this.WorkspaceId;
             #if MODULAR
@@ -234,6 +253,8 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             }
             #endif
             context.WorkspaceProperties_ComputeTypeName = this.WorkspaceProperties_ComputeTypeName;
+            context.GlobalAccelerator_Mode = this.GlobalAccelerator_Mode;
+            context.GlobalAccelerator_PreferredProtocol = this.GlobalAccelerator_PreferredProtocol;
             context.WorkspaceProperties_OperatingSystemName = this.WorkspaceProperties_OperatingSystemName;
             if (this.WorkspaceProperties_Protocol != null)
             {
@@ -341,6 +362,41 @@ namespace Amazon.PowerShell.Cmdlets.WKS
                 request.WorkspaceProperties.UserVolumeSizeGib = requestWorkspaceProperties_workspaceProperties_UserVolumeSizeGib.Value;
                 requestWorkspacePropertiesIsNull = false;
             }
+            Amazon.WorkSpaces.Model.GlobalAcceleratorForWorkSpace requestWorkspaceProperties_workspaceProperties_GlobalAccelerator = null;
+            
+             // populate GlobalAccelerator
+            var requestWorkspaceProperties_workspaceProperties_GlobalAcceleratorIsNull = true;
+            requestWorkspaceProperties_workspaceProperties_GlobalAccelerator = new Amazon.WorkSpaces.Model.GlobalAcceleratorForWorkSpace();
+            Amazon.WorkSpaces.AGAModeForWorkSpaceEnum requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_Mode = null;
+            if (cmdletContext.GlobalAccelerator_Mode != null)
+            {
+                requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_Mode = cmdletContext.GlobalAccelerator_Mode;
+            }
+            if (requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_Mode != null)
+            {
+                requestWorkspaceProperties_workspaceProperties_GlobalAccelerator.Mode = requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_Mode;
+                requestWorkspaceProperties_workspaceProperties_GlobalAcceleratorIsNull = false;
+            }
+            Amazon.WorkSpaces.AGAPreferredProtocolForWorkSpace requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_PreferredProtocol = null;
+            if (cmdletContext.GlobalAccelerator_PreferredProtocol != null)
+            {
+                requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_PreferredProtocol = cmdletContext.GlobalAccelerator_PreferredProtocol;
+            }
+            if (requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_PreferredProtocol != null)
+            {
+                requestWorkspaceProperties_workspaceProperties_GlobalAccelerator.PreferredProtocol = requestWorkspaceProperties_workspaceProperties_GlobalAccelerator_globalAccelerator_PreferredProtocol;
+                requestWorkspaceProperties_workspaceProperties_GlobalAcceleratorIsNull = false;
+            }
+             // determine if requestWorkspaceProperties_workspaceProperties_GlobalAccelerator should be set to null
+            if (requestWorkspaceProperties_workspaceProperties_GlobalAcceleratorIsNull)
+            {
+                requestWorkspaceProperties_workspaceProperties_GlobalAccelerator = null;
+            }
+            if (requestWorkspaceProperties_workspaceProperties_GlobalAccelerator != null)
+            {
+                request.WorkspaceProperties.GlobalAccelerator = requestWorkspaceProperties_workspaceProperties_GlobalAccelerator;
+                requestWorkspacePropertiesIsNull = false;
+            }
              // determine if request.WorkspaceProperties should be set to null
             if (requestWorkspacePropertiesIsNull)
             {
@@ -384,13 +440,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "ModifyWorkspaceProperties");
             try
             {
-                #if DESKTOP
-                return client.ModifyWorkspaceProperties(request);
-                #elif CORECLR
-                return client.ModifyWorkspacePropertiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyWorkspacePropertiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -410,6 +460,8 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             public Amazon.WorkSpaces.DataReplication DataReplication { get; set; }
             public System.String WorkspaceId { get; set; }
             public Amazon.WorkSpaces.Compute WorkspaceProperties_ComputeTypeName { get; set; }
+            public Amazon.WorkSpaces.AGAModeForWorkSpaceEnum GlobalAccelerator_Mode { get; set; }
+            public Amazon.WorkSpaces.AGAPreferredProtocolForWorkSpace GlobalAccelerator_PreferredProtocol { get; set; }
             public Amazon.WorkSpaces.OperatingSystemName WorkspaceProperties_OperatingSystemName { get; set; }
             public List<System.String> WorkspaceProperties_Protocol { get; set; }
             public System.Int32? WorkspaceProperties_RootVolumeSizeGib { get; set; }

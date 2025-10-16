@@ -73,8 +73,6 @@ namespace AWSPowerShellGenerator.Generators
 
         public Type SdkBaseRequestType { get; set; }
 
-        public Type AWSSignerTypeAttributeType { get; set; }
-
         public string CmdletsCsprojFragment
         {
             get
@@ -197,17 +195,26 @@ namespace AWSPowerShellGenerator.Generators
             var configurationsFolder = Path.Combine(Options.RootPath, ConfigurationFolderName);
             var serviceConfigurationsFolder = Path.Combine(configurationsFolder, ServiceConfigFoldername);
 
+            var newServiceFiles = GetNewServiceConfigFiles(Options.RootPath, serviceConfigurationsFolder);
+
             XmlOverridesMerger.ApplyOverrides(Options.RootPath, serviceConfigurationsFolder);
-
+            
             ModelCollection = ConfigModelCollection.LoadAllConfigs(configurationsFolder, Options.Verbose);
+            
+            // Delete new service config files as ApplyOverrides persists the overrides to the actual files even in GenerateReportOnly.
+            // It is safe to persist overrides for existing services when GenerateReportOnly is true but not for new services
+            if (Options.GenerateReportOnly)
+            {
+                DeleteFiles(newServiceFiles);
+            }
 
-            SourceArtifacts = new GenerationSources(OutputFolder, SdkAssembliesFolder, Options.VersionNumber);
+            SourceArtifacts = new GenerationSources(OutputFolder, SdkAssembliesFolder, Options.VersionNumber, Options.PreviewLabel);
             LoadCoreSDKRuntimeMaterials();
             LoadSpecialServiceAssemblies();
 
             CheckForServicePrefixDuplication();
 
-            if (!Options.SkipCmdletGeneration)
+            if (!Options.SkipCmdletGeneration || Options.GenerateReportOnly)
             {
                 //We clean and setup service folders, some services share a folder, project and module, so we use distinct
                 foreach (var project in ModelCollection.ConfigModels.Values
@@ -236,8 +243,9 @@ namespace AWSPowerShellGenerator.Generators
                     Logger.Log("Processing service: {0}", CurrentModel.ServiceName);
 
                     LoadCurrentService(CurrentModel);
+                    DocumentationUtils.CacheMemberDocumentationSummary(CurrentServiceNDoc);
 
-                    if (!Options.SkipCmdletGeneration)
+                    if (!Options.SkipCmdletGeneration || Options.GenerateReportOnly)
                     {
                         GenerateClientAndCmdlets();
                         // if the service contains any hand-maintained cmdlets, scan them to update the
@@ -255,12 +263,23 @@ namespace AWSPowerShellGenerator.Generators
                 }
             }
 
-            var allFoundSdkAssemblies = GenerationSources.SDKFindAssemblyFilenames(SdkAssembliesFolder, Directory.EnumerateFiles);
-            VerifyAllAssembliesHaveConfiguration(SdkVersionsUtils.ReadSdkVersionFile(SdkAssembliesFolder), ModelCollection, allFoundSdkAssemblies);
+            if (!Options.GenerateReportOnly)
+            {
+                var allFoundSdkAssemblies =
+                    GenerationSources.SDKFindAssemblyFilenames(SdkAssembliesFolder, Directory.EnumerateFiles);
+                VerifyAllAssembliesHaveConfiguration(SdkVersionsUtils.ReadSdkVersionFile(SdkAssembliesFolder),
+                    ModelCollection, allFoundSdkAssemblies);
+            }
 
-            if (!Options.SkipCmdletGeneration)
+            if (Options.GenerateReportOnly)
+            {
+                WriteConfigurationChanges();
+            }
+            else if (!Options.SkipCmdletGeneration)
             {
                 ScanAdvancedCmdletsForCommonModule();
+
+                SourceArtifacts.SetAdditionalServiceAssemblies(ModelCollection);
 
                 SourceArtifacts.WriteLegacyAliasesFile(LegacyAliases, ModelCollection.CommonModuleAliases);
                 SourceArtifacts.WriteMonolithicCompletionScriptsFile(GetArgumentCompletionScriptContent());
@@ -290,6 +309,15 @@ namespace AWSPowerShellGenerator.Generators
 
             foreach (var configModel in ModelCollection.ConfigModels.Values)
             {
+                // if Options.GenerateReportOnly, clear AnalysisErrors at model level and ServiceOperations Level
+                if (Options.GenerateReportOnly)
+                {
+                    configModel.AnalysisErrors.Clear();
+                    foreach (var operation in configModel.ServiceOperationsList)
+                    {
+                        operation.AnalysisErrors.Clear();
+                    }
+                }
                 foreach (var error in configModel.AnalysisErrors.Concat(
                       configModel.ServiceOperationsList
                           .OrderBy(so => so.MethodName)
@@ -307,7 +335,7 @@ namespace AWSPowerShellGenerator.Generators
         /// </summary>
         /// <param name="sdkAssembliesFolder">location of the SDK assemblies to generate against</param>
         /// <param name="modelCollection">PowerShell configuration, assumes ConfigModels and IncludeLibrariesList have been fully instantiated</param>
-        /// <param name="allSdkAssemblyFilenames">A list of all the SDK assembly filenames in the net45 and netstandard2.0 folders</param>
+        /// <param name="allSdkAssemblyFilenames">A list of all the SDK assembly filenames in the net472 and netstandard2.0 folders</param>
         public static void VerifyAllAssembliesHaveConfiguration(JObject sdkVersionsJson, 
             ConfigModelCollection modelCollection, 
             IEnumerable<string> allSdkAssemblyFilenames)
@@ -359,7 +387,7 @@ namespace AWSPowerShellGenerator.Generators
 
         private void WriteConfigurationChanges()
         {
-            XmlReportWriter.SerializeReport(Options.RootPath, ModelCollection.ConfigModels.Values);
+            XmlReportWriter.SerializeReport(Options.RootPath, ModelCollection.ConfigModels.Values, Options.GenerateReportOnly);
         }
 
         private void CheckForServicePrefixDuplication()
@@ -432,41 +460,33 @@ namespace AWSPowerShellGenerator.Generators
                 return;
             }
 
-            string awsSignerAttributeTypeValue = null;
-            
-            if(AWSSignerTypeAttributeType != null)
-            {
-                var clientConfigTypeName = string.Format("{0}.{1}", CurrentModel.ServiceNamespace, CurrentModel.ServiceClientConfig);
-                dynamic awsSignerTypeAttribute = CurrentServiceAssembly.GetType(clientConfigTypeName)
-                    .GetCustomAttributes(AWSSignerTypeAttributeType, false).FirstOrDefault();
-                awsSignerAttributeTypeValue = awsSignerTypeAttribute?.SignerType;
-            }
-
             var outputRoot = Path.Combine(CmdletsOutputPath, CurrentModel.AssemblyName);
 
-            try
+            if (!Options.GenerateReportOnly)
             {
-                using (var sw = new StringWriter())
+                try
                 {
-                    // if the service has operations requiring anonymous access, we'll generate two clients
-                    // one for regular authenticated calls and one using anonymous credentials
-                    using (var writer = new IndentedTextWriter(sw))
+                    using (var sw = new StringWriter())
                     {
-                        CmdletServiceClientWriter.Write(writer,
-                                                        CurrentModel,
-                                                        CurrentModel.ServiceName,
-                                                        GetServiceVersion(CurrentModel.ServiceNamespace, CurrentModel.ServiceClient),
-                                                        awsSignerAttributeTypeValue);
-                    }
+                        // if the service has operations requiring anonymous access, we'll generate two clients
+                        // one for regular authenticated calls and one using anonymous credentials
+                        using (var writer = new IndentedTextWriter(sw))
+                        {
+                            CmdletServiceClientWriter.Write(writer,
+                                                            CurrentModel,
+                                                            CurrentModel.ServiceName,
+                                                            GetServiceVersion(CurrentModel.ServiceNamespace, CurrentModel.ServiceClient));
+                        }
 
-                    var fileContents = sw.ToString();
-                    var fileName = CurrentModel.GetServiceCmdletClassName(false) + "Cmdlet.cs";
-                    File.WriteAllText(Path.Combine(outputRoot, fileName), fileContents);
+                        var fileContents = sw.ToString();
+                        var fileName = CurrentModel.GetServiceCmdletClassName(false) + "Cmdlet.cs";
+                        File.WriteAllText(Path.Combine(outputRoot, fileName), fileContents);
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                AnalysisError.ExceptionWhileWritingServiceClientCode(CurrentModel, e);
+                catch (Exception e)
+                {
+                    AnalysisError.ExceptionWhileWritingServiceClientCode(CurrentModel, e);
+                }
             }
 
             // process the methods in order to make debugging more convenient
@@ -475,7 +495,7 @@ namespace AWSPowerShellGenerator.Generators
             {
                 if (ShouldEmitMethod(method))
                 {
-                    CreateCmdlet(method, CurrentModel, awsSignerAttributeTypeValue);
+                    CreateCmdlet(method, CurrentModel);
                     CurrentOperation.Processed = true;
                 }
                 else
@@ -610,7 +630,7 @@ namespace AWSPowerShellGenerator.Generators
         /// </summary>
         /// <param name="method"></param>
         /// <param name="configModel"></param>
-        private void CreateCmdlet(MethodInfo method, ConfigModel configModel, string awsSignerAttributeTypeValue)
+        private void CreateCmdlet(MethodInfo method, ConfigModel configModel)
         {
             Logger.Log();
             Logger.Log("Analyzing method [{0}.{1}]", method.DeclaringType.FullName, method.Name);
@@ -621,6 +641,32 @@ namespace AWSPowerShellGenerator.Generators
 
             try
             {
+                // Special handling for EC2 operations with DryRun parameter:
+                // We need to set NoPipelineParameter and AnonymousShouldProcessTarget to True when not explicitly configured.
+                // This configuration can't be stored in the service config XML since the same file is used for both
+                // PowerShell v4 (where DryRun is not supported) and v5 (where DryRun is supported).
+                // Instead, we programmatically set these parameters here for v4 backward compatibility.
+                // TODO: Remove this logic once PowerShell v4 is fully deprecated.
+                if (configModel.AssemblyName.Equals("EC2", StringComparison.OrdinalIgnoreCase))
+                {    
+                    var parameters = method.GetParameters();
+                    if (parameters.Length > 0 && parameters[0].ParameterType.IsSubclassOf(SdkBaseRequestType))
+                    {
+                        var requestType = parameters[0].ParameterType;
+                        var dryRunProperty = requestType.GetProperty("DryRun");
+                        if (dryRunProperty != null)
+                        {
+                            if (string.IsNullOrEmpty(serviceOperation.PipelineParameter))
+                            {
+                                serviceOperation.NoPipelineParameter = true;
+                            }
+                            if (string.IsNullOrEmpty(serviceOperation.ShouldProcessTarget))
+                            {
+                                serviceOperation.AnonymousShouldProcessTarget = true;
+                            }
+                        }
+                    }
+                }
                 // capture the analyzer so we can serialize the config as json later
                 serviceOperation.Analyzer = new OperationAnalyzer(ModelCollection, CurrentModel, CurrentOperation, CurrentServiceNDoc);
                 serviceOperation.Analyzer.Analyze(this, method);
@@ -630,7 +676,7 @@ namespace AWSPowerShellGenerator.Generators
                 AnalysisError.ExceptionWhileAnalyzingSDKLibrary(CurrentModel, CurrentOperation, e);
             }
 
-            if (serviceOperation.AnalysisErrors.Count == 0)
+            if (serviceOperation.AnalysisErrors.Count == 0 && !Options.GenerateReportOnly)
             {
                 // set file name and location
                 var filePath = Path.Combine(configModel.AssemblyName, GeneratedCmdletsFoldername, $"{serviceOperation.SelectedVerb}-{serviceOperation.SelectedNoun}-Cmdlet.cs");
@@ -641,7 +687,7 @@ namespace AWSPowerShellGenerator.Generators
                     {
                         using (var writer = new IndentedTextWriter(sw))
                         {
-                            new CmdletSourceWriter(serviceOperation.Analyzer, Options).Write(writer, awsSignerAttributeTypeValue);
+                            new CmdletSourceWriter(serviceOperation.Analyzer, Options).Write(writer);
                         }
 
                         var fileContents = sw.ToString();
@@ -759,7 +805,6 @@ namespace AWSPowerShellGenerator.Generators
         {
             (CoreRuntimeAssembly, _, _) = SourceArtifacts.Load(CoreSDKRuntimeAssemblyName);
             SdkBaseRequestType = CoreRuntimeAssembly.GetType("Amazon.Runtime.AmazonWebServiceRequest");
-            AWSSignerTypeAttributeType = CoreRuntimeAssembly.GetType("Amazon.Runtime.Internal.AWSSignerTypeAttribute");
         }
 
         /// <summary>
@@ -773,6 +818,39 @@ namespace AWSPowerShellGenerator.Generators
             foreach (var a in ModelCollection.IncludeLibrariesList)
             {
                 SourceArtifacts.Load(a.Name, a.AddAsReference);
+            }
+        }
+        
+        private List<string> GetNewServiceConfigFiles(string rootPath, string serviceConfigurationsFolder)
+        {
+            var newServiceFiles = new List<string>();
+            var serviceOverrides = XmlOverridesMerger.ReadOverrides(rootPath, out var errorMessage);
+            
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                throw new InvalidOperationException(errorMessage);
+            }
+
+            foreach (var serviceOverride in serviceOverrides)
+            {
+                string configurationFilePath = Path.Combine(serviceConfigurationsFolder, $"{serviceOverride.Key}.xml");
+                if (!File.Exists(configurationFilePath))
+                {
+                    newServiceFiles.Add(configurationFilePath);
+                }
+            }
+            
+            return newServiceFiles;
+        }
+        
+        private void DeleteFiles(List<string> files)
+        {
+            foreach (var file in files)
+            {
+                if (File.Exists(file))
+                {
+                    File.Delete(file);
+                }
             }
         }
 

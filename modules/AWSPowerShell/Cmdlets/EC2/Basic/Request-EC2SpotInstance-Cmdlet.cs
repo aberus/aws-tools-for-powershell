@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -32,13 +34,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// 
     ///  
     /// <para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-requests.html">Spot
-    /// Instance requests</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-requests.html">Work
+    /// with Spot Instance</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><important><para>
     /// We strongly discourage using the RequestSpotInstances API because it is a legacy API
     /// with no planned investment. For options for requesting Spot Instances, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-best-practices.html#which-spot-request-method-to-use">Which
-    /// is the best Spot request method to use?</a> in the <i>Amazon EC2 User Guide for Linux
-    /// Instances</i>.
+    /// is the best Spot request method to use?</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para></important>
     /// </summary>
     [Cmdlet("Request", "EC2SpotInstance", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -46,16 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) RequestSpotInstances API operation.", Operation = new[] {"RequestSpotInstances"}, SelectReturnType = typeof(Amazon.EC2.Model.RequestSpotInstancesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.SpotInstanceRequest or Amazon.EC2.Model.RequestSpotInstancesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.SpotInstanceRequest objects.",
-        "The service call response (type Amazon.EC2.Model.RequestSpotInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.RequestSpotInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RequestEC2SpotInstanceCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LaunchSpecification_AddressingType
         /// <summary>
@@ -70,7 +68,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchSpecification_AllSecurityGroup
         /// <summary>
         /// <para>
-        /// <para>The IDs of the security groups.</para>
+        /// <para>The IDs of the security groups.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchSpecification_BlockDeviceMapping
         /// <summary>
         /// <para>
-        /// <para>The block device mapping entries.</para>
+        /// <para>The block device mapping entries.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,6 +148,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("BlockDurationMinutes")]
         public System.Int32? BlockDurationMinute { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter LaunchSpecification_EbsOptimized
@@ -266,7 +284,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The network interfaces. If you specify a network interface, you must specify subnet
-        /// IDs and security group IDs using the network interface.</para>
+        /// IDs and security group IDs using the network interface.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -287,7 +309,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchSpecification_SecurityGroup
         /// <summary>
         /// <para>
-        /// <para>One or more security group names.</para>
+        /// <para>One or more security group names.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -324,7 +350,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The key-value pair for tagging the Spot Instance request on creation. The value for
         /// <c>ResourceType</c> must be <c>spot-instances-request</c>, otherwise the Spot Instance
         /// request fails. To tag the Spot Instance request after it has been created, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html">CreateTags</a>.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -368,7 +398,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String LaunchSpecification_UserData { get; set; }
         #endregion
         
-        #region Parameter UtcValidFrom
+        #region Parameter ValidFrom
         /// <summary>
         /// <para>
         /// <para>The start date of the request. If this is a one-time request, the request becomes
@@ -379,10 +409,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcValidFrom { get; set; }
+        public System.DateTime? ValidFrom { get; set; }
         #endregion
         
-        #region Parameter UtcValidUntil
+        #region Parameter ValidUntil
         /// <summary>
         /// <para>
         /// <para>The end date of the request, in UTC format (<i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).</para><ul><li><para>For a persistent request, the request remains active until the <c>ValidUntil</c> date
@@ -392,60 +422,19 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcValidUntil { get; set; }
+        public System.DateTime? ValidUntil { get; set; }
         #endregion
         
         #region Parameter ClientToken
         /// <summary>
         /// <para>
         /// <para>Unique, case-sensitive identifier that you provide to ensure the idempotency of the
-        /// request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Run_Instance_Idempotency.html">How
-        /// to Ensure Idempotency</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.</para>
+        /// request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Run_Instance_Idempotency.html">Ensuring
+        /// idempotency in Amazon EC2 API requests</a> in the <i>Amazon EC2 User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ClientToken { get; set; }
-        #endregion
-        
-        #region Parameter ValidFrom
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use ValidFromUtc instead. Setting either ValidFrom or
-        /// ValidFromUtc results in both ValidFrom and ValidFromUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. ValidFrom
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The start date of the request. If this is a one-time request, the request becomes
-        /// active at this date and time and remains active until all instances launch, the request
-        /// expires, or the request is canceled. If the request is persistent, the request becomes
-        /// active at this date and time and remains active until it expires or is canceled.</para><para>The specified start date and time cannot be equal to the current date and time. You
-        /// must specify a start date and time that occurs after the current date and time.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcValidFrom instead.")]
-        public System.DateTime? ValidFrom { get; set; }
-        #endregion
-        
-        #region Parameter ValidUntil
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use ValidUntilUtc instead. Setting either ValidUntil or
-        /// ValidUntilUtc results in both ValidUntil and ValidUntilUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. ValidUntil
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The end date of the request, in UTC format (<i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).</para><ul><li><para>For a persistent request, the request remains active until the <c>ValidUntil</c> date
-        /// and time is reached. Otherwise, the request remains active until you cancel it. </para></li><li><para>For a one-time request, the request remains active until all instances launch, the
-        /// request is canceled, or the <c>ValidUntil</c> date and time is reached. By default,
-        /// the request is valid for 7 days from the date the request was created.</para></li></ul>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcValidUntil instead.")]
-        public System.DateTime? ValidUntil { get; set; }
         #endregion
         
         #region Parameter Select
@@ -459,16 +448,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "SpotInstanceRequests";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SpotPrice parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SpotPrice' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SpotPrice' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -479,9 +458,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SpotPrice), MyInvocation.BoundParameters);
@@ -495,24 +478,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.RequestSpotInstancesResponse, RequestEC2SpotInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SpotPrice;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AvailabilityZoneGroup = this.AvailabilityZoneGroup;
             context.BlockDurationMinute = this.BlockDurationMinute;
             context.ClientToken = this.ClientToken;
+            context.DryRun = this.DryRun;
             context.InstanceCount = this.InstanceCount;
             context.InstanceInterruptionBehavior = this.InstanceInterruptionBehavior;
             context.LaunchGroup = this.LaunchGroup;
@@ -553,14 +527,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
             }
             context.Type = this.Type;
-            context.UtcValidFrom = this.UtcValidFrom;
-            context.UtcValidUntil = this.UtcValidUntil;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ValidFrom = this.ValidFrom;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ValidUntil = this.ValidUntil;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -588,6 +556,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.InstanceCount != null)
             {
@@ -842,34 +814,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Type = cmdletContext.Type;
             }
-            if (cmdletContext.UtcValidFrom != null)
-            {
-                request.ValidFromUtc = cmdletContext.UtcValidFrom.Value;
-            }
-            if (cmdletContext.UtcValidUntil != null)
-            {
-                request.ValidUntilUtc = cmdletContext.UtcValidUntil.Value;
-            }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ValidFrom != null)
             {
-                if (cmdletContext.UtcValidFrom != null)
-                {
-                    throw new System.ArgumentException("Parameters ValidFrom and UtcValidFrom are mutually exclusive.", nameof(this.ValidFrom));
-                }
                 request.ValidFrom = cmdletContext.ValidFrom.Value;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ValidUntil != null)
             {
-                if (cmdletContext.UtcValidUntil != null)
-                {
-                    throw new System.ArgumentException("Parameters ValidUntil and UtcValidUntil are mutually exclusive.", nameof(this.ValidUntil));
-                }
                 request.ValidUntil = cmdletContext.ValidUntil.Value;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             CmdletOutput output;
             
@@ -908,13 +860,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "RequestSpotInstances");
             try
             {
-                #if DESKTOP
-                return client.RequestSpotInstances(request);
-                #elif CORECLR
-                return client.RequestSpotInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RequestSpotInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -934,6 +880,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String AvailabilityZoneGroup { get; set; }
             public System.Int32? BlockDurationMinute { get; set; }
             public System.String ClientToken { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Int32? InstanceCount { get; set; }
             public Amazon.EC2.InstanceInterruptionBehavior InstanceInterruptionBehavior { get; set; }
             public System.String LaunchGroup { get; set; }
@@ -959,11 +906,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String SpotPrice { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public Amazon.EC2.SpotInstanceType Type { get; set; }
-            public System.DateTime? UtcValidFrom { get; set; }
-            public System.DateTime? UtcValidUntil { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? ValidFrom { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? ValidUntil { get; set; }
             public System.Func<Amazon.EC2.Model.RequestSpotInstancesResponse, RequestEC2SpotInstanceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.SpotInstanceRequests;

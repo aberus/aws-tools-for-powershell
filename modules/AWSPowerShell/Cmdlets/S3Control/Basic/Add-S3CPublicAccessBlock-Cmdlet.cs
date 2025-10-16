@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -37,19 +39,24 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// Using Amazon S3 block public access</a>.
     /// </para><para>
     /// Related actions include:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_GetPublicAccessBlock.html">GetPublicAccessBlock</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeletePublicAccessBlock.html">DeletePublicAccessBlock</a></para></li></ul>
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_GetPublicAccessBlock.html">GetPublicAccessBlock</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeletePublicAccessBlock.html">DeletePublicAccessBlock</a></para></li></ul><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Add", "S3CPublicAccessBlock", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon S3 Control PutPublicAccessBlock API operation.", Operation = new[] {"PutPublicAccessBlock"}, SelectReturnType = typeof(Amazon.S3Control.Model.PutPublicAccessBlockResponse))]
     [AWSCmdletOutput("None or Amazon.S3Control.Model.PutPublicAccessBlockResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.S3Control.Model.PutPublicAccessBlockResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.S3Control.Model.PutPublicAccessBlockResponse) be returned by specifying '-Select *'."
     )]
     public partial class AddS3CPublicAccessBlockCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -112,8 +119,8 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <para>
         /// <para>Specifies whether Amazon S3 should restrict public bucket policies for buckets in
         /// this account. Setting this element to <c>TRUE</c> restricts access to buckets with
-        /// public policies to only Amazon Web Service principals and authorized users within
-        /// this account.</para><para>Enabling this setting doesn't affect previously stored bucket policies, except that
+        /// public policies to only Amazon Web Services service principals and authorized users
+        /// within this account.</para><para>Enabling this setting doesn't affect previously stored bucket policies, except that
         /// public and cross-account access within any public bucket policy, including non-public
         /// delegation to specific accounts, is blocked.</para><para>This property is not supported for Amazon S3 on Outposts.</para>
         /// </para>
@@ -143,9 +150,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AccountId), MyInvocation.BoundParameters);
@@ -282,13 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "PutPublicAccessBlock");
             try
             {
-                #if DESKTOP
-                return client.PutPublicAccessBlock(request);
-                #elif CORECLR
-                return client.PutPublicAccessBlockAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutPublicAccessBlockAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

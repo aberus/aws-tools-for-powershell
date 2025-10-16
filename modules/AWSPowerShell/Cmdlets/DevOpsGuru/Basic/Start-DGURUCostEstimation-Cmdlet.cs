@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DevOpsGuru;
 using Amazon.DevOpsGuru.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DGURU
 {
     /// <summary>
@@ -36,17 +38,22 @@ namespace Amazon.PowerShell.Cmdlets.DGURU
     [AWSCmdlet("Calls the Amazon DevOps Guru StartCostEstimation API operation.", Operation = new[] {"StartCostEstimation"}, SelectReturnType = typeof(Amazon.DevOpsGuru.Model.StartCostEstimationResponse))]
     [AWSCmdletOutput("None or Amazon.DevOpsGuru.Model.StartCostEstimationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DevOpsGuru.Model.StartCostEstimationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DevOpsGuru.Model.StartCostEstimationResponse) be returned by specifying '-Select *'."
     )]
     public partial class StartDGURUCostEstimationCmdlet : AmazonDevOpsGuruClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CloudFormation_StackName
         /// <summary>
         /// <para>
-        /// <para>An array of CloudFormation stack names. Its size is fixed at 1 item.</para>
+        /// <para>An array of CloudFormation stack names. Its size is fixed at 1 item.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.DGURU
         /// case-sensitive. For example, DevOps Guru works with a <i>key</i> named <c>devops-guru-rds</c>
         /// and a <i>key</i> named <c>DevOps-Guru-RDS</c>, and these act as two different <i>keys</i>.
         /// Possible <i>key</i>/<i>value</i> pairs in your application might be <c>Devops-Guru-production-application/RDS</c>
-        /// or <c>Devops-Guru-production-application/containers</c>.</para></important>
+        /// or <c>Devops-Guru-production-application/containers</c>.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.DGURU
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -243,13 +258,7 @@ namespace Amazon.PowerShell.Cmdlets.DGURU
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DevOps Guru", "StartCostEstimation");
             try
             {
-                #if DESKTOP
-                return client.StartCostEstimation(request);
-                #elif CORECLR
-                return client.StartCostEstimationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartCostEstimationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

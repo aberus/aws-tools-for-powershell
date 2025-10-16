@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConnect;
 using Amazon.MediaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMCN
 {
     /// <summary>
@@ -34,17 +36,18 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
     [OutputType("Amazon.MediaConnect.Model.UpdateBridgeSourceResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaConnect UpdateBridgeSource API operation.", Operation = new[] {"UpdateBridgeSource"}, SelectReturnType = typeof(Amazon.MediaConnect.Model.UpdateBridgeSourceResponse))]
     [AWSCmdletOutput("Amazon.MediaConnect.Model.UpdateBridgeSourceResponse",
-        "This cmdlet returns an Amazon.MediaConnect.Model.UpdateBridgeSourceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaConnect.Model.UpdateBridgeSourceResponse object containing multiple properties."
     )]
     public partial class UpdateEMCNBridgeSourceCmdlet : AmazonMediaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BridgeArn
         /// <summary>
         /// <para>
-        /// The ARN of the bridge that you want to update.
+        /// <para> The Amazon Resource Name (ARN) of the bridge that you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -61,8 +64,8 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter FlowSource_FlowArn
         /// <summary>
         /// <para>
-        /// The ARN of the cloud flow to use as a source of
-        /// this bridge.
+        /// <para> The Amazon Resource Name (ARN) that identifies the MediaConnect resource from which
+        /// to delete tags.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,17 +75,28 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter NetworkSource_MulticastIp
         /// <summary>
         /// <para>
-        /// The network source multicast IP.
+        /// <para> The network source multicast IP.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NetworkSource_MulticastIp { get; set; }
         #endregion
         
+        #region Parameter MulticastSourceSettings_MulticastSourceIp
+        /// <summary>
+        /// <para>
+        /// <para> The IP address of the source for source-specific multicast (SSM).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("NetworkSource_MulticastSourceSettings_MulticastSourceIp")]
+        public System.String MulticastSourceSettings_MulticastSourceIp { get; set; }
+        #endregion
+        
         #region Parameter NetworkSource_NetworkName
         /// <summary>
         /// <para>
-        /// The network source's gateway network name.
+        /// <para>The network source's gateway network name. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +106,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter NetworkSource_Port
         /// <summary>
         /// <para>
-        /// The network source port.
+        /// <para>The network source port. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,7 +116,8 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter NetworkSource_Protocol
         /// <summary>
         /// <para>
-        /// The network source protocol.
+        /// <para>The network source protocol. </para><note><para>Elemental MediaConnect no longer supports the Fujitsu QoS protocol. This reference
+        /// is maintained for legacy purposes only.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,7 +128,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter SourceName
         /// <summary>
         /// <para>
-        /// The name of the source that you want to update.
+        /// <para> The name of the source that you want to update. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -130,8 +145,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter FlowVpcInterfaceAttachment_VpcInterfaceName
         /// <summary>
         /// <para>
-        /// The name of the VPC interface to use
-        /// for this resource.
+        /// <para> The name of the VPC interface to use for this resource.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,16 +164,6 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BridgeArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BridgeArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BridgeArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -170,9 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceName), MyInvocation.BoundParameters);
@@ -186,21 +194,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConnect.Model.UpdateBridgeSourceResponse, UpdateEMCNBridgeSourceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BridgeArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BridgeArn = this.BridgeArn;
             #if MODULAR
             if (this.BridgeArn == null && ParameterWasBound(nameof(this.BridgeArn)))
@@ -211,6 +209,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             context.FlowSource_FlowArn = this.FlowSource_FlowArn;
             context.FlowVpcInterfaceAttachment_VpcInterfaceName = this.FlowVpcInterfaceAttachment_VpcInterfaceName;
             context.NetworkSource_MulticastIp = this.NetworkSource_MulticastIp;
+            context.MulticastSourceSettings_MulticastSourceIp = this.MulticastSourceSettings_MulticastSourceIp;
             context.NetworkSource_NetworkName = this.NetworkSource_NetworkName;
             context.NetworkSource_Port = this.NetworkSource_Port;
             context.NetworkSource_Protocol = this.NetworkSource_Protocol;
@@ -329,6 +328,31 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
                 request.NetworkSource.Protocol = requestNetworkSource_networkSource_Protocol;
                 requestNetworkSourceIsNull = false;
             }
+            Amazon.MediaConnect.Model.MulticastSourceSettings requestNetworkSource_networkSource_MulticastSourceSettings = null;
+            
+             // populate MulticastSourceSettings
+            var requestNetworkSource_networkSource_MulticastSourceSettingsIsNull = true;
+            requestNetworkSource_networkSource_MulticastSourceSettings = new Amazon.MediaConnect.Model.MulticastSourceSettings();
+            System.String requestNetworkSource_networkSource_MulticastSourceSettings_multicastSourceSettings_MulticastSourceIp = null;
+            if (cmdletContext.MulticastSourceSettings_MulticastSourceIp != null)
+            {
+                requestNetworkSource_networkSource_MulticastSourceSettings_multicastSourceSettings_MulticastSourceIp = cmdletContext.MulticastSourceSettings_MulticastSourceIp;
+            }
+            if (requestNetworkSource_networkSource_MulticastSourceSettings_multicastSourceSettings_MulticastSourceIp != null)
+            {
+                requestNetworkSource_networkSource_MulticastSourceSettings.MulticastSourceIp = requestNetworkSource_networkSource_MulticastSourceSettings_multicastSourceSettings_MulticastSourceIp;
+                requestNetworkSource_networkSource_MulticastSourceSettingsIsNull = false;
+            }
+             // determine if requestNetworkSource_networkSource_MulticastSourceSettings should be set to null
+            if (requestNetworkSource_networkSource_MulticastSourceSettingsIsNull)
+            {
+                requestNetworkSource_networkSource_MulticastSourceSettings = null;
+            }
+            if (requestNetworkSource_networkSource_MulticastSourceSettings != null)
+            {
+                request.NetworkSource.MulticastSourceSettings = requestNetworkSource_networkSource_MulticastSourceSettings;
+                requestNetworkSourceIsNull = false;
+            }
              // determine if request.NetworkSource should be set to null
             if (requestNetworkSourceIsNull)
             {
@@ -376,13 +400,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConnect", "UpdateBridgeSource");
             try
             {
-                #if DESKTOP
-                return client.UpdateBridgeSource(request);
-                #elif CORECLR
-                return client.UpdateBridgeSourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateBridgeSourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -403,6 +421,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             public System.String FlowSource_FlowArn { get; set; }
             public System.String FlowVpcInterfaceAttachment_VpcInterfaceName { get; set; }
             public System.String NetworkSource_MulticastIp { get; set; }
+            public System.String MulticastSourceSettings_MulticastSourceIp { get; set; }
             public System.String NetworkSource_NetworkName { get; set; }
             public System.Int32? NetworkSource_Port { get; set; }
             public Amazon.MediaConnect.Protocol NetworkSource_Protocol { get; set; }

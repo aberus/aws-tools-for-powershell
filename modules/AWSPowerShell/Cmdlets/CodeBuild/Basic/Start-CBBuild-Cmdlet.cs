@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,37 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeBuild;
 using Amazon.CodeBuild.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CB
 {
     /// <summary>
-    /// Starts running a build.
+    /// Starts running a build with the settings defined in the project. These setting include:
+    /// how to run a build, where to get the source code, which build environment to use,
+    /// which build commands to run, and where to store the build output.
+    /// 
+    ///  
+    /// <para>
+    /// You can also start a build run by overriding some of the build settings in the project.
+    /// The overrides only apply for that specific start build request. The settings in the
+    /// project are unaltered.
+    /// </para>
     /// </summary>
     [Cmdlet("Start", "CBBuild", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CodeBuild.Model.Build")]
     [AWSCmdlet("Calls the AWS CodeBuild StartBuild API operation.", Operation = new[] {"StartBuild"}, SelectReturnType = typeof(Amazon.CodeBuild.Model.StartBuildResponse))]
     [AWSCmdletOutput("Amazon.CodeBuild.Model.Build or Amazon.CodeBuild.Model.StartBuildResponse",
         "This cmdlet returns an Amazon.CodeBuild.Model.Build object.",
-        "The service call response (type Amazon.CodeBuild.Model.StartBuildResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeBuild.Model.StartBuildResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCBBuildCmdlet : AmazonCodeBuildClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ArtifactsOverride_ArtifactIdentifier
         /// <summary>
@@ -50,6 +62,18 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ArtifactsOverride_ArtifactIdentifier { get; set; }
+        #endregion
+        
+        #region Parameter AutoRetryLimitOverride
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of additional automatic retries after a failed build. For example,
+        /// if the auto-retry limit is set to 2, CodeBuild will call the <c>RetryBuild</c> API
+        /// to automatically retry your build for up to 2 additional times.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? AutoRetryLimitOverride { get; set; }
         #endregion
         
         #region Parameter ArtifactsOverride_BucketOwnerAccess
@@ -78,19 +102,37 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter BuildspecOverride
         /// <summary>
         /// <para>
-        /// <para>A buildspec file declaration that overrides, for this build only, the latest one already
-        /// defined in the build project.</para><para> If this value is set, it can be either an inline buildspec definition, the path to
+        /// <para>A buildspec file declaration that overrides the latest one defined in the build project,
+        /// for this build only. The buildspec defined on the project is not changed.</para><para>If this value is set, it can be either an inline buildspec definition, the path to
         /// an alternate buildspec file relative to the value of the built-in <c>CODEBUILD_SRC_DIR</c>
         /// environment variable, or the path to an S3 bucket. The bucket must be in the same
         /// Amazon Web Services Region as the build project. Specify the buildspec file using
         /// its ARN (for example, <c>arn:aws:s3:::my-codebuild-sample2/buildspec.yml</c>). If
         /// this value is not provided or is set to an empty string, the source code must contain
         /// a buildspec file in its root directory. For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-spec-ref.html#build-spec-ref-name-storage">Buildspec
-        /// File Name and Storage Location</a>. </para>
+        /// File Name and Storage Location</a>.</para><note><para>Since this property allows you to change the build commands that will run in the container,
+        /// you should note that an IAM principal with the ability to call this API and set this
+        /// parameter can override the default settings. Moreover, we encourage that you use a
+        /// trustworthy buildspec location like a file in your source repository or a Amazon S3
+        /// bucket. Alternatively, you can restrict overrides to the buildspec by using a condition
+        /// key: <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/action-context-keys.html#action-context-keys-example-overridebuildspec.html">Prevent
+        /// unauthorized modifications to project buildspec</a>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String BuildspecOverride { get; set; }
+        #endregion
+        
+        #region Parameter CacheOverride_CacheNamespace
+        /// <summary>
+        /// <para>
+        /// <para>Defines the scope of the cache. You can use this namespace to share a cache across
+        /// multiple projects. For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/caching-s3.html#caching-s3-sharing">Cache
+        /// sharing between projects</a> in the <i>CodeBuild User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CacheOverride_CacheNamespace { get; set; }
         #endregion
         
         #region Parameter CertificateOverride
@@ -219,7 +261,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <summary>
         /// <para>
         /// <para>A set of environment variables that overrides, for this build only, the latest ones
-        /// already defined in the build project.</para>
+        /// already defined in the build project.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -375,7 +421,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// you use a custom cache: </para><ul><li><para>Only directories can be specified for caching. You cannot specify individual files.
         /// </para></li><li><para>Symlinks are used to reference cached directories. </para></li><li><para>Cached directories are linked to your build before it downloads its project sources.
         /// Cached items are overridden if a source item has the same name. Directories are specified
-        /// using cache paths in the buildspec file. </para></li></ul></dd></dl>
+        /// using cache paths in the buildspec file. </para></li></ul></dd></dl><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -507,7 +557,8 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <para>
         /// <para> Set to true to report to your source provider the status of a build's start and completion.
         /// If you use this option with a source provider other than GitHub, GitHub Enterprise,
-        /// or Bitbucket, an <c>invalidInputException</c> is thrown. </para><para>To be able to report the build status to the source provider, the user associated
+        /// GitLab, GitLab Self Managed, or Bitbucket, an <c>invalidInputException</c> is thrown.
+        /// </para><para>To be able to report the build status to the source provider, the user associated
         /// with the source provider must have write access to the repo. If the user does not
         /// have write access, the build status cannot be updated. For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/access-tokens.html">Source
         /// provider access</a> in the <i>CodeBuild User Guide</i>.</para><note><para> The status of a build triggered by a webhook is always reported to your source provider.
@@ -531,7 +582,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter SecondaryArtifactsOverride
         /// <summary>
         /// <para>
-        /// <para> An array of <c>ProjectArtifacts</c> objects. </para>
+        /// <para> An array of <c>ProjectArtifacts</c> objects. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -541,7 +596,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter SecondarySourcesOverride
         /// <summary>
         /// <para>
-        /// <para> An array of <c>ProjectSource</c> objects. </para>
+        /// <para> An array of <c>ProjectSource</c> objects. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -552,7 +611,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <summary>
         /// <para>
         /// <para> An array of <c>ProjectSourceVersion</c> objects that specify one or more versions
-        /// of the project's secondary sources to be used for this build only. </para>
+        /// of the project's secondary sources to be used for this build only. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -601,7 +664,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// of the source code you want to build. If a pull request ID is specified, it must use
         /// the format <c>pr/pull-request-ID</c> (for example <c>pr/25</c>). If a branch name
         /// is specified, the branch's HEAD commit ID is used. If not specified, the default branch's
-        /// HEAD commit ID is used.</para></dd><dt>Bitbucket</dt><dd><para>The commit ID, branch name, or tag name that corresponds to the version of the source
+        /// HEAD commit ID is used.</para></dd><dt>GitLab</dt><dd><para>The commit ID, branch, or Git tag to use.</para></dd><dt>Bitbucket</dt><dd><para>The commit ID, branch name, or tag name that corresponds to the version of the source
         /// code you want to build. If a branch name is specified, the branch's HEAD commit ID
         /// is used. If not specified, the default branch's HEAD commit ID is used.</para></dd><dt>Amazon S3</dt><dd><para>The version ID of the object that represents the build input ZIP file to use.</para></dd></dl><para>If <c>sourceVersion</c> is specified at the project level, then this <c>sourceVersion</c>
         /// (at the build level) takes precedence. </para><para>For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/sample-source-version.html">Source
@@ -667,7 +730,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter TimeoutInMinutesOverride
         /// <summary>
         /// <para>
-        /// <para>The number of build timeout minutes, from 5 to 480 (8 hours), that overrides, for
+        /// <para>The number of build timeout minutes, from 5 to 2160 (36 hours), that overrides, for
         /// this build only, the latest setting already defined in the build project.</para>
         /// </para>
         /// </summary>
@@ -702,8 +765,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter SourceAuthOverride_Type
         /// <summary>
         /// <para>
-        /// <note><para> This data type is deprecated and is no longer accurate or used. </para></note><para>The authorization type to use. The only valid value is <c>OAUTH</c>, which represents
-        /// the OAuth authorization type.</para>
+        /// <para>The authorization type to use. Valid options are OAUTH, CODECONNECTIONS, or SECRETS_MANAGER.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -722,16 +784,6 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public string Select { get; set; } = "Build";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProjectName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProjectName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProjectName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -742,9 +794,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProjectName), MyInvocation.BoundParameters);
@@ -758,21 +814,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodeBuild.Model.StartBuildResponse, StartCBBuildCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProjectName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ArtifactsOverride_ArtifactIdentifier = this.ArtifactsOverride_ArtifactIdentifier;
             context.ArtifactsOverride_BucketOwnerAccess = this.ArtifactsOverride_BucketOwnerAccess;
             context.ArtifactsOverride_EncryptionDisabled = this.ArtifactsOverride_EncryptionDisabled;
@@ -783,9 +829,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
             context.ArtifactsOverride_Packaging = this.ArtifactsOverride_Packaging;
             context.ArtifactsOverride_Path = this.ArtifactsOverride_Path;
             context.ArtifactsOverride_Type = this.ArtifactsOverride_Type;
+            context.AutoRetryLimitOverride = this.AutoRetryLimitOverride;
             context.BuildspecOverride = this.BuildspecOverride;
             context.BuildStatusConfigOverride_Context = this.BuildStatusConfigOverride_Context;
             context.BuildStatusConfigOverride_TargetUrl = this.BuildStatusConfigOverride_TargetUrl;
+            context.CacheOverride_CacheNamespace = this.CacheOverride_CacheNamespace;
             context.CacheOverride_Location = this.CacheOverride_Location;
             if (this.CacheOverride_Mode != null)
             {
@@ -971,6 +1019,10 @@ namespace Amazon.PowerShell.Cmdlets.CB
             {
                 request.ArtifactsOverride = null;
             }
+            if (cmdletContext.AutoRetryLimitOverride != null)
+            {
+                request.AutoRetryLimitOverride = cmdletContext.AutoRetryLimitOverride.Value;
+            }
             if (cmdletContext.BuildspecOverride != null)
             {
                 request.BuildspecOverride = cmdletContext.BuildspecOverride;
@@ -1008,6 +1060,16 @@ namespace Amazon.PowerShell.Cmdlets.CB
              // populate CacheOverride
             var requestCacheOverrideIsNull = true;
             request.CacheOverride = new Amazon.CodeBuild.Model.ProjectCache();
+            System.String requestCacheOverride_cacheOverride_CacheNamespace = null;
+            if (cmdletContext.CacheOverride_CacheNamespace != null)
+            {
+                requestCacheOverride_cacheOverride_CacheNamespace = cmdletContext.CacheOverride_CacheNamespace;
+            }
+            if (requestCacheOverride_cacheOverride_CacheNamespace != null)
+            {
+                request.CacheOverride.CacheNamespace = requestCacheOverride_cacheOverride_CacheNamespace;
+                requestCacheOverrideIsNull = false;
+            }
             System.String requestCacheOverride_cacheOverride_Location = null;
             if (cmdletContext.CacheOverride_Location != null)
             {
@@ -1378,13 +1440,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeBuild", "StartBuild");
             try
             {
-                #if DESKTOP
-                return client.StartBuild(request);
-                #elif CORECLR
-                return client.StartBuildAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartBuildAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1411,9 +1467,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
             public Amazon.CodeBuild.ArtifactPackaging ArtifactsOverride_Packaging { get; set; }
             public System.String ArtifactsOverride_Path { get; set; }
             public Amazon.CodeBuild.ArtifactsType ArtifactsOverride_Type { get; set; }
+            public System.Int32? AutoRetryLimitOverride { get; set; }
             public System.String BuildspecOverride { get; set; }
             public System.String BuildStatusConfigOverride_Context { get; set; }
             public System.String BuildStatusConfigOverride_TargetUrl { get; set; }
+            public System.String CacheOverride_CacheNamespace { get; set; }
             public System.String CacheOverride_Location { get; set; }
             public List<System.String> CacheOverride_Mode { get; set; }
             public Amazon.CodeBuild.CacheType CacheOverride_Type { get; set; }

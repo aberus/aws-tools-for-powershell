@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
     /// <note><para>
-    /// This operation is not supported by directory buckets.
+    /// This operation is not supported for directory buckets.
     /// </para></note><para>
     /// Creates or modifies the <c>PublicAccessBlock</c> configuration for an Amazon S3 bucket.
     /// To use this operation, you must have the <c>s3:PutBucketPublicAccessBlock</c> permission.
@@ -55,19 +57,20 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) PutPublicAccessBlock API operation.", Operation = new[] {"PutPublicAccessBlock"}, SelectReturnType = typeof(Amazon.S3.Model.PutPublicAccessBlockResponse))]
     [AWSCmdletOutput("None or Amazon.S3.Model.PutPublicAccessBlockResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.S3.Model.PutPublicAccessBlockResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.S3.Model.PutPublicAccessBlockResponse) be returned by specifying '-Select *'."
     )]
     public partial class AddS3PublicAccessBlockCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PublicAccessBlockConfiguration_BlockPublicAcl
         /// <summary>
         /// <para>
-        /// <para>Specifies whether Amazon S3 should block public ACLs for this bucket. Setting this
-        /// element to <code>TRUE</code> causes the following behavior:</para><ul><li><para>PUT Bucket acl and PUT Object acl calls will fail if the specified ACL allows public
-        /// access.</para></li><li><para>PUT Object calls will fail if the request includes an object ACL.</para></li></ul><para>Note that enabling this setting doesn't affect existing policies or ACLs.</para>
+        /// <para>Specifies whether Amazon S3 should block public access control lists (ACLs) for this
+        /// bucket and objects in this bucket. Setting this element to <c>TRUE</c> causes the
+        /// following behavior:</para><ul><li><para>PUT Bucket ACL and PUT Object ACL calls fail if the specified ACL is public.</para></li><li><para>PUT Object calls fail if the request includes a public ACL.</para></li><li><para>PUT Bucket calls fail if the request includes a public ACL.</para></li></ul><para>Enabling this setting doesn't affect existing policies or ACLs.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -79,8 +82,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>Specifies whether Amazon S3 should block public bucket policies for this bucket. Setting
-        /// this element to <code>TRUE</code> causes Amazon S3 to reject calls to PUT Bucket policy
-        /// if the specified bucket policy allows public access. </para><para>Note that enabling this setting doesn't affect existing bucket policies.</para>
+        /// this element to <c>TRUE</c> causes Amazon S3 to reject calls to PUT Bucket policy
+        /// if the specified bucket policy allows public access. </para><para>Enabling this setting doesn't affect existing bucket policies.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -90,11 +93,18 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter BucketName
         /// <summary>
         /// <para>
-        /// <para>The name of the Amazon S3 bucket whose Public Access Block configuration you want
-        /// to set.</para>
+        /// <para>The name of the Amazon S3 bucket whose <c>PublicAccessBlock</c> configuration you
+        /// want to set.</para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        #else
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String BucketName { get; set; }
         #endregion
         
@@ -103,11 +113,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>
         /// <para>Indicates the algorithm used to create the checksum for the object when you use the
         /// SDK. This header will not provide any additional functionality if you don't use the
-        /// SDK. When you send this header, there must be a corresponding <code>x-amz-checksum</code>
-        /// or <code>x-amz-trailer</code> header sent. Otherwise, Amazon S3 fails the request
-        /// with the HTTP status code <code>400 Bad Request</code>. For more information, see
-        /// <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking
-        /// object integrity</a> in the <i>Amazon S3 User Guide</i>.</para><para>If you provide an individual checksum, Amazon S3 ignores any provided <code>ChecksumAlgorithm</code>
+        /// SDK. When you send this header, there must be a corresponding <c>x-amz-checksum</c>
+        /// or <c>x-amz-trailer</c> header sent. Otherwise, Amazon S3 fails the request with the
+        /// HTTP status code <c>400 Bad Request</c>. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking
+        /// object integrity</a> in the <i>Amazon S3 User Guide</i>.</para><para>If you provide an individual checksum, Amazon S3 ignores any provided <c>ChecksumAlgorithm</c>
         /// parameter.</para>
         /// </para>
         /// </summary>
@@ -119,7 +128,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter ContentMD5
         /// <summary>
         /// <para>
-        /// <para>The MD5 hash of the <code>PutPublicAccessBlock</code> request body. </para><para>For requests made using the Amazon Web Services Command Line Interface (CLI) or Amazon
+        /// <para>The MD5 hash of the <c>PutPublicAccessBlock</c> request body. </para><para>For requests made using the Amazon Web Services Command Line Interface (CLI) or Amazon
         /// Web Services SDKs, this field is calculated automatically.</para>
         /// </para>
         /// </summary>
@@ -132,7 +141,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>
         /// <para>The account ID of the expected bucket owner. If the account ID that you provide does
         /// not match the actual owner of the bucket, the request fails with the HTTP status code
-        /// <code>403 Forbidden</code> (access denied).</para>
+        /// <c>403 Forbidden</c> (access denied).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,10 +151,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter PublicAccessBlockConfiguration_IgnorePublicAcl
         /// <summary>
         /// <para>
-        /// <para>Specifies whether Amazon S3 should ignore public ACLs for this bucket. Setting this
-        /// element to <code>TRUE</code> causes Amazon S3 to ignore all public ACLs on this bucket
-        /// and any objects that it contains. </para><para>Note that enabling this setting doesn't affect the persistence of any existing ACLs
-        /// and doesn't prevent new public ACLs from being set.</para>
+        /// <para>Specifies whether Amazon S3 should ignore public ACLs for this bucket and objects
+        /// in this bucket. Setting this element to <c>TRUE</c> causes Amazon S3 to ignore all
+        /// public ACLs on this bucket and objects in this bucket.</para><para>Enabling this setting doesn't affect the persistence of any existing ACLs and doesn't
+        /// prevent new public ACLs from being set.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,8 +166,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>Specifies whether Amazon S3 should restrict public bucket policies for this bucket.
-        /// Setting this element to <code>TRUE</code> restricts access to this bucket to only
-        /// Amazon Web Service principals and authorized users within this account if the bucket
+        /// Setting this element to <c>TRUE</c> restricts access to this bucket to only Amazon
+        /// Web Services service principals and authorized users within this account if the bucket
         /// has a public policy.</para><para>Enabling this setting doesn't affect previously stored bucket policies, except that
         /// public and cross-account access within any public bucket policy, including non-public
         /// delegation to specific accounts, is blocked.</para>
@@ -179,16 +188,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -199,9 +198,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BucketName), MyInvocation.BoundParameters);
@@ -215,29 +218,25 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.PutPublicAccessBlockResponse, AddS3PublicAccessBlockCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
+            #if MODULAR
+            if (this.BucketName == null && ParameterWasBound(nameof(this.BucketName)))
+            {
+                WriteWarning("You are passing $null as a value for parameter BucketName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.ChecksumAlgorithm = this.ChecksumAlgorithm;
             context.ContentMD5 = this.ContentMD5;
-            context.PublicAccessBlockConfiguration_BlockPublicAcl = this.PublicAccessBlockConfiguration_BlockPublicAcl;
-            context.PublicAccessBlockConfiguration_IgnorePublicAcl = this.PublicAccessBlockConfiguration_IgnorePublicAcl;
-            context.PublicAccessBlockConfiguration_BlockPublicPolicy = this.PublicAccessBlockConfiguration_BlockPublicPolicy;
-            context.PublicAccessBlockConfiguration_RestrictPublicBucket = this.PublicAccessBlockConfiguration_RestrictPublicBucket;
             context.ExpectedBucketOwner = this.ExpectedBucketOwner;
+            context.PublicAccessBlockConfiguration_BlockPublicAcl = this.PublicAccessBlockConfiguration_BlockPublicAcl;
+            context.PublicAccessBlockConfiguration_BlockPublicPolicy = this.PublicAccessBlockConfiguration_BlockPublicPolicy;
+            context.PublicAccessBlockConfiguration_IgnorePublicAcl = this.PublicAccessBlockConfiguration_IgnorePublicAcl;
+            context.PublicAccessBlockConfiguration_RestrictPublicBucket = this.PublicAccessBlockConfiguration_RestrictPublicBucket;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -266,6 +265,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
             {
                 request.ContentMD5 = cmdletContext.ContentMD5;
             }
+            if (cmdletContext.ExpectedBucketOwner != null)
+            {
+                request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
+            }
             
              // populate PublicAccessBlockConfiguration
             var requestPublicAccessBlockConfigurationIsNull = true;
@@ -280,16 +283,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 request.PublicAccessBlockConfiguration.BlockPublicAcls = requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_BlockPublicAcl.Value;
                 requestPublicAccessBlockConfigurationIsNull = false;
             }
-            System.Boolean? requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl = null;
-            if (cmdletContext.PublicAccessBlockConfiguration_IgnorePublicAcl != null)
-            {
-                requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl = cmdletContext.PublicAccessBlockConfiguration_IgnorePublicAcl.Value;
-            }
-            if (requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl != null)
-            {
-                request.PublicAccessBlockConfiguration.IgnorePublicAcls = requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl.Value;
-                requestPublicAccessBlockConfigurationIsNull = false;
-            }
             System.Boolean? requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_BlockPublicPolicy = null;
             if (cmdletContext.PublicAccessBlockConfiguration_BlockPublicPolicy != null)
             {
@@ -298,6 +291,16 @@ namespace Amazon.PowerShell.Cmdlets.S3
             if (requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_BlockPublicPolicy != null)
             {
                 request.PublicAccessBlockConfiguration.BlockPublicPolicy = requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_BlockPublicPolicy.Value;
+                requestPublicAccessBlockConfigurationIsNull = false;
+            }
+            System.Boolean? requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl = null;
+            if (cmdletContext.PublicAccessBlockConfiguration_IgnorePublicAcl != null)
+            {
+                requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl = cmdletContext.PublicAccessBlockConfiguration_IgnorePublicAcl.Value;
+            }
+            if (requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl != null)
+            {
+                request.PublicAccessBlockConfiguration.IgnorePublicAcls = requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_IgnorePublicAcl.Value;
                 requestPublicAccessBlockConfigurationIsNull = false;
             }
             System.Boolean? requestPublicAccessBlockConfiguration_publicAccessBlockConfiguration_RestrictPublicBucket = null;
@@ -314,10 +317,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
             if (requestPublicAccessBlockConfigurationIsNull)
             {
                 request.PublicAccessBlockConfiguration = null;
-            }
-            if (cmdletContext.ExpectedBucketOwner != null)
-            {
-                request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
             }
             
             CmdletOutput output;
@@ -357,13 +356,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "PutPublicAccessBlock");
             try
             {
-                #if DESKTOP
-                return client.PutPublicAccessBlock(request);
-                #elif CORECLR
-                return client.PutPublicAccessBlockAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutPublicAccessBlockAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -383,11 +376,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
             public System.String BucketName { get; set; }
             public Amazon.S3.ChecksumAlgorithm ChecksumAlgorithm { get; set; }
             public System.String ContentMD5 { get; set; }
-            public System.Boolean? PublicAccessBlockConfiguration_BlockPublicAcl { get; set; }
-            public System.Boolean? PublicAccessBlockConfiguration_IgnorePublicAcl { get; set; }
-            public System.Boolean? PublicAccessBlockConfiguration_BlockPublicPolicy { get; set; }
-            public System.Boolean? PublicAccessBlockConfiguration_RestrictPublicBucket { get; set; }
             public System.String ExpectedBucketOwner { get; set; }
+            public System.Boolean? PublicAccessBlockConfiguration_BlockPublicAcl { get; set; }
+            public System.Boolean? PublicAccessBlockConfiguration_BlockPublicPolicy { get; set; }
+            public System.Boolean? PublicAccessBlockConfiguration_IgnorePublicAcl { get; set; }
+            public System.Boolean? PublicAccessBlockConfiguration_RestrictPublicBucket { get; set; }
             public System.Func<Amazon.S3.Model.PutPublicAccessBlockResponse, AddS3PublicAccessBlockCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

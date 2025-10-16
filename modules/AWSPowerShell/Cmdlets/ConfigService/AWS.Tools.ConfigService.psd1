@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The ConfigService module of AWS Tools for PowerShell lets developers and administrators manage AWS Config from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.ConfigService.dll'
     )
@@ -87,6 +88,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
     # Cmdlets to export from this module
     CmdletsToExport = @(
         'Add-CFGResourceTag', 
+        'Add-CFGResourceType', 
         'Get-CFGAggregateComplianceByConfigRuleList', 
         'Get-CFGAggregateComplianceByConformancePack', 
         'Get-CFGAggregateComplianceDetailsByConfigRule', 
@@ -108,6 +110,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CFGConfigurationAggregatorList', 
         'Get-CFGConfigurationAggregatorSourcesStatus', 
         'Get-CFGConfigurationRecorder', 
+        'Get-CFGConfigurationRecorderList', 
         'Get-CFGConfigurationRecorderStatus', 
         'Get-CFGConformancePack', 
         'Get-CFGConformancePackCompliance', 
@@ -153,7 +156,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CFGRemediationException', 
         'Remove-CFGResourceConfig', 
         'Remove-CFGResourceTag', 
+        'Remove-CFGResourceType', 
         'Remove-CFGRetentionConfiguration', 
+        'Remove-CFGServiceLinkedConfigurationRecorder', 
         'Remove-CFGStoredQuery', 
         'Select-CFGAggregateResourceConfig', 
         'Select-CFGResourceConfig', 
@@ -177,6 +182,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Write-CFGRemediationException', 
         'Write-CFGResourceConfig', 
         'Write-CFGRetentionConfiguration', 
+        'Write-CFGServiceLinkedConfigurationRecorder', 
         'Write-CFGStoredQuery')
 
     # Variables to export from this module
@@ -205,7 +211,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

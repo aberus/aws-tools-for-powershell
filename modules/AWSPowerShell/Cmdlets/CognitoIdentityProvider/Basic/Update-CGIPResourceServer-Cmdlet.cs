@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,17 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Updates the name and scopes of resource server. All other fields are read-only.
+    /// Updates the name and scopes of a resource server. All other fields are read-only.
+    /// For more information about resource servers, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html">Access
+    /// control with resource servers</a>.
     /// 
     ///  <important><para>
     /// If you don't provide a value for an attribute, it is set to the default value.
@@ -45,17 +49,21 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider UpdateResourceServer API operation.", Operation = new[] {"UpdateResourceServer"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.UpdateResourceServerResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.ResourceServerType or Amazon.CognitoIdentityProvider.Model.UpdateResourceServerResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.ResourceServerType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.UpdateResourceServerResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.UpdateResourceServerResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCGIPResourceServerCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Identifier
         /// <summary>
         /// <para>
-        /// <para>The identifier for the resource server.</para>
+        /// <para>A unique resource server identifier for the resource server. The identifier can be
+        /// an API friendly name like <c>solar-system-data</c>. You can also set an API URL like
+        /// <c>https://solar-system-data-api.example.com</c> as your identifier.</para><para>Amazon Cognito represents scopes in the access token in the format <c>$resource-server-identifier/$scope</c>.
+        /// Longer scope-identifier strings increase the size of your access tokens.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -72,7 +80,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The name of the resource server.</para>
+        /// <para>The updated name of the resource server.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -89,7 +97,12 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Scope
         /// <summary>
         /// <para>
-        /// <para>The scope values to be set for the resource server.</para>
+        /// <para>An array of updated custom scope names and descriptions that you want to associate
+        /// with your resource server.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +113,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool.</para>
+        /// <para>The ID of the user pool that contains the resource server that you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -125,16 +138,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "ResourceServer";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Identifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -145,9 +148,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Identifier), MyInvocation.BoundParameters);
@@ -161,21 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.UpdateResourceServerResponse, UpdateCGIPResourceServerCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Identifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Identifier = this.Identifier;
             #if MODULAR
             if (this.Identifier == null && ParameterWasBound(nameof(this.Identifier)))
@@ -271,13 +268,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "UpdateResourceServer");
             try
             {
-                #if DESKTOP
-                return client.UpdateResourceServer(request);
-                #elif CORECLR
-                return client.UpdateResourceServerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateResourceServerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

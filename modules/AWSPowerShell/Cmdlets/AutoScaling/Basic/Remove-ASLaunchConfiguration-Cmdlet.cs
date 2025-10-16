@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling DeleteLaunchConfiguration API operation.", Operation = new[] {"DeleteLaunchConfiguration"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.DeleteLaunchConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.AutoScaling.Model.DeleteLaunchConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.AutoScaling.Model.DeleteLaunchConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.AutoScaling.Model.DeleteLaunchConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveASLaunchConfigurationCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LaunchConfigurationName
         /// <summary>
@@ -75,16 +78,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LaunchConfigurationName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LaunchConfigurationName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LaunchConfigurationName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -95,9 +88,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LaunchConfigurationName), MyInvocation.BoundParameters);
@@ -111,21 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.DeleteLaunchConfigurationResponse, RemoveASLaunchConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LaunchConfigurationName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LaunchConfigurationName = this.LaunchConfigurationName;
             #if MODULAR
             if (this.LaunchConfigurationName == null && ParameterWasBound(nameof(this.LaunchConfigurationName)))
@@ -191,13 +178,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "DeleteLaunchConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DeleteLaunchConfiguration(request);
-                #elif CORECLR
-                return client.DeleteLaunchConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteLaunchConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

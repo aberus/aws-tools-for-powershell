@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.APIGateway;
 using Amazon.APIGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AG
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
     [AWSCmdlet("Calls the Amazon API Gateway GetResources API operation.", Operation = new[] {"GetResources"}, SelectReturnType = typeof(Amazon.APIGateway.Model.GetResourcesResponse))]
     [AWSCmdletOutput("Amazon.APIGateway.Model.Resource or Amazon.APIGateway.Model.GetResourcesResponse",
         "This cmdlet returns a collection of Amazon.APIGateway.Model.Resource objects.",
-        "The service call response (type Amazon.APIGateway.Model.GetResourcesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.APIGateway.Model.GetResourcesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAGResourceListCmdlet : AmazonAPIGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Embed
         /// <summary>
@@ -49,7 +52,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// Resources resource in the response. This <c>embed</c> parameter value is a list of
         /// comma-separated strings. Currently, the request supports only retrieval of the embedded
         /// Method resources this way. The query parameter value must be a single-valued list
-        /// and contain the <c>"methods"</c> string. For example, <c>GET /restapis/{restapi_id}/resources?embed=methods</c>.</para>
+        /// and contain the <c>"methods"</c> string. For example, <c>GET /restapis/{restapi_id}/resources?embed=methods</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +104,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Position $null' for the first call and '-Position $AWSHistory.LastServiceResponse.Position' for subsequent calls.
+        /// <br/>'Position' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Position' to null for the first call then set the 'Position' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public string Select { get; set; } = "Items";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RestApiId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RestApiId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RestApiId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -136,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -146,21 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.APIGateway.Model.GetResourcesResponse, GetAGResourceListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RestApiId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Embed != null)
             {
                 context.Embed = new List<System.String>(this.Embed);
@@ -197,9 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.APIGateway.Model.GetResourcesRequest();
@@ -267,7 +256,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.APIGateway.Model.GetResourcesRequest();
@@ -319,7 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Items.Count;
+                    int _receivedThisCall = response.Items?.Count ?? 0;
                     
                     _nextToken = response.Position;
                     _retrievedSoFar += _receivedThisCall;
@@ -368,13 +357,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon API Gateway", "GetResources");
             try
             {
-                #if DESKTOP
-                return client.GetResources(request);
-                #elif CORECLR
-                return client.GetResourcesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetResourcesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

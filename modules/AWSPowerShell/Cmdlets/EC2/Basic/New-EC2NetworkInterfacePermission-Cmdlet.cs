@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateNetworkInterfacePermission API operation.", Operation = new[] {"CreateNetworkInterfacePermission"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateNetworkInterfacePermissionResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.NetworkInterfacePermission or Amazon.EC2.Model.CreateNetworkInterfacePermissionResponse",
         "This cmdlet returns an Amazon.EC2.Model.NetworkInterfacePermission object.",
-        "The service call response (type Amazon.EC2.Model.CreateNetworkInterfacePermissionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateNetworkInterfacePermissionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2NetworkInterfacePermissionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
@@ -62,11 +65,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter AwsService
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Service. Currently not supported.</para>
+        /// <para>The Amazon Web Services service. Currently not supported.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AwsService { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter NetworkInterfaceId
@@ -114,16 +129,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "InterfacePermission";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NetworkInterfaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NetworkInterfaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NetworkInterfaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -134,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NetworkInterfaceId), MyInvocation.BoundParameters);
@@ -150,23 +159,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateNetworkInterfacePermissionResponse, NewEC2NetworkInterfacePermissionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NetworkInterfaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             context.AwsService = this.AwsService;
+            context.DryRun = this.DryRun;
             context.NetworkInterfaceId = this.NetworkInterfaceId;
             #if MODULAR
             if (this.NetworkInterfaceId == null && ParameterWasBound(nameof(this.NetworkInterfaceId)))
@@ -204,6 +204,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.AwsService != null)
             {
                 request.AwsService = cmdletContext.AwsService;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.NetworkInterfaceId != null)
             {
@@ -251,13 +255,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateNetworkInterfacePermission");
             try
             {
-                #if DESKTOP
-                return client.CreateNetworkInterfacePermission(request);
-                #elif CORECLR
-                return client.CreateNetworkInterfacePermissionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateNetworkInterfacePermissionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -276,6 +274,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         {
             public System.String AwsAccountId { get; set; }
             public System.String AwsService { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String NetworkInterfaceId { get; set; }
             public Amazon.EC2.InterfacePermissionType Permission { get; set; }
             public System.Func<Amazon.EC2.Model.CreateNetworkInterfacePermissionResponse, NewEC2NetworkInterfacePermissionCmdlet, object> Select { get; set; } =

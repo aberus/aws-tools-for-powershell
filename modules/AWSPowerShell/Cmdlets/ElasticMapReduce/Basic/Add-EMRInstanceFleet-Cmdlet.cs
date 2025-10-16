@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticMapReduce;
 using Amazon.ElasticMapReduce.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMR
 {
     /// <summary>
@@ -39,19 +41,21 @@ namespace Amazon.PowerShell.Cmdlets.EMR
     [OutputType("Amazon.ElasticMapReduce.Model.AddInstanceFleetResponse")]
     [AWSCmdlet("Calls the Amazon Elastic MapReduce AddInstanceFleet API operation.", Operation = new[] {"AddInstanceFleet"}, SelectReturnType = typeof(Amazon.ElasticMapReduce.Model.AddInstanceFleetResponse))]
     [AWSCmdletOutput("Amazon.ElasticMapReduce.Model.AddInstanceFleetResponse",
-        "This cmdlet returns an Amazon.ElasticMapReduce.Model.AddInstanceFleetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ElasticMapReduce.Model.AddInstanceFleetResponse object containing multiple properties."
     )]
     public partial class AddEMRInstanceFleetCmdlet : AmazonElasticMapReduceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OnDemandSpecification_AllocationStrategy
         /// <summary>
         /// <para>
-        /// <para>Specifies the strategy to use in launching On-Demand instance fleets. Currently, the
-        /// only option is <c>lowest-price</c> (the default), which launches the lowest price
-        /// first.</para>
+        /// <para>Specifies the strategy to use in launching On-Demand instance fleets. Available options
+        /// are <c>lowest-price</c> and <c>prioritized</c>. <c>lowest-price</c> specifies to launch
+        /// the instances with the lowest price first, and <c>prioritized</c> specifies that Amazon
+        /// EMR should launch the instances with the highest priority first. The default is <c>lowest-price</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,9 +67,9 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter SpotSpecification_AllocationStrategy
         /// <summary>
         /// <para>
-        /// <para>Specifies one of the following strategies to launch Spot Instance fleets: <c>price-capacity-optimized</c>,
-        /// <c>capacity-optimized</c>, <c>lowest-price</c>, or <c>diversified</c>. For more information
-        /// on the provisioning strategies, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-allocation-strategy.html">Allocation
+        /// <para>Specifies one of the following strategies to launch Spot Instance fleets: <c>capacity-optimized</c>,
+        /// <c>price-capacity-optimized</c>, <c>lowest-price</c>, or <c>diversified</c>, and <c>capacity-optimized-prioritized</c>.
+        /// For more information on the provisioning strategies, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-allocation-strategy.html">Allocation
         /// strategies for Spot Instances</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.</para><note><para>When you launch a Spot Instance fleet with the old console, it automatically launches
         /// with the <c>capacity-optimized</c> strategy. You can't change the allocation strategy
         /// from the old console.</para></note>
@@ -75,6 +79,33 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         [Alias("InstanceFleet_LaunchSpecifications_SpotSpecification_AllocationStrategy")]
         [AWSConstantClassSource("Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy")]
         public Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy SpotSpecification_AllocationStrategy { get; set; }
+        #endregion
+        
+        #region Parameter OnDemandResizeSpecification_AllocationStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the allocation strategy to use to launch On-Demand instances during a resize.
+        /// The default is <c>lowest-price</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_AllocationStrategy")]
+        [AWSConstantClassSource("Amazon.ElasticMapReduce.OnDemandProvisioningAllocationStrategy")]
+        public Amazon.ElasticMapReduce.OnDemandProvisioningAllocationStrategy OnDemandResizeSpecification_AllocationStrategy { get; set; }
+        #endregion
+        
+        #region Parameter SpotResizeSpecification_AllocationStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the allocation strategy to use to launch Spot instances during a resize.
+        /// If you run Amazon EMR releases 6.9.0 or higher, the default is <c>price-capacity-optimized</c>.
+        /// If you run Amazon EMR releases 6.8.0 or lower, the default is <c>capacity-optimized</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("InstanceFleet_ResizeSpecifications_SpotResizeSpecification_AllocationStrategy")]
+        [AWSConstantClassSource("Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy")]
+        public Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy SpotResizeSpecification_AllocationStrategy { get; set; }
         #endregion
         
         #region Parameter SpotSpecification_BlockDurationMinute
@@ -111,6 +142,19 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public Amazon.ElasticMapReduce.OnDemandCapacityReservationPreference CapacityReservationOptions_CapacityReservationPreference { get; set; }
         #endregion
         
+        #region Parameter InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the instance's Capacity Reservation preferences. Possible preferences include:</para><ul><li><para><c>open</c> - The instance can run in any open Capacity Reservation that has matching
+        /// attributes (instance type, platform, Availability Zone).</para></li><li><para><c>none</c> - The instance avoids running in a Capacity Reservation even if one is
+        /// available. The instance runs as an On-Demand Instance.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ElasticMapReduce.OnDemandCapacityReservationPreference")]
+        public Amazon.ElasticMapReduce.OnDemandCapacityReservationPreference InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference { get; set; }
+        #endregion
+        
         #region Parameter CapacityReservationOptions_CapacityReservationResourceGroupArn
         /// <summary>
         /// <para>
@@ -120,6 +164,16 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("InstanceFleet_LaunchSpecifications_OnDemandSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn")]
         public System.String CapacityReservationOptions_CapacityReservationResourceGroupArn { get; set; }
+        #endregion
+        
+        #region Parameter InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the Capacity Reservation resource group in which to run the instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn { get; set; }
         #endregion
         
         #region Parameter ClusterId
@@ -137,6 +191,16 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ClusterId { get; set; }
+        #endregion
+        
+        #region Parameter InstanceFleet_Context
+        /// <summary>
+        /// <para>
+        /// <para>Reserved.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String InstanceFleet_Context { get; set; }
         #endregion
         
         #region Parameter InstanceFleet_InstanceFleetType
@@ -160,7 +224,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <summary>
         /// <para>
         /// <para>The instance type configurations that define the Amazon EC2 instances in the instance
-        /// fleet.</para>
+        /// fleet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -304,6 +372,23 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public Amazon.ElasticMapReduce.OnDemandCapacityReservationUsageStrategy CapacityReservationOptions_UsageStrategy { get; set; }
         #endregion
         
+        #region Parameter InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether to use unused Capacity Reservations for fulfilling On-Demand capacity.</para><para>If you specify <c>use-capacity-reservations-first</c>, the fleet uses unused Capacity
+        /// Reservations to fulfill On-Demand capacity up to the target On-Demand capacity. If
+        /// multiple instance pools have unused Capacity Reservations, the On-Demand allocation
+        /// strategy (<c>lowest-price</c>) is applied. If the number of unused Capacity Reservations
+        /// is less than the On-Demand target capacity, the remaining On-Demand target capacity
+        /// is launched according to the On-Demand allocation strategy (<c>lowest-price</c>).</para><para>If you do not specify a value, the fleet fulfills the On-Demand capacity according
+        /// to the chosen On-Demand allocation strategy.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ElasticMapReduce.OnDemandCapacityReservationUsageStrategy")]
+        public Amazon.ElasticMapReduce.OnDemandCapacityReservationUsageStrategy InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -313,16 +398,6 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -335,9 +410,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterId), MyInvocation.BoundParameters);
@@ -351,21 +430,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticMapReduce.Model.AddInstanceFleetResponse, AddEMRInstanceFleetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterId = this.ClusterId;
             #if MODULAR
             if (this.ClusterId == null && ParameterWasBound(nameof(this.ClusterId)))
@@ -373,6 +442,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
                 WriteWarning("You are passing $null as a value for parameter ClusterId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.InstanceFleet_Context = this.InstanceFleet_Context;
             context.InstanceFleet_InstanceFleetType = this.InstanceFleet_InstanceFleetType;
             #if MODULAR
             if (this.InstanceFleet_InstanceFleetType == null && ParameterWasBound(nameof(this.InstanceFleet_InstanceFleetType)))
@@ -393,7 +463,12 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             context.SpotSpecification_TimeoutAction = this.SpotSpecification_TimeoutAction;
             context.SpotSpecification_TimeoutDurationMinute = this.SpotSpecification_TimeoutDurationMinute;
             context.InstanceFleet_Name = this.InstanceFleet_Name;
+            context.OnDemandResizeSpecification_AllocationStrategy = this.OnDemandResizeSpecification_AllocationStrategy;
+            context.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference = this.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference;
+            context.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn = this.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn;
+            context.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy = this.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy;
             context.OnDemandResizeSpecification_TimeoutDurationMinute = this.OnDemandResizeSpecification_TimeoutDurationMinute;
+            context.SpotResizeSpecification_AllocationStrategy = this.SpotResizeSpecification_AllocationStrategy;
             context.SpotResizeSpecification_TimeoutDurationMinute = this.SpotResizeSpecification_TimeoutDurationMinute;
             context.InstanceFleet_TargetOnDemandCapacity = this.InstanceFleet_TargetOnDemandCapacity;
             context.InstanceFleet_TargetSpotCapacity = this.InstanceFleet_TargetSpotCapacity;
@@ -421,6 +496,16 @@ namespace Amazon.PowerShell.Cmdlets.EMR
              // populate InstanceFleet
             var requestInstanceFleetIsNull = true;
             request.InstanceFleet = new Amazon.ElasticMapReduce.Model.InstanceFleetConfig();
+            System.String requestInstanceFleet_instanceFleet_Context = null;
+            if (cmdletContext.InstanceFleet_Context != null)
+            {
+                requestInstanceFleet_instanceFleet_Context = cmdletContext.InstanceFleet_Context;
+            }
+            if (requestInstanceFleet_instanceFleet_Context != null)
+            {
+                request.InstanceFleet.Context = requestInstanceFleet_instanceFleet_Context;
+                requestInstanceFleetIsNull = false;
+            }
             Amazon.ElasticMapReduce.InstanceFleetType requestInstanceFleet_instanceFleet_InstanceFleetType = null;
             if (cmdletContext.InstanceFleet_InstanceFleetType != null)
             {
@@ -616,36 +701,21 @@ namespace Amazon.PowerShell.Cmdlets.EMR
              // populate ResizeSpecifications
             var requestInstanceFleet_instanceFleet_ResizeSpecificationsIsNull = true;
             requestInstanceFleet_instanceFleet_ResizeSpecifications = new Amazon.ElasticMapReduce.Model.InstanceFleetResizingSpecifications();
-            Amazon.ElasticMapReduce.Model.OnDemandResizingSpecification requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification = null;
-            
-             // populate OnDemandResizeSpecification
-            var requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull = true;
-            requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification = new Amazon.ElasticMapReduce.Model.OnDemandResizingSpecification();
-            System.Int32? requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute = null;
-            if (cmdletContext.OnDemandResizeSpecification_TimeoutDurationMinute != null)
-            {
-                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute = cmdletContext.OnDemandResizeSpecification_TimeoutDurationMinute.Value;
-            }
-            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute != null)
-            {
-                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification.TimeoutDurationMinutes = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute.Value;
-                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull = false;
-            }
-             // determine if requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification should be set to null
-            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull)
-            {
-                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification = null;
-            }
-            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification != null)
-            {
-                requestInstanceFleet_instanceFleet_ResizeSpecifications.OnDemandResizeSpecification = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification;
-                requestInstanceFleet_instanceFleet_ResizeSpecificationsIsNull = false;
-            }
             Amazon.ElasticMapReduce.Model.SpotResizingSpecification requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification = null;
             
              // populate SpotResizeSpecification
             var requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecificationIsNull = true;
             requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification = new Amazon.ElasticMapReduce.Model.SpotResizingSpecification();
+            Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification_spotResizeSpecification_AllocationStrategy = null;
+            if (cmdletContext.SpotResizeSpecification_AllocationStrategy != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification_spotResizeSpecification_AllocationStrategy = cmdletContext.SpotResizeSpecification_AllocationStrategy;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification_spotResizeSpecification_AllocationStrategy != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification.AllocationStrategy = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification_spotResizeSpecification_AllocationStrategy;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecificationIsNull = false;
+            }
             System.Int32? requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification_spotResizeSpecification_TimeoutDurationMinute = null;
             if (cmdletContext.SpotResizeSpecification_TimeoutDurationMinute != null)
             {
@@ -664,6 +734,86 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification != null)
             {
                 requestInstanceFleet_instanceFleet_ResizeSpecifications.SpotResizeSpecification = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_SpotResizeSpecification;
+                requestInstanceFleet_instanceFleet_ResizeSpecificationsIsNull = false;
+            }
+            Amazon.ElasticMapReduce.Model.OnDemandResizingSpecification requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification = null;
+            
+             // populate OnDemandResizeSpecification
+            var requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull = true;
+            requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification = new Amazon.ElasticMapReduce.Model.OnDemandResizingSpecification();
+            Amazon.ElasticMapReduce.OnDemandProvisioningAllocationStrategy requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_AllocationStrategy = null;
+            if (cmdletContext.OnDemandResizeSpecification_AllocationStrategy != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_AllocationStrategy = cmdletContext.OnDemandResizeSpecification_AllocationStrategy;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_AllocationStrategy != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification.AllocationStrategy = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_AllocationStrategy;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull = false;
+            }
+            System.Int32? requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute = null;
+            if (cmdletContext.OnDemandResizeSpecification_TimeoutDurationMinute != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute = cmdletContext.OnDemandResizeSpecification_TimeoutDurationMinute.Value;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification.TimeoutDurationMinutes = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_onDemandResizeSpecification_TimeoutDurationMinute.Value;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull = false;
+            }
+            Amazon.ElasticMapReduce.Model.OnDemandCapacityReservationOptions requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions = null;
+            
+             // populate CapacityReservationOptions
+            var requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptionsIsNull = true;
+            requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions = new Amazon.ElasticMapReduce.Model.OnDemandCapacityReservationOptions();
+            Amazon.ElasticMapReduce.OnDemandCapacityReservationPreference requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference = null;
+            if (cmdletContext.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference = cmdletContext.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions.CapacityReservationPreference = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptionsIsNull = false;
+            }
+            System.String requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn = null;
+            if (cmdletContext.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn = cmdletContext.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions.CapacityReservationResourceGroupArn = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptionsIsNull = false;
+            }
+            Amazon.ElasticMapReduce.OnDemandCapacityReservationUsageStrategy requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy = null;
+            if (cmdletContext.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy = cmdletContext.InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions.UsageStrategy = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptionsIsNull = false;
+            }
+             // determine if requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions should be set to null
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptionsIsNull)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions = null;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification.CapacityReservationOptions = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions;
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull = false;
+            }
+             // determine if requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification should be set to null
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecificationIsNull)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification = null;
+            }
+            if (requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification != null)
+            {
+                requestInstanceFleet_instanceFleet_ResizeSpecifications.OnDemandResizeSpecification = requestInstanceFleet_instanceFleet_ResizeSpecifications_instanceFleet_ResizeSpecifications_OnDemandResizeSpecification;
                 requestInstanceFleet_instanceFleet_ResizeSpecificationsIsNull = false;
             }
              // determine if requestInstanceFleet_instanceFleet_ResizeSpecifications should be set to null
@@ -719,13 +869,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic MapReduce", "AddInstanceFleet");
             try
             {
-                #if DESKTOP
-                return client.AddInstanceFleet(request);
-                #elif CORECLR
-                return client.AddInstanceFleetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AddInstanceFleetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -743,6 +887,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClusterId { get; set; }
+            public System.String InstanceFleet_Context { get; set; }
             public Amazon.ElasticMapReduce.InstanceFleetType InstanceFleet_InstanceFleetType { get; set; }
             public List<Amazon.ElasticMapReduce.Model.InstanceTypeConfig> InstanceFleet_InstanceTypeConfig { get; set; }
             public Amazon.ElasticMapReduce.OnDemandProvisioningAllocationStrategy OnDemandSpecification_AllocationStrategy { get; set; }
@@ -754,7 +899,12 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             public Amazon.ElasticMapReduce.SpotProvisioningTimeoutAction SpotSpecification_TimeoutAction { get; set; }
             public System.Int32? SpotSpecification_TimeoutDurationMinute { get; set; }
             public System.String InstanceFleet_Name { get; set; }
+            public Amazon.ElasticMapReduce.OnDemandProvisioningAllocationStrategy OnDemandResizeSpecification_AllocationStrategy { get; set; }
+            public Amazon.ElasticMapReduce.OnDemandCapacityReservationPreference InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference { get; set; }
+            public System.String InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationResourceGroupArn { get; set; }
+            public Amazon.ElasticMapReduce.OnDemandCapacityReservationUsageStrategy InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy { get; set; }
             public System.Int32? OnDemandResizeSpecification_TimeoutDurationMinute { get; set; }
+            public Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy SpotResizeSpecification_AllocationStrategy { get; set; }
             public System.Int32? SpotResizeSpecification_TimeoutDurationMinute { get; set; }
             public System.Int32? InstanceFleet_TargetOnDemandCapacity { get; set; }
             public System.Int32? InstanceFleet_TargetSpotCapacity { get; set; }

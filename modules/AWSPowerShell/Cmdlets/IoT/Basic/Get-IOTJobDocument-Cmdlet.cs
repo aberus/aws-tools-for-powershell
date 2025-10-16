@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -41,12 +43,24 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [AWSCmdlet("Calls the AWS IoT GetJobDocument API operation.", Operation = new[] {"GetJobDocument"}, SelectReturnType = typeof(Amazon.IoT.Model.GetJobDocumentResponse))]
     [AWSCmdletOutput("System.String or Amazon.IoT.Model.GetJobDocumentResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.IoT.Model.GetJobDocumentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoT.Model.GetJobDocumentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTJobDocumentCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter BeforeSubstitution
+        /// <summary>
+        /// <para>
+        /// <para>Provides a view of the job document before and after the substitution parameters have
+        /// been resolved with their exact values.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? BeforeSubstitution { get; set; }
+        #endregion
         
         #region Parameter JobId
         /// <summary>
@@ -76,19 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public string Select { get; set; } = "Document";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -96,21 +104,12 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoT.Model.GetJobDocumentResponse, GetIOTJobDocumentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.BeforeSubstitution = this.BeforeSubstitution;
             context.JobId = this.JobId;
             #if MODULAR
             if (this.JobId == null && ParameterWasBound(nameof(this.JobId)))
@@ -134,6 +133,10 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // create request
             var request = new Amazon.IoT.Model.GetJobDocumentRequest();
             
+            if (cmdletContext.BeforeSubstitution != null)
+            {
+                request.BeforeSubstitution = cmdletContext.BeforeSubstitution.Value;
+            }
             if (cmdletContext.JobId != null)
             {
                 request.JobId = cmdletContext.JobId;
@@ -176,13 +179,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "GetJobDocument");
             try
             {
-                #if DESKTOP
-                return client.GetJobDocument(request);
-                #elif CORECLR
-                return client.GetJobDocumentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetJobDocumentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -199,6 +196,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? BeforeSubstitution { get; set; }
             public System.String JobId { get; set; }
             public System.Func<Amazon.IoT.Model.GetJobDocumentResponse, GetIOTJobDocumentCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Document;

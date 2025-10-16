@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -34,19 +36,31 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     /// <para>
     /// You can also create and update flows using the <a href="https://docs.aws.amazon.com/connect/latest/APIReference/flow-language.html">Amazon
     /// Connect Flow language</a>.
-    /// </para>
+    /// </para><para>
+    /// Use the <c>$SAVED</c> alias in the request to describe the <c>SAVED</c> content of
+    /// a Flow. For example, <c>arn:aws:.../contact-flow/{id}:$SAVED</c>. After a flow is
+    /// published, <c>$SAVED</c> needs to be supplied to view saved content that has not been
+    /// published.
+    /// </para><para>
+    /// Use <c>arn:aws:.../contact-flow/{id}:{version}</c> to retrieve the content of a specific
+    /// flow version.
+    /// </para><para>
+    /// In the response, <b>Status</b> indicates the flow status as either <c>SAVED</c> or
+    /// <c>PUBLISHED</c>. The <c>PUBLISHED</c> status will initiate validation on the content.
+    /// <c>SAVED</c> does not initiate validation of the content. <c>SAVED</c> | <c>PUBLISHED</c></para>
     /// </summary>
     [Cmdlet("Get", "CONNContactFlow")]
     [OutputType("Amazon.Connect.Model.ContactFlow")]
     [AWSCmdlet("Calls the Amazon Connect Service DescribeContactFlow API operation.", Operation = new[] {"DescribeContactFlow"}, SelectReturnType = typeof(Amazon.Connect.Model.DescribeContactFlowResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.ContactFlow or Amazon.Connect.Model.DescribeContactFlowResponse",
         "This cmdlet returns an Amazon.Connect.Model.ContactFlow object.",
-        "The service call response (type Amazon.Connect.Model.DescribeContactFlowResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Connect.Model.DescribeContactFlowResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCONNContactFlowCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactFlowId
         /// <summary>
@@ -93,19 +107,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "ContactFlow";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ContactFlowId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ContactFlowId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ContactFlowId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -113,21 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.DescribeContactFlowResponse, GetCONNContactFlowCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ContactFlowId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContactFlowId = this.ContactFlowId;
             #if MODULAR
             if (this.ContactFlowId == null && ParameterWasBound(nameof(this.ContactFlowId)))
@@ -204,13 +202,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "DescribeContactFlow");
             try
             {
-                #if DESKTOP
-                return client.DescribeContactFlow(request);
-                #elif CORECLR
-                return client.DescribeContactFlowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeContactFlowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

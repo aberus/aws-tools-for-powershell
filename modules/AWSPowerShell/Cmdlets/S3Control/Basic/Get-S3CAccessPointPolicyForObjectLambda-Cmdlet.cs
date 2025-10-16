@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -34,19 +36,24 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// Returns the resource policy for an Object Lambda Access Point.
     /// </para><para>
     /// The following actions are related to <c>GetAccessPointPolicyForObjectLambda</c>:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeleteAccessPointPolicyForObjectLambda.html">DeleteAccessPointPolicyForObjectLambda</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_PutAccessPointPolicyForObjectLambda.html">PutAccessPointPolicyForObjectLambda</a></para></li></ul>
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeleteAccessPointPolicyForObjectLambda.html">DeleteAccessPointPolicyForObjectLambda</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_PutAccessPointPolicyForObjectLambda.html">PutAccessPointPolicyForObjectLambda</a></para></li></ul><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Get", "S3CAccessPointPolicyForObjectLambda")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon S3 Control GetAccessPointPolicyForObjectLambda API operation.", Operation = new[] {"GetAccessPointPolicyForObjectLambda"}, SelectReturnType = typeof(Amazon.S3Control.Model.GetAccessPointPolicyForObjectLambdaResponse))]
     [AWSCmdletOutput("System.String or Amazon.S3Control.Model.GetAccessPointPolicyForObjectLambdaResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.S3Control.Model.GetAccessPointPolicyForObjectLambdaResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3Control.Model.GetAccessPointPolicyForObjectLambdaResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetS3CAccessPointPolicyForObjectLambdaCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -93,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public string Select { get; set; } = "Policy";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -184,13 +195,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "GetAccessPointPolicyForObjectLambda");
             try
             {
-                #if DESKTOP
-                return client.GetAccessPointPolicyForObjectLambda(request);
-                #elif CORECLR
-                return client.GetAccessPointPolicyForObjectLambdaAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAccessPointPolicyForObjectLambdaAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

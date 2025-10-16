@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchEvidently;
 using Amazon.CloudWatchEvidently.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWEVD
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
     [OutputType("Amazon.CloudWatchEvidently.Model.StopExperimentResponse")]
     [AWSCmdlet("Calls the Amazon CloudWatch Evidently StopExperiment API operation.", Operation = new[] {"StopExperiment"}, SelectReturnType = typeof(Amazon.CloudWatchEvidently.Model.StopExperimentResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchEvidently.Model.StopExperimentResponse",
-        "This cmdlet returns an Amazon.CloudWatchEvidently.Model.StopExperimentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudWatchEvidently.Model.StopExperimentResponse object containing multiple properties."
     )]
     public partial class StopCWEVDExperimentCmdlet : AmazonCloudWatchEvidentlyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DesiredState
         /// <summary>
@@ -119,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Experiment), MyInvocation.BoundParameters);
@@ -226,13 +233,7 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Evidently", "StopExperiment");
             try
             {
-                #if DESKTOP
-                return client.StopExperiment(request);
-                #elif CORECLR
-                return client.StopExperimentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StopExperimentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

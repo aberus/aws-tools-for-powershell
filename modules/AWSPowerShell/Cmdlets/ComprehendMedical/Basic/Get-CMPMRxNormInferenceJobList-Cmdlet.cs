@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ComprehendMedical;
 using Amazon.ComprehendMedical.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CMPM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CMPM
     [AWSCmdlet("Calls the AWS Comprehend Medical ListRxNormInferenceJobs API operation.", Operation = new[] {"ListRxNormInferenceJobs"}, SelectReturnType = typeof(Amazon.ComprehendMedical.Model.ListRxNormInferenceJobsResponse))]
     [AWSCmdletOutput("Amazon.ComprehendMedical.Model.ComprehendMedicalAsyncJobProperties or Amazon.ComprehendMedical.Model.ListRxNormInferenceJobsResponse",
         "This cmdlet returns a collection of Amazon.ComprehendMedical.Model.ComprehendMedicalAsyncJobProperties objects.",
-        "The service call response (type Amazon.ComprehendMedical.Model.ListRxNormInferenceJobsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ComprehendMedical.Model.ListRxNormInferenceJobsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCMPMRxNormInferenceJobListCmdlet : AmazonComprehendMedicalClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter_JobName
         /// <summary>
@@ -120,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.CMPM
         public string Select { get; set; } = "ComprehendMedicalAsyncJobPropertiesList";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -252,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.CMPM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Comprehend Medical", "ListRxNormInferenceJobs");
             try
             {
-                #if DESKTOP
-                return client.ListRxNormInferenceJobs(request);
-                #elif CORECLR
-                return client.ListRxNormInferenceJobsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRxNormInferenceJobsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

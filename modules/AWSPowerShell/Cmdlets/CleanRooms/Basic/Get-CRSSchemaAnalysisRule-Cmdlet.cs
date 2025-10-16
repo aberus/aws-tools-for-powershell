@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRooms;
 using Amazon.CleanRooms.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
     [AWSCmdlet("Calls the AWS Clean Rooms Service GetSchemaAnalysisRule API operation.", Operation = new[] {"GetSchemaAnalysisRule"}, SelectReturnType = typeof(Amazon.CleanRooms.Model.GetSchemaAnalysisRuleResponse))]
     [AWSCmdletOutput("Amazon.CleanRooms.Model.AnalysisRule or Amazon.CleanRooms.Model.GetSchemaAnalysisRuleResponse",
         "This cmdlet returns an Amazon.CleanRooms.Model.AnalysisRule object.",
-        "The service call response (type Amazon.CleanRooms.Model.GetSchemaAnalysisRuleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRooms.Model.GetSchemaAnalysisRuleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCRSSchemaAnalysisRuleCmdlet : AmazonCleanRoomsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CollaborationIdentifier
         /// <summary>
@@ -106,19 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public string Select { get; set; } = "AnalysisRule";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CollaborationIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CollaborationIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CollaborationIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -126,21 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CleanRooms.Model.GetSchemaAnalysisRuleResponse, GetCRSSchemaAnalysisRuleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CollaborationIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CollaborationIdentifier = this.CollaborationIdentifier;
             #if MODULAR
             if (this.CollaborationIdentifier == null && ParameterWasBound(nameof(this.CollaborationIdentifier)))
@@ -228,13 +215,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Clean Rooms Service", "GetSchemaAnalysisRule");
             try
             {
-                #if DESKTOP
-                return client.GetSchemaAnalysisRule(request);
-                #elif CORECLR
-                return client.GetSchemaAnalysisRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetSchemaAnalysisRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkMail;
 using Amazon.WorkMail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
     [AWSCmdlet("Calls the Amazon WorkMail ListOrganizations API operation.", Operation = new[] {"ListOrganizations"}, SelectReturnType = typeof(Amazon.WorkMail.Model.ListOrganizationsResponse))]
     [AWSCmdletOutput("Amazon.WorkMail.Model.OrganizationSummary or Amazon.WorkMail.Model.ListOrganizationsResponse",
         "This cmdlet returns a collection of Amazon.WorkMail.Model.OrganizationSummary objects.",
-        "The service call response (type Amazon.WorkMail.Model.ListOrganizationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkMail.Model.ListOrganizationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetWMOrganizationListCmdlet : AmazonWorkMailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -67,7 +70,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,9 +98,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -257,7 +264,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.OrganizationSummaries.Count;
+                    int _receivedThisCall = response.OrganizationSummaries?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -306,13 +313,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkMail", "ListOrganizations");
             try
             {
-                #if DESKTOP
-                return client.ListOrganizations(request);
-                #elif CORECLR
-                return client.ListOrganizationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListOrganizationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

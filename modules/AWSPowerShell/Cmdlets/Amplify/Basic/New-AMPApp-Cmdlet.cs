@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Amplify;
 using Amazon.Amplify.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMP
 {
     /// <summary>
@@ -35,16 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
     [AWSCmdlet("Calls the AWS Amplify CreateApp API operation.", Operation = new[] {"CreateApp"}, SelectReturnType = typeof(Amazon.Amplify.Model.CreateAppResponse))]
     [AWSCmdletOutput("Amazon.Amplify.Model.App or Amazon.Amplify.Model.CreateAppResponse",
         "This cmdlet returns an Amazon.Amplify.Model.App object.",
-        "The service call response (type Amazon.Amplify.Model.CreateAppResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Amplify.Model.CreateAppResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAMPAppCmdlet : AmazonAmplifyClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessToken
         /// <summary>
@@ -67,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter AutoBranchCreationPattern
         /// <summary>
         /// <para>
-        /// <para>The automated branch creation glob patterns for an Amplify app. </para>
+        /// <para>The automated branch creation glob patterns for an Amplify app. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,6 +102,20 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public System.String BasicAuthCredential { get; set; }
         #endregion
         
+        #region Parameter JobConfig_BuildComputeType
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the size of the build instance. Amplify supports three instance sizes: <c>STANDARD_8GB</c>,
+        /// <c>LARGE_16GB</c>, and <c>XLARGE_72GB</c>. If you don't specify a value, Amplify uses
+        /// the <c>STANDARD_8GB</c> default.</para><para>The following list describes the CPU, memory, and storage capacity for each build
+        /// instance type:</para><dl><dt>STANDARD_8GB</dt><dd><ul><li><para>vCPUs: 4</para></li><li><para>Memory: 8 GiB</para></li><li><para>Disk space: 128 GB</para></li></ul></dd><dt>LARGE_16GB</dt><dd><ul><li><para>vCPUs: 8</para></li><li><para>Memory: 16 GiB</para></li><li><para>Disk space: 128 GB</para></li></ul></dd><dt>XLARGE_72GB</dt><dd><ul><li><para>vCPUs: 36</para></li><li><para>Memory: 72 GiB</para></li><li><para>Disk space: 256 GB</para></li></ul></dd></dl>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Amplify.BuildComputeType")]
+        public Amazon.Amplify.BuildComputeType JobConfig_BuildComputeType { get; set; }
+        #endregion
+        
         #region Parameter AutoBranchCreationConfig_BuildSpec
         /// <summary>
         /// <para>
@@ -119,6 +136,20 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public System.String BuildSpec { get; set; }
         #endregion
         
+        #region Parameter ComputeRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role to assign to an SSR app. The SSR Compute
+        /// role allows the Amplify Hosting compute service to securely access specific Amazon
+        /// Web Services resources based on the role's permissions. For more information about
+        /// the SSR Compute role, see <a href="https://docs.aws.amazon.com/amplify/latest/userguide/amplify-SSR-compute-role.html">Adding
+        /// an SSR Compute role</a> in the <i>Amplify User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ComputeRoleArn { get; set; }
+        #endregion
+        
         #region Parameter CustomHeader
         /// <summary>
         /// <para>
@@ -133,7 +164,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter CustomRule
         /// <summary>
         /// <para>
-        /// <para>The custom rewrite and redirect rules for an Amplify app. </para>
+        /// <para>The custom rewrite and redirect rules for an Amplify app. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -238,7 +273,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter AutoBranchCreationConfig_EnvironmentVariable
         /// <summary>
         /// <para>
-        /// <para>The environment variables for the autocreated branch. </para>
+        /// <para>The environment variables for the autocreated branch. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -251,7 +290,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         /// <para>
         /// <para>The environment variables map for an Amplify app. </para><para>For a list of the environment variables that are accessible to Amplify by default,
         /// see <a href="https://docs.aws.amazon.com/amplify/latest/userguide/amplify-console-environment-variables.html">Amplify
-        /// Environment variables</a> in the <i>Amplify Hosting User Guide</i>.</para>
+        /// Environment variables</a> in the <i>Amplify Hosting User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -272,7 +315,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter IamServiceRoleArn
         /// <summary>
         /// <para>
-        /// <para>The AWS Identity and Access Management (IAM) service role for an Amplify app. </para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM service role for the Amplify app.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -320,7 +363,12 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         /// <para>The platform for the Amplify app. For a static app, set the platform type to <c>WEB</c>.
         /// For a dynamic server-side rendered (SSR) app, set the platform type to <c>WEB_COMPUTE</c>.
         /// For an app requiring Amplify Hosting's original SSR support only, set the platform
-        /// type to <c>WEB_DYNAMIC</c>.</para>
+        /// type to <c>WEB_DYNAMIC</c>.</para><para>If you are deploying an SSG only app with Next.js version 14 or later, you must set
+        /// the platform type to <c>WEB_COMPUTE</c> and set the artifacts <c>baseDirectory</c>
+        /// to <c>.next</c> in the application's build settings. For an example of the build specification
+        /// settings, see <a href="https://docs.aws.amazon.com/amplify/latest/userguide/deploy-nextjs-app.html#build-setting-detection-ssg-14">Amplify
+        /// build settings for a Next.js 14 SSG application</a> in the <i>Amplify Hosting User
+        /// Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -362,12 +410,30 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tag for an Amplify app. </para>
+        /// <para>The tag for an Amplify app. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter CacheConfig_Type
+        /// <summary>
+        /// <para>
+        /// <para>The type of cache configuration to use for an Amplify app.</para><para>The <c>AMPLIFY_MANAGED</c> cache configuration automatically applies an optimized
+        /// cache configuration for your app based on its platform, routing rules, and rewrite
+        /// rules.</para><para>The <c>AMPLIFY_MANAGED_NO_COOKIES</c> cache configuration type is the same as <c>AMPLIFY_MANAGED</c>,
+        /// except that it excludes all cookies from the cache key. This is the default setting.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Amplify.CacheConfigType")]
+        public Amazon.Amplify.CacheConfigType CacheConfig_Type { get; set; }
         #endregion
         
         #region Parameter Select
@@ -381,16 +447,6 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public string Select { get; set; } = "App";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -401,9 +457,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -417,21 +477,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Amplify.Model.CreateAppResponse, NewAMPAppCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessToken = this.AccessToken;
             context.AutoBranchCreationConfig_BasicAuthCredential = this.AutoBranchCreationConfig_BasicAuthCredential;
             context.AutoBranchCreationConfig_BuildSpec = this.AutoBranchCreationConfig_BuildSpec;
@@ -456,6 +506,8 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             }
             context.BasicAuthCredential = this.BasicAuthCredential;
             context.BuildSpec = this.BuildSpec;
+            context.CacheConfig_Type = this.CacheConfig_Type;
+            context.ComputeRoleArn = this.ComputeRoleArn;
             context.CustomHeader = this.CustomHeader;
             if (this.CustomRule != null)
             {
@@ -475,6 +527,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
                 }
             }
             context.IamServiceRoleArn = this.IamServiceRoleArn;
+            context.JobConfig_BuildComputeType = this.JobConfig_BuildComputeType;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -634,6 +687,29 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             {
                 request.BuildSpec = cmdletContext.BuildSpec;
             }
+            
+             // populate CacheConfig
+            var requestCacheConfigIsNull = true;
+            request.CacheConfig = new Amazon.Amplify.Model.CacheConfig();
+            Amazon.Amplify.CacheConfigType requestCacheConfig_cacheConfig_Type = null;
+            if (cmdletContext.CacheConfig_Type != null)
+            {
+                requestCacheConfig_cacheConfig_Type = cmdletContext.CacheConfig_Type;
+            }
+            if (requestCacheConfig_cacheConfig_Type != null)
+            {
+                request.CacheConfig.Type = requestCacheConfig_cacheConfig_Type;
+                requestCacheConfigIsNull = false;
+            }
+             // determine if request.CacheConfig should be set to null
+            if (requestCacheConfigIsNull)
+            {
+                request.CacheConfig = null;
+            }
+            if (cmdletContext.ComputeRoleArn != null)
+            {
+                request.ComputeRoleArn = cmdletContext.ComputeRoleArn;
+            }
             if (cmdletContext.CustomHeader != null)
             {
                 request.CustomHeaders = cmdletContext.CustomHeader;
@@ -669,6 +745,25 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             if (cmdletContext.IamServiceRoleArn != null)
             {
                 request.IamServiceRoleArn = cmdletContext.IamServiceRoleArn;
+            }
+            
+             // populate JobConfig
+            var requestJobConfigIsNull = true;
+            request.JobConfig = new Amazon.Amplify.Model.JobConfig();
+            Amazon.Amplify.BuildComputeType requestJobConfig_jobConfig_BuildComputeType = null;
+            if (cmdletContext.JobConfig_BuildComputeType != null)
+            {
+                requestJobConfig_jobConfig_BuildComputeType = cmdletContext.JobConfig_BuildComputeType;
+            }
+            if (requestJobConfig_jobConfig_BuildComputeType != null)
+            {
+                request.JobConfig.BuildComputeType = requestJobConfig_jobConfig_BuildComputeType;
+                requestJobConfigIsNull = false;
+            }
+             // determine if request.JobConfig should be set to null
+            if (requestJobConfigIsNull)
+            {
+                request.JobConfig = null;
             }
             if (cmdletContext.Name != null)
             {
@@ -728,13 +823,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify", "CreateApp");
             try
             {
-                #if DESKTOP
-                return client.CreateApp(request);
-                #elif CORECLR
-                return client.CreateAppAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAppAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -765,6 +854,8 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             public List<System.String> AutoBranchCreationPattern { get; set; }
             public System.String BasicAuthCredential { get; set; }
             public System.String BuildSpec { get; set; }
+            public Amazon.Amplify.CacheConfigType CacheConfig_Type { get; set; }
+            public System.String ComputeRoleArn { get; set; }
             public System.String CustomHeader { get; set; }
             public List<Amazon.Amplify.Model.CustomRule> CustomRule { get; set; }
             public System.String Description { get; set; }
@@ -774,6 +865,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             public System.Boolean? EnableBranchAutoDeletion { get; set; }
             public Dictionary<System.String, System.String> EnvironmentVariable { get; set; }
             public System.String IamServiceRoleArn { get; set; }
+            public Amazon.Amplify.BuildComputeType JobConfig_BuildComputeType { get; set; }
             public System.String Name { get; set; }
             public System.String OauthToken { get; set; }
             public Amazon.Amplify.Platform Platform { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -69,21 +71,24 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     [AWSCmdlet("Calls the Amazon Connect Service StartTaskContact API operation.", Operation = new[] {"StartTaskContact"}, SelectReturnType = typeof(Amazon.Connect.Model.StartTaskContactResponse))]
     [AWSCmdletOutput("System.String or Amazon.Connect.Model.StartTaskContactResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Connect.Model.StartTaskContactResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Connect.Model.StartTaskContactResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCONNTaskContactCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
         /// <para>
         /// <para>A custom key-value pair using an attribute map. The attributes are standard Amazon
         /// Connect attributes, and can be accessed in flows just like any other contact attributes.</para><para>There can be up to 32,768 UTF-8 bytes across all key-value pairs per contact. Attribute
-        /// keys can include only alphanumeric, dash, and underscore characters.</para>
+        /// keys can include only alphanumeric, dash, and underscore characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,10 +100,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>The identifier of the flow for initiating the tasks. To see the ContactFlowId in the
-        /// Amazon Connect admin website, on the navigation menu go to <b>Routing</b>, <b>Contact
-        /// Flows</b>. Choose the flow. On the flow page, under the name of the flow, choose <b>Show
-        /// additional flow information</b>. The ContactFlowId is the last part of the ARN, shown
-        /// here in bold: </para><para>arn:aws:connect:us-west-2:xxxxxxxxxxxx:instance/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/contact-flow/<b>846ec553-a005-41c0-8341-xxxxxxxxxxxx</b></para>
+        /// Amazon Connect admin website, on the navigation menu go to <b>Routing</b>, <b>Flows</b>.
+        /// Choose the flow. On the flow page, under the name of the flow, choose <b>Show additional
+        /// flow information</b>. The ContactFlowId is the last part of the ARN, shown here in
+        /// bold: </para><para>arn:aws:connect:us-west-2:xxxxxxxxxxxx:instance/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/contact-flow/<b>846ec553-a005-41c0-8341-xxxxxxxxxxxx</b></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,7 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <para>A formatted URL that is shown to an agent in the Contact Control Panel (CCP). Tasks
         /// can have the following reference types at the time of creation: <c>URL</c> | <c>NUMBER</c>
         /// | <c>STRING</c> | <c>DATE</c> | <c>EMAIL</c>. <c>ATTACHMENT</c> is not a supported
-        /// reference type during task creation.</para>
+        /// reference type during task creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -216,6 +225,29 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.DateTime? ScheduledTime { get; set; }
+        #endregion
+        
+        #region Parameter SegmentAttribute
+        /// <summary>
+        /// <para>
+        /// <para>A set of system defined key-value pairs stored on individual contact segments (unique
+        /// contact ID) using an attribute map. The attributes are standard Amazon Connect attributes.
+        /// They can be accessed in flows.</para><para>Attribute keys can include only alphanumeric, -, and _.</para><para>This field can be used to set Contact Expiry as a duration in minutes and set a UserId
+        /// for the User who created a task.</para><note><para>To set contact expiry, a ValueMap must be specified containing the integer number
+        /// of minutes the contact will be active for before expiring, with <c>SegmentAttributes</c>
+        /// like { <c> "connect:ContactExpiry": {"ValueMap" : { "ExpiryDuration": { "ValueInteger":
+        /// 135}}}}</c>. </para><para>To set the created by user, a valid AgentResourceId must be supplied, with <c>SegmentAttributes</c>
+        /// like { <c>"connect:CreatedByUser" { "ValueString": "arn:aws:connect:us-west-2:xxxxxxxxxxxx:instance/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/agent/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}}}</c>.
+        /// </para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SegmentAttributes")]
+        public System.Collections.Hashtable SegmentAttribute { get; set; }
         #endregion
         
         #region Parameter TaskTemplateId
@@ -254,16 +286,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "ContactId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -274,9 +296,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -290,21 +316,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.StartTaskContactResponse, StartCONNTaskContactCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -342,6 +358,14 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             }
             context.RelatedContactId = this.RelatedContactId;
             context.ScheduledTime = this.ScheduledTime;
+            if (this.SegmentAttribute != null)
+            {
+                context.SegmentAttribute = new Dictionary<System.String, Amazon.Connect.Model.SegmentAttributeValue>(StringComparer.Ordinal);
+                foreach (var hashKey in this.SegmentAttribute.Keys)
+                {
+                    context.SegmentAttribute.Add((String)hashKey, (Amazon.Connect.Model.SegmentAttributeValue)(this.SegmentAttribute[hashKey]));
+                }
+            }
             context.TaskTemplateId = this.TaskTemplateId;
             
             // allow further manipulation of loaded context prior to processing
@@ -403,6 +427,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             {
                 request.ScheduledTime = cmdletContext.ScheduledTime.Value;
             }
+            if (cmdletContext.SegmentAttribute != null)
+            {
+                request.SegmentAttributes = cmdletContext.SegmentAttribute;
+            }
             if (cmdletContext.TaskTemplateId != null)
             {
                 request.TaskTemplateId = cmdletContext.TaskTemplateId;
@@ -445,13 +473,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "StartTaskContact");
             try
             {
-                #if DESKTOP
-                return client.StartTaskContact(request);
-                #elif CORECLR
-                return client.StartTaskContactAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartTaskContactAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -479,6 +501,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             public Dictionary<System.String, Amazon.Connect.Model.Reference> Reference { get; set; }
             public System.String RelatedContactId { get; set; }
             public System.DateTime? ScheduledTime { get; set; }
+            public Dictionary<System.String, Amazon.Connect.Model.SegmentAttributeValue> SegmentAttribute { get; set; }
             public System.String TaskTemplateId { get; set; }
             public System.Func<Amazon.Connect.Model.StartTaskContactResponse, StartCONNTaskContactCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ContactId;

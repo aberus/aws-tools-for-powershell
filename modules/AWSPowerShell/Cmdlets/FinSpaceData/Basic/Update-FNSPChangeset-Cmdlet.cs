@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FinSpaceData;
 using Amazon.FinSpaceData.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FNSP
 {
     /// <summary>
@@ -34,13 +36,14 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
     [OutputType("Amazon.FinSpaceData.Model.UpdateChangesetResponse")]
     [AWSCmdlet("Calls the FinSpace Public API UpdateChangeset API operation.", Operation = new[] {"UpdateChangeset"}, SelectReturnType = typeof(Amazon.FinSpaceData.Model.UpdateChangesetResponse))]
     [AWSCmdletOutput("Amazon.FinSpaceData.Model.UpdateChangesetResponse",
-        "This cmdlet returns an Amazon.FinSpaceData.Model.UpdateChangesetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.FinSpaceData.Model.UpdateChangesetResponse object containing multiple properties."
     )]
     [System.ObsoleteAttribute("This method will be discontinued.")]
     public partial class UpdateFNSPChangesetCmdlet : AmazonFinSpaceDataClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChangesetId
         /// <summary>
@@ -84,7 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
         /// and the type of compression (<c>compression</c>). </para><para><c>formatType</c> is a required attribute and can have the following values: </para><ul><li><para><c>PARQUET</c> – Parquet source file format.</para></li><li><para><c>CSV</c> – CSV source file format.</para></li><li><para><c>JSON</c> – JSON source file format.</para></li><li><para><c>XML</c> – XML source file format.</para></li></ul><para>Here is an example of how you could specify the <c>formatParams</c>:</para><para><c> "formatParams": { "formatType": "CSV", "withHeader": "true", "separator": ",",
         /// "compression":"None" } </c></para><para>Note that if you only provide <c>formatType</c> as <c>CSV</c>, the rest of the attributes
         /// will automatically default to CSV values as following:</para><para><c> { "withHeader": "true", "separator": "," } </c></para><para> For more information about supported file formats, see <a href="https://docs.aws.amazon.com/finspace/latest/userguide/supported-data-types.html">Supported
-        /// Data Types and File Formats</a> in the FinSpace User Guide.</para>
+        /// Data Types and File Formats</a> in the FinSpace User Guide.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -106,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
         /// and the source of the changeset (<c>sourceType</c>).</para><para>Both <c>s3SourcePath</c> and <c>sourceType</c> are required attributes.</para><para>Here is an example of how you could specify the <c>sourceParams</c>:</para><para><c> "sourceParams": { "s3SourcePath": "s3://finspace-landing-us-east-2-bk7gcfvitndqa6ebnvys4d/scratch/wr5hh8pwkpqqkxa4sxrmcw/ingestion/equity.csv",
         /// "sourceType": "S3" } </c></para><para>The S3 path that you specify must allow the FinSpace role access. To do that, you
         /// first need to configure the IAM policy on S3 bucket. For more information, see <a href="https://docs.aws.amazon.com/finspace/latest/data-api/fs-using-the-finspace-api.html#access-s3-buckets">Loading
-        /// data from an Amazon S3 Bucket using the FinSpace API</a>section.</para>
+        /// data from an Amazon S3 Bucket using the FinSpace API</a>section.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -142,16 +153,6 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DatasetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DatasetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DatasetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -162,9 +163,13 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatasetId), MyInvocation.BoundParameters);
@@ -178,21 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FinSpaceData.Model.UpdateChangesetResponse, UpdateFNSPChangesetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DatasetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ChangesetId = this.ChangesetId;
             #if MODULAR
             if (this.ChangesetId == null && ParameterWasBound(nameof(this.ChangesetId)))
@@ -310,13 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "FinSpace Public API", "UpdateChangeset");
             try
             {
-                #if DESKTOP
-                return client.UpdateChangeset(request);
-                #elif CORECLR
-                return client.UpdateChangesetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateChangesetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

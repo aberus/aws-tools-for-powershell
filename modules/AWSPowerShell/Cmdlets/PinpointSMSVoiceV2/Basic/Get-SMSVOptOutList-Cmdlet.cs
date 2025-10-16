@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
@@ -44,18 +46,24 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.DescribeOptOutListsResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 DescribeOptOutLists API operation.", Operation = new[] {"DescribeOptOutLists"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.DescribeOptOutListsResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.DescribeOptOutListsResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.DescribeOptOutListsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.DescribeOptOutListsResponse object containing multiple properties."
     )]
     public partial class GetSMSVOptOutListCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OptOutListName
         /// <summary>
         /// <para>
         /// <para>The OptOutLists to show the details of. This is an array of strings that can be either
-        /// the OptOutListName or OptOutListArn.</para>
+        /// the OptOutListName or OptOutListArn.</para><important><para>If you are using a shared AWS End User Messaging SMS and Voice resource then you must
+        /// use the full Amazon Resource Name(ARN).</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,11 +90,24 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NextToken { get; set; }
+        #endregion
+        
+        #region Parameter Owner
+        /// <summary>
+        /// <para>
+        /// <para>Use <c>SELF</c> to filter the list of Opt-Out List to ones your account owns or use
+        /// <c>SHARED</c> to filter on Opt-Out List shared with your account. The <c>Owner</c>
+        /// and <c>OptOutListNames</c> parameters can't be used at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.PinpointSMSVoiceV2.Owner")]
+        public Amazon.PinpointSMSVoiceV2.Owner Owner { get; set; }
         #endregion
         
         #region Parameter Select
@@ -110,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -131,6 +156,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             {
                 context.OptOutListName = new List<System.String>(this.OptOutListName);
             }
+            context.Owner = this.Owner;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -156,6 +182,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             if (cmdletContext.OptOutListName != null)
             {
                 request.OptOutListNames = cmdletContext.OptOutListName;
+            }
+            if (cmdletContext.Owner != null)
+            {
+                request.Owner = cmdletContext.Owner;
             }
             
             // Initialize loop variant and commence piping
@@ -219,13 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "DescribeOptOutLists");
             try
             {
-                #if DESKTOP
-                return client.DescribeOptOutLists(request);
-                #elif CORECLR
-                return client.DescribeOptOutListsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeOptOutListsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -245,6 +269,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public List<System.String> OptOutListName { get; set; }
+            public Amazon.PinpointSMSVoiceV2.Owner Owner { get; set; }
             public System.Func<Amazon.PinpointSMSVoiceV2.Model.DescribeOptOutListsResponse, GetSMSVOptOutListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,41 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OpenSearchServerless;
 using Amazon.OpenSearchServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OSS
 {
     /// <summary>
-    /// Returns attributes for one or more collections, including the collection endpoint
-    /// and the OpenSearch Dashboards endpoint. For more information, see <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-manage.html">Creating
+    /// Returns attributes for one or more collections, including the collection endpoint,
+    /// the OpenSearch Dashboards endpoint, and FIPS-compliant endpoints. For more information,
+    /// see <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-manage.html">Creating
     /// and managing Amazon OpenSearch Serverless collections</a>.
     /// </summary>
     [Cmdlet("Get", "OSSGetCollection")]
     [OutputType("Amazon.OpenSearchServerless.Model.BatchGetCollectionResponse")]
     [AWSCmdlet("Calls the OpenSearch Serverless BatchGetCollection API operation.", Operation = new[] {"BatchGetCollection"}, SelectReturnType = typeof(Amazon.OpenSearchServerless.Model.BatchGetCollectionResponse))]
     [AWSCmdletOutput("Amazon.OpenSearchServerless.Model.BatchGetCollectionResponse",
-        "This cmdlet returns an Amazon.OpenSearchServerless.Model.BatchGetCollectionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.OpenSearchServerless.Model.BatchGetCollectionResponse object containing multiple properties."
     )]
     public partial class GetOSSGetCollectionCmdlet : AmazonOpenSearchServerlessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Id
         /// <summary>
         /// <para>
         /// <para>A list of collection IDs. You can't provide names and IDs in the same request. The
         /// ID is part of the collection endpoint. You can also retrieve it using the <a href="https://docs.aws.amazon.com/opensearch-service/latest/ServerlessAPIReference/API_ListCollections.html">ListCollections</a>
-        /// API.</para>
+        /// API.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -59,7 +67,11 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>A list of collection names. You can't provide names and IDs in the same request.</para>
+        /// <para>A list of collection names. You can't provide names and IDs in the same request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,9 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -163,13 +179,7 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "OpenSearch Serverless", "BatchGetCollection");
             try
             {
-                #if DESKTOP
-                return client.BatchGetCollection(request);
-                #elif CORECLR
-                return client.BatchGetCollectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchGetCollectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

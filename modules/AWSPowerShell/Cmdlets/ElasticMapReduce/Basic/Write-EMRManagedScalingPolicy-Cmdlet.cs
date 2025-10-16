@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticMapReduce;
 using Amazon.ElasticMapReduce.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMR
 {
     /// <summary>
@@ -38,12 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
     [AWSCmdlet("Calls the Amazon Elastic MapReduce PutManagedScalingPolicy API operation.", Operation = new[] {"PutManagedScalingPolicy"}, SelectReturnType = typeof(Amazon.ElasticMapReduce.Model.PutManagedScalingPolicyResponse))]
     [AWSCmdletOutput("None or Amazon.ElasticMapReduce.Model.PutManagedScalingPolicyResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ElasticMapReduce.Model.PutManagedScalingPolicyResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ElasticMapReduce.Model.PutManagedScalingPolicyResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteEMRManagedScalingPolicyCmdlet : AmazonElasticMapReduceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterId
         /// <summary>
@@ -119,6 +122,18 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public System.Int32? ComputeLimits_MinimumCapacityUnit { get; set; }
         #endregion
         
+        #region Parameter ManagedScalingPolicy_ScalingStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Determines whether a custom scaling utilization performance index can be set. Possible
+        /// values include <i>ADVANCED</i> or <i>DEFAULT</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ElasticMapReduce.ScalingStrategy")]
+        public Amazon.ElasticMapReduce.ScalingStrategy ManagedScalingPolicy_ScalingStrategy { get; set; }
+        #endregion
+        
         #region Parameter ComputeLimits_UnitType
         /// <summary>
         /// <para>
@@ -131,6 +146,19 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public Amazon.ElasticMapReduce.ComputeLimitsUnitType ComputeLimits_UnitType { get; set; }
         #endregion
         
+        #region Parameter ManagedScalingPolicy_UtilizationPerformanceIndex
+        /// <summary>
+        /// <para>
+        /// <para>An integer value that represents an advanced scaling strategy. Setting a higher value
+        /// optimizes for performance. Setting a lower value optimizes for resource conservation.
+        /// Setting the value to 50 balances performance and resource conservation. Possible values
+        /// are 1, 25, 50, 75, and 100.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ManagedScalingPolicy_UtilizationPerformanceIndex { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -139,16 +167,6 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -161,9 +179,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterId), MyInvocation.BoundParameters);
@@ -177,21 +199,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticMapReduce.Model.PutManagedScalingPolicyResponse, WriteEMRManagedScalingPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterId = this.ClusterId;
             #if MODULAR
             if (this.ClusterId == null && ParameterWasBound(nameof(this.ClusterId)))
@@ -204,6 +216,8 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             context.ComputeLimits_MaximumOnDemandCapacityUnit = this.ComputeLimits_MaximumOnDemandCapacityUnit;
             context.ComputeLimits_MinimumCapacityUnit = this.ComputeLimits_MinimumCapacityUnit;
             context.ComputeLimits_UnitType = this.ComputeLimits_UnitType;
+            context.ManagedScalingPolicy_ScalingStrategy = this.ManagedScalingPolicy_ScalingStrategy;
+            context.ManagedScalingPolicy_UtilizationPerformanceIndex = this.ManagedScalingPolicy_UtilizationPerformanceIndex;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -228,6 +242,26 @@ namespace Amazon.PowerShell.Cmdlets.EMR
              // populate ManagedScalingPolicy
             var requestManagedScalingPolicyIsNull = true;
             request.ManagedScalingPolicy = new Amazon.ElasticMapReduce.Model.ManagedScalingPolicy();
+            Amazon.ElasticMapReduce.ScalingStrategy requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy = null;
+            if (cmdletContext.ManagedScalingPolicy_ScalingStrategy != null)
+            {
+                requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy = cmdletContext.ManagedScalingPolicy_ScalingStrategy;
+            }
+            if (requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy != null)
+            {
+                request.ManagedScalingPolicy.ScalingStrategy = requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy;
+                requestManagedScalingPolicyIsNull = false;
+            }
+            System.Int32? requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex = null;
+            if (cmdletContext.ManagedScalingPolicy_UtilizationPerformanceIndex != null)
+            {
+                requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex = cmdletContext.ManagedScalingPolicy_UtilizationPerformanceIndex.Value;
+            }
+            if (requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex != null)
+            {
+                request.ManagedScalingPolicy.UtilizationPerformanceIndex = requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex.Value;
+                requestManagedScalingPolicyIsNull = false;
+            }
             Amazon.ElasticMapReduce.Model.ComputeLimits requestManagedScalingPolicy_managedScalingPolicy_ComputeLimits = null;
             
              // populate ComputeLimits
@@ -336,13 +370,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic MapReduce", "PutManagedScalingPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutManagedScalingPolicy(request);
-                #elif CORECLR
-                return client.PutManagedScalingPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutManagedScalingPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -365,6 +393,8 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             public System.Int32? ComputeLimits_MaximumOnDemandCapacityUnit { get; set; }
             public System.Int32? ComputeLimits_MinimumCapacityUnit { get; set; }
             public Amazon.ElasticMapReduce.ComputeLimitsUnitType ComputeLimits_UnitType { get; set; }
+            public Amazon.ElasticMapReduce.ScalingStrategy ManagedScalingPolicy_ScalingStrategy { get; set; }
+            public System.Int32? ManagedScalingPolicy_UtilizationPerformanceIndex { get; set; }
             public System.Func<Amazon.ElasticMapReduce.Model.PutManagedScalingPolicyResponse, WriteEMRManagedScalingPolicyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

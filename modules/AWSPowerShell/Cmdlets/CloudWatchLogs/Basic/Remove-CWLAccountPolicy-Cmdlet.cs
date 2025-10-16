@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,15 +22,17 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
-    /// Deletes a CloudWatch Logs account policy. This stops the policy from applying to all
-    /// log groups or a subset of log groups in the account. Log-group level policies will
-    /// still be in effect.
+    /// Deletes a CloudWatch Logs account policy. This stops the account-wide policy from
+    /// applying to log groups in the account. If you delete a data protection policy or subscription
+    /// filter policy, any log-group level policies of those types remain in effect.
     /// 
     ///  
     /// <para>
@@ -42,19 +44,30 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// </para></li><li><para>
     /// To delete a subscription filter policy, you must have the <c>logs:DeleteSubscriptionFilter</c>
     /// and <c>logs:DeleteAccountPolicy</c> permissions.
-    /// </para></li></ul>
+    /// </para></li><li><para>
+    /// To delete a transformer policy, you must have the <c>logs:DeleteTransformer</c> and
+    /// <c>logs:DeleteAccountPolicy</c> permissions.
+    /// </para></li><li><para>
+    /// To delete a field index policy, you must have the <c>logs:DeleteIndexPolicy</c> and
+    /// <c>logs:DeleteAccountPolicy</c> permissions.
+    /// </para></li></ul><para>
+    /// If you delete a field index policy, the indexing of the log events that happened before
+    /// you deleted the policy will still be used for up to 30 days to improve CloudWatch
+    /// Logs Insights queries.
+    /// </para>
     /// </summary>
     [Cmdlet("Remove", "CWLAccountPolicy", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon CloudWatch Logs DeleteAccountPolicy API operation.", Operation = new[] {"DeleteAccountPolicy"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.DeleteAccountPolicyResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchLogs.Model.DeleteAccountPolicyResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchLogs.Model.DeleteAccountPolicyResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchLogs.Model.DeleteAccountPolicyResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveCWLAccountPolicyCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PolicyName
         /// <summary>
@@ -110,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PolicyName), MyInvocation.BoundParameters);
@@ -207,13 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "DeleteAccountPolicy");
             try
             {
-                #if DESKTOP
-                return client.DeleteAccountPolicy(request);
-                #elif CORECLR
-                return client.DeleteAccountPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteAccountPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

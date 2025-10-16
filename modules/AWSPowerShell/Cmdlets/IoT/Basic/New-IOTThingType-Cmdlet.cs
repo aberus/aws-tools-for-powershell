@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
-    /// Creates a new thing type.
+    /// Creates a new thing type. If this call is made multiple times using the same thing
+    /// type name and configuration, the call will succeed. If this call is made with the
+    /// same thing type name but different configuration a <c>ResourceAlreadyExistsException</c>
+    /// is thrown. 
     /// 
     ///  
     /// <para>
@@ -40,17 +45,37 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [OutputType("Amazon.IoT.Model.CreateThingTypeResponse")]
     [AWSCmdlet("Calls the AWS IoT CreateThingType API operation.", Operation = new[] {"CreateThingType"}, SelectReturnType = typeof(Amazon.IoT.Model.CreateThingTypeResponse))]
     [AWSCmdletOutput("Amazon.IoT.Model.CreateThingTypeResponse",
-        "This cmdlet returns an Amazon.IoT.Model.CreateThingTypeResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoT.Model.CreateThingTypeResponse object containing multiple properties."
     )]
     public partial class NewIOTThingTypeCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Mqtt5Configuration_PropagatingAttribute
+        /// <summary>
+        /// <para>
+        /// <para>An object that represents the propagating thing attributes and the connection attributes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ThingTypeProperties_Mqtt5Configuration_PropagatingAttributes")]
+        public Amazon.IoT.Model.PropagatingAttribute[] Mqtt5Configuration_PropagatingAttribute { get; set; }
+        #endregion
         
         #region Parameter ThingTypeProperties_SearchableAttribute
         /// <summary>
         /// <para>
-        /// <para>A list of searchable thing attribute names.</para>
+        /// <para>A list of searchable thing attribute names.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -61,7 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata which can be used to manage the thing type.</para>
+        /// <para>Metadata which can be used to manage the thing type.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,16 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ThingTypeName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ThingTypeName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ThingTypeName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -127,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ThingTypeName), MyInvocation.BoundParameters);
@@ -143,21 +166,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoT.Model.CreateThingTypeResponse, NewIOTThingTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ThingTypeName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.IoT.Model.Tag>(this.Tag);
@@ -169,6 +182,10 @@ namespace Amazon.PowerShell.Cmdlets.IOT
                 WriteWarning("You are passing $null as a value for parameter ThingTypeName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Mqtt5Configuration_PropagatingAttribute != null)
+            {
+                context.Mqtt5Configuration_PropagatingAttribute = new List<Amazon.IoT.Model.PropagatingAttribute>(this.Mqtt5Configuration_PropagatingAttribute);
+            }
             if (this.ThingTypeProperties_SearchableAttribute != null)
             {
                 context.ThingTypeProperties_SearchableAttribute = new List<System.String>(this.ThingTypeProperties_SearchableAttribute);
@@ -222,6 +239,31 @@ namespace Amazon.PowerShell.Cmdlets.IOT
                 request.ThingTypeProperties.ThingTypeDescription = requestThingTypeProperties_thingTypeProperties_ThingTypeDescription;
                 requestThingTypePropertiesIsNull = false;
             }
+            Amazon.IoT.Model.Mqtt5Configuration requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration = null;
+            
+             // populate Mqtt5Configuration
+            var requestThingTypeProperties_thingTypeProperties_Mqtt5ConfigurationIsNull = true;
+            requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration = new Amazon.IoT.Model.Mqtt5Configuration();
+            List<Amazon.IoT.Model.PropagatingAttribute> requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration_mqtt5Configuration_PropagatingAttribute = null;
+            if (cmdletContext.Mqtt5Configuration_PropagatingAttribute != null)
+            {
+                requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration_mqtt5Configuration_PropagatingAttribute = cmdletContext.Mqtt5Configuration_PropagatingAttribute;
+            }
+            if (requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration_mqtt5Configuration_PropagatingAttribute != null)
+            {
+                requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration.PropagatingAttributes = requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration_mqtt5Configuration_PropagatingAttribute;
+                requestThingTypeProperties_thingTypeProperties_Mqtt5ConfigurationIsNull = false;
+            }
+             // determine if requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration should be set to null
+            if (requestThingTypeProperties_thingTypeProperties_Mqtt5ConfigurationIsNull)
+            {
+                requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration = null;
+            }
+            if (requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration != null)
+            {
+                request.ThingTypeProperties.Mqtt5Configuration = requestThingTypeProperties_thingTypeProperties_Mqtt5Configuration;
+                requestThingTypePropertiesIsNull = false;
+            }
              // determine if request.ThingTypeProperties should be set to null
             if (requestThingTypePropertiesIsNull)
             {
@@ -265,13 +307,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "CreateThingType");
             try
             {
-                #if DESKTOP
-                return client.CreateThingType(request);
-                #elif CORECLR
-                return client.CreateThingTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateThingTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -290,6 +326,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         {
             public List<Amazon.IoT.Model.Tag> Tag { get; set; }
             public System.String ThingTypeName { get; set; }
+            public List<Amazon.IoT.Model.PropagatingAttribute> Mqtt5Configuration_PropagatingAttribute { get; set; }
             public List<System.String> ThingTypeProperties_SearchableAttribute { get; set; }
             public System.String ThingTypeProperties_ThingTypeDescription { get; set; }
             public System.Func<Amazon.IoT.Model.CreateThingTypeResponse, NewIOTThingTypeCmdlet, object> Select { get; set; } =

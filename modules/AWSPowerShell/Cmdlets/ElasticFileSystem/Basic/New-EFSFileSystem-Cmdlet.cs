@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticFileSystem;
 using Amazon.ElasticFileSystem.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EFS
 {
     /// <summary>
@@ -62,17 +64,14 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     /// state.
     /// </para></note><para>
     /// This operation accepts an optional <c>PerformanceMode</c> parameter that you choose
-    /// for your file system. We recommend <c>generalPurpose</c> performance mode for all
-    /// file systems. File systems using the <c>maxIO</c> mode is a previous generation performance
-    /// type that is designed for highly parallelized workloads that can tolerate higher latencies
-    /// than the General Purpose mode. Max I/O mode is not supported for One Zone file systems
-    /// or file systems that use Elastic throughput.
-    /// </para><important><para>
-    /// Due to the higher per-operation latencies with Max I/O, we recommend using General
-    /// Purpose performance mode for all file systems.
-    /// </para></important><para>
-    /// The performance mode can't be changed after the file system has been created. For
-    /// more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/performance.html#performancemodes.html">Amazon
+    /// for your file system. We recommend <c>generalPurpose</c><c>PerformanceMode</c> for
+    /// all file systems. The <c>maxIO</c> mode is a previous generation performance type
+    /// that is designed for highly parallelized workloads that can tolerate higher latencies
+    /// than the <c>generalPurpose</c> mode. <c>MaxIO</c> mode is not supported for One Zone
+    /// file systems or file systems that use Elastic throughput.
+    /// </para><para>
+    /// The <c>PerformanceMode</c> can't be changed after the file system has been created.
+    /// For more information, see <a href="https://docs.aws.amazon.com/efs/latest/ug/performance.html#performancemodes.html">Amazon
     /// EFS performance modes</a>.
     /// </para><para>
     /// You can set the throughput mode for the file system using the <c>ThroughputMode</c>
@@ -100,20 +99,21 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     [OutputType("Amazon.ElasticFileSystem.Model.CreateFileSystemResponse")]
     [AWSCmdlet("Calls the Amazon Elastic File System CreateFileSystem API operation.", Operation = new[] {"CreateFileSystem"}, SelectReturnType = typeof(Amazon.ElasticFileSystem.Model.CreateFileSystemResponse))]
     [AWSCmdletOutput("Amazon.ElasticFileSystem.Model.CreateFileSystemResponse",
-        "This cmdlet returns an Amazon.ElasticFileSystem.Model.CreateFileSystemResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ElasticFileSystem.Model.CreateFileSystemResponse object containing multiple properties."
     )]
     public partial class NewEFSFileSystemCmdlet : AmazonElasticFileSystemClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AvailabilityZoneName
         /// <summary>
         /// <para>
-        /// <para>Used to create a One Zone file system. It specifies the Amazon Web Services Availability
-        /// Zone in which to create the file system. Use the format <c>us-east-1a</c> to specify
-        /// the Availability Zone. For more information about One Zone file systems, see <a href="https://docs.aws.amazon.com/efs/latest/ug/storage-classes.html">Using
-        /// EFS storage classes</a> in the <i>Amazon EFS User Guide</i>.</para><note><para>One Zone file systems are not available in all Availability Zones in Amazon Web Services
+        /// <para>For One Zone file systems, specify the Amazon Web Services Availability Zone in which
+        /// to create the file system. Use the format <c>us-east-1a</c> to specify the Availability
+        /// Zone. For more information about One Zone file systems, see <a href="https://docs.aws.amazon.com/efs/latest/ug/availability-durability.html#file-system-type">EFS
+        /// file system types</a> in the <i>Amazon EFS User Guide</i>.</para><note><para>One Zone file systems are not available in all Availability Zones in Amazon Web Services
         /// Regions where Amazon EFS is available.</para></note>
         /// </para>
         /// </summary>
@@ -178,7 +178,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         #region Parameter PerformanceMode
         /// <summary>
         /// <para>
-        /// <para>The Performance mode of the file system. We recommend <c>generalPurpose</c> performance
+        /// <para>The performance mode of the file system. We recommend <c>generalPurpose</c> performance
         /// mode for all file systems. File systems using the <c>maxIO</c> performance mode can
         /// scale to higher levels of aggregate throughput and operations per second with a tradeoff
         /// of slightly higher latencies for most file operations. The performance mode can't
@@ -198,7 +198,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         /// <para>The throughput, measured in mebibytes per second (MiBps), that you want to provision
         /// for a file system that you're creating. Required if <c>ThroughputMode</c> is set to
         /// <c>provisioned</c>. Valid values are 1-3414 MiBps, with the upper limit depending
-        /// on Region. To increase this limit, contact Amazon Web Services Support. For more information,
+        /// on Region. To increase this limit, contact Amazon Web ServicesSupport. For more information,
         /// see <a href="https://docs.aws.amazon.com/efs/latest/ug/limits.html#soft-limits">Amazon
         /// EFS quotas that you can increase</a> in the <i>Amazon EFS User Guide</i>.</para>
         /// </para>
@@ -215,7 +215,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         /// key-value pair. Name your file system on creation by including a <c>"Key":"Name","Value":"{value}"</c>
         /// key-value pair. Each key must be unique. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
         /// Amazon Web Services resources</a> in the <i>Amazon Web Services General Reference
-        /// Guide</i>.</para>
+        /// Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -261,9 +265,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -384,13 +392,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic File System", "CreateFileSystem");
             try
             {
-                #if DESKTOP
-                return client.CreateFileSystem(request);
-                #elif CORECLR
-                return client.CreateFileSystemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFileSystemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

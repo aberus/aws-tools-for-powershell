@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DocDBElastic;
 using Amazon.DocDBElastic.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DOCE
 {
     /// <summary>
-    /// Creates a new Elastic DocumentDB cluster and returns its Cluster structure.
+    /// Creates a new Amazon DocumentDB elastic cluster and returns its cluster structure.
     /// </summary>
     [Cmdlet("New", "DOCECluster", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DocDBElastic.Model.Cluster")]
     [AWSCmdlet("Calls the Amazon DocumentDB Elastic Clusters CreateCluster API operation.", Operation = new[] {"CreateCluster"}, SelectReturnType = typeof(Amazon.DocDBElastic.Model.CreateClusterResponse))]
     [AWSCmdletOutput("Amazon.DocDBElastic.Model.Cluster or Amazon.DocDBElastic.Model.CreateClusterResponse",
         "This cmdlet returns an Amazon.DocDBElastic.Model.Cluster object.",
-        "The service call response (type Amazon.DocDBElastic.Model.CreateClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DocDBElastic.Model.CreateClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDOCEClusterCmdlet : AmazonDocDBElasticClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdminUserName
         /// <summary>
         /// <para>
-        /// <para>The name of the Elastic DocumentDB cluster administrator.</para><para><i>Constraints</i>:</para><ul><li><para>Must be from 1 to 63 letters or numbers.</para></li><li><para>The first character must be a letter.</para></li><li><para>Cannot be a reserved word.</para></li></ul>
+        /// <para>The name of the Amazon DocumentDB elastic clusters administrator.</para><para><i>Constraints</i>:</para><ul><li><para>Must be from 1 to 63 letters or numbers.</para></li><li><para>The first character must be a letter.</para></li><li><para>Cannot be a reserved word.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -64,8 +65,8 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter AdminUserPassword
         /// <summary>
         /// <para>
-        /// <para>The password for the Elastic DocumentDB cluster administrator and can contain any
-        /// printable ASCII characters.</para><para><i>Constraints</i>:</para><ul><li><para>Must contain from 8 to 100 characters.</para></li><li><para>Cannot contain a forward slash (/), double quote ("), or the "at" symbol (@).</para></li></ul>
+        /// <para>The password for the Amazon DocumentDB elastic clusters administrator. The password
+        /// can contain any printable ASCII characters.</para><para><i>Constraints</i>:</para><ul><li><para>Must contain from 8 to 100 characters.</para></li><li><para>Cannot contain a forward slash (/), double quote ("), or the "at" symbol (@).</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,7 +83,8 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter AuthType
         /// <summary>
         /// <para>
-        /// <para>The authentication type for the Elastic DocumentDB cluster.</para>
+        /// <para>The authentication type used to determine where to fetch the password used for accessing
+        /// the elastic cluster. Valid types are <c>PLAIN_TEXT</c> or <c>SECRET_ARN</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -96,11 +98,20 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public Amazon.DocDBElastic.Auth AuthType { get; set; }
         #endregion
         
+        #region Parameter BackupRetentionPeriod
+        /// <summary>
+        /// <para>
+        /// <para>The number of days for which automatic snapshots are retained.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? BackupRetentionPeriod { get; set; }
+        #endregion
+        
         #region Parameter ClusterName
         /// <summary>
         /// <para>
-        /// <para>The name of the new Elastic DocumentDB cluster. This parameter is stored as a lowercase
-        /// string.</para><para><i>Constraints</i>:</para><ul><li><para>Must contain from 1 to 63 letters, numbers, or hyphens.</para></li><li><para>The first character must be a letter.</para></li><li><para>Cannot end with a hyphen or contain two consecutive hyphens.</para></li></ul><para><i>Example</i>: <c>my-cluster</c></para>
+        /// <para>The name of the new elastic cluster. This parameter is stored as a lowercase string.</para><para><i>Constraints</i>:</para><ul><li><para>Must contain from 1 to 63 letters, numbers, or hyphens.</para></li><li><para>The first character must be a letter.</para></li><li><para>Cannot end with a hyphen or contain two consecutive hyphens.</para></li></ul><para><i>Example</i>: <c>my-cluster</c></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -117,15 +128,26 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The KMS key identifier to use to encrypt the new Elastic DocumentDB cluster.</para><para>The KMS key identifier is the Amazon Resource Name (ARN) for the KMS encryption key.
+        /// <para>The KMS key identifier to use to encrypt the new elastic cluster.</para><para>The KMS key identifier is the Amazon Resource Name (ARN) for the KMS encryption key.
         /// If you are creating a cluster using the same Amazon account that owns this KMS encryption
-        /// key, you can use the KMS key alias instead of the ARN as the KMS encryption key.</para><para>If an encryption key is not specified, Elastic DocumentDB uses the default encryption
+        /// key, you can use the KMS key alias instead of the ARN as the KMS encryption key.</para><para>If an encryption key is not specified, Amazon DocumentDB uses the default encryption
         /// key that KMS creates for your account. Your account has a different default encryption
         /// key for each Amazon Region.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String KmsKeyId { get; set; }
+        #endregion
+        
+        #region Parameter PreferredBackupWindow
+        /// <summary>
+        /// <para>
+        /// <para>The daily time range during which automated backups are created if automated backups
+        /// are enabled, as determined by the <c>backupRetentionPeriod</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String PreferredBackupWindow { get; set; }
         #endregion
         
         #region Parameter PreferredMaintenanceWindow
@@ -143,7 +165,8 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter ShardCapacity
         /// <summary>
         /// <para>
-        /// <para>The capacity of each shard in the new Elastic DocumentDB cluster.</para>
+        /// <para>The number of vCPUs assigned to each elastic cluster shard. Maximum is 64. Allowed
+        /// values are 2, 4, 8, 16, 32, 64.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -159,7 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter ShardCount
         /// <summary>
         /// <para>
-        /// <para>The number of shards to create in the new Elastic DocumentDB cluster.</para>
+        /// <para>The number of shards assigned to the elastic cluster. Maximum is 32.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -172,10 +195,26 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public System.Int32? ShardCount { get; set; }
         #endregion
         
+        #region Parameter ShardInstanceCount
+        /// <summary>
+        /// <para>
+        /// <para>The number of replica instances applying to all shards in the elastic cluster. A <c>shardInstanceCount</c>
+        /// value of 1 means there is one writer instance, and any additional instances are replicas
+        /// that can be used for reads and to improve availability.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ShardInstanceCount { get; set; }
+        #endregion
+        
         #region Parameter SubnetId
         /// <summary>
         /// <para>
-        /// <para>The Amazon EC2 subnet IDs for the new Elastic DocumentDB cluster.</para>
+        /// <para>The Amazon EC2 subnet IDs for the new elastic cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,7 +225,11 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be assigned to the new Elastic DocumentDB cluster.</para>
+        /// <para>The tags to be assigned to the new elastic cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -197,7 +240,11 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of EC2 VPC security groups to associate with the new Elastic DocumentDB cluster.</para>
+        /// <para>A list of EC2 VPC security groups to associate with the new elastic cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -208,7 +255,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>The client token for the Elastic DocumentDB cluster.</para>
+        /// <para>The client token for the elastic cluster.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -226,16 +273,6 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -246,9 +283,13 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterName), MyInvocation.BoundParameters);
@@ -262,21 +303,11 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DocDBElastic.Model.CreateClusterResponse, NewDOCEClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdminUserName = this.AdminUserName;
             #if MODULAR
             if (this.AdminUserName == null && ParameterWasBound(nameof(this.AdminUserName)))
@@ -298,6 +329,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
                 WriteWarning("You are passing $null as a value for parameter AuthType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.BackupRetentionPeriod = this.BackupRetentionPeriod;
             context.ClientToken = this.ClientToken;
             context.ClusterName = this.ClusterName;
             #if MODULAR
@@ -307,6 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             }
             #endif
             context.KmsKeyId = this.KmsKeyId;
+            context.PreferredBackupWindow = this.PreferredBackupWindow;
             context.PreferredMaintenanceWindow = this.PreferredMaintenanceWindow;
             context.ShardCapacity = this.ShardCapacity;
             #if MODULAR
@@ -322,6 +355,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
                 WriteWarning("You are passing $null as a value for parameter ShardCount which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ShardInstanceCount = this.ShardInstanceCount;
             if (this.SubnetId != null)
             {
                 context.SubnetId = new List<System.String>(this.SubnetId);
@@ -366,6 +400,10 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             {
                 request.AuthType = cmdletContext.AuthType;
             }
+            if (cmdletContext.BackupRetentionPeriod != null)
+            {
+                request.BackupRetentionPeriod = cmdletContext.BackupRetentionPeriod.Value;
+            }
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
@@ -378,6 +416,10 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             {
                 request.KmsKeyId = cmdletContext.KmsKeyId;
             }
+            if (cmdletContext.PreferredBackupWindow != null)
+            {
+                request.PreferredBackupWindow = cmdletContext.PreferredBackupWindow;
+            }
             if (cmdletContext.PreferredMaintenanceWindow != null)
             {
                 request.PreferredMaintenanceWindow = cmdletContext.PreferredMaintenanceWindow;
@@ -389,6 +431,10 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             if (cmdletContext.ShardCount != null)
             {
                 request.ShardCount = cmdletContext.ShardCount.Value;
+            }
+            if (cmdletContext.ShardInstanceCount != null)
+            {
+                request.ShardInstanceCount = cmdletContext.ShardInstanceCount.Value;
             }
             if (cmdletContext.SubnetId != null)
             {
@@ -440,13 +486,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DocumentDB Elastic Clusters", "CreateCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateCluster(request);
-                #elif CORECLR
-                return client.CreateClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -466,12 +506,15 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             public System.String AdminUserName { get; set; }
             public System.String AdminUserPassword { get; set; }
             public Amazon.DocDBElastic.Auth AuthType { get; set; }
+            public System.Int32? BackupRetentionPeriod { get; set; }
             public System.String ClientToken { get; set; }
             public System.String ClusterName { get; set; }
             public System.String KmsKeyId { get; set; }
+            public System.String PreferredBackupWindow { get; set; }
             public System.String PreferredMaintenanceWindow { get; set; }
             public System.Int32? ShardCapacity { get; set; }
             public System.Int32? ShardCount { get; set; }
+            public System.Int32? ShardInstanceCount { get; set; }
             public List<System.String> SubnetId { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public List<System.String> VpcSecurityGroupId { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
@@ -41,7 +43,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     /// In the China (Ningxia) Region, you can copy images only within the same Region.
     /// </para><para>
     /// In Amazon Web Services GovCloud (US), to copy images to and from other Regions, contact
-    /// Amazon Web Services Support.
+    /// Amazon Web ServicesSupport.
     /// </para><para>
     /// For more information about sharing images, see <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/share-custom-image.html">
     /// Share or Unshare a Custom WorkSpaces Image</a>.
@@ -51,8 +53,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     /// </para></li><li><para>
     /// Sharing Bring Your Own License (BYOL) images across Amazon Web Services accounts isn't
     /// supported at this time in Amazon Web Services GovCloud (US). To share BYOL images
-    /// across accounts in Amazon Web Services GovCloud (US), contact Amazon Web Services
-    /// Support.
+    /// across accounts in Amazon Web Services GovCloud (US), contact Amazon Web ServicesSupport.
     /// </para></li></ul></note>
     /// </summary>
     [Cmdlet("Update", "WKSWorkspaceImagePermission", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -60,12 +61,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     [AWSCmdlet("Calls the Amazon WorkSpaces UpdateWorkspaceImagePermission API operation.", Operation = new[] {"UpdateWorkspaceImagePermission"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.UpdateWorkspaceImagePermissionResponse))]
     [AWSCmdletOutput("None or Amazon.WorkSpaces.Model.UpdateWorkspaceImagePermissionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkSpaces.Model.UpdateWorkspaceImagePermissionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WorkSpaces.Model.UpdateWorkspaceImagePermissionResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateWKSWorkspaceImagePermissionCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowCopyImage
         /// <summary>
@@ -129,16 +131,6 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -149,9 +141,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageId), MyInvocation.BoundParameters);
@@ -165,21 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpaces.Model.UpdateWorkspaceImagePermissionResponse, UpdateWKSWorkspaceImagePermissionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllowCopyImage = this.AllowCopyImage;
             #if MODULAR
             if (this.AllowCopyImage == null && ParameterWasBound(nameof(this.AllowCopyImage)))
@@ -267,13 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "UpdateWorkspaceImagePermission");
             try
             {
-                #if DESKTOP
-                return client.UpdateWorkspaceImagePermission(request);
-                #elif CORECLR
-                return client.UpdateWorkspaceImagePermissionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateWorkspaceImagePermissionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StorageGateway;
 using Amazon.StorageGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SG
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
     [AWSCmdlet("Calls the AWS Storage Gateway CreateTapePool API operation.", Operation = new[] {"CreateTapePool"}, SelectReturnType = typeof(Amazon.StorageGateway.Model.CreateTapePoolResponse))]
     [AWSCmdletOutput("System.String or Amazon.StorageGateway.Model.CreateTapePoolResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.StorageGateway.Model.CreateTapePoolResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.StorageGateway.Model.CreateTapePoolResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSGTapePoolCmdlet : AmazonStorageGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PoolName
         /// <summary>
@@ -113,7 +116,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// pair.</para><note><para>Valid characters for key and value are letters, spaces, and numbers representable
         /// in UTF-8 format, and the following special characters: + - = . _ : / @. The maximum
         /// length of a tag's key is 128 characters, and the maximum length for a tag's value
-        /// is 256.</para></note>
+        /// is 256.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,9 +149,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PoolName), MyInvocation.BoundParameters);
@@ -257,13 +268,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Storage Gateway", "CreateTapePool");
             try
             {
-                #if DESKTOP
-                return client.CreateTapePool(request);
-                #elif CORECLR
-                return client.CreateTapePoolAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTapePoolAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

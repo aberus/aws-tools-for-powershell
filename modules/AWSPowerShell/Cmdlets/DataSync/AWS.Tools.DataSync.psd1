@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The DataSync module of AWS Tools for PowerShell lets developers and administrators manage AWS DataSync from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.DataSync.dll'
     )
@@ -87,11 +88,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
     # Cmdlets to export from this module
     CmdletsToExport = @(
         'Add-DSYNResourceTag', 
-        'Add-DSYNStorageSystem', 
         'Get-DSYNAgent', 
         'Get-DSYNAgentList', 
-        'Get-DSYNDiscoveryJob', 
-        'Get-DSYNDiscoveryJobList', 
         'Get-DSYNLocationAzureBlob', 
         'Get-DSYNLocationEfs', 
         'Get-DSYNLocationFsxLustre', 
@@ -105,10 +103,6 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-DSYNLocationS3', 
         'Get-DSYNLocationSmb', 
         'Get-DSYNResourceTagList', 
-        'Get-DSYNStorageSystem', 
-        'Get-DSYNStorageSystemList', 
-        'Get-DSYNStorageSystemResource', 
-        'Get-DSYNStorageSystemResourceMetric', 
         'Get-DSYNTask', 
         'Get-DSYNTaskExecution', 
         'Get-DSYNTaskExecutionList', 
@@ -125,25 +119,25 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-DSYNLocationObjectStorage', 
         'New-DSYNLocationS3', 
         'New-DSYNLocationSmb', 
-        'New-DSYNRecommendation', 
         'New-DSYNTask', 
         'Remove-DSYNAgent', 
         'Remove-DSYNLocation', 
         'Remove-DSYNResourceTag', 
-        'Remove-DSYNStorageSystem', 
         'Remove-DSYNTask', 
-        'Start-DSYNDiscoveryJob', 
         'Start-DSYNTaskExecution', 
-        'Stop-DSYNDiscoveryJob', 
         'Stop-DSYNTaskExecution', 
         'Update-DSYNAgent', 
-        'Update-DSYNDiscoveryJob', 
         'Update-DSYNLocationAzureBlob', 
+        'Update-DSYNLocationEfs', 
+        'Update-DSYNLocationFsxLustre', 
+        'Update-DSYNLocationFsxOntap', 
+        'Update-DSYNLocationFsxOpenZf', 
+        'Update-DSYNLocationFsxWindow', 
         'Update-DSYNLocationHdf', 
         'Update-DSYNLocationNfs', 
         'Update-DSYNLocationObjectStorage', 
+        'Update-DSYNLocationS3', 
         'Update-DSYNLocationSmb', 
-        'Update-DSYNStorageSystem', 
         'Update-DSYNTask', 
         'Update-DSYNTaskExecution')
 
@@ -169,7 +163,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

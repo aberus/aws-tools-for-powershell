@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,15 +22,17 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VPCLattice;
 using Amazon.VPCLattice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.VPCL
 {
     /// <summary>
     /// Enables access logs to be sent to Amazon CloudWatch, Amazon S3, and Amazon Kinesis
     /// Data Firehose. The service network owner can use the access logs to audit the services
-    /// in the network. The service network owner will only see access logs from clients and
+    /// in the network. The service network owner can only see access logs from clients and
     /// services that are associated with their service network. Access log entries represent
     /// traffic originated from VPCs associated with that network. For more information, see
     /// <a href="https://docs.aws.amazon.com/vpc-lattice/latest/ug/monitoring-access-logs.html">Access
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
     [OutputType("Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse")]
     [AWSCmdlet("Calls the VPC Lattice CreateAccessLogSubscription API operation.", Operation = new[] {"CreateAccessLogSubscription"}, SelectReturnType = typeof(Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse))]
     [AWSCmdletOutput("Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse",
-        "This cmdlet returns an Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse object containing multiple properties."
     )]
     public partial class NewVPCLAccessLogSubscriptionCmdlet : AmazonVPCLatticeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DestinationArn
         /// <summary>
@@ -68,7 +71,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter ResourceIdentifier
         /// <summary>
         /// <para>
-        /// <para>The ID or Amazon Resource Name (ARN) of the service network or service.</para>
+        /// <para>The ID or ARN of the service network or service.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,10 +85,25 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public System.String ResourceIdentifier { get; set; }
         #endregion
         
+        #region Parameter ServiceNetworkLogType
+        /// <summary>
+        /// <para>
+        /// <para>The type of log that monitors your Amazon VPC Lattice service networks.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.VPCLattice.ServiceNetworkLogType")]
+        public Amazon.VPCLattice.ServiceNetworkLogType ServiceNetworkLogType { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags for the access log subscription.</para>
+        /// <para>The tags for the access log subscription.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,16 +135,6 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -137,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceIdentifier), MyInvocation.BoundParameters);
@@ -153,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse, NewVPCLAccessLogSubscriptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.DestinationArn = this.DestinationArn;
             #if MODULAR
@@ -183,6 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
                 WriteWarning("You are passing $null as a value for parameter ResourceIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ServiceNetworkLogType = this.ServiceNetworkLogType;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -218,6 +221,10 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             if (cmdletContext.ResourceIdentifier != null)
             {
                 request.ResourceIdentifier = cmdletContext.ResourceIdentifier;
+            }
+            if (cmdletContext.ServiceNetworkLogType != null)
+            {
+                request.ServiceNetworkLogType = cmdletContext.ServiceNetworkLogType;
             }
             if (cmdletContext.Tag != null)
             {
@@ -261,13 +268,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "VPC Lattice", "CreateAccessLogSubscription");
             try
             {
-                #if DESKTOP
-                return client.CreateAccessLogSubscription(request);
-                #elif CORECLR
-                return client.CreateAccessLogSubscriptionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAccessLogSubscriptionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -287,6 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             public System.String ClientToken { get; set; }
             public System.String DestinationArn { get; set; }
             public System.String ResourceIdentifier { get; set; }
+            public Amazon.VPCLattice.ServiceNetworkLogType ServiceNetworkLogType { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.VPCLattice.Model.CreateAccessLogSubscriptionResponse, NewVPCLAccessLogSubscriptionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

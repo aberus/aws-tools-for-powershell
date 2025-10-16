@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
     /// List the global endpoints associated with this account. For more information about
     /// global endpoints, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-global-endpoints.html">Making
     /// applications Regional-fault tolerant with global endpoints and event replication</a>
-    /// in the <i>Amazon EventBridge User Guide</i>.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// in the <i><i>Amazon EventBridge User Guide</i></i>.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EVBEndpointList")]
     [OutputType("Amazon.EventBridge.Model.Endpoint")]
     [AWSCmdlet("Calls the Amazon EventBridge ListEndpoints API operation.", Operation = new[] {"ListEndpoints"}, SelectReturnType = typeof(Amazon.EventBridge.Model.ListEndpointsResponse))]
     [AWSCmdletOutput("Amazon.EventBridge.Model.Endpoint or Amazon.EventBridge.Model.ListEndpointsResponse",
         "This cmdlet returns a collection of Amazon.EventBridge.Model.Endpoint objects.",
-        "The service call response (type Amazon.EventBridge.Model.ListEndpointsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EventBridge.Model.ListEndpointsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEVBEndpointListCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HomeRegion
         /// <summary>
@@ -81,15 +84,14 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// <para>If <c>nextToken</c> is returned, there are more results available. The value of <c>nextToken</c>
-        /// is a unique pagination token for each page. Make the call again using the returned
-        /// token to retrieve the next page. Keep all other arguments unchanged. Each pagination
-        /// token expires after 24 hours. Using an expired pagination token will return an HTTP
-        /// 400 InvalidToken error.</para>
+        /// <para>The token returned by a previous call, which you can use to retrieve the next set
+        /// of results.</para><para>The value of <c>nextToken</c> is a unique pagination token for each page. To retrieve
+        /// the next page of results, make the call again using the returned token. Keep all other
+        /// arguments unchanged.</para><para> Using an expired pagination token results in an <c>HTTP 400 InvalidToken</c> error.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -228,13 +234,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "ListEndpoints");
             try
             {
-                #if DESKTOP
-                return client.ListEndpoints(request);
-                #elif CORECLR
-                return client.ListEndpointsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListEndpointsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

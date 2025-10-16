@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -35,14 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [AWSCmdlet("Calls the AWS Backup StartRestoreJob API operation.", Operation = new[] {"StartRestoreJob"}, SelectReturnType = typeof(Amazon.Backup.Model.StartRestoreJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.Backup.Model.StartRestoreJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Backup.Model.StartRestoreJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Backup.Model.StartRestoreJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartBAKRestoreJobCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CopySourceTagsToRestoredResource
         /// <summary>
@@ -81,22 +82,30 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter Metadata
         /// <summary>
         /// <para>
-        /// <para>A set of metadata key-value pairs. Contains information, such as a resource name,
-        /// required to restore a recovery point.</para><para> You can get configuration metadata about a resource at the time it was backed up
-        /// by calling <c>GetRecoveryPointRestoreMetadata</c>. However, values in addition to
-        /// those provided by <c>GetRecoveryPointRestoreMetadata</c> might be required to restore
-        /// a resource. For example, you might need to provide a new resource name if the original
-        /// already exists.</para><para>You need to specify specific metadata to restore an Amazon Elastic File System (Amazon
-        /// EFS) instance:</para><ul><li><para><c>file-system-id</c>: The ID of the Amazon EFS file system that is backed up by
-        /// Backup. Returned in <c>GetRecoveryPointRestoreMetadata</c>.</para></li><li><para><c>Encrypted</c>: A Boolean value that, if true, specifies that the file system is
-        /// encrypted. If <c>KmsKeyId</c> is specified, <c>Encrypted</c> must be set to <c>true</c>.</para></li><li><para><c>KmsKeyId</c>: Specifies the Amazon Web Services KMS key that is used to encrypt
-        /// the restored file system. You can specify a key from another Amazon Web Services account
-        /// provided that key it is properly shared with your account via Amazon Web Services
-        /// KMS.</para></li><li><para><c>PerformanceMode</c>: Specifies the throughput mode of the file system.</para></li><li><para><c>CreationToken</c>: A user-supplied value that ensures the uniqueness (idempotency)
-        /// of the request.</para></li><li><para><c>newFileSystem</c>: A Boolean value that, if true, specifies that the recovery
-        /// point is restored to a new Amazon EFS file system.</para></li><li><para><c>ItemsToRestore</c>: An array of one to five strings where each string is a file
-        /// path. Use <c>ItemsToRestore</c> to restore specific files or directories rather than
-        /// the entire file system. This parameter is optional. For example, <c>"itemsToRestore":"[\"/my.test\"]"</c>.</para></li></ul>
+        /// <para>A set of metadata key-value pairs.</para><para>You can get configuration metadata about a resource at the time it was backed up by
+        /// calling <c>GetRecoveryPointRestoreMetadata</c>. However, values in addition to those
+        /// provided by <c>GetRecoveryPointRestoreMetadata</c> might be required to restore a
+        /// resource. For example, you might need to provide a new resource name if the original
+        /// already exists.</para><para>For more information about the metadata for each resource, see the following:</para><ul><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-aur.html#aur-restore-cli">Metadata
+        /// for Amazon Aurora</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-docdb.html#docdb-restore-cli">Metadata
+        /// for Amazon DocumentDB</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-application-stacks.html#restoring-cfn-cli">Metadata
+        /// for CloudFormation</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-dynamodb.html#ddb-restore-cli">Metadata
+        /// for Amazon DynamoDB</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-ebs.html#ebs-restore-cli">
+        /// Metadata for Amazon EBS</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-ec2.html#restoring-ec2-cli">Metadata
+        /// for Amazon EC2</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-efs.html#efs-restore-cli">Metadata
+        /// for Amazon EFS</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-fsx.html#fsx-restore-cli">Metadata
+        /// for Amazon FSx</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-nep.html#nep-restore-cli">Metadata
+        /// for Amazon Neptune</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-rds.html#rds-restore-cli">Metadata
+        /// for Amazon RDS</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/redshift-restores.html#redshift-restore-api">Metadata
+        /// for Amazon Redshift</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-storage-gateway.html#restoring-sgw-cli">Metadata
+        /// for Storage Gateway</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-s3.html#s3-restore-cli">Metadata
+        /// for Amazon S3</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/timestream-restore.html#timestream-restore-api">Metadata
+        /// for Amazon Timestream</a></para></li><li><para><a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/restoring-vm.html#vm-restore-cli">Metadata
+        /// for virtual machines</a></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -130,7 +139,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>Starts a job to restore a recovery point for one of the following resources:</para><ul><li><para><c>Aurora</c> for Amazon Aurora</para></li><li><para><c>DocumentDB</c> for Amazon DocumentDB (with MongoDB compatibility)</para></li><li><para><c>CloudFormation</c> for CloudFormation</para></li><li><para><c>DynamoDB</c> for Amazon DynamoDB</para></li><li><para><c>EBS</c> for Amazon Elastic Block Store</para></li><li><para><c>EC2</c> for Amazon Elastic Compute Cloud</para></li><li><para><c>EFS</c> for Amazon Elastic File System</para></li><li><para><c>FSx</c> for Amazon FSx</para></li><li><para><c>Neptune</c> for Amazon Neptune</para></li><li><para><c>RDS</c> for Amazon Relational Database Service</para></li><li><para><c>Redshift</c> for Amazon Redshift</para></li><li><para><c>Storage Gateway</c> for Storage Gateway</para></li><li><para><c>S3</c> for Amazon S3</para></li><li><para><c>Timestream</c> for Amazon Timestream</para></li><li><para><c>VirtualMachine</c> for virtual machines</para></li></ul>
+        /// <para>Starts a job to restore a recovery point for one of the following resources:</para><ul><li><para><c>Aurora</c> - Amazon Aurora</para></li><li><para><c>DocumentDB</c> - Amazon DocumentDB</para></li><li><para><c>CloudFormation</c> - CloudFormation</para></li><li><para><c>DynamoDB</c> - Amazon DynamoDB</para></li><li><para><c>EBS</c> - Amazon Elastic Block Store</para></li><li><para><c>EC2</c> - Amazon Elastic Compute Cloud</para></li><li><para><c>EFS</c> - Amazon Elastic File System</para></li><li><para><c>FSx</c> - Amazon FSx</para></li><li><para><c>Neptune</c> - Amazon Neptune</para></li><li><para><c>RDS</c> - Amazon Relational Database Service</para></li><li><para><c>Redshift</c> - Amazon Redshift</para></li><li><para><c>Storage Gateway</c> - Storage Gateway</para></li><li><para><c>S3</c> - Amazon Simple Storage Service</para></li><li><para><c>Timestream</c> - Amazon Timestream</para></li><li><para><c>VirtualMachine</c> - Virtual machines</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,16 +157,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "RestoreJobId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RecoveryPointArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RecoveryPointArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RecoveryPointArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -168,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RecoveryPointArn), MyInvocation.BoundParameters);
@@ -184,21 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.StartRestoreJobResponse, StartBAKRestoreJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RecoveryPointArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CopySourceTagsToRestoredResource = this.CopySourceTagsToRestoredResource;
             context.IamRoleArn = this.IamRoleArn;
             context.IdempotencyToken = this.IdempotencyToken;
@@ -302,13 +295,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "StartRestoreJob");
             try
             {
-                #if DESKTOP
-                return client.StartRestoreJob(request);
-                #elif CORECLR
-                return client.StartRestoreJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartRestoreJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

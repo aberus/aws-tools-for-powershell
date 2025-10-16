@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PaymentCryptography;
 using Amazon.PaymentCryptography.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PAYCC
 {
     /// <summary>
-    /// Gets the key material for an Amazon Web Services Payment Cryptography key, including
-    /// the immutable and mutable data specified when the key was created.
+    /// Gets the key metadata for an Amazon Web Services Payment Cryptography key, including
+    /// the immutable and mutable attributes specified when the key was created. Returns key
+    /// metadata including attributes, state, and timestamps, but does not return the actual
+    /// cryptographic key material.
     /// 
     ///  
     /// <para><b>Cross-account use:</b> This operation can't be used across different Amazon Web
     /// Services accounts.
-    /// </para><para><b>Related operations:</b></para><ul><li><para><a>CreateKey</a></para></li><li><para><a>DeleteKey</a></para></li><li><para><a>ListKeys</a></para></li></ul>
+    /// </para><para><b>Related operations:</b></para><ul><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_CreateKey.html">CreateKey</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_DeleteKey.html">DeleteKey</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_ListKeys.html">ListKeys</a></para></li></ul>
     /// </summary>
     [Cmdlet("Get", "PAYCCKey")]
     [OutputType("Amazon.PaymentCryptography.Model.Key")]
     [AWSCmdlet("Calls the Payment Cryptography Control Plane GetKey API operation.", Operation = new[] {"GetKey"}, SelectReturnType = typeof(Amazon.PaymentCryptography.Model.GetKeyResponse))]
     [AWSCmdletOutput("Amazon.PaymentCryptography.Model.Key or Amazon.PaymentCryptography.Model.GetKeyResponse",
         "This cmdlet returns an Amazon.PaymentCryptography.Model.Key object.",
-        "The service call response (type Amazon.PaymentCryptography.Model.GetKeyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PaymentCryptography.Model.GetKeyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetPAYCCKeyCmdlet : AmazonPaymentCryptographyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyIdentifier
         /// <summary>
@@ -76,19 +81,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public string Select { get; set; } = "Key";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -96,21 +95,11 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PaymentCryptography.Model.GetKeyResponse, GetPAYCCKeyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KeyIdentifier = this.KeyIdentifier;
             #if MODULAR
             if (this.KeyIdentifier == null && ParameterWasBound(nameof(this.KeyIdentifier)))
@@ -176,13 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Payment Cryptography Control Plane", "GetKey");
             try
             {
-                #if DESKTOP
-                return client.GetKey(request);
-                #elif CORECLR
-                return client.GetKeyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetKeyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

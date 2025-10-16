@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GlueDataBrew;
 using Amazon.GlueDataBrew.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GDB
 {
     /// <summary>
@@ -34,14 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.GDB
     [OutputType("Amazon.GlueDataBrew.Model.SendProjectSessionActionResponse")]
     [AWSCmdlet("Calls the AWS Glue DataBrew SendProjectSessionAction API operation.", Operation = new[] {"SendProjectSessionAction"}, SelectReturnType = typeof(Amazon.GlueDataBrew.Model.SendProjectSessionActionResponse))]
     [AWSCmdletOutput("Amazon.GlueDataBrew.Model.SendProjectSessionActionResponse",
-        "This cmdlet returns an Amazon.GlueDataBrew.Model.SendProjectSessionActionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GlueDataBrew.Model.SendProjectSessionActionResponse object containing multiple properties."
     )]
     public partial class SendGDBProjectSessionActionCmdlet : AmazonGlueDataBrewClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ViewFrame_Analytic
         /// <summary>
@@ -81,7 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         /// <summary>
         /// <para>
         /// <para>One or more conditions that must be met for the recipe step to succeed.</para><note><para>All of the conditions in the array must be met. In other words, all of the conditions
-        /// must be combined using a logical AND operation.</para></note>
+        /// must be combined using a logical AND operation.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         #region Parameter ViewFrame_HiddenColumn
         /// <summary>
         /// <para>
-        /// <para>A list of columns to hide in the view frame.</para>
+        /// <para>A list of columns to hide in the view frame.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,7 +140,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         #region Parameter Action_Parameter
         /// <summary>
         /// <para>
-        /// <para>Contextual parameters for the transformation.</para>
+        /// <para>Contextual parameters for the transformation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -203,16 +216,6 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -223,9 +226,13 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -239,21 +246,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GlueDataBrew.Model.SendProjectSessionActionResponse, SendGDBProjectSessionActionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientSessionId = this.ClientSessionId;
             context.Name = this.Name;
             #if MODULAR
@@ -479,13 +476,7 @@ namespace Amazon.PowerShell.Cmdlets.GDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue DataBrew", "SendProjectSessionAction");
             try
             {
-                #if DESKTOP
-                return client.SendProjectSessionAction(request);
-                #elif CORECLR
-                return client.SendProjectSessionActionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendProjectSessionActionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

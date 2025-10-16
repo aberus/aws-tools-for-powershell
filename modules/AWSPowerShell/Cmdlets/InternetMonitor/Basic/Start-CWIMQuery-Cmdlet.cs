@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.InternetMonitor;
 using Amazon.InternetMonitor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWIM
 {
     /// <summary>
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
     [AWSCmdlet("Calls the Amazon CloudWatch Internet Monitor StartQuery API operation.", Operation = new[] {"StartQuery"}, SelectReturnType = typeof(Amazon.InternetMonitor.Model.StartQueryResponse))]
     [AWSCmdletOutput("System.String or Amazon.InternetMonitor.Model.StartQueryResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.InternetMonitor.Model.StartQueryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.InternetMonitor.Model.StartQueryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCWIMQueryCmdlet : AmazonInternetMonitorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndTime
         /// <summary>
@@ -77,12 +80,30 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         /// that you can specify depend on the query type, since each query type returns a different
         /// set of Internet Monitor data.</para><para>For more information about specifying filter parameters, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-IM-view-cw-tools-cwim-query.html">Using
         /// the Amazon CloudWatch Internet Monitor query interface</a> in the Amazon CloudWatch
-        /// Internet Monitor User Guide.</para>
+        /// Internet Monitor User Guide.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("FilterParameters")]
         public Amazon.InternetMonitor.Model.FilterParameter[] FilterParameter { get; set; }
+        #endregion
+        
+        #region Parameter LinkedAccountId
+        /// <summary>
+        /// <para>
+        /// <para>The account ID for an account that you've set up cross-account sharing for in Amazon
+        /// CloudWatch Internet Monitor. You configure cross-account sharing by using Amazon CloudWatch
+        /// Observability Access Manager. For more information, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cwim-cross-account.html">Internet
+        /// Monitor cross-account observability</a> in the Amazon CloudWatch Internet Monitor
+        /// User Guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String LinkedAccountId { get; set; }
         #endregion
         
         #region Parameter MonitorName
@@ -106,7 +127,16 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         /// <summary>
         /// <para>
         /// <para>The type of query to run. The following are the three types of queries that you can
-        /// run using the Internet Monitor query interface:</para><ul><li><para><c>MEASUREMENTS</c>: TBD definition</para></li><li><para><c>TOP_LOCATIONS</c>: TBD definition</para></li><li><para><c>TOP_LOCATION_DETAILS</c>: TBD definition</para></li></ul><para>For lists of the fields returned with each query type and more information about how
+        /// run using the Internet Monitor query interface:</para><ul><li><para><c>MEASUREMENTS</c>: Provides availability score, performance score, total traffic,
+        /// and round-trip times, at 5 minute intervals.</para></li><li><para><c>TOP_LOCATIONS</c>: Provides availability score, performance score, total traffic,
+        /// and time to first byte (TTFB) information, for the top location and ASN combinations
+        /// that you're monitoring, by traffic volume.</para></li><li><para><c>TOP_LOCATION_DETAILS</c>: Provides TTFB for Amazon CloudFront, your current configuration,
+        /// and the best performing EC2 configuration, at 1 hour intervals.</para></li><li><para><c>OVERALL_TRAFFIC_SUGGESTIONS</c>: Provides TTFB, using a 30-day weighted average,
+        /// for all traffic in each Amazon Web Services location that is monitored.</para></li><li><para><c>OVERALL_TRAFFIC_SUGGESTIONS_DETAILS</c>: Provides TTFB, using a 30-day weighted
+        /// average, for each top location, for a proposed Amazon Web Services location. Must
+        /// provide an Amazon Web Services location to search.</para></li><li><para><c>ROUTING_SUGGESTIONS</c>: Provides the predicted average round-trip time (RTT)
+        /// from an IP prefix toward an Amazon Web Services location for a DNS resolver. The RTT
+        /// is calculated at one hour intervals, over a one hour period.</para></li></ul><para>For lists of the fields returned with each query type and more information about how
         /// each type of query is performed, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-IM-view-cw-tools-cwim-query.html">
         /// Using the Amazon CloudWatch Internet Monitor query interface</a> in the Amazon CloudWatch
         /// Internet Monitor User Guide.</para>
@@ -151,16 +181,6 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         public string Select { get; set; } = "QueryId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MonitorName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MonitorName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MonitorName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -171,9 +191,13 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MonitorName), MyInvocation.BoundParameters);
@@ -187,21 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.InternetMonitor.Model.StartQueryResponse, StartCWIMQueryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MonitorName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EndTime = this.EndTime;
             #if MODULAR
             if (this.EndTime == null && ParameterWasBound(nameof(this.EndTime)))
@@ -213,6 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             {
                 context.FilterParameter = new List<Amazon.InternetMonitor.Model.FilterParameter>(this.FilterParameter);
             }
+            context.LinkedAccountId = this.LinkedAccountId;
             context.MonitorName = this.MonitorName;
             #if MODULAR
             if (this.MonitorName == null && ParameterWasBound(nameof(this.MonitorName)))
@@ -257,6 +272,10 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             if (cmdletContext.FilterParameter != null)
             {
                 request.FilterParameters = cmdletContext.FilterParameter;
+            }
+            if (cmdletContext.LinkedAccountId != null)
+            {
+                request.LinkedAccountId = cmdletContext.LinkedAccountId;
             }
             if (cmdletContext.MonitorName != null)
             {
@@ -308,13 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Internet Monitor", "StartQuery");
             try
             {
-                #if DESKTOP
-                return client.StartQuery(request);
-                #elif CORECLR
-                return client.StartQueryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartQueryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -333,6 +346,7 @@ namespace Amazon.PowerShell.Cmdlets.CWIM
         {
             public System.DateTime? EndTime { get; set; }
             public List<Amazon.InternetMonitor.Model.FilterParameter> FilterParameter { get; set; }
+            public System.String LinkedAccountId { get; set; }
             public System.String MonitorName { get; set; }
             public Amazon.InternetMonitor.QueryType QueryType { get; set; }
             public System.DateTime? StartTime { get; set; }

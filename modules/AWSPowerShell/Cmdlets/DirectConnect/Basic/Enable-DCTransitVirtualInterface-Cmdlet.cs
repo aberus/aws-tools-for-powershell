@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectConnect;
 using Amazon.DirectConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DC
 {
     /// <summary>
@@ -48,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
     [AWSCmdlet("Calls the AWS Direct Connect AllocateTransitVirtualInterface API operation.", Operation = new[] {"AllocateTransitVirtualInterface"}, SelectReturnType = typeof(Amazon.DirectConnect.Model.AllocateTransitVirtualInterfaceResponse))]
     [AWSCmdletOutput("Amazon.DirectConnect.Model.VirtualInterface or Amazon.DirectConnect.Model.AllocateTransitVirtualInterfaceResponse",
         "This cmdlet returns an Amazon.DirectConnect.Model.VirtualInterface object.",
-        "The service call response (type Amazon.DirectConnect.Model.AllocateTransitVirtualInterfaceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DirectConnect.Model.AllocateTransitVirtualInterfaceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EnableDCTransitVirtualInterfaceCmdlet : AmazonDirectConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NewTransitVirtualInterfaceAllocation_AddressFamily
         /// <summary>
@@ -79,11 +82,28 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter NewTransitVirtualInterfaceAllocation_Asn
         /// <summary>
         /// <para>
-        /// <para>The autonomous system (AS) number for Border Gateway Protocol (BGP) configuration.</para><para>The valid values are 1-2147483647.</para>
+        /// <para>The autonomous system number (ASN). The valid range is from 1 to 2147483646 for Border
+        /// Gateway Protocol (BGP) configuration. If you provide a number greater than the maximum,
+        /// an error is returned. Use <c>asnLong</c> instead.</para><note><para>You can use <c>asnLong</c> or <c>asn</c>, but not both. We recommend using <c>asnLong</c>
+        /// as it supports a greater pool of numbers. </para><ul><li><para>The <c>asnLong</c> attribute accepts both ASN and long ASN ranges.</para></li><li><para>If you provide a value in the same API call for both <c>asn</c> and <c>asnLong</c>,
+        /// the API will only accept the value for <c>asnLong</c>.</para></li></ul></note><para>The valid values are 1-2147483646.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? NewTransitVirtualInterfaceAllocation_Asn { get; set; }
+        #endregion
+        
+        #region Parameter NewTransitVirtualInterfaceAllocation_AsnLong
+        /// <summary>
+        /// <para>
+        /// <para>The ASN when allocating a new transit virtual interface. The valid range is from 1
+        /// to 4294967294 for BGP configuration.</para><note><para>You can use <c>asnLong</c> or <c>asn</c>, but not both. We recommend using <c>asnLong</c>
+        /// as it supports a greater pool of numbers. </para><ul><li><para>The <c>asnLong</c> attribute accepts both ASN and long ASN ranges.</para></li><li><para>If you provide a value in the same API call for both <c>asn</c> and <c>asnLong</c>,
+        /// the API will only accept the value for <c>asnLong</c>.</para></li></ul></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int64? NewTransitVirtualInterfaceAllocation_AsnLong { get; set; }
         #endregion
         
         #region Parameter NewTransitVirtualInterfaceAllocation_AuthKey
@@ -155,7 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter NewTransitVirtualInterfaceAllocation_Tag
         /// <summary>
         /// <para>
-        /// <para>The tags associated with the transitive virtual interface.</para>
+        /// <para>The tags associated with the transitive virtual interface.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public string Select { get; set; } = "VirtualInterface";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -216,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectionId), MyInvocation.BoundParameters);
@@ -232,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.DC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectConnect.Model.AllocateTransitVirtualInterfaceResponse, EnableDCTransitVirtualInterfaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConnectionId = this.ConnectionId;
             #if MODULAR
             if (this.ConnectionId == null && ParameterWasBound(nameof(this.ConnectionId)))
@@ -257,6 +265,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             context.NewTransitVirtualInterfaceAllocation_AddressFamily = this.NewTransitVirtualInterfaceAllocation_AddressFamily;
             context.NewTransitVirtualInterfaceAllocation_AmazonAddress = this.NewTransitVirtualInterfaceAllocation_AmazonAddress;
             context.NewTransitVirtualInterfaceAllocation_Asn = this.NewTransitVirtualInterfaceAllocation_Asn;
+            context.NewTransitVirtualInterfaceAllocation_AsnLong = this.NewTransitVirtualInterfaceAllocation_AsnLong;
             context.NewTransitVirtualInterfaceAllocation_AuthKey = this.NewTransitVirtualInterfaceAllocation_AuthKey;
             context.NewTransitVirtualInterfaceAllocation_CustomerAddress = this.NewTransitVirtualInterfaceAllocation_CustomerAddress;
             context.NewTransitVirtualInterfaceAllocation_Mtu = this.NewTransitVirtualInterfaceAllocation_Mtu;
@@ -325,6 +334,16 @@ namespace Amazon.PowerShell.Cmdlets.DC
             if (requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_Asn != null)
             {
                 request.NewTransitVirtualInterfaceAllocation.Asn = requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_Asn.Value;
+                requestNewTransitVirtualInterfaceAllocationIsNull = false;
+            }
+            System.Int64? requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_AsnLong = null;
+            if (cmdletContext.NewTransitVirtualInterfaceAllocation_AsnLong != null)
+            {
+                requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_AsnLong = cmdletContext.NewTransitVirtualInterfaceAllocation_AsnLong.Value;
+            }
+            if (requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_AsnLong != null)
+            {
+                request.NewTransitVirtualInterfaceAllocation.AsnLong = requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_AsnLong.Value;
                 requestNewTransitVirtualInterfaceAllocationIsNull = false;
             }
             System.String requestNewTransitVirtualInterfaceAllocation_newTransitVirtualInterfaceAllocation_AuthKey = null;
@@ -434,13 +453,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Direct Connect", "AllocateTransitVirtualInterface");
             try
             {
-                #if DESKTOP
-                return client.AllocateTransitVirtualInterface(request);
-                #elif CORECLR
-                return client.AllocateTransitVirtualInterfaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AllocateTransitVirtualInterfaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -461,6 +474,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             public Amazon.DirectConnect.AddressFamily NewTransitVirtualInterfaceAllocation_AddressFamily { get; set; }
             public System.String NewTransitVirtualInterfaceAllocation_AmazonAddress { get; set; }
             public System.Int32? NewTransitVirtualInterfaceAllocation_Asn { get; set; }
+            public System.Int64? NewTransitVirtualInterfaceAllocation_AsnLong { get; set; }
             public System.String NewTransitVirtualInterfaceAllocation_AuthKey { get; set; }
             public System.String NewTransitVirtualInterfaceAllocation_CustomerAddress { get; set; }
             public System.Int32? NewTransitVirtualInterfaceAllocation_Mtu { get; set; }

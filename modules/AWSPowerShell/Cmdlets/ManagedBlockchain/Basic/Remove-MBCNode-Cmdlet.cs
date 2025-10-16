@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedBlockchain;
 using Amazon.ManagedBlockchain.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MBC
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
     [AWSCmdlet("Calls the Amazon Managed Blockchain DeleteNode API operation.", Operation = new[] {"DeleteNode"}, SelectReturnType = typeof(Amazon.ManagedBlockchain.Model.DeleteNodeResponse))]
     [AWSCmdletOutput("None or Amazon.ManagedBlockchain.Model.DeleteNodeResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ManagedBlockchain.Model.DeleteNodeResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ManagedBlockchain.Model.DeleteNodeResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveMBCNodeCmdlet : AmazonManagedBlockchainClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MemberId
         /// <summary>
@@ -61,7 +64,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         #region Parameter NetworkId
         /// <summary>
         /// <para>
-        /// <para>The unique identifier of the network that the node is on.</para><para>Ethereum public networks have the following <c>NetworkId</c>s:</para><ul><li><para><c>n-ethereum-mainnet</c></para></li><li><para><c>n-ethereum-goerli</c></para></li></ul>
+        /// <para>The unique identifier of the network that the node is on.</para><para>Ethereum public networks have the following <c>NetworkId</c>s:</para><ul><li><para><c>n-ethereum-mainnet</c></para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,16 +105,6 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NodeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NodeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NodeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -122,9 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NodeId), MyInvocation.BoundParameters);
@@ -138,21 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ManagedBlockchain.Model.DeleteNodeResponse, RemoveMBCNodeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NodeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MemberId = this.MemberId;
             context.NetworkId = this.NetworkId;
             #if MODULAR
@@ -234,13 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Blockchain", "DeleteNode");
             try
             {
-                #if DESKTOP
-                return client.DeleteNode(request);
-                #elif CORECLR
-                return client.DeleteNodeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteNodeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

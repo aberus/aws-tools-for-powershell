@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -34,11 +36,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// 
     ///  
     /// <para>
-    /// You can create snapshots of volumes in a Region and volumes on an Outpost. If you
-    /// create a snapshot of a volume in a Region, the snapshot must be stored in the same
-    /// Region as the volume. If you create a snapshot of a volume on an Outpost, the snapshot
-    /// can be stored on the same Outpost as the volume, or in the Region for that Outpost.
-    /// </para><para>
+    /// The location of the source EBS volume determines where you can create the snapshot.
+    /// </para><ul><li><para>
+    /// If the source volume is in a Region, you must create the snapshot in the same Region
+    /// as the volume.
+    /// </para></li><li><para>
+    /// If the source volume is in a Local Zone, you can create the snapshot in the same Local
+    /// Zone or in its parent Amazon Web Services Region.
+    /// </para></li><li><para>
+    /// If the source volume is on an Outpost, you can create the snapshot on the same Outpost
+    /// or in its parent Amazon Web Services Region.
+    /// </para></li></ul><para>
     /// When a snapshot is created, any Amazon Web Services Marketplace product codes that
     /// are associated with the source volume are propagated to the snapshot.
     /// </para><para>
@@ -57,14 +65,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// </para><para>
     /// Snapshots that are taken from encrypted volumes are automatically encrypted. Volumes
     /// that are created from encrypted snapshots are also automatically encrypted. Your encrypted
-    /// volumes and any associated snapshots always remain protected.
-    /// </para><para>
-    /// You can tag your snapshots during creation. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html">Tag
-    /// your Amazon EC2 resources</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
-    /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AmazonEBS.html">Amazon
-    /// Elastic Block Store</a> and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html">Amazon
-    /// EBS encryption</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// volumes and any associated snapshots always remain protected. For more information,
+    /// see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-encryption.html">Amazon
+    /// EBS encryption</a> in the <i>Amazon EBS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EC2Snapshot", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -72,12 +75,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateSnapshot API operation.", Operation = new[] {"CreateSnapshot"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateSnapshotResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Snapshot or Amazon.EC2.Model.CreateSnapshotResponse",
         "This cmdlet returns an Amazon.EC2.Model.Snapshot object.",
-        "The service call response (type Amazon.EC2.Model.CreateSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2SnapshotCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -89,16 +93,38 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter Location
+        /// <summary>
+        /// <para>
+        /// <note><para>Only supported for volumes in Local Zones. If the source volume is not in a Local
+        /// Zone, omit this parameter.</para></note><ul><li><para>To create a local snapshot in the same Local Zone as the source volume, specify <c>local</c>.</para></li><li><para>To create a regional snapshot in the parent Region of the Local Zone, specify <c>regional</c>
+        /// or omit this parameter.</para></li></ul><para>Default value: <c>regional</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EC2.SnapshotLocationEnum")]
+        public Amazon.EC2.SnapshotLocationEnum Location { get; set; }
+        #endregion
+        
         #region Parameter OutpostArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Outpost on which to create a local snapshot.</para><ul><li><para>To create a snapshot of a volume in a Region, omit this parameter. The snapshot is
-        /// created in the same Region as the volume.</para></li><li><para>To create a snapshot of a volume on an Outpost and store the snapshot in the Region,
-        /// omit this parameter. The snapshot is created in the Region for the Outpost.</para></li><li><para>To create a snapshot of a volume on an Outpost and store the snapshot on an Outpost,
-        /// specify the ARN of the destination Outpost. The snapshot must be created on the same
-        /// Outpost as the volume.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#create-snapshot">Create
-        /// local snapshots from volumes on an Outpost</a> in the <i>Amazon Elastic Compute Cloud
-        /// User Guide</i>.</para>
+        /// <note><para>Only supported for volumes on Outposts. If the source volume is not on an Outpost,
+        /// omit this parameter.</para></note><ul><li><para>To create the snapshot on the same Outpost as the source volume, specify the ARN of
+        /// that Outpost. The snapshot must be created on the same Outpost as the volume.</para></li><li><para>To create the snapshot in the parent Region of the Outpost, omit this parameter.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/snapshots-outposts.html#create-snapshot">Create
+        /// local snapshots from volumes on an Outpost</a> in the <i>Amazon EBS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,7 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the snapshot during creation.</para>
+        /// <para>The tags to apply to the snapshot during creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,16 +174,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Snapshot";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VolumeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -164,9 +184,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VolumeId), MyInvocation.BoundParameters);
@@ -180,22 +204,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateSnapshotResponse, NewEC2SnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VolumeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
+            context.Location = this.Location;
             context.OutpostArn = this.OutpostArn;
             if (this.TagSpecification != null)
             {
@@ -227,6 +243,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.Location != null)
+            {
+                request.Location = cmdletContext.Location;
             }
             if (cmdletContext.OutpostArn != null)
             {
@@ -278,13 +302,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateSnapshot");
             try
             {
-                #if DESKTOP
-                return client.CreateSnapshot(request);
-                #elif CORECLR
-                return client.CreateSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -302,6 +320,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
+            public Amazon.EC2.SnapshotLocationEnum Location { get; set; }
             public System.String OutpostArn { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public System.String VolumeId { get; set; }

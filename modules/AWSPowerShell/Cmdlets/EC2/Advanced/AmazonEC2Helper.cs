@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -110,7 +110,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// form Get-EC2LaunchTemplateData | New-EC2LaunchTemplateData[Version].This works around
         /// the lack of copy constructors in the sdk.
         /// </summary>
-        /// <param name="t"></param>
+        /// <param name="input"></param>
         /// <returns></returns>
         public static RequestLaunchTemplateData FromResponseTemplateData(ResponseLaunchTemplateData input)
         {
@@ -306,7 +306,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         spotOptions.MaxPrice = responseSpotOptions.MaxPrice;
                         spotOptions.SpotInstanceType = responseSpotOptions.SpotInstanceType;
                         if (AWSSDKUtils.IsPropertySet(responseSpotOptions, nameof(responseSpotOptions.ValidUntil)))
-                            spotOptions.ValidUntilUtc = responseSpotOptions.ValidUntil;
+                            spotOptions.ValidUntil = responseSpotOptions.ValidUntil;
                     }
                 }
             }

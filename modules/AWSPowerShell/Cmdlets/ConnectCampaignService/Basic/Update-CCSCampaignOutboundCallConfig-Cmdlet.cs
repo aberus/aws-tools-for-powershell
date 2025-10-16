@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConnectCampaignService;
 using Amazon.ConnectCampaignService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CCS
 {
     /// <summary>
@@ -35,12 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.CCS
     [AWSCmdlet("Calls the Amazon Connect Campaign Service UpdateCampaignOutboundCallConfig API operation.", Operation = new[] {"UpdateCampaignOutboundCallConfig"}, SelectReturnType = typeof(Amazon.ConnectCampaignService.Model.UpdateCampaignOutboundCallConfigResponse))]
     [AWSCmdletOutput("None or Amazon.ConnectCampaignService.Model.UpdateCampaignOutboundCallConfigResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ConnectCampaignService.Model.UpdateCampaignOutboundCallConfigResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ConnectCampaignService.Model.UpdateCampaignOutboundCallConfigResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateCCSCampaignOutboundCallConfigCmdlet : AmazonConnectCampaignServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt
+        /// <summary>
+        /// <para>
+        /// <para>Enable or disable await answer machine prompt</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt { get; set; }
+        #endregion
         
         #region Parameter ConnectContactFlowId
         /// <summary>
@@ -99,16 +112,6 @@ namespace Amazon.PowerShell.Cmdlets.CCS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -119,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.CCS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -135,21 +142,12 @@ namespace Amazon.PowerShell.Cmdlets.CCS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConnectCampaignService.Model.UpdateCampaignOutboundCallConfigResponse, UpdateCCSCampaignOutboundCallConfigCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt = this.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt;
             context.AnswerMachineDetectionConfig_EnableAnswerMachineDetection = this.AnswerMachineDetectionConfig_EnableAnswerMachineDetection;
             context.ConnectContactFlowId = this.ConnectContactFlowId;
             context.ConnectSourcePhoneNumber = this.ConnectSourcePhoneNumber;
@@ -180,6 +178,16 @@ namespace Amazon.PowerShell.Cmdlets.CCS
              // populate AnswerMachineDetectionConfig
             var requestAnswerMachineDetectionConfigIsNull = true;
             request.AnswerMachineDetectionConfig = new Amazon.ConnectCampaignService.Model.AnswerMachineDetectionConfig();
+            System.Boolean? requestAnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt = null;
+            if (cmdletContext.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt != null)
+            {
+                requestAnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt = cmdletContext.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt.Value;
+            }
+            if (requestAnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt != null)
+            {
+                request.AnswerMachineDetectionConfig.AwaitAnswerMachinePrompt = requestAnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt.Value;
+                requestAnswerMachineDetectionConfigIsNull = false;
+            }
             System.Boolean? requestAnswerMachineDetectionConfig_answerMachineDetectionConfig_EnableAnswerMachineDetection = null;
             if (cmdletContext.AnswerMachineDetectionConfig_EnableAnswerMachineDetection != null)
             {
@@ -245,13 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.CCS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Campaign Service", "UpdateCampaignOutboundCallConfig");
             try
             {
-                #if DESKTOP
-                return client.UpdateCampaignOutboundCallConfig(request);
-                #elif CORECLR
-                return client.UpdateCampaignOutboundCallConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateCampaignOutboundCallConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -268,6 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.CCS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt { get; set; }
             public System.Boolean? AnswerMachineDetectionConfig_EnableAnswerMachineDetection { get; set; }
             public System.String ConnectContactFlowId { get; set; }
             public System.String ConnectSourcePhoneNumber { get; set; }

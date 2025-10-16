@@ -87,6 +87,16 @@ $IAM_Completers = {
             break
         }
 
+        # Amazon.IdentityManagement.AssertionEncryptionModeType
+        {
+            ($_ -eq "New-IAMSAMLProvider/AssertionEncryptionMode") -Or
+            ($_ -eq "Update-IAMSAMLProvider/AssertionEncryptionMode")
+        }
+        {
+            $v = "Allowed","Required"
+            break
+        }
+
         # Amazon.IdentityManagement.AssignmentStatusType
         "Get-IAMVirtualMFADevice/AssignmentStatus"
         {
@@ -147,7 +157,7 @@ $IAM_Completers = {
             ($_ -eq "Update-IAMSSHPublicKey/Status")
         }
         {
-            $v = "Active","Inactive"
+            $v = "Active","Expired","Inactive"
             break
         }
 
@@ -160,6 +170,7 @@ $IAM_Completers = {
 }
 
 $IAM_map = @{
+    "AssertionEncryptionMode"=@("New-IAMSAMLProvider","Update-IAMSAMLProvider")
     "AssignmentStatus"=@("Get-IAMVirtualMFADevice")
     "Encoding"=@("Get-IAMSSHPublicKey")
     "EntityFilter"=@("Get-IAMEntitiesForPolicy")
@@ -269,7 +280,11 @@ $IAM_SelectMap = @{
                "Unregister-IAMGroupPolicy",
                "Unregister-IAMRolePolicy",
                "Unregister-IAMUserPolicy",
+               "Disable-IAMOrganizationsRootCredentialsManagement",
+               "Disable-IAMOrganizationsRootSession",
                "Enable-IAMMFADevice",
+               "Enable-IAMOrganizationsRootCredentialsManagement",
+               "Enable-IAMOrganizationsRootSession",
                "Request-IAMCredentialReport",
                "New-IAMOrganizationsAccessReport",
                "Request-IAMServiceLastAccessedDetail",
@@ -315,6 +330,7 @@ $IAM_SelectMap = @{
                "Get-IAMMFADeviceTagList",
                "Get-IAMOpenIDConnectProviderList",
                "Get-IAMOpenIDConnectProviderTagList",
+               "Get-IAMOrganizationsFeature",
                "Get-IAMPolicyList",
                "Get-IAMPolicyGrantingServiceAccessList",
                "Get-IAMPolicyTagList",

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
     /// Generates an activation code and activation ID you can use to register your on-premises
     /// servers, edge devices, or virtual machine (VM) with Amazon Web Services Systems Manager.
     /// Registering these machines with Systems Manager makes it possible to manage them using
-    /// Systems Manager capabilities. You use the activation code and ID when installing SSM
-    /// Agent on machines in your hybrid environment. For more information about requirements
-    /// for managing on-premises machines using Systems Manager, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-managedinstances.html">Setting
-    /// up Amazon Web Services Systems Manager for hybrid environments</a> in the <i>Amazon
-    /// Web Services Systems Manager User Guide</i>. 
+    /// Systems Manager tools. You use the activation code and ID when installing SSM Agent
+    /// on machines in your hybrid environment. For more information about requirements for
+    /// managing on-premises machines using Systems Manager, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-hybrid-multicloud.html">Using
+    /// Amazon Web Services Systems Manager in hybrid and multicloud environments</a> in the
+    /// <i>Amazon Web Services Systems Manager User Guide</i>. 
     /// 
     ///  <note><para>
     /// Amazon Elastic Compute Cloud (Amazon EC2) instances, edge devices, and on-premises
@@ -47,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [OutputType("Amazon.SimpleSystemsManagement.Model.CreateActivationResponse")]
     [AWSCmdlet("Calls the AWS Systems Manager CreateActivation API operation.", Operation = new[] {"CreateActivation"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.CreateActivationResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.CreateActivationResponse",
-        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.CreateActivationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.CreateActivationResponse object containing multiple properties."
     )]
     public partial class NewSSMActivationCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DefaultInstanceName
         /// <summary>
@@ -81,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>The date by which this activation request should expire, in timestamp format, such
-        /// as "2021-07-07T00:00:00". You can specify a date up to 30 days in advance. If you
+        /// as "2024-07-07T00:00:00". You can specify a date up to 30 days in advance. If you
         /// don't provide an expiration date, the activation code expires in 24 hours.</para>
         /// </para>
         /// </summary>
@@ -95,9 +98,9 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>The name of the Identity and Access Management (IAM) role that you want to assign
         /// to the managed node. This IAM role must provide AssumeRole permissions for the Amazon
         /// Web Services Systems Manager service principal <c>ssm.amazonaws.com</c>. For more
-        /// information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-service-role.html">Create
-        /// an IAM service role for a hybrid environment</a> in the <i>Amazon Web Services Systems
-        /// Manager User Guide</i>.</para><note><para>You can't specify an IAM service-linked role for this parameter. You must create a
+        /// information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/hybrid-multicloud-service-role.html">Create
+        /// the IAM service role required for Systems Manager in a hybrid and multicloud environments</a>
+        /// in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><note><para>You can't specify an IAM service-linked role for this parameter. You must create a
         /// unique role.</para></note>
         /// </para>
         /// </summary>
@@ -126,7 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter RegistrationMetadata
         /// <summary>
         /// <para>
-        /// <para>Reserved for internal use.</para>
+        /// <para>Reserved for internal use.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,7 +154,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// the first time and are assigned a managed node ID. This means they are listed in the
         /// Amazon Web Services Systems Manager console with an ID that is prefixed with "mi-".
         /// For information about how to add tags to your managed nodes, see <a>AddTagsToResource</a>.
-        /// For information about how to remove tags from your managed nodes, see <a>RemoveTagsFromResource</a>.</para>
+        /// For information about how to remove tags from your managed nodes, see <a>RemoveTagsFromResource</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -176,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DefaultInstanceName), MyInvocation.BoundParameters);
@@ -298,13 +313,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "CreateActivation");
             try
             {
-                #if DESKTOP
-                return client.CreateActivation(request);
-                #elif CORECLR
-                return client.CreateActivationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateActivationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

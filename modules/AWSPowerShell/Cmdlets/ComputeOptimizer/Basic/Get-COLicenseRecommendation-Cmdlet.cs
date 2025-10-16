@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ComputeOptimizer;
 using Amazon.ComputeOptimizer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CO
 {
     /// <summary>
@@ -41,18 +43,23 @@ namespace Amazon.PowerShell.Cmdlets.CO
     [OutputType("Amazon.ComputeOptimizer.Model.GetLicenseRecommendationsResponse")]
     [AWSCmdlet("Calls the AWS Compute Optimizer GetLicenseRecommendations API operation.", Operation = new[] {"GetLicenseRecommendations"}, SelectReturnType = typeof(Amazon.ComputeOptimizer.Model.GetLicenseRecommendationsResponse))]
     [AWSCmdletOutput("Amazon.ComputeOptimizer.Model.GetLicenseRecommendationsResponse",
-        "This cmdlet returns an Amazon.ComputeOptimizer.Model.GetLicenseRecommendationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ComputeOptimizer.Model.GetLicenseRecommendationsResponse object containing multiple properties."
     )]
     public partial class GetCOLicenseRecommendationCmdlet : AmazonComputeOptimizerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
         /// <para>The ID of the Amazon Web Services account for which to return license recommendations.</para><para>If your account is the management account of an organization, use this parameter to
-        /// specify the member account for which you want to return license recommendations.</para><para>Only one account ID can be specified per request.</para>
+        /// specify the member account for which you want to return license recommendations.</para><para>Only one account ID can be specified per request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -64,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.CO
         /// <summary>
         /// <para>
         /// <para> An array of objects to specify a filter that returns a more specific list of license
-        /// recommendations. </para>
+        /// recommendations. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,7 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.CO
         #region Parameter ResourceArn
         /// <summary>
         /// <para>
-        /// <para> The ARN that identifies the Amazon EC2 instance. </para><para> The following is the format of the ARN: </para><para><c>arn:aws:ec2:region:aws_account_id:instance/instance-id</c></para>
+        /// <para> The ARN that identifies the Amazon EC2 instance. </para><para> The following is the format of the ARN: </para><para><c>arn:aws:ec2:region:aws_account_id:instance/instance-id</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,7 +117,7 @@ namespace Amazon.PowerShell.Cmdlets.CO
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -130,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.CO
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -255,13 +274,7 @@ namespace Amazon.PowerShell.Cmdlets.CO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Compute Optimizer", "GetLicenseRecommendations");
             try
             {
-                #if DESKTOP
-                return client.GetLicenseRecommendations(request);
-                #elif CORECLR
-                return client.GetLicenseRecommendationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetLicenseRecommendationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

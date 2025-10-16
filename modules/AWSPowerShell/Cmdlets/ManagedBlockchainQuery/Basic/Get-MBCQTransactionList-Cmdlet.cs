@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedBlockchainQuery;
 using Amazon.ManagedBlockchainQuery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MBCQ
 {
     /// <summary>
-    /// Lists all of the transactions on a given wallet address or to a specific contract.
+    /// Lists all the transaction events for a transaction.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "MBCQTransactionList")]
     [OutputType("Amazon.ManagedBlockchainQuery.Model.TransactionOutputItem")]
     [AWSCmdlet("Calls the Amazon Managed Blockchain Query ListTransactions API operation.", Operation = new[] {"ListTransactions"}, SelectReturnType = typeof(Amazon.ManagedBlockchainQuery.Model.ListTransactionsResponse))]
     [AWSCmdletOutput("Amazon.ManagedBlockchainQuery.Model.TransactionOutputItem or Amazon.ManagedBlockchainQuery.Model.ListTransactionsResponse",
         "This cmdlet returns a collection of Amazon.ManagedBlockchainQuery.Model.TransactionOutputItem objects.",
-        "The service call response (type Amazon.ManagedBlockchainQuery.Model.ListTransactionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ManagedBlockchainQuery.Model.ListTransactionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMBCQTransactionListCmdlet : AmazonManagedBlockchainQueryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Address
         /// <summary>
@@ -63,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         /// <summary>
         /// <para>
         /// <para>The container to determine whether to list results that have only reached <a href="https://docs.aws.amazon.com/managed-blockchain/latest/ambq-dg/key-concepts.html#finality"><i>finality</i></a>. Transactions that have reached finality are always part of the
-        /// response.</para>
+        /// response.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,21 +141,30 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>The maximum number of transactions to list.</para><para>Default:<c>100</c></para><note><para>Even if additional results can be retrieved, the request can return less results than
+        /// <para>The maximum number of transactions to list.</para><para>Default: <c>100</c></para><note><para>Even if additional results can be retrieved, the request can return less results than
         /// <c>maxResults</c> or an empty array of results.</para><para>To retrieve the next set of results, make another request with the returned <c>nextToken</c>
         /// value. The value of <c>nextToken</c> is <c>null</c> when there are no more results
         /// to return</para></note>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("MaxResults")]
-        public System.Int32? MaxResult { get; set; }
+        [Alias("MaxItems","MaxResults")]
+        public int? MaxResult { get; set; }
         #endregion
         
         #region Parameter NextToken
         /// <summary>
         /// <para>
         /// <para>The pagination token that indicates the next set of results to retrieve.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -166,9 +182,24 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         public string Select { get; set; } = "Transactions";
         #endregion
         
+        #region Parameter NoAutoIteration
+        /// <summary>
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter NoAutoIteration { get; set; }
+        #endregion
+        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -194,6 +225,15 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             }
             context.FromBlockchainInstant_Time = this.FromBlockchainInstant_Time;
             context.MaxResult = this.MaxResult;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the MaxResult parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing MaxResult" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             context.Network = this.Network;
             #if MODULAR
             if (this.Network == null && ParameterWasBound(nameof(this.Network)))
@@ -218,7 +258,9 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.ManagedBlockchainQuery.Model.ListTransactionsRequest();
             
             if (cmdletContext.Address != null)
@@ -265,15 +307,11 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             }
             if (cmdletContext.MaxResult != null)
             {
-                request.MaxResults = cmdletContext.MaxResult.Value;
+                request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
             }
             if (cmdletContext.Network != null)
             {
                 request.Network = cmdletContext.Network;
-            }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
             }
             
              // populate Sort
@@ -324,27 +362,52 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
                 request.ToBlockchainInstant = null;
             }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.NextToken;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.NextToken));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.NextToken = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextToken;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -361,13 +424,7 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Blockchain Query", "ListTransactions");
             try
             {
-                #if DESKTOP
-                return client.ListTransactions(request);
-                #elif CORECLR
-                return client.ListTransactionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTransactionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -387,7 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             public System.String Address { get; set; }
             public List<System.String> ConfirmationStatusFilter_Include { get; set; }
             public System.DateTime? FromBlockchainInstant_Time { get; set; }
-            public System.Int32? MaxResult { get; set; }
+            public int? MaxResult { get; set; }
             public Amazon.ManagedBlockchainQuery.QueryNetwork Network { get; set; }
             public System.String NextToken { get; set; }
             public Amazon.ManagedBlockchainQuery.ListTransactionsSortBy Sort_SortBy { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,15 +22,17 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
     /// Returns details about the specified delivery channel. If a delivery channel is not
-    /// specified, this action returns the details of all delivery channels associated with
-    /// the account.
+    /// specified, this operation returns the details of all delivery channels associated
+    /// with the account.
     /// 
     ///  <note><para>
     /// Currently, you can specify only one delivery channel per region in your account.
@@ -41,17 +43,22 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config DescribeDeliveryChannels API operation.", Operation = new[] {"DescribeDeliveryChannels"}, SelectReturnType = typeof(Amazon.ConfigService.Model.DescribeDeliveryChannelsResponse), LegacyAlias="Get-CFGDeliveryChannels")]
     [AWSCmdletOutput("Amazon.ConfigService.Model.DeliveryChannel or Amazon.ConfigService.Model.DescribeDeliveryChannelsResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.DeliveryChannel objects.",
-        "The service call response (type Amazon.ConfigService.Model.DescribeDeliveryChannelsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.DescribeDeliveryChannelsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFGDeliveryChannelCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeliveryChannelName
         /// <summary>
         /// <para>
-        /// <para>A list of delivery channel names.</para>
+        /// <para>A list of delivery channel names.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -70,19 +77,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "DeliveryChannels";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeliveryChannelName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeliveryChannelName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeliveryChannelName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +91,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.DescribeDeliveryChannelsResponse, GetCFGDeliveryChannelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeliveryChannelName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.DeliveryChannelName != null)
             {
                 context.DeliveryChannelName = new List<System.String>(this.DeliveryChannelName);
@@ -167,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "DescribeDeliveryChannels");
             try
             {
-                #if DESKTOP
-                return client.DescribeDeliveryChannels(request);
-                #elif CORECLR
-                return client.DescribeDeliveryChannelsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeDeliveryChannelsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

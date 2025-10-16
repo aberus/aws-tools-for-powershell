@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TranscribeService;
 using Amazon.TranscribeService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRS
 {
     /// <summary>
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
     [OutputType("Amazon.TranscribeService.Model.CreateMedicalVocabularyResponse")]
     [AWSCmdlet("Calls the Amazon Transcribe Service CreateMedicalVocabulary API operation.", Operation = new[] {"CreateMedicalVocabulary"}, SelectReturnType = typeof(Amazon.TranscribeService.Model.CreateMedicalVocabularyResponse))]
     [AWSCmdletOutput("Amazon.TranscribeService.Model.CreateMedicalVocabularyResponse",
-        "This cmdlet returns an Amazon.TranscribeService.Model.CreateMedicalVocabularyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.TranscribeService.Model.CreateMedicalVocabularyResponse object containing multiple properties."
     )]
     public partial class NewTRSMedicalVocabularyCmdlet : AmazonTranscribeServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LanguageCode
         /// <summary>
@@ -81,7 +84,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// <para>
         /// <para>Adds one or more custom tags, each in the form of a key:value pair, to a new custom
         /// medical vocabulary at the time you create this new custom vocabulary.</para><para>To learn more about using tags with Amazon Transcribe, refer to <a href="https://docs.aws.amazon.com/transcribe/latest/dg/tagging.html">Tagging
-        /// resources</a>.</para>
+        /// resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,9 +155,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VocabularyName), MyInvocation.BoundParameters);
@@ -264,13 +275,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Transcribe Service", "CreateMedicalVocabulary");
             try
             {
-                #if DESKTOP
-                return client.CreateMedicalVocabulary(request);
-                #elif CORECLR
-                return client.CreateMedicalVocabularyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMedicalVocabularyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
-    /// Set default log level, or log levels by resource types. This can be for wireless device
-    /// log options or wireless gateways log options and is used to control the log messages
+    /// Set default log level, or log levels by resource types. This can be for wireless device,
+    /// wireless gateway, or FUOTA task log options, and is used to control the log messages
     /// that'll be displayed in CloudWatch.
     /// </summary>
     [Cmdlet("Update", "IOTWLogLevelsByResourceType", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
     [AWSCmdlet("Calls the AWS IoT Wireless UpdateLogLevelsByResourceTypes API operation.", Operation = new[] {"UpdateLogLevelsByResourceTypes"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.UpdateLogLevelsByResourceTypesResponse))]
     [AWSCmdletOutput("None or Amazon.IoTWireless.Model.UpdateLogLevelsByResourceTypesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IoTWireless.Model.UpdateLogLevelsByResourceTypesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IoTWireless.Model.UpdateLogLevelsByResourceTypesResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateIOTWLogLevelsByResourceTypeCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DefaultLogLevel
         /// <summary>
@@ -55,10 +58,29 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public Amazon.IoTWireless.LogLevel DefaultLogLevel { get; set; }
         #endregion
         
+        #region Parameter FuotaTaskLogOption
+        /// <summary>
+        /// <para>
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FuotaTaskLogOptions")]
+        public Amazon.IoTWireless.Model.FuotaTaskLogOption[] FuotaTaskLogOption { get; set; }
+        #endregion
+        
         #region Parameter WirelessDeviceLogOption
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -69,7 +91,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter WirelessGatewayLogOption
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -87,16 +113,6 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DefaultLogLevel parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DefaultLogLevel' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DefaultLogLevel' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -107,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DefaultLogLevel), MyInvocation.BoundParameters);
@@ -123,22 +143,16 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTWireless.Model.UpdateLogLevelsByResourceTypesResponse, UpdateIOTWLogLevelsByResourceTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DefaultLogLevel;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DefaultLogLevel = this.DefaultLogLevel;
+            if (this.FuotaTaskLogOption != null)
+            {
+                context.FuotaTaskLogOption = new List<Amazon.IoTWireless.Model.FuotaTaskLogOption>(this.FuotaTaskLogOption);
+            }
             if (this.WirelessDeviceLogOption != null)
             {
                 context.WirelessDeviceLogOption = new List<Amazon.IoTWireless.Model.WirelessDeviceLogOption>(this.WirelessDeviceLogOption);
@@ -166,6 +180,10 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             if (cmdletContext.DefaultLogLevel != null)
             {
                 request.DefaultLogLevel = cmdletContext.DefaultLogLevel;
+            }
+            if (cmdletContext.FuotaTaskLogOption != null)
+            {
+                request.FuotaTaskLogOptions = cmdletContext.FuotaTaskLogOption;
             }
             if (cmdletContext.WirelessDeviceLogOption != null)
             {
@@ -213,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "UpdateLogLevelsByResourceTypes");
             try
             {
-                #if DESKTOP
-                return client.UpdateLogLevelsByResourceTypes(request);
-                #elif CORECLR
-                return client.UpdateLogLevelsByResourceTypesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateLogLevelsByResourceTypesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -237,6 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.IoTWireless.LogLevel DefaultLogLevel { get; set; }
+            public List<Amazon.IoTWireless.Model.FuotaTaskLogOption> FuotaTaskLogOption { get; set; }
             public List<Amazon.IoTWireless.Model.WirelessDeviceLogOption> WirelessDeviceLogOption { get; set; }
             public List<Amazon.IoTWireless.Model.WirelessGatewayLogOption> WirelessGatewayLogOption { get; set; }
             public System.Func<Amazon.IoTWireless.Model.UpdateLogLevelsByResourceTypesResponse, UpdateIOTWLogLevelsByResourceTypeCmdlet, object> Select { get; set; } =

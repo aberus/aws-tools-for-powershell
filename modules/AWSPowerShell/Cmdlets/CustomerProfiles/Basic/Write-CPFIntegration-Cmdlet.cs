@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CustomerProfiles;
 using Amazon.CustomerProfiles.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CPF
 {
     /// <summary>
@@ -44,14 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
     [OutputType("Amazon.CustomerProfiles.Model.PutIntegrationResponse")]
     [AWSCmdlet("Calls the Amazon Connect Customer Profiles PutIntegration API operation.", Operation = new[] {"PutIntegration"}, SelectReturnType = typeof(Amazon.CustomerProfiles.Model.PutIntegrationResponse))]
     [AWSCmdletOutput("Amazon.CustomerProfiles.Model.PutIntegrationResponse",
-        "This cmdlet returns an Amazon.CustomerProfiles.Model.PutIntegrationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CustomerProfiles.Model.PutIntegrationResponse object containing multiple properties."
     )]
     public partial class WriteCPFIntegrationCmdlet : AmazonCustomerProfilesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3_BucketName
         /// <summary>
@@ -163,6 +164,21 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public System.Boolean? Salesforce_EnableDynamicFieldUpdate { get; set; }
         #endregion
         
+        #region Parameter EventTriggerName
+        /// <summary>
+        /// <para>
+        /// <para>A list of unique names for active event triggers associated with the integration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EventTriggerNames")]
+        public System.String[] EventTriggerName { get; set; }
+        #endregion
+        
         #region Parameter Scheduled_FirstExecutionFrom
         /// <summary>
         /// <para>
@@ -269,11 +285,26 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// or Shopify, and each value is an <c>ObjectTypeName</c> (template) used to ingest the
         /// event. It supports the following event types: <c>SegmentIdentify</c>, <c>ShopifyCreateCustomers</c>,
         /// <c>ShopifyUpdateCustomers</c>, <c>ShopifyCreateDraftOrders</c>, <c>ShopifyUpdateDraftOrders</c>,
-        /// <c>ShopifyCreateOrders</c>, and <c>ShopifyUpdatedOrders</c>.</para>
+        /// <c>ShopifyCreateOrders</c>, and <c>ShopifyUpdatedOrders</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Collections.Hashtable ObjectTypeNames { get; set; }
+        #endregion
+        
+        #region Parameter RoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role. The Integration uses this role to
+        /// make Customer Profiles requests on your behalf.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String RoleArn { get; set; }
         #endregion
         
         #region Parameter Scheduled_ScheduleEndTime
@@ -325,7 +356,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags used to organize, track, or control access for this resource.</para>
+        /// <para>The tags used to organize, track, or control access for this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -337,7 +372,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// <summary>
         /// <para>
         /// <para>A list of tasks that Customer Profiles performs while transferring the data in the
-        /// flow run.</para>
+        /// flow run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -390,16 +429,6 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Uri parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Uri' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Uri' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -410,9 +439,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Uri), MyInvocation.BoundParameters);
@@ -426,21 +459,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CustomerProfiles.Model.PutIntegrationResponse, WriteCPFIntegrationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Uri;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainName = this.DomainName;
             #if MODULAR
             if (this.DomainName == null && ParameterWasBound(nameof(this.DomainName)))
@@ -448,6 +471,10 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 WriteWarning("You are passing $null as a value for parameter DomainName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.EventTriggerName != null)
+            {
+                context.EventTriggerName = new List<System.String>(this.EventTriggerName);
+            }
             context.FlowDefinition_Description = this.FlowDefinition_Description;
             context.FlowDefinition_FlowName = this.FlowDefinition_FlowName;
             context.FlowDefinition_KmsArn = this.FlowDefinition_KmsArn;
@@ -483,6 +510,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                     context.ObjectTypeNames.Add((String)hashKey, (System.String)(this.ObjectTypeNames[hashKey]));
                 }
             }
+            context.RoleArn = this.RoleArn;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -511,6 +539,10 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             if (cmdletContext.DomainName != null)
             {
                 request.DomainName = cmdletContext.DomainName;
+            }
+            if (cmdletContext.EventTriggerName != null)
+            {
+                request.EventTriggerNames = cmdletContext.EventTriggerName;
             }
             
              // populate FlowDefinition
@@ -924,6 +956,10 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             {
                 request.ObjectTypeNames = cmdletContext.ObjectTypeNames;
             }
+            if (cmdletContext.RoleArn != null)
+            {
+                request.RoleArn = cmdletContext.RoleArn;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
@@ -970,13 +1006,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Customer Profiles", "PutIntegration");
             try
             {
-                #if DESKTOP
-                return client.PutIntegration(request);
-                #elif CORECLR
-                return client.PutIntegrationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutIntegrationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -994,6 +1024,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String DomainName { get; set; }
+            public List<System.String> EventTriggerName { get; set; }
             public System.String FlowDefinition_Description { get; set; }
             public System.String FlowDefinition_FlowName { get; set; }
             public System.String FlowDefinition_KmsArn { get; set; }
@@ -1019,6 +1050,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             public Amazon.CustomerProfiles.TriggerType TriggerConfig_TriggerType { get; set; }
             public System.String ObjectTypeName { get; set; }
             public Dictionary<System.String, System.String> ObjectTypeNames { get; set; }
+            public System.String RoleArn { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.String Uri { get; set; }
             public System.Func<Amazon.CustomerProfiles.Model.PutIntegrationResponse, WriteCPFIntegrationCmdlet, object> Select { get; set; } =

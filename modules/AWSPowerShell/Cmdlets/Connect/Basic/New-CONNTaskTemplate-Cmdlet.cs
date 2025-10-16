@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     [OutputType("Amazon.Connect.Model.CreateTaskTemplateResponse")]
     [AWSCmdlet("Calls the Amazon Connect Service CreateTaskTemplate API operation.", Operation = new[] {"CreateTaskTemplate"}, SelectReturnType = typeof(Amazon.Connect.Model.CreateTaskTemplateResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.CreateTaskTemplateResponse",
-        "This cmdlet returns an Amazon.Connect.Model.CreateTaskTemplateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Connect.Model.CreateTaskTemplateResponse object containing multiple properties."
     )]
     public partial class NewCONNTaskTemplateCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactFlowId
         /// <summary>
@@ -55,7 +58,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Defaults_DefaultFieldValue
         /// <summary>
         /// <para>
-        /// <para>Default value for the field.</para>
+        /// <para>Default value for the field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Field
         /// <summary>
         /// <para>
-        /// <para>Fields that are part of the template.</para>
+        /// <para>Fields that are part of the template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -112,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Constraints_InvisibleField
         /// <summary>
         /// <para>
-        /// <para>Lists the fields that are invisible to agents.</para>
+        /// <para>Lists the fields that are invisible to agents.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,7 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Constraints_ReadOnlyField
         /// <summary>
         /// <para>
-        /// <para>Lists the fields that are read-only to agents, and cannot be edited.</para>
+        /// <para>Lists the fields that are read-only to agents, and cannot be edited.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,12 +170,27 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Constraints_RequiredField
         /// <summary>
         /// <para>
-        /// <para>Lists the fields that are required to be filled by agents.</para>
+        /// <para>Lists the fields that are required to be filled by agents.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Constraints_RequiredFields")]
         public Amazon.Connect.Model.RequiredFieldInfo[] Constraints_RequiredField { get; set; }
+        #endregion
+        
+        #region Parameter SelfAssignFlowId
+        /// <summary>
+        /// <para>
+        /// <para>The ContactFlowId for the flow that will be run if this template is used to create
+        /// a self-assigned task.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SelfAssignFlowId { get; set; }
         #endregion
         
         #region Parameter Status
@@ -196,16 +230,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -216,9 +240,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -232,21 +260,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.CreateTaskTemplateResponse, NewCONNTaskTemplateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             if (this.Constraints_InvisibleField != null)
             {
@@ -290,6 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SelfAssignFlowId = this.SelfAssignFlowId;
             context.Status = this.Status;
             
             // allow further manipulation of loaded context prior to processing
@@ -389,6 +408,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.SelfAssignFlowId != null)
+            {
+                request.SelfAssignFlowId = cmdletContext.SelfAssignFlowId;
+            }
             if (cmdletContext.Status != null)
             {
                 request.Status = cmdletContext.Status;
@@ -431,13 +454,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "CreateTaskTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreateTaskTemplate(request);
-                #elif CORECLR
-                return client.CreateTaskTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTaskTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -464,6 +481,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             public List<Amazon.Connect.Model.TaskTemplateField> Field { get; set; }
             public System.String InstanceId { get; set; }
             public System.String Name { get; set; }
+            public System.String SelfAssignFlowId { get; set; }
             public Amazon.Connect.TaskTemplateStatus Status { get; set; }
             public System.Func<Amazon.Connect.Model.CreateTaskTemplateResponse, NewCONNTaskTemplateCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

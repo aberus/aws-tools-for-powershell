@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResilienceHub;
 using Amazon.ResilienceHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RESH
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
     [AWSCmdlet("Calls the AWS Resilience Hub ListApps API operation.", Operation = new[] {"ListApps"}, SelectReturnType = typeof(Amazon.ResilienceHub.Model.ListAppsResponse))]
     [AWSCmdletOutput("Amazon.ResilienceHub.Model.AppSummary or Amazon.ResilienceHub.Model.ListAppsResponse",
         "This cmdlet returns a collection of Amazon.ResilienceHub.Model.AppSummary objects.",
-        "The service call response (type Amazon.ResilienceHub.Model.ListAppsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ResilienceHub.Model.ListAppsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetRESHAppListCmdlet : AmazonResilienceHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppArn
         /// <summary>
@@ -63,11 +66,24 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         public System.String AppArn { get; set; }
         #endregion
         
+        #region Parameter AwsApplicationArn
+        /// <summary>
+        /// <para>
+        /// <para>Amazon Resource Name (ARN) of Resource Groups group that is integrated with an AppRegistry
+        /// application. For more information about ARNs, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">
+        /// Amazon Resource Names (ARNs)</a> in the <i>Amazon Web Services General Reference</i>
+        /// guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AwsApplicationArn { get; set; }
+        #endregion
+        
         #region Parameter FromLastAssessmentTime
         /// <summary>
         /// <para>
-        /// <para>Indicates the lower limit of the range that is used to filter applications based on
-        /// their last assessment times.</para>
+        /// <para>Lower limit of the range that is used to filter applications based on their last assessment
+        /// times.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +104,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         /// <summary>
         /// <para>
         /// <para>The application list is sorted based on the values of <c>lastAppComplianceEvaluationTime</c>
-        /// field. By default, application list is sorted in ascending order. To sort the appliation
+        /// field. By default, application list is sorted in ascending order. To sort the application
         /// list in descending order, set this field to <c>True</c>.</para>
         /// </para>
         /// </summary>
@@ -99,8 +115,8 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         #region Parameter ToLastAssessmentTime
         /// <summary>
         /// <para>
-        /// <para>Indicates the upper limit of the range that is used to filter the applications based
-        /// on their last assessment times.</para>
+        /// <para>Upper limit of the range that is used to filter the applications based on their last
+        /// assessment times.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +143,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,9 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -171,6 +191,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.AppArn = this.AppArn;
+            context.AwsApplicationArn = this.AwsApplicationArn;
             context.FromLastAssessmentTime = this.FromLastAssessmentTime;
             context.MaxResult = this.MaxResult;
             context.Name = this.Name;
@@ -198,6 +219,10 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             if (cmdletContext.AppArn != null)
             {
                 request.AppArn = cmdletContext.AppArn;
+            }
+            if (cmdletContext.AwsApplicationArn != null)
+            {
+                request.AwsApplicationArn = cmdletContext.AwsApplicationArn;
             }
             if (cmdletContext.FromLastAssessmentTime != null)
             {
@@ -281,13 +306,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resilience Hub", "ListApps");
             try
             {
-                #if DESKTOP
-                return client.ListApps(request);
-                #elif CORECLR
-                return client.ListAppsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListAppsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -305,6 +324,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AppArn { get; set; }
+            public System.String AwsApplicationArn { get; set; }
             public System.DateTime? FromLastAssessmentTime { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String Name { get; set; }

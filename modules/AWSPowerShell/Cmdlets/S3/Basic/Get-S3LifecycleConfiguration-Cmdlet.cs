@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,56 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
-    /// <note><para>
-    /// This operation is not supported by directory buckets.
-    /// </para></note><note><para>
-    /// Bucket lifecycle configuration now supports specifying a lifecycle rule using an object
-    /// key name prefix, one or more object tags, or a combination of both. Accordingly, this
-    /// section describes the latest API. The response describes the new filter element that
-    /// you can use to specify a filter to select a subset of objects to which the rule applies.
-    /// If you are using a previous version of the lifecycle configuration, it still works.
-    /// For the earlier action, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycle.html">GetBucketLifecycle</a>.
-    /// </para></note><para>
     /// Returns the lifecycle configuration information set on the bucket. For information
     /// about lifecycle configuration, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lifecycle-mgmt.html">Object
     /// Lifecycle Management</a>.
+    /// 
+    ///  
+    /// <para>
+    /// Bucket lifecycle configuration now supports specifying a lifecycle rule using an object
+    /// key name prefix, one or more object tags, object size, or any combination of these.
+    /// Accordingly, this section describes the latest API, which is compatible with the new
+    /// functionality. The previous version of the API supported filtering based only on an
+    /// object key name prefix, which is supported for general purpose buckets for backward
+    /// compatibility. For the related API description, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetBucketLifecycle.html">GetBucketLifecycle</a>.
+    /// </para><note><para>
+    /// Lifecyle configurations for directory buckets only support expiring objects and cancelling
+    /// multipart uploads. Expiring of versioned objects, transitions and tag filters are
+    /// not supported.
+    /// </para></note><dl><dt>Permissions</dt><dd><ul><li><para><b>General purpose bucket permissions</b> - By default, all Amazon S3 resources are
+    /// private, including buckets, objects, and related subresources (for example, lifecycle
+    /// configuration and website configuration). Only the resource owner (that is, the Amazon
+    /// Web Services account that created it) can access the resource. The resource owner
+    /// can optionally grant access permissions to others by writing an access policy. For
+    /// this operation, a user must have the <c>s3:GetLifecycleConfiguration</c> permission.
     /// </para><para>
-    /// To use this operation, you must have permission to perform the <c>s3:GetLifecycleConfiguration</c>
-    /// action. The bucket owner has this permission, by default. The bucket owner can grant
-    /// this permission to others. For more information about permissions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-with-s3-actions.html#using-with-s3-actions-related-to-bucket-subresources">Permissions
-    /// Related to Bucket Subresource Operations</a> and <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-access-control.html">Managing
+    /// For more information about permissions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-access-control.html">Managing
     /// Access Permissions to Your Amazon S3 Resources</a>.
-    /// </para><para><c>GetBucketLifecycleConfiguration</c> has the following special error:
+    /// </para></li></ul><ul><li><para><b>Directory bucket permissions</b> - You must have the <c>s3express:GetLifecycleConfiguration</c>
+    /// permission in an IAM identity-based policy to use this operation. Cross-account access
+    /// to this API operation isn't supported. The resource owner can optionally grant access
+    /// permissions to others by creating a role or user for them as long as they are within
+    /// the same account as the owner and resource.
+    /// </para><para>
+    /// For more information about directory bucket policies and permissions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-security-iam.html">Authorizing
+    /// Regional endpoint APIs with IAM</a> in the <i>Amazon S3 User Guide</i>.
+    /// </para><note><para><b>Directory buckets </b> - For directory buckets, you must make requests for this
+    /// API operation to the Regional endpoint. These endpoints support path-style requests
+    /// in the format <c>https://s3express-control.<i>region-code</i>.amazonaws.com/<i>bucket-name</i></c>. Virtual-hosted-style requests aren't supported. For more information about endpoints
+    /// in Availability Zones, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html">Regional
+    /// and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon
+    /// S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html">Concepts
+    /// for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.
+    /// </para></note></li></ul></dd><dt>HTTP Host header syntax</dt><dd><para><b>Directory buckets </b> - The HTTP Host header syntax is <c>s3express-control.<i>region</i>.amazonaws.com</c>.
+    /// </para></dd></dl><para><c>GetBucketLifecycleConfiguration</c> has the following special error:
     /// </para><ul><li><para>
     /// Error code: <c>NoSuchLifecycleConfiguration</c></para><ul><li><para>
     /// Description: The lifecycle configuration does not exist.
@@ -64,20 +88,28 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) GetLifecycleConfiguration API operation.", Operation = new[] {"GetLifecycleConfiguration"}, SelectReturnType = typeof(Amazon.S3.Model.GetLifecycleConfigurationResponse))]
     [AWSCmdletOutput("Amazon.S3.Model.LifecycleConfiguration or Amazon.S3.Model.GetLifecycleConfigurationResponse",
         "This cmdlet returns an Amazon.S3.Model.LifecycleConfiguration object.",
-        "The service call response (type Amazon.S3.Model.GetLifecycleConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3.Model.GetLifecycleConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetS3LifecycleConfigurationCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The name of the bucket for which to get the lifecycle information.</para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        #else
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String BucketName { get; set; }
         #endregion
         
@@ -86,7 +118,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>
         /// <para>The account ID of the expected bucket owner. If the account ID that you provide does
         /// not match the actual owner of the bucket, the request fails with the HTTP status code
-        /// <code>403 Forbidden</code> (access denied).</para>
+        /// <c>403 Forbidden</c> (access denied).</para><note><para>This parameter applies to general purpose buckets only. It is not supported for directory
+        /// bucket lifecycle configurations.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,19 +137,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "Configuration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -124,22 +151,18 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.GetLifecycleConfigurationResponse, GetS3LifecycleConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
+            #if MODULAR
+            if (this.BucketName == null && ParameterWasBound(nameof(this.BucketName)))
+            {
+                WriteWarning("You are passing $null as a value for parameter BucketName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.ExpectedBucketOwner = this.ExpectedBucketOwner;
             
             // allow further manipulation of loaded context prior to processing
@@ -203,13 +226,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "GetLifecycleConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetLifecycleConfiguration(request);
-                #elif CORECLR
-                return client.GetLifecycleConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetLifecycleConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

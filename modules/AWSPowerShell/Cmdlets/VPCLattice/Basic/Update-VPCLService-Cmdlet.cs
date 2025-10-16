@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VPCLattice;
 using Amazon.VPCLattice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.VPCL
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
     [OutputType("Amazon.VPCLattice.Model.UpdateServiceResponse")]
     [AWSCmdlet("Calls the VPC Lattice UpdateService API operation.", Operation = new[] {"UpdateService"}, SelectReturnType = typeof(Amazon.VPCLattice.Model.UpdateServiceResponse))]
     [AWSCmdletOutput("Amazon.VPCLattice.Model.UpdateServiceResponse",
-        "This cmdlet returns an Amazon.VPCLattice.Model.UpdateServiceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VPCLattice.Model.UpdateServiceResponse object containing multiple properties."
     )]
     public partial class UpdateVPCLServiceCmdlet : AmazonVPCLatticeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuthType
         /// <summary>
@@ -56,7 +59,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter CertificateArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the certificate. </para>
+        /// <para>The Amazon Resource Name (ARN) of the certificate.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -66,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter ServiceIdentifier
         /// <summary>
         /// <para>
-        /// <para>The ID or Amazon Resource Name (ARN) of the service.</para>
+        /// <para>The ID or ARN of the service.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -91,16 +94,6 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServiceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServiceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServiceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -111,9 +104,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ServiceIdentifier), MyInvocation.BoundParameters);
@@ -127,21 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.VPCLattice.Model.UpdateServiceResponse, UpdateVPCLServiceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServiceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuthType = this.AuthType;
             context.CertificateArn = this.CertificateArn;
             context.ServiceIdentifier = this.ServiceIdentifier;
@@ -217,13 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "VPC Lattice", "UpdateService");
             try
             {
-                #if DESKTOP
-                return client.UpdateService(request);
-                #elif CORECLR
-                return client.UpdateServiceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateServiceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

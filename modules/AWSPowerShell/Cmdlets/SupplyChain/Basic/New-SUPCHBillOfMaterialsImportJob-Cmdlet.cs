@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SupplyChain;
 using Amazon.SupplyChain.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SUPCH
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.SUPCH
     [AWSCmdlet("Calls the AWS Supply Chain CreateBillOfMaterialsImportJob API operation.", Operation = new[] {"CreateBillOfMaterialsImportJob"}, SelectReturnType = typeof(Amazon.SupplyChain.Model.CreateBillOfMaterialsImportJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SupplyChain.Model.CreateBillOfMaterialsImportJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SupplyChain.Model.CreateBillOfMaterialsImportJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SupplyChain.Model.CreateBillOfMaterialsImportJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSUPCHBillOfMaterialsImportJobCmdlet : AmazonSupplyChainClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InstanceId
         /// <summary>
@@ -89,7 +92,13 @@ namespace Amazon.PowerShell.Cmdlets.SUPCH
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>An idempotency token.</para>
+        /// <para>An idempotency token ensures the API request is only completed no more than once.
+        /// This way, retrying the request will not trigger the operation multiple times. A client
+        /// token is a unique, case-sensitive string of 33 to 128 ASCII characters. To make an
+        /// idempotent API request, specify a client token in the request. You should not reuse
+        /// the same client token for other requests. If you retry a successful request with the
+        /// same client token, the request will succeed with no further actions being taken, and
+        /// you will receive the same API response as the original successful request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.SUPCH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -219,13 +232,7 @@ namespace Amazon.PowerShell.Cmdlets.SUPCH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Supply Chain", "CreateBillOfMaterialsImportJob");
             try
             {
-                #if DESKTOP
-                return client.CreateBillOfMaterialsImportJob(request);
-                #elif CORECLR
-                return client.CreateBillOfMaterialsImportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBillOfMaterialsImportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

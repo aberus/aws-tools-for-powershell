@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -40,19 +42,24 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager DescribeAvailablePatches API operation.", Operation = new[] {"DescribeAvailablePatches"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.DescribeAvailablePatchesResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.Patch or Amazon.SimpleSystemsManagement.Model.DescribeAvailablePatchesResponse",
         "This cmdlet returns a collection of Amazon.SimpleSystemsManagement.Model.Patch objects.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.DescribeAvailablePatchesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.DescribeAvailablePatchesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSSMAvailablePatchCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
         /// <para>Each element in the array is a structure containing a key-value pair.</para><para><b>Windows Server</b></para><para>Supported keys for Windows Server managed node patches include the following:</para><ul><li><para><b><c>PATCH_SET</c></b></para><para>Sample values: <c>OS</c> | <c>APPLICATION</c></para></li><li><para><b><c>PRODUCT</c></b></para><para>Sample values: <c>WindowsServer2012</c> | <c>Office 2010</c> | <c>MicrosoftDefenderAntivirus</c></para></li><li><para><b><c>PRODUCT_FAMILY</c></b></para><para>Sample values: <c>Windows</c> | <c>Office</c></para></li><li><para><b><c>MSRC_SEVERITY</c></b></para><para>Sample values: <c>ServicePacks</c> | <c>Important</c> | <c>Moderate</c></para></li><li><para><b><c>CLASSIFICATION</c></b></para><para>Sample values: <c>ServicePacks</c> | <c>SecurityUpdates</c> | <c>DefinitionUpdates</c></para></li><li><para><b><c>PATCH_ID</c></b></para><para>Sample values: <c>KB123456</c> | <c>KB4516046</c></para></li></ul><para><b>Linux</b></para><important><para>When specifying filters for Linux patches, you must specify a key-pair for <c>PRODUCT</c>.
         /// For example, using the Command Line Interface (CLI), the following command fails:</para><para><c>aws ssm describe-available-patches --filters Key=CVE_ID,Values=CVE-2018-3615</c></para><para>However, the following command succeeds:</para><para><c>aws ssm describe-available-patches --filters Key=PRODUCT,Values=AmazonLinux2018.03
-        /// Key=CVE_ID,Values=CVE-2018-3615</c></para></important><para>Supported keys for Linux managed node patches include the following:</para><ul><li><para><b><c>PRODUCT</c></b></para><para>Sample values: <c>AmazonLinux2018.03</c> | <c>AmazonLinux2.0</c></para></li><li><para><b><c>NAME</c></b></para><para>Sample values: <c>kernel-headers</c> | <c>samba-python</c> | <c>php</c></para></li><li><para><b><c>SEVERITY</c></b></para><para>Sample values: <c>Critical</c> | <c>Important</c> | <c>Medium</c> | <c>Low</c></para></li><li><para><b><c>EPOCH</c></b></para><para>Sample values: <c>0</c> | <c>1</c></para></li><li><para><b><c>VERSION</c></b></para><para>Sample values: <c>78.6.1</c> | <c>4.10.16</c></para></li><li><para><b><c>RELEASE</c></b></para><para>Sample values: <c>9.56.amzn1</c> | <c>1.amzn2</c></para></li><li><para><b><c>ARCH</c></b></para><para>Sample values: <c>i686</c> | <c>x86_64</c></para></li><li><para><b><c>REPOSITORY</c></b></para><para>Sample values: <c>Core</c> | <c>Updates</c></para></li><li><para><b><c>ADVISORY_ID</c></b></para><para>Sample values: <c>ALAS-2018-1058</c> | <c>ALAS2-2021-1594</c></para></li><li><para><b><c>CVE_ID</c></b></para><para>Sample values: <c>CVE-2018-3615</c> | <c>CVE-2020-1472</c></para></li><li><para><b><c>BUGZILLA_ID</c></b></para><para>Sample values: <c>1463241</c></para></li></ul>
+        /// Key=CVE_ID,Values=CVE-2018-3615</c></para></important><para>Supported keys for Linux managed node patches include the following:</para><ul><li><para><b><c>PRODUCT</c></b></para><para>Sample values: <c>AmazonLinux2018.03</c> | <c>AmazonLinux2.0</c></para></li><li><para><b><c>NAME</c></b></para><para>Sample values: <c>kernel-headers</c> | <c>samba-python</c> | <c>php</c></para></li><li><para><b><c>SEVERITY</c></b></para><para>Sample values: <c>Critical</c> | <c>Important</c> | <c>Medium</c> | <c>Low</c></para></li><li><para><b><c>EPOCH</c></b></para><para>Sample values: <c>0</c> | <c>1</c></para></li><li><para><b><c>VERSION</c></b></para><para>Sample values: <c>78.6.1</c> | <c>4.10.16</c></para></li><li><para><b><c>RELEASE</c></b></para><para>Sample values: <c>9.56.amzn1</c> | <c>1.amzn2</c></para></li><li><para><b><c>ARCH</c></b></para><para>Sample values: <c>i686</c> | <c>x86_64</c></para></li><li><para><b><c>REPOSITORY</c></b></para><para>Sample values: <c>Core</c> | <c>Updates</c></para></li><li><para><b><c>ADVISORY_ID</c></b></para><para>Sample values: <c>ALAS-2018-1058</c> | <c>ALAS2-2021-1594</c></para></li><li><para><b><c>CVE_ID</c></b></para><para>Sample values: <c>CVE-2018-3615</c> | <c>CVE-2020-1472</c></para></li><li><para><b><c>BUGZILLA_ID</c></b></para><para>Sample values: <c>1463241</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -85,7 +92,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -287,7 +298,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Patches.Count;
+                    int _receivedThisCall = response.Patches?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -336,13 +347,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "DescribeAvailablePatches");
             try
             {
-                #if DESKTOP
-                return client.DescribeAvailablePatches(request);
-                #elif CORECLR
-                return client.DescribeAvailablePatchesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAvailablePatchesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

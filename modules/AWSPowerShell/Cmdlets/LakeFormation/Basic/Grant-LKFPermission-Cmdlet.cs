@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LakeFormation;
 using Amazon.LakeFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LKF
 {
     /// <summary>
@@ -42,24 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     [AWSCmdlet("Calls the AWS Lake Formation GrantPermissions API operation.", Operation = new[] {"GrantPermissions"}, SelectReturnType = typeof(Amazon.LakeFormation.Model.GrantPermissionsResponse))]
     [AWSCmdletOutput("None or Amazon.LakeFormation.Model.GrantPermissionsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.LakeFormation.Model.GrantPermissionsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.LakeFormation.Model.GrantPermissionsResponse) be returned by specifying '-Select *'."
     )]
     public partial class GrantLKFPermissionCmdlet : AmazonLakeFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
-        
-        #region Parameter Resource_Catalog
-        /// <summary>
-        /// <para>
-        /// <para>The identifier for the Data Catalog. By default, the account ID. The Data Catalog
-        /// is the persistent metadata store. It contains database definitions, table definitions,
-        /// and other control information to manage your Lake Formation environment. </para>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public Amazon.LakeFormation.Model.CatalogResource Resource_Catalog { get; set; }
-        #endregion
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CatalogId
         /// <summary>
@@ -109,6 +100,17 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public System.String LFTag_CatalogId { get; set; }
         #endregion
         
+        #region Parameter LFTagExpression_CatalogId
+        /// <summary>
+        /// <para>
+        /// <para>The identifier for the Data Catalog. By default, the account ID. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Resource_LFTagExpression_CatalogId")]
+        public System.String LFTagExpression_CatalogId { get; set; }
+        #endregion
+        
         #region Parameter LFTagPolicy_CatalogId
         /// <summary>
         /// <para>
@@ -148,7 +150,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <summary>
         /// <para>
         /// <para>The list of column names for the table. At least one of <c>ColumnNames</c> or <c>ColumnWildcard</c>
-        /// is required.</para>
+        /// is required.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,7 +212,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         #region Parameter ColumnWildcard_ExcludedColumnName
         /// <summary>
         /// <para>
-        /// <para>Excludes column names. Any column with this name will be excluded.</para>
+        /// <para>Excludes column names. Any column with this name will be excluded.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -214,15 +224,54 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public System.String[] ColumnWildcard_ExcludedColumnName { get; set; }
         #endregion
         
+        #region Parameter Condition_Expression
+        /// <summary>
+        /// <para>
+        /// <para>An expression written based on the Cedar Policy Language used to match the principal
+        /// attributes.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Condition_Expression { get; set; }
+        #endregion
+        
         #region Parameter LFTagPolicy_Expression
         /// <summary>
         /// <para>
-        /// <para>A list of LF-tag conditions that apply to the resource's LF-tag policy.</para>
+        /// <para>A list of LF-tag conditions or a saved expression that apply to the resource's LF-tag
+        /// policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Resource_LFTagPolicy_Expression")]
         public Amazon.LakeFormation.Model.LFTag[] LFTagPolicy_Expression { get; set; }
+        #endregion
+        
+        #region Parameter LFTagPolicy_ExpressionName
+        /// <summary>
+        /// <para>
+        /// <para>If provided, permissions are granted to the Data Catalog resources whose assigned
+        /// LF-Tags match the expression body of the saved expression under the provided <c>ExpressionName</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Resource_LFTagPolicy_ExpressionName")]
+        public System.String LFTagPolicy_ExpressionName { get; set; }
+        #endregion
+        
+        #region Parameter Catalog_Id
+        /// <summary>
+        /// <para>
+        /// <para>An identifier for the catalog resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Resource_Catalog_Id")]
+        public System.String Catalog_Id { get; set; }
         #endregion
         
         #region Parameter Database_Name
@@ -245,6 +294,17 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Resource_DataCellsFilter_Name")]
         public System.String DataCellsFilter_Name { get; set; }
+        #endregion
+        
+        #region Parameter LFTagExpression_Name
+        /// <summary>
+        /// <para>
+        /// <para>The name of the LF-Tag expression to grant permissions on.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Resource_LFTagExpression_Name")]
+        public System.String LFTagExpression_Name { get; set; }
         #endregion
         
         #region Parameter Table_Name
@@ -276,7 +336,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <para>The permissions granted to the principal on the resource. Lake Formation defines privileges
         /// to grant and revoke access to metadata in the Data Catalog and data organized in underlying
         /// data storage such as Amazon S3. Lake Formation requires that each principal be authorized
-        /// to perform a specific task on Lake Formation resources. </para>
+        /// to perform a specific task on Lake Formation resources. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -295,7 +359,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <summary>
         /// <para>
         /// <para>Indicates a list of the granted permissions that the principal may pass to other users.
-        /// These permissions may only be a subset of the permissions granted in the <c>Privileges</c>.</para>
+        /// These permissions may only be a subset of the permissions granted in the <c>Privileges</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -373,7 +441,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         #region Parameter LFTag_TagValue
         /// <summary>
         /// <para>
-        /// <para>A list of possible values an attribute can take.</para>
+        /// <para>A list of possible values an attribute can take.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -391,16 +463,6 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Permission parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Permission' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Permission' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -411,9 +473,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CatalogId), MyInvocation.BoundParameters);
@@ -427,22 +493,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LakeFormation.Model.GrantPermissionsResponse, GrantLKFPermissionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Permission;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CatalogId = this.CatalogId;
+            context.Condition_Expression = this.Condition_Expression;
             if (this.Permission != null)
             {
                 context.Permission = new List<System.String>(this.Permission);
@@ -458,7 +515,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
                 context.PermissionsWithGrantOption = new List<System.String>(this.PermissionsWithGrantOption);
             }
             context.Principal_DataLakePrincipalIdentifier = this.Principal_DataLakePrincipalIdentifier;
-            context.Resource_Catalog = this.Resource_Catalog;
+            context.Catalog_Id = this.Catalog_Id;
             context.Database_CatalogId = this.Database_CatalogId;
             context.Database_Name = this.Database_Name;
             context.DataCellsFilter_DatabaseName = this.DataCellsFilter_DatabaseName;
@@ -473,11 +530,14 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             {
                 context.LFTag_TagValue = new List<System.String>(this.LFTag_TagValue);
             }
+            context.LFTagExpression_CatalogId = this.LFTagExpression_CatalogId;
+            context.LFTagExpression_Name = this.LFTagExpression_Name;
             context.LFTagPolicy_CatalogId = this.LFTagPolicy_CatalogId;
             if (this.LFTagPolicy_Expression != null)
             {
                 context.LFTagPolicy_Expression = new List<Amazon.LakeFormation.Model.LFTag>(this.LFTagPolicy_Expression);
             }
+            context.LFTagPolicy_ExpressionName = this.LFTagPolicy_ExpressionName;
             context.LFTagPolicy_ResourceType = this.LFTagPolicy_ResourceType;
             context.Table_CatalogId = this.Table_CatalogId;
             context.Table_DatabaseName = this.Table_DatabaseName;
@@ -514,6 +574,25 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             {
                 request.CatalogId = cmdletContext.CatalogId;
             }
+            
+             // populate Condition
+            var requestConditionIsNull = true;
+            request.Condition = new Amazon.LakeFormation.Model.Condition();
+            System.String requestCondition_condition_Expression = null;
+            if (cmdletContext.Condition_Expression != null)
+            {
+                requestCondition_condition_Expression = cmdletContext.Condition_Expression;
+            }
+            if (requestCondition_condition_Expression != null)
+            {
+                request.Condition.Expression = requestCondition_condition_Expression;
+                requestConditionIsNull = false;
+            }
+             // determine if request.Condition should be set to null
+            if (requestConditionIsNull)
+            {
+                request.Condition = null;
+            }
             if (cmdletContext.Permission != null)
             {
                 request.Permissions = cmdletContext.Permission;
@@ -546,9 +625,24 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             var requestResourceIsNull = true;
             request.Resource = new Amazon.LakeFormation.Model.Resource();
             Amazon.LakeFormation.Model.CatalogResource requestResource_resource_Catalog = null;
-            if (cmdletContext.Resource_Catalog != null)
+            
+             // populate Catalog
+            var requestResource_resource_CatalogIsNull = true;
+            requestResource_resource_Catalog = new Amazon.LakeFormation.Model.CatalogResource();
+            System.String requestResource_resource_Catalog_catalog_Id = null;
+            if (cmdletContext.Catalog_Id != null)
             {
-                requestResource_resource_Catalog = cmdletContext.Resource_Catalog;
+                requestResource_resource_Catalog_catalog_Id = cmdletContext.Catalog_Id;
+            }
+            if (requestResource_resource_Catalog_catalog_Id != null)
+            {
+                requestResource_resource_Catalog.Id = requestResource_resource_Catalog_catalog_Id;
+                requestResource_resource_CatalogIsNull = false;
+            }
+             // determine if requestResource_resource_Catalog should be set to null
+            if (requestResource_resource_CatalogIsNull)
+            {
+                requestResource_resource_Catalog = null;
             }
             if (requestResource_resource_Catalog != null)
             {
@@ -625,6 +719,41 @@ namespace Amazon.PowerShell.Cmdlets.LKF
                 request.Resource.DataLocation = requestResource_resource_DataLocation;
                 requestResourceIsNull = false;
             }
+            Amazon.LakeFormation.Model.LFTagExpressionResource requestResource_resource_LFTagExpression = null;
+            
+             // populate LFTagExpression
+            var requestResource_resource_LFTagExpressionIsNull = true;
+            requestResource_resource_LFTagExpression = new Amazon.LakeFormation.Model.LFTagExpressionResource();
+            System.String requestResource_resource_LFTagExpression_lFTagExpression_CatalogId = null;
+            if (cmdletContext.LFTagExpression_CatalogId != null)
+            {
+                requestResource_resource_LFTagExpression_lFTagExpression_CatalogId = cmdletContext.LFTagExpression_CatalogId;
+            }
+            if (requestResource_resource_LFTagExpression_lFTagExpression_CatalogId != null)
+            {
+                requestResource_resource_LFTagExpression.CatalogId = requestResource_resource_LFTagExpression_lFTagExpression_CatalogId;
+                requestResource_resource_LFTagExpressionIsNull = false;
+            }
+            System.String requestResource_resource_LFTagExpression_lFTagExpression_Name = null;
+            if (cmdletContext.LFTagExpression_Name != null)
+            {
+                requestResource_resource_LFTagExpression_lFTagExpression_Name = cmdletContext.LFTagExpression_Name;
+            }
+            if (requestResource_resource_LFTagExpression_lFTagExpression_Name != null)
+            {
+                requestResource_resource_LFTagExpression.Name = requestResource_resource_LFTagExpression_lFTagExpression_Name;
+                requestResource_resource_LFTagExpressionIsNull = false;
+            }
+             // determine if requestResource_resource_LFTagExpression should be set to null
+            if (requestResource_resource_LFTagExpressionIsNull)
+            {
+                requestResource_resource_LFTagExpression = null;
+            }
+            if (requestResource_resource_LFTagExpression != null)
+            {
+                request.Resource.LFTagExpression = requestResource_resource_LFTagExpression;
+                requestResourceIsNull = false;
+            }
             Amazon.LakeFormation.Model.LFTagKeyResource requestResource_resource_LFTag = null;
             
              // populate LFTag
@@ -668,51 +797,6 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             if (requestResource_resource_LFTag != null)
             {
                 request.Resource.LFTag = requestResource_resource_LFTag;
-                requestResourceIsNull = false;
-            }
-            Amazon.LakeFormation.Model.LFTagPolicyResource requestResource_resource_LFTagPolicy = null;
-            
-             // populate LFTagPolicy
-            var requestResource_resource_LFTagPolicyIsNull = true;
-            requestResource_resource_LFTagPolicy = new Amazon.LakeFormation.Model.LFTagPolicyResource();
-            System.String requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId = null;
-            if (cmdletContext.LFTagPolicy_CatalogId != null)
-            {
-                requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId = cmdletContext.LFTagPolicy_CatalogId;
-            }
-            if (requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId != null)
-            {
-                requestResource_resource_LFTagPolicy.CatalogId = requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId;
-                requestResource_resource_LFTagPolicyIsNull = false;
-            }
-            List<Amazon.LakeFormation.Model.LFTag> requestResource_resource_LFTagPolicy_lFTagPolicy_Expression = null;
-            if (cmdletContext.LFTagPolicy_Expression != null)
-            {
-                requestResource_resource_LFTagPolicy_lFTagPolicy_Expression = cmdletContext.LFTagPolicy_Expression;
-            }
-            if (requestResource_resource_LFTagPolicy_lFTagPolicy_Expression != null)
-            {
-                requestResource_resource_LFTagPolicy.Expression = requestResource_resource_LFTagPolicy_lFTagPolicy_Expression;
-                requestResource_resource_LFTagPolicyIsNull = false;
-            }
-            Amazon.LakeFormation.ResourceType requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType = null;
-            if (cmdletContext.LFTagPolicy_ResourceType != null)
-            {
-                requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType = cmdletContext.LFTagPolicy_ResourceType;
-            }
-            if (requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType != null)
-            {
-                requestResource_resource_LFTagPolicy.ResourceType = requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType;
-                requestResource_resource_LFTagPolicyIsNull = false;
-            }
-             // determine if requestResource_resource_LFTagPolicy should be set to null
-            if (requestResource_resource_LFTagPolicyIsNull)
-            {
-                requestResource_resource_LFTagPolicy = null;
-            }
-            if (requestResource_resource_LFTagPolicy != null)
-            {
-                request.Resource.LFTagPolicy = requestResource_resource_LFTagPolicy;
                 requestResourceIsNull = false;
             }
             Amazon.LakeFormation.Model.DataCellsFilterResource requestResource_resource_DataCellsFilter = null;
@@ -768,6 +852,61 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             if (requestResource_resource_DataCellsFilter != null)
             {
                 request.Resource.DataCellsFilter = requestResource_resource_DataCellsFilter;
+                requestResourceIsNull = false;
+            }
+            Amazon.LakeFormation.Model.LFTagPolicyResource requestResource_resource_LFTagPolicy = null;
+            
+             // populate LFTagPolicy
+            var requestResource_resource_LFTagPolicyIsNull = true;
+            requestResource_resource_LFTagPolicy = new Amazon.LakeFormation.Model.LFTagPolicyResource();
+            System.String requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId = null;
+            if (cmdletContext.LFTagPolicy_CatalogId != null)
+            {
+                requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId = cmdletContext.LFTagPolicy_CatalogId;
+            }
+            if (requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId != null)
+            {
+                requestResource_resource_LFTagPolicy.CatalogId = requestResource_resource_LFTagPolicy_lFTagPolicy_CatalogId;
+                requestResource_resource_LFTagPolicyIsNull = false;
+            }
+            List<Amazon.LakeFormation.Model.LFTag> requestResource_resource_LFTagPolicy_lFTagPolicy_Expression = null;
+            if (cmdletContext.LFTagPolicy_Expression != null)
+            {
+                requestResource_resource_LFTagPolicy_lFTagPolicy_Expression = cmdletContext.LFTagPolicy_Expression;
+            }
+            if (requestResource_resource_LFTagPolicy_lFTagPolicy_Expression != null)
+            {
+                requestResource_resource_LFTagPolicy.Expression = requestResource_resource_LFTagPolicy_lFTagPolicy_Expression;
+                requestResource_resource_LFTagPolicyIsNull = false;
+            }
+            System.String requestResource_resource_LFTagPolicy_lFTagPolicy_ExpressionName = null;
+            if (cmdletContext.LFTagPolicy_ExpressionName != null)
+            {
+                requestResource_resource_LFTagPolicy_lFTagPolicy_ExpressionName = cmdletContext.LFTagPolicy_ExpressionName;
+            }
+            if (requestResource_resource_LFTagPolicy_lFTagPolicy_ExpressionName != null)
+            {
+                requestResource_resource_LFTagPolicy.ExpressionName = requestResource_resource_LFTagPolicy_lFTagPolicy_ExpressionName;
+                requestResource_resource_LFTagPolicyIsNull = false;
+            }
+            Amazon.LakeFormation.ResourceType requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType = null;
+            if (cmdletContext.LFTagPolicy_ResourceType != null)
+            {
+                requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType = cmdletContext.LFTagPolicy_ResourceType;
+            }
+            if (requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType != null)
+            {
+                requestResource_resource_LFTagPolicy.ResourceType = requestResource_resource_LFTagPolicy_lFTagPolicy_ResourceType;
+                requestResource_resource_LFTagPolicyIsNull = false;
+            }
+             // determine if requestResource_resource_LFTagPolicy should be set to null
+            if (requestResource_resource_LFTagPolicyIsNull)
+            {
+                requestResource_resource_LFTagPolicy = null;
+            }
+            if (requestResource_resource_LFTagPolicy != null)
+            {
+                request.Resource.LFTagPolicy = requestResource_resource_LFTagPolicy;
                 requestResourceIsNull = false;
             }
             Amazon.LakeFormation.Model.TableResource requestResource_resource_Table = null;
@@ -948,13 +1087,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lake Formation", "GrantPermissions");
             try
             {
-                #if DESKTOP
-                return client.GrantPermissions(request);
-                #elif CORECLR
-                return client.GrantPermissionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GrantPermissionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -972,10 +1105,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String CatalogId { get; set; }
+            public System.String Condition_Expression { get; set; }
             public List<System.String> Permission { get; set; }
             public List<System.String> PermissionsWithGrantOption { get; set; }
             public System.String Principal_DataLakePrincipalIdentifier { get; set; }
-            public Amazon.LakeFormation.Model.CatalogResource Resource_Catalog { get; set; }
+            public System.String Catalog_Id { get; set; }
             public System.String Database_CatalogId { get; set; }
             public System.String Database_Name { get; set; }
             public System.String DataCellsFilter_DatabaseName { get; set; }
@@ -987,8 +1121,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             public System.String LFTag_CatalogId { get; set; }
             public System.String LFTag_TagKey { get; set; }
             public List<System.String> LFTag_TagValue { get; set; }
+            public System.String LFTagExpression_CatalogId { get; set; }
+            public System.String LFTagExpression_Name { get; set; }
             public System.String LFTagPolicy_CatalogId { get; set; }
             public List<Amazon.LakeFormation.Model.LFTag> LFTagPolicy_Expression { get; set; }
+            public System.String LFTagPolicy_ExpressionName { get; set; }
             public Amazon.LakeFormation.ResourceType LFTagPolicy_ResourceType { get; set; }
             public System.String Table_CatalogId { get; set; }
             public System.String Table_DatabaseName { get; set; }

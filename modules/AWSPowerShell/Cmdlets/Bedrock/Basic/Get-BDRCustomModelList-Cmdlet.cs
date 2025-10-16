@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Bedrock;
 using Amazon.Bedrock.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BDR
 {
     /// <summary>
@@ -34,7 +36,8 @@ namespace Amazon.PowerShell.Cmdlets.BDR
     ///  
     /// <para>
     /// For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/custom-models.html">Custom
-    /// models</a> in the Bedrock User Guide.
+    /// models</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+    /// Bedrock User Guide</a>.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "BDRCustomModelList")]
@@ -42,17 +45,19 @@ namespace Amazon.PowerShell.Cmdlets.BDR
     [AWSCmdlet("Calls the Amazon Bedrock ListCustomModels API operation.", Operation = new[] {"ListCustomModels"}, SelectReturnType = typeof(Amazon.Bedrock.Model.ListCustomModelsResponse))]
     [AWSCmdletOutput("Amazon.Bedrock.Model.CustomModelSummary or Amazon.Bedrock.Model.ListCustomModelsResponse",
         "This cmdlet returns a collection of Amazon.Bedrock.Model.CustomModelSummary objects.",
-        "The service call response (type Amazon.Bedrock.Model.ListCustomModelsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Bedrock.Model.ListCustomModelsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBDRCustomModelListCmdlet : AmazonBedrockClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BaseModelArnEqual
         /// <summary>
         /// <para>
-        /// <para>Return custom models only if the base model ARN matches this parameter.</para>
+        /// <para>Return custom models only if the base model Amazon Resource Name (ARN) matches this
+        /// parameter.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,12 +88,36 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter FoundationModelArnEqual
         /// <summary>
         /// <para>
-        /// <para>Return custom models only if the foundation model ARN matches this parameter.</para>
+        /// <para>Return custom models only if the foundation model Amazon Resource Name (ARN) matches
+        /// this parameter.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("FoundationModelArnEquals")]
         public System.String FoundationModelArnEqual { get; set; }
+        #endregion
+        
+        #region Parameter IsOwned
+        /// <summary>
+        /// <para>
+        /// <para>Return custom models depending on if the current account owns them (<c>true</c>) or
+        /// if they were shared with the current account (<c>false</c>).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? IsOwned { get; set; }
+        #endregion
+        
+        #region Parameter ModelStatus
+        /// <summary>
+        /// <para>
+        /// <para>The status of them model to filter results by. Possible values include:</para><ul><li><para><c>Creating</c> - Include only models that are currently being created and validated.</para></li><li><para><c>Active</c> - Include only models that have been successfully created and are ready
+        /// for use.</para></li><li><para><c>Failed</c> - Include only models where the creation process failed.</para></li></ul><para>If you don't specify a status, the API returns models in all states.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Bedrock.ModelStatus")]
+        public Amazon.Bedrock.ModelStatus ModelStatus { get; set; }
         #endregion
         
         #region Parameter NameContain
@@ -127,7 +156,9 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>Maximum number of results to return in the response.</para>
+        /// <para>The maximum number of results to return in the response. If the total number of results
+        /// is greater than this value, use the token returned in the response in the <c>nextToken</c>
+        /// field when making another request to return the next batch of results.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,12 +169,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// <para>Continuation token from the previous response, for Amazon Bedrock to list the next
-        /// set of results.</para>
+        /// <para>If the total number of results is greater than the <c>maxResults</c> value provided
+        /// in the request, enter the token returned in the <c>nextToken</c> field in the response
+        /// in this field to return the next batch of results.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,9 +203,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -190,7 +226,9 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             context.CreationTimeAfter = this.CreationTimeAfter;
             context.CreationTimeBefore = this.CreationTimeBefore;
             context.FoundationModelArnEqual = this.FoundationModelArnEqual;
+            context.IsOwned = this.IsOwned;
             context.MaxResult = this.MaxResult;
+            context.ModelStatus = this.ModelStatus;
             context.NameContain = this.NameContain;
             context.NextToken = this.NextToken;
             context.SortBy = this.SortBy;
@@ -229,9 +267,17 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             {
                 request.FoundationModelArnEquals = cmdletContext.FoundationModelArnEqual;
             }
+            if (cmdletContext.IsOwned != null)
+            {
+                request.IsOwned = cmdletContext.IsOwned.Value;
+            }
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = cmdletContext.MaxResult.Value;
+            }
+            if (cmdletContext.ModelStatus != null)
+            {
+                request.ModelStatus = cmdletContext.ModelStatus;
             }
             if (cmdletContext.NameContain != null)
             {
@@ -307,13 +353,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Bedrock", "ListCustomModels");
             try
             {
-                #if DESKTOP
-                return client.ListCustomModels(request);
-                #elif CORECLR
-                return client.ListCustomModelsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListCustomModelsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -334,7 +374,9 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             public System.DateTime? CreationTimeAfter { get; set; }
             public System.DateTime? CreationTimeBefore { get; set; }
             public System.String FoundationModelArnEqual { get; set; }
+            public System.Boolean? IsOwned { get; set; }
             public System.Int32? MaxResult { get; set; }
+            public Amazon.Bedrock.ModelStatus ModelStatus { get; set; }
             public System.String NameContain { get; set; }
             public System.String NextToken { get; set; }
             public Amazon.Bedrock.SortModelsBy SortBy { get; set; }

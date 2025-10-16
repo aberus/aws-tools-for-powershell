@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Cloud9;
 using Amazon.Cloud9.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.C9
 {
     /// <summary>
     /// Creates an Cloud9 development environment, launches an Amazon Elastic Compute Cloud
     /// (Amazon EC2) instance, and then connects from the instance to the environment.
+    /// 
+    ///  <important><para>
+    /// Cloud9 is no longer available to new customers. Existing customers of Cloud9 can continue
+    /// to use the service as normal. <a href="http://aws.amazon.com/blogs/devops/how-to-migrate-from-aws-cloud9-to-aws-ide-toolkits-or-aws-cloudshell/">Learn
+    /// more"</a></para></important>
     /// </summary>
     [Cmdlet("New", "C9EnvironmentEC2", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Cloud9 CreateEnvironmentEC2 API operation.", Operation = new[] {"CreateEnvironmentEC2"}, SelectReturnType = typeof(Amazon.Cloud9.Model.CreateEnvironmentEC2Response))]
     [AWSCmdletOutput("System.String or Amazon.Cloud9.Model.CreateEnvironmentEC2Response",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Cloud9.Model.CreateEnvironmentEC2Response) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Cloud9.Model.CreateEnvironmentEC2Response) can be returned by specifying '-Select *'."
     )]
     public partial class NewC9EnvironmentEC2Cmdlet : AmazonCloud9ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutomaticStopTimeMinute
         /// <summary>
@@ -111,12 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.C9
         /// <para>
         /// <para>The identifier for the Amazon Machine Image (AMI) that's used to create the EC2 instance.
         /// To choose an AMI for the instance, you must specify a valid AMI alias or a valid Amazon
-        /// EC2 Systems Manager (SSM) path.</para><para>From December 04, 2023, you will be required to include the <c>imageId</c> parameter
-        /// for the <c>CreateEnvironmentEC2</c> action. This change will be reflected across all
-        /// direct methods of communicating with the API, such as Amazon Web Services SDK, Amazon
-        /// Web Services CLI and Amazon Web Services CloudFormation. This change will only affect
-        /// direct API consumers, and not Cloud9 console users.</para><para>We recommend using Amazon Linux 2023 as the AMI to create your environment as it is
-        /// fully supported. </para><para>Since Ubuntu 18.04 has ended standard support as of May 31, 2023, we recommend you
+        /// EC2 Systems Manager (SSM) path.</para><para>We recommend using Amazon Linux 2023 as the AMI to create your environment as it is
+        /// fully supported.</para><para>From December 16, 2024, Ubuntu 18.04 will be removed from the list of available <c>imageIds</c>
+        /// for Cloud9. This change is necessary as Ubuntu 18.04 has ended standard support on
+        /// May 31, 2023. This change will only affect direct API consumers, and not Cloud9 console
+        /// users.</para><para>Since Ubuntu 18.04 has ended standard support as of May 31, 2023, we recommend you
         /// choose Ubuntu 22.04.</para><para><b>AMI aliases </b></para><ul><li><para>Amazon Linux 2: <c>amazonlinux-2-x86_64</c></para></li><li><para>Amazon Linux 2023 (recommended): <c>amazonlinux-2023-x86_64</c></para></li><li><para>Ubuntu 18.04: <c>ubuntu-18.04-x86_64</c></para></li><li><para>Ubuntu 22.04: <c>ubuntu-22.04-x86_64</c></para></li></ul><para><b>SSM paths</b></para><ul><li><para>Amazon Linux 2: <c>resolve:ssm:/aws/service/cloud9/amis/amazonlinux-2-x86_64</c></para></li><li><para>Amazon Linux 2023 (recommended): <c>resolve:ssm:/aws/service/cloud9/amis/amazonlinux-2023-x86_64</c></para></li><li><para>Ubuntu 18.04: <c>resolve:ssm:/aws/service/cloud9/amis/ubuntu-18.04-x86_64</c></para></li><li><para>Ubuntu 22.04: <c>resolve:ssm:/aws/service/cloud9/amis/ubuntu-22.04-x86_64</c></para></li></ul>
         /// </para>
         /// </summary>
@@ -192,7 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.C9
         /// <summary>
         /// <para>
         /// <para>An array of key-value pairs that will be associated with the new Cloud9 development
-        /// environment.</para>
+        /// environment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -211,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.C9
         public string Select { get; set; } = "EnvironmentId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -231,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.C9
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -247,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.C9
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Cloud9.Model.CreateEnvironmentEC2Response, NewC9EnvironmentEC2Cmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutomaticStopTimeMinute = this.AutomaticStopTimeMinute;
             context.ClientRequestToken = this.ClientRequestToken;
             context.ConnectionType = this.ConnectionType;
@@ -392,13 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.C9
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cloud9", "CreateEnvironmentEC2");
             try
             {
-                #if DESKTOP
-                return client.CreateEnvironmentEC2(request);
-                #elif CORECLR
-                return client.CreateEnvironmentEC2Async(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateEnvironmentEC2Async(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

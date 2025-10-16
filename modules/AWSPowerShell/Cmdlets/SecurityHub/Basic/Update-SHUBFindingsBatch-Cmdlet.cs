@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,41 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
     /// Used by Security Hub customers to update information about their investigation into
-    /// a finding. Requested by administrator accounts or member accounts. Administrator accounts
-    /// can update findings for their account and their member accounts. Member accounts can
-    /// update findings for their account.
+    /// one or more findings. Requested by administrator accounts or member accounts. Administrator
+    /// accounts can update findings for their account and their member accounts. A member
+    /// account can update findings only for their own account. Administrator and member accounts
+    /// can use this operation to update the following fields and objects for one or more
+    /// findings: 
     /// 
-    ///  
-    /// <para>
-    /// Updates from <c>BatchUpdateFindings</c> do not affect the value of <c>UpdatedAt</c>
-    /// for a finding.
+    ///  <ul><li><para><c>Confidence</c></para></li><li><para><c>Criticality</c></para></li><li><para><c>Note</c></para></li><li><para><c>RelatedFindings</c></para></li><li><para><c>Severity</c></para></li><li><para><c>Types</c></para></li><li><para><c>UserDefinedFields</c></para></li><li><para><c>VerificationState</c></para></li><li><para><c>Workflow</c></para></li></ul><para>
+    ///  If you use this operation to update a finding, your updates don’t affect the value
+    /// for the <c>UpdatedAt</c> field of the finding. Also note that it can take several
+    /// minutes for Security Hub to process your request and update each finding specified
+    /// in the request. 
     /// </para><para>
-    /// Administrator and member accounts can use <c>BatchUpdateFindings</c> to update the
-    /// following finding fields and objects.
-    /// </para><ul><li><para><c>Confidence</c></para></li><li><para><c>Criticality</c></para></li><li><para><c>Note</c></para></li><li><para><c>RelatedFindings</c></para></li><li><para><c>Severity</c></para></li><li><para><c>Types</c></para></li><li><para><c>UserDefinedFields</c></para></li><li><para><c>VerificationState</c></para></li><li><para><c>Workflow</c></para></li></ul><para>
-    /// You can configure IAM policies to restrict access to fields and field values. For
+    ///  You can configure IAM policies to restrict access to fields and field values. For
     /// example, you might not want member accounts to be able to suppress findings or change
-    /// the finding severity. See <a href="https://docs.aws.amazon.com/securityhub/latest/userguide/finding-update-batchupdatefindings.html#batchupdatefindings-configure-access">Configuring
-    /// access to BatchUpdateFindings</a> in the <i>Security Hub User Guide</i>.
+    /// the finding severity. For more information see <a href="https://docs.aws.amazon.com/securityhub/latest/userguide/finding-update-batchupdatefindings.html#batchupdatefindings-configure-access">Configuring
+    /// access to BatchUpdateFindings</a> in the <i>Security Hub User Guide</i>. 
     /// </para>
     /// </summary>
     [Cmdlet("Update", "SHUBFindingsBatch", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SecurityHub.Model.BatchUpdateFindingsResponse")]
     [AWSCmdlet("Calls the AWS Security Hub BatchUpdateFindings API operation.", Operation = new[] {"BatchUpdateFindings"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.BatchUpdateFindingsResponse))]
     [AWSCmdletOutput("Amazon.SecurityHub.Model.BatchUpdateFindingsResponse",
-        "This cmdlet returns an Amazon.SecurityHub.Model.BatchUpdateFindingsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SecurityHub.Model.BatchUpdateFindingsResponse object containing multiple properties."
     )]
     public partial class UpdateSHUBFindingsBatchCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Confidence
         /// <summary>
@@ -88,7 +91,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <para>
         /// <para>The list of findings to update. <c>BatchUpdateFindings</c> can be used to update up
         /// to 100 findings at a time.</para><para>For each finding, the list provides the finding identifier and the ARN of the finding
-        /// provider.</para>
+        /// provider.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -118,8 +125,8 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <summary>
         /// <para>
         /// <para>The normalized severity for the finding. This attribute is to be deprecated in favor
-        /// of <c>Label</c>.</para><para>If you provide <c>Normalized</c> and do not provide <c>Label</c>, <c>Label</c> is
-        /// set automatically as follows.</para><ul><li><para>0 - <c>INFORMATIONAL</c></para></li><li><para>1–39 - <c>LOW</c></para></li><li><para>40–69 - <c>MEDIUM</c></para></li><li><para>70–89 - <c>HIGH</c></para></li><li><para>90–100 - <c>CRITICAL</c></para></li></ul>
+        /// of <c>Label</c>.</para><para>If you provide <c>Normalized</c> and don't provide <c>Label</c>, <c>Label</c> is set
+        /// automatically as follows.</para><ul><li><para>0 - <c>INFORMATIONAL</c></para></li><li><para>1–39 - <c>LOW</c></para></li><li><para>40–69 - <c>MEDIUM</c></para></li><li><para>70–89 - <c>HIGH</c></para></li><li><para>90–100 - <c>CRITICAL</c></para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,7 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         #region Parameter RelatedFinding
         /// <summary>
         /// <para>
-        /// <para>A list of findings that are related to the updated findings.</para>
+        /// <para>A list of findings that are related to the updated findings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,7 +169,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// to <c>NEW</c> in the following cases:</para><ul><li><para>The record state changes from <c>ARCHIVED</c> to <c>ACTIVE</c>.</para></li><li><para>The compliance status changes from <c>PASSED</c> to either <c>WARNING</c>, <c>FAILED</c>,
         /// or <c>NOT_AVAILABLE</c>.</para></li></ul></li><li><para><c>NOTIFIED</c> - Indicates that you notified the resource owner about the security
         /// issue. Used when the initial reviewer is not the resource owner, and needs intervention
-        /// from the resource owner.</para></li><li><para><c>RESOLVED</c> - The finding was reviewed and remediated and is now considered resolved.</para></li><li><para><c>SUPPRESSED</c> - Indicates that you reviewed the finding and do not believe that
+        /// from the resource owner.</para></li><li><para><c>RESOLVED</c> - The finding was reviewed and remediated and is now considered resolved.</para></li><li><para><c>SUPPRESSED</c> - Indicates that you reviewed the finding and don't believe that
         /// any action is needed. The finding is no longer updated.</para></li></ul>
         /// </para>
         /// </summary>
@@ -181,7 +192,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <summary>
         /// <para>
         /// <para>One or more finding types in the format of namespace/category/classifier that classify
-        /// a finding.</para><para>Valid namespace values are as follows.</para><ul><li><para>Software and Configuration Checks</para></li><li><para>TTPs</para></li><li><para>Effects</para></li><li><para>Unusual Behaviors</para></li><li><para>Sensitive Data Identifications </para></li></ul>
+        /// a finding.</para><para>Valid namespace values are as follows.</para><ul><li><para>Software and Configuration Checks</para></li><li><para>TTPs</para></li><li><para>Effects</para></li><li><para>Unusual Behaviors</para></li><li><para>Sensitive Data Identifications </para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -203,7 +218,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// <summary>
         /// <para>
         /// <para>A list of name/value string pairs associated with the finding. These are custom, user-defined
-        /// fields added to a finding.</para>
+        /// fields added to a finding.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -244,9 +263,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -469,13 +492,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "BatchUpdateFindings");
             try
             {
-                #if DESKTOP
-                return client.BatchUpdateFindings(request);
-                #elif CORECLR
-                return client.BatchUpdateFindingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchUpdateFindingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

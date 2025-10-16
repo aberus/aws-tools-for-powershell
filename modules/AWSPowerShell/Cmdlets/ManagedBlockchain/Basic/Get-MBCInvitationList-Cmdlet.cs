@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedBlockchain;
 using Amazon.ManagedBlockchain.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MBC
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
     [AWSCmdlet("Calls the Amazon Managed Blockchain ListInvitations API operation.", Operation = new[] {"ListInvitations"}, SelectReturnType = typeof(Amazon.ManagedBlockchain.Model.ListInvitationsResponse))]
     [AWSCmdletOutput("Amazon.ManagedBlockchain.Model.Invitation or Amazon.ManagedBlockchain.Model.ListInvitationsResponse",
         "This cmdlet returns a collection of Amazon.ManagedBlockchain.Model.Invitation objects.",
-        "The service call response (type Amazon.ManagedBlockchain.Model.ListInvitationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ManagedBlockchain.Model.ListInvitationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMBCInvitationListCmdlet : AmazonManagedBlockchainClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -70,7 +73,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,9 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -249,7 +256,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Invitations.Count;
+                    int _receivedThisCall = response.Invitations?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -298,13 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Blockchain", "ListInvitations");
             try
             {
-                #if DESKTOP
-                return client.ListInvitations(request);
-                #elif CORECLR
-                return client.ListInvitationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListInvitationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

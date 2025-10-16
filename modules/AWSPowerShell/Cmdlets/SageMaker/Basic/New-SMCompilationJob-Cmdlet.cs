@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
     /// Starts a model compilation job. After the model has been compiled, Amazon SageMaker
-    /// saves the resulting model artifacts to an Amazon Simple Storage Service (Amazon S3)
-    /// bucket that you specify. 
+    /// AI saves the resulting model artifacts to an Amazon Simple Storage Service (Amazon
+    /// S3) bucket that you specify. 
     /// 
     ///  
     /// <para>
-    /// If you choose to host your model using Amazon SageMaker hosting services, you can
+    /// If you choose to host your model using Amazon SageMaker AI hosting services, you can
     /// use the resulting model artifacts as part of the model. You can also use the artifacts
     /// with Amazon Web Services IoT Greengrass. In that case, deploy them as an ML resource.
     /// </para><para>
@@ -47,8 +49,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
     /// The output location for the compiled model and the device (target) that the model
     /// runs on 
     /// </para></li><li><para>
-    /// The Amazon Resource Name (ARN) of the IAM role that Amazon SageMaker assumes to perform
-    /// the model compilation job. 
+    /// The Amazon Resource Name (ARN) of the IAM role that Amazon SageMaker AI assumes to
+    /// perform the model compilation job. 
     /// </para></li></ul><para>
     /// You can also provide a <c>Tag</c> to track the model compilation job's resource use
     /// and costs. The response body contains the <c>CompilationJobArn</c> for the compiled
@@ -64,12 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateCompilationJob API operation.", Operation = new[] {"CreateCompilationJob"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateCompilationJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateCompilationJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateCompilationJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateCompilationJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMCompilationJobCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TargetPlatform_Accelerator
         /// <summary>
@@ -132,11 +135,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// 2 -O2\""</c>. </para><para>For information about supported compiler options, see <a href="https://awsdocs-neuron.readthedocs-hosted.com/en/latest/compiler/neuronx-cc/api-reference-guide/neuron-compiler-cli-reference-guide.html">
         /// Neuron Compiler CLI Reference Guide</a>. </para></li><li><para><c>CoreML</c>: Compilation for the CoreML <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_OutputConfig.html">OutputConfig</a><c>TargetDevice</c> supports the following compiler options:</para><ul><li><para><c>class_labels</c>: Specifies the classification labels file name inside input tar.gz
         /// file. For example, <c>{"class_labels": "imagenet_labels_1000.txt"}</c>. Labels inside
-        /// the txt file should be separated by newlines.</para></li></ul></li><li><para><c>EIA</c>: Compilation for the Elastic Inference Accelerator supports the following
-        /// compiler options:</para><ul><li><para><c>precision_mode</c>: Specifies the precision of compiled artifacts. Supported values
-        /// are <c>"FP16"</c> and <c>"FP32"</c>. Default is <c>"FP32"</c>.</para></li><li><para><c>signature_def_key</c>: Specifies the signature to use for models in SavedModel
-        /// format. Defaults is TensorFlow's default signature def key.</para></li><li><para><c>output_names</c>: Specifies a list of output tensor names for models in FrozenGraph
-        /// format. Set at most one API field, either: <c>signature_def_key</c> or <c>output_names</c>.</para></li></ul><para>For example: <c>{"precision_mode": "FP32", "output_names": ["output:0"]}</c></para></li></ul>
+        /// the txt file should be separated by newlines.</para></li></ul></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -217,9 +216,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The Amazon Web Services Key Management Service key (Amazon Web Services KMS) that
-        /// Amazon SageMaker uses to encrypt your output models with Amazon S3 server-side encryption
-        /// after compilation job. If you don't provide a KMS key ID, Amazon SageMaker uses the
-        /// default KMS key for Amazon S3 for your role's account. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html">KMS-Managed
+        /// Amazon SageMaker AI uses to encrypt your output models with Amazon S3 server-side
+        /// encryption after compilation job. If you don't provide a KMS key ID, Amazon SageMaker
+        /// AI uses the default KMS key for Amazon S3 for your role's account. For more information,
+        /// see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html">KMS-Managed
         /// Encryption Keys</a> in the <i>Amazon Simple Storage Service Developer Guide.</i></para><para>The KmsKeyId can be any of the following formats: </para><ul><li><para>Key ID: <c>1234abcd-12ab-34cd-56ef-1234567890ab</c></para></li><li><para>Key ARN: <c>arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab</c></para></li><li><para>Alias name: <c>alias/ExampleAlias</c></para></li><li><para>Alias name ARN: <c>arn:aws:kms:us-west-2:111122223333:alias/ExampleAlias</c></para></li></ul>
         /// </para>
         /// </summary>
@@ -231,7 +231,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The maximum length of time, in seconds, that a training or compilation job can be
-        /// pending before it is stopped.</para>
+        /// pending before it is stopped.</para><note><para>When working with training jobs that use capacity from <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/reserve-capacity-with-training-plans.html">training
+        /// plans</a>, not all <c>Pending</c> job states count against the <c>MaxPendingTimeInSeconds</c>
+        /// limit. The following scenarios do not increment the <c>MaxPendingTimeInSeconds</c>
+        /// counter:</para><ul><li><para>The plan is in a <c>Scheduled</c> state: Jobs queued (in <c>Pending</c> status) before
+        /// a plan's start date (waiting for scheduled start time)</para></li><li><para>Between capacity reservations: Jobs temporarily back to <c>Pending</c> status between
+        /// two capacity reservation periods</para></li></ul><para><c>MaxPendingTimeInSeconds</c> only increments when jobs are actively waiting for
+        /// capacity in an <c>Active</c> plan.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -302,11 +308,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter RoleArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of an IAM role that enables Amazon SageMaker to perform
-        /// tasks on your behalf. </para><para>During model compilation, Amazon SageMaker needs your permission to:</para><ul><li><para>Read input data from an S3 bucket</para></li><li><para>Write model artifacts to an S3 bucket</para></li><li><para>Write logs to Amazon CloudWatch Logs</para></li><li><para>Publish metrics to Amazon CloudWatch</para></li></ul><para>You grant permissions for all of these tasks to an IAM role. To pass this role to
-        /// Amazon SageMaker, the caller of this API must have the <c>iam:PassRole</c> permission.
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that enables Amazon SageMaker AI to
+        /// perform tasks on your behalf. </para><para>During model compilation, Amazon SageMaker AI needs your permission to:</para><ul><li><para>Read input data from an S3 bucket</para></li><li><para>Write model artifacts to an S3 bucket</para></li><li><para>Write logs to Amazon CloudWatch Logs</para></li><li><para>Publish metrics to Amazon CloudWatch</para></li></ul><para>You grant permissions for all of these tasks to an IAM role. To pass this role to
+        /// Amazon SageMaker AI, the caller of this API must have the <c>iam:PassRole</c> permission.
         /// For more information, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html">Amazon
-        /// SageMaker Roles.</a></para>
+        /// SageMaker AI Roles.</a></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -323,7 +329,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter OutputConfig_S3OutputLocation
         /// <summary>
         /// <para>
-        /// <para>Identifies the S3 bucket where you want Amazon SageMaker to store the model artifacts.
+        /// <para>Identifies the S3 bucket where you want Amazon SageMaker AI to store the model artifacts.
         /// For example, <c>s3://bucket-name/key-name-prefix</c>.</para>
         /// </para>
         /// </summary>
@@ -353,7 +359,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs. IDs have the form of <c>sg-xxxxxxxx</c>. Specify the security
-        /// groups for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// groups for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -365,7 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The ID of the subnets in the VPC that you want to connect the compilation job to for
-        /// accessing the model in Amazon S3.</para>
+        /// accessing the model in Amazon S3.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -379,7 +393,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>An array of key-value pairs. You can use tags to categorize your Amazon Web Services
         /// resources in different ways, for example, by purpose, owner, or environment. For more
         /// information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services Resources</a>.</para>
+        /// Amazon Web Services Resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -413,16 +431,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "CompilationJobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CompilationJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CompilationJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CompilationJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -433,9 +441,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CompilationJobName), MyInvocation.BoundParameters);
@@ -449,21 +461,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateCompilationJobResponse, NewSMCompilationJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CompilationJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CompilationJobName = this.CompilationJobName;
             #if MODULAR
             if (this.CompilationJobName == null && ParameterWasBound(nameof(this.CompilationJobName)))
@@ -792,13 +794,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateCompilationJob");
             try
             {
-                #if DESKTOP
-                return client.CreateCompilationJob(request);
-                #elif CORECLR
-                return client.CreateCompilationJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCompilationJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

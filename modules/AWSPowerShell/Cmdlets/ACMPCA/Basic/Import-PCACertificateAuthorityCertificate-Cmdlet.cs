@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ACMPCA;
 using Amazon.ACMPCA.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PCA
 {
     /// <summary>
@@ -77,57 +79,59 @@ namespace Amazon.PowerShell.Cmdlets.PCA
     /// Amazon Web Services Private CA allows the following extensions to be marked critical
     /// in the imported CA certificate or chain.
     /// </para><ul><li><para>
-    /// Basic constraints (<i>must</i> be marked critical)
-    /// </para></li><li><para>
-    /// Subject alternative names
-    /// </para></li><li><para>
-    /// Key usage
-    /// </para></li><li><para>
-    /// Extended key usage
-    /// </para></li><li><para>
     /// Authority key identifier
     /// </para></li><li><para>
-    /// Subject key identifier
-    /// </para></li><li><para>
-    /// Issuer alternative name
-    /// </para></li><li><para>
-    /// Subject directory attributes
-    /// </para></li><li><para>
-    /// Subject information access
+    /// Basic constraints (<i>must</i> be marked critical)
     /// </para></li><li><para>
     /// Certificate policies
     /// </para></li><li><para>
-    /// Policy mappings
+    /// Extended key usage
     /// </para></li><li><para>
     /// Inhibit anyPolicy
+    /// </para></li><li><para>
+    /// Issuer alternative name
+    /// </para></li><li><para>
+    /// Key usage
+    /// </para></li><li><para>
+    /// Name constraints
+    /// </para></li><li><para>
+    /// Policy mappings
+    /// </para></li><li><para>
+    /// Subject alternative name
+    /// </para></li><li><para>
+    /// Subject directory attributes
+    /// </para></li><li><para>
+    /// Subject key identifier
+    /// </para></li><li><para>
+    /// Subject information access
     /// </para></li></ul><para>
     /// Amazon Web Services Private CA rejects the following extensions when they are marked
     /// critical in an imported CA certificate or chain.
     /// </para><ul><li><para>
-    /// Name constraints
-    /// </para></li><li><para>
-    /// Policy constraints
+    /// Authority information access
     /// </para></li><li><para>
     /// CRL distribution points
     /// </para></li><li><para>
-    /// Authority information access
-    /// </para></li><li><para>
     /// Freshest CRL
     /// </para></li><li><para>
-    /// Any other extension
-    /// </para></li></ul>
+    /// Policy constraints
+    /// </para></li></ul><para>
+    /// Amazon Web Services Private Certificate Authority will also reject any other extension
+    /// marked as critical not contained on the preceding list of allowed extensions.
+    /// </para>
     /// </summary>
     [Cmdlet("Import", "PCACertificateAuthorityCertificate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Certificate Manager Private Certificate Authority ImportCertificateAuthorityCertificate API operation.", Operation = new[] {"ImportCertificateAuthorityCertificate"}, SelectReturnType = typeof(Amazon.ACMPCA.Model.ImportCertificateAuthorityCertificateResponse))]
     [AWSCmdletOutput("None or Amazon.ACMPCA.Model.ImportCertificateAuthorityCertificateResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ACMPCA.Model.ImportCertificateAuthorityCertificateResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ACMPCA.Model.ImportCertificateAuthorityCertificateResponse) be returned by specifying '-Select *'."
     )]
     public partial class ImportPCACertificateAuthorityCertificateCmdlet : AmazonACMPCAClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Certificate
         /// <summary>
@@ -192,16 +196,6 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CertificateAuthorityArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CertificateAuthorityArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CertificateAuthorityArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -212,9 +206,13 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CertificateAuthorityArn), MyInvocation.BoundParameters);
@@ -228,21 +226,11 @@ namespace Amazon.PowerShell.Cmdlets.PCA
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ACMPCA.Model.ImportCertificateAuthorityCertificateResponse, ImportPCACertificateAuthorityCertificateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CertificateAuthorityArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Certificate = this.Certificate;
             #if MODULAR
             if (this.Certificate == null && ParameterWasBound(nameof(this.Certificate)))
@@ -343,13 +331,7 @@ namespace Amazon.PowerShell.Cmdlets.PCA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager Private Certificate Authority", "ImportCertificateAuthorityCertificate");
             try
             {
-                #if DESKTOP
-                return client.ImportCertificateAuthorityCertificate(request);
-                #elif CORECLR
-                return client.ImportCertificateAuthorityCertificateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportCertificateAuthorityCertificateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

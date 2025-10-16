@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateIpamPool API operation.", Operation = new[] {"CreateIpamPool"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateIpamPoolResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.IpamPool or Amazon.EC2.Model.CreateIpamPoolResponse",
         "This cmdlet returns an Amazon.EC2.Model.IpamPool object.",
-        "The service call response (type Amazon.EC2.Model.CreateIpamPoolResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateIpamPoolResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2IpamPoolCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddressFamily
         /// <summary>
@@ -114,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>Tags that are required for resources that use CIDRs from this IPAM pool. Resources
         /// that do not have these tags will not be allowed to allocate space from the pool. If
         /// the resources have their tags changed after they have allocated space or if the allocation
-        /// tagging requirements are changed on the pool, the resource may be marked as noncompliant.</para>
+        /// tagging requirements are changed on the pool, the resource may be marked as noncompliant.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,6 +168,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>A check for whether you have the required permissions for the action without actually
+        /// making the request and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter IpamScopeId
         /// <summary>
         /// <para>
@@ -181,13 +200,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Locale
         /// <summary>
         /// <para>
-        /// <para>In IPAM, the locale is the Amazon Web Services Region where you want to make an IPAM
-        /// pool available for allocations. Only resources in the same Region as the locale of
-        /// the pool can get IP address allocations from the pool. You can only allocate a CIDR
-        /// for a VPC, for example, from an IPAM pool that shares a locale with the VPC’s Region.
-        /// Note that once you choose a Locale for a pool, you cannot modify it. If you do not
-        /// choose a locale, resources in Regions others than the IPAM's home region cannot use
-        /// CIDRs from this pool.</para><para>Possible values: Any Amazon Web Services Region, such as us-east-1.</para>
+        /// <para>The locale for the pool should be one of the following:</para><ul><li><para>An Amazon Web Services Region where you want this IPAM pool to be available for allocations.</para></li><li><para>The network border group for an Amazon Web Services Local Zone where you want this
+        /// IPAM pool to be available for allocations (<a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html#byoip-zone-avail">supported
+        /// Local Zones</a>). This option is only available for IPAM IPv4 pools in the public
+        /// scope.</para></li></ul><para>Possible values: Any Amazon Web Services Region or supported Amazon Web Services Local
+        /// Zone. Default is <c>none</c> and means any locale.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -214,8 +231,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter PubliclyAdvertisable
         /// <summary>
         /// <para>
-        /// <para>Determines if the pool is publicly advertisable. This option is not available for
-        /// pools with AddressFamily set to <c>ipv4</c>.</para>
+        /// <para>Determines if the pool is publicly advertisable. The request can only contain <c>PubliclyAdvertisable</c>
+        /// if <c>AddressFamily</c> is <c>ipv6</c> and <c>PublicIpSource</c> is <c>byoip</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -281,7 +298,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The key/value combination of a tag assigned to the resource. Use the tag key in the
         /// filter name and the tag value as the filter value. For example, to find all resources
         /// that have a tag with the key <c>Owner</c> and the value <c>TeamA</c>, specify <c>tag:Owner</c>
-        /// for the filter name and <c>TeamA</c> for the filter value.</para>
+        /// for the filter name and <c>TeamA</c> for the filter value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -293,8 +314,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>A unique, case-sensitive identifier that you provide to ensure the idempotency of
-        /// the request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
-        /// Idempotency</a>.</para>
+        /// the request. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -312,16 +333,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "IpamPool";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IpamScopeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IpamScopeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IpamScopeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -332,9 +343,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IpamScopeId), MyInvocation.BoundParameters);
@@ -348,21 +363,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateIpamPoolResponse, NewEC2IpamPoolCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IpamScopeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AddressFamily = this.AddressFamily;
             #if MODULAR
             if (this.AddressFamily == null && ParameterWasBound(nameof(this.AddressFamily)))
@@ -381,6 +386,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.AwsService = this.AwsService;
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
             context.IpamScopeId = this.IpamScopeId;
             #if MODULAR
             if (this.IpamScopeId == null && ParameterWasBound(nameof(this.IpamScopeId)))
@@ -451,6 +457,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.IpamScopeId != null)
             {
@@ -563,13 +573,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateIpamPool");
             try
             {
-                #if DESKTOP
-                return client.CreateIpamPool(request);
-                #elif CORECLR
-                return client.CreateIpamPoolAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateIpamPoolAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -595,6 +599,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public Amazon.EC2.IpamPoolAwsService AwsService { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String IpamScopeId { get; set; }
             public System.String Locale { get; set; }
             public Amazon.EC2.IpamPoolPublicIpSource PublicIpSource { get; set; }

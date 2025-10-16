@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config GetOrganizationConformancePackDetailedStatus API operation.", Operation = new[] {"GetOrganizationConformancePackDetailedStatus"}, SelectReturnType = typeof(Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusResponse))]
     [AWSCmdletOutput("Amazon.ConfigService.Model.OrganizationConformancePackDetailedStatus or Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.OrganizationConformancePackDetailedStatus objects.",
-        "The service call response (type Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFGOrganizationConformancePackDetailedStatusCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filters_AccountId
         /// <summary>
@@ -115,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,16 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "OrganizationConformancePackDetailedStatuses";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OrganizationConformancePackName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OrganizationConformancePackName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OrganizationConformancePackName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -153,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -163,21 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusResponse, GetCFGOrganizationConformancePackDetailedStatusCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OrganizationConformancePackName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Filters_AccountId = this.Filters_AccountId;
             context.Filters_Status = this.Filters_Status;
             context.Limit = this.Limit;
@@ -212,9 +199,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusRequest();
@@ -307,7 +292,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ConfigService.Model.GetOrganizationConformancePackDetailedStatusRequest();
@@ -391,7 +376,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.OrganizationConformancePackDetailedStatuses.Count;
+                    int _receivedThisCall = response.OrganizationConformancePackDetailedStatuses?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -440,13 +425,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "GetOrganizationConformancePackDetailedStatus");
             try
             {
-                #if DESKTOP
-                return client.GetOrganizationConformancePackDetailedStatus(request);
-                #elif CORECLR
-                return client.GetOrganizationConformancePackDetailedStatusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetOrganizationConformancePackDetailedStatusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

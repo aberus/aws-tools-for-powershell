@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Links an existing user account in a user pool (<c>DestinationUser</c>) to an identity
-    /// from an external IdP (<c>SourceUser</c>) based on a specified attribute name and value
-    /// from the external IdP. This allows you to create a link from the existing user account
-    /// to an external federated user identity that has not yet been used to sign in. You
-    /// can then use the federated user identity to sign in as the existing user account.
-    /// 
+    /// Links an existing user account in a user pool, or <c>DestinationUser</c>, to an identity
+    /// from an external IdP, or <c>SourceUser</c>, based on a specified attribute name and
+    /// value from the external IdP.
     /// 
     ///  
     /// <para>
-    ///  For example, if there is an existing user with a username and password, this API
-    /// links that user to a federated user identity. When the user signs in with a federated
-    /// user identity, they sign in as the existing user account.
+    /// This operation connects a local user profile with a user identity who hasn't yet signed
+    /// in from their third-party IdP. When the user signs in with their IdP, they get access-control
+    /// configuration from the local user profile. Linked local users can also sign in with
+    /// SDK-based API operations like <c>InitiateAuth</c> after they sign in at least once
+    /// through their IdP. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-identity-federation-consolidate-users.html">Linking
+    /// federated users</a>.
     /// </para><note><para>
     /// The maximum number of federated identities linked to a user is five.
     /// </para></note><important><para>
-    /// Because this API allows a user with an external federated identity to sign in as an
-    /// existing user in the user pool, it is critical that it only be used with external
-    /// IdPs and provider attributes that have been trusted by the application owner.
+    /// Because this API allows a user with an external federated identity to sign in as a
+    /// local user, it is critical that it only be used with external IdPs and linked attributes
+    /// that you trust.
     /// </para></important><note><para>
     /// Amazon Cognito evaluates Identity and Access Management (IAM) policies in requests
     /// for this API operation. For this operation, you must use IAM credentials to authorize
@@ -59,12 +61,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider AdminLinkProviderForUser API operation.", Operation = new[] {"AdminLinkProviderForUser"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.AdminLinkProviderForUserResponse))]
     [AWSCmdletOutput("None or Amazon.CognitoIdentityProvider.Model.AdminLinkProviderForUserResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CognitoIdentityProvider.Model.AdminLinkProviderForUserResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CognitoIdentityProvider.Model.AdminLinkProviderForUserResponse) be returned by specifying '-Select *'."
     )]
     public partial class ConnectCGIPProviderForUserAdminCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DestinationUser_ProviderAttributeName
         /// <summary>
@@ -129,7 +132,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool.</para>
+        /// <para>The ID of the user pool where you want to link a federated identity.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -153,16 +156,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserPoolId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -173,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserPoolId), MyInvocation.BoundParameters);
@@ -189,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.AdminLinkProviderForUserResponse, ConnectCGIPProviderForUserAdminCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserPoolId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DestinationUser_ProviderAttributeName = this.DestinationUser_ProviderAttributeName;
             context.DestinationUser_ProviderAttributeValue = this.DestinationUser_ProviderAttributeValue;
             context.DestinationUser_ProviderName = this.DestinationUser_ProviderName;
@@ -353,13 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "AdminLinkProviderForUser");
             try
             {
-                #if DESKTOP
-                return client.AdminLinkProviderForUser(request);
-                #elif CORECLR
-                return client.AdminLinkProviderForUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AdminLinkProviderForUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

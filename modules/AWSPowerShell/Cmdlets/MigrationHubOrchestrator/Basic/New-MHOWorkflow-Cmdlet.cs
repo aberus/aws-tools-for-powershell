@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MigrationHubOrchestrator;
 using Amazon.MigrationHubOrchestrator.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MHO
 {
     /// <summary>
@@ -34,16 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MHO
     [OutputType("Amazon.MigrationHubOrchestrator.Model.CreateWorkflowResponse")]
     [AWSCmdlet("Calls the AWS Migration Hub Orchestrator CreateWorkflow API operation.", Operation = new[] {"CreateWorkflow"}, SelectReturnType = typeof(Amazon.MigrationHubOrchestrator.Model.CreateWorkflowResponse))]
     [AWSCmdletOutput("Amazon.MigrationHubOrchestrator.Model.CreateWorkflowResponse",
-        "This cmdlet returns an Amazon.MigrationHubOrchestrator.Model.CreateWorkflowResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MigrationHubOrchestrator.Model.CreateWorkflowResponse object containing multiple properties."
     )]
     public partial class NewMHOWorkflowCmdlet : AmazonMigrationHubOrchestratorClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationConfigurationId
         /// <summary>
@@ -51,14 +50,7 @@ namespace Amazon.PowerShell.Cmdlets.MHO
         /// <para>The configuration ID of the application configured in Application Discovery Service.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ApplicationConfigurationId { get; set; }
         #endregion
         
@@ -75,7 +67,11 @@ namespace Amazon.PowerShell.Cmdlets.MHO
         #region Parameter InputParameter
         /// <summary>
         /// <para>
-        /// <para>The input parameters required to create a migration workflow.</para>
+        /// <para>The input parameters required to create a migration workflow.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -110,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.MHO
         #region Parameter StepTarget
         /// <summary>
         /// <para>
-        /// <para>The servers on which a step will be run.</para>
+        /// <para>The servers on which a step will be run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,7 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.MHO
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to add on a migration workflow.</para>
+        /// <para>The tags to add on a migration workflow.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,9 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.MHO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -189,12 +197,6 @@ namespace Amazon.PowerShell.Cmdlets.MHO
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.ApplicationConfigurationId = this.ApplicationConfigurationId;
-            #if MODULAR
-            if (this.ApplicationConfigurationId == null && ParameterWasBound(nameof(this.ApplicationConfigurationId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter ApplicationConfigurationId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.Description = this.Description;
             if (this.InputParameter != null)
             {
@@ -318,13 +320,7 @@ namespace Amazon.PowerShell.Cmdlets.MHO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Migration Hub Orchestrator", "CreateWorkflow");
             try
             {
-                #if DESKTOP
-                return client.CreateWorkflow(request);
-                #elif CORECLR
-                return client.CreateWorkflowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateWorkflowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

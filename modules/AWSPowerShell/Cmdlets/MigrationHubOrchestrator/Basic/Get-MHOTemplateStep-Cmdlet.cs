@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MigrationHubOrchestrator;
 using Amazon.MigrationHubOrchestrator.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MHO
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MHO
     [OutputType("Amazon.MigrationHubOrchestrator.Model.GetTemplateStepResponse")]
     [AWSCmdlet("Calls the AWS Migration Hub Orchestrator GetTemplateStep API operation.", Operation = new[] {"GetTemplateStep"}, SelectReturnType = typeof(Amazon.MigrationHubOrchestrator.Model.GetTemplateStepResponse))]
     [AWSCmdletOutput("Amazon.MigrationHubOrchestrator.Model.GetTemplateStepResponse",
-        "This cmdlet returns an Amazon.MigrationHubOrchestrator.Model.GetTemplateStepResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MigrationHubOrchestrator.Model.GetTemplateStepResponse object containing multiple properties."
     )]
     public partial class GetMHOTemplateStepCmdlet : AmazonMigrationHubOrchestratorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Id
         /// <summary>
@@ -103,9 +106,13 @@ namespace Amazon.PowerShell.Cmdlets.MHO
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -205,13 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.MHO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Migration Hub Orchestrator", "GetTemplateStep");
             try
             {
-                #if DESKTOP
-                return client.GetTemplateStep(request);
-                #elif CORECLR
-                return client.GetTemplateStepAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTemplateStepAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

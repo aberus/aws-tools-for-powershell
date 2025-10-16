@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticMapReduce;
 using Amazon.ElasticMapReduce.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMR
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
     [AWSCmdlet("Calls the Amazon Elastic MapReduce GetStudioSessionMapping API operation.", Operation = new[] {"GetStudioSessionMapping"}, SelectReturnType = typeof(Amazon.ElasticMapReduce.Model.GetStudioSessionMappingResponse))]
     [AWSCmdletOutput("Amazon.ElasticMapReduce.Model.SessionMappingDetail or Amazon.ElasticMapReduce.Model.GetStudioSessionMappingResponse",
         "This cmdlet returns an Amazon.ElasticMapReduce.Model.SessionMappingDetail object.",
-        "The service call response (type Amazon.ElasticMapReduce.Model.GetStudioSessionMappingResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticMapReduce.Model.GetStudioSessionMappingResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEMRStudioSessionMappingCmdlet : AmazonElasticMapReduceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IdentityId
         /// <summary>
@@ -115,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public string Select { get; set; } = "SessionMapping";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -216,13 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic MapReduce", "GetStudioSessionMapping");
             try
             {
-                #if DESKTOP
-                return client.GetStudioSessionMapping(request);
-                #elif CORECLR
-                return client.GetStudioSessionMappingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetStudioSessionMappingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

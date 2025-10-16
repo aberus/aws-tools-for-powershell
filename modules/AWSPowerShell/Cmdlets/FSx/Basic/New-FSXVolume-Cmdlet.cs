@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FSx;
 using Amazon.FSx.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FSX
 {
     /// <summary>
@@ -35,19 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     [AWSCmdlet("Calls the Amazon FSx CreateVolume API operation.", Operation = new[] {"CreateVolume"}, SelectReturnType = typeof(Amazon.FSx.Model.CreateVolumeResponse))]
     [AWSCmdletOutput("Amazon.FSx.Model.Volume or Amazon.FSx.Model.CreateVolumeResponse",
         "This cmdlet returns an Amazon.FSx.Model.Volume object.",
-        "The service call response (type Amazon.FSx.Model.CreateVolumeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FSx.Model.CreateVolumeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewFSXVolumeCmdlet : AmazonFSxClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AggregateConfiguration_Aggregate
         /// <summary>
         /// <para>
-        /// <para>Used to specify the names of aggregates on which the volume will be created.</para>
+        /// <para>Used to specify the names of aggregates on which the volume will be created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -146,11 +151,12 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>A Boolean value indicating whether tags for the volume should be copied to snapshots.
-        /// This value defaults to <c>false</c>. If it's set to <c>true</c>, all tags for the
-        /// volume are copied to snapshots where the user doesn't specify tags. If this value
-        /// is <c>true</c>, and you specify one or more tags, only the specified tags are copied
-        /// to snapshots. If you specify one or more tags when creating the snapshot, no tags
-        /// are copied from the volume, regardless of this value.</para>
+        /// This value defaults to <c>false</c>. If this value is set to <c>true</c>, and you
+        /// do not specify any tags, all tags for the original volume are copied over to snapshots.
+        /// If this value is set to <c>true</c>, and you do specify one or more tags, only the
+        /// specified tags for the original volume are copied over to snapshots. If you specify
+        /// one or more tags when creating a new snapshot, no tags are copied over from the original
+        /// volume, regardless of this value. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -223,7 +229,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter OpenZFSConfiguration_NfsExport
         /// <summary>
         /// <para>
-        /// <para>The configuration object for mounting a Network File System (NFS) file system.</para>
+        /// <para>The configuration object for mounting a Network File System (NFS) file system.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -235,8 +245,8 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>Specifies the type of volume you are creating. Valid values are the following:</para><ul><li><para><c>RW</c> specifies a read/write volume. <c>RW</c> is the default.</para></li><li><para><c>DP</c> specifies a data-protection volume. A <c>DP</c> volume is read-only and
-        /// can be used as the destination of a NetApp SnapMirror relationship.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/volume-types">Volume
-        /// types</a> in the <i>Amazon FSx for NetApp ONTAP User Guide</i>.</para>
+        /// can be used as the destination of a NetApp SnapMirror relationship.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/managing-volumes.html#volume-types">Volume
+        /// types</a> in the Amazon FSx for NetApp ONTAP User Guide.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,12 +295,14 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>Specifies the suggested block size for a volume in a ZFS dataset, in kibibytes (KiB).
-        /// Valid values are 4, 8, 16, 32, 64, 128, 256, 512, or 1024 KiB. The default is 128
-        /// KiB. We recommend using the default setting for the majority of use cases. Generally,
-        /// workloads that write in fixed small or large record sizes may benefit from setting
-        /// a custom record size, like database workloads (small record size) or media streaming
-        /// workloads (large record size). For additional guidance on when to set a custom record
-        /// size, see <a href="https://docs.aws.amazon.com/fsx/latest/OpenZFSGuide/performance.html#record-size-performance">
+        /// For file systems using the Intelligent-Tiering storage class, valid values are 128,
+        /// 256, 512, 1024, 2048, or 4096 KiB, with a default of 1024 KiB. For all other file
+        /// systems, valid values are 4, 8, 16, 32, 64, 128, 256, 512, or 1024 KiB, with a default
+        /// of 128 KiB. We recommend using the default setting for the majority of use cases.
+        /// Generally, workloads that write in fixed small or large record sizes may benefit from
+        /// setting a custom record size, like database workloads (small record size) or media
+        /// streaming workloads (large record size). For additional guidance on when to set a
+        /// custom record size, see <a href="https://docs.aws.amazon.com/fsx/latest/OpenZFSGuide/performance.html#record-size-performance">
         /// ZFS Record size</a> in the <i>Amazon FSx for OpenZFS User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -303,15 +315,14 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>
         /// <para>Specifies the security style for the volume. If a volume's security style is not specified,
         /// it is automatically set to the root volume's security style. The security style determines
-        /// the type of permissions that FSx for ONTAP uses to control data access. For more information,
-        /// see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/managing-volumes.html#volume-security-style">Volume
-        /// security style</a> in the <i>Amazon FSx for NetApp ONTAP User Guide</i>. Specify one
+        /// the type of permissions that FSx for ONTAP uses to control data access. Specify one
         /// of the following values:</para><ul><li><para><c>UNIX</c> if the file system is managed by a UNIX administrator, the majority of
         /// users are NFS clients, and an application accessing the data uses a UNIX user as the
         /// service account. </para></li><li><para><c>NTFS</c> if the file system is managed by a Windows administrator, the majority
         /// of users are SMB clients, and an application accessing the data uses a Windows user
-        /// as the service account.</para></li><li><para><c>MIXED</c> if the file system is managed by both UNIX and Windows administrators
-        /// and users consist of both NFS and SMB clients.</para></li></ul>
+        /// as the service account.</para></li><li><para><c>MIXED</c> This is an advanced setting. For more information, see the topic <a href="https://docs.netapp.com/us-en/ontap/nfs-admin/security-styles-their-effects-concept.html">What
+        /// the security styles and their effects are</a> in the NetApp Documentation Center.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/managing-volumes.html#volume-security-style">Volume
+        /// security style</a> in the FSx for ONTAP User Guide.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -322,7 +333,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter OntapConfiguration_SizeInByte
         /// <summary>
         /// <para>
-        /// <para>The configured size of the volume, in bytes.</para>
+        /// <para>Specifies the configured size of the volume, in bytes.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -373,7 +384,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// that it only retains one snapshot from the weekly schedule.</para></li><li><para><c>none</c>: This policy does not take any snapshots. This policy can be assigned
         /// to volumes to prevent automatic snapshots from being taken.</para></li></ul><para>You can also provide the name of a custom policy that you created with the ONTAP CLI
         /// or REST API.</para><para>For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/snapshots-ontap.html#snapshot-policies">Snapshot
-        /// policies</a> in the <i>Amazon FSx for NetApp ONTAP User Guide</i>.</para>
+        /// policies</a> in the Amazon FSx for NetApp ONTAP User Guide.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -416,7 +427,8 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>Set to true to enable deduplication, compression, and compaction storage efficiency
-        /// features on the volume, or set to false to disable them. This parameter is required.</para>
+        /// features on the volume, or set to false to disable them.</para><para><c>StorageEfficiencyEnabled</c> is required when creating a <c>RW</c> volume (<c>OntapVolumeType</c>
+        /// set to <c>RW</c>).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -436,7 +448,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -506,7 +522,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter OpenZFSConfiguration_UserAndGroupQuota
         /// <summary>
         /// <para>
-        /// <para>An object specifying how much storage users or groups can use on the volume.</para>
+        /// <para>Configures how much storage users and groups can use on the volume.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -582,9 +602,10 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter OntapConfiguration_VolumeStyle
         /// <summary>
         /// <para>
-        /// <para>Use to specify the style of an ONTAP volume. For more information about FlexVols and
-        /// FlexGroups, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/volume-types.html">Volume
-        /// types</a> in Amazon FSx for NetApp ONTAP User Guide.</para>
+        /// <para>Use to specify the style of an ONTAP volume. FSx for ONTAP offers two styles of volumes
+        /// that you can use for different purposes, FlexVol and FlexGroup volumes. For more information,
+        /// see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/managing-volumes.html#volume-styles">Volume
+        /// styles</a> in the Amazon FSx for NetApp ONTAP User Guide.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -613,7 +634,8 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter OntapConfiguration_SizeInMegabyte
         /// <summary>
         /// <para>
-        /// <para>Specifies the size of the volume, in megabytes (MB), that you are creating.</para>
+        /// <para>Use <c>SizeInBytes</c> instead. Specifies the size of the volume, in megabytes (MB),
+        /// that you are creating.</para>
         /// </para>
         /// <para>This parameter is deprecated.</para>
         /// </summary>
@@ -634,16 +656,6 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public string Select { get; set; } = "Volume";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -654,9 +666,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -670,21 +686,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FSx.Model.CreateVolumeResponse, NewFSXVolumeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.Name = this.Name;
             #if MODULAR
@@ -1347,13 +1353,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon FSx", "CreateVolume");
             try
             {
-                #if DESKTOP
-                return client.CreateVolume(request);
-                #elif CORECLR
-                return client.CreateVolumeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVolumeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

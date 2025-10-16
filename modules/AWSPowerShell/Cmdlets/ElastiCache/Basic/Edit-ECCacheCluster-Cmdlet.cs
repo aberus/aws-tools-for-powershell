@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
     [AWSCmdlet("Calls the Amazon ElastiCache ModifyCacheCluster API operation.", Operation = new[] {"ModifyCacheCluster"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.ModifyCacheClusterResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.CacheCluster or Amazon.ElastiCache.Model.ModifyCacheClusterResponse",
         "This cmdlet returns an Amazon.ElastiCache.Model.CacheCluster object.",
-        "The service call response (type Amazon.ElastiCache.Model.ModifyCacheClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.ModifyCacheClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditECCacheClusterCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplyImmediately
         /// <summary>
@@ -73,8 +76,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>Specifies the strategy to use to update the AUTH token. This parameter must be specified
-        /// with the <c>auth-token</c> parameter. Possible values:</para><ul><li><para>Rotate</para></li><li><para>Set</para></li></ul><para> For more information, see <a href="http://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html">Authenticating
-        /// Users with Redis AUTH</a></para>
+        /// with the <c>auth-token</c> parameter. Possible values:</para><ul><li><para>ROTATE - default, if no update strategy is provided</para></li><li><para>SET - allowed only after ROTATE</para></li><li><para>DELETE - allowed only when transitioning to RBAC</para></li></ul><para> For more information, see <a href="http://docs.aws.amazon.com/AmazonElastiCache/latest/dg/auth.html">Authenticating
+        /// Users with AUTH</a></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -85,8 +88,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
         #region Parameter AutoMinorVersionUpgrade
         /// <summary>
         /// <para>
-        /// <para> If you are running Redis engine version 6.0 or later, set this parameter to yes if
-        /// you want to opt-in to the next auto minor version upgrade campaign. This parameter
+        /// <para> If you are running Valkey 7.2 or Redis OSS engine version 6.0 or later, set this
+        /// parameter to yes to opt-in to the next auto minor version upgrade campaign. This parameter
         /// is disabled for previous versions.  </para>
         /// </para>
         /// </summary>
@@ -135,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// pending cache nodes, whichever is greater, and the value of <c>NumCacheNodes</c> in
         /// the request.</para><para>For example: If you have 3 active cache nodes, 7 pending cache nodes, and the number
         /// of cache nodes in this <c>ModifyCacheCluster</c> call is 5, you must list 2 (7 - 5)
-        /// cache node IDs to remove.</para>
+        /// cache node IDs to remove.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,7 +176,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <para>
         /// <para>A list of cache security group names to authorize on this cluster. This change is
         /// asynchronously applied as soon as possible.</para><para>You can use this parameter only with clusters that are created outside of an Amazon
-        /// Virtual Private Cloud (Amazon VPC).</para><para>Constraints: Must contain no more than 255 alphanumeric characters. Must not be "Default".</para>
+        /// Virtual Private Cloud (Amazon VPC).</para><para>Constraints: Must contain no more than 255 alphanumeric characters. Must not be "Default".</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -177,10 +188,20 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public System.String[] CacheSecurityGroupName { get; set; }
         #endregion
         
+        #region Parameter Engine
+        /// <summary>
+        /// <para>
+        /// <para>The engine type used by the cache cluster. The options are valkey, memcached or redis.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Engine { get; set; }
+        #endregion
+        
         #region Parameter EngineVersion
         /// <summary>
         /// <para>
-        /// <para>The upgraded version of the cache engine to be run on the cache nodes.</para><para><b>Important:</b> You can upgrade to a newer engine version (see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/SelectEngine.html#VersionManagement">Selecting
+        /// <para>The upgraded version of the cache engine to be run on the cache nodes.</para><para><b>Important:</b> You can upgrade to a newer engine version (see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/SelectEngine.html#VersionManagement">Selecting
         /// a Cache Engine and Version</a>), but you cannot downgrade to an earlier engine version.
         /// If you want to use an earlier engine version, you must delete the existing cluster
         /// and create it anew with the earlier engine version. </para>
@@ -194,9 +215,9 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The network type you choose when modifying a cluster, either <c>ipv4</c> | <c>ipv6</c>.
-        /// IPv6 is supported for workloads using Redis engine version 6.2 onward or Memcached
-        /// engine version 1.6.6 on all instances built on the <a href="http://aws.amazon.com/ec2/nitro/">Nitro
-        /// system</a>.</para>
+        /// IPv6 is supported for workloads using Valkey 7.2 and above, Redis OSS engine version
+        /// 6.2 to 7.1 or Memcached engine version 1.6.6 and above on all instances built on the
+        /// <a href="http://aws.amazon.com/ec2/nitro/">Nitro system</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -207,7 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         #region Parameter LogDeliveryConfiguration
         /// <summary>
         /// <para>
-        /// <para>Specifies the destination, format and type of the logs.</para>
+        /// <para>Specifies the destination, format and type of the logs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -230,10 +255,14 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// to the number of current nodes.</para><para>If <c>cross-az</c> is specified, existing Memcached nodes remain in their current
         /// Availability Zone. Only newly created nodes can be located in different Availability
         /// Zones. For guidance on how to move existing Memcached nodes to different Availability
-        /// Zones, see the <b>Availability Zone Considerations</b> section of <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/CacheNodes.SupportedTypes.html">Cache
+        /// Zones, see the <b>Availability Zone Considerations</b> section of <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/CacheNodes.SupportedTypes.html">Cache
         /// Node Considerations for Memcached</a>.</para><para><b>Impact of new add/remove requests upon pending requests</b></para><ul><li><para>Scenario-1</para><ul><li><para>Pending Action: Delete</para></li><li><para>New Request: Delete</para></li><li><para>Result: The new delete, pending or immediate, replaces the pending delete.</para></li></ul></li><li><para>Scenario-2</para><ul><li><para>Pending Action: Delete</para></li><li><para>New Request: Create</para></li><li><para>Result: The new create, pending or immediate, replaces the pending delete.</para></li></ul></li><li><para>Scenario-3</para><ul><li><para>Pending Action: Create</para></li><li><para>New Request: Delete</para></li><li><para>Result: The new delete, pending or immediate, replaces the pending create.</para></li></ul></li><li><para>Scenario-4</para><ul><li><para>Pending Action: Create</para></li><li><para>New Request: Create</para></li><li><para>Result: The new create is added to the pending create.</para><important><para><b>Important:</b> If the new create request is <b>Apply Immediately - Yes</b>, all
         /// creates are performed immediately. If the new create request is <b>Apply Immediately
-        /// - No</b>, all creates are pending.</para></important></li></ul></li></ul>
+        /// - No</b>, all creates are pending.</para></important></li></ul></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -271,8 +300,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// nodes pending creation (which may be zero), more nodes are added. If the value is
         /// less than the number of existing cache nodes, nodes are removed. If the value is equal
         /// to the number of current cache nodes, any pending add or remove requests are canceled.</para><para>If you are removing cache nodes, you must use the <c>CacheNodeIdsToRemove</c> parameter
-        /// to provide the IDs of the specific cache nodes to remove.</para><para>For clusters running Redis, this value must be 1. For clusters running Memcached,
-        /// this value must be between 1 and 40.</para><note><para>Adding or removing Memcached cache nodes can be applied immediately or as a pending
+        /// to provide the IDs of the specific cache nodes to remove.</para><para>For clusters running Valkey or Redis OSS, this value must be 1. For clusters running
+        /// Memcached, this value must be between 1 and 40.</para><note><para>Adding or removing Memcached cache nodes can be applied immediately or as a pending
         /// operation (see <c>ApplyImmediately</c>).</para><para>A pending operation to modify the number of cache nodes in a cluster during its maintenance
         /// window, whether by adding or removing nodes in accordance with the scale out architecture,
         /// is not queued. The customer's latest request to add or remove nodes to the cluster
@@ -306,11 +335,38 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public System.String PreferredMaintenanceWindow { get; set; }
         #endregion
         
+        #region Parameter ScaleConfig_ScaleIntervalMinute
+        /// <summary>
+        /// <para>
+        /// <para>The time interval in seconds between scaling operations when performing gradual scaling
+        /// for a Memcached cluster.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ScaleConfig_ScaleIntervalMinutes")]
+        public System.Int32? ScaleConfig_ScaleIntervalMinute { get; set; }
+        #endregion
+        
+        #region Parameter ScaleConfig_ScalePercentage
+        /// <summary>
+        /// <para>
+        /// <para>The percentage by which to scale the Memcached cluster, either horizontally by adding
+        /// nodes or vertically by increasing resources.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ScaleConfig_ScalePercentage { get; set; }
+        #endregion
+        
         #region Parameter SecurityGroupId
         /// <summary>
         /// <para>
         /// <para>Specifies the VPC Security Groups associated with the cluster.</para><para>This parameter can be used only with clusters that are created in an Amazon Virtual
-        /// Private Cloud (Amazon VPC).</para>
+        /// Private Cloud (Amazon VPC).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -353,16 +409,6 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "CacheCluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CacheClusterId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CacheClusterId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CacheClusterId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -373,9 +419,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CacheClusterId), MyInvocation.BoundParameters);
@@ -389,21 +439,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.ModifyCacheClusterResponse, EditECCacheClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CacheClusterId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplyImmediately = this.ApplyImmediately;
             context.AuthToken = this.AuthToken;
             context.AuthTokenUpdateStrategy = this.AuthTokenUpdateStrategy;
@@ -426,6 +466,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             {
                 context.CacheSecurityGroupName = new List<System.String>(this.CacheSecurityGroupName);
             }
+            context.Engine = this.Engine;
             context.EngineVersion = this.EngineVersion;
             context.IpDiscovery = this.IpDiscovery;
             if (this.LogDeliveryConfiguration != null)
@@ -440,6 +481,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
             context.NotificationTopicStatus = this.NotificationTopicStatus;
             context.NumCacheNode = this.NumCacheNode;
             context.PreferredMaintenanceWindow = this.PreferredMaintenanceWindow;
+            context.ScaleConfig_ScaleIntervalMinute = this.ScaleConfig_ScaleIntervalMinute;
+            context.ScaleConfig_ScalePercentage = this.ScaleConfig_ScalePercentage;
             if (this.SecurityGroupId != null)
             {
                 context.SecurityGroupId = new List<System.String>(this.SecurityGroupId);
@@ -502,6 +545,10 @@ namespace Amazon.PowerShell.Cmdlets.EC
             {
                 request.CacheSecurityGroupNames = cmdletContext.CacheSecurityGroupName;
             }
+            if (cmdletContext.Engine != null)
+            {
+                request.Engine = cmdletContext.Engine;
+            }
             if (cmdletContext.EngineVersion != null)
             {
                 request.EngineVersion = cmdletContext.EngineVersion;
@@ -533,6 +580,35 @@ namespace Amazon.PowerShell.Cmdlets.EC
             if (cmdletContext.PreferredMaintenanceWindow != null)
             {
                 request.PreferredMaintenanceWindow = cmdletContext.PreferredMaintenanceWindow;
+            }
+            
+             // populate ScaleConfig
+            var requestScaleConfigIsNull = true;
+            request.ScaleConfig = new Amazon.ElastiCache.Model.ScaleConfig();
+            System.Int32? requestScaleConfig_scaleConfig_ScaleIntervalMinute = null;
+            if (cmdletContext.ScaleConfig_ScaleIntervalMinute != null)
+            {
+                requestScaleConfig_scaleConfig_ScaleIntervalMinute = cmdletContext.ScaleConfig_ScaleIntervalMinute.Value;
+            }
+            if (requestScaleConfig_scaleConfig_ScaleIntervalMinute != null)
+            {
+                request.ScaleConfig.ScaleIntervalMinutes = requestScaleConfig_scaleConfig_ScaleIntervalMinute.Value;
+                requestScaleConfigIsNull = false;
+            }
+            System.Int32? requestScaleConfig_scaleConfig_ScalePercentage = null;
+            if (cmdletContext.ScaleConfig_ScalePercentage != null)
+            {
+                requestScaleConfig_scaleConfig_ScalePercentage = cmdletContext.ScaleConfig_ScalePercentage.Value;
+            }
+            if (requestScaleConfig_scaleConfig_ScalePercentage != null)
+            {
+                request.ScaleConfig.ScalePercentage = requestScaleConfig_scaleConfig_ScalePercentage.Value;
+                requestScaleConfigIsNull = false;
+            }
+             // determine if request.ScaleConfig should be set to null
+            if (requestScaleConfigIsNull)
+            {
+                request.ScaleConfig = null;
             }
             if (cmdletContext.SecurityGroupId != null)
             {
@@ -584,13 +660,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "ModifyCacheCluster");
             try
             {
-                #if DESKTOP
-                return client.ModifyCacheCluster(request);
-                #elif CORECLR
-                return client.ModifyCacheClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyCacheClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -617,6 +687,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             public System.String CacheNodeType { get; set; }
             public System.String CacheParameterGroupName { get; set; }
             public List<System.String> CacheSecurityGroupName { get; set; }
+            public System.String Engine { get; set; }
             public System.String EngineVersion { get; set; }
             public Amazon.ElastiCache.IpDiscovery IpDiscovery { get; set; }
             public List<Amazon.ElastiCache.Model.LogDeliveryConfigurationRequest> LogDeliveryConfiguration { get; set; }
@@ -625,6 +696,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
             public System.String NotificationTopicStatus { get; set; }
             public System.Int32? NumCacheNode { get; set; }
             public System.String PreferredMaintenanceWindow { get; set; }
+            public System.Int32? ScaleConfig_ScaleIntervalMinute { get; set; }
+            public System.Int32? ScaleConfig_ScalePercentage { get; set; }
             public List<System.String> SecurityGroupId { get; set; }
             public System.Int32? SnapshotRetentionLimit { get; set; }
             public System.String SnapshotWindow { get; set; }

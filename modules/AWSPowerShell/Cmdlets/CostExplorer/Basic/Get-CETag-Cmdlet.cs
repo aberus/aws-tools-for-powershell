@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CostExplorer;
 using Amazon.CostExplorer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CE
 {
     /// <summary>
@@ -35,12 +37,27 @@ namespace Amazon.PowerShell.Cmdlets.CE
     [OutputType("Amazon.CostExplorer.Model.GetTagsResponse")]
     [AWSCmdlet("Calls the AWS Cost Explorer GetTags API operation.", Operation = new[] {"GetTags"}, SelectReturnType = typeof(Amazon.CostExplorer.Model.GetTagsResponse))]
     [AWSCmdletOutput("Amazon.CostExplorer.Model.GetTagsResponse",
-        "This cmdlet returns an Amazon.CostExplorer.Model.GetTagsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CostExplorer.Model.GetTagsResponse object containing multiple properties."
     )]
     public partial class GetCETagCmdlet : AmazonCostExplorerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter BillingViewArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) that uniquely identifies a specific billing view. The
+        /// ARN is used to specify which particular billing view you want to interact with or
+        /// retrieve information from when making API calls related to Amazon Web Services Billing
+        /// and Cost Management features. The BillingViewArn can be retrieved by calling the ListBillingViews
+        /// API.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String BillingViewArn { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -65,7 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.CE
         #region Parameter SortBy
         /// <summary>
         /// <para>
-        /// <para>The value that you want to sort the data by.</para><para>The key represents cost and usage metrics. The following values are supported:</para><ul><li><para><c>BlendedCost</c></para></li><li><para><c>UnblendedCost</c></para></li><li><para><c>AmortizedCost</c></para></li><li><para><c>NetAmortizedCost</c></para></li><li><para><c>NetUnblendedCost</c></para></li><li><para><c>UsageQuantity</c></para></li><li><para><c>NormalizedUsageAmount</c></para></li></ul><para>The supported values for <c>SortOrder</c> are <c>ASCENDING</c> and <c>DESCENDING</c>.</para><para>When you use <c>SortBy</c>, <c>NextPageToken</c> and <c>SearchString</c> aren't supported.</para>
+        /// <para>The value that you want to sort the data by.</para><para>The key represents cost and usage metrics. The following values are supported:</para><ul><li><para><c>BlendedCost</c></para></li><li><para><c>UnblendedCost</c></para></li><li><para><c>AmortizedCost</c></para></li><li><para><c>NetAmortizedCost</c></para></li><li><para><c>NetUnblendedCost</c></para></li><li><para><c>UsageQuantity</c></para></li><li><para><c>NormalizedUsageAmount</c></para></li></ul><para>The supported values for <c>SortOrder</c> are <c>ASCENDING</c> and <c>DESCENDING</c>.</para><para>When you use <c>SortBy</c>, <c>NextPageToken</c> and <c>SearchString</c> aren't supported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,7 +143,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.CostExplorer module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextPageToken $null' for the first call and '-NextPageToken $AWSHistory.LastServiceResponse.NextPageToken' for subsequent calls.
+        /// <br/>'NextPageToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextPageToken' to null for the first call then set the 'NextPageToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,16 +162,6 @@ namespace Amazon.PowerShell.Cmdlets.CE
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TimePeriod parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TimePeriod' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TimePeriod' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -163,9 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.CE
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -173,21 +188,12 @@ namespace Amazon.PowerShell.Cmdlets.CE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CostExplorer.Model.GetTagsResponse, GetCETagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TimePeriod;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.BillingViewArn = this.BillingViewArn;
             context.Filter = this.Filter;
             context.MaxResult = this.MaxResult;
             context.NextPageToken = this.NextPageToken;
@@ -218,13 +224,15 @@ namespace Amazon.PowerShell.Cmdlets.CE
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CostExplorer.Model.GetTagsRequest();
             
+            if (cmdletContext.BillingViewArn != null)
+            {
+                request.BillingViewArn = cmdletContext.BillingViewArn;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filter = cmdletContext.Filter;
@@ -303,6 +311,10 @@ namespace Amazon.PowerShell.Cmdlets.CE
             // create request
             var request = new Amazon.CostExplorer.Model.GetTagsRequest();
             
+            if (cmdletContext.BillingViewArn != null)
+            {
+                request.BillingViewArn = cmdletContext.BillingViewArn;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filter = cmdletContext.Filter;
@@ -370,13 +382,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cost Explorer", "GetTags");
             try
             {
-                #if DESKTOP
-                return client.GetTags(request);
-                #elif CORECLR
-                return client.GetTagsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTagsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -393,6 +399,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String BillingViewArn { get; set; }
             public Amazon.CostExplorer.Model.Expression Filter { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String NextPageToken { get; set; }

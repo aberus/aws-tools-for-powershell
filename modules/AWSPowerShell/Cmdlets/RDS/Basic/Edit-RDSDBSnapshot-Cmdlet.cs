@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -33,8 +35,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     /// 
     ///  
     /// <para>
-    /// Amazon RDS supports upgrading DB snapshots for MySQL, PostgreSQL, and Oracle. This
-    /// operation doesn't apply to RDS Custom or RDS for Db2.
+    /// Amazon RDS supports upgrading DB snapshots for MariaDB, MySQL, PostgreSQL, and Oracle.
+    /// This operation doesn't apply to RDS Custom or RDS for Db2.
     /// </para>
     /// </summary>
     [Cmdlet("Edit", "RDSDBSnapshot", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyDBSnapshot API operation.", Operation = new[] {"ModifyDBSnapshot"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyDBSnapshotResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBSnapshot or Amazon.RDS.Model.ModifyDBSnapshotResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBSnapshot object.",
-        "The service call response (type Amazon.RDS.Model.ModifyDBSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyDBSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSDBSnapshotCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DBSnapshotIdentifier
         /// <summary>
@@ -70,9 +73,14 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The engine version to upgrade the DB snapshot to.</para><para>The following are the database engines and engine versions that are available when
-        /// you upgrade a DB snapshot.</para><para><b>MySQL</b></para><para>For the list of engine versions that are available for upgrading a DB snapshot, see
+        /// you upgrade a DB snapshot.</para><para><b>MariaDB</b></para><para>For the list of engine versions that are available for upgrading a DB snapshot, see
+        /// <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/mariadb-upgrade-snapshot.html">
+        /// Upgrading a MariaDB DB snapshot engine version</a> in the <i>Amazon RDS User Guide.</i></para><para><b>MySQL</b></para><para>For the list of engine versions that are available for upgrading a DB snapshot, see
         /// <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/mysql-upgrade-snapshot.html">
-        /// Upgrading a MySQL DB snapshot engine version</a> in the <i>Amazon RDS User Guide.</i></para><para><b>Oracle</b></para><ul><li><para><c>19.0.0.0.ru-2022-01.rur-2022-01.r1</c> (supported for 12.2.0.1 DB snapshots)</para></li><li><para><c>19.0.0.0.ru-2022-07.rur-2022-07.r1</c> (supported for 12.1.0.2 DB snapshots)</para></li><li><para><c>12.1.0.2.v8</c> (supported for 12.1.0.1 DB snapshots)</para></li><li><para><c>11.2.0.4.v12</c> (supported for 11.2.0.2 DB snapshots)</para></li><li><para><c>11.2.0.4.v11</c> (supported for 11.2.0.3 DB snapshots)</para></li></ul><para><b>PostgreSQL</b></para><para>For the list of engine versions that are available for upgrading a DB snapshot, see
+        /// Upgrading a MySQL DB snapshot engine version</a> in the <i>Amazon RDS User Guide.</i></para><para><b>Oracle</b></para><ul><li><para><c>21.0.0.0.ru-2025-04.rur-2025-04.r1</c> (supported for 21.0.0.0.ru-2022-01.rur-2022-01.r1,
+        /// 21.0.0.0.ru-2022-04.rur-2022-04.r1, 21.0.0.0.ru-2022-07.rur-2022-07.r1, 21.0.0.0.ru-2022-10.rur-2022-10.r1,
+        /// 21.0.0.0.ru-2023-01.rur-2023-01.r1 and 21.0.0.0.ru-2023-01.rur-2023-01.r2 DB snapshots)</para></li><li><para><c>19.0.0.0.ru-2025-04.rur-2025-04.r1</c> (supported for 19.0.0.0.ru-2019-07.rur-2019-07.r1,
+        /// 19.0.0.0.ru-2019-10.rur-2019-10.r1 and 0.0.0.ru-2020-01.rur-2020-01.r1 DB snapshots)</para></li><li><para><c>19.0.0.0.ru-2022-01.rur-2022-01.r1</c> (supported for 12.2.0.1 DB snapshots)</para></li><li><para><c>19.0.0.0.ru-2022-07.rur-2022-07.r1</c> (supported for 12.1.0.2 DB snapshots)</para></li><li><para><c>12.1.0.2.v8</c> (supported for 12.1.0.1 DB snapshots)</para></li><li><para><c>11.2.0.4.v12</c> (supported for 11.2.0.2 DB snapshots)</para></li><li><para><c>11.2.0.4.v11</c> (supported for 11.2.0.3 DB snapshots)</para></li></ul><para><b>PostgreSQL</b></para><para>For the list of engine versions that are available for upgrading a DB snapshot, see
         /// <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBSnapshot.PostgreSQL.html">
         /// Upgrading a PostgreSQL DB snapshot engine version</a> in the <i>Amazon RDS User Guide.</i></para>
         /// </para>
@@ -105,16 +113,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBSnapshot";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBSnapshotIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBSnapshotIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBSnapshotIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -125,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBSnapshotIdentifier), MyInvocation.BoundParameters);
@@ -141,21 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyDBSnapshotResponse, EditRDSDBSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBSnapshotIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DBSnapshotIdentifier = this.DBSnapshotIdentifier;
             #if MODULAR
             if (this.DBSnapshotIdentifier == null && ParameterWasBound(nameof(this.DBSnapshotIdentifier)))
@@ -231,13 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyDBSnapshot");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBSnapshot(request);
-                #elif CORECLR
-                return client.ModifyDBSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

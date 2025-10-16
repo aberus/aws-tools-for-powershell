@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -34,18 +36,23 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// You must have the <c>s3:UpdateAccessGrantsLocation</c> permission to use this operation.
     /// 
     /// </para></dd><dt>Additional Permissions</dt><dd><para>
-    /// You must also have the following permission: <c>iam:PassRole</c></para></dd></dl>
+    /// You must also have the following permission: <c>iam:PassRole</c></para></dd></dl><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Update", "S3CAccessGrantsLocation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.S3Control.Model.UpdateAccessGrantsLocationResponse")]
     [AWSCmdlet("Calls the Amazon S3 Control UpdateAccessGrantsLocation API operation.", Operation = new[] {"UpdateAccessGrantsLocation"}, SelectReturnType = typeof(Amazon.S3Control.Model.UpdateAccessGrantsLocationResponse))]
     [AWSCmdletOutput("Amazon.S3Control.Model.UpdateAccessGrantsLocationResponse",
-        "This cmdlet returns an Amazon.S3Control.Model.UpdateAccessGrantsLocationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.S3Control.Model.UpdateAccessGrantsLocationResponse object containing multiple properties."
     )]
     public partial class UpdateS3CAccessGrantsLocationCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessGrantsLocationId
         /// <summary>
@@ -75,7 +82,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter AccountId
         /// <summary>
         /// <para>
-        /// <para>The ID of the Amazon Web Services account that is making this request.</para>
+        /// <para>The Amazon Web Services account ID of the S3 Access Grants instance.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -128,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -236,13 +247,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "UpdateAccessGrantsLocation");
             try
             {
-                #if DESKTOP
-                return client.UpdateAccessGrantsLocation(request);
-                #elif CORECLR
-                return client.UpdateAccessGrantsLocationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateAccessGrantsLocationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

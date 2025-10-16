@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CW
 {
     /// <summary>
@@ -35,19 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.CW
     [AWSCmdlet("Calls the Amazon CloudWatch StopMetricStreams API operation.", Operation = new[] {"StopMetricStreams"}, SelectReturnType = typeof(Amazon.CloudWatch.Model.StopMetricStreamsResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatch.Model.StopMetricStreamsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatch.Model.StopMetricStreamsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatch.Model.StopMetricStreamsResponse) be returned by specifying '-Select *'."
     )]
     public partial class StopCWMetricStreamCmdlet : AmazonCloudWatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Name
         /// <summary>
         /// <para>
         /// <para>The array of the names of metric streams to stop streaming.</para><para>This is an "all or nothing" operation. If you do not have permission to access all
         /// of the metric streams that you list here, then none of the streams that you list in
-        /// the operation will stop streaming.</para>
+        /// the operation will stop streaming.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,9 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -171,13 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch", "StopMetricStreams");
             try
             {
-                #if DESKTOP
-                return client.StopMetricStreams(request);
-                #elif CORECLR
-                return client.StopMetricStreamsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StopMetricStreamsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

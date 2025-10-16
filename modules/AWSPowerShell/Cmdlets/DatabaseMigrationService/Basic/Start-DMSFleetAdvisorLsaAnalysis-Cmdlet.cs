@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,37 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
+    /// <important><para>
+    ///  End of support notice: On May 20, 2026, Amazon Web Services will end support for
+    /// Amazon Web Services DMS Fleet Advisor;. After May 20, 2026, you will no longer be
+    /// able to access the Amazon Web Services DMS Fleet Advisor; console or Amazon Web Services
+    /// DMS Fleet Advisor; resources. For more information, see <a href="https://docs.aws.amazon.com/dms/latest/userguide/dms_fleet.advisor-end-of-support.html">Amazon
+    /// Web Services DMS Fleet Advisor end of support</a>. 
+    /// </para></important><para>
     /// Runs large-scale assessment (LSA) analysis on every Fleet Advisor collector in your
     /// account.
+    /// </para>
     /// </summary>
     [Cmdlet("Start", "DMSFleetAdvisorLsaAnalysis", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Database Migration Service RunFleetAdvisorLsaAnalysis API operation.", Operation = new[] {"RunFleetAdvisorLsaAnalysis"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.RunFleetAdvisorLsaAnalysisResponse))]
     [AWSCmdletOutput("System.String or Amazon.DatabaseMigrationService.Model.RunFleetAdvisorLsaAnalysisResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.RunFleetAdvisorLsaAnalysisResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.RunFleetAdvisorLsaAnalysisResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartDMSFleetAdvisorLsaAnalysisCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -64,9 +75,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -139,13 +154,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "RunFleetAdvisorLsaAnalysis");
             try
             {
-                #if DESKTOP
-                return client.RunFleetAdvisorLsaAnalysis(request);
-                #elif CORECLR
-                return client.RunFleetAdvisorLsaAnalysisAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RunFleetAdvisorLsaAnalysisAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

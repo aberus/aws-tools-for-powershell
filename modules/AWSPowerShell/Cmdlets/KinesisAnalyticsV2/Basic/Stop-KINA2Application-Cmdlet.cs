@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisAnalyticsV2;
 using Amazon.KinesisAnalyticsV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINA2
 {
     /// <summary>
@@ -36,21 +38,21 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
     /// You can use the <a>DescribeApplication</a> operation to find the application status.
     /// 
     /// </para><para>
-    /// Kinesis Data Analytics takes a snapshot when the application is stopped, unless <c>Force</c>
-    /// is set to <c>true</c>.
+    /// Managed Service for Apache Flink takes a snapshot when the application is stopped,
+    /// unless <c>Force</c> is set to <c>true</c>.
     /// </para>
     /// </summary>
     [Cmdlet("Stop", "KINA2Application", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
-    [OutputType("None")]
+    [OutputType("Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse")]
     [AWSCmdlet("Calls the Amazon Kinesis Analytics V2 StopApplication API operation.", Operation = new[] {"StopApplication"}, SelectReturnType = typeof(Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse))]
-    [AWSCmdletOutput("None or Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse",
-        "This cmdlet does not generate any output." +
-        "The service response (type Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+    [AWSCmdletOutput("Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse",
+        "This cmdlet returns an Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse object containing multiple properties."
     )]
     public partial class StopKINA2ApplicationCmdlet : AmazonKinesisAnalyticsV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationName
         /// <summary>
@@ -73,9 +75,10 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
         /// <summary>
         /// <para>
         /// <para>Set to <c>true</c> to force the application to stop. If you set <c>Force</c> to <c>true</c>,
-        /// Kinesis Data Analytics stops the application without taking a snapshot. </para><note><para>Force-stopping your application may lead to data loss or duplication. To prevent data
+        /// Managed Service for Apache Flink stops the application without taking a snapshot.
+        /// </para><note><para>Force-stopping your application may lead to data loss or duplication. To prevent data
         /// loss or duplicate processing of data during application restarts, we recommend you
-        /// to take frequent snapshots of your application.</para></note><para>You can only force stop a Flink-based Kinesis Data Analytics application. You can't
+        /// to take frequent snapshots of your application.</para></note><para>You can only force stop a Managed Service for Apache Flink application. You can't
         /// force stop a SQL-based Kinesis Data Analytics application.</para><para>The application must be in the <c>STARTING</c>, <c>UPDATING</c>, <c>STOPPING</c>,
         /// <c>AUTOSCALING</c>, or <c>RUNNING</c> status. </para>
         /// </para>
@@ -86,22 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
         
         #region Parameter Select
         /// <summary>
-        /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
+        /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
         /// Specifying -Select '*' will result in the cmdlet returning the whole service response (Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse).
+        /// Specifying the name of a property of type Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse will result in that property being returned.
         /// Specifying -Select '^ParameterName' will result in the cmdlet returning the selected cmdlet parameter value.
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -114,9 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationName), MyInvocation.BoundParameters);
@@ -130,21 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse, StopKINA2ApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationName = this.ApplicationName;
             #if MODULAR
             if (this.ApplicationName == null && ParameterWasBound(nameof(this.ApplicationName)))
@@ -215,13 +203,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Analytics V2", "StopApplication");
             try
             {
-                #if DESKTOP
-                return client.StopApplication(request);
-                #elif CORECLR
-                return client.StopApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StopApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -241,7 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
             public System.String ApplicationName { get; set; }
             public System.Boolean? ForceStop { get; set; }
             public System.Func<Amazon.KinesisAnalyticsV2.Model.StopApplicationResponse, StopKINA2ApplicationCmdlet, object> Select { get; set; } =
-                (response, cmdlet) => null;
+                (response, cmdlet) => response;
         }
         
     }

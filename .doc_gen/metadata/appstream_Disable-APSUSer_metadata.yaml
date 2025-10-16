@@ -1,0 +1,20 @@
+---
+appstream_DisableUser:
+  title: Use Disable-APSUSer
+  title_abbrev: Disable-APSUSer
+  synopsis: use Disable-APSUSer
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Disable-APSUSer
+        excerpts:
+        - snippet_files: []
+          description: '<emphasis role="bold">Example 1: This sample disables an user in USERPOOL</emphasis>'
+        - snippet_files:
+          - .doc_gen/snippet_files/appstream_Disable-APSUSer.1.1.ps1
+          description:
+  services:
+    appstream:
+      DisableUser:
+

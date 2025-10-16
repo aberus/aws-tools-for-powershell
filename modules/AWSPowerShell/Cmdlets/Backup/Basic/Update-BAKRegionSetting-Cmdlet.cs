@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [AWSCmdlet("Calls the AWS Backup UpdateRegionSettings API operation.", Operation = new[] {"UpdateRegionSettings"}, SelectReturnType = typeof(Amazon.Backup.Model.UpdateRegionSettingsResponse))]
     [AWSCmdletOutput("None or Amazon.Backup.Model.UpdateRegionSettingsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Backup.Model.UpdateRegionSettingsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Backup.Model.UpdateRegionSettingsResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateBAKRegionSettingCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceTypeManagementPreference
         /// <summary>
@@ -54,7 +57,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <para>Enables or disables full Backup management of backups for a resource type. To enable
         /// full Backup management for DynamoDB along with <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/advanced-ddb-backup.html">
         /// Backup's advanced DynamoDB backup features</a>, follow the procedure to <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/advanced-ddb-backup.html#advanced-ddb-backup-enable-cli">
-        /// enable advanced DynamoDB backup programmatically</a>.</para>
+        /// enable advanced DynamoDB backup programmatically</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -69,7 +76,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// EC2, or Amazon RDS, it will be included in the backup even if the opt-in is not enabled
         /// for that particular service. If both a resource type and tags are specified in a resource
         /// assignment, the resource type specified in the backup plan takes priority over the
-        /// tag condition. Service opt-in settings are disregarded in this situation.</para>
+        /// tag condition. Service opt-in settings are disregarded in this situation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,9 +107,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceTypeOptInPreference), MyInvocation.BoundParameters);
@@ -195,13 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "UpdateRegionSettings");
             try
             {
-                #if DESKTOP
-                return client.UpdateRegionSettings(request);
-                #elif CORECLR
-                return client.UpdateRegionSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRegionSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

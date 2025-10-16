@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ACMPCA;
 using Amazon.ACMPCA.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PCA
 {
     /// <summary>
@@ -48,7 +50,7 @@ namespace Amazon.PowerShell.Cmdlets.PCA
     /// policies for CRLs in Amazon S3</a>.
     /// </para></note><para>
     /// Amazon Web Services Private CA assets that are stored in Amazon S3 can be protected
-    /// with encryption. For more information, see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/PcaCreateCa.html#crl-encryption">Encrypting
+    /// with encryption. For more information, see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/crl-planning.html#crl-encryption">Encrypting
     /// Your CRLs</a>.
     /// </para>
     /// </summary>
@@ -57,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.PCA
     [AWSCmdlet("Calls the AWS Certificate Manager Private Certificate Authority CreateCertificateAuthority API operation.", Operation = new[] {"CreateCertificateAuthority"}, SelectReturnType = typeof(Amazon.ACMPCA.Model.CreateCertificateAuthorityResponse))]
     [AWSCmdletOutput("System.String or Amazon.ACMPCA.Model.CreateCertificateAuthorityResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ACMPCA.Model.CreateCertificateAuthorityResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ACMPCA.Model.CreateCertificateAuthorityResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPCACertificateAuthorityCmdlet : AmazonACMPCAClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateAuthorityConfiguration
         /// <summary>
@@ -117,12 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         #region Parameter KeyStorageSecurityStandard
         /// <summary>
         /// <para>
-        /// <para>Specifies a cryptographic key management compliance standard used for handling CA
-        /// keys.</para><para>Default: FIPS_140_2_LEVEL_3_OR_HIGHER</para><note><para>Some Amazon Web Services Regions do not support the default. When creating a CA in
-        /// these Regions, you must provide <c>FIPS_140_2_LEVEL_2_OR_HIGHER</c> as the argument
-        /// for <c>KeyStorageSecurityStandard</c>. Failure to do this results in an <c>InvalidArgsException</c>
-        /// with the message, "A certificate authority cannot be created in this region with the
-        /// specified security standard."</para><para>For information about security standard support in various Regions, see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/data-protection.html#private-keys">Storage
+        /// <para>Specifies a cryptographic key management compliance standard for handling and protecting
+        /// CA keys.</para><para>Default: FIPS_140_2_LEVEL_3_OR_HIGHER</para><note><para>Some Amazon Web Services Regions don't support the default value. When you create
+        /// a CA in these Regions, you must use <c>CCPC_LEVEL_1_OR_HIGHER</c> for the <c>KeyStorageSecurityStandard</c>
+        /// parameter. If you don't, the operation returns an <c>InvalidArgsException</c> with
+        /// this message: "A certificate authority cannot be created in this region with the specified
+        /// security standard."</para><para>For information about security standard support in different Amazon Web Services Regions,
+        /// see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/data-protection.html#private-keys">Storage
         /// and security compliance of Amazon Web Services Private CA private keys</a>.</para></note>
         /// </para>
         /// </summary>
@@ -134,15 +138,15 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         #region Parameter RevocationConfiguration
         /// <summary>
         /// <para>
-        /// <para>Contains information to enable Online Certificate Status Protocol (OCSP) support,
-        /// to enable a certificate revocation list (CRL), to enable both, or to enable neither.
-        /// The default is for both certificate validation mechanisms to be disabled. </para><note><para>The following requirements apply to revocation configurations.</para><ul><li><para>A configuration disabling CRLs or OCSP must contain only the <c>Enabled=False</c>
+        /// <para>Contains information to enable support for Online Certificate Status Protocol (OCSP),
+        /// certificate revocation list (CRL), both protocols, or neither. By default, both certificate
+        /// validation mechanisms are disabled.</para><para>The following requirements apply to revocation configurations.</para><ul><li><para>A configuration disabling CRLs or OCSP must contain only the <c>Enabled=False</c>
         /// parameter, and will fail if other parameters such as <c>CustomCname</c> or <c>ExpirationInDays</c>
         /// are included.</para></li><li><para>In a CRL configuration, the <c>S3BucketName</c> parameter must conform to <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">Amazon
         /// S3 bucket naming rules</a>.</para></li><li><para>A configuration containing a custom Canonical Name (CNAME) parameter for CRLs or OCSP
         /// must conform to <a href="https://www.ietf.org/rfc/rfc2396.txt">RFC2396</a> restrictions
         /// on the use of special characters in a CNAME. </para></li><li><para>In a CRL or OCSP configuration, the value of a CNAME parameter must not include a
-        /// protocol prefix such as "http://" or "https://".</para></li></ul></note><para> For more information, see the <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_OcspConfiguration.html">OcspConfiguration</a>
+        /// protocol prefix such as "http://" or "https://".</para></li></ul><para> For more information, see the <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_OcspConfiguration.html">OcspConfiguration</a>
         /// and <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_CrlConfiguration.html">CrlConfiguration</a>
         /// types.</para>
         /// </para>
@@ -157,7 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         /// <para>Key-value pairs that will be attached to the new private CA. You can associate up
         /// to 50 tags with a private CA. For information using tags with IAM to manage permissions,
         /// see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_iam-tags.html">Controlling
-        /// Access Using IAM Tags</a>.</para>
+        /// Access Using IAM Tags</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,9 +208,13 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -325,13 +337,7 @@ namespace Amazon.PowerShell.Cmdlets.PCA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager Private Certificate Authority", "CreateCertificateAuthority");
             try
             {
-                #if DESKTOP
-                return client.CreateCertificateAuthority(request);
-                #elif CORECLR
-                return client.CreateCertificateAuthorityAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCertificateAuthorityAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

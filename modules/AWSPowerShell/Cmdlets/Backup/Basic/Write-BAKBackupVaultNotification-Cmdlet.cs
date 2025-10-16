@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -35,21 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [AWSCmdlet("Calls the AWS Backup PutBackupVaultNotifications API operation.", Operation = new[] {"PutBackupVaultNotifications"}, SelectReturnType = typeof(Amazon.Backup.Model.PutBackupVaultNotificationsResponse))]
     [AWSCmdletOutput("None or Amazon.Backup.Model.PutBackupVaultNotificationsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Backup.Model.PutBackupVaultNotificationsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Backup.Model.PutBackupVaultNotificationsResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteBAKBackupVaultNotificationCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupVaultEvent
         /// <summary>
         /// <para>
         /// <para>An array of events that indicate the status of jobs to back up resources to the backup
-        /// vault.</para><para>For common use cases and code samples, see <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/sns-notifications.html">Using
-        /// Amazon SNS to track Backup events</a>.</para><para>The following events are supported:</para><ul><li><para><c>BACKUP_JOB_STARTED</c> | <c>BACKUP_JOB_COMPLETED</c></para></li><li><para><c>COPY_JOB_STARTED</c> | <c>COPY_JOB_SUCCESSFUL</c> | <c>COPY_JOB_FAILED</c></para></li><li><para><c>RESTORE_JOB_STARTED</c> | <c>RESTORE_JOB_COMPLETED</c> | <c>RECOVERY_POINT_MODIFIED</c></para></li><li><para><c>S3_BACKUP_OBJECT_FAILED</c> | <c>S3_RESTORE_OBJECT_FAILED</c></para></li></ul><note><para>The list below shows items that are deprecated events (for reference) and are no longer
-        /// in use. They are no longer supported and will not return statuses or notifications.
-        /// Refer to the list above for current supported events.</para></note>
+        /// vault. For the list of supported events, common use cases, and code samples, see <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/backup-notifications.html">Notification
+        /// options with Backup</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -69,7 +74,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <para>
         /// <para>The name of a logical container where backups are stored. Backup vaults are identified
         /// by names that are unique to the account used to create them and the Amazon Web Services
-        /// Region where they are created. They consist of lowercase letters, numbers, and hyphens.</para>
+        /// Region where they are created.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -111,16 +116,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BackupVaultName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -131,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BackupVaultName), MyInvocation.BoundParameters);
@@ -147,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.PutBackupVaultNotificationsResponse, WriteBAKBackupVaultNotificationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BackupVaultName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.BackupVaultEvent != null)
             {
                 context.BackupVaultEvent = new List<System.String>(this.BackupVaultEvent);
@@ -252,13 +241,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "PutBackupVaultNotifications");
             try
             {
-                #if DESKTOP
-                return client.PutBackupVaultNotifications(request);
-                #elif CORECLR
-                return client.PutBackupVaultNotificationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutBackupVaultNotificationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53RecoveryReadiness;
 using Amazon.Route53RecoveryReadiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PD
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.PD
     [OutputType("Amazon.Route53RecoveryReadiness.Model.GetArchitectureRecommendationsResponse")]
     [AWSCmdlet("Calls the AWS Route53 Recovery Readiness GetArchitectureRecommendations API operation.", Operation = new[] {"GetArchitectureRecommendations"}, SelectReturnType = typeof(Amazon.Route53RecoveryReadiness.Model.GetArchitectureRecommendationsResponse))]
     [AWSCmdletOutput("Amazon.Route53RecoveryReadiness.Model.GetArchitectureRecommendationsResponse",
-        "This cmdlet returns an Amazon.Route53RecoveryReadiness.Model.GetArchitectureRecommendationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53RecoveryReadiness.Model.GetArchitectureRecommendationsResponse object containing multiple properties."
     )]
     public partial class GetPDArchitectureRecommendationCmdlet : AmazonRoute53RecoveryReadinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RecoveryGroupName
         /// <summary>
@@ -91,19 +94,13 @@ namespace Amazon.PowerShell.Cmdlets.PD
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RecoveryGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RecoveryGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RecoveryGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -111,21 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.PD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Route53RecoveryReadiness.Model.GetArchitectureRecommendationsResponse, GetPDArchitectureRecommendationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RecoveryGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
             context.RecoveryGroupName = this.RecoveryGroupName;
@@ -201,13 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.PD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Route53 Recovery Readiness", "GetArchitectureRecommendations");
             try
             {
-                #if DESKTOP
-                return client.GetArchitectureRecommendations(request);
-                #elif CORECLR
-                return client.GetArchitectureRecommendationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetArchitectureRecommendationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

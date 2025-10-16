@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConnect;
 using Amazon.MediaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMCN
 {
     /// <summary>
@@ -36,30 +38,59 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
     [AWSCmdlet("Calls the AWS Elemental MediaConnect CreateFlow API operation.", Operation = new[] {"CreateFlow"}, SelectReturnType = typeof(Amazon.MediaConnect.Model.CreateFlowResponse))]
     [AWSCmdletOutput("Amazon.MediaConnect.Model.Flow or Amazon.MediaConnect.Model.CreateFlowResponse",
         "This cmdlet returns an Amazon.MediaConnect.Model.Flow object.",
-        "The service call response (type Amazon.MediaConnect.Model.CreateFlowResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaConnect.Model.CreateFlowResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEMCNFlowCmdlet : AmazonMediaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter SourceMonitoringConfig_AudioMonitoringSetting
+        /// <summary>
+        /// <para>
+        /// <para> Contains the settings for audio stream metrics monitoring.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceMonitoringConfig_AudioMonitoringSettings")]
+        public Amazon.MediaConnect.Model.AudioMonitoringSetting[] SourceMonitoringConfig_AudioMonitoringSetting { get; set; }
+        #endregion
         
         #region Parameter AvailabilityZone
         /// <summary>
         /// <para>
-        /// The Availability Zone that you want to
-        /// create the flow in. These options are limited to the Availability Zones within the
-        /// current AWS Region.
+        /// <para> The Availability Zone that you want to create the flow in. These options are limited
+        /// to the Availability Zones within the current Amazon Web Services Region.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AvailabilityZone { get; set; }
         #endregion
         
+        #region Parameter SourceMonitoringConfig_ContentQualityAnalysisState
+        /// <summary>
+        /// <para>
+        /// <para> Indicates whether content quality analysis is enabled or disabled.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaConnect.ContentQualityAnalysisState")]
+        public Amazon.MediaConnect.ContentQualityAnalysisState SourceMonitoringConfig_ContentQualityAnalysisState { get; set; }
+        #endregion
+        
         #region Parameter Entitlement
         /// <summary>
         /// <para>
-        /// The entitlements that you want to grant on
-        /// a flow.
+        /// <para> The entitlements that you want to grant on a flow.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -70,9 +101,9 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter SourceFailoverConfig_FailoverMode
         /// <summary>
         /// <para>
-        /// The type of failover you choose for this
-        /// flow. MERGE combines the source streams into a single stream, allowing graceful recovery
-        /// from any single-source loss. FAILOVER allows switching between different streams.
+        /// <para> The type of failover you choose for this flow. MERGE combines the source streams
+        /// into a single stream, allowing graceful recovery from any single-source loss. FAILOVER
+        /// allows switching between different streams.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -80,11 +111,48 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public Amazon.MediaConnect.FailoverMode SourceFailoverConfig_FailoverMode { get; set; }
         #endregion
         
+        #region Parameter FlowSize
+        /// <summary>
+        /// <para>
+        /// <para> Determines the processing capacity and feature set of the flow. Set this optional
+        /// parameter to <c>LARGE</c> if you want to enable NDI outputs on the flow. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaConnect.FlowSize")]
+        public Amazon.MediaConnect.FlowSize FlowSize { get; set; }
+        #endregion
+        
+        #region Parameter FlowTag
+        /// <summary>
+        /// <para>
+        /// <para> The key-value pairs that can be used to tag and organize the flow. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FlowTags")]
+        public System.Collections.Hashtable FlowTag { get; set; }
+        #endregion
+        
+        #region Parameter NdiConfig_MachineName
+        /// <summary>
+        /// <para>
+        /// <para>A prefix for the names of the NDI sources that the flow creates. If a custom name
+        /// isn't specified, MediaConnect generates a unique 12-character ID as the prefix. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NdiConfig_MachineName { get; set; }
+        #endregion
+        
         #region Parameter Maintenance_MaintenanceDay
         /// <summary>
         /// <para>
-        /// A day of a week when the maintenance will
-        /// happen. Use Monday/Tuesday/Wednesday/Thursday/Friday/Saturday/Sunday.
+        /// <para> A day of a week when the maintenance will happen. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,9 +163,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Maintenance_MaintenanceStartHour
         /// <summary>
         /// <para>
-        /// UTC time when the maintenance will
-        /// happen. Use 24-hour HH:MM format. Minutes must be 00. Example: 13:00. The default
-        /// value is 02:00.
+        /// <para> UTC time when the maintenance will happen. </para><para>Use 24-hour HH:MM format. </para><para>Minutes must be 00. </para><para>Example: 13:00. </para><para>The default value is 02:00.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,8 +173,12 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter MediaStream
         /// <summary>
         /// <para>
-        /// The media streams that you want to add to
-        /// the flow. You can associate these media streams with sources and outputs on the flow.
+        /// <para> The media streams that you want to add to the flow. You can associate these media
+        /// streams with sources and outputs on the flow.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -119,7 +189,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// The name of the flow.
+        /// <para> The name of the flow.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -133,10 +203,42 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter NdiConfig_NdiDiscoveryServer
+        /// <summary>
+        /// <para>
+        /// <para>A list of up to three NDI discovery server configurations. While not required by the
+        /// API, this configuration is necessary for NDI functionality to work properly. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("NdiConfig_NdiDiscoveryServers")]
+        public Amazon.MediaConnect.Model.NdiDiscoveryServerConfig[] NdiConfig_NdiDiscoveryServer { get; set; }
+        #endregion
+        
+        #region Parameter NdiConfig_NdiState
+        /// <summary>
+        /// <para>
+        /// <para>A setting that controls whether NDI outputs can be used in the flow. Must be ENABLED
+        /// to add NDI outputs. Default is DISABLED. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaConnect.NdiState")]
+        public Amazon.MediaConnect.NdiState NdiConfig_NdiState { get; set; }
+        #endregion
+        
         #region Parameter Output
         /// <summary>
         /// <para>
-        /// The outputs that you want to add to this flow.
+        /// <para> The outputs that you want to add to this flow.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,8 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter SourcePriority_PrimarySource
         /// <summary>
         /// <para>
-        /// The name of the source you choose as the
-        /// primary source for this flow.
+        /// <para> The name of the source you choose as the primary source for this flow.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter SourceFailoverConfig_RecoveryWindow
         /// <summary>
         /// <para>
-        /// Search window time to look for dash-7 packets
+        /// <para> Search window time to look for dash-7 packets.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,7 +270,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Source
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The sources that are assigned to the flow. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,7 +285,8 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter SourceFailoverConfig_State
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The state of source failover on the flow. If the state is inactive, the flow can have
+        /// only one source. If the state is active, the flow can have one or two sources. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -188,10 +294,40 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public Amazon.MediaConnect.State SourceFailoverConfig_State { get; set; }
         #endregion
         
+        #region Parameter SourceMonitoringConfig_ThumbnailState
+        /// <summary>
+        /// <para>
+        /// <para> Indicates whether thumbnails are enabled or disabled.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaConnect.ThumbnailState")]
+        public Amazon.MediaConnect.ThumbnailState SourceMonitoringConfig_ThumbnailState { get; set; }
+        #endregion
+        
+        #region Parameter SourceMonitoringConfig_VideoMonitoringSetting
+        /// <summary>
+        /// <para>
+        /// <para> Contains the settings for video stream metrics monitoring.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceMonitoringConfig_VideoMonitoringSettings")]
+        public Amazon.MediaConnect.Model.VideoMonitoringSetting[] SourceMonitoringConfig_VideoMonitoringSetting { get; set; }
+        #endregion
+        
         #region Parameter VpcInterface
         /// <summary>
         /// <para>
-        /// The VPC interfaces you want on the flow.
+        /// <para> The VPC interfaces you want on the flow.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,16 +346,6 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public string Select { get; set; } = "Flow";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -230,9 +356,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -246,25 +376,24 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConnect.Model.CreateFlowResponse, NewEMCNFlowCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AvailabilityZone = this.AvailabilityZone;
             if (this.Entitlement != null)
             {
                 context.Entitlement = new List<Amazon.MediaConnect.Model.GrantEntitlementRequest>(this.Entitlement);
+            }
+            context.FlowSize = this.FlowSize;
+            if (this.FlowTag != null)
+            {
+                context.FlowTag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.FlowTag.Keys)
+                {
+                    context.FlowTag.Add((String)hashKey, (System.String)(this.FlowTag[hashKey]));
+                }
             }
             context.Maintenance_MaintenanceDay = this.Maintenance_MaintenanceDay;
             context.Maintenance_MaintenanceStartHour = this.Maintenance_MaintenanceStartHour;
@@ -279,6 +408,12 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.NdiConfig_MachineName = this.NdiConfig_MachineName;
+            if (this.NdiConfig_NdiDiscoveryServer != null)
+            {
+                context.NdiConfig_NdiDiscoveryServer = new List<Amazon.MediaConnect.Model.NdiDiscoveryServerConfig>(this.NdiConfig_NdiDiscoveryServer);
+            }
+            context.NdiConfig_NdiState = this.NdiConfig_NdiState;
             if (this.Output != null)
             {
                 context.Output = new List<Amazon.MediaConnect.Model.AddOutputRequest>(this.Output);
@@ -287,6 +422,16 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             context.SourceFailoverConfig_RecoveryWindow = this.SourceFailoverConfig_RecoveryWindow;
             context.SourcePriority_PrimarySource = this.SourcePriority_PrimarySource;
             context.SourceFailoverConfig_State = this.SourceFailoverConfig_State;
+            if (this.SourceMonitoringConfig_AudioMonitoringSetting != null)
+            {
+                context.SourceMonitoringConfig_AudioMonitoringSetting = new List<Amazon.MediaConnect.Model.AudioMonitoringSetting>(this.SourceMonitoringConfig_AudioMonitoringSetting);
+            }
+            context.SourceMonitoringConfig_ContentQualityAnalysisState = this.SourceMonitoringConfig_ContentQualityAnalysisState;
+            context.SourceMonitoringConfig_ThumbnailState = this.SourceMonitoringConfig_ThumbnailState;
+            if (this.SourceMonitoringConfig_VideoMonitoringSetting != null)
+            {
+                context.SourceMonitoringConfig_VideoMonitoringSetting = new List<Amazon.MediaConnect.Model.VideoMonitoringSetting>(this.SourceMonitoringConfig_VideoMonitoringSetting);
+            }
             if (this.Source != null)
             {
                 context.Source = new List<Amazon.MediaConnect.Model.SetSourceRequest>(this.Source);
@@ -318,6 +463,14 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             if (cmdletContext.Entitlement != null)
             {
                 request.Entitlements = cmdletContext.Entitlement;
+            }
+            if (cmdletContext.FlowSize != null)
+            {
+                request.FlowSize = cmdletContext.FlowSize;
+            }
+            if (cmdletContext.FlowTag != null)
+            {
+                request.FlowTags = cmdletContext.FlowTag;
             }
             
              // populate Maintenance
@@ -355,6 +508,45 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            
+             // populate NdiConfig
+            var requestNdiConfigIsNull = true;
+            request.NdiConfig = new Amazon.MediaConnect.Model.NdiConfig();
+            System.String requestNdiConfig_ndiConfig_MachineName = null;
+            if (cmdletContext.NdiConfig_MachineName != null)
+            {
+                requestNdiConfig_ndiConfig_MachineName = cmdletContext.NdiConfig_MachineName;
+            }
+            if (requestNdiConfig_ndiConfig_MachineName != null)
+            {
+                request.NdiConfig.MachineName = requestNdiConfig_ndiConfig_MachineName;
+                requestNdiConfigIsNull = false;
+            }
+            List<Amazon.MediaConnect.Model.NdiDiscoveryServerConfig> requestNdiConfig_ndiConfig_NdiDiscoveryServer = null;
+            if (cmdletContext.NdiConfig_NdiDiscoveryServer != null)
+            {
+                requestNdiConfig_ndiConfig_NdiDiscoveryServer = cmdletContext.NdiConfig_NdiDiscoveryServer;
+            }
+            if (requestNdiConfig_ndiConfig_NdiDiscoveryServer != null)
+            {
+                request.NdiConfig.NdiDiscoveryServers = requestNdiConfig_ndiConfig_NdiDiscoveryServer;
+                requestNdiConfigIsNull = false;
+            }
+            Amazon.MediaConnect.NdiState requestNdiConfig_ndiConfig_NdiState = null;
+            if (cmdletContext.NdiConfig_NdiState != null)
+            {
+                requestNdiConfig_ndiConfig_NdiState = cmdletContext.NdiConfig_NdiState;
+            }
+            if (requestNdiConfig_ndiConfig_NdiState != null)
+            {
+                request.NdiConfig.NdiState = requestNdiConfig_ndiConfig_NdiState;
+                requestNdiConfigIsNull = false;
+            }
+             // determine if request.NdiConfig should be set to null
+            if (requestNdiConfigIsNull)
+            {
+                request.NdiConfig = null;
             }
             if (cmdletContext.Output != null)
             {
@@ -424,6 +616,55 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             {
                 request.SourceFailoverConfig = null;
             }
+            
+             // populate SourceMonitoringConfig
+            var requestSourceMonitoringConfigIsNull = true;
+            request.SourceMonitoringConfig = new Amazon.MediaConnect.Model.MonitoringConfig();
+            List<Amazon.MediaConnect.Model.AudioMonitoringSetting> requestSourceMonitoringConfig_sourceMonitoringConfig_AudioMonitoringSetting = null;
+            if (cmdletContext.SourceMonitoringConfig_AudioMonitoringSetting != null)
+            {
+                requestSourceMonitoringConfig_sourceMonitoringConfig_AudioMonitoringSetting = cmdletContext.SourceMonitoringConfig_AudioMonitoringSetting;
+            }
+            if (requestSourceMonitoringConfig_sourceMonitoringConfig_AudioMonitoringSetting != null)
+            {
+                request.SourceMonitoringConfig.AudioMonitoringSettings = requestSourceMonitoringConfig_sourceMonitoringConfig_AudioMonitoringSetting;
+                requestSourceMonitoringConfigIsNull = false;
+            }
+            Amazon.MediaConnect.ContentQualityAnalysisState requestSourceMonitoringConfig_sourceMonitoringConfig_ContentQualityAnalysisState = null;
+            if (cmdletContext.SourceMonitoringConfig_ContentQualityAnalysisState != null)
+            {
+                requestSourceMonitoringConfig_sourceMonitoringConfig_ContentQualityAnalysisState = cmdletContext.SourceMonitoringConfig_ContentQualityAnalysisState;
+            }
+            if (requestSourceMonitoringConfig_sourceMonitoringConfig_ContentQualityAnalysisState != null)
+            {
+                request.SourceMonitoringConfig.ContentQualityAnalysisState = requestSourceMonitoringConfig_sourceMonitoringConfig_ContentQualityAnalysisState;
+                requestSourceMonitoringConfigIsNull = false;
+            }
+            Amazon.MediaConnect.ThumbnailState requestSourceMonitoringConfig_sourceMonitoringConfig_ThumbnailState = null;
+            if (cmdletContext.SourceMonitoringConfig_ThumbnailState != null)
+            {
+                requestSourceMonitoringConfig_sourceMonitoringConfig_ThumbnailState = cmdletContext.SourceMonitoringConfig_ThumbnailState;
+            }
+            if (requestSourceMonitoringConfig_sourceMonitoringConfig_ThumbnailState != null)
+            {
+                request.SourceMonitoringConfig.ThumbnailState = requestSourceMonitoringConfig_sourceMonitoringConfig_ThumbnailState;
+                requestSourceMonitoringConfigIsNull = false;
+            }
+            List<Amazon.MediaConnect.Model.VideoMonitoringSetting> requestSourceMonitoringConfig_sourceMonitoringConfig_VideoMonitoringSetting = null;
+            if (cmdletContext.SourceMonitoringConfig_VideoMonitoringSetting != null)
+            {
+                requestSourceMonitoringConfig_sourceMonitoringConfig_VideoMonitoringSetting = cmdletContext.SourceMonitoringConfig_VideoMonitoringSetting;
+            }
+            if (requestSourceMonitoringConfig_sourceMonitoringConfig_VideoMonitoringSetting != null)
+            {
+                request.SourceMonitoringConfig.VideoMonitoringSettings = requestSourceMonitoringConfig_sourceMonitoringConfig_VideoMonitoringSetting;
+                requestSourceMonitoringConfigIsNull = false;
+            }
+             // determine if request.SourceMonitoringConfig should be set to null
+            if (requestSourceMonitoringConfigIsNull)
+            {
+                request.SourceMonitoringConfig = null;
+            }
             if (cmdletContext.Source != null)
             {
                 request.Sources = cmdletContext.Source;
@@ -470,13 +711,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConnect", "CreateFlow");
             try
             {
-                #if DESKTOP
-                return client.CreateFlow(request);
-                #elif CORECLR
-                return client.CreateFlowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFlowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -495,15 +730,24 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         {
             public System.String AvailabilityZone { get; set; }
             public List<Amazon.MediaConnect.Model.GrantEntitlementRequest> Entitlement { get; set; }
+            public Amazon.MediaConnect.FlowSize FlowSize { get; set; }
+            public Dictionary<System.String, System.String> FlowTag { get; set; }
             public Amazon.MediaConnect.MaintenanceDay Maintenance_MaintenanceDay { get; set; }
             public System.String Maintenance_MaintenanceStartHour { get; set; }
             public List<Amazon.MediaConnect.Model.AddMediaStreamRequest> MediaStream { get; set; }
             public System.String Name { get; set; }
+            public System.String NdiConfig_MachineName { get; set; }
+            public List<Amazon.MediaConnect.Model.NdiDiscoveryServerConfig> NdiConfig_NdiDiscoveryServer { get; set; }
+            public Amazon.MediaConnect.NdiState NdiConfig_NdiState { get; set; }
             public List<Amazon.MediaConnect.Model.AddOutputRequest> Output { get; set; }
             public Amazon.MediaConnect.FailoverMode SourceFailoverConfig_FailoverMode { get; set; }
             public System.Int32? SourceFailoverConfig_RecoveryWindow { get; set; }
             public System.String SourcePriority_PrimarySource { get; set; }
             public Amazon.MediaConnect.State SourceFailoverConfig_State { get; set; }
+            public List<Amazon.MediaConnect.Model.AudioMonitoringSetting> SourceMonitoringConfig_AudioMonitoringSetting { get; set; }
+            public Amazon.MediaConnect.ContentQualityAnalysisState SourceMonitoringConfig_ContentQualityAnalysisState { get; set; }
+            public Amazon.MediaConnect.ThumbnailState SourceMonitoringConfig_ThumbnailState { get; set; }
+            public List<Amazon.MediaConnect.Model.VideoMonitoringSetting> SourceMonitoringConfig_VideoMonitoringSetting { get; set; }
             public List<Amazon.MediaConnect.Model.SetSourceRequest> Source { get; set; }
             public List<Amazon.MediaConnect.Model.VpcInterfaceRequest> VpcInterface { get; set; }
             public System.Func<Amazon.MediaConnect.Model.CreateFlowResponse, NewEMCNFlowCmdlet, object> Select { get; set; } =

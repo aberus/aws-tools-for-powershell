@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -39,12 +41,36 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateCluster API operation.", Operation = new[] {"CreateCluster"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateClusterResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateClusterResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMClusterCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AutoScaling_AutoScalerType
+        /// <summary>
+        /// <para>
+        /// <para>The type of autoscaler to use. Currently supported value is <c>Karpenter</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.ClusterAutoScalerType")]
+        public Amazon.SageMaker.ClusterAutoScalerType AutoScaling_AutoScalerType { get; set; }
+        #endregion
+        
+        #region Parameter Eks_ClusterArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the Amazon EKS cluster associated with the SageMaker
+        /// HyperPod cluster.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Orchestrator_Eks_ClusterArn")]
+        public System.String Eks_ClusterArn { get; set; }
+        #endregion
         
         #region Parameter ClusterName
         /// <summary>
@@ -63,29 +89,125 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.String ClusterName { get; set; }
         #endregion
         
+        #region Parameter ClusterRole
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role that HyperPod assumes to perform cluster
+        /// autoscaling operations. This role must have permissions for <c>sagemaker:BatchAddClusterNodes</c>
+        /// and <c>sagemaker:BatchDeleteClusterNodes</c>. This is only required when autoscaling
+        /// is enabled and when HyperPod is performing autoscaling operations.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ClusterRole { get; set; }
+        #endregion
+        
         #region Parameter InstanceGroup
         /// <summary>
         /// <para>
-        /// <para>The instance groups to be created in the SageMaker HyperPod cluster.</para>
+        /// <para>The instance groups to be created in the SageMaker HyperPod cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("InstanceGroups")]
         public Amazon.SageMaker.Model.ClusterInstanceGroupSpecification[] InstanceGroup { get; set; }
+        #endregion
+        
+        #region Parameter TieredStorageConfig_InstanceMemoryAllocationPercentage
+        /// <summary>
+        /// <para>
+        /// <para>The percentage (int) of cluster memory to allocate for checkpointing.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? TieredStorageConfig_InstanceMemoryAllocationPercentage { get; set; }
+        #endregion
+        
+        #region Parameter AutoScaling_Mode
+        /// <summary>
+        /// <para>
+        /// <para>Describes whether autoscaling is enabled or disabled for the cluster. Valid values
+        /// are <c>Enable</c> and <c>Disable</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.ClusterAutoScalingMode")]
+        public Amazon.SageMaker.ClusterAutoScalingMode AutoScaling_Mode { get; set; }
+        #endregion
+        
+        #region Parameter TieredStorageConfig_Mode
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether managed tier checkpointing is enabled or disabled for the HyperPod
+        /// cluster. When set to <c>Enable</c>, the system installs a memory management daemon
+        /// that provides disaggregated memory as a service for checkpoint storage. When set to
+        /// <c>Disable</c>, the feature is turned off and the memory management daemon is removed
+        /// from the cluster.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.ClusterConfigMode")]
+        public Amazon.SageMaker.ClusterConfigMode TieredStorageConfig_Mode { get; set; }
+        #endregion
+        
+        #region Parameter NodeProvisioningMode
+        /// <summary>
+        /// <para>
+        /// <para>The mode for provisioning nodes in the cluster. You can specify the following modes:</para><ul><li><para><b>Continuous</b>: Scaling behavior that enables 1) concurrent operation execution
+        /// within instance groups, 2) continuous retry mechanisms for failed operations, 3) enhanced
+        /// customer visibility into cluster events through detailed event streams, 4) partial
+        /// provisioning capabilities. Your clusters and instance groups remain <c>InService</c>
+        /// while scaling. This mode is only supported for EKS orchestrated clusters.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.ClusterNodeProvisioningMode")]
+        public Amazon.SageMaker.ClusterNodeProvisioningMode NodeProvisioningMode { get; set; }
+        #endregion
+        
+        #region Parameter NodeRecovery
+        /// <summary>
+        /// <para>
+        /// <para>The node recovery mode for the SageMaker HyperPod cluster. When set to <c>Automatic</c>,
+        /// SageMaker HyperPod will automatically reboot or replace faulty nodes when issues are
+        /// detected. When set to <c>None</c>, cluster administrators will need to manually manage
+        /// any faulty cluster instances.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.ClusterNodeRecovery")]
+        public Amazon.SageMaker.ClusterNodeRecovery NodeRecovery { get; set; }
+        #endregion
+        
+        #region Parameter RestrictedInstanceGroup
+        /// <summary>
+        /// <para>
+        /// <para>The specialized instance groups for training models like Amazon Nova to be created
+        /// in the SageMaker HyperPod cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RestrictedInstanceGroups")]
+        public Amazon.SageMaker.Model.ClusterRestrictedInstanceGroupSpecification[] RestrictedInstanceGroup { get; set; }
         #endregion
         
         #region Parameter VpcConfig_SecurityGroupId
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs, in the form <c>sg-xxxxxxxx</c>. Specify the security groups
-        /// for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,7 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The ID of the subnets in the VPC to which you want to connect your training job or
         /// model. For information about the availability of specific instance types, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/instance-types-az.html">Supported
-        /// Instance Types and Availability Zones</a>.</para>
+        /// Instance Types and Availability Zones</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,7 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// resource. You can add tags to your cluster in the same way you add them in other Amazon
         /// Web Services services that support tagging. To learn more about tagging Amazon Web
         /// Services resources in general, see <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/tagging.html">Tagging
-        /// Amazon Web Services Resources User Guide</a>.</para>
+        /// Amazon Web Services Resources User Guide</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,16 +262,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "ClusterArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +272,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterName), MyInvocation.BoundParameters);
@@ -168,21 +292,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateClusterResponse, NewSMClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.AutoScaling_AutoScalerType = this.AutoScaling_AutoScalerType;
+            context.AutoScaling_Mode = this.AutoScaling_Mode;
             context.ClusterName = this.ClusterName;
             #if MODULAR
             if (this.ClusterName == null && ParameterWasBound(nameof(this.ClusterName)))
@@ -190,20 +306,24 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 WriteWarning("You are passing $null as a value for parameter ClusterName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ClusterRole = this.ClusterRole;
             if (this.InstanceGroup != null)
             {
                 context.InstanceGroup = new List<Amazon.SageMaker.Model.ClusterInstanceGroupSpecification>(this.InstanceGroup);
             }
-            #if MODULAR
-            if (this.InstanceGroup == null && ParameterWasBound(nameof(this.InstanceGroup)))
+            context.NodeProvisioningMode = this.NodeProvisioningMode;
+            context.NodeRecovery = this.NodeRecovery;
+            context.Eks_ClusterArn = this.Eks_ClusterArn;
+            if (this.RestrictedInstanceGroup != null)
             {
-                WriteWarning("You are passing $null as a value for parameter InstanceGroup which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+                context.RestrictedInstanceGroup = new List<Amazon.SageMaker.Model.ClusterRestrictedInstanceGroupSpecification>(this.RestrictedInstanceGroup);
             }
-            #endif
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.SageMaker.Model.Tag>(this.Tag);
             }
+            context.TieredStorageConfig_InstanceMemoryAllocationPercentage = this.TieredStorageConfig_InstanceMemoryAllocationPercentage;
+            context.TieredStorageConfig_Mode = this.TieredStorageConfig_Mode;
             if (this.VpcConfig_SecurityGroupId != null)
             {
                 context.VpcConfig_SecurityGroupId = new List<System.String>(this.VpcConfig_SecurityGroupId);
@@ -228,17 +348,125 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // create request
             var request = new Amazon.SageMaker.Model.CreateClusterRequest();
             
+            
+             // populate AutoScaling
+            var requestAutoScalingIsNull = true;
+            request.AutoScaling = new Amazon.SageMaker.Model.ClusterAutoScalingConfig();
+            Amazon.SageMaker.ClusterAutoScalerType requestAutoScaling_autoScaling_AutoScalerType = null;
+            if (cmdletContext.AutoScaling_AutoScalerType != null)
+            {
+                requestAutoScaling_autoScaling_AutoScalerType = cmdletContext.AutoScaling_AutoScalerType;
+            }
+            if (requestAutoScaling_autoScaling_AutoScalerType != null)
+            {
+                request.AutoScaling.AutoScalerType = requestAutoScaling_autoScaling_AutoScalerType;
+                requestAutoScalingIsNull = false;
+            }
+            Amazon.SageMaker.ClusterAutoScalingMode requestAutoScaling_autoScaling_Mode = null;
+            if (cmdletContext.AutoScaling_Mode != null)
+            {
+                requestAutoScaling_autoScaling_Mode = cmdletContext.AutoScaling_Mode;
+            }
+            if (requestAutoScaling_autoScaling_Mode != null)
+            {
+                request.AutoScaling.Mode = requestAutoScaling_autoScaling_Mode;
+                requestAutoScalingIsNull = false;
+            }
+             // determine if request.AutoScaling should be set to null
+            if (requestAutoScalingIsNull)
+            {
+                request.AutoScaling = null;
+            }
             if (cmdletContext.ClusterName != null)
             {
                 request.ClusterName = cmdletContext.ClusterName;
+            }
+            if (cmdletContext.ClusterRole != null)
+            {
+                request.ClusterRole = cmdletContext.ClusterRole;
             }
             if (cmdletContext.InstanceGroup != null)
             {
                 request.InstanceGroups = cmdletContext.InstanceGroup;
             }
+            if (cmdletContext.NodeProvisioningMode != null)
+            {
+                request.NodeProvisioningMode = cmdletContext.NodeProvisioningMode;
+            }
+            if (cmdletContext.NodeRecovery != null)
+            {
+                request.NodeRecovery = cmdletContext.NodeRecovery;
+            }
+            
+             // populate Orchestrator
+            var requestOrchestratorIsNull = true;
+            request.Orchestrator = new Amazon.SageMaker.Model.ClusterOrchestrator();
+            Amazon.SageMaker.Model.ClusterOrchestratorEksConfig requestOrchestrator_orchestrator_Eks = null;
+            
+             // populate Eks
+            var requestOrchestrator_orchestrator_EksIsNull = true;
+            requestOrchestrator_orchestrator_Eks = new Amazon.SageMaker.Model.ClusterOrchestratorEksConfig();
+            System.String requestOrchestrator_orchestrator_Eks_eks_ClusterArn = null;
+            if (cmdletContext.Eks_ClusterArn != null)
+            {
+                requestOrchestrator_orchestrator_Eks_eks_ClusterArn = cmdletContext.Eks_ClusterArn;
+            }
+            if (requestOrchestrator_orchestrator_Eks_eks_ClusterArn != null)
+            {
+                requestOrchestrator_orchestrator_Eks.ClusterArn = requestOrchestrator_orchestrator_Eks_eks_ClusterArn;
+                requestOrchestrator_orchestrator_EksIsNull = false;
+            }
+             // determine if requestOrchestrator_orchestrator_Eks should be set to null
+            if (requestOrchestrator_orchestrator_EksIsNull)
+            {
+                requestOrchestrator_orchestrator_Eks = null;
+            }
+            if (requestOrchestrator_orchestrator_Eks != null)
+            {
+                request.Orchestrator.Eks = requestOrchestrator_orchestrator_Eks;
+                requestOrchestratorIsNull = false;
+            }
+             // determine if request.Orchestrator should be set to null
+            if (requestOrchestratorIsNull)
+            {
+                request.Orchestrator = null;
+            }
+            if (cmdletContext.RestrictedInstanceGroup != null)
+            {
+                request.RestrictedInstanceGroups = cmdletContext.RestrictedInstanceGroup;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
+            }
+            
+             // populate TieredStorageConfig
+            var requestTieredStorageConfigIsNull = true;
+            request.TieredStorageConfig = new Amazon.SageMaker.Model.ClusterTieredStorageConfig();
+            System.Int32? requestTieredStorageConfig_tieredStorageConfig_InstanceMemoryAllocationPercentage = null;
+            if (cmdletContext.TieredStorageConfig_InstanceMemoryAllocationPercentage != null)
+            {
+                requestTieredStorageConfig_tieredStorageConfig_InstanceMemoryAllocationPercentage = cmdletContext.TieredStorageConfig_InstanceMemoryAllocationPercentage.Value;
+            }
+            if (requestTieredStorageConfig_tieredStorageConfig_InstanceMemoryAllocationPercentage != null)
+            {
+                request.TieredStorageConfig.InstanceMemoryAllocationPercentage = requestTieredStorageConfig_tieredStorageConfig_InstanceMemoryAllocationPercentage.Value;
+                requestTieredStorageConfigIsNull = false;
+            }
+            Amazon.SageMaker.ClusterConfigMode requestTieredStorageConfig_tieredStorageConfig_Mode = null;
+            if (cmdletContext.TieredStorageConfig_Mode != null)
+            {
+                requestTieredStorageConfig_tieredStorageConfig_Mode = cmdletContext.TieredStorageConfig_Mode;
+            }
+            if (requestTieredStorageConfig_tieredStorageConfig_Mode != null)
+            {
+                request.TieredStorageConfig.Mode = requestTieredStorageConfig_tieredStorageConfig_Mode;
+                requestTieredStorageConfigIsNull = false;
+            }
+             // determine if request.TieredStorageConfig should be set to null
+            if (requestTieredStorageConfigIsNull)
+            {
+                request.TieredStorageConfig = null;
             }
             
              // populate VpcConfig
@@ -307,13 +535,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateCluster(request);
-                #elif CORECLR
-                return client.CreateClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -330,9 +552,18 @@ namespace Amazon.PowerShell.Cmdlets.SM
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.SageMaker.ClusterAutoScalerType AutoScaling_AutoScalerType { get; set; }
+            public Amazon.SageMaker.ClusterAutoScalingMode AutoScaling_Mode { get; set; }
             public System.String ClusterName { get; set; }
+            public System.String ClusterRole { get; set; }
             public List<Amazon.SageMaker.Model.ClusterInstanceGroupSpecification> InstanceGroup { get; set; }
+            public Amazon.SageMaker.ClusterNodeProvisioningMode NodeProvisioningMode { get; set; }
+            public Amazon.SageMaker.ClusterNodeRecovery NodeRecovery { get; set; }
+            public System.String Eks_ClusterArn { get; set; }
+            public List<Amazon.SageMaker.Model.ClusterRestrictedInstanceGroupSpecification> RestrictedInstanceGroup { get; set; }
             public List<Amazon.SageMaker.Model.Tag> Tag { get; set; }
+            public System.Int32? TieredStorageConfig_InstanceMemoryAllocationPercentage { get; set; }
+            public Amazon.SageMaker.ClusterConfigMode TieredStorageConfig_Mode { get; set; }
             public List<System.String> VpcConfig_SecurityGroupId { get; set; }
             public List<System.String> VpcConfig_Subnet { get; set; }
             public System.Func<Amazon.SageMaker.Model.CreateClusterResponse, NewSMClusterCmdlet, object> Select { get; set; } =

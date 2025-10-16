@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECR;
 using Amazon.ECR.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECR
 {
     /// <summary>
-    /// Starts an image vulnerability scan. An image scan can only be started once per 24
-    /// hours on an individual image. This limit includes if an image was scanned on initial
-    /// push. For more information, see <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning.html">Image
+    /// Starts a basic image vulnerability scan.
+    /// 
+    ///  
+    /// <para>
+    ///  A basic image scan can only be started once per 24 hours on an individual image.
+    /// This limit includes if an image was scanned on initial push. You can start up to 100,000
+    /// basic scans per 24 hours. This limit includes both scans on initial push and scans
+    /// initiated by the StartImageScan API. For more information, see <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning-basic.html">Basic
     /// scanning</a> in the <i>Amazon Elastic Container Registry User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("Start", "ECRImageScan", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ECR.Model.StartImageScanResponse")]
     [AWSCmdlet("Calls the Amazon EC2 Container Registry StartImageScan API operation.", Operation = new[] {"StartImageScan"}, SelectReturnType = typeof(Amazon.ECR.Model.StartImageScanResponse))]
     [AWSCmdletOutput("Amazon.ECR.Model.StartImageScanResponse",
-        "This cmdlet returns an Amazon.ECR.Model.StartImageScanResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ECR.Model.StartImageScanResponse object containing multiple properties."
     )]
     public partial class StartECRImageScanCmdlet : AmazonECRClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ImageId_ImageDigest
         /// <summary>
@@ -104,16 +113,6 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RepositoryName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RepositoryName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RepositoryName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -124,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RepositoryName), MyInvocation.BoundParameters);
@@ -140,21 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECR.Model.StartImageScanResponse, StartECRImageScanCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RepositoryName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ImageId_ImageDigest = this.ImageId_ImageDigest;
             context.ImageId_ImageTag = this.ImageId_ImageTag;
             context.RegistryId = this.RegistryId;
@@ -256,13 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Registry", "StartImageScan");
             try
             {
-                #if DESKTOP
-                return client.StartImageScan(request);
-                #elif CORECLR
-                return client.StartImageScanAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartImageScanAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

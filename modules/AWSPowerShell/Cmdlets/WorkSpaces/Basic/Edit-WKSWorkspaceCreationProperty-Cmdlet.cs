@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     [AWSCmdlet("Calls the Amazon WorkSpaces ModifyWorkspaceCreationProperties API operation.", Operation = new[] {"ModifyWorkspaceCreationProperties"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.ModifyWorkspaceCreationPropertiesResponse))]
     [AWSCmdletOutput("None or Amazon.WorkSpaces.Model.ModifyWorkspaceCreationPropertiesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkSpaces.Model.ModifyWorkspaceCreationPropertiesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WorkSpaces.Model.ModifyWorkspaceCreationPropertiesResponse) be returned by specifying '-Select *'."
     )]
     public partial class EditWKSWorkspaceCreationPropertyCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WorkspaceCreationProperties_CustomSecurityGroupId
         /// <summary>
@@ -91,24 +94,14 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public System.Boolean? WorkspaceCreationProperties_EnableMaintenanceMode { get; set; }
         #endregion
         
-        #region Parameter WorkspaceCreationProperties_EnableWorkDoc
+        #region Parameter WorkspaceCreationProperties_InstanceIamRoleArn
         /// <summary>
         /// <para>
-        /// <para>Indicates whether Amazon WorkDocs is enabled for your WorkSpaces.</para><note><para>If WorkDocs is already enabled for a WorkSpaces directory and you disable it, new
-        /// WorkSpaces launched in the directory will not have WorkDocs enabled. However, WorkDocs
-        /// remains enabled for any existing WorkSpaces, unless you either disable users' access
-        /// to WorkDocs or you delete the WorkDocs site. To disable users' access to WorkDocs,
-        /// see <a href="https://docs.aws.amazon.com/workdocs/latest/adminguide/inactive-user.html">Disabling
-        /// Users</a> in the <i>Amazon WorkDocs Administration Guide</i>. To delete a WorkDocs
-        /// site, see <a href="https://docs.aws.amazon.com/workdocs/latest/adminguide/manage-sites.html">Deleting
-        /// a Site</a> in the <i>Amazon WorkDocs Administration Guide</i>.</para><para>If you enable WorkDocs on a directory that already has existing WorkSpaces, the existing
-        /// WorkSpaces and any new WorkSpaces that are launched in the directory will have WorkDocs
-        /// enabled.</para></note>
+        /// <para>Indicates the IAM role ARN of the instance.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("WorkspaceCreationProperties_EnableWorkDocs")]
-        public System.Boolean? WorkspaceCreationProperties_EnableWorkDoc { get; set; }
+        public System.String WorkspaceCreationProperties_InstanceIamRoleArn { get; set; }
         #endregion
         
         #region Parameter ResourceId
@@ -148,16 +141,6 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -168,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceId), MyInvocation.BoundParameters);
@@ -184,21 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpaces.Model.ModifyWorkspaceCreationPropertiesResponse, EditWKSWorkspaceCreationPropertyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceId = this.ResourceId;
             #if MODULAR
             if (this.ResourceId == null && ParameterWasBound(nameof(this.ResourceId)))
@@ -210,7 +187,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             context.WorkspaceCreationProperties_DefaultOu = this.WorkspaceCreationProperties_DefaultOu;
             context.WorkspaceCreationProperties_EnableInternetAccess = this.WorkspaceCreationProperties_EnableInternetAccess;
             context.WorkspaceCreationProperties_EnableMaintenanceMode = this.WorkspaceCreationProperties_EnableMaintenanceMode;
-            context.WorkspaceCreationProperties_EnableWorkDoc = this.WorkspaceCreationProperties_EnableWorkDoc;
+            context.WorkspaceCreationProperties_InstanceIamRoleArn = this.WorkspaceCreationProperties_InstanceIamRoleArn;
             context.WorkspaceCreationProperties_UserEnabledAsLocalAdministrator = this.WorkspaceCreationProperties_UserEnabledAsLocalAdministrator;
             
             // allow further manipulation of loaded context prior to processing
@@ -276,14 +253,14 @@ namespace Amazon.PowerShell.Cmdlets.WKS
                 request.WorkspaceCreationProperties.EnableMaintenanceMode = requestWorkspaceCreationProperties_workspaceCreationProperties_EnableMaintenanceMode.Value;
                 requestWorkspaceCreationPropertiesIsNull = false;
             }
-            System.Boolean? requestWorkspaceCreationProperties_workspaceCreationProperties_EnableWorkDoc = null;
-            if (cmdletContext.WorkspaceCreationProperties_EnableWorkDoc != null)
+            System.String requestWorkspaceCreationProperties_workspaceCreationProperties_InstanceIamRoleArn = null;
+            if (cmdletContext.WorkspaceCreationProperties_InstanceIamRoleArn != null)
             {
-                requestWorkspaceCreationProperties_workspaceCreationProperties_EnableWorkDoc = cmdletContext.WorkspaceCreationProperties_EnableWorkDoc.Value;
+                requestWorkspaceCreationProperties_workspaceCreationProperties_InstanceIamRoleArn = cmdletContext.WorkspaceCreationProperties_InstanceIamRoleArn;
             }
-            if (requestWorkspaceCreationProperties_workspaceCreationProperties_EnableWorkDoc != null)
+            if (requestWorkspaceCreationProperties_workspaceCreationProperties_InstanceIamRoleArn != null)
             {
-                request.WorkspaceCreationProperties.EnableWorkDocs = requestWorkspaceCreationProperties_workspaceCreationProperties_EnableWorkDoc.Value;
+                request.WorkspaceCreationProperties.InstanceIamRoleArn = requestWorkspaceCreationProperties_workspaceCreationProperties_InstanceIamRoleArn;
                 requestWorkspaceCreationPropertiesIsNull = false;
             }
             System.Boolean? requestWorkspaceCreationProperties_workspaceCreationProperties_UserEnabledAsLocalAdministrator = null;
@@ -339,13 +316,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "ModifyWorkspaceCreationProperties");
             try
             {
-                #if DESKTOP
-                return client.ModifyWorkspaceCreationProperties(request);
-                #elif CORECLR
-                return client.ModifyWorkspaceCreationPropertiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyWorkspaceCreationPropertiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -367,7 +338,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             public System.String WorkspaceCreationProperties_DefaultOu { get; set; }
             public System.Boolean? WorkspaceCreationProperties_EnableInternetAccess { get; set; }
             public System.Boolean? WorkspaceCreationProperties_EnableMaintenanceMode { get; set; }
-            public System.Boolean? WorkspaceCreationProperties_EnableWorkDoc { get; set; }
+            public System.String WorkspaceCreationProperties_InstanceIamRoleArn { get; set; }
             public System.Boolean? WorkspaceCreationProperties_UserEnabledAsLocalAdministrator { get; set; }
             public System.Func<Amazon.WorkSpaces.Model.ModifyWorkspaceCreationPropertiesResponse, EditWKSWorkspaceCreationPropertyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

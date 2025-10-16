@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkMonitor;
 using Amazon.NetworkMonitor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWNM
 {
     /// <summary>
     /// Updates a monitor probe. This action requires both the <c>monitorName</c> and <c>probeId</c>
     /// parameters. Run <c>ListMonitors</c> to get a list of monitor names. Run <c>GetMonitor</c>
-    /// to get a list of probes and probe IDs.
+    /// to get a list of probes and probe IDs. 
+    /// 
+    ///  
+    /// <para>
+    /// You can update the following para create a monitor with probes using this command.
+    /// For each probe, you define the following:
+    /// </para><ul><li><para><c>state</c>—The state of the probe.
+    /// </para></li><li><para><c>destination</c>— The target destination IP address for the probe.
+    /// </para></li><li><para><c>destinationPort</c>—Required only if the protocol is <c>TCP</c>.
+    /// </para></li><li><para><c>protocol</c>—The communication protocol between the source and destination. This
+    /// will be either <c>TCP</c> or <c>ICMP</c>.
+    /// </para></li><li><para><c>packetSize</c>—The size of the packets. This must be a number between <c>56</c>
+    /// and <c>8500</c>.
+    /// </para></li><li><para>
+    /// (Optional) <c>tags</c> —Key-value pairs created and assigned to the probe.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Update", "CWNMProbe", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.NetworkMonitor.Model.UpdateProbeResponse")]
     [AWSCmdlet("Calls the Amazon CloudWatch Network Monitor UpdateProbe API operation.", Operation = new[] {"UpdateProbe"}, SelectReturnType = typeof(Amazon.NetworkMonitor.Model.UpdateProbeResponse))]
     [AWSCmdletOutput("Amazon.NetworkMonitor.Model.UpdateProbeResponse",
-        "This cmdlet returns an Amazon.NetworkMonitor.Model.UpdateProbeResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NetworkMonitor.Model.UpdateProbeResponse object containing multiple properties."
     )]
     public partial class UpdateCWNMProbeCmdlet : AmazonNetworkMonitorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Destination
         /// <summary>
@@ -96,7 +114,7 @@ namespace Amazon.PowerShell.Cmdlets.CWNM
         #region Parameter ProbeId
         /// <summary>
         /// <para>
-        /// <para>Run <c>GetMonitor</c> to get a list of probes and probe IDs.</para>
+        /// <para>The ID of the probe to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -144,16 +162,6 @@ namespace Amazon.PowerShell.Cmdlets.CWNM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MonitorName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MonitorName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MonitorName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -164,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.CWNM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MonitorName), MyInvocation.BoundParameters);
@@ -180,21 +192,11 @@ namespace Amazon.PowerShell.Cmdlets.CWNM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkMonitor.Model.UpdateProbeResponse, UpdateCWNMProbeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MonitorName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Destination = this.Destination;
             context.DestinationPort = this.DestinationPort;
             context.MonitorName = this.MonitorName;
@@ -296,13 +298,7 @@ namespace Amazon.PowerShell.Cmdlets.CWNM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Network Monitor", "UpdateProbe");
             try
             {
-                #if DESKTOP
-                return client.UpdateProbe(request);
-                #elif CORECLR
-                return client.UpdateProbeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateProbeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

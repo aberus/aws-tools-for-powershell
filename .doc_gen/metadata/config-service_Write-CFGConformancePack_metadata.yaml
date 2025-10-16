@@ -1,0 +1,21 @@
+---
+config-service_PutConformancePack:
+  title: Use Write-CFGConformancePack
+  title_abbrev: Write-CFGConformancePack
+  synopsis: use Write-CFGConformancePack
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Write-CFGConformancePack
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: This sample creates conformance pack, fetching template from the given yaml file. </emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/config-service_Write-CFGConformancePack.1.1.ps1
+  services:
+    config-service:
+      PutConformancePack:
+
+

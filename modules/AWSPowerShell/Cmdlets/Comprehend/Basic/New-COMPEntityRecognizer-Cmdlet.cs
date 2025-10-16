@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Comprehend;
 using Amazon.Comprehend.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.COMP
 {
     /// <summary>
@@ -37,19 +39,24 @@ namespace Amazon.PowerShell.Cmdlets.COMP
     [AWSCmdlet("Calls the Amazon Comprehend CreateEntityRecognizer API operation.", Operation = new[] {"CreateEntityRecognizer"}, SelectReturnType = typeof(Amazon.Comprehend.Model.CreateEntityRecognizerResponse))]
     [AWSCmdletOutput("System.String or Amazon.Comprehend.Model.CreateEntityRecognizerResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Comprehend.Model.CreateEntityRecognizerResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Comprehend.Model.CreateEntityRecognizerResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCOMPEntityRecognizerCmdlet : AmazonComprehendClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InputDataConfig_AugmentedManifest
         /// <summary>
         /// <para>
         /// <para>A list of augmented manifest files that provide training data for your custom model.
         /// An augmented manifest file is a labeled dataset that is produced by Amazon SageMaker
-        /// Ground Truth.</para><para>This parameter is required if you set <c>DataFormat</c> to <c>AUGMENTED_MANIFEST</c>.</para>
+        /// Ground Truth.</para><para>This parameter is required if you set <c>DataFormat</c> to <c>AUGMENTED_MANIFEST</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,7 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         /// the custom entity recognizer. Any entity types that you don't specify are ignored.</para><para>A maximum of 25 entity types can be used at one time to train an entity recognizer.
         /// Entity types must not contain the following invalid characters: \n (line break), \\n
         /// (escaped line break), \r (carriage return), \\r (escaped carriage return), \t (tab),
-        /// \\t (escaped tab), space, and , (comma). </para>
+        /// \\t (escaped tab), space, and , (comma). </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -256,7 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         /// and provides security for the resources that you’ll be accessing on the VPC. This
         /// ID number is preceded by "sg-", for instance: "sg-03b388029b0a285ea". For more information,
         /// see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html">Security
-        /// Groups for your VPC</a>. </para>
+        /// Groups for your VPC</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -271,7 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         /// the a range of IPv4 addresses used by the VPC and is specific to a given availability
         /// zone in the VPC’s Region. This ID number is preceded by "subnet-", for instance: "subnet-04ccf456919e69055".
         /// For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html">VPCs
-        /// and Subnets</a>. </para>
+        /// and Subnets</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,7 +304,11 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         /// <para>Tags to associate with the entity recognizer. A tag is a key-value pair that adds
         /// as a metadata to a resource used by Amazon Comprehend. For example, a tag with "Sales"
         /// as the key might be added to a resource to indicate its use by the sales department.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -354,16 +377,6 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         public string Select { get; set; } = "EntityRecognizerArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RecognizerName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RecognizerName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RecognizerName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -374,9 +387,13 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RecognizerName), MyInvocation.BoundParameters);
@@ -390,21 +407,11 @@ namespace Amazon.PowerShell.Cmdlets.COMP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Comprehend.Model.CreateEntityRecognizerResponse, NewCOMPEntityRecognizerCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RecognizerName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.DataAccessRoleArn = this.DataAccessRoleArn;
             #if MODULAR
@@ -727,13 +734,7 @@ namespace Amazon.PowerShell.Cmdlets.COMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Comprehend", "CreateEntityRecognizer");
             try
             {
-                #if DESKTOP
-                return client.CreateEntityRecognizer(request);
-                #elif CORECLR
-                return client.CreateEntityRecognizerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateEntityRecognizerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateIpam API operation.", Operation = new[] {"CreateIpam"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateIpamResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Ipam or Amazon.EC2.Model.CreateIpamResponse",
         "This cmdlet returns an Amazon.EC2.Model.Ipam object.",
-        "The service call response (type Amazon.EC2.Model.CreateIpamResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateIpamResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2IpamCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -61,13 +64,55 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>A check for whether you have the required permissions for the action without actually
+        /// making the request and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter EnablePrivateGua
+        /// <summary>
+        /// <para>
+        /// <para>Enable this option to use your own GUA ranges as private IPv6 addresses. This option
+        /// is disabled by default.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? EnablePrivateGua { get; set; }
+        #endregion
+        
+        #region Parameter MeteredAccount
+        /// <summary>
+        /// <para>
+        /// <para>A metered account is an Amazon Web Services account that is charged for active IP
+        /// addresses managed in IPAM. For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/ipam/ipam-enable-cost-distro.html">Enable
+        /// cost distribution</a> in the <i>Amazon VPC IPAM User Guide</i>.</para><para>Possible values:</para><ul><li><para><c>ipam-owner</c> (default): The Amazon Web Services account which owns the IPAM
+        /// is charged for all active IP addresses managed in IPAM.</para></li><li><para><c>resource-owner</c>: The Amazon Web Services account that owns the IP address is
+        /// charged for the active IP address.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EC2.IpamMeteredAccount")]
+        public Amazon.EC2.IpamMeteredAccount MeteredAccount { get; set; }
+        #endregion
+        
         #region Parameter OperatingRegion
         /// <summary>
         /// <para>
         /// <para>The operating Regions for the IPAM. Operating Regions are Amazon Web Services Regions
         /// where the IPAM is allowed to manage IP address CIDRs. IPAM only discovers and monitors
         /// resources in the Amazon Web Services Regions you select as operating Regions. </para><para>For more information about operating Regions, see <a href="https://docs.aws.amazon.com/vpc/latest/ipam/create-ipam.html">Create
-        /// an IPAM</a> in the <i>Amazon VPC IPAM User Guide</i>. </para>
+        /// an IPAM</a> in the <i>Amazon VPC IPAM User Guide</i>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,7 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The key/value combination of a tag assigned to the resource. Use the tag key in the
         /// filter name and the tag value as the filter value. For example, to find all resources
         /// that have a tag with the key <c>Owner</c> and the value <c>TeamA</c>, specify <c>tag:Owner</c>
-        /// for the filter name and <c>TeamA</c> for the filter value.</para>
+        /// for the filter name and <c>TeamA</c> for the filter value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,8 +155,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>A unique, case-sensitive identifier that you provide to ensure the idempotency of
-        /// the request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
-        /// Idempotency</a>.</para>
+        /// the request. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,16 +174,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Ipam";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Description parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Description' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Description' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -145,9 +184,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Description), MyInvocation.BoundParameters);
@@ -161,23 +204,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateIpamResponse, NewEC2IpamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Description;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
+            context.EnablePrivateGua = this.EnablePrivateGua;
+            context.MeteredAccount = this.MeteredAccount;
             if (this.OperatingRegion != null)
             {
                 context.OperatingRegion = new List<Amazon.EC2.Model.AddIpamOperatingRegion>(this.OperatingRegion);
@@ -210,6 +246,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.EnablePrivateGua != null)
+            {
+                request.EnablePrivateGua = cmdletContext.EnablePrivateGua.Value;
+            }
+            if (cmdletContext.MeteredAccount != null)
+            {
+                request.MeteredAccount = cmdletContext.MeteredAccount;
             }
             if (cmdletContext.OperatingRegion != null)
             {
@@ -261,13 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateIpam");
             try
             {
-                #if DESKTOP
-                return client.CreateIpam(request);
-                #elif CORECLR
-                return client.CreateIpamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateIpamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -286,6 +328,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         {
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
+            public System.Boolean? EnablePrivateGua { get; set; }
+            public Amazon.EC2.IpamMeteredAccount MeteredAccount { get; set; }
             public List<Amazon.EC2.Model.AddIpamOperatingRegion> OperatingRegion { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public Amazon.EC2.IpamTier Tier { get; set; }

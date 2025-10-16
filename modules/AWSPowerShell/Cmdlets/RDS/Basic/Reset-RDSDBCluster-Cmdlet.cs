@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -42,14 +44,15 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [OutputType("Amazon.RDS.Model.BacktrackDBClusterResponse")]
     [AWSCmdlet("Calls the Amazon Relational Database Service BacktrackDBCluster API operation.", Operation = new[] {"BacktrackDBCluster"}, SelectReturnType = typeof(Amazon.RDS.Model.BacktrackDBClusterResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.BacktrackDBClusterResponse",
-        "This cmdlet returns an Amazon.RDS.Model.BacktrackDBClusterResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RDS.Model.BacktrackDBClusterResponse object containing multiple properties."
     )]
     public partial class ResetRDSDBClusterCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
-        #region Parameter UtcBacktrackTo
+        #region Parameter BacktrackTo
         /// <summary>
         /// <para>
         /// <para>The timestamp of the time to backtrack the DB cluster to, specified in ISO 8601 format.
@@ -65,7 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         [System.Management.Automation.AllowNull]
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
-        public System.DateTime? UtcBacktrackTo { get; set; }
+        public System.DateTime? BacktrackTo { get; set; }
         #endregion
         
         #region Parameter DBClusterIdentifier
@@ -110,26 +113,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Boolean? UseEarliestTimeOnPointInTimeUnavailable { get; set; }
         #endregion
         
-        #region Parameter BacktrackTo
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use BacktrackToUtc instead. Setting either BacktrackTo
-        /// or BacktrackToUtc results in both BacktrackTo and BacktrackToUtc being assigned, the
-        /// latest assignment to either one of the two property is reflected in the value of both.
-        /// BacktrackTo is provided for backwards compatibility only and assigning a non-Utc DateTime
-        /// to it results in the wrong timestamp being passed to the service.</para><para>The timestamp of the time to backtrack the DB cluster to, specified in ISO 8601 format.
-        /// For more information about ISO 8601, see the <a href="http://en.wikipedia.org/wiki/ISO_8601">ISO8601
-        /// Wikipedia page.</a></para><note><para>If the specified time isn't a consistent time for the DB cluster, Aurora automatically
-        /// chooses the nearest possible consistent time for the DB cluster.</para></note><para>Constraints:</para><ul><li><para>Must contain a valid ISO 8601 timestamp.</para></li><li><para>Can't contain a timestamp set in the future.</para></li></ul><para>Example: <c>2017-07-08T18:00Z</c></para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcBacktrackTo instead.")]
-        public System.DateTime? BacktrackTo { get; set; }
-        #endregion
-        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -139,16 +122,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -161,9 +134,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBClusterIdentifier), MyInvocation.BoundParameters);
@@ -177,26 +154,16 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.BacktrackDBClusterResponse, ResetRDSDBClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.UtcBacktrackTo = this.UtcBacktrackTo;
+            context.BacktrackTo = this.BacktrackTo;
             #if MODULAR
-            if (this.UtcBacktrackTo == null && ParameterWasBound(nameof(this.UtcBacktrackTo)))
+            if (this.BacktrackTo == null && ParameterWasBound(nameof(this.BacktrackTo)))
             {
-                WriteWarning("You are passing $null as a value for parameter UtcBacktrackTo which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+                WriteWarning("You are passing $null as a value for parameter BacktrackTo which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
             context.DBClusterIdentifier = this.DBClusterIdentifier;
@@ -208,9 +175,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             #endif
             context.EnforceReset = this.EnforceReset;
             context.UseEarliestTimeOnPointInTimeUnavailable = this.UseEarliestTimeOnPointInTimeUnavailable;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.BacktrackTo = this.BacktrackTo;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -227,9 +191,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // create request
             var request = new Amazon.RDS.Model.BacktrackDBClusterRequest();
             
-            if (cmdletContext.UtcBacktrackTo != null)
+            if (cmdletContext.BacktrackTo != null)
             {
-                request.BacktrackToUtc = cmdletContext.UtcBacktrackTo.Value;
+                request.BacktrackTo = cmdletContext.BacktrackTo.Value;
             }
             if (cmdletContext.DBClusterIdentifier != null)
             {
@@ -243,16 +207,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.UseEarliestTimeOnPointInTimeUnavailable = cmdletContext.UseEarliestTimeOnPointInTimeUnavailable.Value;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.BacktrackTo != null)
-            {
-                if (cmdletContext.UtcBacktrackTo != null)
-                {
-                    throw new System.ArgumentException("Parameters BacktrackTo and UtcBacktrackTo are mutually exclusive.", nameof(this.BacktrackTo));
-                }
-                request.BacktrackTo = cmdletContext.BacktrackTo.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             CmdletOutput output;
             
@@ -291,13 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "BacktrackDBCluster");
             try
             {
-                #if DESKTOP
-                return client.BacktrackDBCluster(request);
-                #elif CORECLR
-                return client.BacktrackDBClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BacktrackDBClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -314,12 +262,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         
         internal partial class CmdletContext : ExecutorContext
         {
-            public System.DateTime? UtcBacktrackTo { get; set; }
+            public System.DateTime? BacktrackTo { get; set; }
             public System.String DBClusterIdentifier { get; set; }
             public System.Boolean? EnforceReset { get; set; }
             public System.Boolean? UseEarliestTimeOnPointInTimeUnavailable { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? BacktrackTo { get; set; }
             public System.Func<Amazon.RDS.Model.BacktrackDBClusterResponse, ResetRDSDBClusterCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

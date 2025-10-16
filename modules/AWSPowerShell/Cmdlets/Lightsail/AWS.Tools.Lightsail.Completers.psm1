@@ -188,10 +188,10 @@ $LS_Completers = {
 
         # Amazon.Lightsail.ForwardValues
         {
-            ($_ -eq "New-LSDistribution/CacheBehaviorSettings_ForwardedCookies_Option") -Or
-            ($_ -eq "Update-LSDistribution/CacheBehaviorSettings_ForwardedCookies_Option") -Or
-            ($_ -eq "New-LSDistribution/CacheBehaviorSettings_ForwardedHeaders_Option") -Or
-            ($_ -eq "Update-LSDistribution/CacheBehaviorSettings_ForwardedHeaders_Option")
+            ($_ -eq "New-LSDistribution/ForwardedCookies_Option") -Or
+            ($_ -eq "Update-LSDistribution/ForwardedCookies_Option") -Or
+            ($_ -eq "New-LSDistribution/ForwardedHeaders_Option") -Or
+            ($_ -eq "Update-LSDistribution/ForwardedHeaders_Option")
         }
         {
             $v = "all","allow-list","none"
@@ -213,7 +213,7 @@ $LS_Completers = {
         }
 
         # Amazon.Lightsail.HttpTokens
-        "Update-LSInstanceMetadataOption/HttpTokens"
+        "Update-LSInstanceMetadataOption/HttpToken"
         {
             $v = "optional","required"
             break
@@ -242,7 +242,7 @@ $LS_Completers = {
             ($_ -eq "Set-LSIpAddressType/IpAddressType")
         }
         {
-            $v = "dualstack","ipv4"
+            $v = "dualstack","ipv4","ipv6"
             break
         }
 
@@ -286,7 +286,7 @@ $LS_Completers = {
             ($_ -eq "Open-LSInstancePublicPort/PortInfo_Protocol")
         }
         {
-            $v = "all","icmp","tcp","udp"
+            $v = "all","icmp","icmpv6","tcp","udp"
             break
         }
 
@@ -307,7 +307,7 @@ $LS_Completers = {
             ($_ -eq "Copy-LSSnapshot/SourceRegion")
         }
         {
-            $v = "ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ca-central-1","eu-central-1","eu-north-1","eu-west-1","eu-west-2","eu-west-3","us-east-1","us-east-2","us-west-1","us-west-2"
+            $v = "ap-northeast-1","ap-northeast-2","ap-south-1","ap-southeast-1","ap-southeast-2","ap-southeast-3","ca-central-1","eu-central-1","eu-north-1","eu-west-1","eu-west-2","eu-west-3","us-east-1","us-east-2","us-west-1","us-west-2"
             break
         }
 
@@ -346,6 +346,16 @@ $LS_Completers = {
             break
         }
 
+        # Amazon.Lightsail.ViewerMinimumTlsProtocolVersionEnum
+        {
+            ($_ -eq "New-LSDistribution/ViewerMinimumTlsProtocolVersion") -Or
+            ($_ -eq "Update-LSDistribution/ViewerMinimumTlsProtocolVersion")
+        }
+        {
+            $v = "TLSv1.1_2016","TLSv1.2_2018","TLSv1.2_2019","TLSv1.2_2021"
+            break
+        }
+
 
     }
 
@@ -361,14 +371,14 @@ $LS_map = @{
     "AddOnType"=@("Disable-LSAddOn")
     "AppCategory"=@("Get-LSBlueprintList","Get-LSBundleList")
     "AttributeName"=@("Update-LSLoadBalancerAttribute")
-    "CacheBehaviorSettings_ForwardedCookies_Option"=@("New-LSDistribution","Update-LSDistribution")
-    "CacheBehaviorSettings_ForwardedHeaders_Option"=@("New-LSDistribution","Update-LSDistribution")
     "CertificateProvider"=@("Set-LSInstanceHttp")
     "ComparisonOperator"=@("Add-LSAlarm")
     "DefaultCacheBehavior_Behavior"=@("New-LSDistribution","Update-LSDistribution")
+    "ForwardedCookies_Option"=@("New-LSDistribution","Update-LSDistribution")
+    "ForwardedHeaders_Option"=@("New-LSDistribution","Update-LSDistribution")
     "HttpEndpoint"=@("Update-LSInstanceMetadataOption")
     "HttpProtocolIpv6"=@("Update-LSInstanceMetadataOption")
-    "HttpTokens"=@("Update-LSInstanceMetadataOption")
+    "HttpToken"=@("Update-LSInstanceMetadataOption")
     "IpAddressType"=@("New-LSDistribution","New-LSInstance","New-LSInstancesFromSnapshot","New-LSLoadBalancer","Set-LSIpAddressType")
     "MetricName"=@("Add-LSAlarm","Get-LSBucketMetricData","Get-LSContainerServiceMetricData","Get-LSDistributionMetricData","Get-LSInstanceMetricData","Get-LSLoadBalancerMetricData","Get-LSRelationalDatabaseMetricData")
     "Origin_ProtocolPolicy"=@("New-LSDistribution","Update-LSDistribution")
@@ -382,6 +392,7 @@ $LS_map = @{
     "State"=@("Test-LSAlarm")
     "TreatMissingData"=@("Add-LSAlarm")
     "Unit"=@("Get-LSBucketMetricData","Get-LSDistributionMetricData","Get-LSInstanceMetricData","Get-LSLoadBalancerMetricData","Get-LSRelationalDatabaseMetricData")
+    "ViewerMinimumTlsProtocolVersion"=@("New-LSDistribution","Update-LSDistribution")
 }
 
 _awsArgumentCompleterRegistration $LS_Completers $LS_map

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,38 +22,41 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Creates an Amazon QuickSight user whose identity is associated with the Identity and
-    /// Access Management (IAM) identity or role specified in the request. When you register
-    /// a new user from the Amazon QuickSight API, Amazon QuickSight generates a registration
-    /// URL. The user accesses this registration URL to create their account. Amazon QuickSight
-    /// doesn't send a registration email to users who are registered from the Amazon QuickSight
-    /// API. If you want new users to receive a registration email, then add those users in
-    /// the Amazon QuickSight console. For more information on registering a new user in the
-    /// Amazon QuickSight console, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/managing-users.html#inviting-users">
-    /// Inviting users to access Amazon QuickSight</a>.
+    /// Creates an Amazon Quick Sight user whose identity is associated with the Identity
+    /// and Access Management (IAM) identity or role specified in the request. When you register
+    /// a new user from the Quick Sight API, Quick Sight generates a registration URL. The
+    /// user accesses this registration URL to create their account. Quick Sight doesn't send
+    /// a registration email to users who are registered from the Quick Sight API. If you
+    /// want new users to receive a registration email, then add those users in the Quick
+    /// Sight console. For more information on registering a new user in the Quick Sight console,
+    /// see <a href="https://docs.aws.amazon.com/quicksight/latest/user/managing-users.html#inviting-users">
+    /// Inviting users to access Quick Sight</a>.
     /// </summary>
     [Cmdlet("Register", "QSUser", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QuickSight.Model.RegisterUserResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight RegisterUser API operation.", Operation = new[] {"RegisterUser"}, SelectReturnType = typeof(Amazon.QuickSight.Model.RegisterUserResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.RegisterUserResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.RegisterUserResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.RegisterUserResponse object containing multiple properties."
     )]
     public partial class RegisterQSUserCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
         /// <para>The ID for the Amazon Web Services account that the user is in. Currently, you use
-        /// the ID for the Amazon Web Services account that contains your Amazon QuickSight account.</para>
+        /// the ID for the Amazon Web Services account that contains your Amazon Quick Sight account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -71,7 +74,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The URL of the custom OpenID Connect (OIDC) provider that provides identity to let
-        /// a user federate into Amazon QuickSight with an associated Identity and Access Management(IAM)
+        /// a user federate into Quick Sight with an associated Identity and Access Management(IAM)
         /// role. This parameter should only be used when <c>ExternalLoginFederationProviderType</c>
         /// parameter is set to <c>CUSTOM_OIDC</c>.</para>
         /// </para>
@@ -86,11 +89,12 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>(Enterprise edition only) The name of the custom permissions profile that you want
         /// to assign to this user. Customized permissions allows you to control a user's access
         /// by restricting access the following operations:</para><ul><li><para>Create and update data sources</para></li><li><para>Create and update datasets</para></li><li><para>Create and update email reports</para></li><li><para>Subscribe to email reports</para></li></ul><para>To add custom permissions to an existing user, use <c><a href="https://docs.aws.amazon.com/quicksight/latest/APIReference/API_UpdateUser.html">UpdateUser</a></c> instead.</para><para>A set of custom permissions includes any combination of these restrictions. Currently,
-        /// you need to create the profile names for custom permission sets by using the Amazon
-        /// QuickSight console. Then, you use the <c>RegisterUser</c> API operation to assign
-        /// the named set of permissions to a Amazon QuickSight user. </para><para>Amazon QuickSight custom permissions are applied through IAM policies. Therefore,
-        /// they override the permissions typically granted by assigning Amazon QuickSight users
-        /// to one of the default security cohorts in Amazon QuickSight (admin, author, reader).</para><para>This feature is available only to Amazon QuickSight Enterprise edition subscriptions.</para>
+        /// you need to create the profile names for custom permission sets by using the Quick
+        /// Sight console. Then, you use the <c>RegisterUser</c> API operation to assign the named
+        /// set of permissions to a Quick Sight user. </para><para>Quick Sight custom permissions are applied through IAM policies. Therefore, they override
+        /// the permissions typically granted by assigning Quick Sight users to one of the default
+        /// security cohorts in Quick Sight (admin, author, reader, admin pro, author pro, reader
+        /// pro).</para><para>This feature is available only to Quick Sight Enterprise edition subscriptions.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,7 +122,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The type of supported external login provider that provides identity to let a user
-        /// federate into Amazon QuickSight with an associated Identity and Access Management(IAM)
+        /// federate into Amazon Quick Sight with an associated Identity and Access Management(IAM)
         /// role. The type of supported external login provider can be one of the following.</para><ul><li><para><c>COGNITO</c>: Amazon Cognito. The provider URL is cognito-identity.amazonaws.com.
         /// When choosing the <c>COGNITO</c> provider type, don’t use the "CustomFederationProviderUrl"
         /// parameter which is only needed when the external provider is custom.</para></li><li><para><c>CUSTOM_OIDC</c>: Custom OpenID Connect (OIDC) provider. When choosing <c>CUSTOM_OIDC</c>
@@ -143,7 +147,8 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter IamArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the IAM user or role that you are registering with Amazon QuickSight. </para>
+        /// <para>The ARN of the IAM user or role that you are registering with Amazon Quick Sight.
+        /// </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,9 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter IdentityType
         /// <summary>
         /// <para>
-        /// <para>Amazon QuickSight supports several ways of managing the identity of users. This parameter
-        /// accepts two values:</para><ul><li><para><c>IAM</c>: A user whose identity maps to an existing IAM user or role. </para></li><li><para><c>QUICKSIGHT</c>: A user whose identity is owned and managed internally by Amazon
-        /// QuickSight. </para></li></ul>
+        /// <para>The identity type that your Quick Sight account uses to manage the identity of users.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -191,7 +194,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>You need to use this parameter only when you register one or more users using an assumed
         /// IAM role. You don't need to provide the session name for other scenarios, for example
-        /// when you are registering an IAM user or an Amazon QuickSight user. You can register
+        /// when you are registering an IAM user or an Amazon Quick Sight user. You can register
         /// multiple users using the same IAM role if each user has a different session name.
         /// For more information on assuming IAM roles, see <a href="https://docs.aws.amazon.com/cli/latest/reference/sts/assume-role.html"><c>assume-role</c></a> in the <i>CLI Reference.</i></para>
         /// </para>
@@ -203,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to associate with the user.</para>
+        /// <para>The tags to associate with the user.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -214,7 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter UserName
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight user name that you want to create for the user you are registering.</para>
+        /// <para>The Amazon Quick Sight user name that you want to create for the user you are registering.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -224,7 +231,12 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter UserRole
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight role for the user. The user role can be one of the following:</para><ul><li><para><c>READER</c>: A user who has read-only access to dashboards.</para></li><li><para><c>AUTHOR</c>: A user who can create data sources, datasets, analyses, and dashboards.</para></li><li><para><c>ADMIN</c>: A user who is an author, who can also manage Amazon QuickSight settings.</para></li><li><para><c>RESTRICTED_READER</c>: This role isn't currently available for use.</para></li><li><para><c>RESTRICTED_AUTHOR</c>: This role isn't currently available for use.</para></li></ul>
+        /// <para>The Amazon Quick Sight role for the user. The user role can be one of the following:</para><ul><li><para><c>READER</c>: A user who has read-only access to dashboards.</para></li><li><para><c>AUTHOR</c>: A user who can create data sources, datasets, analyses, and dashboards.</para></li><li><para><c>ADMIN</c>: A user who is an author, who can also manage Amazon Quick Sight settings.</para></li><li><para><c>READER_PRO</c>: Reader Pro adds Generative BI capabilities to the Reader role.
+        /// Reader Pros have access to Amazon Q in Quick Sight, can build stories with Amazon
+        /// Q, and can generate executive summaries from dashboards.</para></li><li><para><c>AUTHOR_PRO</c>: Author Pro adds Generative BI capabilities to the Author role.
+        /// Author Pros can author dashboards with natural language with Amazon Q, build stories
+        /// with Amazon Q, create Topics for Q&amp;A, and generate executive summaries from dashboards.</para></li><li><para><c>ADMIN_PRO</c>: Admin Pros are Author Pros who can also manage Amazon Quick Sight
+        /// administrative settings. Admin Pro users are billed at Author Pro pricing.</para></li><li><para><c>RESTRICTED_READER</c>: This role isn't currently available for use.</para></li><li><para><c>RESTRICTED_AUTHOR</c>: This role isn't currently available for use.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -249,16 +261,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Email parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Email' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Email' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -269,9 +271,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Email), MyInvocation.BoundParameters);
@@ -285,21 +291,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.RegisterUserResponse, RegisterQSUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Email;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -452,13 +448,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "RegisterUser");
             try
             {
-                #if DESKTOP
-                return client.RegisterUser(request);
-                #elif CORECLR
-                return client.RegisterUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

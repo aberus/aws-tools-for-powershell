@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexModelsV2;
 using Amazon.LexModelsV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LMBV2
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
     [OutputType("Amazon.LexModelsV2.Model.DescribeCustomVocabularyMetadataResponse")]
     [AWSCmdlet("Calls the Amazon Lex Model Building V2 DescribeCustomVocabularyMetadata API operation.", Operation = new[] {"DescribeCustomVocabularyMetadata"}, SelectReturnType = typeof(Amazon.LexModelsV2.Model.DescribeCustomVocabularyMetadataResponse))]
     [AWSCmdletOutput("Amazon.LexModelsV2.Model.DescribeCustomVocabularyMetadataResponse",
-        "This cmdlet returns an Amazon.LexModelsV2.Model.DescribeCustomVocabularyMetadataResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexModelsV2.Model.DescribeCustomVocabularyMetadataResponse object containing multiple properties."
     )]
     public partial class GetLMBV2CustomVocabularyMetadataCmdlet : AmazonLexModelsV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BotId
         /// <summary>
@@ -103,9 +106,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -205,13 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Model Building V2", "DescribeCustomVocabularyMetadata");
             try
             {
-                #if DESKTOP
-                return client.DescribeCustomVocabularyMetadata(request);
-                #elif CORECLR
-                return client.DescribeCustomVocabularyMetadataAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeCustomVocabularyMetadataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

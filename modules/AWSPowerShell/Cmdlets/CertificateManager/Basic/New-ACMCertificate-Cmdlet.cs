@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACM
 {
     /// <summary>
@@ -39,8 +41,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
     /// you are requesting a public certificate, each domain name that you specify must be
     /// validated to verify that you own or control the domain. You can use <a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-dns.html">DNS
     /// validation</a> or <a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-validate-email.html">email
-    /// validation</a>. We recommend that you use DNS validation. ACM issues public certificates
-    /// after receiving approval from the domain owner. 
+    /// validation</a>. We recommend that you use DNS validation.
     /// </para><note><para>
     /// ACM behavior differs from the <a href="https://datatracker.ietf.org/doc/html/rfc6125#appendix-B.2">RFC
     /// 6125</a> specification of the certificate validation process. ACM first checks for
@@ -55,12 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.ACM
     [AWSCmdlet("Calls the AWS Certificate Manager RequestCertificate API operation.", Operation = new[] {"RequestCertificate"}, SelectReturnType = typeof(Amazon.CertificateManager.Model.RequestCertificateResponse))]
     [AWSCmdletOutput("System.String or Amazon.CertificateManager.Model.RequestCertificateResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CertificateManager.Model.RequestCertificateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CertificateManager.Model.RequestCertificateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewACMCertificateCmdlet : AmazonCertificateManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateAuthorityArn
         /// <summary>
@@ -117,12 +119,27 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         /// <summary>
         /// <para>
         /// <para>The domain name that you want ACM to use to send you emails so that you can validate
-        /// domain ownership.</para>
+        /// domain ownership.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DomainValidationOptions")]
         public Amazon.CertificateManager.Model.DomainValidationOption[] DomainValidationOption { get; set; }
+        #endregion
+        
+        #region Parameter Options_Export
+        /// <summary>
+        /// <para>
+        /// <para>You can opt in to allow the export of your certificates by specifying <c>ENABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CertificateManager.CertificateExport")]
+        public Amazon.CertificateManager.CertificateExport Options_Export { get; set; }
         #endregion
         
         #region Parameter IdempotencyToken
@@ -146,15 +163,31 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         /// to encrypt data. RSA is the default key algorithm for ACM certificates. Elliptic Curve
         /// Digital Signature Algorithm (ECDSA) keys are smaller, offering security comparable
         /// to RSA keys but with greater computing efficiency. However, ECDSA is not supported
-        /// by all network clients. Some AWS services may require RSA keys, or only support ECDSA
-        /// keys of a particular size, while others allow the use of either RSA and ECDSA keys
-        /// to ensure that compatibility is not broken. Check the requirements for the AWS service
-        /// where you plan to deploy your certificate.</para><para>Default: RSA_2048</para>
+        /// by all network clients. Some Amazon Web Services services may require RSA keys, or
+        /// only support ECDSA keys of a particular size, while others allow the use of either
+        /// RSA and ECDSA keys to ensure that compatibility is not broken. Check the requirements
+        /// for the Amazon Web Services service where you plan to deploy your certificate. For
+        /// more information about selecting an algorithm, see <a href="https://docs.aws.amazon.com/acm/latest/userguide/acm-certificate.html#algorithms">Key
+        /// algorithms</a>.</para><note><para>Algorithms supported for an ACM certificate request include: </para><ul><li><para><c>RSA_2048</c></para></li><li><para><c>EC_prime256v1</c></para></li><li><para><c>EC_secp384r1</c></para></li></ul><para>Other listed algorithms are for imported certificates only. </para></note><note><para>When you request a private PKI certificate signed by a CA from Amazon Web Services
+        /// Private CA, the specified signing algorithm family (RSA or ECDSA) must match the algorithm
+        /// family of the CA's secret key.</para></note><para>Default: RSA_2048</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.CertificateManager.KeyAlgorithm")]
         public Amazon.CertificateManager.KeyAlgorithm KeyAlgorithm { get; set; }
+        #endregion
+        
+        #region Parameter ManagedBy
+        /// <summary>
+        /// <para>
+        /// <para>Identifies the Amazon Web Services service that manages the certificate issued by
+        /// ACM.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CertificateManager.CertificateManagedBy")]
+        public Amazon.CertificateManager.CertificateManagedBy ManagedBy { get; set; }
         #endregion
         
         #region Parameter SubjectAlternativeName
@@ -170,7 +203,11 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         /// examples: </para><ul><li><para><c>(63 octets).(63 octets).(63 octets).(61 octets)</c> is legal because the total
         /// length is 253 octets (63+1+63+1+63+1+61) and no label exceeds 63 octets.</para></li><li><para><c>(64 octets).(63 octets).(63 octets).(61 octets)</c> is not legal because the total
         /// length exceeds 253 octets (64+1+63+1+63+1+61) and the first label exceeds 63 octets.</para></li><li><para><c>(63 octets).(63 octets).(63 octets).(62 octets)</c> is not legal because the total
-        /// length of the DNS name (63+1+63+1+63+1+62) exceeds 253 octets.</para></li></ul>
+        /// length of the DNS name (63+1+63+1+63+1+62) exceeds 253 octets.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,7 +218,11 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>One or more resource tags to associate with the certificate.</para>
+        /// <para>One or more resource tags to associate with the certificate.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -224,9 +265,13 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainName), MyInvocation.BoundParameters);
@@ -259,7 +304,9 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             }
             context.IdempotencyToken = this.IdempotencyToken;
             context.KeyAlgorithm = this.KeyAlgorithm;
+            context.ManagedBy = this.ManagedBy;
             context.Options_CertificateTransparencyLoggingPreference = this.Options_CertificateTransparencyLoggingPreference;
+            context.Options_Export = this.Options_Export;
             if (this.SubjectAlternativeName != null)
             {
                 context.SubjectAlternativeName = new List<System.String>(this.SubjectAlternativeName);
@@ -305,6 +352,10 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             {
                 request.KeyAlgorithm = cmdletContext.KeyAlgorithm;
             }
+            if (cmdletContext.ManagedBy != null)
+            {
+                request.ManagedBy = cmdletContext.ManagedBy;
+            }
             
              // populate Options
             var requestOptionsIsNull = true;
@@ -317,6 +368,16 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             if (requestOptions_options_CertificateTransparencyLoggingPreference != null)
             {
                 request.Options.CertificateTransparencyLoggingPreference = requestOptions_options_CertificateTransparencyLoggingPreference;
+                requestOptionsIsNull = false;
+            }
+            Amazon.CertificateManager.CertificateExport requestOptions_options_Export = null;
+            if (cmdletContext.Options_Export != null)
+            {
+                requestOptions_options_Export = cmdletContext.Options_Export;
+            }
+            if (requestOptions_options_Export != null)
+            {
+                request.Options.Export = requestOptions_options_Export;
                 requestOptionsIsNull = false;
             }
              // determine if request.Options should be set to null
@@ -374,13 +435,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager", "RequestCertificate");
             try
             {
-                #if DESKTOP
-                return client.RequestCertificate(request);
-                #elif CORECLR
-                return client.RequestCertificateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RequestCertificateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -402,7 +457,9 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             public List<Amazon.CertificateManager.Model.DomainValidationOption> DomainValidationOption { get; set; }
             public System.String IdempotencyToken { get; set; }
             public Amazon.CertificateManager.KeyAlgorithm KeyAlgorithm { get; set; }
+            public Amazon.CertificateManager.CertificateManagedBy ManagedBy { get; set; }
             public Amazon.CertificateManager.CertificateTransparencyLoggingPreference Options_CertificateTransparencyLoggingPreference { get; set; }
+            public Amazon.CertificateManager.CertificateExport Options_Export { get; set; }
             public List<System.String> SubjectAlternativeName { get; set; }
             public List<Amazon.CertificateManager.Model.Tag> Tag { get; set; }
             public Amazon.CertificateManager.ValidationMethod ValidationMethod { get; set; }

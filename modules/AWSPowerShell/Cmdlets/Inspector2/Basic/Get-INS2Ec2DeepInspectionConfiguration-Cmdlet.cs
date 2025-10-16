@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector2;
 using Amazon.Inspector2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS2
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.INS2
     [OutputType("Amazon.Inspector2.Model.GetEc2DeepInspectionConfigurationResponse")]
     [AWSCmdlet("Calls the Inspector2 GetEc2DeepInspectionConfiguration API operation.", Operation = new[] {"GetEc2DeepInspectionConfiguration"}, SelectReturnType = typeof(Amazon.Inspector2.Model.GetEc2DeepInspectionConfigurationResponse))]
     [AWSCmdletOutput("Amazon.Inspector2.Model.GetEc2DeepInspectionConfigurationResponse",
-        "This cmdlet returns an Amazon.Inspector2.Model.GetEc2DeepInspectionConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Inspector2.Model.GetEc2DeepInspectionConfigurationResponse object containing multiple properties."
     )]
     public partial class GetINS2Ec2DeepInspectionConfigurationCmdlet : AmazonInspector2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Inspector2", "GetEc2DeepInspectionConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetEc2DeepInspectionConfiguration(request);
-                #elif CORECLR
-                return client.GetEc2DeepInspectionConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetEc2DeepInspectionConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

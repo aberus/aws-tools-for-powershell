@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedBlockchainQuery;
 using Amazon.ManagedBlockchainQuery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MBCQ
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
     [AWSCmdlet("Calls the Amazon Managed Blockchain Query GetTransaction API operation.", Operation = new[] {"GetTransaction"}, SelectReturnType = typeof(Amazon.ManagedBlockchainQuery.Model.GetTransactionResponse))]
     [AWSCmdletOutput("Amazon.ManagedBlockchainQuery.Model.Transaction or Amazon.ManagedBlockchainQuery.Model.GetTransactionResponse",
         "This cmdlet returns an Amazon.ManagedBlockchainQuery.Model.Transaction object.",
-        "The service call response (type Amazon.ManagedBlockchainQuery.Model.GetTransactionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ManagedBlockchainQuery.Model.GetTransactionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMBCQTransactionCmdlet : AmazonManagedBlockchainQueryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Network
         /// <summary>
@@ -68,19 +71,21 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         #region Parameter TransactionHash
         /// <summary>
         /// <para>
-        /// <para>The hash of the transaction. It is generated whenever a transaction is verified and
-        /// added to the blockchain.</para>
+        /// <para>The hash of a transaction. It is generated when a transaction is created.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String TransactionHash { get; set; }
+        #endregion
+        
+        #region Parameter TransactionId
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of a Bitcoin transaction. It is generated when a transaction is created.</para><note><para><c>transactionId</c> is only supported on the Bitcoin networks.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TransactionId { get; set; }
         #endregion
         
         #region Parameter Select
@@ -94,9 +99,13 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         public string Select { get; set; } = "Transaction";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -117,12 +126,7 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             }
             #endif
             context.TransactionHash = this.TransactionHash;
-            #if MODULAR
-            if (this.TransactionHash == null && ParameterWasBound(nameof(this.TransactionHash)))
-            {
-                WriteWarning("You are passing $null as a value for parameter TransactionHash which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.TransactionId = this.TransactionId;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -146,6 +150,10 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             if (cmdletContext.TransactionHash != null)
             {
                 request.TransactionHash = cmdletContext.TransactionHash;
+            }
+            if (cmdletContext.TransactionId != null)
+            {
+                request.TransactionId = cmdletContext.TransactionId;
             }
             
             CmdletOutput output;
@@ -185,13 +193,7 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Blockchain Query", "GetTransaction");
             try
             {
-                #if DESKTOP
-                return client.GetTransaction(request);
-                #elif CORECLR
-                return client.GetTransactionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTransactionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -210,6 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.MBCQ
         {
             public Amazon.ManagedBlockchainQuery.QueryNetwork Network { get; set; }
             public System.String TransactionHash { get; set; }
+            public System.String TransactionId { get; set; }
             public System.Func<Amazon.ManagedBlockchainQuery.Model.GetTransactionResponse, GetMBCQTransactionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Transaction;
         }

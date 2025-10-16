@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     [AWSCmdlet("Calls the Amazon WorkSpaces ImportWorkspaceImage API operation.", Operation = new[] {"ImportWorkspaceImage"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.ImportWorkspaceImageResponse))]
     [AWSCmdletOutput("System.String or Amazon.WorkSpaces.Model.ImportWorkspaceImageResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.WorkSpaces.Model.ImportWorkspaceImageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkSpaces.Model.ImportWorkspaceImageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportWKSWorkspaceImageCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Application
         /// <summary>
@@ -52,7 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         /// <para>If specified, the version of Microsoft Office to subscribe to. Valid only for Windows
         /// 10 and 11 BYOL images. For more information about subscribing to Office for BYOL images,
         /// see <a href="https://docs.aws.amazon.com/workspaces/latest/adminguide/byol-windows-images.html">
-        /// Bring Your Own Windows Desktop Licenses</a>.</para><note><ul><li><para>Although this parameter is an array, only one item is allowed at this time.</para></li><li><para>Windows 11 only supports <c>Microsoft_Office_2019</c>.</para></li></ul></note>
+        /// Bring Your Own Windows Desktop Licenses</a>.</para><note><ul><li><para>Although this parameter is an array, only one item is allowed at this time.</para></li><li><para>During the image import process, non-GPU DCV (formerly WSP) WorkSpaces with Windows
+        /// 11 support only <c>Microsoft_Office_2019</c>. GPU DCV (formerly WSP) WorkSpaces with
+        /// Windows 11 do not support Office installation.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,10 +124,10 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         /// <summary>
         /// <para>
         /// <para>The ingestion process to be used when importing the image, depending on which protocol
-        /// you want to use for your BYOL Workspace image, either PCoIP, WorkSpaces Streaming
-        /// Protocol (WSP), or bring your own protocol (BYOP). To use WSP, specify a value that
-        /// ends in <c>_WSP</c>. To use PCoIP, specify a value that does not end in <c>_WSP</c>.
-        /// To use BYOP, specify a value that ends in <c>_BYOP</c>.</para><para>For non-GPU-enabled bundles (bundles other than Graphics or GraphicsPro), specify
+        /// you want to use for your BYOL Workspace image, either PCoIP, WSP, or bring your own
+        /// protocol (BYOP). To use DCV, specify a value that ends in <c>_WSP</c>. To use PCoIP,
+        /// specify a value that does not end in <c>_WSP</c>. To use BYOP, specify a value that
+        /// ends in <c>_BYOP</c>.</para><para>For non-GPU-enabled bundles (bundles other than Graphics or GraphicsPro), specify
         /// <c>BYOL_REGULAR</c>, <c>BYOL_REGULAR_WSP</c>, or <c>BYOL_REGULAR_BYOP</c>, depending
         /// on the protocol.</para><note><para>The <c>BYOL_REGULAR_BYOP</c> and <c>BYOL_GRAPHICS_G4DN_BYOP</c> values are only supported
         /// by Amazon WorkSpaces Core. Contact your account team to be allow-listed to use these
@@ -140,7 +149,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags. Each WorkSpaces resource can have a maximum of 50 tags.</para>
+        /// <para>The tags. Each WorkSpaces resource can have a maximum of 50 tags.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,16 +172,6 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public string Select { get; set; } = "ImageId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -179,9 +182,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageName), MyInvocation.BoundParameters);
@@ -195,21 +202,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpaces.Model.ImportWorkspaceImageResponse, ImportWKSWorkspaceImageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Application != null)
             {
                 context.Application = new List<System.String>(this.Application);
@@ -324,13 +321,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "ImportWorkspaceImage");
             try
             {
-                #if DESKTOP
-                return client.ImportWorkspaceImage(request);
-                #elif CORECLR
-                return client.ImportWorkspaceImageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportWorkspaceImageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

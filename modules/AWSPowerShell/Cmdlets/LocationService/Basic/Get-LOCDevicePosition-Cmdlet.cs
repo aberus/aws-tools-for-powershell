@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -38,14 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.GetDevicePositionResponse")]
     [AWSCmdlet("Calls the Amazon Location Service GetDevicePosition API operation.", Operation = new[] {"GetDevicePosition"}, SelectReturnType = typeof(Amazon.LocationService.Model.GetDevicePositionResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.GetDevicePositionResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.GetDevicePositionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.GetDevicePositionResponse object containing multiple properties."
     )]
     public partial class GetLOCDevicePositionCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeviceId
         /// <summary>
@@ -92,19 +93,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TrackerName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TrackerName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TrackerName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -112,21 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.GetDevicePositionResponse, GetLOCDevicePositionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TrackerName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeviceId = this.DeviceId;
             #if MODULAR
             if (this.DeviceId == null && ParameterWasBound(nameof(this.DeviceId)))
@@ -203,13 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "GetDevicePosition");
             try
             {
-                #if DESKTOP
-                return client.GetDevicePosition(request);
-                #elif CORECLR
-                return client.GetDevicePositionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDevicePositionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

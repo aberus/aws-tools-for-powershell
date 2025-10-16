@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FMS;
 using Amazon.FMS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FMS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.FMS
     [OutputType("Amazon.FMS.Model.GetProtectionStatusResponse")]
     [AWSCmdlet("Calls the Firewall Management Service GetProtectionStatus API operation.", Operation = new[] {"GetProtectionStatus"}, SelectReturnType = typeof(Amazon.FMS.Model.GetProtectionStatusResponse))]
     [AWSCmdletOutput("Amazon.FMS.Model.GetProtectionStatusResponse",
-        "This cmdlet returns an Amazon.FMS.Model.GetProtectionStatusResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.FMS.Model.GetProtectionStatusResponse object containing multiple properties."
     )]
     public partial class GetFMSProtectionStatusCmdlet : AmazonFMSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndTime
         /// <summary>
@@ -122,7 +125,7 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.FMS module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,16 +143,6 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PolicyId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PolicyId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PolicyId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -162,9 +155,13 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -172,21 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.FMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FMS.Model.GetProtectionStatusResponse, GetFMSProtectionStatusCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PolicyId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EndTime = this.EndTime;
             context.MaxResult = this.MaxResult;
             context.MemberAccountId = this.MemberAccountId;
@@ -213,9 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.FMS.Model.GetProtectionStatusRequest();
@@ -357,13 +342,7 @@ namespace Amazon.PowerShell.Cmdlets.FMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Firewall Management Service", "GetProtectionStatus");
             try
             {
-                #if DESKTOP
-                return client.GetProtectionStatus(request);
-                #elif CORECLR
-                return client.GetProtectionStatusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetProtectionStatusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

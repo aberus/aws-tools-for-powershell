@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceDiscovery;
 using Amazon.ServiceDiscovery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SD
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.SD
     [AWSCmdlet("Calls the AWS Cloud Map GetOperation API operation.", Operation = new[] {"GetOperation"}, SelectReturnType = typeof(Amazon.ServiceDiscovery.Model.GetOperationResponse))]
     [AWSCmdletOutput("Amazon.ServiceDiscovery.Model.Operation or Amazon.ServiceDiscovery.Model.GetOperationResponse",
         "This cmdlet returns an Amazon.ServiceDiscovery.Model.Operation object.",
-        "The service call response (type Amazon.ServiceDiscovery.Model.GetOperationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceDiscovery.Model.GetOperationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSDOperationCmdlet : AmazonServiceDiscoveryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OperationId
         /// <summary>
@@ -64,6 +67,19 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public System.String OperationId { get; set; }
         #endregion
         
+        #region Parameter OwnerAccount
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the Amazon Web Services account that owns the namespace associated with
+        /// the operation, as specified in the namespace <c>ResourceOwner</c> field. For operations
+        /// associated with namespaces that are shared with your account, you must specify an
+        /// <c>OwnerAccount</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String OwnerAccount { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Operation'.
@@ -75,19 +91,13 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public string Select { get; set; } = "Operation";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OperationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OperationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OperationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -95,21 +105,11 @@ namespace Amazon.PowerShell.Cmdlets.SD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceDiscovery.Model.GetOperationResponse, GetSDOperationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OperationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.OperationId = this.OperationId;
             #if MODULAR
             if (this.OperationId == null && ParameterWasBound(nameof(this.OperationId)))
@@ -117,6 +117,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
                 WriteWarning("You are passing $null as a value for parameter OperationId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.OwnerAccount = this.OwnerAccount;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -136,6 +137,10 @@ namespace Amazon.PowerShell.Cmdlets.SD
             if (cmdletContext.OperationId != null)
             {
                 request.OperationId = cmdletContext.OperationId;
+            }
+            if (cmdletContext.OwnerAccount != null)
+            {
+                request.OwnerAccount = cmdletContext.OwnerAccount;
             }
             
             CmdletOutput output;
@@ -175,13 +180,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cloud Map", "GetOperation");
             try
             {
-                #if DESKTOP
-                return client.GetOperation(request);
-                #elif CORECLR
-                return client.GetOperationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetOperationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -199,6 +198,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String OperationId { get; set; }
+            public System.String OwnerAccount { get; set; }
             public System.Func<Amazon.ServiceDiscovery.Model.GetOperationResponse, GetSDOperationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Operation;
         }

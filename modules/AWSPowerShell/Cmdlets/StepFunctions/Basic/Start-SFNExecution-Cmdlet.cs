@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StepFunctions;
 using Amazon.StepFunctions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SFN
 {
     /// <summary>
@@ -68,20 +70,19 @@ namespace Amazon.PowerShell.Cmdlets.SFN
     [OutputType("Amazon.StepFunctions.Model.StartExecutionResponse")]
     [AWSCmdlet("Calls the AWS Step Functions StartExecution API operation.", Operation = new[] {"StartExecution"}, SelectReturnType = typeof(Amazon.StepFunctions.Model.StartExecutionResponse))]
     [AWSCmdletOutput("Amazon.StepFunctions.Model.StartExecutionResponse",
-        "This cmdlet returns an Amazon.StepFunctions.Model.StartExecutionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.StepFunctions.Model.StartExecutionResponse object containing multiple properties."
     )]
     public partial class StartSFNExecutionCmdlet : AmazonStepFunctionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Input
         /// <summary>
         /// <para>
-        /// <para>The string that contains the JSON input data for the execution, for example:</para><para><c>"input": "{\"first_name\" : \"test\"}"</c></para><note><para>If you don't include any JSON input data, you still must include the two braces, for
-        /// example: <c>"input": "{}"</c></para></note><para>Length constraints apply to the payload size, and are expressed as bytes in UTF-8
+        /// <para>The string that contains the JSON input data for the execution, for example:</para><para><c>"{\"first_name\" : \"Alejandro\"}"</c></para><note><para>If you don't include any JSON input data, you still must include the two braces, for
+        /// example: <c>"{}"</c></para></note><para>Length constraints apply to the payload size, and are expressed as bytes in UTF-8
         /// encoding.</para>
         /// </para>
         /// </summary>
@@ -96,7 +97,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         /// account, Region, and state machine for 90 days. For more information, see <a href="https://docs.aws.amazon.com/step-functions/latest/dg/limits.html#service-limits-state-machine-executions">
         /// Limits Related to State Machine Executions</a> in the <i>Step Functions Developer
         /// Guide</i>.</para><para>If you don't provide a name for the execution, Step Functions automatically generates
-        /// a universally unique identifier (UUID) as the execution name.</para><para>A name must <i>not</i> contain:</para><ul><li><para>white space</para></li><li><para>brackets <c>&lt; &gt; { } [ ]</c></para></li><li><para>wildcard characters <c>? *</c></para></li><li><para>special characters <c>" # % \ ^ | ~ ` $ &amp; , ; : /</c></para></li><li><para>control characters (<c>U+0000-001F</c>, <c>U+007F-009F</c>)</para></li></ul><para>To enable logging with CloudWatch Logs, the name should only contain 0-9, A-Z, a-z,
+        /// a universally unique identifier (UUID) as the execution name.</para><para>A name must <i>not</i> contain:</para><ul><li><para>white space</para></li><li><para>brackets <c>&lt; &gt; { } [ ]</c></para></li><li><para>wildcard characters <c>? *</c></para></li><li><para>special characters <c>" # % \ ^ | ~ ` $ &amp; , ; : /</c></para></li><li><para>control characters (<c>U+0000-001F</c>, <c>U+007F-009F</c>, <c>U+FFFE-FFFF</c>)</para></li><li><para>surrogates (<c>U+D800-DFFF</c>)</para></li><li><para>invalid characters (<c> U+10FFFF</c>)</para></li></ul><para>To enable logging with CloudWatch Logs, the name should only contain 0-9, A-Z, a-z,
         /// - and _.</para>
         /// </para>
         /// </summary>
@@ -135,7 +136,12 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         /// <summary>
         /// <para>
         /// <para>Passes the X-Ray trace header. The trace header can also be passed in the request
-        /// payload.</para>
+        /// payload.</para><note><para> For X-Ray traces, all Amazon Web Services services use the <c>X-Amzn-Trace-Id</c>
+        /// header from the HTTP request. Using the header is the preferred mechanism to identify
+        /// a trace. <c>StartExecution</c> and <c>StartSyncExecution</c> API operations can also
+        /// use <c>traceHeader</c> from the body of the request payload. If <b>both</b> sources
+        /// are provided, Step Functions will use the <b>header value</b> (preferred) over the
+        /// value in the request body. </para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,16 +159,6 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StateMachineArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StateMachineArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StateMachineArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -173,9 +169,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.StateMachineArn), MyInvocation.BoundParameters);
@@ -189,21 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StepFunctions.Model.StartExecutionResponse, StartSFNExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StateMachineArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Input = this.Input;
             context.Name = this.Name;
             context.StateMachineArn = this.StateMachineArn;
@@ -284,13 +274,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Step Functions", "StartExecution");
             try
             {
-                #if DESKTOP
-                return client.StartExecution(request);
-                #elif CORECLR
-                return client.StartExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

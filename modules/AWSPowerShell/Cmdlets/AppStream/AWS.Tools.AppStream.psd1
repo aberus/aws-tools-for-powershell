@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The AppStream module of AWS Tools for PowerShell lets developers and administrators manage Amazon AppStream from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.AppStream.dll'
     )
@@ -89,6 +90,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-APSAppBlockBuilderAppBlock', 
         'Add-APSApplicationToEntitlement', 
         'Add-APSResourceTag', 
+        'Add-APSSoftwareToImageBuilder', 
         'Copy-APSImage', 
         'Disable-APSUser', 
         'Enable-APSUser', 
@@ -97,6 +99,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-APSAppBlockBuilderAppBlockAssociation', 
         'Get-APSApplication', 
         'Get-APSApplicationFleetAssociation', 
+        'Get-APSAppLicenseUsage', 
         'Get-APSAssociatedFleetList', 
         'Get-APSAssociatedStackList', 
         'Get-APSDirectoryConfigList', 
@@ -107,8 +110,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-APSImageList', 
         'Get-APSImagePermission', 
         'Get-APSSessionList', 
+        'Get-APSSoftwareAssociation', 
         'Get-APSStackList', 
         'Get-APSTagsForResourceList', 
+        'Get-APSThemeForStack', 
         'Get-APSUsageReportSubscription', 
         'Get-APSUser', 
         'Get-APSUserStackAssociation', 
@@ -123,6 +128,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-APSImageBuilderStreamingURL', 
         'New-APSStack', 
         'New-APSStreamingURL', 
+        'New-APSThemeForStack', 
         'New-APSUpdatedImage', 
         'New-APSUsageReportSubscription', 
         'New-APSUser', 
@@ -141,13 +147,16 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-APSImageBuilder', 
         'Remove-APSImagePermission', 
         'Remove-APSResourceTag', 
+        'Remove-APSSoftwareFromImageBuilder', 
         'Remove-APSStack', 
+        'Remove-APSThemeForStack', 
         'Remove-APSUsageReportSubscription', 
         'Remove-APSUser', 
         'Revoke-APSSession', 
         'Start-APSAppBlockBuilder', 
         'Start-APSFleet', 
         'Start-APSImageBuilder', 
+        'Start-APSSoftwareDeploymentToImageBuilder', 
         'Stop-APSAppBlockBuilder', 
         'Stop-APSFleet', 
         'Stop-APSImageBuilder', 
@@ -160,7 +169,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-APSEntitlement', 
         'Update-APSFleet', 
         'Update-APSImagePermission', 
-        'Update-APSStack')
+        'Update-APSStack', 
+        'Update-APSThemeForStack')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -184,7 +194,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

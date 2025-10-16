@@ -38,6 +38,14 @@ namespace AWSPowerShellGenerator
         public bool CreateNewCmdlets { get; set; } = true;
 
         /// <summary>
+        /// If true, report.xml is generated when there is a new operation and
+        /// there are no errors during auto-generation of the buildconfig
+        /// When this is set, the generator won't throw exception for any analysis errors.
+        /// The cmdlets will not be generated when this is true.
+        /// </summary>
+        public bool GenerateReportOnly { get; set; } = false;
+
+        /// <summary>
         /// If true (the default is false), the build will fail if new operations are
         /// present in the SDK. Set to true for release builds when all configurations
         /// are expected to be already committed.
@@ -121,6 +129,10 @@ namespace AWSPowerShellGenerator
         /// </summary>
         public string Edition { get; set; }
 
+        public string PreviewLabel { get; set; } = string.Empty;
+
+        public bool IsPreview => !string.IsNullOrEmpty(PreviewLabel);
+
         /// <summary>
         /// Returns the constructed deployment folder path for the edition
         /// denoted in the Edition property.
@@ -145,7 +157,7 @@ namespace AWSPowerShellGenerator
                     return "netstandard2.0";
 
             if (Edition.Equals("desktop", StringComparison.OrdinalIgnoreCase))
-                    return "net45";
+                    return "net472";
 
                 throw new InvalidOperationException("Unknown edition - " + Edition);
             }
@@ -196,6 +208,8 @@ namespace AWSPowerShellGenerator
             CNNorth1RegionDocsDomain = rhs.CNNorth1RegionDocsDomain;
             Edition = rhs.Edition;
             SkipCmdletGeneration = rhs.SkipCmdletGeneration;
+            PreviewLabel = rhs.PreviewLabel;
+            GenerateReportOnly = rhs.GenerateReportOnly;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -62,12 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service CreateEventSubscription API operation.", Operation = new[] {"CreateEventSubscription"}, SelectReturnType = typeof(Amazon.RDS.Model.CreateEventSubscriptionResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.EventSubscription or Amazon.RDS.Model.CreateEventSubscriptionResponse",
         "This cmdlet returns an Amazon.RDS.Model.EventSubscription object.",
-        "The service call response (type Amazon.RDS.Model.CreateEventSubscriptionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.CreateEventSubscriptionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewRDSEventSubscriptionCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Enabled
         /// <summary>
@@ -86,7 +89,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>A list of event categories for a particular source type (<c>SourceType</c>) that you
         /// want to subscribe to. You can see a list of the categories for a given source type
         /// in the "Amazon RDS event categories and event messages" section of the <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Events.Messages.html"><i>Amazon RDS User Guide</i></a> or the <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/USER_Events.Messages.html"><i>Amazon Aurora User Guide</i></a>. You can also see this list by using the <c>DescribeEventCategories</c>
-        /// operation.</para>
+        /// operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// with a hyphen or contain two consecutive hyphens.</para><para>Constraints:</para><ul><li><para>If <c>SourceIds</c> are supplied, <c>SourceType</c> must also be provided.</para></li><li><para>If the source type is a DB instance, a <c>DBInstanceIdentifier</c> value must be supplied.</para></li><li><para>If the source type is a DB cluster, a <c>DBClusterIdentifier</c> value must be supplied.</para></li><li><para>If the source type is a DB parameter group, a <c>DBParameterGroupName</c> value must
         /// be supplied.</para></li><li><para>If the source type is a DB security group, a <c>DBSecurityGroupName</c> value must
         /// be supplied.</para></li><li><para>If the source type is a DB snapshot, a <c>DBSnapshotIdentifier</c> value must be supplied.</para></li><li><para>If the source type is a DB cluster snapshot, a <c>DBClusterSnapshotIdentifier</c>
-        /// value must be supplied.</para></li><li><para>If the source type is an RDS Proxy, a <c>DBProxyName</c> value must be supplied.</para></li></ul>
+        /// value must be supplied.</para></li><li><para>If the source type is an RDS Proxy, a <c>DBProxyName</c> value must be supplied.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,8 +148,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>The type of source that is generating the events. For example, if you want to be notified
         /// of events generated by a DB instance, you set this parameter to <c>db-instance</c>.
         /// For RDS Proxy events, specify <c>db-proxy</c>. If this value isn't specified, all
-        /// events are returned.</para><para>Valid Values: <c>db-instance</c> | <c>db-cluster</c> | <c>db-parameter-group</c> |
-        /// <c>db-security-group</c> | <c>db-snapshot</c> | <c>db-cluster-snapshot</c> | <c>db-proxy</c></para>
+        /// events are returned.</para><para>Valid Values:<c> db-instance | db-cluster | db-parameter-group | db-security-group
+        /// | db-snapshot | db-cluster-snapshot | db-proxy | zero-etl | custom-engine-version
+        /// | blue-green-deployment </c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
@@ -165,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,16 +200,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "EventSubscription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SubscriptionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SubscriptionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SubscriptionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -204,9 +210,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SubscriptionName), MyInvocation.BoundParameters);
@@ -220,21 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.CreateEventSubscriptionResponse, NewRDSEventSubscriptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SubscriptionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Enabled = this.Enabled;
             if (this.EventCategory != null)
             {
@@ -345,13 +345,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "CreateEventSubscription");
             try
             {
-                #if DESKTOP
-                return client.CreateEventSubscription(request);
-                #elif CORECLR
-                return client.CreateEventSubscriptionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateEventSubscriptionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

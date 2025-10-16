@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FIS;
 using Amazon.FIS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FIS
 {
     /// <summary>
@@ -43,7 +45,7 @@ namespace Amazon.PowerShell.Cmdlets.FIS
     /// alarm.
     /// </para></li></ul><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/fis/latest/userguide/experiment-templates.html">experiment
-    /// templates</a> in the <i>Fault Injection Simulator User Guide</i>.
+    /// templates</a> in the <i>Fault Injection Service User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "FISExperimentTemplate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.FIS
     [AWSCmdlet("Calls the AWS Fault Injection Simulator CreateExperimentTemplate API operation.", Operation = new[] {"CreateExperimentTemplate"}, SelectReturnType = typeof(Amazon.FIS.Model.CreateExperimentTemplateResponse))]
     [AWSCmdletOutput("Amazon.FIS.Model.ExperimentTemplate or Amazon.FIS.Model.CreateExperimentTemplateResponse",
         "This cmdlet returns an Amazon.FIS.Model.ExperimentTemplate object.",
-        "The service call response (type Amazon.FIS.Model.CreateExperimentTemplateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FIS.Model.CreateExperimentTemplateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewFISExperimentTemplateCmdlet : AmazonFISClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExperimentOptions_AccountTargeting
         /// <summary>
@@ -72,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         #region Parameter Action
         /// <summary>
         /// <para>
-        /// <para>The actions for the experiment.</para>
+        /// <para>The actions for the experiment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -87,6 +94,16 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         public System.Collections.Hashtable Action { get; set; }
         #endregion
         
+        #region Parameter ExperimentReportConfiguration_Outputs_S3Configuration_BucketName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the S3 bucket where the experiment report will be stored.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ExperimentReportConfiguration_Outputs_S3Configuration_BucketName { get; set; }
+        #endregion
+        
         #region Parameter S3Configuration_BucketName
         /// <summary>
         /// <para>
@@ -96,6 +113,21 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("LogConfiguration_S3Configuration_BucketName")]
         public System.String S3Configuration_BucketName { get; set; }
+        #endregion
+        
+        #region Parameter DataSources_CloudWatchDashboard
+        /// <summary>
+        /// <para>
+        /// <para>The CloudWatch dashboards to include as data sources in the experiment report.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExperimentReportConfiguration_DataSources_CloudWatchDashboards")]
+        public Amazon.FIS.Model.ReportConfigurationCloudWatchDashboardInput[] DataSources_CloudWatchDashboard { get; set; }
         #endregion
         
         #region Parameter Description
@@ -147,6 +179,38 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         public System.Int32? LogConfiguration_LogSchemaVersion { get; set; }
         #endregion
         
+        #region Parameter ExperimentReportConfiguration_PostExperimentDuration
+        /// <summary>
+        /// <para>
+        /// <para>The duration after the experiment end time for the data sources to include in the
+        /// report. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ExperimentReportConfiguration_PostExperimentDuration { get; set; }
+        #endregion
+        
+        #region Parameter ExperimentReportConfiguration_PreExperimentDuration
+        /// <summary>
+        /// <para>
+        /// <para>The duration before the experiment start time for the data sources to include in the
+        /// report. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ExperimentReportConfiguration_PreExperimentDuration { get; set; }
+        #endregion
+        
+        #region Parameter ExperimentReportConfiguration_Outputs_S3Configuration_Prefix
+        /// <summary>
+        /// <para>
+        /// <para>The prefix of the S3 bucket where the experiment report will be stored.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ExperimentReportConfiguration_Outputs_S3Configuration_Prefix { get; set; }
+        #endregion
+        
         #region Parameter S3Configuration_Prefix
         /// <summary>
         /// <para>
@@ -179,7 +243,11 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         #region Parameter StopCondition
         /// <summary>
         /// <para>
-        /// <para>The stop conditions.</para>
+        /// <para>The stop conditions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -197,7 +265,11 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the experiment template.</para>
+        /// <para>The tags to apply to the experiment template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -208,7 +280,11 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         #region Parameter Target
         /// <summary>
         /// <para>
-        /// <para>The targets for the experiment.</para>
+        /// <para>The targets for the experiment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -248,9 +324,13 @@ namespace Amazon.PowerShell.Cmdlets.FIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RoleArn), MyInvocation.BoundParameters);
@@ -293,6 +373,14 @@ namespace Amazon.PowerShell.Cmdlets.FIS
             #endif
             context.ExperimentOptions_AccountTargeting = this.ExperimentOptions_AccountTargeting;
             context.ExperimentOptions_EmptyTargetResolutionMode = this.ExperimentOptions_EmptyTargetResolutionMode;
+            if (this.DataSources_CloudWatchDashboard != null)
+            {
+                context.DataSources_CloudWatchDashboard = new List<Amazon.FIS.Model.ReportConfigurationCloudWatchDashboardInput>(this.DataSources_CloudWatchDashboard);
+            }
+            context.ExperimentReportConfiguration_Outputs_S3Configuration_BucketName = this.ExperimentReportConfiguration_Outputs_S3Configuration_BucketName;
+            context.ExperimentReportConfiguration_Outputs_S3Configuration_Prefix = this.ExperimentReportConfiguration_Outputs_S3Configuration_Prefix;
+            context.ExperimentReportConfiguration_PostExperimentDuration = this.ExperimentReportConfiguration_PostExperimentDuration;
+            context.ExperimentReportConfiguration_PreExperimentDuration = this.ExperimentReportConfiguration_PreExperimentDuration;
             context.CloudWatchLogsConfiguration_LogGroupArn = this.CloudWatchLogsConfiguration_LogGroupArn;
             context.LogConfiguration_LogSchemaVersion = this.LogConfiguration_LogSchemaVersion;
             context.S3Configuration_BucketName = this.S3Configuration_BucketName;
@@ -386,6 +474,110 @@ namespace Amazon.PowerShell.Cmdlets.FIS
             if (requestExperimentOptionsIsNull)
             {
                 request.ExperimentOptions = null;
+            }
+            
+             // populate ExperimentReportConfiguration
+            var requestExperimentReportConfigurationIsNull = true;
+            request.ExperimentReportConfiguration = new Amazon.FIS.Model.CreateExperimentTemplateReportConfigurationInput();
+            System.String requestExperimentReportConfiguration_experimentReportConfiguration_PostExperimentDuration = null;
+            if (cmdletContext.ExperimentReportConfiguration_PostExperimentDuration != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_PostExperimentDuration = cmdletContext.ExperimentReportConfiguration_PostExperimentDuration;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_PostExperimentDuration != null)
+            {
+                request.ExperimentReportConfiguration.PostExperimentDuration = requestExperimentReportConfiguration_experimentReportConfiguration_PostExperimentDuration;
+                requestExperimentReportConfigurationIsNull = false;
+            }
+            System.String requestExperimentReportConfiguration_experimentReportConfiguration_PreExperimentDuration = null;
+            if (cmdletContext.ExperimentReportConfiguration_PreExperimentDuration != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_PreExperimentDuration = cmdletContext.ExperimentReportConfiguration_PreExperimentDuration;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_PreExperimentDuration != null)
+            {
+                request.ExperimentReportConfiguration.PreExperimentDuration = requestExperimentReportConfiguration_experimentReportConfiguration_PreExperimentDuration;
+                requestExperimentReportConfigurationIsNull = false;
+            }
+            Amazon.FIS.Model.ExperimentTemplateReportConfigurationDataSourcesInput requestExperimentReportConfiguration_experimentReportConfiguration_DataSources = null;
+            
+             // populate DataSources
+            var requestExperimentReportConfiguration_experimentReportConfiguration_DataSourcesIsNull = true;
+            requestExperimentReportConfiguration_experimentReportConfiguration_DataSources = new Amazon.FIS.Model.ExperimentTemplateReportConfigurationDataSourcesInput();
+            List<Amazon.FIS.Model.ReportConfigurationCloudWatchDashboardInput> requestExperimentReportConfiguration_experimentReportConfiguration_DataSources_dataSources_CloudWatchDashboard = null;
+            if (cmdletContext.DataSources_CloudWatchDashboard != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_DataSources_dataSources_CloudWatchDashboard = cmdletContext.DataSources_CloudWatchDashboard;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_DataSources_dataSources_CloudWatchDashboard != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_DataSources.CloudWatchDashboards = requestExperimentReportConfiguration_experimentReportConfiguration_DataSources_dataSources_CloudWatchDashboard;
+                requestExperimentReportConfiguration_experimentReportConfiguration_DataSourcesIsNull = false;
+            }
+             // determine if requestExperimentReportConfiguration_experimentReportConfiguration_DataSources should be set to null
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_DataSourcesIsNull)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_DataSources = null;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_DataSources != null)
+            {
+                request.ExperimentReportConfiguration.DataSources = requestExperimentReportConfiguration_experimentReportConfiguration_DataSources;
+                requestExperimentReportConfigurationIsNull = false;
+            }
+            Amazon.FIS.Model.ExperimentTemplateReportConfigurationOutputsInput requestExperimentReportConfiguration_experimentReportConfiguration_Outputs = null;
+            
+             // populate Outputs
+            var requestExperimentReportConfiguration_experimentReportConfiguration_OutputsIsNull = true;
+            requestExperimentReportConfiguration_experimentReportConfiguration_Outputs = new Amazon.FIS.Model.ExperimentTemplateReportConfigurationOutputsInput();
+            Amazon.FIS.Model.ReportConfigurationS3OutputInput requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration = null;
+            
+             // populate S3Configuration
+            var requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3ConfigurationIsNull = true;
+            requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration = new Amazon.FIS.Model.ReportConfigurationS3OutputInput();
+            System.String requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_BucketName = null;
+            if (cmdletContext.ExperimentReportConfiguration_Outputs_S3Configuration_BucketName != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_BucketName = cmdletContext.ExperimentReportConfiguration_Outputs_S3Configuration_BucketName;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_BucketName != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration.BucketName = requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_BucketName;
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3ConfigurationIsNull = false;
+            }
+            System.String requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_Prefix = null;
+            if (cmdletContext.ExperimentReportConfiguration_Outputs_S3Configuration_Prefix != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_Prefix = cmdletContext.ExperimentReportConfiguration_Outputs_S3Configuration_Prefix;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_Prefix != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration.Prefix = requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration_experimentReportConfiguration_Outputs_S3Configuration_Prefix;
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3ConfigurationIsNull = false;
+            }
+             // determine if requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration should be set to null
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3ConfigurationIsNull)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration = null;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration != null)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs.S3Configuration = requestExperimentReportConfiguration_experimentReportConfiguration_Outputs_experimentReportConfiguration_Outputs_S3Configuration;
+                requestExperimentReportConfiguration_experimentReportConfiguration_OutputsIsNull = false;
+            }
+             // determine if requestExperimentReportConfiguration_experimentReportConfiguration_Outputs should be set to null
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_OutputsIsNull)
+            {
+                requestExperimentReportConfiguration_experimentReportConfiguration_Outputs = null;
+            }
+            if (requestExperimentReportConfiguration_experimentReportConfiguration_Outputs != null)
+            {
+                request.ExperimentReportConfiguration.Outputs = requestExperimentReportConfiguration_experimentReportConfiguration_Outputs;
+                requestExperimentReportConfigurationIsNull = false;
+            }
+             // determine if request.ExperimentReportConfiguration should be set to null
+            if (requestExperimentReportConfigurationIsNull)
+            {
+                request.ExperimentReportConfiguration = null;
             }
             
              // populate LogConfiguration
@@ -520,13 +712,7 @@ namespace Amazon.PowerShell.Cmdlets.FIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Fault Injection Simulator", "CreateExperimentTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreateExperimentTemplate(request);
-                #elif CORECLR
-                return client.CreateExperimentTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateExperimentTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -548,6 +734,11 @@ namespace Amazon.PowerShell.Cmdlets.FIS
             public System.String Description { get; set; }
             public Amazon.FIS.AccountTargeting ExperimentOptions_AccountTargeting { get; set; }
             public Amazon.FIS.EmptyTargetResolutionMode ExperimentOptions_EmptyTargetResolutionMode { get; set; }
+            public List<Amazon.FIS.Model.ReportConfigurationCloudWatchDashboardInput> DataSources_CloudWatchDashboard { get; set; }
+            public System.String ExperimentReportConfiguration_Outputs_S3Configuration_BucketName { get; set; }
+            public System.String ExperimentReportConfiguration_Outputs_S3Configuration_Prefix { get; set; }
+            public System.String ExperimentReportConfiguration_PostExperimentDuration { get; set; }
+            public System.String ExperimentReportConfiguration_PreExperimentDuration { get; set; }
             public System.String CloudWatchLogsConfiguration_LogGroupArn { get; set; }
             public System.Int32? LogConfiguration_LogSchemaVersion { get; set; }
             public System.String S3Configuration_BucketName { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -17,6 +17,7 @@
 
 using System;
 using System.Management.Automation;
+using System.Threading;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.S3;
@@ -32,14 +33,33 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [AWSCmdlet("Creates a new bucket in Amazon S3.", Operation = new [] {"PutBucket"}, SelectReturnType = typeof(Amazon.S3.Model.PutBucketResponse))]
     [AWSCmdletOutput("Amazon.S3.Model.S3Bucket or Amazon.S3.Model.PutBucketResponse",
         "Returns an Amazon.S3.Model.S3Bucket instance representing the new bucket.",
-        "The service response (type Amazon.S3.Model.PutBucketResponse) is added to the cmdlet entry in the $AWSHistory stack."
+        "The service call response(s) (type Amazon.S3.Model.PutBucketResponse) can be returned by specifying '-Select *'."
     )]
     public class NewS3BucketCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
         #region Parameter BucketName
         /// <summary>
-        /// The name that will be given to the new bucket. This name needs to be
-        /// unique across Amazon S3.
+        /// <para>
+        /// The name of the bucket to create.
+        /// </para>
+        ///  
+        /// <para>
+        ///  <b>General purpose buckets</b> - For information about bucket naming restrictions,
+        /// see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">Bucket
+        /// naming rules</a> in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        ///  
+        /// <para>
+        ///  <b>Directory buckets </b> - When you use this operation with a directory bucket,
+        /// you must use path-style requests in the format <c>https://s3express-control.<i>region_code</i>.amazonaws.com/<i>bucket-name</i>
+        /// </c>. Virtual-hosted-style requests aren't supported. Directory bucket names must
+        /// be unique in the chosen Availability Zone. Bucket names must also follow the format
+        /// <c> <i>bucket_base_name</i>--<i>az_id</i>--x-s3</c> (for example, <c> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</c>).
+        /// For information about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i> 
+        /// </para>
         /// </summary>
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
         [Amazon.PowerShell.Common.AWSRequiredParameter]
@@ -49,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter CannedACLName
         /// <summary>
         /// Specifies the name of the canned ACL (access control list) of permissions to be applied to the S3 bucket.
-        /// Please refer to <a href="http://docs.aws.amazon.com/sdkfornet/v3/apidocs/Index.html?page=S3/TS3_S3CannedACL.html&tocid=Amazon_S3_S3CannedACL">Amazon.S3.Model.S3CannedACL</a> for information on S3 Canned ACLs.
+        /// Please refer to <a href="http://docs.aws.amazon.com/sdkfornet/v4/apidocs/Index.html?page=S3/TS3_S3CannedACL.html&tocid=Amazon_S3_S3CannedACL">Amazon.S3.Model.S3CannedACL</a> for information on S3 Canned ACLs.
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.S3.S3CannedACL")]
@@ -111,6 +131,12 @@ namespace Amazon.PowerShell.Cmdlets.S3
         [System.Management.Automation.Parameter]
         public string Select { get; set; } = "*";
         #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
 
         protected override void ProcessRecord()
         {
@@ -211,13 +237,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             try
             {
-#if DESKTOP
-                return client.PutBucket(request);
-#elif CORECLR
-                return client.PutBucketAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.PutBucketAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

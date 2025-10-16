@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectConnect;
 using Amazon.DirectConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DC
 {
     /// <summary>
-    /// Removes the association between a MAC Security (MACsec) security key and an Direct
-    /// Connect dedicated connection.
+    /// Removes the association between a MAC Security (MACsec) security key and a Direct
+    /// Connect connection.
     /// </summary>
     [Cmdlet("Remove", "DCMacSecKey", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.DirectConnect.Model.DisassociateMacSecKeyResponse")]
     [AWSCmdlet("Calls the AWS Direct Connect DisassociateMacSecKey API operation.", Operation = new[] {"DisassociateMacSecKey"}, SelectReturnType = typeof(Amazon.DirectConnect.Model.DisassociateMacSecKeyResponse))]
     [AWSCmdletOutput("Amazon.DirectConnect.Model.DisassociateMacSecKeyResponse",
-        "This cmdlet returns an Amazon.DirectConnect.Model.DisassociateMacSecKeyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DirectConnect.Model.DisassociateMacSecKeyResponse object containing multiple properties."
     )]
     public partial class RemoveDCMacSecKeyCmdlet : AmazonDirectConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConnectionId
         /// <summary>
         /// <para>
-        /// <para>The ID of the dedicated connection (dxcon-xxxx), or the ID of the LAG (dxlag-xxxx).</para><para>You can use <a>DescribeConnections</a> or <a>DescribeLags</a> to retrieve connection
-        /// ID.</para>
+        /// <para>The ID of the dedicated connection (dxcon-xxxx), interconnect (dxcon-xxxx), or LAG
+        /// (dxlag-xxxx).</para><para>You can use <a>DescribeConnections</a>, <a>DescribeInterconnects</a>, or <a>DescribeLags</a>
+        /// to retrieve connection ID.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectionId), MyInvocation.BoundParameters);
@@ -196,13 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Direct Connect", "DisassociateMacSecKey");
             try
             {
-                #if DESKTOP
-                return client.DisassociateMacSecKey(request);
-                #elif CORECLR
-                return client.DisassociateMacSecKeyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisassociateMacSecKeyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

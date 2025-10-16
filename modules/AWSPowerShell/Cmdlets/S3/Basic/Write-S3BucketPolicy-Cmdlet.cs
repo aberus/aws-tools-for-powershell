@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
@@ -32,8 +34,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
     /// 
     ///  <note><para><b>Directory buckets </b> - For directory buckets, you must make requests for this
     /// API operation to the Regional endpoint. These endpoints support path-style requests
-    /// in the format <c>https://s3express-control.<i>region_code</i>.amazonaws.com/<i>bucket-name</i></c>. Virtual-hosted-style requests aren't supported. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-Regions-and-Zones.html">Regional
-    /// and Zonal endpoints</a> in the <i>Amazon S3 User Guide</i>.
+    /// in the format <c>https://s3express-control.<i>region-code</i>.amazonaws.com/<i>bucket-name</i></c>. Virtual-hosted-style requests aren't supported. For more information about endpoints
+    /// in Availability Zones, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html">Regional
+    /// and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon
+    /// S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html">Concepts
+    /// for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.
     /// </para></note><dl><dt>Permissions</dt><dd><para>
     /// If you are using an identity other than the root user of the Amazon Web Services account
     /// that owns the bucket, the calling identity must both have the <c>PutBucketPolicy</c>
@@ -67,7 +72,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
     /// policy examples</a> in the <i>Amazon S3 User Guide</i>.
     /// </para><para><b>Directory bucket example bucket policies</b> - See <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-security-iam-example-bucket-policies.html">Example
     /// bucket policies for S3 Express One Zone</a> in the <i>Amazon S3 User Guide</i>.
-    /// </para></dd><dt>HTTP Host header syntax</dt><dd><para><b>Directory buckets </b> - The HTTP Host header syntax is <c>s3express-control.<i>region</i>.amazonaws.com</c>.
+    /// </para></dd><dt>HTTP Host header syntax</dt><dd><para><b>Directory buckets </b> - The HTTP Host header syntax is <c>s3express-control.<i>region-code</i>.amazonaws.com</c>.
     /// </para></dd></dl><para>
     /// The following operations are related to <c>PutBucketPolicy</c>:
     /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html">CreateBucket</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteBucket.html">DeleteBucket</a></para></li></ul>
@@ -77,39 +82,47 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) PutBucketPolicy API operation.", Operation = new[] {"PutBucketPolicy"}, SelectReturnType = typeof(Amazon.S3.Model.PutBucketPolicyResponse))]
     [AWSCmdletOutput("None or Amazon.S3.Model.PutBucketPolicyResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.S3.Model.PutBucketPolicyResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.S3.Model.PutBucketPolicyResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteS3BucketPolicyCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
         /// <para>
         /// <para>The name of the bucket.</para><para><b>Directory buckets </b> - When you use this operation with a directory bucket,
-        /// you must use path-style requests in the format <code>https://s3express-control.<i>region_code</i>.amazonaws.com/<i>bucket-name</i></code>. Virtual-hosted-style requests aren't supported. Directory bucket names must
-        /// be unique in the chosen Availability Zone. Bucket names must also follow the format
-        /// <code><i>bucket_base_name</i>--<i>az_id</i>--x-s3</code> (for example, <code><i>DOC-EXAMPLE-BUCKET</i>--<i>usw2-az2</i>--x-s3</code>).
-        /// For information about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// you must use path-style requests in the format <c>https://s3express-control.<i>region-code</i>.amazonaws.com/<i>bucket-name</i></c>. Virtual-hosted-style requests aren't supported. Directory bucket names must
+        /// be unique in the chosen Zone (Availability Zone or Local Zone). Bucket names must
+        /// also follow the format <c><i>bucket-base-name</i>--<i>zone-id</i>--x-s3</c> (for
+        /// example, <c><i>DOC-EXAMPLE-BUCKET</i>--<i>usw2-az1</i>--x-s3</c>). For information
+        /// about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
         /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i></para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        #else
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String BucketName { get; set; }
         #endregion
         
         #region Parameter ChecksumAlgorithm
         /// <summary>
         /// <para>
-        /// <para>Indicates the algorithm used to create the checksum for the object when you use the
+        /// <para>Indicates the algorithm used to create the checksum for the request when you use the
         /// SDK. This header will not provide any additional functionality if you don't use the
-        /// SDK. When you send this header, there must be a corresponding <code>x-amz-checksum-<i>algorithm</i></code> or <code>x-amz-trailer</code> header sent. Otherwise, Amazon S3 fails the
-        /// request with the HTTP status code <code>400 Bad Request</code>.</para><para>For the <code>x-amz-checksum-<i>algorithm</i></code> header, replace <code><i>algorithm</i></code> with the supported algorithm from the following list: </para><ul><li><para>CRC32</para></li><li><para>CRC32C</para></li><li><para>SHA1</para></li><li><para>SHA256</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking
-        /// object integrity</a> in the <i>Amazon S3 User Guide</i>.</para><para>If the individual checksum value you provide through <code>x-amz-checksum-<i>algorithm</i></code> doesn't match the checksum algorithm you set through <code>x-amz-sdk-checksum-algorithm</code>,
-        /// Amazon S3 ignores any provided <code>ChecksumAlgorithm</code> parameter and uses the
-        /// checksum algorithm that matches the provided value in <code>x-amz-checksum-<i>algorithm</i></code>.</para><note><para>For directory buckets, when you use Amazon Web Services SDKs, <code>CRC32</code> is
-        /// the default checksum algorithm that's used for performance.</para></note>
+        /// SDK. When you send this header, there must be a corresponding <c>x-amz-checksum-<i>algorithm</i></c> or <c>x-amz-trailer</c> header sent. Otherwise, Amazon S3 fails the request with
+        /// the HTTP status code <c>400 Bad Request</c>.</para><para>For the <c>x-amz-checksum-<i>algorithm</i></c> header, replace <c><i>algorithm</i></c> with the supported algorithm from the following list: </para><ul><li><para><c>CRC32</c></para></li><li><para><c>CRC32C</c></para></li><li><para><c>CRC64NVME</c></para></li><li><para><c>SHA1</c></para></li><li><para><c>SHA256</c></para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking
+        /// object integrity</a> in the <i>Amazon S3 User Guide</i>.</para><para>If the individual checksum value you provide through <c>x-amz-checksum-<i>algorithm</i></c> doesn't match the checksum algorithm you set through <c>x-amz-sdk-checksum-algorithm</c>,
+        /// Amazon S3 fails the request with a <c>BadDigest</c> error.</para><note><para>For directory buckets, when you use Amazon Web Services SDKs, <c>CRC32</c> is the
+        /// default checksum algorithm that's used for performance.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,8 +157,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>
         /// <para>The account ID of the expected bucket owner. If the account ID that you provide does
         /// not match the actual owner of the bucket, the request fails with the HTTP status code
-        /// <code>403 Forbidden</code> (access denied).</para><note><para>For directory buckets, this header is not supported in this API operation. If you
-        /// specify this header, the request fails with the HTTP status code <code>501 Not Implemented</code>.</para></note>
+        /// <c>403 Forbidden</c> (access denied).</para><note><para>For directory buckets, this header is not supported in this API operation. If you
+        /// specify this header, the request fails with the HTTP status code <c>501 Not Implemented</c>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,10 +168,17 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter Policy
         /// <summary>
         /// <para>
-        /// <para>The bucket policy as a JSON document.</para><para>For directory buckets, the only IAM action supported in the bucket policy is <code>s3express:CreateSession</code>.</para>
+        /// <para>The bucket policy as a JSON document.</para><para>For directory buckets, the only IAM action supported in the bucket policy is <c>s3express:CreateSession</c>.</para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
+        #else
+        [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Policy { get; set; }
         #endregion
         
@@ -172,16 +192,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -192,9 +202,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BucketName), MyInvocation.BoundParameters);
@@ -208,27 +222,29 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.PutBucketPolicyResponse, WriteS3BucketPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
+            #if MODULAR
+            if (this.BucketName == null && ParameterWasBound(nameof(this.BucketName)))
+            {
+                WriteWarning("You are passing $null as a value for parameter BucketName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.ChecksumAlgorithm = this.ChecksumAlgorithm;
-            context.ContentMD5 = this.ContentMD5;
-            context.Policy = this.Policy;
             context.ConfirmRemoveSelfBucketAccess = this.ConfirmRemoveSelfBucketAccess;
+            context.ContentMD5 = this.ContentMD5;
             context.ExpectedBucketOwner = this.ExpectedBucketOwner;
+            context.Policy = this.Policy;
+            #if MODULAR
+            if (this.Policy == null && ParameterWasBound(nameof(this.Policy)))
+            {
+                WriteWarning("You are passing $null as a value for parameter Policy which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -253,21 +269,21 @@ namespace Amazon.PowerShell.Cmdlets.S3
             {
                 request.ChecksumAlgorithm = cmdletContext.ChecksumAlgorithm;
             }
-            if (cmdletContext.ContentMD5 != null)
-            {
-                request.ContentMD5 = cmdletContext.ContentMD5;
-            }
-            if (cmdletContext.Policy != null)
-            {
-                request.Policy = cmdletContext.Policy;
-            }
             if (cmdletContext.ConfirmRemoveSelfBucketAccess != null)
             {
                 request.ConfirmRemoveSelfBucketAccess = cmdletContext.ConfirmRemoveSelfBucketAccess.Value;
             }
+            if (cmdletContext.ContentMD5 != null)
+            {
+                request.ContentMD5 = cmdletContext.ContentMD5;
+            }
             if (cmdletContext.ExpectedBucketOwner != null)
             {
                 request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
+            }
+            if (cmdletContext.Policy != null)
+            {
+                request.Policy = cmdletContext.Policy;
             }
             
             CmdletOutput output;
@@ -307,13 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "PutBucketPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutBucketPolicy(request);
-                #elif CORECLR
-                return client.PutBucketPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutBucketPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -332,10 +342,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             public System.String BucketName { get; set; }
             public Amazon.S3.ChecksumAlgorithm ChecksumAlgorithm { get; set; }
-            public System.String ContentMD5 { get; set; }
-            public System.String Policy { get; set; }
             public System.Boolean? ConfirmRemoveSelfBucketAccess { get; set; }
+            public System.String ContentMD5 { get; set; }
             public System.String ExpectedBucketOwner { get; set; }
+            public System.String Policy { get; set; }
             public System.Func<Amazon.S3.Model.PutBucketPolicyResponse, WriteS3BucketPolicyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

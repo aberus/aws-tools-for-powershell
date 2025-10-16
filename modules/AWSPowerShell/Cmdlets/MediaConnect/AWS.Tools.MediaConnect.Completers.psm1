@@ -88,9 +88,19 @@ $EMCN_Completers = {
         }
 
         # Amazon.MediaConnect.Colorimetry
-        "Update-EMCNFlowMediaStream/Attributes_Fmtp_Colorimetry"
+        "Update-EMCNFlowMediaStream/Fmtp_Colorimetry"
         {
             $v = "BT2020","BT2100","BT601","BT709","ST2065-1","ST2065-3","XYZ"
+            break
+        }
+
+        # Amazon.MediaConnect.ContentQualityAnalysisState
+        {
+            ($_ -eq "New-EMCNFlow/SourceMonitoringConfig_ContentQualityAnalysisState") -Or
+            ($_ -eq "Update-EMCNFlow/SourceMonitoringConfig_ContentQualityAnalysisState")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -120,6 +130,16 @@ $EMCN_Completers = {
             break
         }
 
+        # Amazon.MediaConnect.FlowSize
+        {
+            ($_ -eq "New-EMCNFlow/FlowSize") -Or
+            ($_ -eq "Update-EMCNFlow/FlowSize")
+        }
+        {
+            $v = "LARGE","MEDIUM"
+            break
+        }
+
         # Amazon.MediaConnect.MaintenanceDay
         {
             ($_ -eq "New-EMCNFlow/Maintenance_MaintenanceDay") -Or
@@ -137,6 +157,23 @@ $EMCN_Completers = {
             break
         }
 
+        # Amazon.MediaConnect.NdiState
+        {
+            ($_ -eq "New-EMCNFlow/NdiConfig_NdiState") -Or
+            ($_ -eq "Update-EMCNFlow/NdiConfig_NdiState")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.MediaConnect.OutputStatus
+        "Update-EMCNFlowOutput/OutputStatus"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
         # Amazon.MediaConnect.Protocol
         {
             ($_ -eq "Update-EMCNBridgeOutput/NetworkOutput_Protocol") -Or
@@ -145,19 +182,19 @@ $EMCN_Completers = {
             ($_ -eq "Update-EMCNFlowSource/Protocol")
         }
         {
-            $v = "cdi","fujitsu-qos","rist","rtp","rtp-fec","srt-caller","srt-listener","st2110-jpegxs","udp","zixi-pull","zixi-push"
+            $v = "cdi","fujitsu-qos","ndi-speed-hq","rist","rtp","rtp-fec","srt-caller","srt-listener","st2110-jpegxs","udp","zixi-pull","zixi-push"
             break
         }
 
         # Amazon.MediaConnect.Range
-        "Update-EMCNFlowMediaStream/Attributes_Fmtp_Range"
+        "Update-EMCNFlowMediaStream/Fmtp_Range"
         {
             $v = "FULL","FULLPROTECT","NARROW"
             break
         }
 
         # Amazon.MediaConnect.ScanMode
-        "Update-EMCNFlowMediaStream/Attributes_Fmtp_ScanMode"
+        "Update-EMCNFlowMediaStream/Fmtp_ScanMode"
         {
             $v = "interlace","progressive","progressive-segmented-frame"
             break
@@ -176,9 +213,19 @@ $EMCN_Completers = {
         }
 
         # Amazon.MediaConnect.Tcs
-        "Update-EMCNFlowMediaStream/Attributes_Fmtp_Tcs"
+        "Update-EMCNFlowMediaStream/Fmtp_Tc"
         {
             $v = "BT2100LINHLG","BT2100LINPQ","DENSITY","HLG","LINEAR","PQ","SDR","ST2065-1","ST428-1"
+            break
+        }
+
+        # Amazon.MediaConnect.ThumbnailState
+        {
+            ($_ -eq "New-EMCNFlow/SourceMonitoringConfig_ThumbnailState") -Or
+            ($_ -eq "Update-EMCNFlow/SourceMonitoringConfig_ThumbnailState")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -191,20 +238,25 @@ $EMCN_Completers = {
 }
 
 $EMCN_map = @{
-    "Attributes_Fmtp_Colorimetry"=@("Update-EMCNFlowMediaStream")
-    "Attributes_Fmtp_Range"=@("Update-EMCNFlowMediaStream")
-    "Attributes_Fmtp_ScanMode"=@("Update-EMCNFlowMediaStream")
-    "Attributes_Fmtp_Tcs"=@("Update-EMCNFlowMediaStream")
     "BridgePlacement"=@("Update-EMCNGatewayInstance")
     "DesiredState"=@("Update-EMCNBridgeState")
     "EntitlementStatus"=@("Update-EMCNFlowEntitlement")
+    "FlowSize"=@("New-EMCNFlow","Update-EMCNFlow")
+    "Fmtp_Colorimetry"=@("Update-EMCNFlowMediaStream")
+    "Fmtp_Range"=@("Update-EMCNFlowMediaStream")
+    "Fmtp_ScanMode"=@("Update-EMCNFlowMediaStream")
+    "Fmtp_Tc"=@("Update-EMCNFlowMediaStream")
     "Maintenance_MaintenanceDay"=@("New-EMCNFlow","Update-EMCNFlow")
     "MediaStreamType"=@("Update-EMCNFlowMediaStream")
+    "NdiConfig_NdiState"=@("New-EMCNFlow","Update-EMCNFlow")
     "NetworkOutput_Protocol"=@("Update-EMCNBridgeOutput")
     "NetworkSource_Protocol"=@("Update-EMCNBridgeSource")
+    "OutputStatus"=@("Update-EMCNFlowOutput")
     "Protocol"=@("Update-EMCNFlowOutput","Update-EMCNFlowSource")
     "SourceFailoverConfig_FailoverMode"=@("New-EMCNBridge","New-EMCNFlow","Update-EMCNBridge","Update-EMCNFlow")
     "SourceFailoverConfig_State"=@("New-EMCNBridge","New-EMCNFlow","Update-EMCNBridge","Update-EMCNFlow")
+    "SourceMonitoringConfig_ContentQualityAnalysisState"=@("New-EMCNFlow","Update-EMCNFlow")
+    "SourceMonitoringConfig_ThumbnailState"=@("New-EMCNFlow","Update-EMCNFlow")
 }
 
 _awsArgumentCompleterRegistration $EMCN_Completers $EMCN_map
@@ -273,6 +325,7 @@ $EMCN_SelectMap = @{
                "Get-EMCNBridge",
                "Get-EMCNFlow",
                "Get-EMCNFlowSourceMetadata",
+               "Get-EMCNFlowSourceThumbnail",
                "Get-EMCNGateway",
                "Get-EMCNGatewayInstance",
                "Get-EMCNOffering",

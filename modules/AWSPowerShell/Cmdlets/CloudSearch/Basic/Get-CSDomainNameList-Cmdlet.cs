@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudSearch;
 using Amazon.CloudSearch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CS
     [AWSCmdlet("Calls the Amazon CloudSearch ListDomainNames API operation.", Operation = new[] {"ListDomainNames"}, SelectReturnType = typeof(Amazon.CloudSearch.Model.ListDomainNamesResponse), LegacyAlias="Get-CSListDomainNames")]
     [AWSCmdletOutput("System.String or Amazon.CloudSearch.Model.ListDomainNamesResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.CloudSearch.Model.ListDomainNamesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudSearch.Model.ListDomainNamesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCSDomainNameListCmdlet : AmazonCloudSearchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.CS
         public string Select { get; set; } = "DomainNames";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.CS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudSearch", "ListDomainNames");
             try
             {
-                #if DESKTOP
-                return client.ListDomainNames(request);
-                #elif CORECLR
-                return client.ListDomainNamesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListDomainNamesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

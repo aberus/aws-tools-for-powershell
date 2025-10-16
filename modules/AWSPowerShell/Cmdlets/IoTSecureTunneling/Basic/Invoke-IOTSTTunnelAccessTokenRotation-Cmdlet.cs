@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSecureTunneling;
 using Amazon.IoTSecureTunneling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTST
 {
     /// <summary>
@@ -46,14 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTST
     [OutputType("Amazon.IoTSecureTunneling.Model.RotateTunnelAccessTokenResponse")]
     [AWSCmdlet("Calls the AWS IoT Secure Tunneling RotateTunnelAccessToken API operation.", Operation = new[] {"RotateTunnelAccessToken"}, SelectReturnType = typeof(Amazon.IoTSecureTunneling.Model.RotateTunnelAccessTokenResponse))]
     [AWSCmdletOutput("Amazon.IoTSecureTunneling.Model.RotateTunnelAccessTokenResponse",
-        "This cmdlet returns an Amazon.IoTSecureTunneling.Model.RotateTunnelAccessTokenResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTSecureTunneling.Model.RotateTunnelAccessTokenResponse object containing multiple properties."
     )]
     public partial class InvokeIOTSTTunnelAccessTokenRotationCmdlet : AmazonIoTSecureTunnelingClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientMode
         /// <summary>
@@ -79,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTST
         /// <para>A list of service names that identify the target application. The IoT client running
         /// on the destination device reads this value and uses it to look up a port or an IP
         /// address and a port. The IoT client instantiates the local proxy, which uses this information
-        /// to connect to the destination application.</para>
+        /// to connect to the destination application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,9 +140,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTST
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TunnelId), MyInvocation.BoundParameters);
@@ -266,13 +275,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTST
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Secure Tunneling", "RotateTunnelAccessToken");
             try
             {
-                #if DESKTOP
-                return client.RotateTunnelAccessToken(request);
-                #elif CORECLR
-                return client.RotateTunnelAccessTokenAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RotateTunnelAccessTokenAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

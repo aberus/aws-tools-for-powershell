@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticMapReduce;
 using Amazon.ElasticMapReduce.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMR
 {
     /// <summary>
@@ -60,12 +62,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
     [AWSCmdlet("Calls the Amazon Elastic MapReduce RunJobFlow API operation.", Operation = new[] {"RunJobFlow"}, SelectReturnType = typeof(Amazon.ElasticMapReduce.Model.RunJobFlowResponse))]
     [AWSCmdletOutput("System.String or Amazon.ElasticMapReduce.Model.RunJobFlowResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ElasticMapReduce.Model.RunJobFlowResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticMapReduce.Model.RunJobFlowResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartEMRJobFlowCmdlet : AmazonElasticMapReduceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalInfo
         /// <summary>
@@ -80,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter Instances_AdditionalMasterSecurityGroup
         /// <summary>
         /// <para>
-        /// <para>A list of additional Amazon EC2 security group IDs for the master node.</para>
+        /// <para>A list of additional Amazon EC2 security group IDs for the master node.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,7 +98,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter Instances_AdditionalSlaveSecurityGroup
         /// <summary>
         /// <para>
-        /// <para>A list of additional Amazon EC2 security group IDs for the core and task nodes.</para>
+        /// <para>A list of additional Amazon EC2 security group IDs for the core and task nodes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,7 +148,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <para>Applies to Amazon EMR releases 4.0 and later. A case-insensitive list of applications
         /// for Amazon EMR to install and configure when launching the cluster. For a list of
         /// applications available for each Amazon EMR release version, see the <a href="https://docs.aws.amazon.com/emr/latest/ReleaseGuide/">Amazon
-        /// EMRRelease Guide</a>.</para>
+        /// EMRRelease Guide</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <para>When multiple Availability Zones are specified, Amazon EMR evaluates them and launches
         /// instances in the optimal Availability Zone. <c>AvailabilityZones</c> is used for instance
         /// fleets, while <c>AvailabilityZone</c> (singular) is used for uniform instance groups.</para><note><para>The instance fleet configuration is available only in Amazon EMR releases 4.8.0 and
-        /// later, excluding 5.0.x versions.</para></note>
+        /// later, excluding 5.0.x versions.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,7 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter BootstrapAction
         /// <summary>
         /// <para>
-        /// <para>A list of bootstrap actions to run before Hadoop starts on the cluster nodes.</para>
+        /// <para>A list of bootstrap actions to run before Hadoop starts on the cluster nodes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -197,7 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <summary>
         /// <para>
         /// <para>For Amazon EMR releases 4.0 and later. The list of configurations supplied for the
-        /// Amazon EMR cluster that you are creating.</para>
+        /// Amazon EMR cluster that you are creating.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -298,7 +325,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <para>Applies to clusters that use the instance fleet configuration. When multiple Amazon
         /// EC2 subnet IDs are specified, Amazon EMR evaluates them and launches instances in
         /// the optimal subnet.</para><note><para>The instance fleet configuration is available only in Amazon EMR releases 4.8.0 and
-        /// later, excluding 5.0.x versions.</para></note>
+        /// later, excluding 5.0.x versions.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -325,6 +356,16 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Instances_EmrManagedSlaveSecurityGroup { get; set; }
+        #endregion
+        
+        #region Parameter ExtendedSupport
+        /// <summary>
+        /// <para>
+        /// <para>Reserved.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ExtendedSupport { get; set; }
         #endregion
         
         #region Parameter Instances_HadoopVersion
@@ -369,7 +410,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <para>
         /// <note><para>The instance fleet configuration is available only in Amazon EMR releases 4.8.0 and
         /// later, excluding 5.0.x versions.</para></note><para>Describes the Amazon EC2 instances and instance configurations for clusters that use
-        /// the instance fleet configuration.</para>
+        /// the instance fleet configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -380,7 +425,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter Instances_InstanceGroup
         /// <summary>
         /// <para>
-        /// <para>Configuration for the instance groups in a cluster.</para>
+        /// <para>Configuration for the instance groups in a cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -416,7 +465,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <summary>
         /// <para>
         /// <para>Specifies whether the cluster should remain available after completing all steps.
-        /// Defaults to <c>true</c>. For more information about configuring cluster termination,
+        /// Defaults to <c>false</c>. For more information about configuring cluster termination,
         /// see <a href="https://docs.aws.amazon.com/emr/latest/ManagementGuide/emr-plan-termination.html">Control
         /// Cluster Termination</a> in the <i>EMR Management Guide</i>.</para>
         /// </para>
@@ -540,7 +589,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// the corresponding installation script as bootstrap action arguments. For more information,
         /// see "Launch a Job Flow on the MapR Distribution for Hadoop" in the <a href="https://docs.aws.amazon.com/emr/latest/DeveloperGuide/emr-dg.pdf">Amazon
         /// EMR Developer Guide</a>. Supported values are:</para><ul><li><para>"mapr-m3" - launch the cluster using MapR M3 Edition.</para></li><li><para>"mapr-m5" - launch the cluster using MapR M5 Edition.</para></li><li><para>"mapr" with the user arguments specifying "--edition,m3" or "--edition,m5" - launch
-        /// the job flow using MapR M3 or M5 Edition respectively.</para></li><li><para>"mapr-m7" - launch the cluster using MapR M7 Edition.</para></li><li><para>"hunk" - launch the cluster with the Hunk Big Data Analytics Platform.</para></li><li><para>"hue"- launch the cluster with Hue installed.</para></li><li><para>"spark" - launch the cluster with Apache Spark installed.</para></li><li><para>"ganglia" - launch the cluster with the Ganglia Monitoring System installed.</para></li></ul>
+        /// the job flow using MapR M3 or M5 Edition respectively.</para></li><li><para>"mapr-m7" - launch the cluster using MapR M7 Edition.</para></li><li><para>"hunk" - launch the cluster with the Hunk Big Data Analytics Platform.</para></li><li><para>"hue"- launch the cluster with Hue installed.</para></li><li><para>"spark" - launch the cluster with Apache Spark installed.</para></li><li><para>"ganglia" - launch the cluster with the Ganglia Monitoring System installed.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -563,7 +616,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter PlacementGroupConfig
         /// <summary>
         /// <para>
-        /// <para>The specified placement group configuration for an Amazon EMR cluster.</para>
+        /// <para>The specified placement group configuration for an Amazon EMR cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -634,6 +691,18 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public Amazon.ElasticMapReduce.ScaleDownBehavior ScaleDownBehavior { get; set; }
         #endregion
         
+        #region Parameter ManagedScalingPolicy_ScalingStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Determines whether a custom scaling utilization performance index can be set. Possible
+        /// values include <i>ADVANCED</i> or <i>DEFAULT</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ElasticMapReduce.ScalingStrategy")]
+        public Amazon.ElasticMapReduce.ScalingStrategy ManagedScalingPolicy_ScalingStrategy { get; set; }
+        #endregion
+        
         #region Parameter SecurityConfiguration
         /// <summary>
         /// <para>
@@ -691,7 +760,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter Step
         /// <summary>
         /// <para>
-        /// <para>A list of steps to run.</para>
+        /// <para>A list of steps to run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -704,7 +777,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         /// <para>
         /// <note><para>For Amazon EMR releases 3.x and 2.x. For Amazon EMR releases 4.x and later, use Applications.</para></note><para>A list of strings that indicates third-party software to use. For more information,
         /// see the <a href="https://docs.aws.amazon.com/emr/latest/DeveloperGuide/emr-dg.pdf">Amazon
-        /// EMR Developer Guide</a>. Currently supported values are:</para><ul><li><para>"mapr-m3" - launch the job flow using MapR M3 Edition.</para></li><li><para>"mapr-m5" - launch the job flow using MapR M5 Edition.</para></li></ul>
+        /// EMR Developer Guide</a>. Currently supported values are:</para><ul><li><para>"mapr-m3" - launch the job flow using MapR M3 Edition.</para></li><li><para>"mapr-m5" - launch the job flow using MapR M5 Edition.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -715,7 +792,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of tags to associate with a cluster and propagate to Amazon EC2 instances.</para>
+        /// <para>A list of tags to associate with a cluster and propagate to Amazon EC2 instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -734,6 +815,17 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public System.Boolean? Instances_TerminationProtected { get; set; }
         #endregion
         
+        #region Parameter Instances_UnhealthyNodeReplacement
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether Amazon EMR should gracefully replace core nodes that have degraded
+        /// within the cluster.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Instances_UnhealthyNodeReplacement { get; set; }
+        #endregion
+        
         #region Parameter ComputeLimits_UnitType
         /// <summary>
         /// <para>
@@ -744,6 +836,19 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         [Alias("ManagedScalingPolicy_ComputeLimits_UnitType")]
         [AWSConstantClassSource("Amazon.ElasticMapReduce.ComputeLimitsUnitType")]
         public Amazon.ElasticMapReduce.ComputeLimitsUnitType ComputeLimits_UnitType { get; set; }
+        #endregion
+        
+        #region Parameter ManagedScalingPolicy_UtilizationPerformanceIndex
+        /// <summary>
+        /// <para>
+        /// <para>An integer value that represents an advanced scaling strategy. Setting a higher value
+        /// optimizes for performance. Setting a lower value optimizes for resource conservation.
+        /// Setting the value to 50 balances performance and resource conservation. Possible values
+        /// are 1, 25, 50, 75, and 100.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ManagedScalingPolicy_UtilizationPerformanceIndex { get; set; }
         #endregion
         
         #region Parameter VisibleToAllUser
@@ -778,16 +883,6 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public string Select { get; set; } = "JobFlowId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -798,9 +893,13 @@ namespace Amazon.PowerShell.Cmdlets.EMR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -814,21 +913,11 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticMapReduce.Model.RunJobFlowResponse, StartEMRJobFlowCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdditionalInfo = this.AdditionalInfo;
             context.AmiVersion = this.AmiVersion;
             if (this.Application != null)
@@ -849,6 +938,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             context.EbsRootVolumeIops = this.EbsRootVolumeIops;
             context.EbsRootVolumeSize = this.EbsRootVolumeSize;
             context.EbsRootVolumeThroughput = this.EbsRootVolumeThroughput;
+            context.ExtendedSupport = this.ExtendedSupport;
             if (this.Instances_AdditionalMasterSecurityGroup != null)
             {
                 context.Instances_AdditionalMasterSecurityGroup = new List<System.String>(this.Instances_AdditionalMasterSecurityGroup);
@@ -885,6 +975,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             context.Instances_ServiceAccessSecurityGroup = this.Instances_ServiceAccessSecurityGroup;
             context.Instances_SlaveInstanceType = this.Instances_SlaveInstanceType;
             context.Instances_TerminationProtected = this.Instances_TerminationProtected;
+            context.Instances_UnhealthyNodeReplacement = this.Instances_UnhealthyNodeReplacement;
             context.JobFlowRole = this.JobFlowRole;
             context.KerberosAttributes_ADDomainJoinPassword = this.KerberosAttributes_ADDomainJoinPassword;
             context.KerberosAttributes_ADDomainJoinUser = this.KerberosAttributes_ADDomainJoinUser;
@@ -898,6 +989,8 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             context.ComputeLimits_MaximumOnDemandCapacityUnit = this.ComputeLimits_MaximumOnDemandCapacityUnit;
             context.ComputeLimits_MinimumCapacityUnit = this.ComputeLimits_MinimumCapacityUnit;
             context.ComputeLimits_UnitType = this.ComputeLimits_UnitType;
+            context.ManagedScalingPolicy_ScalingStrategy = this.ManagedScalingPolicy_ScalingStrategy;
+            context.ManagedScalingPolicy_UtilizationPerformanceIndex = this.ManagedScalingPolicy_UtilizationPerformanceIndex;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -1007,6 +1100,10 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             if (cmdletContext.EbsRootVolumeThroughput != null)
             {
                 request.EbsRootVolumeThroughput = cmdletContext.EbsRootVolumeThroughput.Value;
+            }
+            if (cmdletContext.ExtendedSupport != null)
+            {
+                request.ExtendedSupport = cmdletContext.ExtendedSupport.Value;
             }
             
              // populate Instances
@@ -1172,6 +1269,16 @@ namespace Amazon.PowerShell.Cmdlets.EMR
                 request.Instances.TerminationProtected = requestInstances_instances_TerminationProtected.Value;
                 requestInstancesIsNull = false;
             }
+            System.Boolean? requestInstances_instances_UnhealthyNodeReplacement = null;
+            if (cmdletContext.Instances_UnhealthyNodeReplacement != null)
+            {
+                requestInstances_instances_UnhealthyNodeReplacement = cmdletContext.Instances_UnhealthyNodeReplacement.Value;
+            }
+            if (requestInstances_instances_UnhealthyNodeReplacement != null)
+            {
+                request.Instances.UnhealthyNodeReplacement = requestInstances_instances_UnhealthyNodeReplacement.Value;
+                requestInstancesIsNull = false;
+            }
             Amazon.ElasticMapReduce.Model.PlacementType requestInstances_instances_Placement = null;
             
              // populate Placement
@@ -1287,6 +1394,26 @@ namespace Amazon.PowerShell.Cmdlets.EMR
              // populate ManagedScalingPolicy
             var requestManagedScalingPolicyIsNull = true;
             request.ManagedScalingPolicy = new Amazon.ElasticMapReduce.Model.ManagedScalingPolicy();
+            Amazon.ElasticMapReduce.ScalingStrategy requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy = null;
+            if (cmdletContext.ManagedScalingPolicy_ScalingStrategy != null)
+            {
+                requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy = cmdletContext.ManagedScalingPolicy_ScalingStrategy;
+            }
+            if (requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy != null)
+            {
+                request.ManagedScalingPolicy.ScalingStrategy = requestManagedScalingPolicy_managedScalingPolicy_ScalingStrategy;
+                requestManagedScalingPolicyIsNull = false;
+            }
+            System.Int32? requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex = null;
+            if (cmdletContext.ManagedScalingPolicy_UtilizationPerformanceIndex != null)
+            {
+                requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex = cmdletContext.ManagedScalingPolicy_UtilizationPerformanceIndex.Value;
+            }
+            if (requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex != null)
+            {
+                request.ManagedScalingPolicy.UtilizationPerformanceIndex = requestManagedScalingPolicy_managedScalingPolicy_UtilizationPerformanceIndex.Value;
+                requestManagedScalingPolicyIsNull = false;
+            }
             Amazon.ElasticMapReduce.Model.ComputeLimits requestManagedScalingPolicy_managedScalingPolicy_ComputeLimits = null;
             
              // populate ComputeLimits
@@ -1451,13 +1578,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic MapReduce", "RunJobFlow");
             try
             {
-                #if DESKTOP
-                return client.RunJobFlow(request);
-                #elif CORECLR
-                return client.RunJobFlowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RunJobFlowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1485,6 +1606,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             public System.Int32? EbsRootVolumeIops { get; set; }
             public System.Int32? EbsRootVolumeSize { get; set; }
             public System.Int32? EbsRootVolumeThroughput { get; set; }
+            public System.Boolean? ExtendedSupport { get; set; }
             public List<System.String> Instances_AdditionalMasterSecurityGroup { get; set; }
             public List<System.String> Instances_AdditionalSlaveSecurityGroup { get; set; }
             public System.String Instances_Ec2KeyName { get; set; }
@@ -1503,6 +1625,7 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             public System.String Instances_ServiceAccessSecurityGroup { get; set; }
             public System.String Instances_SlaveInstanceType { get; set; }
             public System.Boolean? Instances_TerminationProtected { get; set; }
+            public System.Boolean? Instances_UnhealthyNodeReplacement { get; set; }
             public System.String JobFlowRole { get; set; }
             public System.String KerberosAttributes_ADDomainJoinPassword { get; set; }
             public System.String KerberosAttributes_ADDomainJoinUser { get; set; }
@@ -1516,6 +1639,8 @@ namespace Amazon.PowerShell.Cmdlets.EMR
             public System.Int32? ComputeLimits_MaximumOnDemandCapacityUnit { get; set; }
             public System.Int32? ComputeLimits_MinimumCapacityUnit { get; set; }
             public Amazon.ElasticMapReduce.ComputeLimitsUnitType ComputeLimits_UnitType { get; set; }
+            public Amazon.ElasticMapReduce.ScalingStrategy ManagedScalingPolicy_ScalingStrategy { get; set; }
+            public System.Int32? ManagedScalingPolicy_UtilizationPerformanceIndex { get; set; }
             public System.String Name { get; set; }
             public List<Amazon.ElasticMapReduce.Model.SupportedProductConfig> NewSupportedProduct { get; set; }
             public System.String OSReleaseLabel { get; set; }

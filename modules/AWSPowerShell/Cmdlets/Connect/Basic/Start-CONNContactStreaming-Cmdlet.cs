@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -34,19 +36,25 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     /// <para>
     ///  For more information about message streaming, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/chat-message-streaming.html">Enable
     /// real-time chat message streaming</a> in the <i>Amazon Connect Administrator Guide</i>.
-    /// </para>
+    /// </para><para>
+    /// For more information about chat, see the following topics in the <i>Amazon Connect
+    /// Administrator Guide</i>: 
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/connect/latest/adminguide/web-and-mobile-chat.html">Concepts:
+    /// Web and mobile messaging capabilities in Amazon Connect</a></para></li><li><para><a href="https://docs.aws.amazon.com/connect/latest/adminguide/security-best-practices.html#bp-security-chat">Amazon
+    /// Connect Chat security best practices</a></para></li></ul>
     /// </summary>
     [Cmdlet("Start", "CONNContactStreaming", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon Connect Service StartContactStreaming API operation.", Operation = new[] {"StartContactStreaming"}, SelectReturnType = typeof(Amazon.Connect.Model.StartContactStreamingResponse))]
     [AWSCmdletOutput("System.String or Amazon.Connect.Model.StartContactStreamingResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Connect.Model.StartContactStreamingResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Connect.Model.StartContactStreamingResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCONNContactStreamingCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactId
         /// <summary>
@@ -127,16 +135,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "StreamingId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ContactId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ContactId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ContactId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -147,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ContactId), MyInvocation.BoundParameters);
@@ -163,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.StartContactStreamingResponse, StartCONNContactStreamingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ContactId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ChatStreamingConfiguration_StreamingEndpointArn = this.ChatStreamingConfiguration_StreamingEndpointArn;
             #if MODULAR
             if (this.ChatStreamingConfiguration_StreamingEndpointArn == null && ParameterWasBound(nameof(this.ChatStreamingConfiguration_StreamingEndpointArn)))
@@ -285,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "StartContactStreaming");
             try
             {
-                #if DESKTOP
-                return client.StartContactStreaming(request);
-                #elif CORECLR
-                return client.StartContactStreamingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartContactStreamingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

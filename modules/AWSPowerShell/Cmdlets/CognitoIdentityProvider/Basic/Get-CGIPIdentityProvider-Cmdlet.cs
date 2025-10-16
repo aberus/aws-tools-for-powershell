@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Gets information about a specific IdP.
+    /// Given a user pool ID and identity provider (IdP) name, returns details about the IdP.
     /// </summary>
     [Cmdlet("Get", "CGIPIdentityProvider")]
     [OutputType("Amazon.CognitoIdentityProvider.Model.IdentityProviderType")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider DescribeIdentityProvider API operation.", Operation = new[] {"DescribeIdentityProvider"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.DescribeIdentityProviderResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.IdentityProviderType or Amazon.CognitoIdentityProvider.Model.DescribeIdentityProviderResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.IdentityProviderType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.DescribeIdentityProviderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.DescribeIdentityProviderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGIPIdentityProviderCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ProviderName
         /// <summary>
         /// <para>
-        /// <para>The IdP name.</para>
+        /// <para>The name of the IdP that you want to describe.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID.</para>
+        /// <para>The ID of the user pool that has the IdP that you want to describe..</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -87,19 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "IdentityProvider";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProviderName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProviderName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProviderName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,21 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.DescribeIdentityProviderResponse, GetCGIPIdentityProviderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProviderName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ProviderName = this.ProviderName;
             #if MODULAR
             if (this.ProviderName == null && ParameterWasBound(nameof(this.ProviderName)))
@@ -198,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "DescribeIdentityProvider");
             try
             {
-                #if DESKTOP
-                return client.DescribeIdentityProvider(request);
-                #elif CORECLR
-                return client.DescribeIdentityProviderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeIdentityProviderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

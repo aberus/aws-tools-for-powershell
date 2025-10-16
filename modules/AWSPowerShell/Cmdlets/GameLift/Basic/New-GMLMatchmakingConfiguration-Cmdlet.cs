@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
     /// Defines a new matchmaking configuration for use with FlexMatch. Whether your are using
-    /// FlexMatch with Amazon GameLift hosting or as a standalone matchmaking service, the
-    /// matchmaking configuration sets out rules for matching players and forming teams. If
-    /// you're also using Amazon GameLift hosting, it defines how to start game sessions for
-    /// each match. Your matchmaking system can use multiple configurations to handle different
-    /// game scenarios. All matchmaking requests identify the matchmaking configuration to
-    /// use and provide player attributes consistent with that configuration. 
+    /// FlexMatch with Amazon GameLift Servers hosting or as a standalone matchmaking service,
+    /// the matchmaking configuration sets out rules for matching players and forming teams.
+    /// If you're also using Amazon GameLift Servers hosting, it defines how to start game
+    /// sessions for each match. Your matchmaking system can use multiple configurations to
+    /// handle different game scenarios. All matchmaking requests identify the matchmaking
+    /// configuration to use and provide player attributes consistent with that configuration.
+    /// 
     /// 
     ///  
     /// <para>
     /// To create a matchmaking configuration, you must provide the following: configuration
-    /// name and FlexMatch mode (with or without Amazon GameLift hosting); a rule set that
-    /// specifies how to evaluate players and find acceptable matches; whether player acceptance
-    /// is required; and the maximum time allowed for a matchmaking attempt. When using FlexMatch
-    /// with Amazon GameLift hosting, you also need to identify the game session queue to
-    /// use when starting a game session for the match.
+    /// name and FlexMatch mode (with or without Amazon GameLift Servers hosting); a rule
+    /// set that specifies how to evaluate players and find acceptable matches; whether player
+    /// acceptance is required; and the maximum time allowed for a matchmaking attempt. When
+    /// using FlexMatch with Amazon GameLift Servers hosting, you also need to identify the
+    /// game session queue to use when starting a game session for the match.
     /// </para><para>
     /// In addition, you must set up an Amazon Simple Notification Service topic to receive
     /// matchmaking notifications. Provide the topic ARN in the matchmaking configuration.
@@ -56,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service CreateMatchmakingConfiguration API operation.", Operation = new[] {"CreateMatchmakingConfiguration"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreateMatchmakingConfigurationResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.MatchmakingConfiguration or Amazon.GameLift.Model.CreateMatchmakingConfigurationResponse",
         "This cmdlet returns an Amazon.GameLift.Model.MatchmakingConfiguration object.",
-        "The service call response (type Amazon.GameLift.Model.CreateMatchmakingConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.CreateMatchmakingConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGMLMatchmakingConfigurationCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceptanceRequired
         /// <summary>
@@ -98,10 +102,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The number of player slots in a match to keep open for future players. For example,
-        /// if the configuration's rule set specifies a match for a single 10-person team, and
-        /// the additional player count is set to 2, 10 players will be selected for the match
-        /// and 2 more player slots will be open for future players. This parameter is not used
-        /// if <c>FlexMatchMode</c> is set to <c>STANDALONE</c>.</para>
+        /// if the configuration's rule set specifies a match for a single 12-person team, and
+        /// the additional player count is set to 2, only 10 players are selected for the match.
+        /// This parameter is not used if <c>FlexMatchMode</c> is set to <c>STANDALONE</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,9 +116,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>
         /// <para>The method used to backfill game sessions that are created with this matchmaking configuration.
         /// Specify <c>MANUAL</c> when your game manages backfill requests manually or does not
-        /// use the match backfill feature. Specify <c>AUTOMATIC</c> to have Amazon GameLift create
-        /// a backfill request whenever a game session has one or more open slots. Learn more
-        /// about manual and automatic backfill in <a href="https://docs.aws.amazon.com/gamelift/latest/flexmatchguide/match-backfill.html">
+        /// use the match backfill feature. Specify <c>AUTOMATIC</c> to have Amazon GameLift Servers
+        /// create a backfill request whenever a game session has one or more open slots. Learn
+        /// more about manual and automatic backfill in <a href="https://docs.aws.amazon.com/gamelift/latest/flexmatchguide/match-backfill.html">
         /// Backfill Existing Games with FlexMatch</a>. Automatic backfill is not available when
         /// <c>FlexMatchMode</c> is set to <c>STANDALONE</c>.</para>
         /// </para>
@@ -149,10 +152,10 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>Indicates whether this matchmaking configuration is being used with Amazon GameLift
-        /// hosting or as a standalone matchmaking solution. </para><ul><li><para><b>STANDALONE</b> - FlexMatch forms matches and returns match information, including
+        /// Servers hosting or as a standalone matchmaking solution. </para><ul><li><para><b>STANDALONE</b> - FlexMatch forms matches and returns match information, including
         /// players and team assignments, in a <a href="https://docs.aws.amazon.com/gamelift/latest/flexmatchguide/match-events.html#match-events-matchmakingsucceeded">
         /// MatchmakingSucceeded</a> event.</para></li><li><para><b>WITH_QUEUE</b> - FlexMatch forms matches and uses the specified Amazon GameLift
-        /// queue to start a game session for the match. </para></li></ul>
+        /// Servers queue to start a game session for the match. </para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -166,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>A set of key-value pairs that can store custom data in a game session. For example:
         /// <c>{"Key": "difficulty", "Value": "novice"}</c>. This information is added to the
         /// new <c>GameSession</c> object that is created for a successful match. This parameter
-        /// is not used if <c>FlexMatchMode</c> is set to <c>STANDALONE</c>.</para>
+        /// is not used if <c>FlexMatchMode</c> is set to <c>STANDALONE</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -178,9 +185,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A set of custom game session properties, formatted as a single string value. This
-        /// data is passed to a game server process with a request to start a new game session
-        /// (see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
-        /// a Game Session</a>). This information is added to the new <c>GameSession</c> object
+        /// data is passed to a game server process with a request to start a new game session.
+        /// For more information, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
+        /// a game session</a>. This information is added to the new <c>GameSession</c> object
         /// that is created for a successful match. This parameter is not used if <c>FlexMatchMode</c>
         /// is set to <c>STANDALONE</c>.</para>
         /// </para>
@@ -193,11 +200,16 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (<a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-arn-format.html">ARN</a>)
-        /// that is assigned to a Amazon GameLift game session queue resource and uniquely identifies
-        /// it. ARNs are unique across all Regions. Format is <c>arn:aws:gamelift:&lt;region&gt;::gamesessionqueue/&lt;queue
+        /// that is assigned to a Amazon GameLift Servers game session queue resource and uniquely
+        /// identifies it. ARNs are unique across all Regions. Format is <c>arn:aws:gamelift:&lt;region&gt;::gamesessionqueue/&lt;queue
         /// name&gt;</c>. Queues can be located in any Region. Queues are used to start new Amazon
-        /// GameLift-hosted game sessions for matches that are created with this matchmaking configuration.
-        /// If <c>FlexMatchMode</c> is set to <c>STANDALONE</c>, do not set this parameter. </para>
+        /// GameLift Servers-hosted game sessions for matches that are created with this matchmaking
+        /// configuration. If <c>FlexMatchMode</c> is set to <c>STANDALONE</c>, do not set this
+        /// parameter. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -278,7 +290,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// developer-defined key-value pairs. Tagging Amazon Web Services resources are useful
         /// for resource management, access management and cost allocation. For more information,
         /// see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html"> Tagging
-        /// Amazon Web Services Resources</a> in the <i>Amazon Web Services General Reference</i>.</para>
+        /// Amazon Web Services Resources</a> in the <i>Amazon Web Services General Reference</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -297,16 +313,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "Configuration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RuleSetName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RuleSetName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RuleSetName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -317,9 +323,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RuleSetName), MyInvocation.BoundParameters);
@@ -333,21 +343,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreateMatchmakingConfigurationResponse, NewGMLMatchmakingConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RuleSetName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AcceptanceRequired = this.AcceptanceRequired;
             #if MODULAR
             if (this.AcceptanceRequired == null && ParameterWasBound(nameof(this.AcceptanceRequired)))
@@ -510,13 +510,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreateMatchmakingConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateMatchmakingConfiguration(request);
-                #elif CORECLR
-                return client.CreateMatchmakingConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMatchmakingConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

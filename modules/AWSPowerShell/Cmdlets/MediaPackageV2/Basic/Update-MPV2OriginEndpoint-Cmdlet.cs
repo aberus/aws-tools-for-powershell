@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaPackageV2;
 using Amazon.MediaPackageV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MPV2
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
     [OutputType("Amazon.MediaPackageV2.Model.UpdateOriginEndpointResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaPackage v2 UpdateOriginEndpoint API operation.", Operation = new[] {"UpdateOriginEndpoint"}, SelectReturnType = typeof(Amazon.MediaPackageV2.Model.UpdateOriginEndpointResponse))]
     [AWSCmdletOutput("Amazon.MediaPackageV2.Model.UpdateOriginEndpointResponse",
-        "This cmdlet returns an Amazon.MediaPackageV2.Model.UpdateOriginEndpointResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaPackageV2.Model.UpdateOriginEndpointResponse object containing multiple properties."
     )]
     public partial class UpdateMPV2OriginEndpointCmdlet : AmazonMediaPackageV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChannelGroupName
         /// <summary>
@@ -95,6 +98,19 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public Amazon.MediaPackageV2.CmafEncryptionMethod EncryptionMethod_CmafEncryptionMethod { get; set; }
         #endregion
         
+        #region Parameter Encryption_CmafExcludeSegmentDrmMetadata
+        /// <summary>
+        /// <para>
+        /// <para>Excludes SEIG and SGPD boxes from segment metadata in CMAF containers.</para><para>When set to <c>true</c>, MediaPackage omits these DRM metadata boxes from CMAF segments,
+        /// which can improve compatibility with certain devices and players that don't support
+        /// these boxes.</para><para>Important considerations:</para><ul><li><para>This setting only affects CMAF container formats</para></li><li><para>Key rotation can still be handled through media playlist signaling</para></li><li><para>PSSH and TENC boxes remain unaffected</para></li><li><para>Default behavior is preserved when this setting is disabled</para></li></ul><para>Valid values: <c>true</c> | <c>false</c></para><para>Default: <c>false</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Segment_Encryption_CmafExcludeSegmentDrmMetadata")]
+        public System.Boolean? Encryption_CmafExcludeSegmentDrmMetadata { get; set; }
+        #endregion
+        
         #region Parameter Encryption_ConstantInitializationVector
         /// <summary>
         /// <para>
@@ -127,6 +143,21 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public Amazon.MediaPackageV2.ContainerType ContainerType { get; set; }
         #endregion
         
+        #region Parameter DashManifest
+        /// <summary>
+        /// <para>
+        /// <para>A DASH manifest configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DashManifests")]
+        public Amazon.MediaPackageV2.Model.CreateDashManifestConfiguration[] DashManifest { get; set; }
+        #endregion
+        
         #region Parameter Description
         /// <summary>
         /// <para>
@@ -141,7 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         #region Parameter SpekeKeyProvider_DrmSystem
         /// <summary>
         /// <para>
-        /// <para>The DRM solution provider you're using to protect your content during distribution.</para>
+        /// <para>The DRM solution provider you're using to protect your content during distribution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,10 +184,31 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public System.String[] SpekeKeyProvider_DrmSystem { get; set; }
         #endregion
         
+        #region Parameter ForceEndpointErrorConfiguration_EndpointErrorCondition
+        /// <summary>
+        /// <para>
+        /// <para>The failover conditions for the endpoint. The options are:</para><ul><li><para><c>STALE_MANIFEST</c> - The manifest stalled and there are no new segments or parts.</para></li><li><para><c>INCOMPLETE_MANIFEST</c> - There is a gap in the manifest.</para></li><li><para><c>MISSING_DRM_KEY</c> - Key rotation is enabled but we're unable to fetch the key
+        /// for the current key period.</para></li><li><para><c>SLATE_INPUT</c> - The segments which contain slate content are considered to be
+        /// missing content.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ForceEndpointErrorConfiguration_EndpointErrorConditions")]
+        public System.String[] ForceEndpointErrorConfiguration_EndpointErrorCondition { get; set; }
+        #endregion
+        
         #region Parameter HlsManifest
         /// <summary>
         /// <para>
-        /// <para>An HTTP live streaming (HLS) manifest configuration.</para>
+        /// <para>An HTTP live streaming (HLS) manifest configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -176,6 +232,20 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public System.Boolean? Segment_IncludeIframeOnlyStream { get; set; }
         #endregion
         
+        #region Parameter EncryptionMethod_IsmEncryptionMethod
+        /// <summary>
+        /// <para>
+        /// <para>The encryption method used for Microsoft Smooth Streaming (MSS) content. This specifies
+        /// how the MSS segments are encrypted to protect the content during delivery to client
+        /// players.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Segment_Encryption_EncryptionMethod_IsmEncryptionMethod")]
+        [AWSConstantClassSource("Amazon.MediaPackageV2.IsmEncryptionMethod")]
+        public Amazon.MediaPackageV2.IsmEncryptionMethod EncryptionMethod_IsmEncryptionMethod { get; set; }
+        #endregion
+        
         #region Parameter Encryption_KeyRotationIntervalSecond
         /// <summary>
         /// <para>
@@ -196,12 +266,32 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         #region Parameter LowLatencyHlsManifest
         /// <summary>
         /// <para>
-        /// <para>A low-latency HLS manifest configuration.</para>
+        /// <para>A low-latency HLS manifest configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("LowLatencyHlsManifests")]
         public Amazon.MediaPackageV2.Model.CreateLowLatencyHlsManifestConfiguration[] LowLatencyHlsManifest { get; set; }
+        #endregion
+        
+        #region Parameter MssManifest
+        /// <summary>
+        /// <para>
+        /// <para>A list of Microsoft Smooth Streaming (MSS) manifest configurations to update for the
+        /// origin endpoint. This replaces the existing MSS manifest configurations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MssManifests")]
+        public Amazon.MediaPackageV2.Model.CreateMssManifestConfiguration[] MssManifest { get; set; }
         #endregion
         
         #region Parameter OriginEndpointName
@@ -295,7 +385,11 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         #region Parameter Scte_ScteFilter
         /// <summary>
         /// <para>
-        /// <para>The SCTE-35 message types that you want to be treated as ad markers in the output.</para>
+        /// <para>The SCTE-35 message types that you want to be treated as ad markers in the output.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -389,6 +483,17 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public System.String SpekeKeyProvider_Url { get; set; }
         #endregion
         
+        #region Parameter ETag
+        /// <summary>
+        /// <para>
+        /// <para>The expected current Entity Tag (ETag) for the resource. If the specified ETag does
+        /// not match the resource's current entity tag, the update request will be rejected.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ETag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -398,16 +503,6 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OriginEndpointName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OriginEndpointName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OriginEndpointName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -420,9 +515,13 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -436,21 +535,11 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaPackageV2.Model.UpdateOriginEndpointResponse, UpdateMPV2OriginEndpointCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OriginEndpointName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ChannelGroupName = this.ChannelGroupName;
             #if MODULAR
             if (this.ChannelGroupName == null && ParameterWasBound(nameof(this.ChannelGroupName)))
@@ -472,7 +561,16 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
                 WriteWarning("You are passing $null as a value for parameter ContainerType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.DashManifest != null)
+            {
+                context.DashManifest = new List<Amazon.MediaPackageV2.Model.CreateDashManifestConfiguration>(this.DashManifest);
+            }
             context.Description = this.Description;
+            context.ETag = this.ETag;
+            if (this.ForceEndpointErrorConfiguration_EndpointErrorCondition != null)
+            {
+                context.ForceEndpointErrorConfiguration_EndpointErrorCondition = new List<System.String>(this.ForceEndpointErrorConfiguration_EndpointErrorCondition);
+            }
             if (this.HlsManifest != null)
             {
                 context.HlsManifest = new List<Amazon.MediaPackageV2.Model.CreateHlsManifestConfiguration>(this.HlsManifest);
@@ -481,6 +579,10 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             {
                 context.LowLatencyHlsManifest = new List<Amazon.MediaPackageV2.Model.CreateLowLatencyHlsManifestConfiguration>(this.LowLatencyHlsManifest);
             }
+            if (this.MssManifest != null)
+            {
+                context.MssManifest = new List<Amazon.MediaPackageV2.Model.CreateMssManifestConfiguration>(this.MssManifest);
+            }
             context.OriginEndpointName = this.OriginEndpointName;
             #if MODULAR
             if (this.OriginEndpointName == null && ParameterWasBound(nameof(this.OriginEndpointName)))
@@ -488,8 +590,10 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
                 WriteWarning("You are passing $null as a value for parameter OriginEndpointName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Encryption_CmafExcludeSegmentDrmMetadata = this.Encryption_CmafExcludeSegmentDrmMetadata;
             context.Encryption_ConstantInitializationVector = this.Encryption_ConstantInitializationVector;
             context.EncryptionMethod_CmafEncryptionMethod = this.EncryptionMethod_CmafEncryptionMethod;
+            context.EncryptionMethod_IsmEncryptionMethod = this.EncryptionMethod_IsmEncryptionMethod;
             context.EncryptionMethod_TsEncryptionMethod = this.EncryptionMethod_TsEncryptionMethod;
             context.Encryption_KeyRotationIntervalSecond = this.Encryption_KeyRotationIntervalSecond;
             if (this.SpekeKeyProvider_DrmSystem != null)
@@ -539,9 +643,36 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             {
                 request.ContainerType = cmdletContext.ContainerType;
             }
+            if (cmdletContext.DashManifest != null)
+            {
+                request.DashManifests = cmdletContext.DashManifest;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.ETag != null)
+            {
+                request.ETag = cmdletContext.ETag;
+            }
+            
+             // populate ForceEndpointErrorConfiguration
+            var requestForceEndpointErrorConfigurationIsNull = true;
+            request.ForceEndpointErrorConfiguration = new Amazon.MediaPackageV2.Model.ForceEndpointErrorConfiguration();
+            List<System.String> requestForceEndpointErrorConfiguration_forceEndpointErrorConfiguration_EndpointErrorCondition = null;
+            if (cmdletContext.ForceEndpointErrorConfiguration_EndpointErrorCondition != null)
+            {
+                requestForceEndpointErrorConfiguration_forceEndpointErrorConfiguration_EndpointErrorCondition = cmdletContext.ForceEndpointErrorConfiguration_EndpointErrorCondition;
+            }
+            if (requestForceEndpointErrorConfiguration_forceEndpointErrorConfiguration_EndpointErrorCondition != null)
+            {
+                request.ForceEndpointErrorConfiguration.EndpointErrorConditions = requestForceEndpointErrorConfiguration_forceEndpointErrorConfiguration_EndpointErrorCondition;
+                requestForceEndpointErrorConfigurationIsNull = false;
+            }
+             // determine if request.ForceEndpointErrorConfiguration should be set to null
+            if (requestForceEndpointErrorConfigurationIsNull)
+            {
+                request.ForceEndpointErrorConfiguration = null;
             }
             if (cmdletContext.HlsManifest != null)
             {
@@ -550,6 +681,10 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             if (cmdletContext.LowLatencyHlsManifest != null)
             {
                 request.LowLatencyHlsManifests = cmdletContext.LowLatencyHlsManifest;
+            }
+            if (cmdletContext.MssManifest != null)
+            {
+                request.MssManifests = cmdletContext.MssManifest;
             }
             if (cmdletContext.OriginEndpointName != null)
             {
@@ -639,6 +774,16 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
              // populate Encryption
             var requestSegment_segment_EncryptionIsNull = true;
             requestSegment_segment_Encryption = new Amazon.MediaPackageV2.Model.Encryption();
+            System.Boolean? requestSegment_segment_Encryption_encryption_CmafExcludeSegmentDrmMetadata = null;
+            if (cmdletContext.Encryption_CmafExcludeSegmentDrmMetadata != null)
+            {
+                requestSegment_segment_Encryption_encryption_CmafExcludeSegmentDrmMetadata = cmdletContext.Encryption_CmafExcludeSegmentDrmMetadata.Value;
+            }
+            if (requestSegment_segment_Encryption_encryption_CmafExcludeSegmentDrmMetadata != null)
+            {
+                requestSegment_segment_Encryption.CmafExcludeSegmentDrmMetadata = requestSegment_segment_Encryption_encryption_CmafExcludeSegmentDrmMetadata.Value;
+                requestSegment_segment_EncryptionIsNull = false;
+            }
             System.String requestSegment_segment_Encryption_encryption_ConstantInitializationVector = null;
             if (cmdletContext.Encryption_ConstantInitializationVector != null)
             {
@@ -672,6 +817,16 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             if (requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_CmafEncryptionMethod != null)
             {
                 requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod.CmafEncryptionMethod = requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_CmafEncryptionMethod;
+                requestSegment_segment_Encryption_segment_Encryption_EncryptionMethodIsNull = false;
+            }
+            Amazon.MediaPackageV2.IsmEncryptionMethod requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_IsmEncryptionMethod = null;
+            if (cmdletContext.EncryptionMethod_IsmEncryptionMethod != null)
+            {
+                requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_IsmEncryptionMethod = cmdletContext.EncryptionMethod_IsmEncryptionMethod;
+            }
+            if (requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_IsmEncryptionMethod != null)
+            {
+                requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod.IsmEncryptionMethod = requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_IsmEncryptionMethod;
                 requestSegment_segment_Encryption_segment_Encryption_EncryptionMethodIsNull = false;
             }
             Amazon.MediaPackageV2.TsEncryptionMethod requestSegment_segment_Encryption_segment_Encryption_EncryptionMethod_encryptionMethod_TsEncryptionMethod = null;
@@ -841,13 +996,7 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaPackage v2", "UpdateOriginEndpoint");
             try
             {
-                #if DESKTOP
-                return client.UpdateOriginEndpoint(request);
-                #elif CORECLR
-                return client.UpdateOriginEndpointAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateOriginEndpointAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -867,12 +1016,18 @@ namespace Amazon.PowerShell.Cmdlets.MPV2
             public System.String ChannelGroupName { get; set; }
             public System.String ChannelName { get; set; }
             public Amazon.MediaPackageV2.ContainerType ContainerType { get; set; }
+            public List<Amazon.MediaPackageV2.Model.CreateDashManifestConfiguration> DashManifest { get; set; }
             public System.String Description { get; set; }
+            public System.String ETag { get; set; }
+            public List<System.String> ForceEndpointErrorConfiguration_EndpointErrorCondition { get; set; }
             public List<Amazon.MediaPackageV2.Model.CreateHlsManifestConfiguration> HlsManifest { get; set; }
             public List<Amazon.MediaPackageV2.Model.CreateLowLatencyHlsManifestConfiguration> LowLatencyHlsManifest { get; set; }
+            public List<Amazon.MediaPackageV2.Model.CreateMssManifestConfiguration> MssManifest { get; set; }
             public System.String OriginEndpointName { get; set; }
+            public System.Boolean? Encryption_CmafExcludeSegmentDrmMetadata { get; set; }
             public System.String Encryption_ConstantInitializationVector { get; set; }
             public Amazon.MediaPackageV2.CmafEncryptionMethod EncryptionMethod_CmafEncryptionMethod { get; set; }
+            public Amazon.MediaPackageV2.IsmEncryptionMethod EncryptionMethod_IsmEncryptionMethod { get; set; }
             public Amazon.MediaPackageV2.TsEncryptionMethod EncryptionMethod_TsEncryptionMethod { get; set; }
             public System.Int32? Encryption_KeyRotationIntervalSecond { get; set; }
             public List<System.String> SpekeKeyProvider_DrmSystem { get; set; }

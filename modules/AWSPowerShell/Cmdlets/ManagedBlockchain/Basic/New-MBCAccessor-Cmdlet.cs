@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedBlockchain;
 using Amazon.ManagedBlockchain.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MBC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
     [OutputType("Amazon.ManagedBlockchain.Model.CreateAccessorResponse")]
     [AWSCmdlet("Calls the Amazon Managed Blockchain CreateAccessor API operation.", Operation = new[] {"CreateAccessor"}, SelectReturnType = typeof(Amazon.ManagedBlockchain.Model.CreateAccessorResponse))]
     [AWSCmdletOutput("Amazon.ManagedBlockchain.Model.CreateAccessorResponse",
-        "This cmdlet returns an Amazon.ManagedBlockchain.Model.CreateAccessorResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ManagedBlockchain.Model.CreateAccessorResponse object containing multiple properties."
     )]
     public partial class NewMBCAccessorCmdlet : AmazonManagedBlockchainClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessorType
         /// <summary>
@@ -76,10 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         #region Parameter NetworkType
         /// <summary>
         /// <para>
-        /// <para>The blockchain network that the <c>Accessor</c> token is created for.</para><note><para>We recommend using the appropriate <c>networkType</c> value for the blockchain network
-        /// that you are creating the <c>Accessor</c> token for. You cannnot use the value <c>ETHEREUM_MAINNET_AND_GOERLI</c>
-        /// to specify a <c>networkType</c> for your Accessor token.</para><para>The default value of <c>ETHEREUM_MAINNET_AND_GOERLI</c> is only applied:</para><ul><li><para>when the <c>CreateAccessor</c> action does not set a <c>networkType</c>.</para></li><li><para>to all existing <c>Accessor</c> tokens that were created before the <c>networkType</c>
-        /// property was introduced. </para></li></ul></note>
+        /// <para>The blockchain network that the <c>Accessor</c> token is created for.</para><note><ul><li><para>Use the actual <c>networkType</c> value for the blockchain network that you are creating
+        /// the <c>Accessor</c> token for.</para></li><li><para>With the shut down of the <i>Ethereum Goerli</i> and <i>Polygon Mumbai Testnet</i>
+        /// networks the following <c>networkType</c> values are no longer available for selection
+        /// and use.</para><ul><li><para><c>ETHEREUM_MAINNET_AND_GOERLI</c></para></li><li><para><c>ETHEREUM_GOERLI</c></para></li><li><para><c>POLYGON_MUMBAI</c></para></li></ul><para>However, your existing <c>Accessor</c> tokens with these <c>networkType</c> values
+        /// will remain unchanged.</para></li></ul></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +98,11 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         /// pairs in a single request with an overall maximum of 50 tags allowed per resource.</para><para>For more information about tags, see <a href="https://docs.aws.amazon.com/managed-blockchain/latest/ethereum-dev/tagging-resources.html">Tagging
         /// Resources</a> in the <i>Amazon Managed Blockchain Ethereum Developer Guide</i>, or
         /// <a href="https://docs.aws.amazon.com/managed-blockchain/latest/hyperledger-fabric-dev/tagging-resources.html">Tagging
-        /// Resources</a> in the <i>Amazon Managed Blockchain Hyperledger Fabric Developer Guide</i>.</para>
+        /// Resources</a> in the <i>Amazon Managed Blockchain Hyperledger Fabric Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,16 +121,6 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AccessorType parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AccessorType' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AccessorType' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -133,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AccessorType), MyInvocation.BoundParameters);
@@ -149,21 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ManagedBlockchain.Model.CreateAccessorResponse, NewMBCAccessorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AccessorType;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessorType = this.AccessorType;
             #if MODULAR
             if (this.AccessorType == null && ParameterWasBound(nameof(this.AccessorType)))
@@ -251,13 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Blockchain", "CreateAccessor");
             try
             {
-                #if DESKTOP
-                return client.CreateAccessor(request);
-                #elif CORECLR
-                return client.CreateAccessorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAccessorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

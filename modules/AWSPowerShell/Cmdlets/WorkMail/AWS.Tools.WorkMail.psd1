@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The WorkMail module of AWS Tools for PowerShell lets developers and administrators manage Amazon WorkMail from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.WorkMail.dll'
     )
@@ -101,6 +102,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-WMGroup', 
         'Get-WMGroupList', 
         'Get-WMGroupsForEntityList', 
+        'Get-WMIdentityProviderConfiguration', 
         'Get-WMImpersonationRole', 
         'Get-WMImpersonationRoleEffect', 
         'Get-WMImpersonationRoleList', 
@@ -118,6 +120,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-WMMobileDeviceAccessRuleList', 
         'Get-WMOrganization', 
         'Get-WMOrganizationList', 
+        'Get-WMPersonalAccessTokenList', 
+        'Get-WMPersonalAccessTokenMetadata', 
         'Get-WMResource', 
         'Get-WMResourceList', 
         'Get-WMResourceTag', 
@@ -127,6 +131,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-WMAlias', 
         'New-WMAvailabilityConfiguration', 
         'New-WMGroup', 
+        'New-WMIdentityCenterApplication', 
         'New-WMImpersonationRole', 
         'New-WMMobileDeviceAccessRule', 
         'New-WMOrganization', 
@@ -140,6 +145,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-WMEmailMonitoringConfiguration', 
         'Remove-WMFromWorkMail', 
         'Remove-WMGroup', 
+        'Remove-WMIdentityCenterApplication', 
+        'Remove-WMIdentityProviderConfiguration', 
         'Remove-WMImpersonationRole', 
         'Remove-WMMailboxPermission', 
         'Remove-WMMailDomain', 
@@ -147,6 +154,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-WMMobileDeviceAccessOverride', 
         'Remove-WMMobileDeviceAccessRule', 
         'Remove-WMOrganization', 
+        'Remove-WMPersonalAccessToken', 
         'Remove-WMResource', 
         'Remove-WMResourceTag', 
         'Remove-WMRetentionPolicy', 
@@ -166,6 +174,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-WMUser', 
         'Write-WMAccessControlRule', 
         'Write-WMEmailMonitoringConfiguration', 
+        'Write-WMIdentityProviderConfiguration', 
         'Write-WMInboundDmarcSetting', 
         'Write-WMMailboxPermission', 
         'Write-WMMobileDeviceAccessOverride', 
@@ -193,7 +202,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

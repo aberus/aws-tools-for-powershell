@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
     /// When a contact is being recorded, this API suspends recording whatever is selected
-    /// in the flow configuration: call, screen, or both. If only call recording or only screen
-    /// recording is enabled, then it would be suspended. For example, you might suspend the
-    /// screen recording while collecting sensitive information, such as a credit card number.
-    /// Then use ResumeContactRecording to restart recording the screen.
+    /// in the flow configuration: call (IVR or agent), screen, or both. If only call recording
+    /// or only screen recording is enabled, then it would be suspended. For example, you
+    /// might suspend the screen recording while collecting sensitive information, such as
+    /// a credit card number. Then use <a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_ResumeContactRecording.html">ResumeContactRecording</a>
+    /// to restart recording the screen.
     /// 
     ///  
     /// <para>
     /// The period of time that the recording is suspended is filled with silence in the final
-    /// recording.
+    /// recording. 
     /// </para><para>
-    /// Voice and screen recordings are supported.
+    ///  Voice (IVR, agent) and screen recordings are supported.
     /// </para>
     /// </summary>
     [Cmdlet("Suspend", "CONNContactRecording", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -47,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     [AWSCmdlet("Calls the Amazon Connect Service SuspendContactRecording API operation.", Operation = new[] {"SuspendContactRecording"}, SelectReturnType = typeof(Amazon.Connect.Model.SuspendContactRecordingResponse))]
     [AWSCmdletOutput("None or Amazon.Connect.Model.SuspendContactRecordingResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Connect.Model.SuspendContactRecordingResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Connect.Model.SuspendContactRecordingResponse) be returned by specifying '-Select *'."
     )]
     public partial class SuspendCONNContactRecordingCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactId
         /// <summary>
@@ -69,6 +73,17 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ContactId { get; set; }
+        #endregion
+        
+        #region Parameter ContactRecordingType
+        /// <summary>
+        /// <para>
+        /// <para>The type of recording being operated on.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Connect.ContactRecordingType")]
+        public Amazon.Connect.ContactRecordingType ContactRecordingType { get; set; }
         #endregion
         
         #region Parameter InitialContactId
@@ -117,16 +132,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -137,9 +142,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -153,21 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.SuspendContactRecordingResponse, SuspendCONNContactRecordingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContactId = this.ContactId;
             #if MODULAR
             if (this.ContactId == null && ParameterWasBound(nameof(this.ContactId)))
@@ -175,6 +174,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
                 WriteWarning("You are passing $null as a value for parameter ContactId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ContactRecordingType = this.ContactRecordingType;
             context.InitialContactId = this.InitialContactId;
             #if MODULAR
             if (this.InitialContactId == null && ParameterWasBound(nameof(this.InitialContactId)))
@@ -208,6 +208,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             if (cmdletContext.ContactId != null)
             {
                 request.ContactId = cmdletContext.ContactId;
+            }
+            if (cmdletContext.ContactRecordingType != null)
+            {
+                request.ContactRecordingType = cmdletContext.ContactRecordingType;
             }
             if (cmdletContext.InitialContactId != null)
             {
@@ -255,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "SuspendContactRecording");
             try
             {
-                #if DESKTOP
-                return client.SuspendContactRecording(request);
-                #elif CORECLR
-                return client.SuspendContactRecordingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SuspendContactRecordingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -279,6 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ContactId { get; set; }
+            public Amazon.Connect.ContactRecordingType ContactRecordingType { get; set; }
             public System.String InitialContactId { get; set; }
             public System.String InstanceId { get; set; }
             public System.Func<Amazon.Connect.Model.SuspendContactRecordingResponse, SuspendCONNContactRecordingCmdlet, object> Select { get; set; } =

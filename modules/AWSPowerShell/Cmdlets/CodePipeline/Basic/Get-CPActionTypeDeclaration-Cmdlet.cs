@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodePipeline;
 using Amazon.CodePipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CP
 {
     /// <summary>
@@ -37,18 +39,19 @@ namespace Amazon.PowerShell.Cmdlets.CP
     [AWSCmdlet("Calls the AWS CodePipeline GetActionType API operation.", Operation = new[] {"GetActionType"}, SelectReturnType = typeof(Amazon.CodePipeline.Model.GetActionTypeResponse))]
     [AWSCmdletOutput("Amazon.CodePipeline.Model.ActionTypeDeclaration or Amazon.CodePipeline.Model.GetActionTypeResponse",
         "This cmdlet returns an Amazon.CodePipeline.Model.ActionTypeDeclaration object.",
-        "The service call response (type Amazon.CodePipeline.Model.GetActionTypeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodePipeline.Model.GetActionTypeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCPActionTypeDeclarationCmdlet : AmazonCodePipelineClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Category
         /// <summary>
         /// <para>
         /// <para>Defines what kind of action can be taken in the stage. The following are the valid
-        /// values:</para><ul><li><para><c>Source</c></para></li><li><para><c>Build</c></para></li><li><para><c>Test</c></para></li><li><para><c>Deploy</c></para></li><li><para><c>Approval</c></para></li><li><para><c>Invoke</c></para></li></ul>
+        /// values:</para><ul><li><para><c>Source</c></para></li><li><para><c>Build</c></para></li><li><para><c>Test</c></para></li><li><para><c>Deploy</c></para></li><li><para><c>Approval</c></para></li><li><para><c>Invoke</c></para></li><li><para><c>Compute</c></para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -126,9 +129,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public string Select { get; set; } = "ActionType";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -239,13 +246,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodePipeline", "GetActionType");
             try
             {
-                #if DESKTOP
-                return client.GetActionType(request);
-                #elif CORECLR
-                return client.GetActionTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetActionTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

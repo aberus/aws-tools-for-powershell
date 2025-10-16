@@ -18,7 +18,7 @@
         <RootPath Condition="'$(RootPath)'==''">$(MSBuildProjectDirectory)/..</RootPath>
 
         <!-- the relative location (to the project file) of the generator executable -->
-        <GeneratorPath>$(RootPath)/generator/AWSPSGenerator/bin/$(Configuration)/netcoreapp3.1</GeneratorPath>
+        <GeneratorPath>$(RootPath)/generator/AWSPSGenerator/bin/$(Configuration)/net8.0</GeneratorPath>
         <Generator>AWSPSGenerator.dll</Generator>
 
         <!-- expected location of SDK assemblies to be consumed by generator; these should have been fetched via
@@ -47,13 +47,17 @@
         <!-- the four-components version number e.g. 4.0.0.0. -->
         <PatchNumber Condition="'$(PatchNumber)'==''">0.0.0.0</PatchNumber>
 
+        <!-- BuildPatchNumber is passed to create-cmdlets. For previews and stagingbuild, this should be 0.0.0.0 -->
+        <BuildPatchNumber Condition=" '$(IsPreviewBuild)' == 'true' ">0.0.0.0</BuildPatchNumber>
+        <BuildPatchNumber Condition=" '$(IsPreviewBuild)'=='' or '$(IsPreviewBuild)' != 'true' ">$(PatchNumber)</BuildPatchNumber>
+
         <!-- default location for artifacts consolidation -->
         <Deployment Condition="'$(Deployment)'==''">$(RootPath)/Deployment</Deployment>
         <DesktopDeploymentArtifacts>$(Deployment)/AWSPowerShell/</DesktopDeploymentArtifacts>
         <NetCoreDeploymentArtifacts>$(Deployment)/AWSPowerShell.NetCore/</NetCoreDeploymentArtifacts>
         <ModularDeploymentArtifacts>$(Deployment)/AWS.Tools/</ModularDeploymentArtifacts>
         <AWSPowerShellSourceFolder>$(RootPath)/modules/AWSPowerShell</AWSPowerShellSourceFolder>
-        <DesktopBuildFolder>$(AWSPowerShellSourceFolder)/bin/$(Configuration)/net45/</DesktopBuildFolder>
+        <DesktopBuildFolder>$(AWSPowerShellSourceFolder)/bin/$(Configuration)/net472/</DesktopBuildFolder>
         <NetCoreBuildFolder>$(AWSPowerShellSourceFolder)/bin/$(Configuration)/netstandard2.0/</NetCoreBuildFolder>
 
         <DocDeployment Condition="'$(DocDeployment)'==''">$(RootPath)/DocDeployment</DocDeployment>
@@ -75,7 +79,12 @@
         <Message Text="Generates all cmdlets and then builds AWSPowerShell.NetCore deployment artifacts and powershell help files."/>
     </Target>
 
-    <Target Name="staging-build" DependsOnTargets="clean-bin;clean-deployment;clean-sdk-references;build-generator;create-cmdlets;build-modules;build-test-modules">
+    <Target Name="build-report-only" DependsOnTargets="clean-deployment;build-generator">
+        <Message Text="Generates report.xml only when there is a new operation and there are no errors during auto-generation of the buildconfig."/>
+        <Exec Command="dotnet $(GeneratorPath)/$(Generator) -sdk $(SDKAssembliesFolder) -rp $(RootPath) -t cmdlets -cnc true -scg false -bno false -ro true -vn $(PatchNumber)" />
+    </Target>
+
+    <Target Name="staging-build" DependsOnTargets="clean-bin;clean-deployment;clean-sdk-references;build-generator;create-cmdlets">
         <Message Text="Generates and then builds all cmdlets and PowerShell deployment artifacts."/>
     </Target>
 
@@ -99,13 +108,16 @@
         <Message Text="Building AWS PowerShell generator"/>
         <!-- Parallel restore randomly fails package certificate trust https://github.com/NuGet/Home/issues/10322 -->
         <Exec Command="dotnet restore --disable-parallel ../solutions/AWSPowerShellGenerator.sln"/>
-        <Exec Command="dotnet build -c $(Configuration) --force --no-incremental --no-restore ../solutions/AWSPowerShellGenerator.sln"/>
+        <Exec Command="dotnet build -c $(Configuration) --force --no-incremental --no-restore -p:UseSharedCompilation=false ../solutions/AWSPowerShellGenerator.sln"/>
     </Target>
 
     <Target Name="create-cmdlets" DependsOnTargets="build-generator">
-        <Exec Command="pwsh -NoProfile -Command Remove-Item -Path $(RootPath)/GenerationSucceeded.tag" IgnoreExitCode="true" />
+        <PropertyGroup>
+            <PreviewLabel Condition="'$(PreviewLabel)'==''">""</PreviewLabel>
+        </PropertyGroup>
+        <Exec Command="pwsh -NoProfile -Command Remove-Item -Path $(RootPath)/GenerationSucceeded.tag -ErrorAction SilentlyContinue" IgnoreExitCode="true" />
         <Message Text="Generating cmdlets for all services"/>
-        <Exec Command="dotnet $(GeneratorPath)/$(Generator) -sdk $(SDKAssembliesFolder) -rp $(RootPath) -t cmdlets -cnc $(CreateNewCmdlets) -scg $(SkipCmdletGeneration) -bno $(BreakOnNewOperations) -vn $(PatchNumber)" />
+        <Exec Command="dotnet $(GeneratorPath)/$(Generator) -sdk $(SDKAssembliesFolder) -rp $(RootPath) -t cmdlets -cnc $(CreateNewCmdlets) -scg $(SkipCmdletGeneration) -bno $(BreakOnNewOperations) -vn $(BuildPatchNumber) -pl $(PreviewLabel)" />
         <Exec Command="pwsh -NoProfile -Command New-Item -Path $(RootPath)/GenerationSucceeded.tag" />
     </Target>
 
@@ -114,13 +126,13 @@
     <Target Name="build-desktop-module" DependsOnTargets="create-cmdlets;build-netcore-module">
         <Message Text="Building AWSPowerShell desktop module edition"/>
         <Exec Command="dotnet restore --disable-parallel ../solutions/AWSPowerShell.sln"/>
-        <Exec Command="dotnet build -c $(Configuration) -f net45 --force --no-incremental --no-restore ../solutions/AWSPowerShell.sln"/>
+        <Exec Command="dotnet build -c $(Configuration) -f net472 --force --no-incremental --no-restore -p:UseSharedCompilation=false ../solutions/AWSPowerShell.sln"/>
     </Target>
 
     <Target Name="build-netcore-module" DependsOnTargets="create-cmdlets">
         <Message Text="Building AWSPowerShell netcore module edition"/>
         <Exec Command="dotnet restore --disable-parallel ../solutions/AWSPowerShell.sln"/>
-        <Exec Command="dotnet build -c $(Configuration) -f netstandard2.0  --force --no-incremental --no-restore ../solutions/AWSPowerShell.sln"/>
+        <Exec Command="dotnet build -c $(Configuration) -f netstandard2.0  --force --no-incremental --no-restore -p:UseSharedCompilation=false ../solutions/AWSPowerShell.sln"/>
 
         <Message Text="Generating custom view formats ps1xml file"/>
         <Exec Command="dotnet $(GeneratorPath)/$(Generator) -sdk $(SDKAssembliesFolder) -rp $(RootPath) -t formats -e coreclr" />
@@ -129,7 +141,7 @@
     <Target Name="build-modular-modules" DependsOnTargets="create-cmdlets">
         <Message Text="Building AWSPowerShell modular edition"/>
         <Exec Command="dotnet restore --disable-parallel ../solutions/ModularAWSPowerShell.sln"/>
-        <Exec Command="dotnet build -c $(Configuration) -f netstandard2.0  --force --no-incremental --no-restore ../solutions/ModularAWSPowerShell.sln"/>
+        <Exec Command="dotnet build -c $(Configuration) -f netstandard2.0  --force --no-incremental --no-restore -p:UseSharedCompilation=false ../solutions/ModularAWSPowerShell.sln"/>
     </Target>
 
     <Target Name="create-help" DependsOnTargets="create-pshelp;create-webhelp" />
@@ -150,7 +162,7 @@
     </Target>
 
     <Target Name="package-webhelp" Condition="Exists('$(InternalBuildTools)/references.targets')">
-        <CreateSitemapTask SourceFolder="$(DocDeployment)/docs" BaseUrl="http://docs.aws.amazon.com/powershell/latest/reference/" OutputFile="$(DocDeployment)/docs/sitemap.xml" />
+        <CreateSitemapTask SourceFolder="$(DocDeployment)/docs" BaseUrl="http://docs.aws.amazon.com/powershell/v5/reference/" OutputFile="$(DocDeployment)/docs/sitemap.xml" />
 
         <ItemGroup>
             <FilesToZip Include="$(DocDeployment)/docs/**" />
@@ -161,7 +173,7 @@
     <Target Name="build-test-modules" DependsOnTargets="create-cmdlets">
         <Message Text="Building test modules"/>
         <Exec Command="dotnet restore --disable-parallel ../tests/modules/TestModule.sln"/>
-        <Exec Command="dotnet build -c $(Configuration) -f netstandard2.0  --force --no-incremental --no-restore ../tests/modules/TestModule.sln"/>
+        <Exec Command="dotnet build -c $(Configuration) -f netstandard2.0  --force --no-incremental --no-restore -p:UseSharedCompilation=false ../tests/modules/TestModule.sln"/>
     </Target>
 	
     <Target Name="run-tests" Condition="'$(RunTests)'">
@@ -181,12 +193,12 @@
         <Message Text="Consolidating Desktop edition artifacts from $(DesktopBuildFolder) to $(DesktopDeploymentArtifacts)"/>
 
         <ItemGroup>
-            <SDKAssemblies Include="$(SDKAssembliesFolder)/net45/AWSSDK.*.dll" />
+            <SDKAssemblies Include="$(SDKAssembliesFolder)/net472/AWSSDK.*.dll" />
         </ItemGroup>
         <Copy SourceFiles="@(SDKAssemblies)" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
 
         <ItemGroup>
-            <CRTAssemblies Include="$(SDKAssembliesFolder)/net45/aws-crt*.dll" />
+            <CRTAssemblies Include="$(SDKAssembliesFolder)/net472/aws-crt*.dll" />
         </ItemGroup>
         <Copy SourceFiles="@(CRTAssemblies)" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
 
@@ -206,6 +218,20 @@
         <Copy SourceFiles="$(RootPath)/CHANGELOG.md" DestinationFiles="$(DesktopDeploymentArtifacts)/CHANGELOG.txt"/>
         <Copy SourceFiles="$(RootPath)/LICENSE" DestinationFiles="$(DesktopDeploymentArtifacts)/LICENSE"/>
         <Copy SourceFiles="$(RootPath)/NOTICE" DestinationFiles="$(DesktopDeploymentArtifacts)/NOTICE"/>
+
+       <!-- Copy transitive dependencies -->
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/BouncyCastle.Cryptography.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/Microsoft.Bcl.AsyncInterfaces.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Buffers.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Memory.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Numerics.Vectors.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Runtime.CompilerServices.Unsafe.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Text.Json.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Threading.Tasks.Extensions.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Text.Encodings.Web.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.ValueTuple.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/System.Formats.Cbor.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/net472/Microsoft.Bcl.HashCode.dll" DestinationFolder="$(DesktopDeploymentArtifacts)"/>
     </Target>
 
     <Target Name="copy-coreclr-artifacts" DependsOnTargets="build-netcore-module">
@@ -235,6 +261,19 @@
         <Copy SourceFiles="$(RootPath)/CHANGELOG.md" DestinationFiles="$(NetCoreDeploymentArtifacts)/CHANGELOG.txt"/>
         <Copy SourceFiles="$(RootPath)/LICENSE" DestinationFiles="$(NetCoreDeploymentArtifacts)/LICENSE"/>
         <Copy SourceFiles="$(RootPath)/NOTICE" DestinationFiles="$(NetCoreDeploymentArtifacts)/NOTICE"/>
+
+        <!-- Copy transitive dependencies -->
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/BouncyCastle.Cryptography.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/Microsoft.Bcl.AsyncInterfaces.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Buffers.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Memory.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Numerics.Vectors.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Runtime.CompilerServices.Unsafe.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Text.Json.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Threading.Tasks.Extensions.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Text.Encodings.Web.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/System.Formats.Cbor.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
+        <Copy SourceFiles="$(SDKAssembliesFolder)/netstandard2.0/Microsoft.Bcl.HashCode.dll" DestinationFolder="$(NetCoreDeploymentArtifacts)"/>
     </Target>
 
     <Target Name="copy-modular-artifacts" DependsOnTargets="build-modular-modules">
@@ -272,6 +311,7 @@
             <PostBuildScripts Include="$(RootPath)/buildtools/Confirm-StagedArtifact.ps1" />
             <PostBuildScripts Include="$(RootPath)/buildtools/Publish-StagedArtifact.ps1" />
             <PostBuildScripts Include="$(RootPath)/buildtools/Update-ModulePackageVersion.psm1" />
+            <PostBuildScripts Include="$(RootPath)/buildtools/Test-NugetPackageDependencyVersion.ps1" />
         </ItemGroup>
 
         <Copy SourceFiles="@(PostBuildScripts)" DestinationFolder="$(RootPath)/Deployment" />
@@ -308,7 +348,7 @@
             <SignableItemsBasePath>$(Deployment)</SignableItemsBasePath>
             <ZipPrefix>powershell</ZipPrefix>
             <ZipFilesPath>$(RootPath)/codesign-zip</ZipFilesPath>
-            <SigningS3KeyPrefix>powershell</SigningS3KeyPrefix>
+            <SigningS3KeyPrefix>powershell5-staging-$([System.Guid]::NewGuid())</SigningS3KeyPrefix>
             <SignedItemsPath>$(Deployment)</SignedItemsPath>
             <SigningRoleSessionName>powershell-signer-session</SigningRoleSessionName>
         </PropertyGroup>
@@ -356,7 +396,7 @@
             <SignableItemsBasePath>$(Deployment)</SignableItemsBasePath>
             <ZipPrefix>powershell</ZipPrefix>
             <ZipFilesPath>$(RootPath)/codesign-zip</ZipFilesPath>
-            <SigningS3KeyPrefix>powershell</SigningS3KeyPrefix>
+            <SigningS3KeyPrefix>powershell5-preview-$([System.Guid]::NewGuid())</SigningS3KeyPrefix>
             <SignedItemsPath>$(Deployment)</SignedItemsPath>
             <SigningRoleSessionName>powershell-signer-session</SigningRoleSessionName>
         </PropertyGroup>
@@ -396,6 +436,10 @@
             <PrivateKeyException Include="generator\AWSPSGeneratorLib\HelpMaterials\Examples\IAM\Get-IAMServerCertificate.xml" />
             <PrivateKeyException Include="generator\AWSPSGeneratorLib\HelpMaterials\Examples\IAM\Get-IAMSigningCertificate.xml" />
             <PrivateKeyException Include="generator\AWSPSGeneratorLib\HelpMaterials\Examples\IAM\Publish-IAMSigningCertificate.xml" />
+            <PrivateKeyException Include=".doc_gen\metadata\ec2_New-EC2KeyPair_metadata.yaml" />
+            <PrivateKeyException Include=".doc_gen\metadata\iam_Get-IAMServerCertificate_metadata.yaml" />
+            <PrivateKeyException Include=".doc_gen\metadata\iam_Get-IAMSigningCertificate_metadata.yaml" />
+            <PrivateKeyException Include=".doc_gen\metadata\iam_Publish-IAMSigningCertificate_metadata.yaml" />
             <PrivateKeyException Include="Deployment\AWSPowerShell\AWSPowerShell.dll-Help.xml" />
             <PrivateKeyException Include="Deployment\AWSPowerShell.NetCore\AWSPowerShell.NetCore.dll-Help.xml" />
             <PrivateKeyException Include="Deployment\AWS.Tools\AWS.Tools.EC2\AWS.Tools.EC2.dll-Help.xml" />
@@ -444,16 +488,21 @@
 
         <ItemGroup>
             <FolderException Include="Include/sdk/models"/>
+            <FolderException Include="Include/sdk/assemblies"/>
             <FolderException Include="PSGalleryDownloads"/>
+            <FolderException Include="Include/sdk/assemblies"/>
         </ItemGroup>
 
         <KeyScannerTask Folder="$(MSBuildProjectDirectory)/.." FilePattern="**" PrivateKeyExceptions="@(PrivateKeyException)" FileExceptions="@(FileException)" FolderExceptions="@(FolderException)" ParallelScan="true" />
     </Target>
 
     <Target Name="draft-release-notes" Condition="$(DraftReleaseNotes)">
+        <PropertyGroup>
+            <PreviewLabel Condition="'$(PreviewLabel)'==''">""</PreviewLabel>
+        </PropertyGroup>
         <Exec Command="dotnet restore --disable-parallel ../solutions/ReleaseNotesGenerator.sln"/>
-        <Exec Command="dotnet build -c Release --no-incremental --no-restore ../solutions/ReleaseNotesGenerator.sln"/>
-        <Exec Condition="'$(PreviousVersionPath)'==''" Command="dotnet $(MSBuildProjectDirectory)/../generator/ReleaseNotesGenerator/bin/Release/netcoreapp3.1/ReleaseNotesGenerator.dll -na $(NetCoreDeploymentArtifacts)/AWSPowerShell.NetCore.dll -mn AWSPowerShell.NetCore -df ../PSGalleryDownloads/ -an AWSPowerShell.NetCore.dll -vf ../Include/sdk/_sdk-versions.json -of ../ReleaseNotesDraft.txt -bc ../BreakingChangesLookup.xml -or ../overrides.xml" />
-        <Exec Condition="'$(PreviousVersionPath)'!=''" Command="dotnet $(MSBuildProjectDirectory)/../generator/ReleaseNotesGenerator/bin/Release/netcoreapp3.1/ReleaseNotesGenerator.dll -na $(NetCoreDeploymentArtifacts)/AWSPowerShell.NetCore.dll -oa $(PreviousVersionPath) -vf ../Include/sdk/_sdk-versions.json -of ../ReleaseNotesDraft.txt -bc ../BreakingChangesLookup.xml -or ../overrides.xml"/>
+        <Exec Command="dotnet build -c Release --no-incremental --no-restore -p:UseSharedCompilation=false ../solutions/ReleaseNotesGenerator.sln"/>
+        <Exec Condition="'$(PreviousVersionPath)'==''" Command="dotnet $(MSBuildProjectDirectory)/../generator/ReleaseNotesGenerator/bin/Release/net8.0/ReleaseNotesGenerator.dll -na $(NetCoreDeploymentArtifacts)/AWSPowerShell.NetCore.dll -mn AWSPowerShell.NetCore -df ../PSGalleryDownloads/ -an AWSPowerShell.NetCore.dll -vf ../Include/sdk/_sdk-versions.json -of ../ReleaseNotesDraft.txt -bc ../BreakingChangesLookup.xml -or ../overrides.xml -pl $(PreviewLabel) -nv $(PatchNumber)" />
+        <Exec Condition="'$(PreviousVersionPath)'!=''" Command="dotnet $(MSBuildProjectDirectory)/../generator/ReleaseNotesGenerator/bin/Release/net8.0/ReleaseNotesGenerator.dll -na $(NetCoreDeploymentArtifacts)/AWSPowerShell.NetCore.dll -oa $(PreviousVersionPath) -vf ../Include/sdk/_sdk-versions.json -of ../ReleaseNotesDraft.txt -bc ../BreakingChangesLookup.xml -or ../overrides.xml"/>
     </Target>
 </Project>

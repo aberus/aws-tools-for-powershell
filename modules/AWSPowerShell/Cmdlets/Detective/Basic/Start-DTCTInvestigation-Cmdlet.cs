@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Detective;
 using Amazon.Detective.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTCT
 {
     /// <summary>
-    /// initiate an investigation on an entity in a graph
+    /// Detective investigations lets you investigate IAM users and IAM roles using indicators
+    /// of compromise. An indicator of compromise (IOC) is an artifact observed in or on a
+    /// network, system, or environment that can (with a high level of confidence) identify
+    /// malicious activity or a security incident. <c>StartInvestigation</c> initiates an
+    /// investigation on an entity in a behavior graph.
     /// </summary>
     [Cmdlet("Start", "DTCTInvestigation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon Detective StartInvestigation API operation.", Operation = new[] {"StartInvestigation"}, SelectReturnType = typeof(Amazon.Detective.Model.StartInvestigationResponse))]
     [AWSCmdletOutput("System.String or Amazon.Detective.Model.StartInvestigationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Detective.Model.StartInvestigationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Detective.Model.StartInvestigationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartDTCTInvestigationCmdlet : AmazonDetectiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EntityArn
         /// <summary>
@@ -62,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         #region Parameter GraphArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the behavior graph.</para>
+        /// <para>The Amazon Resource Name (ARN) of the behavior graph.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -79,7 +86,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         #region Parameter ScopeEndTime
         /// <summary>
         /// <para>
-        /// <para>The data and time when the investigation began. The value is an UTC ISO8601 formatted
+        /// <para>The data and time when the investigation ended. The value is an UTC ISO8601 formatted
         /// string. For example, <c>2021-08-18T16:35:56.284Z</c>.</para>
         /// </para>
         /// </summary>
@@ -121,16 +128,6 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public string Select { get; set; } = "InvestigationId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EntityArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EntityArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EntityArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -141,9 +138,13 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -157,21 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Detective.Model.StartInvestigationResponse, StartDTCTInvestigationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EntityArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EntityArn = this.EntityArn;
             #if MODULAR
             if (this.EntityArn == null && ParameterWasBound(nameof(this.EntityArn)))
@@ -270,13 +261,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Detective", "StartInvestigation");
             try
             {
-                #if DESKTOP
-                return client.StartInvestigation(request);
-                #elif CORECLR
-                return client.StartInvestigationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartInvestigationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

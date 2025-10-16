@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,38 +22,49 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.BedrockRuntime;
 using Amazon.BedrockRuntime.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BDRR
 {
     /// <summary>
-    /// Invokes the specified Bedrock model to run inference using the input provided in the
-    /// request body. You use InvokeModel to run inference for text models, image models,
-    /// and embedding models.
+    /// Invokes the specified Amazon Bedrock model to run inference using the prompt and inference
+    /// parameters provided in the request body. You use model inference to generate text,
+    /// images, and embeddings.
     /// 
     ///  
     /// <para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/api-methods-run.html">Run
-    /// inference</a> in the Bedrock User Guide.
+    /// For example code, see <i>Invoke model code examples</i> in the <i>Amazon Bedrock User
+    /// Guide</i>. 
     /// </para><para>
-    /// For example requests, see Examples (after the Errors section).
+    /// This operation requires permission for the <c>bedrock:InvokeModel</c> action.
+    /// </para><important><para>
+    /// To deny all inference access to resources that you specify in the modelId field, you
+    /// need to deny access to the <c>bedrock:InvokeModel</c> and <c>bedrock:InvokeModelWithResponseStream</c>
+    /// actions. Doing this also denies access to the resource through the Converse API actions
+    /// (<a href="https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_Converse.html">Converse</a>
+    /// and <a href="https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ConverseStream.html">ConverseStream</a>).
+    /// For more information see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/security_iam_id-based-policy-examples.html#security_iam_id-based-policy-examples-deny-inference">Deny
+    /// access for inference on specific models</a>. 
+    /// </para></important><para>
+    /// For troubleshooting some of the common errors you might encounter when using the <c>InvokeModel</c>
+    /// API, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/troubleshooting-api-error-codes.html">Troubleshooting
+    /// Amazon Bedrock API Error Codes</a> in the Amazon Bedrock User Guide
     /// </para>
     /// </summary>
     [Cmdlet("Invoke", "BDRRModel", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.BedrockRuntime.Model.InvokeModelResponse")]
     [AWSCmdlet("Calls the Amazon Bedrock Runtime InvokeModel API operation.", Operation = new[] {"InvokeModel"}, SelectReturnType = typeof(Amazon.BedrockRuntime.Model.InvokeModelResponse))]
     [AWSCmdletOutput("Amazon.BedrockRuntime.Model.InvokeModelResponse",
-        "This cmdlet returns an Amazon.BedrockRuntime.Model.InvokeModelResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.BedrockRuntime.Model.InvokeModelResponse object containing multiple properties."
     )]
     public partial class InvokeBDRRModelCmdlet : AmazonBedrockRuntimeClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Accept
         /// <summary>
@@ -69,19 +80,15 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
         #region Parameter Body
         /// <summary>
         /// <para>
-        /// <para>Input data in the format specified in the content-type request header. To see the
-        /// format and content of this field for different models, refer to <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters.html">Inference
-        /// parameters</a>.</para>
+        /// <para>The prompt and inference parameters in the format specified in the <c>contentType</c>
+        /// in the header. You must provide the body in JSON format. To see the format and content
+        /// of the request and response bodies for different models, refer to <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-parameters.html">Inference
+        /// parameters</a>. For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/api-methods-run.html">Run
+        /// inference</a> in the Bedrock User Guide.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Amazon.PowerShell.Common.MemoryStreamParameterConverter]
         public byte[] Body { get; set; }
         #endregion
@@ -89,17 +96,52 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
         #region Parameter ContentType
         /// <summary>
         /// <para>
-        /// <para>The MIME type of the input data in the request. The default value is <c>application/json</c>.</para>
+        /// <para>The MIME type of the input data in the request. You must specify <c>application/json</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ContentType { get; set; }
         #endregion
         
+        #region Parameter GuardrailIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The unique identifier of the guardrail that you want to use. If you don't provide
+        /// a value, no guardrail is applied to the invocation.</para><para>An error will be thrown in the following situations.</para><ul><li><para>You don't provide a guardrail identifier but you specify the <c>amazon-bedrock-guardrailConfig</c>
+        /// field in the request body.</para></li><li><para>You enable the guardrail but the <c>contentType</c> isn't <c>application/json</c>.</para></li><li><para>You provide a guardrail identifier, but <c>guardrailVersion</c> isn't specified.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String GuardrailIdentifier { get; set; }
+        #endregion
+        
+        #region Parameter GuardrailVersion
+        /// <summary>
+        /// <para>
+        /// <para>The version number for the guardrail. The value can also be <c>DRAFT</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String GuardrailVersion { get; set; }
+        #endregion
+        
         #region Parameter ModelId
         /// <summary>
         /// <para>
-        /// <para>Identifier of the model. </para>
+        /// <para>The unique identifier of the model to invoke to run inference.</para><para>The <c>modelId</c> to provide depends on the type of model or throughput that you
+        /// use:</para><ul><li><para>If you use a base model, specify the model ID or its ARN. For a list of model IDs
+        /// for base models, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html#model-ids-arns">Amazon
+        /// Bedrock base model IDs (on-demand throughput)</a> in the Amazon Bedrock User Guide.</para></li><li><para>If you use an inference profile, specify the inference profile ID or its ARN. For
+        /// a list of inference profile IDs, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference-support.html">Supported
+        /// Regions and models for cross-region inference</a> in the Amazon Bedrock User Guide.</para></li><li><para>If you use a provisioned model, specify the ARN of the Provisioned Throughput. For
+        /// more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prov-thru-use.html">Run
+        /// inference using a Provisioned Throughput</a> in the Amazon Bedrock User Guide.</para></li><li><para>If you use a custom model, specify the ARN of the custom model deployment (for on-demand
+        /// inference) or the ARN of your provisioned model (for Provisioned Throughput). For
+        /// more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-use.html">Use
+        /// a custom model in Amazon Bedrock</a> in the Amazon Bedrock User Guide.</para></li><li><para>If you use an <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-import-model.html">imported
+        /// model</a>, specify the ARN of the imported model. You can get the model ARN from a
+        /// successful call to <a href="https://docs.aws.amazon.com/bedrock/latest/APIReference/API_CreateModelImportJob.html">CreateModelImportJob</a>
+        /// or from the Imported models page in the Amazon Bedrock console.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,6 +155,29 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
         public System.String ModelId { get; set; }
         #endregion
         
+        #region Parameter PerformanceConfigLatency
+        /// <summary>
+        /// <para>
+        /// <para>Model performance settings for the request.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.BedrockRuntime.PerformanceConfigLatency")]
+        public Amazon.BedrockRuntime.PerformanceConfigLatency PerformanceConfigLatency { get; set; }
+        #endregion
+        
+        #region Parameter Trace
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to enable or disable the Bedrock trace. If enabled, you can see
+        /// the full Bedrock trace.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.BedrockRuntime.Trace")]
+        public Amazon.BedrockRuntime.Trace Trace { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -122,16 +187,6 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ModelId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ModelId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ModelId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -144,9 +199,13 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ModelId), MyInvocation.BoundParameters);
@@ -160,30 +219,16 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.BedrockRuntime.Model.InvokeModelResponse, InvokeBDRRModelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ModelId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Accept = this.Accept;
             context.Body = this.Body;
-            #if MODULAR
-            if (this.Body == null && ParameterWasBound(nameof(this.Body)))
-            {
-                WriteWarning("You are passing $null as a value for parameter Body which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.ContentType = this.ContentType;
+            context.GuardrailIdentifier = this.GuardrailIdentifier;
+            context.GuardrailVersion = this.GuardrailVersion;
             context.ModelId = this.ModelId;
             #if MODULAR
             if (this.ModelId == null && ParameterWasBound(nameof(this.ModelId)))
@@ -191,6 +236,8 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
                 WriteWarning("You are passing $null as a value for parameter ModelId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.PerformanceConfigLatency = this.PerformanceConfigLatency;
+            context.Trace = this.Trace;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -224,9 +271,25 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
                 {
                     request.ContentType = cmdletContext.ContentType;
                 }
+                if (cmdletContext.GuardrailIdentifier != null)
+                {
+                    request.GuardrailIdentifier = cmdletContext.GuardrailIdentifier;
+                }
+                if (cmdletContext.GuardrailVersion != null)
+                {
+                    request.GuardrailVersion = cmdletContext.GuardrailVersion;
+                }
                 if (cmdletContext.ModelId != null)
                 {
                     request.ModelId = cmdletContext.ModelId;
+                }
+                if (cmdletContext.PerformanceConfigLatency != null)
+                {
+                    request.PerformanceConfigLatency = cmdletContext.PerformanceConfigLatency;
+                }
+                if (cmdletContext.Trace != null)
+                {
+                    request.Trace = cmdletContext.Trace;
                 }
                 
                 CmdletOutput output;
@@ -274,13 +337,7 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Bedrock Runtime", "InvokeModel");
             try
             {
-                #if DESKTOP
-                return client.InvokeModel(request);
-                #elif CORECLR
-                return client.InvokeModelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.InvokeModelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -300,7 +357,11 @@ namespace Amazon.PowerShell.Cmdlets.BDRR
             public System.String Accept { get; set; }
             public byte[] Body { get; set; }
             public System.String ContentType { get; set; }
+            public System.String GuardrailIdentifier { get; set; }
+            public System.String GuardrailVersion { get; set; }
             public System.String ModelId { get; set; }
+            public Amazon.BedrockRuntime.PerformanceConfigLatency PerformanceConfigLatency { get; set; }
+            public Amazon.BedrockRuntime.Trace Trace { get; set; }
             public System.Func<Amazon.BedrockRuntime.Model.InvokeModelResponse, InvokeBDRRModelCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

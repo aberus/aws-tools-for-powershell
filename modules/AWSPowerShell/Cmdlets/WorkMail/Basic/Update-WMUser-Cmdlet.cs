@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkMail;
 using Amazon.WorkMail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WM
 {
     /// <summary>
@@ -37,14 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
     [AWSCmdlet("Calls the Amazon WorkMail UpdateUser API operation.", Operation = new[] {"UpdateUser"}, SelectReturnType = typeof(Amazon.WorkMail.Model.UpdateUserResponse))]
     [AWSCmdletOutput("None or Amazon.WorkMail.Model.UpdateUserResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkMail.Model.UpdateUserResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WorkMail.Model.UpdateUserResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateWMUserCmdlet : AmazonWorkMailClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter City
         /// <summary>
@@ -114,6 +115,18 @@ namespace Amazon.PowerShell.Cmdlets.WM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? HiddenFromGlobalAddressList { get; set; }
+        #endregion
+        
+        #region Parameter IdentityProviderUserId
+        /// <summary>
+        /// <para>
+        /// <para>User ID from the IAM Identity Center. If this parameter is empty it will be updated
+        /// automatically when the user logs in for the first time to the mailbox associated with
+        /// WorkMail.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IdentityProviderUserId { get; set; }
         #endregion
         
         #region Parameter Initial
@@ -226,7 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
         #region Parameter ZipCode
         /// <summary>
         /// <para>
-        /// <para>Updates the user's zipcode.</para>
+        /// <para>Updates the user's zip code.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -243,16 +256,6 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -263,9 +266,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserId), MyInvocation.BoundParameters);
@@ -279,21 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.WM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkMail.Model.UpdateUserResponse, UpdateWMUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.City = this.City;
             context.Company = this.Company;
             context.Country = this.Country;
@@ -301,6 +298,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
             context.DisplayName = this.DisplayName;
             context.FirstName = this.FirstName;
             context.HiddenFromGlobalAddressList = this.HiddenFromGlobalAddressList;
+            context.IdentityProviderUserId = this.IdentityProviderUserId;
             context.Initial = this.Initial;
             context.JobTitle = this.JobTitle;
             context.LastName = this.LastName;
@@ -366,6 +364,10 @@ namespace Amazon.PowerShell.Cmdlets.WM
             if (cmdletContext.HiddenFromGlobalAddressList != null)
             {
                 request.HiddenFromGlobalAddressList = cmdletContext.HiddenFromGlobalAddressList.Value;
+            }
+            if (cmdletContext.IdentityProviderUserId != null)
+            {
+                request.IdentityProviderUserId = cmdletContext.IdentityProviderUserId;
             }
             if (cmdletContext.Initial != null)
             {
@@ -445,13 +447,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkMail", "UpdateUser");
             try
             {
-                #if DESKTOP
-                return client.UpdateUser(request);
-                #elif CORECLR
-                return client.UpdateUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -475,6 +471,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
             public System.String DisplayName { get; set; }
             public System.String FirstName { get; set; }
             public System.Boolean? HiddenFromGlobalAddressList { get; set; }
+            public System.String IdentityProviderUserId { get; set; }
             public System.String Initial { get; set; }
             public System.String JobTitle { get; set; }
             public System.String LastName { get; set; }

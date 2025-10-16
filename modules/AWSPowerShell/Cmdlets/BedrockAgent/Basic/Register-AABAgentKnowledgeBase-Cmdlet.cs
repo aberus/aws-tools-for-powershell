@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.BedrockAgent;
 using Amazon.BedrockAgent.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AAB
 {
     /// <summary>
-    /// Associate a Knowledge Base to an existing Amazon Bedrock Agent
+    /// Associates a knowledge base with an agent. If a knowledge base is associated and its
+    /// <c>indexState</c> is set to <c>Enabled</c>, the agent queries the knowledge base for
+    /// information to augment its response to the user.
     /// </summary>
     [Cmdlet("Register", "AABAgentKnowledgeBase", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.BedrockAgent.Model.AgentKnowledgeBase")]
     [AWSCmdlet("Calls the Agents for Amazon Bedrock AssociateAgentKnowledgeBase API operation.", Operation = new[] {"AssociateAgentKnowledgeBase"}, SelectReturnType = typeof(Amazon.BedrockAgent.Model.AssociateAgentKnowledgeBaseResponse))]
     [AWSCmdletOutput("Amazon.BedrockAgent.Model.AgentKnowledgeBase or Amazon.BedrockAgent.Model.AssociateAgentKnowledgeBaseResponse",
         "This cmdlet returns an Amazon.BedrockAgent.Model.AgentKnowledgeBase object.",
-        "The service call response (type Amazon.BedrockAgent.Model.AssociateAgentKnowledgeBaseResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.BedrockAgent.Model.AssociateAgentKnowledgeBaseResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterAABAgentKnowledgeBaseCmdlet : AmazonBedrockAgentClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AgentId
         /// <summary>
         /// <para>
-        /// <para>Id generated at the server side when an Agent is created</para>
+        /// <para>The unique identifier of the agent with which you want to associate the knowledge
+        /// base.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter AgentVersion
         /// <summary>
         /// <para>
-        /// <para>Draft Version of the Agent.</para>
+        /// <para>The version of the agent with which you want to associate the knowledge base.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -79,7 +85,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>A description of what the agent should use the knowledge base for.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -96,7 +102,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter KnowledgeBaseId
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The unique identifier of the knowledge base to associate with the agent.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,7 +119,8 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter KnowledgeBaseState
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>Specifies whether to use the knowledge base or not when sending an <a href="https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html">InvokeAgent</a>
+        /// request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,16 +139,6 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public string Select { get; set; } = "AgentKnowledgeBase";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AgentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AgentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AgentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +149,13 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AgentId), MyInvocation.BoundParameters);
@@ -168,21 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.BedrockAgent.Model.AssociateAgentKnowledgeBaseResponse, RegisterAABAgentKnowledgeBaseCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AgentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AgentId = this.AgentId;
             #if MODULAR
             if (this.AgentId == null && ParameterWasBound(nameof(this.AgentId)))
@@ -286,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Agents for Amazon Bedrock", "AssociateAgentKnowledgeBase");
             try
             {
-                #if DESKTOP
-                return client.AssociateAgentKnowledgeBase(request);
-                #elif CORECLR
-                return client.AssociateAgentKnowledgeBaseAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateAgentKnowledgeBaseAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

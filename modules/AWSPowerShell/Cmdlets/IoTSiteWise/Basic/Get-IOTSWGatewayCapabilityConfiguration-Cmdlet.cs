@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,36 +22,51 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
-    /// Retrieves information about a gateway capability configuration. Each gateway capability
-    /// defines data sources for a gateway. A capability configuration can contain multiple
-    /// data source configurations. If you define OPC-UA sources for a gateway in the IoT
-    /// SiteWise console, all of your OPC-UA sources are stored in one capability configuration.
-    /// To list all capability configurations for a gateway, use <a href="https://docs.aws.amazon.com/iot-sitewise/latest/APIReference/API_DescribeGateway.html">DescribeGateway</a>.
+    /// Each gateway capability defines data sources for a gateway. This is the namespace
+    /// of the gateway capability.
+    /// 
+    ///  
+    /// <para>
+    /// . The namespace follows the format <c>service:capability:version</c>, where:
+    /// </para><ul><li><para><c>service</c> - The service providing the capability, or <c>iotsitewise</c>.
+    /// </para></li><li><para><c>capability</c> - The specific capability type. Options include: <c>opcuacollector</c>
+    /// for the OPC UA data source collector, or <c>publisher</c> for data publisher capability.
+    /// </para></li><li><para><c>version</c> - The version number of the capability. Option include <c>2</c> for
+    /// Classic streams, V2 gateways, and <c>3</c> for MQTT-enabled, V3 gateways.
+    /// </para></li></ul><para>
+    /// After updating a capability configuration, the sync status becomes <c>OUT_OF_SYNC</c>
+    /// until the gateway processes the configuration.Use <c>DescribeGatewayCapabilityConfiguration</c>
+    /// to check the sync status and verify the configuration was applied.
+    /// </para><para>
+    /// A gateway can have multiple capability configurations with different namespaces.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "IOTSWGatewayCapabilityConfiguration")]
     [OutputType("Amazon.IoTSiteWise.Model.DescribeGatewayCapabilityConfigurationResponse")]
     [AWSCmdlet("Calls the AWS IoT SiteWise DescribeGatewayCapabilityConfiguration API operation.", Operation = new[] {"DescribeGatewayCapabilityConfiguration"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.DescribeGatewayCapabilityConfigurationResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.DescribeGatewayCapabilityConfigurationResponse",
-        "This cmdlet returns an Amazon.IoTSiteWise.Model.DescribeGatewayCapabilityConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTSiteWise.Model.DescribeGatewayCapabilityConfigurationResponse object containing multiple properties."
     )]
     public partial class GetIOTSWGatewayCapabilityConfigurationCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CapabilityNamespace
         /// <summary>
         /// <para>
-        /// <para>The namespace of the capability configuration. For example, if you configure OPC-UA
-        /// sources from the IoT SiteWise console, your OPC-UA capability configuration has the
-        /// namespace <c>iotsitewise:opcuacollector:version</c>, where <c>version</c> is a number
-        /// such as <c>1</c>.</para>
+        /// <para>The namespace of the capability configuration. For example, if you configure OPC UA
+        /// sources for an MQTT-enabled gateway, your OPC-UA capability configuration has the
+        /// namespace <c>iotsitewise:opcuacollector:3</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,19 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GatewayId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GatewayId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GatewayId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -113,21 +122,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTSiteWise.Model.DescribeGatewayCapabilityConfigurationResponse, GetIOTSWGatewayCapabilityConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GatewayId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CapabilityNamespace = this.CapabilityNamespace;
             #if MODULAR
             if (this.CapabilityNamespace == null && ParameterWasBound(nameof(this.CapabilityNamespace)))
@@ -204,13 +203,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "DescribeGatewayCapabilityConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DescribeGatewayCapabilityConfiguration(request);
-                #elif CORECLR
-                return client.DescribeGatewayCapabilityConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeGatewayCapabilityConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

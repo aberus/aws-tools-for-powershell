@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
     /// <note><para>
-    /// Amazon Elastic Graphics reached end of life on January 8, 2024. For workloads that
-    /// require graphics acceleration, we recommend that you use Amazon EC2 G4ad, G4dn, or
-    /// G5 instances.
+    /// Amazon Elastic Graphics reached end of life on January 8, 2024.
     /// </para></note><para>
-    /// Describes the Elastic Graphics accelerator associated with your instances. For more
-    /// information about Elastic Graphics, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/WindowsGuide/elastic-graphics.html">Amazon
-    /// Elastic Graphics</a>.
+    /// Describes the Elastic Graphics accelerator associated with your instances.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2ElasticGpu")]
@@ -43,17 +41,34 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeElasticGpus API operation.", Operation = new[] {"DescribeElasticGpus"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeElasticGpusResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.ElasticGpus or Amazon.EC2.Model.DescribeElasticGpusResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.ElasticGpus objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeElasticGpusResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeElasticGpusResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2ElasticGpuCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter ElasticGpuId
         /// <summary>
         /// <para>
-        /// <para>The Elastic Graphics accelerator IDs.</para>
+        /// <para>The Elastic Graphics accelerator IDs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// resides.</para></li><li><para><c>elastic-gpu-health</c> - The status of the Elastic Graphics accelerator (<c>OK</c>
         /// | <c>IMPAIRED</c>).</para></li><li><para><c>elastic-gpu-state</c> - The state of the Elastic Graphics accelerator (<c>ATTACHED</c>).</para></li><li><para><c>elastic-gpu-type</c> - The type of Elastic Graphics accelerator; for example,
         /// <c>eg1.medium</c>.</para></li><li><para><c>instance-id</c> - The ID of the instance to which the Elastic Graphics accelerator
-        /// is associated.</para></li></ul>
+        /// is associated.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,7 +120,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,9 +148,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -144,6 +167,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeElasticGpusResponse, GetEC2ElasticGpuCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.DryRun = this.DryRun;
             if (this.ElasticGpuId != null)
             {
                 context.ElasticGpuId = new List<System.String>(this.ElasticGpuId);
@@ -182,6 +206,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeElasticGpusRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.ElasticGpuId != null)
             {
                 request.ElasticGpuIds = cmdletContext.ElasticGpuId;
@@ -249,6 +277,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeElasticGpusRequest();
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.ElasticGpuId != null)
             {
                 request.ElasticGpuIds = cmdletContext.ElasticGpuId;
@@ -304,7 +336,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ElasticGpuSet.Count;
+                    int _receivedThisCall = response.ElasticGpuSet?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -353,13 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeElasticGpus");
             try
             {
-                #if DESKTOP
-                return client.DescribeElasticGpus(request);
-                #elif CORECLR
-                return client.DescribeElasticGpusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeElasticGpusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -376,6 +402,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<System.String> ElasticGpuId { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public int? MaxResult { get; set; }

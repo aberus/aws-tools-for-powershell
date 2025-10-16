@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
     /// Starts a new task using the specified task definition.
     /// 
-    ///  
-    /// <para>
+    ///  <note><para>
+    /// On March 21, 2024, a change was made to resolve the task definition revision before
+    /// authorization. When a task definition revision is not specified, authorization will
+    /// occur using the latest revision of a task definition.
+    /// </para></note><note><para>
+    /// Amazon Elastic Inference (EI) is no longer available to customers.
+    /// </para></note><para>
     /// You can allow Amazon ECS to place tasks for you, or you can customize how Amazon ECS
     /// places tasks using placement constraints and placement strategies. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/scheduling_tasks.html">Scheduling
     /// Tasks</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.
     /// </para><para>
-    /// Alternatively, you can use <a>StartTask</a> to use your own scheduler or place tasks
+    /// Alternatively, you can use <c>StartTask</c> to use your own scheduler or place tasks
     /// manually on specific container instances.
-    /// </para><note><para>
-    /// Starting April 15, 2023, Amazon Web Services will not onboard new customers to Amazon
-    /// Elastic Inference (EI), and will help current customers migrate their workloads to
-    /// options that offer better price and performance. After April 15, 2023, new customers
-    /// will not be able to launch instances with Amazon EI accelerators in Amazon SageMaker,
-    /// Amazon ECS, or Amazon EC2. However, customers who have used Amazon EI at least once
-    /// during the past 30-day period are considered current customers and will be able to
-    /// continue using the service. 
-    /// </para></note><para>
+    /// </para><para>
     /// You can attach Amazon EBS volumes to Amazon ECS tasks by configuring the volume when
-    /// creating or updating a service. For more infomation, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-volumes.html#ebs-volume-types">Amazon
+    /// creating or updating a service. For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-volumes.html#ebs-volume-types">Amazon
     /// EBS volumes</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.
     /// </para><para>
     /// The Amazon ECS API follows an eventual consistency model. This is because of the distributed
@@ -69,24 +68,43 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// Add wait time between subsequent commands, even if the DescribeTasks command returns
     /// an accurate response. Apply an exponential backoff algorithm starting with a couple
     /// of seconds of wait time, and increase gradually up to about five minutes of wait time.
-    /// </para></li></ul>
+    /// </para></li></ul><para>
+    /// If you get a <c>ConflictException</c> error, the <c>RunTask</c> request could not
+    /// be processed due to conflicts. The provided <c>clientToken</c> is already in use with
+    /// a different <c>RunTask</c> request. The <c>resourceIds</c> are the existing task ARNs
+    /// which are already associated with the <c>clientToken</c>. 
+    /// </para><para>
+    /// To fix this issue:
+    /// </para><ul><li><para>
+    /// Run <c>RunTask</c> with a unique <c>clientToken</c>.
+    /// </para></li><li><para>
+    /// Run <c>RunTask</c> with the <c>clientToken</c> and the original set of parameters
+    /// </para></li></ul><para>
+    /// If you get a <c>ClientException</c>error, the <c>RunTask</c> could not be processed
+    /// because you use managed scaling and there is a capacity error because the quota of
+    /// tasks in the <c>PROVISIONING</c> per cluster has been reached. For information about
+    /// the service quotas, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-quotas.html">Amazon
+    /// ECS service quotas</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "ECSTask", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ECS.Model.RunTaskResponse")]
     [AWSCmdlet("Calls the Amazon EC2 Container Service RunTask API operation.", Operation = new[] {"RunTask"}, SelectReturnType = typeof(Amazon.ECS.Model.RunTaskResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.RunTaskResponse",
-        "This cmdlet returns an Amazon.ECS.Model.RunTaskResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ECS.Model.RunTaskResponse object containing multiple properties."
     )]
     public partial class NewECSTaskCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsvpcConfiguration_AssignPublicIp
         /// <summary>
         /// <para>
-        /// <para>Whether the task's elastic network interface receives a public IP address. The default
-        /// value is <c>DISABLED</c>.</para>
+        /// <para>Whether the task's elastic network interface receives a public IP address. </para><para>Consider the following when you set this value:</para><ul><li><para>When you use <c>create-service</c> or <c>update-service</c>, the default is <c>DISABLED</c>.
+        /// </para></li><li><para>When the service <c>deploymentController</c> is <c>ECS</c>, the value must be <c>DISABLED</c>.
+        /// </para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,7 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>The capacity provider strategy to use for the task.</para><para>If a <c>capacityProviderStrategy</c> is specified, the <c>launchType</c> parameter
         /// must be omitted. If no <c>capacityProviderStrategy</c> or <c>launchType</c> is specified,
         /// the <c>defaultCapacityProviderStrategy</c> for the cluster is used.</para><para>When you use cluster auto scaling, you must specify <c>capacityProviderStrategy</c>
-        /// and not <c>launchType</c>. </para><para>A capacity provider strategy may contain a maximum of 6 capacity providers.</para>
+        /// and not <c>launchType</c>. </para><para>A capacity provider strategy can contain a maximum of 20 capacity providers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,7 +134,8 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The short name or full Amazon Resource Name (ARN) of the cluster to run your task
-        /// on. If you do not specify a cluster, the default cluster is assumed.</para>
+        /// on. If you do not specify a cluster, the default cluster is assumed.</para><para>Each account receives a default cluster the first time you use the service, but you
+        /// may also create other clusters.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -122,7 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter Overrides_ContainerOverride
         /// <summary>
         /// <para>
-        /// <para>One or more container overrides that are sent to a task.</para>
+        /// <para>One or more container overrides that are sent to a task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,7 +232,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter Overrides_InferenceAcceleratorOverride
         /// <summary>
         /// <para>
-        /// <para>The Elastic Inference accelerator override for the task.</para>
+        /// <para>The Elastic Inference accelerator override for the task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -246,7 +277,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>An array of placement constraint objects to use for the task. You can specify up to
         /// 10 constraints for each task (including constraints in the task definition and those
-        /// specified at runtime).</para>
+        /// specified at runtime).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -258,7 +293,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The placement strategy objects to use for the task. You can specify a maximum of 5
-        /// strategy rules for each task.</para>
+        /// strategy rules for each task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -283,7 +322,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>Specifies whether to propagate the tags from the task definition to the task. If no
         /// value is specified, the tags aren't propagated. Tags can only be propagated to the
-        /// task during task creation. To add tags to a task after task creation, use the <a>TagResource</a>
+        /// task during task creation. To add tags to a task after task creation, use the<a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TagResource.html">TagResource</a>
         /// API action.</para><note><para>An error will be received if you specify the <c>SERVICE</c> option when running a
         /// task.</para></note>
         /// </para>
@@ -297,8 +336,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter ReferenceId
         /// <summary>
         /// <para>
-        /// <para>The reference ID to use for the task. The reference ID can have a maximum length of
-        /// 1024 characters.</para>
+        /// <para>This parameter is only used by Amazon ECS. It is not intended for use by customers.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -310,7 +348,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>The IDs of the security groups associated with the task or service. If you don't specify
         /// a security group, the default security group for the VPC is used. There's a limit
-        /// of 5 security groups that can be specified per <c>AwsVpcConfiguration</c>.</para><note><para>All specified security groups must be from the same VPC.</para></note>
+        /// of 5 security groups that can be specified.</para><note><para>All specified security groups must be from the same VPC.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -336,9 +378,9 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>An optional tag specified when a task is started. For example, if you automatically
         /// trigger a task to run a batch process job, you could apply a unique identifier for
         /// that job to your task with the <c>startedBy</c> parameter. You can then identify which
-        /// tasks belong to that job by filtering the results of a <a>ListTasks</a> call with
-        /// the <c>startedBy</c> value. Up to 128 letters (uppercase and lowercase), numbers,
-        /// hyphens (-), and underscores (_) are allowed.</para><para>If a task is started by an Amazon ECS service, then the <c>startedBy</c> parameter
+        /// tasks belong to that job by filtering the results of a <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ListTasks.html">ListTasks</a>
+        /// call with the <c>startedBy</c> value. Up to 128 letters (uppercase and lowercase),
+        /// numbers, hyphens (-), forward slash (/), and underscores (_) are allowed.</para><para>If a task is started by an Amazon ECS service, then the <c>startedBy</c> parameter
         /// contains the deployment ID of the service that starts it.</para>
         /// </para>
         /// </summary>
@@ -350,7 +392,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The IDs of the subnets associated with the task or service. There's a limit of 16
-        /// subnets that can be specified per <c>AwsVpcConfiguration</c>.</para><note><para>All specified subnets must be from the same VPC.</para></note>
+        /// subnets that can be specified.</para><note><para>All specified subnets must be from the same VPC.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -369,7 +415,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// + - = . _ : / @.</para></li><li><para>Tag keys and values are case-sensitive.</para></li><li><para>Do not use <c>aws:</c>, <c>AWS:</c>, or any upper or lowercase combination of such
         /// as a prefix for either keys or values as it is reserved for Amazon Web Services use.
         /// You cannot edit or delete tag keys or values with this prefix. Tags with this prefix
-        /// do not count against your tags per resource limit.</para></li></ul>
+        /// do not count against your tags per resource limit.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -382,15 +432,12 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>The <c>family</c> and <c>revision</c> (<c>family:revision</c>) or full ARN of the
         /// task definition to run. If a <c>revision</c> isn't specified, the latest <c>ACTIVE</c>
-        /// revision is used.</para><para>When you create a policy for run-task, you can set the resource to be the latest task
-        /// definition revision, or a specific revision.</para><para>The full ARN value must match the value that you specified as the <c>Resource</c>
-        /// of the principal's permissions policy.</para><para>When you specify the policy resource as the latest task definition version (by setting
-        /// the <c>Resource</c> in the policy to <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName</c>),
-        /// then set this value to <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName</c>.</para><para>When you specify the policy resource as a specific task definition version (by setting
-        /// the <c>Resource</c> in the policy to <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName:1</c>
-        /// or <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName:*</c>), then
-        /// set this value to <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName:1</c>.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security_iam_service-with-iam.html#security_iam_service-with-iam-id-based-policies-resources">Policy
-        /// Resources for Amazon ECS</a> in the Amazon Elastic Container Service developer Guide.</para>
+        /// revision is used.</para><para>The full ARN value must match the value that you specified as the <c>Resource</c>
+        /// of the principal's permissions policy.</para><para>When you specify a task definition, you must either specify a specific revision, or
+        /// all revisions in the ARN.</para><para>To specify a specific revision, include the revision number in the ARN. For example,
+        /// to specify revision 2, use <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName:2</c>.</para><para>To specify all revisions, use the wildcard (*) in the ARN. For example, to specify
+        /// all revisions, use <c>arn:aws:ecs:us-east-1:111122223333:task-definition/TaskFamilyName:*</c>.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/security_iam_service-with-iam.html#security_iam_service-with-iam-id-based-policies-resources">Policy
+        /// Resources for Amazon ECS</a> in the Amazon Elastic Container Service Developer Guide.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -421,8 +468,12 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The details of the volume that was <c>configuredAtLaunch</c>. You can configure the
-        /// size, volumeType, IOPS, throughput, snapshot and encryption in in <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskManagedEBSVolumeConfiguration.html">TaskManagedEBSVolumeConfiguration</a>.
-        /// The <c>name</c> of the volume must match the <c>name</c> from the task definition.</para>
+        /// size, volumeType, IOPS, throughput, snapshot and encryption in <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_TaskManagedEBSVolumeConfiguration.html">TaskManagedEBSVolumeConfiguration</a>.
+        /// The <c>name</c> of the volume must match the <c>name</c> from the task definition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -454,16 +505,6 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Cluster parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -474,9 +515,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Cluster), MyInvocation.BoundParameters);
@@ -490,21 +535,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECS.Model.RunTaskResponse, NewECSTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Cluster;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.CapacityProviderStrategy != null)
             {
                 context.CapacityProviderStrategy = new List<Amazon.ECS.Model.CapacityProviderStrategyItem>(this.CapacityProviderStrategy);
@@ -835,13 +870,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "RunTask");
             try
             {
-                #if DESKTOP
-                return client.RunTask(request);
-                #elif CORECLR
-                return client.RunTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RunTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

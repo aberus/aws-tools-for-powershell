@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GlobalAccelerator;
 using Amazon.GlobalAccelerator.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GACL
 {
     /// <summary>
     /// Create a cross-account attachment in Global Accelerator. You create a cross-account
-    /// attachment to specify the <i>principals</i> who have permission to add to accelerators
-    /// in their own account the resources in your account that you also list in the attachment.
+    /// attachment to specify the <i>principals</i> who have permission to work with <i>resources</i>
+    /// in accelerators in their own account. You specify, in the same attachment, the resources
+    /// that are shared.
     /// 
     ///  
     /// <para>
     /// A principal can be an Amazon Web Services account number or the Amazon Resource Name
-    /// (ARN) for an accelerator. For account numbers that are listed as principals, to add
-    /// a resource listed in the attachment to an accelerator, you must sign in to an account
-    /// specified as a principal. Then you can add the resources that are listed to any of
-    /// your accelerators. If an accelerator ARN is listed in the cross-account attachment
-    /// as a principal, anyone with permission to make updates to the accelerator can add
-    /// as endpoints resources that are listed in the attachment. 
+    /// (ARN) for an accelerator. For account numbers that are listed as principals, to work
+    /// with a resource listed in the attachment, you must sign in to an account specified
+    /// as a principal. Then, you can work with resources that are listed, with any of your
+    /// accelerators. If an accelerator ARN is listed in the cross-account attachment as a
+    /// principal, anyone with permission to make updates to the accelerator can work with
+    /// resources that are listed in the attachment. 
+    /// </para><para>
+    /// Specify each principal and resource separately. To specify two CIDR address pools,
+    /// list them individually under <c>Resources</c>, and so on. For a command line operation,
+    /// for example, you might use a statement like the following:
+    /// </para><para><c> "Resources": [{"Cidr": "169.254.60.0/24"},{"Cidr": "169.254.59.0/24"}]</c></para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/global-accelerator/latest/dg/cross-account-resources.html">
+    /// Working with cross-account attachments and resources in Global Accelerator</a> in
+    /// the <i> Global Accelerator Developer Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "GACLCrossAccountAttachment", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -48,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.GACL
     [AWSCmdlet("Calls the AWS Global Accelerator CreateCrossAccountAttachment API operation.", Operation = new[] {"CreateCrossAccountAttachment"}, SelectReturnType = typeof(Amazon.GlobalAccelerator.Model.CreateCrossAccountAttachmentResponse))]
     [AWSCmdletOutput("Amazon.GlobalAccelerator.Model.Attachment or Amazon.GlobalAccelerator.Model.CreateCrossAccountAttachmentResponse",
         "This cmdlet returns an Amazon.GlobalAccelerator.Model.Attachment object.",
-        "The service call response (type Amazon.GlobalAccelerator.Model.CreateCrossAccountAttachmentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GlobalAccelerator.Model.CreateCrossAccountAttachmentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGACLCrossAccountAttachmentCmdlet : AmazonGlobalAcceleratorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IdempotencyToken
         /// <summary>
@@ -86,9 +98,13 @@ namespace Amazon.PowerShell.Cmdlets.GACL
         #region Parameter Principal
         /// <summary>
         /// <para>
-        /// <para>The principals to list in the cross-account attachment. A principal can be an Amazon
+        /// <para>The principals to include in the cross-account attachment. A principal can be an Amazon
         /// Web Services account number or the Amazon Resource Name (ARN) for an accelerator.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,9 +115,14 @@ namespace Amazon.PowerShell.Cmdlets.GACL
         #region Parameter Resource
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) for the resources to list in the cross-account attachment.
-        /// A resource can be any supported Amazon Web Services resource type for Global Accelerator.
-        /// </para>
+        /// <para>The Amazon Resource Names (ARNs) for the resources to include in the cross-account
+        /// attachment. A resource can be any supported Amazon Web Services resource type for
+        /// Global Accelerator or a CIDR range for a bring your own IP address (BYOIP) address
+        /// pool. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,8 +133,12 @@ namespace Amazon.PowerShell.Cmdlets.GACL
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Create tags for cross-account attachment.</para><para>For more information, see <a href="https://docs.aws.amazon.com/global-accelerator/latest/dg/tagging-in-global-accelerator.html">Tagging
-        /// in Global Accelerator</a> in the <i>Global Accelerator Developer Guide</i>.</para>
+        /// <para>Add tags for a cross-account attachment.</para><para>For more information, see <a href="https://docs.aws.amazon.com/global-accelerator/latest/dg/tagging-in-global-accelerator.html">Tagging
+        /// in Global Accelerator</a> in the <i>Global Accelerator Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,16 +157,6 @@ namespace Amazon.PowerShell.Cmdlets.GACL
         public string Select { get; set; } = "CrossAccountAttachment";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.GACL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -168,21 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.GACL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GlobalAccelerator.Model.CreateCrossAccountAttachmentResponse, NewGACLCrossAccountAttachmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.IdempotencyToken = this.IdempotencyToken;
             context.Name = this.Name;
             #if MODULAR
@@ -277,13 +286,7 @@ namespace Amazon.PowerShell.Cmdlets.GACL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Global Accelerator", "CreateCrossAccountAttachment");
             try
             {
-                #if DESKTOP
-                return client.CreateCrossAccountAttachment(request);
-                #elif CORECLR
-                return client.CreateCrossAccountAttachmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCrossAccountAttachmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

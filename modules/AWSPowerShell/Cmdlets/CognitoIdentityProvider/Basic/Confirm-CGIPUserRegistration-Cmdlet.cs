@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// This public API operation provides a code that Amazon Cognito sent to your user when
-    /// they signed up in your user pool via the <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_SignUp.html">SignUp</a>
-    /// API operation. After your user enters their code, they confirm ownership of the email
-    /// address or phone number that they provided, and their user account becomes active.
-    /// Depending on your user pool configuration, your users will receive their confirmation
-    /// code in an email or SMS message.
+    /// Confirms the account of a new user. This public API operation submits a code that
+    /// Amazon Cognito sent to your user when they signed up in your user pool. After your
+    /// user enters their code, they confirm ownership of the email address or phone number
+    /// that they provided, and their user account becomes active. Depending on your user
+    /// pool configuration, your users will receive their confirmation code in an email or
+    /// SMS message.
     /// 
     ///  
     /// <para>
     /// Local users who signed up in your user pool are the only type of user who can confirm
     /// sign-up with a code. Users who federate through an external identity provider (IdP)
-    /// have already been confirmed by their IdP. Administrator-created users, users created
-    /// with the <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminCreateUser.html">AdminCreateUser</a>
-    /// API operation, confirm their accounts when they respond to their invitation email
-    /// message and choose a password. They do not receive a confirmation code. Instead, they
-    /// receive a temporary password.
+    /// have already been confirmed by their IdP.
     /// </para><note><para>
     /// Amazon Cognito doesn't evaluate Identity and Access Management (IAM) policies in requests
     /// for this API operation. For this operation, you can't use IAM credentials to authorize
@@ -53,23 +51,23 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// </para></note>
     /// </summary>
     [Cmdlet("Confirm", "CGIPUserRegistration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
-    [OutputType("None")]
+    [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider ConfirmSignUp API operation. This operation uses anonymous authentication and does not require credential parameters to be supplied.", Operation = new[] {"ConfirmSignUp"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse))]
-    [AWSCmdletOutput("None or Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse",
-        "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+    [AWSCmdletOutput("System.String or Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse",
+        "This cmdlet returns a System.String object.",
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ConfirmCGIPUserRegistrationCmdlet : AnonymousAmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnalyticsMetadata_AnalyticsEndpointId
         /// <summary>
         /// <para>
-        /// <para>The endpoint ID.</para>
+        /// <para>The endpoint ID. Information that you want to pass to Amazon Pinpoint about where
+        /// to send notifications.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,11 +103,15 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// to the ClientMetadata parameter in your ConfirmSignUp request. In your function code
         /// in Lambda, you can process the <c>clientMetadata</c> value to enhance your workflow
         /// for your specific needs.</para><para>For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html">
-        /// Customizing user pool Workflows with Lambda Triggers</a> in the <i>Amazon Cognito
-        /// Developer Guide</i>.</para><note><para>When you use the ClientMetadata parameter, remember that Amazon Cognito won't do the
-        /// following:</para><ul><li><para>Store the ClientMetadata value. This data is available only to Lambda triggers that
-        /// are assigned to a user pool to support custom workflows. If your user pool configuration
-        /// doesn't include triggers, the ClientMetadata parameter serves no purpose.</para></li><li><para>Validate the ClientMetadata value.</para></li><li><para>Encrypt the ClientMetadata value. Don't use Amazon Cognito to provide sensitive information.</para></li></ul></note>
+        /// Using Lambda triggers</a> in the <i>Amazon Cognito Developer Guide</i>.</para><note><para>When you use the <c>ClientMetadata</c> parameter, note that Amazon Cognito won't do
+        /// the following:</para><ul><li><para>Store the <c>ClientMetadata</c> value. This data is available only to Lambda triggers
+        /// that are assigned to a user pool to support custom workflows. If your user pool configuration
+        /// doesn't include triggers, the <c>ClientMetadata</c> parameter serves no purpose.</para></li><li><para>Validate the <c>ClientMetadata</c> value.</para></li><li><para>Encrypt the <c>ClientMetadata</c> value. Don't send sensitive information in this
+        /// parameter.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -119,7 +121,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ConfirmationCode
         /// <summary>
         /// <para>
-        /// <para>The confirmation code sent by a user's request to confirm registration.</para>
+        /// <para>The confirmation code that your user pool sent in response to the <c>SignUp</c> request.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -148,12 +150,16 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter ForceAliasCreation
         /// <summary>
         /// <para>
-        /// <para>Boolean to be specified to force user confirmation irrespective of existing alias.
-        /// By default set to <c>False</c>. If this parameter is set to <c>True</c> and the phone
-        /// number/email used for sign up confirmation already exists as an alias with a different
-        /// user, the API call will migrate the alias from the previous user to the newly created
-        /// user being confirmed. If set to <c>False</c>, the API will throw an <b>AliasExistsException</b>
-        /// error.</para>
+        /// <para>When <c>true</c>, forces user confirmation despite any existing aliases. Defaults
+        /// to <c>false</c>. A value of <c>true</c> migrates the alias from an existing user to
+        /// the new user if an existing user already has the phone number or email address as
+        /// an alias.</para><para>Say, for example, that an existing user has an <c>email</c> attribute of <c>bob@example.com</c>
+        /// and email is an alias in your user pool. If the new user also has an email of <c>bob@example.com</c>
+        /// and your <c>ConfirmSignUp</c> response sets <c>ForceAliasCreation</c> to <c>true</c>,
+        /// the new user can sign in with a username of <c>bob@example.com</c> and the existing
+        /// user can no longer do so.</para><para>If <c>false</c> and an attribute belongs to an existing alias, this request returns
+        /// an <b>AliasExistsException</b> error.</para><para>For more information about sign-in aliases, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-settings-attributes.html#user-pool-settings-aliases">Customizing
+        /// sign-in attributes</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,20 +180,33 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <summary>
         /// <para>
         /// <para>A keyed-hash message authentication code (HMAC) calculated using the secret key of
-        /// a user pool client and username plus the client ID in the message.</para>
+        /// a user pool client and username plus the client ID in the message. For more information
+        /// about <c>SecretHash</c>, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/signing-up-users-in-your-app.html#cognito-user-pools-computing-secret-hash">Computing
+        /// secret hash values</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SecretHash { get; set; }
         #endregion
         
+        #region Parameter Session
+        /// <summary>
+        /// <para>
+        /// <para>The optional session ID from a <c>SignUp</c> API request. You can sign in a user directly
+        /// from the sign-up process with the <c>USER_AUTH</c> authentication flow.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Session { get; set; }
+        #endregion
+        
         #region Parameter Username
         /// <summary>
         /// <para>
-        /// <para>The username of the user that you want to query or modify. The value of this parameter
+        /// <para>The name of the user that you want to query or modify. The value of this parameter
         /// is typically your user's username, but it can be any of their alias attributes. If
-        /// <c>username</c> isn't an alias attribute in your user pool, you can also use their
-        /// <c>sub</c> in this request.</para>
+        /// <c>username</c> isn't an alias attribute in your user pool, this value must be the
+        /// <c>sub</c> of a local user or the username of a user from a third-party IdP.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -203,22 +222,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         
         #region Parameter Select
         /// <summary>
-        /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
+        /// Use the -Select parameter to control the cmdlet output. The default value is 'Session'.
         /// Specifying -Select '*' will result in the cmdlet returning the whole service response (Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse).
+        /// Specifying the name of a property of type Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse will result in that property being returned.
         /// Specifying -Select '^ParameterName' will result in the cmdlet returning the selected cmdlet parameter value.
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Username parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Username' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Username' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public string Select { get; set; } = "Session";
         #endregion
         
         #region Parameter Force
@@ -231,9 +241,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Username), MyInvocation.BoundParameters);
@@ -247,21 +261,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse, ConfirmCGIPUserRegistrationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Username;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnalyticsMetadata_AnalyticsEndpointId = this.AnalyticsMetadata_AnalyticsEndpointId;
             context.ClientId = this.ClientId;
             #if MODULAR
@@ -287,6 +291,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             #endif
             context.ForceAliasCreation = this.ForceAliasCreation;
             context.SecretHash = this.SecretHash;
+            context.Session = this.Session;
             context.UserContextData_EncodedData = this.UserContextData_EncodedData;
             context.UserContextData_IpAddress = this.UserContextData_IpAddress;
             context.Username = this.Username;
@@ -350,6 +355,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             if (cmdletContext.SecretHash != null)
             {
                 request.SecretHash = cmdletContext.SecretHash;
+            }
+            if (cmdletContext.Session != null)
+            {
+                request.Session = cmdletContext.Session;
             }
             
              // populate UserContextData
@@ -422,13 +431,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "ConfirmSignUp");
             try
             {
-                #if DESKTOP
-                return client.ConfirmSignUp(request);
-                #elif CORECLR
-                return client.ConfirmSignUpAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ConfirmSignUpAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -451,11 +454,12 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             public System.String ConfirmationCode { get; set; }
             public System.Boolean? ForceAliasCreation { get; set; }
             public System.String SecretHash { get; set; }
+            public System.String Session { get; set; }
             public System.String UserContextData_EncodedData { get; set; }
             public System.String UserContextData_IpAddress { get; set; }
             public System.String Username { get; set; }
             public System.Func<Amazon.CognitoIdentityProvider.Model.ConfirmSignUpResponse, ConfirmCGIPUserRegistrationCmdlet, object> Select { get; set; } =
-                (response, cmdlet) => null;
+                (response, cmdlet) => response.Session;
         }
         
     }

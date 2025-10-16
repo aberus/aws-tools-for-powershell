@@ -84,15 +84,54 @@ $WKS_Completers = {
         {
             ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeAndroid") -Or
             ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeChromeOs") -Or
-            ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeIos") -Or
+            ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeIo") -Or
             ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeLinux") -Or
             ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeOsx") -Or
             ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeWeb") -Or
-            ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeWindows") -Or
+            ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeWindow") -Or
+            ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient") -Or
             ($_ -eq "Edit-WKSWorkspaceAccessProperty/WorkspaceAccessProperties_DeviceTypeZeroClient")
         }
         {
             $v = "ALLOW","DENY"
+            break
+        }
+
+        # Amazon.WorkSpaces.AGAModeForDirectoryEnum
+        "Edit-WKSStreamingProperty/GlobalAccelerator_Mode"
+        {
+            $v = "DISABLED","ENABLED_AUTO"
+            break
+        }
+
+        # Amazon.WorkSpaces.AGAModeForWorkSpaceEnum
+        "Edit-WKSWorkspaceProperty/GlobalAccelerator_Mode"
+        {
+            $v = "DISABLED","ENABLED_AUTO","INHERITED"
+            break
+        }
+
+        # Amazon.WorkSpaces.AGAPreferredProtocolForDirectory
+        "Edit-WKSStreamingProperty/GlobalAccelerator_PreferredProtocol"
+        {
+            $v = "NONE","TCP"
+            break
+        }
+
+        # Amazon.WorkSpaces.AGAPreferredProtocolForWorkSpace
+        "Edit-WKSWorkspaceProperty/GlobalAccelerator_PreferredProtocol"
+        {
+            $v = "INHERITED","NONE","TCP"
+            break
+        }
+
+        # Amazon.WorkSpaces.ApplicationSettingsStatusEnum
+        {
+            ($_ -eq "New-WKSWorkspacesPool/ApplicationSettings_Status") -Or
+            ($_ -eq "Update-WKSWorkspacesPool/ApplicationSettings_Status")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -109,7 +148,14 @@ $WKS_Completers = {
             ($_ -eq "Edit-WKSWorkspaceProperty/WorkspaceProperties_ComputeTypeName")
         }
         {
-            $v = "GRAPHICS","GRAPHICSPRO","GRAPHICSPRO_G4DN","GRAPHICS_G4DN","PERFORMANCE","POWER","POWERPRO","STANDARD","VALUE"
+            $v = "GENERALPURPOSE_4XLARGE","GENERALPURPOSE_8XLARGE","GRAPHICS","GRAPHICSPRO","GRAPHICSPRO_G4DN","GRAPHICS_G4DN","PERFORMANCE","POWER","POWERPRO","STANDARD","VALUE"
+            break
+        }
+
+        # Amazon.WorkSpaces.CustomImageProtocol
+        "Import-WKSCustomWorkspaceImage/Protocol"
+        {
+            $v = "BYOP","DCV","PCOIP"
             break
         }
 
@@ -124,6 +170,20 @@ $WKS_Completers = {
         "Edit-WKSAccount/DedicatedTenancySupport"
         {
             $v = "ENABLED"
+            break
+        }
+
+        # Amazon.WorkSpaces.EndpointEncryptionMode
+        "Edit-WKSEndpointEncryptionMode/EndpointEncryptionMode"
+        {
+            $v = "FIPS_VALIDATED","STANDARD_TLS"
+            break
+        }
+
+        # Amazon.WorkSpaces.ImageComputeType
+        "Import-WKSCustomWorkspaceImage/ComputeType"
+        {
+            $v = "BASE","GRAPHICS_G4DN"
             break
         }
 
@@ -144,7 +204,31 @@ $WKS_Completers = {
         # Amazon.WorkSpaces.OperatingSystemName
         "Edit-WKSWorkspaceProperty/WorkspaceProperties_OperatingSystemName"
         {
-            $v = "AMAZON_LINUX_2","UBUNTU_18_04","UBUNTU_20_04","UBUNTU_22_04","UNKNOWN","WINDOWS_10","WINDOWS_11","WINDOWS_7","WINDOWS_SERVER_2016","WINDOWS_SERVER_2019","WINDOWS_SERVER_2022"
+            $v = "AMAZON_LINUX_2","RHEL_8","ROCKY_8","UBUNTU_18_04","UBUNTU_20_04","UBUNTU_22_04","UNKNOWN","WINDOWS_10","WINDOWS_11","WINDOWS_7","WINDOWS_SERVER_2016","WINDOWS_SERVER_2019","WINDOWS_SERVER_2022"
+            break
+        }
+
+        # Amazon.WorkSpaces.OSVersion
+        "Import-WKSCustomWorkspaceImage/OsVersion"
+        {
+            $v = "Windows_10","Windows_11"
+            break
+        }
+
+        # Amazon.WorkSpaces.Platform
+        "Import-WKSCustomWorkspaceImage/Platform"
+        {
+            $v = "WINDOWS"
+            break
+        }
+
+        # Amazon.WorkSpaces.PoolsRunningMode
+        {
+            ($_ -eq "New-WKSWorkspacesPool/RunningMode") -Or
+            ($_ -eq "Update-WKSWorkspacesPool/RunningMode")
+        }
+        {
+            $v = "ALWAYS_ON","AUTO_STOP"
             break
         }
 
@@ -176,6 +260,13 @@ $WKS_Completers = {
             break
         }
 
+        # Amazon.WorkSpaces.StreamingExperiencePreferredProtocolEnum
+        "Edit-WKSStreamingProperty/StreamingProperties_StreamingExperiencePreferredProtocol"
+        {
+            $v = "TCP","UDP"
+            break
+        }
+
         # Amazon.WorkSpaces.TargetWorkspaceState
         "Edit-WKSWorkspaceState/WorkspaceState"
         {
@@ -190,6 +281,13 @@ $WKS_Completers = {
             break
         }
 
+        # Amazon.WorkSpaces.UserIdentityType
+        "Register-WKSWorkspaceDirectory/UserIdentityType"
+        {
+            $v = "AWS_DIRECTORY_SERVICE","AWS_IAM_IDENTITY_CENTER","CUSTOMER_MANAGED"
+            break
+        }
+
         # Amazon.WorkSpaces.WorkSpaceApplicationLicenseType
         "Get-WKSApplication/LicenseType"
         {
@@ -200,7 +298,14 @@ $WKS_Completers = {
         # Amazon.WorkSpaces.WorkspaceImageIngestionProcess
         "Import-WKSWorkspaceImage/IngestionProcess"
         {
-            $v = "BYOL_GRAPHICS","BYOL_GRAPHICSPRO","BYOL_GRAPHICS_G4DN","BYOL_GRAPHICS_G4DN_BYOP","BYOL_REGULAR","BYOL_REGULAR_BYOP","BYOL_REGULAR_WSP"
+            $v = "BYOL_GRAPHICS","BYOL_GRAPHICSPRO","BYOL_GRAPHICS_G4DN","BYOL_GRAPHICS_G4DN_BYOP","BYOL_GRAPHICS_G4DN_WSP","BYOL_REGULAR","BYOL_REGULAR_BYOP","BYOL_REGULAR_WSP"
+            break
+        }
+
+        # Amazon.WorkSpaces.WorkspaceType
+        "Register-WKSWorkspaceDirectory/WorkspaceType"
+        {
+            $v = "PERSONAL","POOLS"
             break
         }
 
@@ -213,34 +318,47 @@ $WKS_Completers = {
 }
 
 $WKS_map = @{
+    "ApplicationSettings_Status"=@("New-WKSWorkspacesPool","Update-WKSWorkspacesPool")
     "CertificateBasedAuthProperties_Status"=@("Edit-WKSCertificateBasedAuthProperty")
     "ClientProperties_LogUploadEnabled"=@("Edit-WKSClientProperty")
     "ClientProperties_ReconnectEnabled"=@("Edit-WKSClientProperty")
+    "ComputeType"=@("Import-WKSCustomWorkspaceImage")
     "ComputeType_Name"=@("New-WKSWorkspaceBundle")
     "DataReplication"=@("Edit-WKSWorkspaceProperty")
     "DedicatedTenancySupport"=@("Edit-WKSAccount")
+    "EndpointEncryptionMode"=@("Edit-WKSEndpointEncryptionMode")
+    "GlobalAccelerator_Mode"=@("Edit-WKSStreamingProperty","Edit-WKSWorkspaceProperty")
+    "GlobalAccelerator_PreferredProtocol"=@("Edit-WKSStreamingProperty","Edit-WKSWorkspaceProperty")
     "ImageType"=@("Get-WKSWorkspaceImage")
     "IngestionProcess"=@("Import-WKSWorkspaceImage")
     "LicenseType"=@("Get-WKSApplication")
+    "OsVersion"=@("Import-WKSCustomWorkspaceImage")
+    "Platform"=@("Import-WKSCustomWorkspaceImage")
+    "Protocol"=@("Import-WKSCustomWorkspaceImage")
+    "RunningMode"=@("New-WKSWorkspacesPool","Update-WKSWorkspacesPool")
     "SamlProperties_Status"=@("Edit-WKSSamlProperty")
     "SelfservicePermissions_ChangeComputeType"=@("Edit-WKSSelfservicePermission")
     "SelfservicePermissions_IncreaseVolumeSize"=@("Edit-WKSSelfservicePermission")
     "SelfservicePermissions_RebuildWorkspace"=@("Edit-WKSSelfservicePermission")
     "SelfservicePermissions_RestartWorkspace"=@("Edit-WKSSelfservicePermission")
     "SelfservicePermissions_SwitchRunningMode"=@("Edit-WKSSelfservicePermission")
+    "StreamingProperties_StreamingExperiencePreferredProtocol"=@("Edit-WKSStreamingProperty")
     "Tenancy"=@("Register-WKSWorkspaceDirectory")
+    "UserIdentityType"=@("Register-WKSWorkspaceDirectory")
     "WorkspaceAccessProperties_DeviceTypeAndroid"=@("Edit-WKSWorkspaceAccessProperty")
     "WorkspaceAccessProperties_DeviceTypeChromeOs"=@("Edit-WKSWorkspaceAccessProperty")
-    "WorkspaceAccessProperties_DeviceTypeIos"=@("Edit-WKSWorkspaceAccessProperty")
+    "WorkspaceAccessProperties_DeviceTypeIo"=@("Edit-WKSWorkspaceAccessProperty")
     "WorkspaceAccessProperties_DeviceTypeLinux"=@("Edit-WKSWorkspaceAccessProperty")
     "WorkspaceAccessProperties_DeviceTypeOsx"=@("Edit-WKSWorkspaceAccessProperty")
     "WorkspaceAccessProperties_DeviceTypeWeb"=@("Edit-WKSWorkspaceAccessProperty")
-    "WorkspaceAccessProperties_DeviceTypeWindows"=@("Edit-WKSWorkspaceAccessProperty")
+    "WorkspaceAccessProperties_DeviceTypeWindow"=@("Edit-WKSWorkspaceAccessProperty")
+    "WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient"=@("Edit-WKSWorkspaceAccessProperty")
     "WorkspaceAccessProperties_DeviceTypeZeroClient"=@("Edit-WKSWorkspaceAccessProperty")
     "WorkspaceProperties_ComputeTypeName"=@("Edit-WKSWorkspaceProperty")
     "WorkspaceProperties_OperatingSystemName"=@("Edit-WKSWorkspaceProperty")
     "WorkspaceProperties_RunningMode"=@("Edit-WKSWorkspaceProperty")
     "WorkspaceState"=@("Edit-WKSWorkspaceState")
+    "WorkspaceType"=@("Register-WKSWorkspaceDirectory")
 }
 
 _awsArgumentCompleterRegistration $WKS_Completers $WKS_map
@@ -293,11 +411,13 @@ $WKS_SelectCompleters = {
 }
 
 $WKS_SelectMap = @{
-    "Select"=@("Register-WKSConnectionAlias",
+    "Select"=@("Approve-WKSAccountLinkInvitation",
+               "Register-WKSConnectionAlias",
                "Register-WKSIpGroup",
                "Register-WKSWorkspaceApplication",
                "Approve-WKSIpRule",
                "Copy-WKSWorkspaceImage",
+               "New-WKSAccountLinkInvitation",
                "New-WKSConnectClientAddIn",
                "New-WKSConnectionAlias",
                "New-WKSIpGroup",
@@ -307,6 +427,8 @@ $WKS_SelectMap = @{
                "New-WKSWorkspaceBundle",
                "New-WKSWorkspaceImage",
                "New-WKSWorkspace",
+               "New-WKSWorkspacesPool",
+               "Remove-WKSAccountLinkInvitation",
                "Remove-WKSClientBranding",
                "Remove-WKSConnectClientAddIn",
                "Remove-WKSConnectionAlias",
@@ -326,6 +448,7 @@ $WKS_SelectMap = @{
                "Get-WKSConnectClientAddIn",
                "Get-WKSConnectionAlias",
                "Get-WKSConnectionAliasPermission",
+               "Get-WKSCustomWorkspaceImageImport",
                "Get-WKSImageAssociation",
                "Get-WKSIpGroup",
                "Get-WKSTag",
@@ -337,18 +460,25 @@ $WKS_SelectMap = @{
                "Get-WKSWorkspace",
                "Get-WKSWorkspacesConnectionStatus",
                "Get-WKSWorkspaceSnapshot",
+               "Get-WKSWorkspacesPool",
+               "Get-WKSWorkspacesPoolSession",
                "Unregister-WKSConnectionAlias",
                "Unregister-WKSIpGroup",
                "Unregister-WKSWorkspaceApplication",
+               "Get-WKSAccountLink",
                "Import-WKSClientBranding",
+               "Import-WKSCustomWorkspaceImage",
                "Import-WKSWorkspaceImage",
+               "Get-WKSAccountLinkList",
                "Get-WKSAvailableManagementCidrRangeList",
                "Start-WKSWorkspaceMigration",
                "Edit-WKSAccount",
                "Edit-WKSCertificateBasedAuthProperty",
                "Edit-WKSClientProperty",
+               "Edit-WKSEndpointEncryptionMode",
                "Edit-WKSSamlProperty",
                "Edit-WKSSelfservicePermission",
+               "Edit-WKSStreamingProperty",
                "Edit-WKSWorkspaceAccessProperty",
                "Edit-WKSWorkspaceCreationProperty",
                "Edit-WKSWorkspaceProperty",
@@ -356,16 +486,22 @@ $WKS_SelectMap = @{
                "Restart-WKSWorkspace",
                "Reset-WKSWorkspace",
                "Register-WKSWorkspaceDirectory",
+               "Deny-WKSAccountLinkInvitation",
                "Restore-WKSWorkspace",
                "Revoke-WKSIpRule",
                "Start-WKSWorkspace",
+               "Start-WKSWorkspacesPool",
                "Stop-WKSWorkspace",
+               "Stop-WKSWorkspacesPool",
                "Remove-WKSWorkspace",
+               "Remove-WKSWorkspacesPool",
+               "Remove-WKSWorkspacesPoolSession",
                "Update-WKSConnectClientAddIn",
                "Update-WKSConnectionAliasPermission",
                "Update-WKSRulesOfIpGroup",
                "Update-WKSWorkspaceBundle",
-               "Update-WKSWorkspaceImagePermission")
+               "Update-WKSWorkspaceImagePermission",
+               "Update-WKSWorkspacesPool")
 }
 
 _awsArgumentCompleterRegistration $WKS_SelectCompleters $WKS_SelectMap

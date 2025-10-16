@@ -83,12 +83,12 @@ $AHL_Completers = {
         # Amazon.HealthLake.AuthorizationStrategy
         "New-AHLFHIRDatastore/IdentityProviderConfiguration_AuthorizationStrategy"
         {
-            $v = "AWS_AUTH","SMART_ON_FHIR_V1"
+            $v = "AWS_AUTH","SMART_ON_FHIR","SMART_ON_FHIR_V1"
             break
         }
 
         # Amazon.HealthLake.CmkType
-        "New-AHLFHIRDatastore/SseConfiguration_KmsEncryptionConfig_CmkType"
+        "New-AHLFHIRDatastore/KmsEncryptionConfig_CmkType"
         {
             $v = "AWS_OWNED_KMS_KEY","CUSTOMER_MANAGED_KMS_KEY"
             break
@@ -97,7 +97,7 @@ $AHL_Completers = {
         # Amazon.HealthLake.DatastoreStatus
         "Get-AHLFHIRDatastoreList/Filter_DatastoreStatus"
         {
-            $v = "ACTIVE","CREATING","DELETED","DELETING"
+            $v = "ACTIVE","CREATE_FAILED","CREATING","DELETED","DELETING"
             break
         }
 
@@ -114,7 +114,7 @@ $AHL_Completers = {
             ($_ -eq "Get-AHLFHIRImportJobList/JobStatus")
         }
         {
-            $v = "CANCEL_COMPLETED","CANCEL_FAILED","CANCEL_IN_PROGRESS","CANCEL_SUBMITTED","COMPLETED","COMPLETED_WITH_ERRORS","FAILED","IN_PROGRESS","SUBMITTED"
+            $v = "CANCEL_COMPLETED","CANCEL_FAILED","CANCEL_IN_PROGRESS","CANCEL_SUBMITTED","COMPLETED","COMPLETED_WITH_ERRORS","FAILED","IN_PROGRESS","QUEUED","SUBMITTED"
             break
         }
 
@@ -122,6 +122,13 @@ $AHL_Completers = {
         "New-AHLFHIRDatastore/PreloadDataConfig_PreloadDataType"
         {
             $v = "SYNTHEA"
+            break
+        }
+
+        # Amazon.HealthLake.ValidationLevel
+        "Start-AHLFHIRImportJob/ValidationLevel"
+        {
+            $v = "minimal","strict","structure-only"
             break
         }
 
@@ -138,8 +145,9 @@ $AHL_map = @{
     "Filter_DatastoreStatus"=@("Get-AHLFHIRDatastoreList")
     "IdentityProviderConfiguration_AuthorizationStrategy"=@("New-AHLFHIRDatastore")
     "JobStatus"=@("Get-AHLFHIRExportJobList","Get-AHLFHIRImportJobList")
+    "KmsEncryptionConfig_CmkType"=@("New-AHLFHIRDatastore")
     "PreloadDataConfig_PreloadDataType"=@("New-AHLFHIRDatastore")
-    "SseConfiguration_KmsEncryptionConfig_CmkType"=@("New-AHLFHIRDatastore")
+    "ValidationLevel"=@("Start-AHLFHIRImportJob")
 }
 
 _awsArgumentCompleterRegistration $AHL_Completers $AHL_map

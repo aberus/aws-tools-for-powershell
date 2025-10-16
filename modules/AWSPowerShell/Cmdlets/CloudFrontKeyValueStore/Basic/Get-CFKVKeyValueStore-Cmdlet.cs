@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFrontKeyValueStore;
 using Amazon.CloudFrontKeyValueStore.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFKV
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.CFKV
     [OutputType("Amazon.CloudFrontKeyValueStore.Model.DescribeKeyValueStoreResponse")]
     [AWSCmdlet("Calls the Amazon CloudFront KeyValueStore DescribeKeyValueStore API operation.", Operation = new[] {"DescribeKeyValueStore"}, SelectReturnType = typeof(Amazon.CloudFrontKeyValueStore.Model.DescribeKeyValueStoreResponse))]
     [AWSCmdletOutput("Amazon.CloudFrontKeyValueStore.Model.DescribeKeyValueStoreResponse",
-        "This cmdlet returns an Amazon.CloudFrontKeyValueStore.Model.DescribeKeyValueStoreResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudFrontKeyValueStore.Model.DescribeKeyValueStoreResponse object containing multiple properties."
     )]
     public partial class GetCFKVKeyValueStoreCmdlet : AmazonCloudFrontKeyValueStoreClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KvsARN
         /// <summary>
@@ -69,19 +72,13 @@ namespace Amazon.PowerShell.Cmdlets.CFKV
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KvsARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KvsARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KvsARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -89,21 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.CFKV
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFrontKeyValueStore.Model.DescribeKeyValueStoreResponse, GetCFKVKeyValueStoreCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KvsARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KvsARN = this.KvsARN;
             #if MODULAR
             if (this.KvsARN == null && ParameterWasBound(nameof(this.KvsARN)))
@@ -169,13 +156,7 @@ namespace Amazon.PowerShell.Cmdlets.CFKV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront KeyValueStore", "DescribeKeyValueStore");
             try
             {
-                #if DESKTOP
-                return client.DescribeKeyValueStore(request);
-                #elif CORECLR
-                return client.DescribeKeyValueStoreAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeKeyValueStoreAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

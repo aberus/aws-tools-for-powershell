@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [OutputType("Amazon.SageMaker.Model.CreateProjectResponse")]
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateProject API operation.", Operation = new[] {"CreateProject"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateProjectResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.CreateProjectResponse",
-        "This cmdlet returns an Amazon.SageMaker.Model.CreateProjectResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SageMaker.Model.CreateProjectResponse object containing multiple properties."
     )]
     public partial class NewSMProjectCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ServiceCatalogProvisioningDetails_PathId
         /// <summary>
@@ -59,14 +62,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>The ID of the product to provision.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ServiceCatalogProvisioningDetails_ProductId { get; set; }
         #endregion
         
@@ -110,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ServiceCatalogProvisioningDetails_ProvisioningParameter
         /// <summary>
         /// <para>
-        /// <para>A list of key value pairs that you specify when you provision a product.</para>
+        /// <para>A list of key value pairs that you specify when you provision a product.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,12 +124,32 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>An array of key-value pairs that you want to use to organize and track your Amazon
         /// Web Services resource costs. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
         /// Amazon Web Services resources</a> in the <i>Amazon Web Services General Reference
-        /// Guide</i>.</para>
+        /// Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.SageMaker.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter TemplateProvider
+        /// <summary>
+        /// <para>
+        /// <para> An array of template provider configurations for creating infrastructure resources
+        /// for the project. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TemplateProviders")]
+        public Amazon.SageMaker.Model.CreateTemplateProvider[] TemplateProvider { get; set; }
         #endregion
         
         #region Parameter Select
@@ -143,16 +163,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProjectName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProjectName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProjectName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -163,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProjectName), MyInvocation.BoundParameters);
@@ -179,21 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateProjectResponse, NewSMProjectCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProjectName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ProjectDescription = this.ProjectDescription;
             context.ProjectName = this.ProjectName;
             #if MODULAR
@@ -204,12 +208,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
             #endif
             context.ServiceCatalogProvisioningDetails_PathId = this.ServiceCatalogProvisioningDetails_PathId;
             context.ServiceCatalogProvisioningDetails_ProductId = this.ServiceCatalogProvisioningDetails_ProductId;
-            #if MODULAR
-            if (this.ServiceCatalogProvisioningDetails_ProductId == null && ParameterWasBound(nameof(this.ServiceCatalogProvisioningDetails_ProductId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter ServiceCatalogProvisioningDetails_ProductId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.ServiceCatalogProvisioningDetails_ProvisioningArtifactId = this.ServiceCatalogProvisioningDetails_ProvisioningArtifactId;
             if (this.ServiceCatalogProvisioningDetails_ProvisioningParameter != null)
             {
@@ -218,6 +216,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.SageMaker.Model.Tag>(this.Tag);
+            }
+            if (this.TemplateProvider != null)
+            {
+                context.TemplateProvider = new List<Amazon.SageMaker.Model.CreateTemplateProvider>(this.TemplateProvider);
             }
             
             // allow further manipulation of loaded context prior to processing
@@ -296,6 +298,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 request.Tags = cmdletContext.Tag;
             }
+            if (cmdletContext.TemplateProvider != null)
+            {
+                request.TemplateProviders = cmdletContext.TemplateProvider;
+            }
             
             CmdletOutput output;
             
@@ -334,13 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateProject");
             try
             {
-                #if DESKTOP
-                return client.CreateProject(request);
-                #elif CORECLR
-                return client.CreateProjectAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateProjectAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -364,6 +364,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String ServiceCatalogProvisioningDetails_ProvisioningArtifactId { get; set; }
             public List<Amazon.SageMaker.Model.ProvisioningParameter> ServiceCatalogProvisioningDetails_ProvisioningParameter { get; set; }
             public List<Amazon.SageMaker.Model.Tag> Tag { get; set; }
+            public List<Amazon.SageMaker.Model.CreateTemplateProvider> TemplateProvider { get; set; }
             public System.Func<Amazon.SageMaker.Model.CreateProjectResponse, NewSMProjectCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

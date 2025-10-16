@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The SimpleSystemsManagement module of AWS Tools for PowerShell lets developers and administrators manage AWS Systems Manager from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.SimpleSystemsManagement.dll'
     )
@@ -88,6 +89,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
     CmdletsToExport = @(
         'Add-SSMResourceTag', 
         'Edit-SSMDocumentPermission', 
+        'Get-SSMAccessToken', 
         'Get-SSMActivation', 
         'Get-SSMAssociation', 
         'Get-SSMAssociationExecution', 
@@ -115,11 +117,13 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SSMDocumentVersionList', 
         'Get-SSMEffectiveInstanceAssociationList', 
         'Get-SSMEffectivePatchesForPatchBaseline', 
+        'Get-SSMExecutionPreview', 
         'Get-SSMInstanceAssociationsStatus', 
         'Get-SSMInstanceInformation', 
         'Get-SSMInstancePatch', 
         'Get-SSMInstancePatchState', 
         'Get-SSMInstancePatchStatesForPatchGroup', 
+        'Get-SSMInstanceProperty', 
         'Get-SSMInventory', 
         'Get-SSMInventoryDeletionList', 
         'Get-SSMInventoryEntryList', 
@@ -138,6 +142,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SSMMaintenanceWindowTarget', 
         'Get-SSMMaintenanceWindowTask', 
         'Get-SSMMaintenanceWindowTaskList', 
+        'Get-SSMNode', 
+        'Get-SSMNodesSummary', 
         'Get-SSMOpsItem', 
         'Get-SSMOpsItemEvent', 
         'Get-SSMOpsItemRelatedItem', 
@@ -195,9 +201,11 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Send-SSMAutomationSignal', 
         'Send-SSMCommand', 
         'Set-SSMParameterVersionLabel', 
+        'Start-SSMAccessRequest', 
         'Start-SSMAssociationsOnce', 
         'Start-SSMAutomationExecution', 
         'Start-SSMChangeRequestExecution', 
+        'Start-SSMExecutionPreview', 
         'Start-SSMSession', 
         'Stop-SSMAutomationExecution', 
         'Stop-SSMCommand', 
@@ -255,7 +263,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

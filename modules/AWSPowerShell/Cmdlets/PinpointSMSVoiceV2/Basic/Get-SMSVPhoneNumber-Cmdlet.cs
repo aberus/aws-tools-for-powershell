@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
@@ -45,17 +47,22 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.DescribePhoneNumbersResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 DescribePhoneNumbers API operation.", Operation = new[] {"DescribePhoneNumbers"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.DescribePhoneNumbersResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.DescribePhoneNumbersResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.DescribePhoneNumbersResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.DescribePhoneNumbersResponse object containing multiple properties."
     )]
     public partial class GetSMSVPhoneNumberCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>An array of PhoneNumberFilter objects to filter the results.</para>
+        /// <para>An array of PhoneNumberFilter objects to filter the results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,7 +74,12 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>The unique identifier of phone numbers to find information about. This is an array
-        /// of strings that can be either the PhoneNumberId or PhoneNumberArn.</para>
+        /// of strings that can be either the PhoneNumberId or PhoneNumberArn.</para><important><para>If you are using a shared AWS End User Messaging SMS and Voice resource then you must
+        /// use the full Amazon Resource Name(ARN).</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,11 +106,24 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NextToken { get; set; }
+        #endregion
+        
+        #region Parameter Owner
+        /// <summary>
+        /// <para>
+        /// <para>Use <c>SELF</c> to filter the list of phone numbers to ones your account owns or use
+        /// <c>SHARED</c> to filter on phone numbers shared with your account. The <c>Owner</c>
+        /// and <c>PhoneNumberIds</c> parameters can't be used at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.PinpointSMSVoiceV2.Owner")]
+        public Amazon.PinpointSMSVoiceV2.Owner Owner { get; set; }
         #endregion
         
         #region Parameter Select
@@ -122,9 +147,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -143,6 +172,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             }
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
+            context.Owner = this.Owner;
             if (this.PhoneNumberId != null)
             {
                 context.PhoneNumberId = new List<System.String>(this.PhoneNumberId);
@@ -172,6 +202,10 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = cmdletContext.MaxResult.Value;
+            }
+            if (cmdletContext.Owner != null)
+            {
+                request.Owner = cmdletContext.Owner;
             }
             if (cmdletContext.PhoneNumberId != null)
             {
@@ -239,13 +273,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "DescribePhoneNumbers");
             try
             {
-                #if DESKTOP
-                return client.DescribePhoneNumbers(request);
-                #elif CORECLR
-                return client.DescribePhoneNumbersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribePhoneNumbersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -265,6 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             public List<Amazon.PinpointSMSVoiceV2.Model.PhoneNumberFilter> Filter { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
+            public Amazon.PinpointSMSVoiceV2.Owner Owner { get; set; }
             public List<System.String> PhoneNumberId { get; set; }
             public System.Func<Amazon.PinpointSMSVoiceV2.Model.DescribePhoneNumbersResponse, GetSMSVPhoneNumberCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

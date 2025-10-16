@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NeptuneGraph;
 using Amazon.NeptuneGraph.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NEPTG
 {
     /// <summary>
@@ -42,12 +44,27 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
     [OutputType("Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskResponse")]
     [AWSCmdlet("Calls the Amazon Neptune Graph CreateGraphUsingImportTask API operation.", Operation = new[] {"CreateGraphUsingImportTask"}, SelectReturnType = typeof(Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskResponse))]
     [AWSCmdletOutput("Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskResponse",
-        "This cmdlet returns an Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskResponse object containing multiple properties."
     )]
     public partial class NewNEPTGGraphUsingImportTaskCmdlet : AmazonNeptuneGraphClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter BlankNodeHandling
+        /// <summary>
+        /// <para>
+        /// <para>The method to handle blank nodes in the dataset. Currently, only <c>convertToIri</c>
+        /// is supported, meaning blank nodes are converted to unique IRIs at load time. Must
+        /// be provided when format is <c>ntriples</c>. For more information, see <a href="https://docs.aws.amazon.com/neptune-analytics/latest/userguide/using-rdf-data.html#rdf-handling">Handling
+        /// RDF values</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.NeptuneGraph.BlankNodeHandling")]
+        public Amazon.NeptuneGraph.BlankNodeHandling BlankNodeHandling { get; set; }
+        #endregion
         
         #region Parameter DeletionProtection
         /// <summary>
@@ -86,8 +103,9 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <para>
         /// <para>Specifies the format of S3 data to be imported. Valid values are <c>CSV</c>, which
         /// identifies the <a href="https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load-tutorial-format-gremlin.html">Gremlin
-        /// CSV format</a> or <c>OPENCYPHER</c>, which identies the <a href="https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load-tutorial-format-opencypher.html">openCypher
-        /// load format</a>.</para>
+        /// CSV format</a>, <c>OPEN_CYPHER</c>, which identifies the <a href="https://docs.aws.amazon.com/neptune/latest/userguide/bulk-load-tutorial-format-opencypher.html">openCypher
+        /// load format</a>, or <c>ntriples</c>, which identifies the <a href="https://docs.aws.amazon.com/neptune-analytics/latest/userguide/using-rdf-data.html">RDF
+        /// n-triples</a> format.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <para>
         /// <para>A name for the new Neptune Analytics graph to be created.</para><para>The name must contain from 1 to 63 letters, numbers, or hyphens, and its first character
         /// must be a letter. It cannot end with a hyphen or contain two consecutive hyphens.
-        /// </para>
+        /// Only lowercase letters are allowed.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -128,9 +146,9 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>The maximum provisioned memory-optimized Neptune Capacity Units (m-NCUs) to use for
-        /// the graph. Default: 1024, or the approved upper limit for your account.</para><para> If both the minimum and maximum values are specified, the max of the <c>min-provisioned-memory</c>
-        /// and <c>max-provisioned memory</c> is used to create the graph. If neither value is
-        /// specified 128 m-NCUs are used.</para>
+        /// the graph. Default: 1024, or the approved upper limit for your account.</para><para> If both the minimum and maximum values are specified, the final <c>provisioned-memory</c>
+        /// will be chosen per the actual size of your imported data. If neither value is specified,
+        /// 128 m-NCUs are used.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,11 +159,22 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>The minimum provisioned memory-optimized Neptune Capacity Units (m-NCUs) to use for
-        /// the graph. Default: 128</para>
+        /// the graph. Default: 16</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? MinProvisionedMemory { get; set; }
+        #endregion
+        
+        #region Parameter ParquetType
+        /// <summary>
+        /// <para>
+        /// <para>The parquet type of the import task.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.NeptuneGraph.ParquetType")]
+        public Amazon.NeptuneGraph.ParquetType ParquetType { get; set; }
         #endregion
         
         #region Parameter Neptune_PreserveDefaultVertexLabel
@@ -182,7 +211,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>Specifies whether or not the graph can be reachable over the internet. All access
-        /// to graphs IAM authenticated. (<c>true</c> to enable, or <c>false</c> to disable).</para>
+        /// to graphs is IAM authenticated. (<c>true</c> to enable, or <c>false</c> to disable).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -193,7 +222,8 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>The number of replicas in other AZs to provision on the new graph after import. Default
-        /// = 0, Min = 0, Max = 2.</para>
+        /// = 0, Min = 0, Max = 2.</para><important><para> Additional charges equivalent to the m-NCUs selected for the graph apply for each
+        /// replica. </para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -261,7 +291,11 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>Adds metadata tags to the new graph. These tags can also be used with cost allocation
-        /// reporting, or used in a Condition statement in an IAM policy.</para>
+        /// reporting, or used in a Condition statement in an IAM policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -290,9 +324,13 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GraphName), MyInvocation.BoundParameters);
@@ -311,6 +349,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
                 context.Select = CreateSelectDelegate<Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskResponse, NewNEPTGGraphUsingImportTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.BlankNodeHandling = this.BlankNodeHandling;
             context.DeletionProtection = this.DeletionProtection;
             context.FailOnError = this.FailOnError;
             context.Format = this.Format;
@@ -328,6 +367,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             context.KmsKeyIdentifier = this.KmsKeyIdentifier;
             context.MaxProvisionedMemory = this.MaxProvisionedMemory;
             context.MinProvisionedMemory = this.MinProvisionedMemory;
+            context.ParquetType = this.ParquetType;
             context.PublicConnectivity = this.PublicConnectivity;
             context.ReplicaCount = this.ReplicaCount;
             context.RoleArn = this.RoleArn;
@@ -369,6 +409,10 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             // create request
             var request = new Amazon.NeptuneGraph.Model.CreateGraphUsingImportTaskRequest();
             
+            if (cmdletContext.BlankNodeHandling != null)
+            {
+                request.BlankNodeHandling = cmdletContext.BlankNodeHandling;
+            }
             if (cmdletContext.DeletionProtection != null)
             {
                 request.DeletionProtection = cmdletContext.DeletionProtection.Value;
@@ -461,6 +505,10 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             {
                 request.MinProvisionedMemory = cmdletContext.MinProvisionedMemory.Value;
             }
+            if (cmdletContext.ParquetType != null)
+            {
+                request.ParquetType = cmdletContext.ParquetType;
+            }
             if (cmdletContext.PublicConnectivity != null)
             {
                 request.PublicConnectivity = cmdletContext.PublicConnectivity.Value;
@@ -538,13 +586,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Neptune Graph", "CreateGraphUsingImportTask");
             try
             {
-                #if DESKTOP
-                return client.CreateGraphUsingImportTask(request);
-                #elif CORECLR
-                return client.CreateGraphUsingImportTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGraphUsingImportTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -561,6 +603,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.NeptuneGraph.BlankNodeHandling BlankNodeHandling { get; set; }
             public System.Boolean? DeletionProtection { get; set; }
             public System.Boolean? FailOnError { get; set; }
             public Amazon.NeptuneGraph.Format Format { get; set; }
@@ -572,6 +615,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             public System.String KmsKeyIdentifier { get; set; }
             public System.Int32? MaxProvisionedMemory { get; set; }
             public System.Int32? MinProvisionedMemory { get; set; }
+            public Amazon.NeptuneGraph.ParquetType ParquetType { get; set; }
             public System.Boolean? PublicConnectivity { get; set; }
             public System.Int32? ReplicaCount { get; set; }
             public System.String RoleArn { get; set; }

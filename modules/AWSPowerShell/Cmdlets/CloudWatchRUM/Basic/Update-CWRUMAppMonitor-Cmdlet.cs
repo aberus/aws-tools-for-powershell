@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchRUM;
 using Amazon.CloudWatchRUM.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWRUM
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
     [AWSCmdlet("Calls the CloudWatch RUM UpdateAppMonitor API operation.", Operation = new[] {"UpdateAppMonitor"}, SelectReturnType = typeof(Amazon.CloudWatchRUM.Model.UpdateAppMonitorResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchRUM.Model.UpdateAppMonitorResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchRUM.Model.UpdateAppMonitorResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchRUM.Model.UpdateAppMonitorResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateCWRUMAppMonitorCmdlet : AmazonCloudWatchRUMClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppMonitorConfiguration_AllowCookie
         /// <summary>
@@ -93,6 +96,21 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public System.String Domain { get; set; }
         #endregion
         
+        #region Parameter DomainList
+        /// <summary>
+        /// <para>
+        /// <para> List the domain names for which your application has administrative authority. The
+        /// <c>UpdateAppMonitor</c> allows either the domain or the domain list. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] DomainList { get; set; }
+        #endregion
+        
         #region Parameter AppMonitorConfiguration_EnableXRay
         /// <summary>
         /// <para>
@@ -111,7 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         #region Parameter AppMonitorConfiguration_ExcludedPage
         /// <summary>
         /// <para>
-        /// <para>A list of URLs in your website or application to exclude from RUM data collection.</para><para>You can't include both <c>ExcludedPages</c> and <c>IncludedPages</c> in the same operation.</para>
+        /// <para>A list of URLs in your website or application to exclude from RUM data collection.</para><para>You can't include both <c>ExcludedPages</c> and <c>IncludedPages</c> in the same operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// <summary>
         /// <para>
         /// <para>A list of pages in your application that are to be displayed with a "favorite" icon
-        /// in the CloudWatch RUM console.</para>
+        /// in the CloudWatch RUM console.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,7 +161,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// <summary>
         /// <para>
         /// <para>The ARN of the guest IAM role that is attached to the Amazon Cognito identity pool
-        /// that is used to authorize the sending of data to RUM.</para>
+        /// that is used to authorize the sending of data to RUM.</para><note><para>It is possible that an app monitor does not have a value for <c>GuestRoleArn</c>.
+        /// For example, this can happen when you use the console to create an app monitor and
+        /// you allow CloudWatch RUM to create a new identity pool for Authorization. In this
+        /// case, <c>GuestRoleArn</c> is not present in the <a href="https://docs.aws.amazon.com/cloudwatchrum/latest/APIReference/API_GetAppMonitor.html">GetAppMonitor</a>
+        /// response because it is not stored by the service.</para><para>If this issue affects you, you can take one of the following steps:</para><ul><li><para>Use the Cloud Development Kit (CDK) to create an identity pool and the associated
+        /// IAM role, and use that for your app monitor.</para></li><li><para>Make a separate <a href="https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_GetIdentityPoolRoles.html">GetIdentityPoolRoles</a>
+        /// call to Amazon Cognito to retrieve the <c>GuestRoleArn</c>.</para></li></ul></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         /// <summary>
         /// <para>
         /// <para>If this app monitor is to collect data from only certain pages in your application,
-        /// this structure lists those pages. </para><para>You can't include both <c>ExcludedPages</c> and <c>IncludedPages</c> in the same operation.</para>
+        /// this structure lists those pages. </para><para>You can't include both <c>ExcludedPages</c> and <c>IncludedPages</c> in the same operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,6 +216,18 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter JavaScriptSourceMaps_S3Uri
+        /// <summary>
+        /// <para>
+        /// <para> The S3Uri of the bucket or folder that stores the source map files. It is required
+        /// if status is ENABLED. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DeobfuscationConfiguration_JavaScriptSourceMaps_S3Uri")]
+        public System.String JavaScriptSourceMaps_S3Uri { get; set; }
         #endregion
         
         #region Parameter AppMonitorConfiguration_SessionSampleRate
@@ -208,12 +256,30 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public Amazon.CloudWatchRUM.CustomEventsStatus CustomEvents_Status { get; set; }
         #endregion
         
+        #region Parameter JavaScriptSourceMaps_Status
+        /// <summary>
+        /// <para>
+        /// <para> Specifies whether JavaScript error stack traces should be unminified for this app
+        /// monitor. The default is for JavaScript error stack trace unminification to be <c>DISABLED</c>.
+        /// </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DeobfuscationConfiguration_JavaScriptSourceMaps_Status")]
+        [AWSConstantClassSource("Amazon.CloudWatchRUM.DeobfuscationStatus")]
+        public Amazon.CloudWatchRUM.DeobfuscationStatus JavaScriptSourceMaps_Status { get; set; }
+        #endregion
+        
         #region Parameter AppMonitorConfiguration_Telemetry
         /// <summary>
         /// <para>
         /// <para>An array that lists the types of telemetry data that this app monitor is to collect.</para><ul><li><para><c>errors</c> indicates that RUM collects data about unhandled JavaScript errors
         /// raised by your application.</para></li><li><para><c>performance</c> indicates that RUM collects performance data about how your application
-        /// and its resources are loaded and rendered. This includes Core Web Vitals.</para></li><li><para><c>http</c> indicates that RUM collects data about HTTP errors thrown by your application.</para></li></ul>
+        /// and its resources are loaded and rendered. This includes Core Web Vitals.</para></li><li><para><c>http</c> indicates that RUM collects data about HTTP errors thrown by your application.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -231,16 +297,6 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -251,9 +307,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -267,21 +327,11 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchRUM.Model.UpdateAppMonitorResponse, UpdateCWRUMAppMonitorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppMonitorConfiguration_AllowCookie = this.AppMonitorConfiguration_AllowCookie;
             context.AppMonitorConfiguration_EnableXRay = this.AppMonitorConfiguration_EnableXRay;
             if (this.AppMonitorConfiguration_ExcludedPage != null)
@@ -305,7 +355,13 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             }
             context.CustomEvents_Status = this.CustomEvents_Status;
             context.CwLogEnabled = this.CwLogEnabled;
+            context.JavaScriptSourceMaps_S3Uri = this.JavaScriptSourceMaps_S3Uri;
+            context.JavaScriptSourceMaps_Status = this.JavaScriptSourceMaps_Status;
             context.Domain = this.Domain;
+            if (this.DomainList != null)
+            {
+                context.DomainList = new List<System.String>(this.DomainList);
+            }
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -451,9 +507,57 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             {
                 request.CwLogEnabled = cmdletContext.CwLogEnabled.Value;
             }
+            
+             // populate DeobfuscationConfiguration
+            var requestDeobfuscationConfigurationIsNull = true;
+            request.DeobfuscationConfiguration = new Amazon.CloudWatchRUM.Model.DeobfuscationConfiguration();
+            Amazon.CloudWatchRUM.Model.JavaScriptSourceMaps requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps = null;
+            
+             // populate JavaScriptSourceMaps
+            var requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMapsIsNull = true;
+            requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps = new Amazon.CloudWatchRUM.Model.JavaScriptSourceMaps();
+            System.String requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_S3Uri = null;
+            if (cmdletContext.JavaScriptSourceMaps_S3Uri != null)
+            {
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_S3Uri = cmdletContext.JavaScriptSourceMaps_S3Uri;
+            }
+            if (requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_S3Uri != null)
+            {
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps.S3Uri = requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_S3Uri;
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMapsIsNull = false;
+            }
+            Amazon.CloudWatchRUM.DeobfuscationStatus requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_Status = null;
+            if (cmdletContext.JavaScriptSourceMaps_Status != null)
+            {
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_Status = cmdletContext.JavaScriptSourceMaps_Status;
+            }
+            if (requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_Status != null)
+            {
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps.Status = requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps_javaScriptSourceMaps_Status;
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMapsIsNull = false;
+            }
+             // determine if requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps should be set to null
+            if (requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMapsIsNull)
+            {
+                requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps = null;
+            }
+            if (requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps != null)
+            {
+                request.DeobfuscationConfiguration.JavaScriptSourceMaps = requestDeobfuscationConfiguration_deobfuscationConfiguration_JavaScriptSourceMaps;
+                requestDeobfuscationConfigurationIsNull = false;
+            }
+             // determine if request.DeobfuscationConfiguration should be set to null
+            if (requestDeobfuscationConfigurationIsNull)
+            {
+                request.DeobfuscationConfiguration = null;
+            }
             if (cmdletContext.Domain != null)
             {
                 request.Domain = cmdletContext.Domain;
+            }
+            if (cmdletContext.DomainList != null)
+            {
+                request.DomainList = cmdletContext.DomainList;
             }
             if (cmdletContext.Name != null)
             {
@@ -497,13 +601,7 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "CloudWatch RUM", "UpdateAppMonitor");
             try
             {
-                #if DESKTOP
-                return client.UpdateAppMonitor(request);
-                #elif CORECLR
-                return client.UpdateAppMonitorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateAppMonitorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -531,7 +629,10 @@ namespace Amazon.PowerShell.Cmdlets.CWRUM
             public List<System.String> AppMonitorConfiguration_Telemetry { get; set; }
             public Amazon.CloudWatchRUM.CustomEventsStatus CustomEvents_Status { get; set; }
             public System.Boolean? CwLogEnabled { get; set; }
+            public System.String JavaScriptSourceMaps_S3Uri { get; set; }
+            public Amazon.CloudWatchRUM.DeobfuscationStatus JavaScriptSourceMaps_Status { get; set; }
             public System.String Domain { get; set; }
+            public List<System.String> DomainList { get; set; }
             public System.String Name { get; set; }
             public System.Func<Amazon.CloudWatchRUM.Model.UpdateAppMonitorResponse, UpdateCWRUMAppMonitorCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

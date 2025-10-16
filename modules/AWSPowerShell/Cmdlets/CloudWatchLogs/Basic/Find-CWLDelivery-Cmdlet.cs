@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -35,9 +37,9 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// A <i>delivery</i> is a connection between a <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutDeliverySource.html"><i>delivery source</i></a> and a <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutDeliveryDestination.html"><i>delivery destination</i></a>.
     /// </para><para>
     /// A delivery source represents an Amazon Web Services resource that sends logs to an
-    /// logs delivery destination. The destination can be CloudWatch Logs, Amazon S3, or Kinesis
-    /// Data Firehose. Only some Amazon Web Services services support being configured as
-    /// a delivery source. These services are listed in <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AWS-logs-and-resource-policy.html">Enable
+    /// logs delivery destination. The destination can be CloudWatch Logs, Amazon S3, Firehose
+    /// or X-Ray. Only some Amazon Web Services services support being configured as a delivery
+    /// source. These services are listed in <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AWS-logs-and-resource-policy.html">Enable
     /// logging from Amazon Web Services services.</a></para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Find", "CWLDelivery")]
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs DescribeDeliveries API operation.", Operation = new[] {"DescribeDeliveries"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.DescribeDeliveriesResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchLogs.Model.Delivery or Amazon.CloudWatchLogs.Model.DescribeDeliveriesResponse",
         "This cmdlet returns a collection of Amazon.CloudWatchLogs.Model.Delivery objects.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.DescribeDeliveriesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.DescribeDeliveriesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class FindCWLDeliveryCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Limit
         /// <summary>
@@ -69,7 +72,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -198,13 +205,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "DescribeDeliveries");
             try
             {
-                #if DESKTOP
-                return client.DescribeDeliveries(request);
-                #elif CORECLR
-                return client.DescribeDeliveriesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeDeliveriesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

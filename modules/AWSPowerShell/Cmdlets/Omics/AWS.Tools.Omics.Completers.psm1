@@ -81,7 +81,10 @@ $OMICS_Completers = {
     switch ($("$commandName/$parameterName"))
     {
         # Amazon.Omics.Accelerators
-        "New-OMICSWorkflow/Accelerators"
+        {
+            ($_ -eq "New-OMICSWorkflow/Accelerator") -Or
+            ($_ -eq "New-OMICSWorkflowVersion/Accelerator")
+        }
         {
             $v = "GPU"
             break
@@ -89,11 +92,22 @@ $OMICS_Completers = {
 
         # Amazon.Omics.AnnotationType
         {
-            ($_ -eq "New-OMICSAnnotationStore/StoreOptions_TsvStoreOptions_AnnotationType") -Or
-            ($_ -eq "New-OMICSAnnotationStoreVersion/VersionOptions_TsvVersionOptions_AnnotationType")
+            ($_ -eq "New-OMICSAnnotationStore/TsvStoreOptions_AnnotationType") -Or
+            ($_ -eq "New-OMICSAnnotationStoreVersion/TsvVersionOptions_AnnotationType")
         }
         {
             $v = "CHR_POS","CHR_POS_REF_ALT","CHR_START_END_ONE_BASE","CHR_START_END_REF_ALT_ONE_BASE","CHR_START_END_REF_ALT_ZERO_BASE","CHR_START_END_ZERO_BASE","GENERIC"
+            break
+        }
+
+        # Amazon.Omics.CacheBehavior
+        {
+            ($_ -eq "New-OMICSRunCache/CacheBehavior") -Or
+            ($_ -eq "Start-OMICSRun/CacheBehavior") -Or
+            ($_ -eq "Update-OMICSRunCache/CacheBehavior")
+        }
+        {
+            $v = "CACHE_ALWAYS","CACHE_ON_FAILURE"
             break
         }
 
@@ -113,6 +127,13 @@ $OMICS_Completers = {
         }
         {
             $v = "KMS"
+            break
+        }
+
+        # Amazon.Omics.ETagAlgorithmFamily
+        "New-OMICSSequenceStore/ETagAlgorithmFamily"
+        {
+            $v = "MD5up","SHA256up","SHA512up"
             break
         }
 
@@ -220,6 +241,36 @@ $OMICS_Completers = {
             break
         }
 
+        # Amazon.Omics.SequenceStoreStatus
+        "Get-OMICSSequenceStoreList/Filter_Status"
+        {
+            $v = "ACTIVE","CREATING","DELETING","FAILED","UPDATING"
+            break
+        }
+
+        # Amazon.Omics.SourceReferenceType
+        {
+            ($_ -eq "New-OMICSWorkflow/SourceReference_Type") -Or
+            ($_ -eq "New-OMICSWorkflowVersion/SourceReference_Type")
+        }
+        {
+            $v = "BRANCH","COMMIT","TAG"
+            break
+        }
+
+        # Amazon.Omics.StorageType
+        {
+            ($_ -eq "New-OMICSWorkflow/StorageType") -Or
+            ($_ -eq "New-OMICSWorkflowVersion/StorageType") -Or
+            ($_ -eq "Start-OMICSRun/StorageType") -Or
+            ($_ -eq "Update-OMICSWorkflow/StorageType") -Or
+            ($_ -eq "Update-OMICSWorkflowVersion/StorageType")
+        }
+        {
+            $v = "DYNAMIC","STATIC"
+            break
+        }
+
         # Amazon.Omics.StoreFormat
         "New-OMICSAnnotationStore/StoreFormat"
         {
@@ -252,7 +303,10 @@ $OMICS_Completers = {
         }
 
         # Amazon.Omics.WorkflowEngine
-        "New-OMICSWorkflow/Engine"
+        {
+            ($_ -eq "New-OMICSWorkflow/Engine") -Or
+            ($_ -eq "New-OMICSWorkflowVersion/Engine")
+        }
         {
             $v = "CWL","NEXTFLOW","WDL"
             break
@@ -262,6 +316,8 @@ $OMICS_Completers = {
         {
             ($_ -eq "Get-OMICSWorkflow/Type") -Or
             ($_ -eq "Get-OMICSWorkflowList/Type") -Or
+            ($_ -eq "Get-OMICSWorkflowVersion/Type") -Or
+            ($_ -eq "Get-OMICSWorkflowVersionList/Type") -Or
             ($_ -eq "Start-OMICSRun/WorkflowType")
         }
         {
@@ -278,22 +334,26 @@ $OMICS_Completers = {
 }
 
 $OMICS_map = @{
-    "Accelerators"=@("New-OMICSWorkflow")
-    "Engine"=@("New-OMICSWorkflow")
+    "Accelerator"=@("New-OMICSWorkflow","New-OMICSWorkflowVersion")
+    "CacheBehavior"=@("New-OMICSRunCache","Start-OMICSRun","Update-OMICSRunCache")
+    "Engine"=@("New-OMICSWorkflow","New-OMICSWorkflowVersion")
+    "ETagAlgorithmFamily"=@("New-OMICSSequenceStore")
     "File"=@("Get-OMICSReadSet","Get-OMICSReference")
     "Filter_CreationType"=@("Get-OMICSReadSetList")
-    "Filter_Status"=@("Get-OMICSAnnotationImportJobList","Get-OMICSAnnotationStoreList","Get-OMICSAnnotationStoreVersionList","Get-OMICSReadSetActivationJobList","Get-OMICSReadSetExportJobList","Get-OMICSReadSetImportJobList","Get-OMICSReadSetList","Get-OMICSReferenceImportJobList","Get-OMICSVariantImportJobList","Get-OMICSVariantStoreList")
+    "Filter_Status"=@("Get-OMICSAnnotationImportJobList","Get-OMICSAnnotationStoreList","Get-OMICSAnnotationStoreVersionList","Get-OMICSReadSetActivationJobList","Get-OMICSReadSetExportJobList","Get-OMICSReadSetImportJobList","Get-OMICSReadSetList","Get-OMICSReferenceImportJobList","Get-OMICSSequenceStoreList","Get-OMICSVariantImportJobList","Get-OMICSVariantStoreList")
     "LogLevel"=@("Start-OMICSRun")
     "PartSource"=@("Get-OMICSReadSetUploadPartList","Set-OMICSReadSetPart")
     "ResourceOwner"=@("Get-OMICSShareList")
     "RetentionMode"=@("Start-OMICSRun")
     "SourceFileType"=@("New-OMICSMultipartReadSetUpload")
+    "SourceReference_Type"=@("New-OMICSWorkflow","New-OMICSWorkflowVersion")
     "SseConfig_Type"=@("New-OMICSAnnotationStore","New-OMICSReferenceStore","New-OMICSSequenceStore","New-OMICSVariantStore")
     "Status"=@("Get-OMICSRunList","Get-OMICSRunTaskList")
+    "StorageType"=@("New-OMICSWorkflow","New-OMICSWorkflowVersion","Start-OMICSRun","Update-OMICSWorkflow","Update-OMICSWorkflowVersion")
     "StoreFormat"=@("New-OMICSAnnotationStore")
-    "StoreOptions_TsvStoreOptions_AnnotationType"=@("New-OMICSAnnotationStore")
-    "Type"=@("Get-OMICSWorkflow","Get-OMICSWorkflowList")
-    "VersionOptions_TsvVersionOptions_AnnotationType"=@("New-OMICSAnnotationStoreVersion")
+    "TsvStoreOptions_AnnotationType"=@("New-OMICSAnnotationStore")
+    "TsvVersionOptions_AnnotationType"=@("New-OMICSAnnotationStoreVersion")
+    "Type"=@("Get-OMICSWorkflow","Get-OMICSWorkflowList","Get-OMICSWorkflowVersion","Get-OMICSWorkflowVersionList")
     "WorkflowType"=@("Start-OMICSRun")
 }
 
@@ -358,21 +418,26 @@ $OMICS_SelectMap = @{
                "New-OMICSAnnotationStoreVersion",
                "New-OMICSMultipartReadSetUpload",
                "New-OMICSReferenceStore",
+               "New-OMICSRunCache",
                "New-OMICSRunGroup",
                "New-OMICSSequenceStore",
                "New-OMICSShare",
                "New-OMICSVariantStore",
                "New-OMICSWorkflow",
+               "New-OMICSWorkflowVersion",
                "Remove-OMICSAnnotationStore",
                "Remove-OMICSAnnotationStoreVersion",
                "Remove-OMICSReference",
                "Remove-OMICSReferenceStore",
                "Remove-OMICSRun",
+               "Remove-OMICSRunCache",
                "Remove-OMICSRunGroup",
+               "Remove-OMICSS3AccessPolicy",
                "Remove-OMICSSequenceStore",
                "Remove-OMICSShare",
                "Remove-OMICSVariantStore",
                "Remove-OMICSWorkflow",
+               "Remove-OMICSWorkflowVersion",
                "Get-OMICSAnnotationImportJob",
                "Get-OMICSAnnotationStore",
                "Get-OMICSAnnotationStoreVersion",
@@ -386,13 +451,16 @@ $OMICS_SelectMap = @{
                "Get-OMICSReferenceMetadata",
                "Get-OMICSReferenceStore",
                "Get-OMICSRun",
+               "Get-OMICSRunCache",
                "Get-OMICSRunGroup",
                "Get-OMICSRunTask",
+               "Get-OMICSS3AccessPolicy",
                "Get-OMICSSequenceStore",
                "Get-OMICSShare",
                "Get-OMICSVariantImportJob",
                "Get-OMICSVariantStore",
                "Get-OMICSWorkflow",
+               "Get-OMICSWorkflowVersion",
                "Get-OMICSAnnotationImportJobList",
                "Get-OMICSAnnotationStoreList",
                "Get-OMICSAnnotationStoreVersionList",
@@ -405,6 +473,7 @@ $OMICS_SelectMap = @{
                "Get-OMICSReferenceImportJobList",
                "Get-OMICSReferenceList",
                "Get-OMICSReferenceStoreList",
+               "Get-OMICSRunCachList",
                "Get-OMICSRunGroupList",
                "Get-OMICSRunList",
                "Get-OMICSRunTaskList",
@@ -414,6 +483,8 @@ $OMICS_SelectMap = @{
                "Get-OMICSVariantImportJobList",
                "Get-OMICSVariantStoreList",
                "Get-OMICSWorkflowList",
+               "Get-OMICSWorkflowVersionList",
+               "Write-OMICSS3AccessPolicy",
                "Start-OMICSAnnotationImportJob",
                "Start-OMICSReadSetActivationJob",
                "Start-OMICSReadSetExportJob",
@@ -425,9 +496,12 @@ $OMICS_SelectMap = @{
                "Remove-OMICSResourceTag",
                "Update-OMICSAnnotationStore",
                "Update-OMICSAnnotationStoreVersion",
+               "Update-OMICSRunCache",
                "Update-OMICSRunGroup",
+               "Update-OMICSSequenceStore",
                "Update-OMICSVariantStore",
                "Update-OMICSWorkflow",
+               "Update-OMICSWorkflowVersion",
                "Set-OMICSReadSetPart")
 }
 

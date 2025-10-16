@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LakeFormation;
 using Amazon.LakeFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LKF
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     [AWSCmdlet("Calls the AWS Lake Formation PutDataLakeSettings API operation.", Operation = new[] {"PutDataLakeSettings"}, SelectReturnType = typeof(Amazon.LakeFormation.Model.PutDataLakeSettingsResponse))]
     [AWSCmdletOutput("None or Amazon.LakeFormation.Model.PutDataLakeSettingsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.LakeFormation.Model.PutDataLakeSettingsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.LakeFormation.Model.PutDataLakeSettingsResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteLKFDataLakeSettingCmdlet : AmazonLakeFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DataLakeSettings_AllowExternalDataFiltering
         /// <summary>
@@ -82,7 +85,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// integrator to tag the user's role while assuming it. Lake Formation will publish the
         /// acceptable key-value pair, for example key = "LakeFormationTrustedCaller" and value
         /// = "TRUE" and the third party integrator must properly tag the temporary security credentials
-        /// that will be used to call Lake Formation's administrative APIs.</para>
+        /// that will be used to call Lake Formation's administrative APIs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// This is referred to as the setting "Use only IAM access control," and is for backward
         /// compatibility with the Glue permission model implemented by IAM permissions.</para><para>The only permitted values are an empty array or an array that contains a single JSON
         /// object that grants ALL to IAM_ALLOWED_PRINCIPALS.</para><para>For more information, see <a href="https://docs.aws.amazon.com/lake-formation/latest/dg/change-settings.html">Changing
-        /// the Default Security Settings for Your Data Lake</a>.</para>
+        /// the Default Security Settings for Your Data Lake</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// This is referred to as the setting "Use only IAM access control," and is for backward
         /// compatibility with the Glue permission model implemented by IAM permissions.</para><para>The only permitted values are an empty array or an array that contains a single JSON
         /// object that grants ALL to IAM_ALLOWED_PRINCIPALS.</para><para>For more information, see <a href="https://docs.aws.amazon.com/lake-formation/latest/dg/change-settings.html">Changing
-        /// the Default Security Settings for Your Data Lake</a>.</para>
+        /// the Default Security Settings for Your Data Lake</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         #region Parameter DataLakeSettings_DataLakeAdmin
         /// <summary>
         /// <para>
-        /// <para>A list of Lake Formation principals. Supported principals are IAM users or IAM roles.</para>
+        /// <para>A list of Lake Formation principals. Supported principals are IAM users or IAM roles.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <summary>
         /// <para>
         /// <para>A list of the account IDs of Amazon Web Services accounts with Amazon EMR clusters
-        /// that are to perform data filtering.&gt;</para>
+        /// that are to perform data filtering.&gt;</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,7 +185,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <para>
         /// <para>A key-value map that provides an additional configuration on your data lake. CROSS_ACCOUNT_VERSION
         /// is the key you can configure in the Parameters field. Accepted values for the CrossAccountVersion
-        /// key are 1, 2, 3, and 4.</para>
+        /// key are 1, 2, 3, and 4.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,7 +201,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <summary>
         /// <para>
         /// <para>A list of Lake Formation principals with only view access to the resources, without
-        /// the ability to make changes. Supported principals are IAM users or IAM roles.</para>
+        /// the ability to make changes. Supported principals are IAM users or IAM roles.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -188,7 +219,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <para>A list of the resource-owning account IDs that the caller's account can use to share
         /// their user access details (user ARNs). The user ARNs can be logged in the resource
         /// owner's CloudTrail log.</para><para>You may want to specify this property when you are in a high-trust boundary, such
-        /// as the same team or company. </para>
+        /// as the same team or company. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,16 +241,6 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CatalogId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CatalogId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CatalogId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -226,9 +251,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CatalogId), MyInvocation.BoundParameters);
@@ -242,21 +271,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LakeFormation.Model.PutDataLakeSettingsResponse, WriteLKFDataLakeSettingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CatalogId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CatalogId = this.CatalogId;
             context.DataLakeSettings_AllowExternalDataFiltering = this.DataLakeSettings_AllowExternalDataFiltering;
             context.DataLakeSettings_AllowFullTableExternalDataAccess = this.DataLakeSettings_AllowFullTableExternalDataAccess;
@@ -463,13 +482,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lake Formation", "PutDataLakeSettings");
             try
             {
-                #if DESKTOP
-                return client.PutDataLakeSettings(request);
-                #elif CORECLR
-                return client.PutDataLakeSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutDataLakeSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

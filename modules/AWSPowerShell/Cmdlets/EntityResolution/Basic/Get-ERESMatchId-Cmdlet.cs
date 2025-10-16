@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,57 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EntityResolution;
 using Amazon.EntityResolution.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ERES
 {
     /// <summary>
-    /// Returns the corresponding Match ID of a customer record if the record has been processed.
+    /// Returns the corresponding Match ID of a customer record if the record has been processed
+    /// in a rule-based matching workflow.
+    /// 
+    ///  
+    /// <para>
+    /// You can call this API as a dry run of an incremental load on the rule-based matching
+    /// workflow.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "ERESMatchId")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS EntityResolution GetMatchId API operation.", Operation = new[] {"GetMatchId"}, SelectReturnType = typeof(Amazon.EntityResolution.Model.GetMatchIdResponse))]
     [AWSCmdletOutput("System.String or Amazon.EntityResolution.Model.GetMatchIdResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EntityResolution.Model.GetMatchIdResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EntityResolution.Model.GetMatchIdResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetERESMatchIdCmdlet : AmazonEntityResolutionClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ApplyNormalization
+        /// <summary>
+        /// <para>
+        /// <para>Normalizes the attributes defined in the schema in the input data. For example, if
+        /// an attribute has an <c>AttributeType</c> of <c>PHONE_NUMBER</c>, and the data in the
+        /// input table is in a format of 1234567890, Entity Resolution will normalize this field
+        /// in the output to (123)-456-7890.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ApplyNormalization { get; set; }
+        #endregion
         
         #region Parameter Record
         /// <summary>
         /// <para>
-        /// <para>The record to fetch the Match ID for.</para>
+        /// <para>The record to fetch the Match ID for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -89,19 +114,13 @@ namespace Amazon.PowerShell.Cmdlets.ERES
         public string Select { get; set; } = "MatchId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkflowName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkflowName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkflowName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -109,21 +128,12 @@ namespace Amazon.PowerShell.Cmdlets.ERES
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EntityResolution.Model.GetMatchIdResponse, GetERESMatchIdCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkflowName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ApplyNormalization = this.ApplyNormalization;
             if (this.Record != null)
             {
                 context.Record = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -161,6 +171,10 @@ namespace Amazon.PowerShell.Cmdlets.ERES
             // create request
             var request = new Amazon.EntityResolution.Model.GetMatchIdRequest();
             
+            if (cmdletContext.ApplyNormalization != null)
+            {
+                request.ApplyNormalization = cmdletContext.ApplyNormalization.Value;
+            }
             if (cmdletContext.Record != null)
             {
                 request.Record = cmdletContext.Record;
@@ -207,13 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.ERES
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS EntityResolution", "GetMatchId");
             try
             {
-                #if DESKTOP
-                return client.GetMatchId(request);
-                #elif CORECLR
-                return client.GetMatchIdAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetMatchIdAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -230,6 +238,7 @@ namespace Amazon.PowerShell.Cmdlets.ERES
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? ApplyNormalization { get; set; }
             public Dictionary<System.String, System.String> Record { get; set; }
             public System.String WorkflowName { get; set; }
             public System.Func<Amazon.EntityResolution.Model.GetMatchIdResponse, GetERESMatchIdCmdlet, object> Select { get; set; } =

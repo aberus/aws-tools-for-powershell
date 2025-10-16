@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PI;
 using Amazon.PI.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PI
 {
     /// <summary>
@@ -34,18 +36,19 @@ namespace Amazon.PowerShell.Cmdlets.PI
     ///  <note><para>
     /// Each response element returns a maximum of 500 bytes. For larger elements, such as
     /// SQL statements, only the first 500 bytes are returned.
-    /// </para></note>
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "PIDimensionKey")]
     [OutputType("Amazon.PI.Model.DescribeDimensionKeysResponse")]
     [AWSCmdlet("Calls the AWS Performance Insights DescribeDimensionKeys API operation.", Operation = new[] {"DescribeDimensionKeys"}, SelectReturnType = typeof(Amazon.PI.Model.DescribeDimensionKeysResponse))]
     [AWSCmdletOutput("Amazon.PI.Model.DescribeDimensionKeysResponse",
-        "This cmdlet returns an Amazon.PI.Model.DescribeDimensionKeysResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PI.Model.DescribeDimensionKeysResponse object containing multiple properties."
     )]
     public partial class GetPIDimensionKeyCmdlet : AmazonPIClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalMetric
         /// <summary>
@@ -53,8 +56,11 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>Additional metrics for the top <c>N</c> dimension keys. If the specified dimension
         /// group in the <c>GroupBy</c> parameter is <c>db.sql_tokenized</c>, you can specify
         /// per-SQL metrics to get the values for the top <c>N</c> SQL digests. The response syntax
-        /// is as follows: <c>"AdditionalMetrics" : { "<i>string</i>" : "<i>string</i>" }</c>.
-        /// </para>
+        /// is as follows: <c>"AdditionalMetrics" : { "<i>string</i>" : "<i>string</i>" }</c>.</para><para>The only supported statistic function is <c>.avg</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>A list of specific dimensions from a dimension group. If this parameter is not present,
         /// then it signifies that all of the dimensions in the group were requested, or are present
         /// in the response.</para><para>Valid values for elements in the <c>Dimensions</c> array are:</para><ul><li><para><c>db.application.name</c> - The name of the application that is connected to the
-        /// database. Valid values are as follows: </para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.host.id</c> - The host ID of the connected client (all engines).</para></li><li><para><c>db.host.name</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.name</c> - The name of the database to which the client is connected. Valid
+        /// database. Valid values are as follows: </para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.blocking_sql.id</c> - The ID for each of the SQL queries blocking the most
+        /// DB load.</para></li><li><para><c>db.blocking_sql.sql</c> - The SQL text for each of the SQL queries blocking the
+        /// most DB load.</para></li><li><para><c>db.blocking_session.id</c> - The ID for each of the sessions blocking the most
+        /// DB load.</para></li><li><para><c>db.blocking_object.id</c> - The ID for each of the object resources acquired by
+        /// other sessions that are blocking the most DB load.</para></li><li><para><c>db.blocking_object.type</c> - The object type for each of the object resources
+        /// acquired by other sessions that are blocking the most DB load.</para></li><li><para><c>db.blocking_object.value</c> - The value for each of the object resources acquired
+        /// by other sessions that are blocking the most DB load.</para></li><li><para><c>db.host.id</c> - The host ID of the connected client (all engines).</para></li><li><para><c>db.host.name</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.name</c> - The name of the database to which the client is connected. Valid
         /// values are as follows:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Aurora MySQL</para></li><li><para>Amazon RDS MySQL</para></li><li><para>Amazon RDS MariaDB</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.query.id</c> - The query ID generated by Performance Insights (only Amazon
         /// DocumentDB).</para></li><li><para><c>db.query.db_id</c> - The query ID generated by the database (only Amazon DocumentDB).</para></li><li><para><c>db.query.statement</c> - The text of the query that is being run (only Amazon
         /// DocumentDB).</para></li><li><para><c>db.query.tokenized_id</c></para></li><li><para><c>db.query.tokenized.id</c> - The query digest ID generated by Performance Insights
@@ -77,7 +89,10 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// Performance Insights (all engines except Amazon DocumentDB).</para></li><li><para><c>db.sql.db_id</c> - Either the SQL ID generated by the database engine, or a value
         /// generated by Performance Insights that begins with <c>pi-</c> (all engines except
         /// Amazon DocumentDB).</para></li><li><para><c>db.sql.statement</c> - The full text of the SQL statement that is running, as
-        /// in <c>SELECT * FROM employees</c> (all engines except Amazon DocumentDB)</para></li><li><para><c>db.sql.tokenized_id</c></para></li><li><para><c>db.sql_tokenized.id</c> - The hash of the SQL digest generated by Performance
+        /// in <c>SELECT * FROM employees</c> (all engines except Amazon DocumentDB)</para></li><li><para><c>db.sql.tokenized_id</c> - The hash of the SQL digest generated by Performance
+        /// Insights (all engines except Amazon DocumentDB). The <c>db.sql.tokenized_id</c> dimension
+        /// fetches the value of the <c>db.sql_tokenized.id</c> dimension. Amazon RDS returns
+        /// <c>db.sql.tokenized_id</c> from the <c>db.sql</c> dimension group. </para></li><li><para><c>db.sql_tokenized.id</c> - The hash of the SQL digest generated by Performance
         /// Insights (all engines except Amazon DocumentDB). In the console, <c>db.sql_tokenized.id</c>
         /// is called the Support ID because Amazon Web Services Support can look at this data
         /// to help you troubleshoot database issues.</para></li><li><para><c>db.sql_tokenized.db_id</c> - Either the native database ID used to refer to the
@@ -89,7 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// except Amazon DocumentDB).</para></li><li><para><c>db.wait_event.type</c> - The type of event for which the backend is waiting (all
         /// engines except Amazon DocumentDB).</para></li><li><para><c>db.wait_event_type.name</c> - The name of the event type for which the backend
         /// is waiting (all engines except Amazon DocumentDB).</para></li><li><para><c>db.wait_state.name</c> - The event for which the backend is waiting (only Amazon
-        /// DocumentDB).</para></li></ul>
+        /// DocumentDB).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,7 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>A list of specific dimensions from a dimension group. If this parameter is not present,
         /// then it signifies that all of the dimensions in the group were requested, or are present
         /// in the response.</para><para>Valid values for elements in the <c>Dimensions</c> array are:</para><ul><li><para><c>db.application.name</c> - The name of the application that is connected to the
-        /// database. Valid values are as follows: </para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.host.id</c> - The host ID of the connected client (all engines).</para></li><li><para><c>db.host.name</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.name</c> - The name of the database to which the client is connected. Valid
+        /// database. Valid values are as follows: </para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.blocking_sql.id</c> - The ID for each of the SQL queries blocking the most
+        /// DB load.</para></li><li><para><c>db.blocking_sql.sql</c> - The SQL text for each of the SQL queries blocking the
+        /// most DB load.</para></li><li><para><c>db.blocking_session.id</c> - The ID for each of the sessions blocking the most
+        /// DB load.</para></li><li><para><c>db.blocking_object.id</c> - The ID for each of the object resources acquired by
+        /// other sessions that are blocking the most DB load.</para></li><li><para><c>db.blocking_object.type</c> - The object type for each of the object resources
+        /// acquired by other sessions that are blocking the most DB load.</para></li><li><para><c>db.blocking_object.value</c> - The value for each of the object resources acquired
+        /// by other sessions that are blocking the most DB load.</para></li><li><para><c>db.host.id</c> - The host ID of the connected client (all engines).</para></li><li><para><c>db.host.name</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.name</c> - The name of the database to which the client is connected. Valid
         /// values are as follows:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Aurora MySQL</para></li><li><para>Amazon RDS MySQL</para></li><li><para>Amazon RDS MariaDB</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.query.id</c> - The query ID generated by Performance Insights (only Amazon
         /// DocumentDB).</para></li><li><para><c>db.query.db_id</c> - The query ID generated by the database (only Amazon DocumentDB).</para></li><li><para><c>db.query.statement</c> - The text of the query that is being run (only Amazon
         /// DocumentDB).</para></li><li><para><c>db.query.tokenized_id</c></para></li><li><para><c>db.query.tokenized.id</c> - The query digest ID generated by Performance Insights
@@ -112,7 +137,10 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// Performance Insights (all engines except Amazon DocumentDB).</para></li><li><para><c>db.sql.db_id</c> - Either the SQL ID generated by the database engine, or a value
         /// generated by Performance Insights that begins with <c>pi-</c> (all engines except
         /// Amazon DocumentDB).</para></li><li><para><c>db.sql.statement</c> - The full text of the SQL statement that is running, as
-        /// in <c>SELECT * FROM employees</c> (all engines except Amazon DocumentDB)</para></li><li><para><c>db.sql.tokenized_id</c></para></li><li><para><c>db.sql_tokenized.id</c> - The hash of the SQL digest generated by Performance
+        /// in <c>SELECT * FROM employees</c> (all engines except Amazon DocumentDB)</para></li><li><para><c>db.sql.tokenized_id</c> - The hash of the SQL digest generated by Performance
+        /// Insights (all engines except Amazon DocumentDB). The <c>db.sql.tokenized_id</c> dimension
+        /// fetches the value of the <c>db.sql_tokenized.id</c> dimension. Amazon RDS returns
+        /// <c>db.sql.tokenized_id</c> from the <c>db.sql</c> dimension group. </para></li><li><para><c>db.sql_tokenized.id</c> - The hash of the SQL digest generated by Performance
         /// Insights (all engines except Amazon DocumentDB). In the console, <c>db.sql_tokenized.id</c>
         /// is called the Support ID because Amazon Web Services Support can look at this data
         /// to help you troubleshoot database issues.</para></li><li><para><c>db.sql_tokenized.db_id</c> - Either the native database ID used to refer to the
@@ -124,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// except Amazon DocumentDB).</para></li><li><para><c>db.wait_event.type</c> - The type of event for which the backend is waiting (all
         /// engines except Amazon DocumentDB).</para></li><li><para><c>db.wait_event_type.name</c> - The name of the event type for which the backend
         /// is waiting (all engines except Amazon DocumentDB).</para></li><li><para><c>db.wait_state.name</c> - The event for which the backend is waiting (only Amazon
-        /// DocumentDB).</para></li></ul>
+        /// DocumentDB).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -154,7 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <summary>
         /// <para>
         /// <para>One or more filters to apply in the request. Restrictions:</para><ul><li><para>Any number of filters by the same dimension, as specified in the <c>GroupBy</c> or
-        /// <c>Partition</c> parameters.</para></li><li><para>A single filter for any other dimension in this dimension group.</para></li></ul>
+        /// <c>Partition</c> parameters.</para></li><li><para>A single filter for any other dimension in this dimension group.</para></li></ul><note><para>The <c>db.sql.db_id</c> filter isn't available for RDS for SQL Server DB instances.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -166,7 +202,8 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>
         /// <para>The name of the dimension group. Valid values are as follows:</para><ul><li><para><c>db</c> - The name of the database to which the client is connected. The following
         /// values are permitted:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Aurora MySQL</para></li><li><para>Amazon RDS MySQL</para></li><li><para>Amazon RDS MariaDB</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.application</c> - The name of the application that is connected to the database.
-        /// The following values are permitted:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.host</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.query</c> - The query that is currently running (only Amazon DocumentDB).</para></li><li><para><c>db.query_tokenized</c> - The digest query (only Amazon DocumentDB).</para></li><li><para><c>db.session_type</c> - The type of the current session (only Aurora PostgreSQL
+        /// The following values are permitted:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.blocking_sql</c> - The SQL queries blocking the most DB load.</para></li><li><para><c>db.blocking_session</c> - The sessions blocking the most DB load.</para></li><li><para><c>db.blocking_object</c> - The object resources acquired by other sessions that
+        /// are blocking the most DB load.</para></li><li><para><c>db.host</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.plans</c> - The execution plans for the query (only Aurora PostgreSQL).</para></li><li><para><c>db.query</c> - The query that is currently running (only Amazon DocumentDB).</para></li><li><para><c>db.query_tokenized</c> - The digest query (only Amazon DocumentDB).</para></li><li><para><c>db.session_type</c> - The type of the current session (only Aurora PostgreSQL
         /// and RDS PostgreSQL).</para></li><li><para><c>db.sql</c> - The text of the SQL statement that is currently running (all engines
         /// except Amazon DocumentDB).</para></li><li><para><c>db.sql_tokenized</c> - The SQL digest (all engines except Amazon DocumentDB).</para></li><li><para><c>db.user</c> - The user logged in to the database (all engines except Amazon DocumentDB).</para></li><li><para><c>db.wait_event</c> - The event for which the database backend is waiting (all engines
         /// except Amazon DocumentDB).</para></li><li><para><c>db.wait_event_type</c> - The type of event for which the database backend is waiting
@@ -190,7 +227,8 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>
         /// <para>The name of the dimension group. Valid values are as follows:</para><ul><li><para><c>db</c> - The name of the database to which the client is connected. The following
         /// values are permitted:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Aurora MySQL</para></li><li><para>Amazon RDS MySQL</para></li><li><para>Amazon RDS MariaDB</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.application</c> - The name of the application that is connected to the database.
-        /// The following values are permitted:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.host</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.query</c> - The query that is currently running (only Amazon DocumentDB).</para></li><li><para><c>db.query_tokenized</c> - The digest query (only Amazon DocumentDB).</para></li><li><para><c>db.session_type</c> - The type of the current session (only Aurora PostgreSQL
+        /// The following values are permitted:</para><ul><li><para>Aurora PostgreSQL</para></li><li><para>Amazon RDS PostgreSQL</para></li><li><para>Amazon DocumentDB</para></li></ul></li><li><para><c>db.blocking_sql</c> - The SQL queries blocking the most DB load.</para></li><li><para><c>db.blocking_session</c> - The sessions blocking the most DB load.</para></li><li><para><c>db.blocking_object</c> - The object resources acquired by other sessions that
+        /// are blocking the most DB load.</para></li><li><para><c>db.host</c> - The host name of the connected client (all engines).</para></li><li><para><c>db.plans</c> - The execution plans for the query (only Aurora PostgreSQL).</para></li><li><para><c>db.query</c> - The query that is currently running (only Amazon DocumentDB).</para></li><li><para><c>db.query_tokenized</c> - The digest query (only Amazon DocumentDB).</para></li><li><para><c>db.session_type</c> - The type of the current session (only Aurora PostgreSQL
         /// and RDS PostgreSQL).</para></li><li><para><c>db.sql</c> - The text of the SQL statement that is currently running (all engines
         /// except Amazon DocumentDB).</para></li><li><para><c>db.sql_tokenized</c> - The SQL digest (all engines except Amazon DocumentDB).</para></li><li><para><c>db.user</c> - The user logged in to the database (all engines except Amazon DocumentDB).</para></li><li><para><c>db.wait_event</c> - The event for which the database backend is waiting (all engines
         /// except Amazon DocumentDB).</para></li><li><para><c>db.wait_event_type</c> - The type of event for which the database backend is waiting
@@ -324,10 +362,15 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// specified <c>MaxRecords</c> value, a pagination token is included in the response
         /// so that the remaining results can be retrieved. </para>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("MaxResults")]
-        public System.Int32? MaxResult { get; set; }
+        [Alias("MaxItems","MaxResults")]
+        public int? MaxResult { get; set; }
         #endregion
         
         #region Parameter NextToken
@@ -336,6 +379,10 @@ namespace Amazon.PowerShell.Cmdlets.PI
         /// <para>An optional pagination token provided by a previous request. If this parameter is
         /// specified, the response includes only records beyond the token, up to the value specified
         /// by <c>MaxRecords</c>.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -353,9 +400,24 @@ namespace Amazon.PowerShell.Cmdlets.PI
         public string Select { get; set; } = "*";
         #endregion
         
+        #region Parameter NoAutoIteration
+        /// <summary>
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter NoAutoIteration { get; set; }
+        #endregion
+        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -407,6 +469,15 @@ namespace Amazon.PowerShell.Cmdlets.PI
             }
             #endif
             context.MaxResult = this.MaxResult;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the MaxResult parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing MaxResult" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             context.Metric = this.Metric;
             #if MODULAR
             if (this.Metric == null && ParameterWasBound(nameof(this.Metric)))
@@ -449,7 +520,9 @@ namespace Amazon.PowerShell.Cmdlets.PI
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.PI.Model.DescribeDimensionKeysRequest();
             
             if (cmdletContext.AdditionalMetric != null)
@@ -509,15 +582,11 @@ namespace Amazon.PowerShell.Cmdlets.PI
             }
             if (cmdletContext.MaxResult != null)
             {
-                request.MaxResults = cmdletContext.MaxResult.Value;
+                request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
             }
             if (cmdletContext.Metric != null)
             {
                 request.Metric = cmdletContext.Metric;
-            }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
             }
             
              // populate PartitionBy
@@ -571,27 +640,52 @@ namespace Amazon.PowerShell.Cmdlets.PI
                 request.StartTime = cmdletContext.StartTime.Value;
             }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.NextToken;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.NextToken));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.NextToken = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextToken;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -608,13 +702,7 @@ namespace Amazon.PowerShell.Cmdlets.PI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Performance Insights", "DescribeDimensionKeys");
             try
             {
-                #if DESKTOP
-                return client.DescribeDimensionKeys(request);
-                #elif CORECLR
-                return client.DescribeDimensionKeysAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeDimensionKeysAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -638,7 +726,7 @@ namespace Amazon.PowerShell.Cmdlets.PI
             public System.String GroupBy_Group { get; set; }
             public System.Int32? GroupBy_Limit { get; set; }
             public System.String Identifier { get; set; }
-            public System.Int32? MaxResult { get; set; }
+            public int? MaxResult { get; set; }
             public System.String Metric { get; set; }
             public System.String NextToken { get; set; }
             public List<System.String> PartitionBy_Dimension { get; set; }

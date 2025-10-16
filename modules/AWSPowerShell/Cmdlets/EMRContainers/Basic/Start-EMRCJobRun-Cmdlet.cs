@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EMRContainers;
 using Amazon.EMRContainers.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMRC
 {
     /// <summary>
@@ -35,23 +37,49 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
     [OutputType("Amazon.EMRContainers.Model.StartJobRunResponse")]
     [AWSCmdlet("Calls the Amazon EMR Containers StartJobRun API operation.", Operation = new[] {"StartJobRun"}, SelectReturnType = typeof(Amazon.EMRContainers.Model.StartJobRunResponse))]
     [AWSCmdletOutput("Amazon.EMRContainers.Model.StartJobRunResponse",
-        "This cmdlet returns an Amazon.EMRContainers.Model.StartJobRunResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EMRContainers.Model.StartJobRunResponse object containing multiple properties."
     )]
     public partial class StartEMRCJobRunCmdlet : AmazonEMRContainersClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ManagedLogs_AllowAWSToRetainLog
+        /// <summary>
+        /// <para>
+        /// <para>Determines whether Amazon Web Services can retain logs.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ConfigurationOverrides_MonitoringConfiguration_ManagedLogs_AllowAWSToRetainLogs")]
+        [AWSConstantClassSource("Amazon.EMRContainers.AllowAWSToRetainLogs")]
+        public Amazon.EMRContainers.AllowAWSToRetainLogs ManagedLogs_AllowAWSToRetainLog { get; set; }
+        #endregion
         
         #region Parameter ConfigurationOverrides_ApplicationConfiguration
         /// <summary>
         /// <para>
-        /// <para>The configurations for the application running by the job run. </para>
+        /// <para>The configurations for the application running by the job run. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.EMRContainers.Model.Configuration[] ConfigurationOverrides_ApplicationConfiguration { get; set; }
+        #endregion
+        
+        #region Parameter ManagedLogs_EncryptionKeyArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon resource name (ARN) of the encryption key for logs.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ConfigurationOverrides_MonitoringConfiguration_ManagedLogs_EncryptionKeyArn")]
+        public System.String ManagedLogs_EncryptionKeyArn { get; set; }
         #endregion
         
         #region Parameter SparkSqlJobDriver_EntryPoint
@@ -79,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         #region Parameter SparkSubmitJobDriver_EntryPointArgument
         /// <summary>
         /// <para>
-        /// <para>The arguments for job application.</para>
+        /// <para>The arguments for job application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,7 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         #region Parameter JobTemplateParameter
         /// <summary>
         /// <para>
-        /// <para>The values of job template parameters to start a job run.</para>
+        /// <para>The values of job template parameters to start a job run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -241,7 +277,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags assigned to job runs.</para>
+        /// <para>The tags assigned to job runs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -287,16 +327,6 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VirtualClusterId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VirtualClusterId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VirtualClusterId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -307,9 +337,13 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -323,21 +357,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EMRContainers.Model.StartJobRunResponse, StartEMRCJobRunCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VirtualClusterId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             if (this.ConfigurationOverrides_ApplicationConfiguration != null)
             {
@@ -347,6 +371,8 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             context.CloudWatchMonitoringConfiguration_LogStreamNamePrefix = this.CloudWatchMonitoringConfiguration_LogStreamNamePrefix;
             context.ContainerLogRotationConfiguration_MaxFilesToKeep = this.ContainerLogRotationConfiguration_MaxFilesToKeep;
             context.ContainerLogRotationConfiguration_RotationSize = this.ContainerLogRotationConfiguration_RotationSize;
+            context.ManagedLogs_AllowAWSToRetainLog = this.ManagedLogs_AllowAWSToRetainLog;
+            context.ManagedLogs_EncryptionKeyArn = this.ManagedLogs_EncryptionKeyArn;
             context.MonitoringConfiguration_PersistentAppUI = this.MonitoringConfiguration_PersistentAppUI;
             context.S3MonitoringConfiguration_LogUri = this.S3MonitoringConfiguration_LogUri;
             context.ExecutionRoleArn = this.ExecutionRoleArn;
@@ -527,6 +553,41 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ContainerLogRotationConfiguration != null)
             {
                 requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration.ContainerLogRotationConfiguration = requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ContainerLogRotationConfiguration;
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfigurationIsNull = false;
+            }
+            Amazon.EMRContainers.Model.ManagedLogs requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs = null;
+            
+             // populate ManagedLogs
+            var requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogsIsNull = true;
+            requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs = new Amazon.EMRContainers.Model.ManagedLogs();
+            Amazon.EMRContainers.AllowAWSToRetainLogs requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_AllowAWSToRetainLog = null;
+            if (cmdletContext.ManagedLogs_AllowAWSToRetainLog != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_AllowAWSToRetainLog = cmdletContext.ManagedLogs_AllowAWSToRetainLog;
+            }
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_AllowAWSToRetainLog != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs.AllowAWSToRetainLogs = requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_AllowAWSToRetainLog;
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogsIsNull = false;
+            }
+            System.String requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_EncryptionKeyArn = null;
+            if (cmdletContext.ManagedLogs_EncryptionKeyArn != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_EncryptionKeyArn = cmdletContext.ManagedLogs_EncryptionKeyArn;
+            }
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_EncryptionKeyArn != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs.EncryptionKeyArn = requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs_managedLogs_EncryptionKeyArn;
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogsIsNull = false;
+            }
+             // determine if requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs should be set to null
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogsIsNull)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs = null;
+            }
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration.ManagedLogs = requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedLogs;
                 requestConfigurationOverrides_configurationOverrides_MonitoringConfigurationIsNull = false;
             }
              // determine if requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration should be set to null
@@ -718,13 +779,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EMR Containers", "StartJobRun");
             try
             {
-                #if DESKTOP
-                return client.StartJobRun(request);
-                #elif CORECLR
-                return client.StartJobRunAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartJobRunAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -747,6 +802,8 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             public System.String CloudWatchMonitoringConfiguration_LogStreamNamePrefix { get; set; }
             public System.Int32? ContainerLogRotationConfiguration_MaxFilesToKeep { get; set; }
             public System.String ContainerLogRotationConfiguration_RotationSize { get; set; }
+            public Amazon.EMRContainers.AllowAWSToRetainLogs ManagedLogs_AllowAWSToRetainLog { get; set; }
+            public System.String ManagedLogs_EncryptionKeyArn { get; set; }
             public Amazon.EMRContainers.PersistentAppUI MonitoringConfiguration_PersistentAppUI { get; set; }
             public System.String S3MonitoringConfiguration_LogUri { get; set; }
             public System.String ExecutionRoleArn { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
@@ -58,26 +60,27 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [AWSCmdlet("Calls the Amazon QuickSight GenerateEmbedUrlForAnonymousUser API operation.", Operation = new[] {"GenerateEmbedUrlForAnonymousUser"}, SelectReturnType = typeof(Amazon.QuickSight.Model.GenerateEmbedUrlForAnonymousUserResponse))]
     [AWSCmdletOutput("System.String or Amazon.QuickSight.Model.GenerateEmbedUrlForAnonymousUserResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.QuickSight.Model.GenerateEmbedUrlForAnonymousUserResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.QuickSight.Model.GenerateEmbedUrlForAnonymousUserResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewQSEmbedUrlForAnonymousUserCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowedDomain
         /// <summary>
         /// <para>
         /// <para>The domains that you want to add to the allow list for access to the generated URL
         /// that is then embedded. This optional parameter overrides the static domains that are
-        /// configured in the Manage QuickSight menu in the Amazon QuickSight console. Instead,
+        /// configured in the Manage Quick Sight menu in the Amazon Quick Sight console. Instead,
         /// it allows only the domains that you include in this parameter. You can list up to
         /// three domains or subdomains in each API call.</para><para>To include all subdomains under a specific domain to the allow list, use <c>*</c>.
-        /// For example, <c>https://*.sapp.amazon.com</c> includes all subdomains under <c>https://sapp.amazon.com</c>.</para>
+        /// For example, <c>https://*.sapp.amazon.com</c> includes all subdomains under <c>https://sapp.amazon.com</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,11 +91,14 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter AuthorizedResourceArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) for the Amazon QuickSight resources that the user
-        /// is authorized to access during the lifetime of the session. If you choose <c>Dashboard</c>
-        /// embedding experience, pass the list of dashboard ARNs in the account that you want
-        /// the user to be able to view. Currently, you can pass up to 25 dashboard ARNs in each
-        /// API call.</para>
+        /// <para>The Amazon Resource Names (ARNs) for the Quick Sight resources that the user is authorized
+        /// to access during the lifetime of the session.</para><para>If you choose <c>Dashboard</c> embedding experience, pass the list of dashboard ARNs
+        /// in the account that you want the user to be able to view.</para><para>If you want to make changes to the theme of your embedded content, pass a list of
+        /// theme ARNs that the anonymous users need access to.</para><para>Currently, you can pass up to 25 theme ARNs in each API call.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -130,8 +136,8 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>The ID of the dashboard that has the visual that you want to embed. The <c>DashboardId</c>
         /// can be found in the <c>IDs for developers</c> section of the <c>Embed visual</c> pane
-        /// of the visual's on-visual menu of the Amazon QuickSight console. You can also get
-        /// the <c>DashboardId</c> with a <c>ListDashboards</c> API operation.</para>
+        /// of the visual's on-visual menu of the QuickSight console. You can also get the <c>DashboardId</c>
+        /// with a <c>ListDashboards</c> API operation.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,11 +145,52 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public System.String InitialDashboardVisualId_DashboardId { get; set; }
         #endregion
         
+        #region Parameter Dashboard_DisabledFeature
+        /// <summary>
+        /// <para>
+        /// <para>A list of all disabled features of a specified anonymous dashboard.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExperienceConfiguration_Dashboard_DisabledFeatures")]
+        public System.String[] Dashboard_DisabledFeature { get; set; }
+        #endregion
+        
+        #region Parameter SharedView_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>The shared view settings of an embedded dashboard.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExperienceConfiguration_Dashboard_FeatureConfigurations_SharedView_Enabled")]
+        public System.Boolean? SharedView_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter Dashboard_EnabledFeature
+        /// <summary>
+        /// <para>
+        /// <para>A list of all enabled features of a specified anonymous dashboard.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExperienceConfiguration_Dashboard_EnabledFeatures")]
+        public System.String[] Dashboard_EnabledFeature { get; set; }
+        #endregion
+        
         #region Parameter Dashboard_InitialDashboardId
         /// <summary>
         /// <para>
         /// <para>The dashboard ID for the dashboard that you want the user to see first. This ID is
-        /// included in the output URL. When the URL in response is accessed, Amazon QuickSight
+        /// included in the output URL. When the URL in response is accessed, Amazon Quick Sight
         /// renders this dashboard.</para><para>The Amazon Resource Name (ARN) of this dashboard must be included in the <c>AuthorizedResourceArns</c>
         /// parameter. Otherwise, the request will fail with <c>InvalidParameterValueException</c>.</para>
         /// </para>
@@ -153,13 +200,30 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public System.String Dashboard_InitialDashboardId { get; set; }
         #endregion
         
+        #region Parameter GenerativeQnA_InitialTopicId
+        /// <summary>
+        /// <para>
+        /// <para>The Quick Sight Q topic ID of the new reader experience topic that you want the anonymous
+        /// user to see first. This ID is included in the output URL. When the URL in response
+        /// is accessed, Quick Sight renders the Generative Q&amp;A experience with this new reader
+        /// experience topic pre selected.</para><para>The Amazon Resource Name (ARN) of this Q new reader experience topic must be included
+        /// in the <c>AuthorizedResourceArns</c> parameter. Otherwise, the request fails with
+        /// an <c>InvalidParameterValueException</c> error.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExperienceConfiguration_GenerativeQnA_InitialTopicId")]
+        public System.String GenerativeQnA_InitialTopicId { get; set; }
+        #endregion
+        
         #region Parameter QSearchBar_InitialTopicId
         /// <summary>
         /// <para>
-        /// <para>The QuickSight Q topic ID of the topic that you want the anonymous user to see first.
-        /// This ID is included in the output URL. When the URL in response is accessed, Amazon
-        /// QuickSight renders the Q search bar with this topic pre-selected.</para><para>The Amazon Resource Name (ARN) of this Q topic must be included in the <c>AuthorizedResourceArns</c>
-        /// parameter. Otherwise, the request will fail with <c>InvalidParameterValueException</c>.</para>
+        /// <para>The Quick Sight Q topic ID of the legacy topic that you want the anonymous user to
+        /// see first. This ID is included in the output URL. When the URL in response is accessed,
+        /// Quick Sight renders the Q search bar with this legacy topic pre-selected.</para><para>The Amazon Resource Name (ARN) of this Q legacy topic must be included in the <c>AuthorizedResourceArns</c>
+        /// parameter. Otherwise, the request fails with an <c>InvalidParameterValueException</c>
+        /// error.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,8 +234,8 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Namespace
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight namespace that the anonymous user virtually belongs to. If you
-        /// are not using an Amazon QuickSight custom namespace, set this to <c>default</c>.</para>
+        /// <para>The Amazon Quick Sight namespace that the anonymous user virtually belongs to. If
+        /// you are not using an Amazon QuickSight custom namespace, set this to <c>default</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -204,7 +268,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// sure that you have configured the relevant datasets using the <c>DataSet$RowLevelPermissionTagConfiguration</c>
         /// parameter so that session tags can be used to provide row-level security.</para><para>These are not the tags used for the Amazon Web Services resource tagging feature.
         /// For more information, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/quicksight-dev-rls-tags.html">Using
-        /// Row-Level Security (RLS) with Tags</a>in the <i>Amazon QuickSight User Guide</i>.</para>
+        /// Row-Level Security (RLS) with Tags</a>in the <i>Amazon Quick Sight User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -217,7 +285,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>The ID of the sheet that the has visual that you want to embed. The <c>SheetId</c>
         /// can be found in the <c>IDs for developers</c> section of the <c>Embed visual</c> pane
-        /// of the visual's on-visual menu of the Amazon QuickSight console.</para>
+        /// of the visual's on-visual menu of the QuickSight console.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -230,7 +298,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>The ID of the visual that you want to embed. The <c>VisualID</c> can be found in the
         /// <c>IDs for developers</c> section of the <c>Embed visual</c> pane of the visual's
-        /// on-visual menu of the Amazon QuickSight console.</para>
+        /// on-visual menu of the Amazon Quick Sight console.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -249,16 +317,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "EmbedUrl";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AwsAccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -269,9 +327,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -285,21 +347,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.GenerateEmbedUrlForAnonymousUserResponse, NewQSEmbedUrlForAnonymousUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AwsAccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AllowedDomain != null)
             {
                 context.AllowedDomain = new List<System.String>(this.AllowedDomain);
@@ -321,10 +373,20 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 WriteWarning("You are passing $null as a value for parameter AwsAccountId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Dashboard_DisabledFeature != null)
+            {
+                context.Dashboard_DisabledFeature = new List<System.String>(this.Dashboard_DisabledFeature);
+            }
+            if (this.Dashboard_EnabledFeature != null)
+            {
+                context.Dashboard_EnabledFeature = new List<System.String>(this.Dashboard_EnabledFeature);
+            }
+            context.SharedView_Enabled = this.SharedView_Enabled;
             context.Dashboard_InitialDashboardId = this.Dashboard_InitialDashboardId;
             context.InitialDashboardVisualId_DashboardId = this.InitialDashboardVisualId_DashboardId;
             context.InitialDashboardVisualId_SheetId = this.InitialDashboardVisualId_SheetId;
             context.InitialDashboardVisualId_VisualId = this.InitialDashboardVisualId_VisualId;
+            context.GenerativeQnA_InitialTopicId = this.GenerativeQnA_InitialTopicId;
             context.QSearchBar_InitialTopicId = this.QSearchBar_InitialTopicId;
             context.Namespace = this.Namespace;
             #if MODULAR
@@ -370,31 +432,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
              // populate ExperienceConfiguration
             var requestExperienceConfigurationIsNull = true;
             request.ExperienceConfiguration = new Amazon.QuickSight.Model.AnonymousUserEmbeddingExperienceConfiguration();
-            Amazon.QuickSight.Model.AnonymousUserDashboardEmbeddingConfiguration requestExperienceConfiguration_experienceConfiguration_Dashboard = null;
-            
-             // populate Dashboard
-            var requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = true;
-            requestExperienceConfiguration_experienceConfiguration_Dashboard = new Amazon.QuickSight.Model.AnonymousUserDashboardEmbeddingConfiguration();
-            System.String requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId = null;
-            if (cmdletContext.Dashboard_InitialDashboardId != null)
-            {
-                requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId = cmdletContext.Dashboard_InitialDashboardId;
-            }
-            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId != null)
-            {
-                requestExperienceConfiguration_experienceConfiguration_Dashboard.InitialDashboardId = requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId;
-                requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = false;
-            }
-             // determine if requestExperienceConfiguration_experienceConfiguration_Dashboard should be set to null
-            if (requestExperienceConfiguration_experienceConfiguration_DashboardIsNull)
-            {
-                requestExperienceConfiguration_experienceConfiguration_Dashboard = null;
-            }
-            if (requestExperienceConfiguration_experienceConfiguration_Dashboard != null)
-            {
-                request.ExperienceConfiguration.Dashboard = requestExperienceConfiguration_experienceConfiguration_Dashboard;
-                requestExperienceConfigurationIsNull = false;
-            }
             Amazon.QuickSight.Model.AnonymousUserDashboardVisualEmbeddingConfiguration requestExperienceConfiguration_experienceConfiguration_DashboardVisual = null;
             
              // populate DashboardVisual
@@ -455,6 +492,31 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 request.ExperienceConfiguration.DashboardVisual = requestExperienceConfiguration_experienceConfiguration_DashboardVisual;
                 requestExperienceConfigurationIsNull = false;
             }
+            Amazon.QuickSight.Model.AnonymousUserGenerativeQnAEmbeddingConfiguration requestExperienceConfiguration_experienceConfiguration_GenerativeQnA = null;
+            
+             // populate GenerativeQnA
+            var requestExperienceConfiguration_experienceConfiguration_GenerativeQnAIsNull = true;
+            requestExperienceConfiguration_experienceConfiguration_GenerativeQnA = new Amazon.QuickSight.Model.AnonymousUserGenerativeQnAEmbeddingConfiguration();
+            System.String requestExperienceConfiguration_experienceConfiguration_GenerativeQnA_generativeQnA_InitialTopicId = null;
+            if (cmdletContext.GenerativeQnA_InitialTopicId != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_GenerativeQnA_generativeQnA_InitialTopicId = cmdletContext.GenerativeQnA_InitialTopicId;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_GenerativeQnA_generativeQnA_InitialTopicId != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_GenerativeQnA.InitialTopicId = requestExperienceConfiguration_experienceConfiguration_GenerativeQnA_generativeQnA_InitialTopicId;
+                requestExperienceConfiguration_experienceConfiguration_GenerativeQnAIsNull = false;
+            }
+             // determine if requestExperienceConfiguration_experienceConfiguration_GenerativeQnA should be set to null
+            if (requestExperienceConfiguration_experienceConfiguration_GenerativeQnAIsNull)
+            {
+                requestExperienceConfiguration_experienceConfiguration_GenerativeQnA = null;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_GenerativeQnA != null)
+            {
+                request.ExperienceConfiguration.GenerativeQnA = requestExperienceConfiguration_experienceConfiguration_GenerativeQnA;
+                requestExperienceConfigurationIsNull = false;
+            }
             Amazon.QuickSight.Model.AnonymousUserQSearchBarEmbeddingConfiguration requestExperienceConfiguration_experienceConfiguration_QSearchBar = null;
             
              // populate QSearchBar
@@ -478,6 +540,91 @@ namespace Amazon.PowerShell.Cmdlets.QS
             if (requestExperienceConfiguration_experienceConfiguration_QSearchBar != null)
             {
                 request.ExperienceConfiguration.QSearchBar = requestExperienceConfiguration_experienceConfiguration_QSearchBar;
+                requestExperienceConfigurationIsNull = false;
+            }
+            Amazon.QuickSight.Model.AnonymousUserDashboardEmbeddingConfiguration requestExperienceConfiguration_experienceConfiguration_Dashboard = null;
+            
+             // populate Dashboard
+            var requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = true;
+            requestExperienceConfiguration_experienceConfiguration_Dashboard = new Amazon.QuickSight.Model.AnonymousUserDashboardEmbeddingConfiguration();
+            List<System.String> requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_DisabledFeature = null;
+            if (cmdletContext.Dashboard_DisabledFeature != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_DisabledFeature = cmdletContext.Dashboard_DisabledFeature;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_DisabledFeature != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard.DisabledFeatures = requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_DisabledFeature;
+                requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = false;
+            }
+            List<System.String> requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_EnabledFeature = null;
+            if (cmdletContext.Dashboard_EnabledFeature != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_EnabledFeature = cmdletContext.Dashboard_EnabledFeature;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_EnabledFeature != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard.EnabledFeatures = requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_EnabledFeature;
+                requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = false;
+            }
+            System.String requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId = null;
+            if (cmdletContext.Dashboard_InitialDashboardId != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId = cmdletContext.Dashboard_InitialDashboardId;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard.InitialDashboardId = requestExperienceConfiguration_experienceConfiguration_Dashboard_dashboard_InitialDashboardId;
+                requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = false;
+            }
+            Amazon.QuickSight.Model.AnonymousUserDashboardFeatureConfigurations requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations = null;
+            
+             // populate FeatureConfigurations
+            var requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurationsIsNull = true;
+            requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations = new Amazon.QuickSight.Model.AnonymousUserDashboardFeatureConfigurations();
+            Amazon.QuickSight.Model.SharedViewConfigurations requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView = null;
+            
+             // populate SharedView
+            var requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedViewIsNull = true;
+            requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView = new Amazon.QuickSight.Model.SharedViewConfigurations();
+            System.Boolean? requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView_sharedView_Enabled = null;
+            if (cmdletContext.SharedView_Enabled != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView_sharedView_Enabled = cmdletContext.SharedView_Enabled.Value;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView_sharedView_Enabled != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView.Enabled = requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView_sharedView_Enabled.Value;
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedViewIsNull = false;
+            }
+             // determine if requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView should be set to null
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedViewIsNull)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView = null;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations.SharedView = requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations_experienceConfiguration_Dashboard_FeatureConfigurations_SharedView;
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurationsIsNull = false;
+            }
+             // determine if requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations should be set to null
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurationsIsNull)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations = null;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations != null)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard.FeatureConfigurations = requestExperienceConfiguration_experienceConfiguration_Dashboard_experienceConfiguration_Dashboard_FeatureConfigurations;
+                requestExperienceConfiguration_experienceConfiguration_DashboardIsNull = false;
+            }
+             // determine if requestExperienceConfiguration_experienceConfiguration_Dashboard should be set to null
+            if (requestExperienceConfiguration_experienceConfiguration_DashboardIsNull)
+            {
+                requestExperienceConfiguration_experienceConfiguration_Dashboard = null;
+            }
+            if (requestExperienceConfiguration_experienceConfiguration_Dashboard != null)
+            {
+                request.ExperienceConfiguration.Dashboard = requestExperienceConfiguration_experienceConfiguration_Dashboard;
                 requestExperienceConfigurationIsNull = false;
             }
              // determine if request.ExperienceConfiguration should be set to null
@@ -535,13 +682,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "GenerateEmbedUrlForAnonymousUser");
             try
             {
-                #if DESKTOP
-                return client.GenerateEmbedUrlForAnonymousUser(request);
-                #elif CORECLR
-                return client.GenerateEmbedUrlForAnonymousUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GenerateEmbedUrlForAnonymousUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -561,10 +702,14 @@ namespace Amazon.PowerShell.Cmdlets.QS
             public List<System.String> AllowedDomain { get; set; }
             public List<System.String> AuthorizedResourceArn { get; set; }
             public System.String AwsAccountId { get; set; }
+            public List<System.String> Dashboard_DisabledFeature { get; set; }
+            public List<System.String> Dashboard_EnabledFeature { get; set; }
+            public System.Boolean? SharedView_Enabled { get; set; }
             public System.String Dashboard_InitialDashboardId { get; set; }
             public System.String InitialDashboardVisualId_DashboardId { get; set; }
             public System.String InitialDashboardVisualId_SheetId { get; set; }
             public System.String InitialDashboardVisualId_VisualId { get; set; }
+            public System.String GenerativeQnA_InitialTopicId { get; set; }
             public System.String QSearchBar_InitialTopicId { get; set; }
             public System.String Namespace { get; set; }
             public System.Int64? SessionLifetimeInMinute { get; set; }

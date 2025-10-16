@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Macie2;
 using Amazon.Macie2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MAC2
 {
     /// <summary>
@@ -35,13 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
     [OutputType("System.Int64")]
     [AWSCmdlet("Calls the Amazon Macie 2 GetInvitationsCount API operation.", Operation = new[] {"GetInvitationsCount"}, SelectReturnType = typeof(Amazon.Macie2.Model.GetInvitationsCountResponse))]
     [AWSCmdletOutput("System.Int64 or Amazon.Macie2.Model.GetInvitationsCountResponse",
-        "This cmdlet returns a System.Int64 object.",
-        "The service call response (type Amazon.Macie2.Model.GetInvitationsCountResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Int64 objects.",
+        "The service call response (type Amazon.Macie2.Model.GetInvitationsCountResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMAC2InvitationsCountCmdlet : AmazonMacie2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -54,9 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public string Select { get; set; } = "InvitationsCount";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,13 +130,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Macie 2", "GetInvitationsCount");
             try
             {
-                #if DESKTOP
-                return client.GetInvitationsCount(request);
-                #elif CORECLR
-                return client.GetInvitationsCountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetInvitationsCountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

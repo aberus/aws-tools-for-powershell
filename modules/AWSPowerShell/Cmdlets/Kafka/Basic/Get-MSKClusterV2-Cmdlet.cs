@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kafka;
 using Amazon.Kafka.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MSK
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.MSK
     [AWSCmdlet("Calls the Amazon Managed Streaming for Apache Kafka (MSK) DescribeClusterV2 API operation.", Operation = new[] {"DescribeClusterV2"}, SelectReturnType = typeof(Amazon.Kafka.Model.DescribeClusterV2Response))]
     [AWSCmdletOutput("Amazon.Kafka.Model.Cluster or Amazon.Kafka.Model.DescribeClusterV2Response",
         "This cmdlet returns an Amazon.Kafka.Model.Cluster object.",
-        "The service call response (type Amazon.Kafka.Model.DescribeClusterV2Response) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Kafka.Model.DescribeClusterV2Response) can be returned by specifying '-Select *'."
     )]
     public partial class GetMSKClusterV2Cmdlet : AmazonKafkaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterArn
         /// <summary>
@@ -71,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.MSK
         public string Select { get; set; } = "ClusterInfo";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -91,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.MSK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kafka.Model.DescribeClusterV2Response, GetMSKClusterV2Cmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterArn = this.ClusterArn;
             #if MODULAR
             if (this.ClusterArn == null && ParameterWasBound(nameof(this.ClusterArn)))
@@ -171,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.MSK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Streaming for Apache Kafka (MSK)", "DescribeClusterV2");
             try
             {
-                #if DESKTOP
-                return client.DescribeClusterV2(request);
-                #elif CORECLR
-                return client.DescribeClusterV2Async(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeClusterV2Async(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

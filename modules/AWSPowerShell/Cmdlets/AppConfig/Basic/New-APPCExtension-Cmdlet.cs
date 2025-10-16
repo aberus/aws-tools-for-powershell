@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppConfig;
 using Amazon.AppConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APPC
 {
     /// <summary>
@@ -50,25 +52,30 @@ namespace Amazon.PowerShell.Cmdlets.APPC
     /// For a custom Amazon SQS notification extension, enter the ARN of an Amazon SQS message
     /// queue in the <c>Uri</c> field. 
     /// </para></li></ul><para>
-    /// For more information about extensions, see <a href="https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions.html">Working
-    /// with AppConfig extensions</a> in the <i>AppConfig User Guide</i>.
+    /// For more information about extensions, see <a href="https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions.html">Extending
+    /// workflows</a> in the <i>AppConfig User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "APPCExtension", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.AppConfig.Model.CreateExtensionResponse")]
     [AWSCmdlet("Calls the AWS AppConfig CreateExtension API operation.", Operation = new[] {"CreateExtension"}, SelectReturnType = typeof(Amazon.AppConfig.Model.CreateExtensionResponse))]
     [AWSCmdletOutput("Amazon.AppConfig.Model.CreateExtensionResponse",
-        "This cmdlet returns an Amazon.AppConfig.Model.CreateExtensionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AppConfig.Model.CreateExtensionResponse object containing multiple properties."
     )]
     public partial class NewAPPCExtensionCmdlet : AmazonAppConfigClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
         /// <para>
-        /// <para>The actions defined in the extension.</para>
+        /// <para>The actions defined in the extension.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -129,7 +136,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         /// <para>The parameters accepted by the extension. You specify parameter values when you associate
         /// the extension to an AppConfig resource by using the <c>CreateExtensionAssociation</c>
         /// API action. For Lambda extension actions, these parameters are included in the Lambda
-        /// request object.</para>
+        /// request object.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         /// <para>
         /// <para>Adds one or more tags for the specified extension. Tags are metadata that help you
         /// categorize resources in different ways, for example, by purpose, owner, or environment.
-        /// Each tag consists of a key and an optional value, both of which you define. </para>
+        /// Each tag consists of a key and an optional value, both of which you define. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,16 +176,6 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -181,9 +186,13 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -197,21 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppConfig.Model.CreateExtensionResponse, NewAPPCExtensionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Action != null)
             {
                 context.Action = new Dictionary<System.String, List<Amazon.AppConfig.Model.Action>>(StringComparer.Ordinal);
@@ -341,13 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppConfig", "CreateExtension");
             try
             {
-                #if DESKTOP
-                return client.CreateExtension(request);
-                #elif CORECLR
-                return client.CreateExtensionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateExtensionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

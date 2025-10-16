@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CostExplorer;
 using Amazon.CostExplorer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CE
 {
     /// <summary>
@@ -46,12 +48,27 @@ namespace Amazon.PowerShell.Cmdlets.CE
     [OutputType("Amazon.CostExplorer.Model.GetCostAndUsageResponse")]
     [AWSCmdlet("Calls the AWS Cost Explorer GetCostAndUsage API operation.", Operation = new[] {"GetCostAndUsage"}, SelectReturnType = typeof(Amazon.CostExplorer.Model.GetCostAndUsageResponse))]
     [AWSCmdletOutput("Amazon.CostExplorer.Model.GetCostAndUsageResponse",
-        "This cmdlet returns an Amazon.CostExplorer.Model.GetCostAndUsageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CostExplorer.Model.GetCostAndUsageResponse object containing multiple properties."
     )]
     public partial class GetCECostAndUsageCmdlet : AmazonCostExplorerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter BillingViewArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) that uniquely identifies a specific billing view. The
+        /// ARN is used to specify which particular billing view you want to interact with or
+        /// retrieve information from when making API calls related to Amazon Web Services Billing
+        /// and Cost Management features. The BillingViewArn can be retrieved by calling the ListBillingViews
+        /// API.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String BillingViewArn { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -95,7 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.CE
         /// tag keys, cost categories, or any two group by types.</para><para>Valid values for the <c>DIMENSION</c> type are <c>AZ</c>, <c>INSTANCE_TYPE</c>, <c>LEGAL_ENTITY_NAME</c>,
         /// <c>INVOICING_ENTITY</c>, <c>LINKED_ACCOUNT</c>, <c>OPERATION</c>, <c>PLATFORM</c>,
         /// <c>PURCHASE_TYPE</c>, <c>SERVICE</c>, <c>TENANCY</c>, <c>RECORD_TYPE</c>, and <c>USAGE_TYPE</c>.</para><para>When you group by the <c>TAG</c> type and include a valid tag key, you get all tag
-        /// values, including empty strings.</para>
+        /// values, including empty strings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,7 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.CE
         /// across all of Amazon EC2, the results aren't meaningful because Amazon EC2 compute
         /// hours and data transfer are measured in different units (for example, hours and GB).
         /// To get more meaningful <c>UsageQuantity</c> metrics, filter by <c>UsageType</c> or
-        /// <c>UsageTypeGroups</c>. </para></note><para><c>Metrics</c> is required for <c>GetCostAndUsage</c> requests.</para>
+        /// <c>UsageTypeGroups</c>. </para></note><para><c>Metrics</c> is required for <c>GetCostAndUsage</c> requests.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -157,7 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.CostExplorer module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextPageToken $null' for the first call and '-NextPageToken $AWSHistory.LastServiceResponse.NextPageToken' for subsequent calls.
+        /// <br/>'NextPageToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextPageToken' to null for the first call then set the 'NextPageToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -176,16 +201,6 @@ namespace Amazon.PowerShell.Cmdlets.CE
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TimePeriod parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TimePeriod' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TimePeriod' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -198,9 +213,13 @@ namespace Amazon.PowerShell.Cmdlets.CE
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -208,21 +227,12 @@ namespace Amazon.PowerShell.Cmdlets.CE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CostExplorer.Model.GetCostAndUsageResponse, GetCECostAndUsageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TimePeriod;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.BillingViewArn = this.BillingViewArn;
             context.Filter = this.Filter;
             context.Granularity = this.Granularity;
             #if MODULAR
@@ -267,13 +277,15 @@ namespace Amazon.PowerShell.Cmdlets.CE
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CostExplorer.Model.GetCostAndUsageRequest();
             
+            if (cmdletContext.BillingViewArn != null)
+            {
+                request.BillingViewArn = cmdletContext.BillingViewArn;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filter = cmdletContext.Filter;
@@ -348,6 +360,10 @@ namespace Amazon.PowerShell.Cmdlets.CE
             // create request
             var request = new Amazon.CostExplorer.Model.GetCostAndUsageRequest();
             
+            if (cmdletContext.BillingViewArn != null)
+            {
+                request.BillingViewArn = cmdletContext.BillingViewArn;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filter = cmdletContext.Filter;
@@ -411,13 +427,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cost Explorer", "GetCostAndUsage");
             try
             {
-                #if DESKTOP
-                return client.GetCostAndUsage(request);
-                #elif CORECLR
-                return client.GetCostAndUsageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetCostAndUsageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -434,6 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String BillingViewArn { get; set; }
             public Amazon.CostExplorer.Model.Expression Filter { get; set; }
             public Amazon.CostExplorer.Granularity Granularity { get; set; }
             public List<Amazon.CostExplorer.Model.GroupDefinition> GroupBy { get; set; }

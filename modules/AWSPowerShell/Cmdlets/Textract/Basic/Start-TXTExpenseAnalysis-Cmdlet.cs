@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Textract;
 using Amazon.Textract.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TXT
 {
     /// <summary>
@@ -54,12 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.TXT
     [AWSCmdlet("Calls the Amazon Textract StartExpenseAnalysis API operation.", Operation = new[] {"StartExpenseAnalysis"}, SelectReturnType = typeof(Amazon.Textract.Model.StartExpenseAnalysisResponse))]
     [AWSCmdletOutput("System.String or Amazon.Textract.Model.StartExpenseAnalysisResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Textract.Model.StartExpenseAnalysisResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Textract.Model.StartExpenseAnalysisResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartTXTExpenseAnalysisCmdlet : AmazonTextractClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3Object_Bucket
         /// <summary>
@@ -115,9 +118,8 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         #region Parameter S3Object_Name
         /// <summary>
         /// <para>
-        /// <para>The file name of the input document. Synchronous operations can use image files that
-        /// are in JPEG or PNG format. Asynchronous operations also support PDF and TIFF format
-        /// files.</para>
+        /// <para>The file name of the input document. Image files may be in PDF, TIFF, JPEG, or PNG
+        /// format.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -199,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.TXT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -408,13 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.TXT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Textract", "StartExpenseAnalysis");
             try
             {
-                #if DESKTOP
-                return client.StartExpenseAnalysis(request);
-                #elif CORECLR
-                return client.StartExpenseAnalysisAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartExpenseAnalysisAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MarketplaceCatalog;
 using Amazon.MarketplaceCatalog.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MCAT
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
     [AWSCmdlet("Calls the AWS Marketplace Catalog Service ListEntities API operation.", Operation = new[] {"ListEntities"}, SelectReturnType = typeof(Amazon.MarketplaceCatalog.Model.ListEntitiesResponse))]
     [AWSCmdletOutput("Amazon.MarketplaceCatalog.Model.EntitySummary or Amazon.MarketplaceCatalog.Model.ListEntitiesResponse",
         "This cmdlet returns a collection of Amazon.MarketplaceCatalog.Model.EntitySummary objects.",
-        "The service call response (type Amazon.MarketplaceCatalog.Model.ListEntitiesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MarketplaceCatalog.Model.ListEntitiesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMCATEntityListCmdlet : AmazonMarketplaceCatalogClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EntityTypeFilters_AmiProductFilters_LastModifiedDate_DateRange_AfterValue
         /// <summary>
@@ -70,6 +73,18 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EntityTypeFilters_DataProductFilters_LastModifiedDate_DateRange_AfterValue { get; set; }
+        #endregion
+        
+        #region Parameter DateRange_AfterValue
+        /// <summary>
+        /// <para>
+        /// <para>The start date (inclusive) of the date range. The operation returns machine learning
+        /// products with last modified dates on or after this date.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_AfterValue")]
+        public System.String DateRange_AfterValue { get; set; }
         #endregion
         
         #region Parameter EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_AfterValue
@@ -170,6 +185,18 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EntityTypeFilters_DataProductFilters_LastModifiedDate_DateRange_BeforeValue { get; set; }
+        #endregion
+        
+        #region Parameter DateRange_BeforeValue
+        /// <summary>
+        /// <para>
+        /// <para>The end date (inclusive) of the date range. The operation returns machine learning
+        /// products with last modified dates on or before this date.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_BeforeValue")]
+        public System.String DateRange_BeforeValue { get; set; }
         #endregion
         
         #region Parameter EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_BeforeValue
@@ -283,7 +310,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>An array of filter objects. Each filter object contains two attributes, <c>filterName</c>
-        /// and <c>filterValues</c>.</para>
+        /// and <c>filterValues</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -338,6 +369,19 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         [Alias("EntityTypeSort_DataProductSort_SortBy")]
         [AWSConstantClassSource("Amazon.MarketplaceCatalog.DataProductSortBy")]
         public Amazon.MarketplaceCatalog.DataProductSortBy DataProductSort_SortBy { get; set; }
+        #endregion
+        
+        #region Parameter MachineLearningProductSort_SortBy
+        /// <summary>
+        /// <para>
+        /// <para>The field to sort by. Valid values: <c>EntityId</c>, <c>LastModifiedDate</c>, <c>ProductTitle</c>,
+        /// and <c>Visibility</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeSort_MachineLearningProductSort_SortBy")]
+        [AWSConstantClassSource("Amazon.MarketplaceCatalog.MachineLearningProductSortBy")]
+        public Amazon.MarketplaceCatalog.MachineLearningProductSortBy MachineLearningProductSort_SortBy { get; set; }
         #endregion
         
         #region Parameter OfferSort_SortBy
@@ -427,6 +471,18 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public Amazon.MarketplaceCatalog.SortOrder DataProductSort_SortOrder { get; set; }
         #endregion
         
+        #region Parameter MachineLearningProductSort_SortOrder
+        /// <summary>
+        /// <para>
+        /// <para>The sort order. Valid values are <c>ASC</c> (ascending) and <c>DESC</c> (descending).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeSort_MachineLearningProductSort_SortOrder")]
+        [AWSConstantClassSource("Amazon.MarketplaceCatalog.SortOrder")]
+        public Amazon.MarketplaceCatalog.SortOrder MachineLearningProductSort_SortOrder { get; set; }
+        #endregion
+        
         #region Parameter OfferSort_SortOrder
         /// <summary>
         /// <para>
@@ -479,7 +535,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_AmiProductFilters_EntityId_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique entity id values to be filtered on.</para>
+        /// <para>A string array of unique entity id values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -489,7 +549,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_AmiProductFilters_ProductTitle_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique product title values to be filtered on.</para>
+        /// <para>A string array of unique product title values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -499,7 +563,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_AmiProductFilters_Visibility_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique visibility values to be filtered on.</para>
+        /// <para>A string array of unique visibility values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -509,7 +577,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_ContainerProductFilters_EntityId_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique entity id values to be filtered on.</para>
+        /// <para>A string array of unique entity id values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -519,7 +591,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_ContainerProductFilters_ProductTitle_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique product title values to be filtered on.</para>
+        /// <para>A string array of unique product title values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -529,7 +605,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_ContainerProductFilters_Visibility_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique visibility values to be filtered on.</para>
+        /// <para>A string array of unique visibility values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -539,7 +619,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_DataProductFilters_EntityId_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique entity id values to be filtered on.</para>
+        /// <para>A string array of unique entity id values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -549,7 +633,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_DataProductFilters_ProductTitle_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique product title values to be filtered on.</para>
+        /// <para>A string array of unique product title values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -559,17 +647,73 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_DataProductFilters_Visibility_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique visibility values to be filtered on.</para>
+        /// <para>A string array of unique visibility values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String[] EntityTypeFilters_DataProductFilters_Visibility_ValueList { get; set; }
         #endregion
         
+        #region Parameter EntityId_ValueList
+        /// <summary>
+        /// <para>
+        /// <para>A list of entity IDs to filter by. The operation returns machine learning products
+        /// with entity IDs that match the values in this list.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_MachineLearningProductFilters_EntityId_ValueList")]
+        public System.String[] EntityId_ValueList { get; set; }
+        #endregion
+        
+        #region Parameter ProductTitle_ValueList
+        /// <summary>
+        /// <para>
+        /// <para>A list of product titles to filter by. The operation returns machine learning products
+        /// with titles that exactly match the values in this list.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_MachineLearningProductFilters_ProductTitle_ValueList")]
+        public System.String[] ProductTitle_ValueList { get; set; }
+        #endregion
+        
+        #region Parameter Visibility_ValueList
+        /// <summary>
+        /// <para>
+        /// <para>A list of visibility values to filter by. The operation returns machine learning products
+        /// with visibility status that match the values in this list.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_MachineLearningProductFilters_Visibility_ValueList")]
+        public System.String[] Visibility_ValueList { get; set; }
+        #endregion
+        
         #region Parameter EntityTypeFilters_OfferFilters_EntityId_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on entity id of an offer with list input.</para>
+        /// <para>Allows filtering on entity id of an offer with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -579,7 +723,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_OfferFilters_Name_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>Name</c> of an offer with list input.</para>
+        /// <para>Allows filtering on the <c>Name</c> of an offer with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -589,17 +737,40 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_OfferFilters_ProductId_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>ProductId</c> of an offer with list input.</para>
+        /// <para>Allows filtering on the <c>ProductId</c> of an offer with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String[] EntityTypeFilters_OfferFilters_ProductId_ValueList { get; set; }
         #endregion
         
+        #region Parameter ResaleAuthorizationId_ValueList
+        /// <summary>
+        /// <para>
+        /// <para>Allows filtering on the <c>ResaleAuthorizationId</c> of an offer with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_OfferFilters_ResaleAuthorizationId_ValueList")]
+        public System.String[] ResaleAuthorizationId_ValueList { get; set; }
+        #endregion
+        
         #region Parameter State_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>State</c> of an offer with list input.</para>
+        /// <para>Allows filtering on the <c>State</c> of an offer with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -610,7 +781,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter Targeting_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>Targeting</c> of an offer with list input.</para>
+        /// <para>Allows filtering on the <c>Targeting</c> of an offer with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -622,7 +797,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on <c>AvailabilityEndDate</c> of a ResaleAuthorization with date
-        /// value as input.</para>
+        /// value as input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -633,7 +812,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on <c>CreatedDate</c> of a ResaleAuthorization with date value as
-        /// input.</para>
+        /// input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -644,7 +827,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_ResaleAuthorizationFilters_EntityId_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on <c>EntityId</c> of a ResaleAuthorization with list input.</para>
+        /// <para>Allows filtering on <c>EntityId</c> of a ResaleAuthorization with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -655,7 +842,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on the <c>ManufacturerAccountId</c> of a ResaleAuthorization with
-        /// list input.</para>
+        /// list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -667,7 +858,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on the <c>ManufacturerLegalName</c> of a ResaleAuthorization with
-        /// list input.</para>
+        /// list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -678,7 +873,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_ResaleAuthorizationFilters_Name_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>Name</c> of a ResaleAuthorization with list input.</para>
+        /// <para>Allows filtering on the <c>Name</c> of a ResaleAuthorization with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -689,7 +888,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on the <c>OfferExtendedStatus</c> of a ResaleAuthorization with list
-        /// input.</para>
+        /// input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -700,7 +903,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_ResaleAuthorizationFilters_ProductId_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>ProductId</c> of a ResaleAuthorization with list input.</para>
+        /// <para>Allows filtering on the <c>ProductId</c> of a ResaleAuthorization with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -710,7 +917,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter ProductName_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>ProductName</c> of a ResaleAuthorization with list input.</para>
+        /// <para>Allows filtering on the <c>ProductName</c> of a ResaleAuthorization with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -722,7 +933,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on the <c>ResellerAccountID</c> of a ResaleAuthorization with list
-        /// input.</para>
+        /// input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -734,7 +949,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// <summary>
         /// <para>
         /// <para>Allows filtering on the ResellerLegalNameProductName of a ResaleAuthorization with
-        /// list input.</para>
+        /// list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -745,7 +964,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter Status_ValueList
         /// <summary>
         /// <para>
-        /// <para>Allows filtering on the <c>Status</c> of a ResaleAuthorization with list input.</para>
+        /// <para>Allows filtering on the <c>Status</c> of a ResaleAuthorization with list input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -756,7 +979,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_SaaSProductFilters_EntityId_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique entity id values to be filtered on.</para>
+        /// <para>A string array of unique entity id values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -766,7 +993,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_SaaSProductFilters_ProductTitle_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique product title values to be filtered on.</para>
+        /// <para>A string array of unique product title values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -776,7 +1007,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         #region Parameter EntityTypeFilters_SaaSProductFilters_Visibility_ValueList
         /// <summary>
         /// <para>
-        /// <para>A string array of unique visibility values to be filtered on.</para>
+        /// <para>A string array of unique visibility values to be filtered on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -814,6 +1049,18 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EntityTypeFilters_DataProductFilters_ProductTitle_WildCardValue { get; set; }
+        #endregion
+        
+        #region Parameter ProductTitle_WildCardValue
+        /// <summary>
+        /// <para>
+        /// <para>A wildcard value to filter product titles. The operation returns machine learning
+        /// products with titles that match this wildcard pattern.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EntityTypeFilters_MachineLearningProductFilters_ProductTitle_WildCardValue")]
+        public System.String ProductTitle_WildCardValue { get; set; }
         #endregion
         
         #region Parameter BuyerAccounts_WildCardValue
@@ -948,7 +1195,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -966,16 +1213,6 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public string Select { get; set; } = "EntitySummaryList";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Catalog parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Catalog' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Catalog' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -986,9 +1223,13 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -996,21 +1237,11 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MarketplaceCatalog.Model.ListEntitiesResponse, GetMCATEntityListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Catalog;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Catalog = this.Catalog;
             #if MODULAR
             if (this.Catalog == null && ParameterWasBound(nameof(this.Catalog)))
@@ -1070,6 +1301,21 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             {
                 context.EntityTypeFilters_DataProductFilters_Visibility_ValueList = new List<System.String>(this.EntityTypeFilters_DataProductFilters_Visibility_ValueList);
             }
+            if (this.EntityId_ValueList != null)
+            {
+                context.EntityId_ValueList = new List<System.String>(this.EntityId_ValueList);
+            }
+            context.DateRange_AfterValue = this.DateRange_AfterValue;
+            context.DateRange_BeforeValue = this.DateRange_BeforeValue;
+            if (this.ProductTitle_ValueList != null)
+            {
+                context.ProductTitle_ValueList = new List<System.String>(this.ProductTitle_ValueList);
+            }
+            context.ProductTitle_WildCardValue = this.ProductTitle_WildCardValue;
+            if (this.Visibility_ValueList != null)
+            {
+                context.Visibility_ValueList = new List<System.String>(this.Visibility_ValueList);
+            }
             context.EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_AfterValue = this.EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_AfterValue;
             context.EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_BeforeValue = this.EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_BeforeValue;
             context.BuyerAccounts_WildCardValue = this.BuyerAccounts_WildCardValue;
@@ -1090,6 +1336,10 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             }
             context.EntityTypeFilters_OfferFilters_ReleaseDate_DateRange_AfterValue = this.EntityTypeFilters_OfferFilters_ReleaseDate_DateRange_AfterValue;
             context.EntityTypeFilters_OfferFilters_ReleaseDate_DateRange_BeforeValue = this.EntityTypeFilters_OfferFilters_ReleaseDate_DateRange_BeforeValue;
+            if (this.ResaleAuthorizationId_ValueList != null)
+            {
+                context.ResaleAuthorizationId_ValueList = new List<System.String>(this.ResaleAuthorizationId_ValueList);
+            }
             if (this.State_ValueList != null)
             {
                 context.State_ValueList = new List<System.String>(this.State_ValueList);
@@ -1180,6 +1430,8 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             context.ContainerProductSort_SortOrder = this.ContainerProductSort_SortOrder;
             context.DataProductSort_SortBy = this.DataProductSort_SortBy;
             context.DataProductSort_SortOrder = this.DataProductSort_SortOrder;
+            context.MachineLearningProductSort_SortBy = this.MachineLearningProductSort_SortBy;
+            context.MachineLearningProductSort_SortOrder = this.MachineLearningProductSort_SortOrder;
             context.OfferSort_SortBy = this.OfferSort_SortBy;
             context.OfferSort_SortOrder = this.OfferSort_SortOrder;
             context.ResaleAuthorizationSort_SortBy = this.ResaleAuthorizationSort_SortBy;
@@ -1208,9 +1460,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.MarketplaceCatalog.Model.ListEntitiesRequest();
@@ -1677,6 +1927,156 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
                 request.EntityTypeFilters.DataProductFilters = requestEntityTypeFilters_entityTypeFilters_DataProductFilters;
                 requestEntityTypeFiltersIsNull = false;
             }
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductFilters requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters = null;
+            
+             // populate MachineLearningProductFilters
+            var requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFiltersIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters = new Amazon.MarketplaceCatalog.Model.MachineLearningProductFilters();
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductEntityIdFilter requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId = null;
+            
+             // populate EntityId
+            var requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityIdIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId = new Amazon.MarketplaceCatalog.Model.MachineLearningProductEntityIdFilter();
+            List<System.String> requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId_entityId_ValueList = null;
+            if (cmdletContext.EntityId_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId_entityId_ValueList = cmdletContext.EntityId_ValueList;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId_entityId_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId.ValueList = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId_entityId_ValueList;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityIdIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityIdIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters.EntityId = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_EntityId;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFiltersIsNull = false;
+            }
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductLastModifiedDateFilter requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate = null;
+            
+             // populate LastModifiedDate
+            var requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDateIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate = new Amazon.MarketplaceCatalog.Model.MachineLearningProductLastModifiedDateFilter();
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductLastModifiedDateFilterDateRange requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange = null;
+            
+             // populate DateRange
+            var requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRangeIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange = new Amazon.MarketplaceCatalog.Model.MachineLearningProductLastModifiedDateFilterDateRange();
+            System.String requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_AfterValue = null;
+            if (cmdletContext.DateRange_AfterValue != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_AfterValue = cmdletContext.DateRange_AfterValue;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_AfterValue != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange.AfterValue = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_AfterValue;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRangeIsNull = false;
+            }
+            System.String requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_BeforeValue = null;
+            if (cmdletContext.DateRange_BeforeValue != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_BeforeValue = cmdletContext.DateRange_BeforeValue;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_BeforeValue != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange.BeforeValue = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange_dateRange_BeforeValue;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRangeIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRangeIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate.DateRange = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate_DateRange;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDateIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDateIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters.LastModifiedDate = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_LastModifiedDate;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFiltersIsNull = false;
+            }
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductVisibilityFilter requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility = null;
+            
+             // populate Visibility
+            var requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_VisibilityIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility = new Amazon.MarketplaceCatalog.Model.MachineLearningProductVisibilityFilter();
+            List<System.String> requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility_visibility_ValueList = null;
+            if (cmdletContext.Visibility_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility_visibility_ValueList = cmdletContext.Visibility_ValueList;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility_visibility_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility.ValueList = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility_visibility_ValueList;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_VisibilityIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_VisibilityIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters.Visibility = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_Visibility;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFiltersIsNull = false;
+            }
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductTitleFilter requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle = null;
+            
+             // populate ProductTitle
+            var requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitleIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle = new Amazon.MarketplaceCatalog.Model.MachineLearningProductTitleFilter();
+            List<System.String> requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_ValueList = null;
+            if (cmdletContext.ProductTitle_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_ValueList = cmdletContext.ProductTitle_ValueList;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle.ValueList = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_ValueList;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitleIsNull = false;
+            }
+            System.String requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_WildCardValue = null;
+            if (cmdletContext.ProductTitle_WildCardValue != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_WildCardValue = cmdletContext.ProductTitle_WildCardValue;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_WildCardValue != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle.WildCardValue = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle_productTitle_WildCardValue;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitleIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitleIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters.ProductTitle = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters_entityTypeFilters_MachineLearningProductFilters_ProductTitle;
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFiltersIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFiltersIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters != null)
+            {
+                request.EntityTypeFilters.MachineLearningProductFilters = requestEntityTypeFilters_entityTypeFilters_MachineLearningProductFilters;
+                requestEntityTypeFiltersIsNull = false;
+            }
             Amazon.MarketplaceCatalog.Model.SaaSProductFilters requestEntityTypeFilters_entityTypeFilters_SaaSProductFilters = null;
             
              // populate SaaSProductFilters
@@ -2055,6 +2455,31 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             if (requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ReleaseDate != null)
             {
                 requestEntityTypeFilters_entityTypeFilters_OfferFilters.ReleaseDate = requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ReleaseDate;
+                requestEntityTypeFilters_entityTypeFilters_OfferFiltersIsNull = false;
+            }
+            Amazon.MarketplaceCatalog.Model.OfferResaleAuthorizationIdFilter requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId = null;
+            
+             // populate ResaleAuthorizationId
+            var requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationIdIsNull = true;
+            requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId = new Amazon.MarketplaceCatalog.Model.OfferResaleAuthorizationIdFilter();
+            List<System.String> requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId_resaleAuthorizationId_ValueList = null;
+            if (cmdletContext.ResaleAuthorizationId_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId_resaleAuthorizationId_ValueList = cmdletContext.ResaleAuthorizationId_ValueList;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId_resaleAuthorizationId_ValueList != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId.ValueList = requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId_resaleAuthorizationId_ValueList;
+                requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationIdIsNull = false;
+            }
+             // determine if requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId should be set to null
+            if (requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationIdIsNull)
+            {
+                requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId = null;
+            }
+            if (requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId != null)
+            {
+                requestEntityTypeFilters_entityTypeFilters_OfferFilters.ResaleAuthorizationId = requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_ResaleAuthorizationId;
                 requestEntityTypeFilters_entityTypeFilters_OfferFiltersIsNull = false;
             }
             Amazon.MarketplaceCatalog.Model.OfferStateFilter requestEntityTypeFilters_entityTypeFilters_OfferFilters_entityTypeFilters_OfferFilters_State = null;
@@ -2771,6 +3196,41 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
                 request.EntityTypeSort.DataProductSort = requestEntityTypeSort_entityTypeSort_DataProductSort;
                 requestEntityTypeSortIsNull = false;
             }
+            Amazon.MarketplaceCatalog.Model.MachineLearningProductSort requestEntityTypeSort_entityTypeSort_MachineLearningProductSort = null;
+            
+             // populate MachineLearningProductSort
+            var requestEntityTypeSort_entityTypeSort_MachineLearningProductSortIsNull = true;
+            requestEntityTypeSort_entityTypeSort_MachineLearningProductSort = new Amazon.MarketplaceCatalog.Model.MachineLearningProductSort();
+            Amazon.MarketplaceCatalog.MachineLearningProductSortBy requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortBy = null;
+            if (cmdletContext.MachineLearningProductSort_SortBy != null)
+            {
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortBy = cmdletContext.MachineLearningProductSort_SortBy;
+            }
+            if (requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortBy != null)
+            {
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSort.SortBy = requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortBy;
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSortIsNull = false;
+            }
+            Amazon.MarketplaceCatalog.SortOrder requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortOrder = null;
+            if (cmdletContext.MachineLearningProductSort_SortOrder != null)
+            {
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortOrder = cmdletContext.MachineLearningProductSort_SortOrder;
+            }
+            if (requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortOrder != null)
+            {
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSort.SortOrder = requestEntityTypeSort_entityTypeSort_MachineLearningProductSort_machineLearningProductSort_SortOrder;
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSortIsNull = false;
+            }
+             // determine if requestEntityTypeSort_entityTypeSort_MachineLearningProductSort should be set to null
+            if (requestEntityTypeSort_entityTypeSort_MachineLearningProductSortIsNull)
+            {
+                requestEntityTypeSort_entityTypeSort_MachineLearningProductSort = null;
+            }
+            if (requestEntityTypeSort_entityTypeSort_MachineLearningProductSort != null)
+            {
+                request.EntityTypeSort.MachineLearningProductSort = requestEntityTypeSort_entityTypeSort_MachineLearningProductSort;
+                requestEntityTypeSortIsNull = false;
+            }
             Amazon.MarketplaceCatalog.Model.OfferSort requestEntityTypeSort_entityTypeSort_OfferSort = null;
             
              // populate OfferSort
@@ -2984,13 +3444,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Catalog Service", "ListEntities");
             try
             {
-                #if DESKTOP
-                return client.ListEntities(request);
-                #elif CORECLR
-                return client.ListEntitiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListEntitiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -3027,6 +3481,12 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             public List<System.String> EntityTypeFilters_DataProductFilters_ProductTitle_ValueList { get; set; }
             public System.String EntityTypeFilters_DataProductFilters_ProductTitle_WildCardValue { get; set; }
             public List<System.String> EntityTypeFilters_DataProductFilters_Visibility_ValueList { get; set; }
+            public List<System.String> EntityId_ValueList { get; set; }
+            public System.String DateRange_AfterValue { get; set; }
+            public System.String DateRange_BeforeValue { get; set; }
+            public List<System.String> ProductTitle_ValueList { get; set; }
+            public System.String ProductTitle_WildCardValue { get; set; }
+            public List<System.String> Visibility_ValueList { get; set; }
             public System.String EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_AfterValue { get; set; }
             public System.String EntityTypeFilters_OfferFilters_AvailabilityEndDate_DateRange_BeforeValue { get; set; }
             public System.String BuyerAccounts_WildCardValue { get; set; }
@@ -3038,6 +3498,7 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             public List<System.String> EntityTypeFilters_OfferFilters_ProductId_ValueList { get; set; }
             public System.String EntityTypeFilters_OfferFilters_ReleaseDate_DateRange_AfterValue { get; set; }
             public System.String EntityTypeFilters_OfferFilters_ReleaseDate_DateRange_BeforeValue { get; set; }
+            public List<System.String> ResaleAuthorizationId_ValueList { get; set; }
             public List<System.String> State_ValueList { get; set; }
             public List<System.String> Targeting_ValueList { get; set; }
             public System.String EntityTypeFilters_ResaleAuthorizationFilters_AvailabilityEndDate_DateRange_AfterValue { get; set; }
@@ -3077,6 +3538,8 @@ namespace Amazon.PowerShell.Cmdlets.MCAT
             public Amazon.MarketplaceCatalog.SortOrder ContainerProductSort_SortOrder { get; set; }
             public Amazon.MarketplaceCatalog.DataProductSortBy DataProductSort_SortBy { get; set; }
             public Amazon.MarketplaceCatalog.SortOrder DataProductSort_SortOrder { get; set; }
+            public Amazon.MarketplaceCatalog.MachineLearningProductSortBy MachineLearningProductSort_SortBy { get; set; }
+            public Amazon.MarketplaceCatalog.SortOrder MachineLearningProductSort_SortOrder { get; set; }
             public Amazon.MarketplaceCatalog.OfferSortBy OfferSort_SortBy { get; set; }
             public Amazon.MarketplaceCatalog.SortOrder OfferSort_SortOrder { get; set; }
             public Amazon.MarketplaceCatalog.ResaleAuthorizationSortBy ResaleAuthorizationSort_SortBy { get; set; }

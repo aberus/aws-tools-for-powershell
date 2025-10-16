@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager SendAutomationSignal API operation.", Operation = new[] {"SendAutomationSignal"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.SendAutomationSignalResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleSystemsManagement.Model.SendAutomationSignalResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleSystemsManagement.Model.SendAutomationSignalResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleSystemsManagement.Model.SendAutomationSignalResponse) be returned by specifying '-Select *'."
     )]
     public partial class SendSSMAutomationSignalCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutomationExecutionId
         /// <summary>
@@ -68,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// in the request.</para><para>For <c>Approve</c> and <c>Reject</c> signal types, the payload is an optional comment
         /// that you can send with the signal type. For example:</para><para><c>Comment="Looks good"</c></para><para>For <c>StartStep</c> and <c>Resume</c> signal types, you must send the name of the
         /// Automation step to start or resume as the payload. For example:</para><para><c>StepName="step1"</c></para><para>For the <c>StopStep</c> signal type, you must send the step execution ID as the payload.
-        /// For example:</para><para><c>StepExecutionId="97fff367-fc5a-4299-aed8-0123456789ab"</c></para>
+        /// For example:</para><para><c>StepExecutionId="97fff367-fc5a-4299-aed8-0123456789ab"</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,16 +109,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutomationExecutionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutomationExecutionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutomationExecutionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -122,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutomationExecutionId), MyInvocation.BoundParameters);
@@ -138,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.SendAutomationSignalResponse, SendSSMAutomationSignalCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutomationExecutionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutomationExecutionId = this.AutomationExecutionId;
             #if MODULAR
             if (this.AutomationExecutionId == null && ParameterWasBound(nameof(this.AutomationExecutionId)))
@@ -253,13 +244,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "SendAutomationSignal");
             try
             {
-                #if DESKTOP
-                return client.SendAutomationSignal(request);
-                #elif CORECLR
-                return client.SendAutomationSignalAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendAutomationSignalAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -55,18 +57,23 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [AWSCmdlet("Calls the Amazon Rekognition DistributeDatasetEntries API operation.", Operation = new[] {"DistributeDatasetEntries"}, SelectReturnType = typeof(Amazon.Rekognition.Model.DistributeDatasetEntriesResponse))]
     [AWSCmdletOutput("None or Amazon.Rekognition.Model.DistributeDatasetEntriesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Rekognition.Model.DistributeDatasetEntriesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Rekognition.Model.DistributeDatasetEntriesResponse) be returned by specifying '-Select *'."
     )]
     public partial class InvokeREKDistributeDatasetEntryCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Dataset
         /// <summary>
         /// <para>
         /// <para>The ARNS for the training dataset and test dataset that you want to use. The datasets
-        /// must belong to the same project. The test dataset must be empty. </para>
+        /// must belong to the same project. The test dataset must be empty. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -101,9 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Dataset), MyInvocation.BoundParameters);
@@ -190,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "DistributeDatasetEntries");
             try
             {
-                #if DESKTOP
-                return client.DistributeDatasetEntries(request);
-                #elif CORECLR
-                return client.DistributeDatasetEntriesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DistributeDatasetEntriesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

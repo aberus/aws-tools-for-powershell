@@ -1,0 +1,20 @@
+---
+iam_ListUserTags:
+  title: Use Get-IAMUserTagList
+  title_abbrev: Get-IAMUserTagList
+  synopsis: use Get-IAMUserTagList
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Get-IAMUserTagList
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: This example fetches the tag associated with the user.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/iam_Get-IAMUserTagList.1.1.ps1
+  services:
+    iam:
+      ListUserTags:
+

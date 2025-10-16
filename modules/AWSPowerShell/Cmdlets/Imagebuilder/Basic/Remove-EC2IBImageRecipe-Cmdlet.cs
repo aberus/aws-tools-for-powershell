@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [OutputType("Amazon.Imagebuilder.Model.DeleteImageRecipeResponse")]
     [AWSCmdlet("Calls the EC2 Image Builder DeleteImageRecipe API operation.", Operation = new[] {"DeleteImageRecipe"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.DeleteImageRecipeResponse))]
     [AWSCmdletOutput("Amazon.Imagebuilder.Model.DeleteImageRecipeResponse",
-        "This cmdlet returns an Amazon.Imagebuilder.Model.DeleteImageRecipeResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Imagebuilder.Model.DeleteImageRecipeResponse object containing multiple properties."
     )]
     public partial class RemoveEC2IBImageRecipeCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ImageRecipeArn
         /// <summary>
@@ -69,16 +72,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageRecipeArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageRecipeArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageRecipeArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -89,9 +82,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageRecipeArn), MyInvocation.BoundParameters);
@@ -105,21 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Imagebuilder.Model.DeleteImageRecipeResponse, RemoveEC2IBImageRecipeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageRecipeArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ImageRecipeArn = this.ImageRecipeArn;
             #if MODULAR
             if (this.ImageRecipeArn == null && ParameterWasBound(nameof(this.ImageRecipeArn)))
@@ -185,13 +172,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "DeleteImageRecipe");
             try
             {
-                #if DESKTOP
-                return client.DeleteImageRecipe(request);
-                #elif CORECLR
-                return client.DeleteImageRecipeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteImageRecipeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

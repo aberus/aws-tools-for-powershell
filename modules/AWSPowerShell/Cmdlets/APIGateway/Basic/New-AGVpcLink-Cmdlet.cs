@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.APIGateway;
 using Amazon.APIGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AG
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
     [OutputType("Amazon.APIGateway.Model.CreateVpcLinkResponse")]
     [AWSCmdlet("Calls the Amazon API Gateway CreateVpcLink API operation.", Operation = new[] {"CreateVpcLink"}, SelectReturnType = typeof(Amazon.APIGateway.Model.CreateVpcLinkResponse))]
     [AWSCmdletOutput("Amazon.APIGateway.Model.CreateVpcLinkResponse",
-        "This cmdlet returns an Amazon.APIGateway.Model.CreateVpcLinkResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.APIGateway.Model.CreateVpcLinkResponse object containing multiple properties."
     )]
     public partial class NewAGVpcLinkCmdlet : AmazonAPIGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -75,7 +78,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <para>
         /// <para>The key-value map of strings. The valid character set is [a-zA-Z+-=._:/]. The tag
         /// key can be up to 128 characters and must not start with <c>aws:</c>. The tag value
-        /// can be up to 256 characters.</para>
+        /// can be up to 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -87,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <summary>
         /// <para>
         /// <para>The ARN of the network load balancer of the VPC targeted by the VPC link. The network
-        /// load balancer must be owned by the same Amazon Web Services account of the API owner.</para>
+        /// load balancer must be owned by the same Amazon Web Services account of the API owner.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -123,9 +134,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -240,13 +255,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon API Gateway", "CreateVpcLink");
             try
             {
-                #if DESKTOP
-                return client.CreateVpcLink(request);
-                #elif CORECLR
-                return client.CreateVpcLinkAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVpcLinkAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

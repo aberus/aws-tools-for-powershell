@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -62,12 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateSubnet API operation.", Operation = new[] {"CreateSubnet"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateSubnetResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Subnet or Amazon.EC2.Model.CreateSubnetResponse",
         "This cmdlet returns an Amazon.EC2.Model.Subnet object.",
-        "The service call response (type Amazon.EC2.Model.CreateSubnetResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateSubnetResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2SubnetCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AvailabilityZone
         /// <summary>
@@ -75,8 +78,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The Availability Zone or Local Zone for the subnet.</para><para>Default: Amazon Web Services selects one for you. If you create more than one subnet
         /// in your VPC, we do not necessarily select a different zone for each subnet.</para><para>To create a subnet in a Local Zone, set this value to the Local Zone ID, for example
         /// <c>us-west-2-lax-1a</c>. For information about the Regions that support Local Zones,
-        /// see <a href="http://aws.amazon.com/about-aws/global-infrastructure/localzones/locations/">Local
-        /// Zones locations</a>.</para><para>To create a subnet in an Outpost, set this value to the Availability Zone for the
+        /// see <a href="https://docs.aws.amazon.com/local-zones/latest/ug/available-local-zones.html">Available
+        /// Local Zones</a>.</para><para>To create a subnet in an Outpost, set this value to the Availability Zone for the
         /// Outpost and specify the Outpost ARN.</para>
         /// </para>
         /// </summary>
@@ -104,6 +107,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
         public System.String CidrBlock { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter Ipv4IpamPoolId
@@ -181,7 +196,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to assign to the subnet.</para>
+        /// <para>The tags to assign to the subnet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -217,16 +236,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Subnet";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VpcId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VpcId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VpcId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -237,9 +246,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VpcId), MyInvocation.BoundParameters);
@@ -253,24 +266,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateSubnetResponse, NewEC2SubnetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VpcId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AvailabilityZone = this.AvailabilityZone;
             context.AvailabilityZoneId = this.AvailabilityZoneId;
             context.CidrBlock = this.CidrBlock;
+            context.DryRun = this.DryRun;
             context.Ipv4IpamPoolId = this.Ipv4IpamPoolId;
             context.Ipv4NetmaskLength = this.Ipv4NetmaskLength;
             context.Ipv6CidrBlock = this.Ipv6CidrBlock;
@@ -316,6 +320,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.CidrBlock != null)
             {
                 request.CidrBlock = cmdletContext.CidrBlock;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Ipv4IpamPoolId != null)
             {
@@ -391,13 +399,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateSubnet");
             try
             {
-                #if DESKTOP
-                return client.CreateSubnet(request);
-                #elif CORECLR
-                return client.CreateSubnetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSubnetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -417,6 +419,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String AvailabilityZone { get; set; }
             public System.String AvailabilityZoneId { get; set; }
             public System.String CidrBlock { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String Ipv4IpamPoolId { get; set; }
             public System.Int32? Ipv4NetmaskLength { get; set; }
             public System.String Ipv6CidrBlock { get; set; }

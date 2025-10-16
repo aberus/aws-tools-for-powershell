@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
     [AWSCmdlet("Calls the Amazon CloudFront ListStreamingDistributions API operation.", Operation = new[] {"ListStreamingDistributions"}, SelectReturnType = typeof(Amazon.CloudFront.Model.ListStreamingDistributionsResponse), LegacyAlias="Get-CFStreamingDistributions")]
     [AWSCmdletOutput("Amazon.CloudFront.Model.StreamingDistributionSummary or Amazon.CloudFront.Model.ListStreamingDistributionsResponse",
         "This cmdlet returns a collection of Amazon.CloudFront.Model.StreamingDistributionSummary objects.",
-        "The service call response (type Amazon.CloudFront.Model.ListStreamingDistributionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFront.Model.ListStreamingDistributionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFStreamingDistributionListCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Marker
         /// <summary>
@@ -49,7 +52,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.NextMarker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,9 +97,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -238,7 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.StreamingDistributionList.Items.Count;
+                    int _receivedThisCall = response.StreamingDistributionList.Items?.Count ?? 0;
                     
                     _nextToken = response.StreamingDistributionList.NextMarker;
                     _retrievedSoFar += _receivedThisCall;
@@ -287,13 +294,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "ListStreamingDistributions");
             try
             {
-                #if DESKTOP
-                return client.ListStreamingDistributions(request);
-                #elif CORECLR
-                return client.ListStreamingDistributionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListStreamingDistributionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

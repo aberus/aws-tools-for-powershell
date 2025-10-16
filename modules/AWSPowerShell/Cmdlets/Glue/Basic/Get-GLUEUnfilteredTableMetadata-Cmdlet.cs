@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
-    /// Retrieves table metadata from the Data Catalog that contains unfiltered metadata.
+    /// Allows a third-party analytical engine to retrieve unfiltered table metadata from
+    /// the Data Catalog.
     /// 
     ///  
     /// <para>
@@ -39,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [OutputType("Amazon.Glue.Model.GetUnfilteredTableMetadataResponse")]
     [AWSCmdlet("Calls the AWS Glue GetUnfilteredTableMetadata API operation.", Operation = new[] {"GetUnfilteredTableMetadata"}, SelectReturnType = typeof(Amazon.Glue.Model.GetUnfilteredTableMetadataResponse))]
     [AWSCmdletOutput("Amazon.Glue.Model.GetUnfilteredTableMetadataResponse",
-        "This cmdlet returns an Amazon.Glue.Model.GetUnfilteredTableMetadataResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Glue.Model.GetUnfilteredTableMetadataResponse object containing multiple properties."
     )]
     public partial class GetGLUEUnfilteredTableMetadataCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuditContext_AdditionalAuditContext
         /// <summary>
@@ -59,7 +63,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #region Parameter QuerySessionContext_AdditionalContext
         /// <summary>
         /// <para>
-        /// <para>An opaque string-string map passed by the query engine.</para>
+        /// <para>An opaque string-string map passed by the query engine.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,11 +166,25 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter ParentResourceArn
+        /// <summary>
+        /// <para>
+        /// <para>The resource ARN of the view.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ParentResourceArn { get; set; }
+        #endregion
+        
         #region Parameter Permission
         /// <summary>
         /// <para>
         /// <para>The Lake Formation data permissions of the caller on the table. Used to authorize
-        /// the call when no view context is found.</para>
+        /// the call when no view context is found.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -213,7 +235,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #region Parameter AuditContext_RequestedColumn
         /// <summary>
         /// <para>
-        /// <para>The requested columns for audit.</para>
+        /// <para>The requested columns for audit.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -221,10 +247,40 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String[] AuditContext_RequestedColumn { get; set; }
         #endregion
         
+        #region Parameter RootResourceArn
+        /// <summary>
+        /// <para>
+        /// <para>The resource ARN of the root view in a chain of nested views.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String RootResourceArn { get; set; }
+        #endregion
+        
         #region Parameter SupportedPermissionType
         /// <summary>
         /// <para>
-        /// <para>(Required) A list of supported permission types. </para>
+        /// <para>Indicates the level of filtering a third-party analytical engine is capable of enforcing
+        /// when calling the <c>GetUnfilteredTableMetadata</c> API operation. Accepted values
+        /// are:</para><ul><li><para><c>COLUMN_PERMISSION</c> - Column permissions ensure that users can access only specific
+        /// columns in the table. If there are particular columns contain sensitive data, data
+        /// lake administrators can define column filters that exclude access to specific columns.</para></li><li><para><c>CELL_FILTER_PERMISSION</c> - Cell-level filtering combines column filtering (include
+        /// or exclude columns) and row filter expressions to restrict access to individual elements
+        /// in the table.</para></li><li><para><c>NESTED_PERMISSION</c> - Nested permissions combines cell-level filtering and nested
+        /// column filtering to restrict access to columns and/or nested columns in specific rows
+        /// based on row filter expressions.</para></li><li><para><c>NESTED_CELL_PERMISSION</c> - Nested cell permissions combines nested permission
+        /// with nested cell-level filtering. This allows different subsets of nested columns
+        /// to be restricted based on an array of row filter expressions. </para></li></ul><para>Note: Each of these permission types follows a hierarchical order where each subsequent
+        /// permission type includes all permission of the previous type.</para><para>Important: If you provide a supported permission type that doesn't match the user's
+        /// level of permissions on the table, then Lake Formation raises an exception. For example,
+        /// if the third-party engine calling the <c>GetUnfilteredTableMetadata</c> operation
+        /// can enforce only column-level filtering, and the user has nested cell filtering applied
+        /// on the table, Lake Formation throws an exception, and will not return unfiltered table
+        /// metadata and data access credentials.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -250,19 +306,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CatalogId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CatalogId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CatalogId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -270,21 +320,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.GetUnfilteredTableMetadataResponse, GetGLUEUnfilteredTableMetadataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CatalogId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuditContext_AdditionalAuditContext = this.AuditContext_AdditionalAuditContext;
             context.AuditContext_AllColumnsRequested = this.AuditContext_AllColumnsRequested;
             if (this.AuditContext_RequestedColumn != null)
@@ -312,6 +352,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ParentResourceArn = this.ParentResourceArn;
             if (this.Permission != null)
             {
                 context.Permission = new List<System.String>(this.Permission);
@@ -329,6 +370,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             context.QuerySessionContext_QueryId = this.QuerySessionContext_QueryId;
             context.QuerySessionContext_QueryStartTime = this.QuerySessionContext_QueryStartTime;
             context.ResourceRegion = this.ResourceRegion;
+            context.RootResourceArn = this.RootResourceArn;
             context.SupportedDialect_Dialect = this.SupportedDialect_Dialect;
             context.SupportedDialect_DialectVersion = this.SupportedDialect_DialectVersion;
             if (this.SupportedPermissionType != null)
@@ -408,6 +450,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.ParentResourceArn != null)
+            {
+                request.ParentResourceArn = cmdletContext.ParentResourceArn;
+            }
             if (cmdletContext.Permission != null)
             {
                 request.Permissions = cmdletContext.Permission;
@@ -474,6 +520,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             if (cmdletContext.ResourceRegion != null)
             {
                 request.Region = cmdletContext.ResourceRegion;
+            }
+            if (cmdletContext.RootResourceArn != null)
+            {
+                request.RootResourceArn = cmdletContext.RootResourceArn;
             }
             
              // populate SupportedDialect
@@ -546,13 +596,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "GetUnfilteredTableMetadata");
             try
             {
-                #if DESKTOP
-                return client.GetUnfilteredTableMetadata(request);
-                #elif CORECLR
-                return client.GetUnfilteredTableMetadataAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetUnfilteredTableMetadataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -575,6 +619,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             public System.String CatalogId { get; set; }
             public System.String DatabaseName { get; set; }
             public System.String Name { get; set; }
+            public System.String ParentResourceArn { get; set; }
             public List<System.String> Permission { get; set; }
             public Dictionary<System.String, System.String> QuerySessionContext_AdditionalContext { get; set; }
             public System.String QuerySessionContext_ClusterId { get; set; }
@@ -582,6 +627,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             public System.String QuerySessionContext_QueryId { get; set; }
             public System.DateTime? QuerySessionContext_QueryStartTime { get; set; }
             public System.String ResourceRegion { get; set; }
+            public System.String RootResourceArn { get; set; }
             public Amazon.Glue.ViewDialect SupportedDialect_Dialect { get; set; }
             public System.String SupportedDialect_DialectVersion { get; set; }
             public List<System.String> SupportedPermissionType { get; set; }

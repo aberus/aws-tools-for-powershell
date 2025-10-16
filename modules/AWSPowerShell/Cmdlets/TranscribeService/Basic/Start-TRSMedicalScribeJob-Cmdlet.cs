@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TranscribeService;
 using Amazon.TranscribeService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRS
 {
     /// <summary>
@@ -52,8 +54,8 @@ namespace Amazon.PowerShell.Cmdlets.TRS
     /// </para></li><li><para><c>MedicalScribeJobName</c>: A custom name you create for your MedicalScribe job
     /// that is unique within your Amazon Web Services account.
     /// </para></li><li><para><c>OutputBucketName</c>: The Amazon S3 bucket where you want your output files stored.
-    /// </para></li><li><para><c>Settings</c>: A <c>MedicalScribeSettings</c> obect that must set exactly one of
-    /// <c>ShowSpeakerLabels</c> or <c>ChannelIdentification</c> to true. If <c>ShowSpeakerLabels</c>
+    /// </para></li><li><para><c>Settings</c>: A <c>MedicalScribeSettings</c> object that must set exactly one
+    /// of <c>ShowSpeakerLabels</c> or <c>ChannelIdentification</c> to true. If <c>ShowSpeakerLabels</c>
     /// is true, <c>MaxSpeakerLabels</c> must also be set. 
     /// </para></li><li><para><c>ChannelDefinitions</c>: A <c>MedicalScribeChannelDefinitions</c> array should
     /// be set if and only if the <c>ChannelIdentification</c> value of <c>Settings</c> is
@@ -65,12 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
     [AWSCmdlet("Calls the Amazon Transcribe Service StartMedicalScribeJob API operation.", Operation = new[] {"StartMedicalScribeJob"}, SelectReturnType = typeof(Amazon.TranscribeService.Model.StartMedicalScribeJobResponse))]
     [AWSCmdletOutput("Amazon.TranscribeService.Model.MedicalScribeJob or Amazon.TranscribeService.Model.StartMedicalScribeJobResponse",
         "This cmdlet returns an Amazon.TranscribeService.Model.MedicalScribeJob object.",
-        "The service call response (type Amazon.TranscribeService.Model.StartMedicalScribeJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.TranscribeService.Model.StartMedicalScribeJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartTRSMedicalScribeJobCmdlet : AmazonTranscribeServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChannelDefinition
         /// <summary>
@@ -81,7 +84,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// and <c>ParticipantRole</c> to <c>CLINICIAN</c> (to indicate that it's the clinician
         /// speaking). Then you would set the <c>ChannelId</c> of the second <c>ChannelDefinition</c>
         /// in the list to <c>1</c> (to indicate the second channel) and <c>ParticipantRole</c>
-        /// to <c>PATIENT</c> (to indicate that it's the patient speaking). </para>
+        /// to <c>PATIENT</c> (to indicate that it's the patient speaking). </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,7 +136,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// <para>A map of plain text, non-secret key:value pairs, known as encryption context pairs,
         /// that provide an added layer of security for your data. For more information, see <a href="https://docs.aws.amazon.com/transcribe/latest/dg/key-management.html#kms-context">KMS
         /// encryption context</a> and <a href="https://docs.aws.amazon.com/transcribe/latest/dg/symmetric-asymmetric.html">Asymmetric
-        /// keys in KMS</a>.</para>
+        /// keys in KMS</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,6 +190,27 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public System.String MedicalScribeJobName { get; set; }
         #endregion
         
+        #region Parameter ClinicalNoteGenerationSettings_NoteTemplate
+        /// <summary>
+        /// <para>
+        /// <para>Specify one of the following templates to use for the clinical note summary. The default
+        /// is <c>HISTORY_AND_PHYSICAL</c>.</para><ul><li><para>HISTORY_AND_PHYSICAL: Provides summaries for key sections of the clinical documentation.
+        /// Examples of sections include Chief Complaint, History of Present Illness, Review of
+        /// Systems, Past Medical History, Assessment, and Plan. </para></li><li><para>GIRPP: Provides summaries based on the patients progress toward goals. Examples of
+        /// sections include Goal, Intervention, Response, Progress, and Plan.</para></li><li><para>BIRP: Focuses on the patient's behavioral patterns and responses. Examples of sections
+        /// include Behavior, Intervention, Response, and Plan.</para></li><li><para>SIRP: Emphasizes the situational context of therapy. Examples of sections include
+        /// Situation, Intervention, Response, and Plan.</para></li><li><para>DAP: Provides a simplified format for clinical documentation. Examples of sections
+        /// include Data, Assessment, and Plan.</para></li><li><para>BEHAVIORAL_SOAP: Behavioral health focused documentation format. Examples of sections
+        /// include Subjective, Objective, Assessment, and Plan.</para></li><li><para>PHYSICAL_SOAP: Physical health focused documentation format. Examples of sections
+        /// include Subjective, Objective, Assessment, and Plan.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_ClinicalNoteGenerationSettings_NoteTemplate")]
+        [AWSConstantClassSource("Amazon.TranscribeService.MedicalScribeNoteTemplate")]
+        public Amazon.TranscribeService.MedicalScribeNoteTemplate ClinicalNoteGenerationSettings_NoteTemplate { get; set; }
+        #endregion
+        
         #region Parameter OutputBucketName
         /// <summary>
         /// <para>
@@ -204,15 +236,30 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         #region Parameter OutputEncryptionKMSKeyId
         /// <summary>
         /// <para>
-        /// <para>The KMS key you want to use to encrypt your Medical Scribe output.</para><para>If using a key located in the <b>current</b> Amazon Web Services account, you can
-        /// specify your KMS key in one of four ways:</para><ol><li><para>Use the KMS key ID itself. For example, <c>1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use an alias for the KMS key ID. For example, <c>alias/ExampleAlias</c>.</para></li><li><para>Use the Amazon Resource Name (ARN) for the KMS key ID. For example, <c>arn:aws:kms:region:account-ID:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use the ARN for the KMS key alias. For example, <c>arn:aws:kms:region:account-ID:alias/ExampleAlias</c>.</para></li></ol><para>If using a key located in a <b>different</b> Amazon Web Services account than the
-        /// current Amazon Web Services account, you can specify your KMS key in one of two ways:</para><ol><li><para>Use the ARN for the KMS key ID. For example, <c>arn:aws:kms:region:account-ID:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.</para></li><li><para>Use the ARN for the KMS key alias. For example, <c>arn:aws:kms:region:account-ID:alias/ExampleAlias</c>.</para></li></ol><para>If you do not specify an encryption key, your output is encrypted with the default
-        /// Amazon S3 key (SSE-S3).</para><para>Note that the role specified in the <c>DataAccessRoleArn</c> request parameter must
-        /// have permission to use the specified KMS key.</para>
+        /// <para>The Amazon Resource Name (ARN) of a KMS key that you want to use to encrypt your Medical
+        /// Scribe output.</para><para>KMS key ARNs have the format <c>arn:partition:kms:region:account:key/key-id</c>. For
+        /// example: <c>arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab</c>.
+        /// For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#key-id-key-ARN">
+        /// KMS key ARNs</a>.</para><para>If you do not specify an encryption key, your output is encrypted with the default
+        /// Amazon S3 key (SSE-S3).</para><para>Note that the role making the request and the role specified in the <c>DataAccessRoleArn</c>
+        /// request parameter (if present) must have permission to use the specified KMS key.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OutputEncryptionKMSKeyId { get; set; }
+        #endregion
+        
+        #region Parameter PatientContext_Pronoun
+        /// <summary>
+        /// <para>
+        /// <para>The patient's preferred pronouns that the user wants to provide as a context for clinical
+        /// note generation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MedicalScribeContext_PatientContext_Pronouns")]
+        [AWSConstantClassSource("Amazon.TranscribeService.Pronouns")]
+        public Amazon.TranscribeService.Pronouns PatientContext_Pronoun { get; set; }
         #endregion
         
         #region Parameter Media_RedactedMediaFileUri
@@ -244,9 +291,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Adds one or more custom tags, each in the form of a key:value pair, to the Medica
+        /// <para>Adds one or more custom tags, each in the form of a key:value pair, to the Medical
         /// Scribe job.</para><para>To learn more about using tags with Amazon Transcribe, refer to <a href="https://docs.aws.amazon.com/transcribe/latest/dg/tagging.html">Tagging
-        /// resources</a>.</para>
+        /// resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -299,16 +350,6 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public string Select { get; set; } = "MedicalScribeJob";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MedicalScribeJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MedicalScribeJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MedicalScribeJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -319,9 +360,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MedicalScribeJobName), MyInvocation.BoundParameters);
@@ -335,21 +380,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.TranscribeService.Model.StartMedicalScribeJobResponse, StartTRSMedicalScribeJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MedicalScribeJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ChannelDefinition != null)
             {
                 context.ChannelDefinition = new List<Amazon.TranscribeService.Model.MedicalScribeChannelDefinition>(this.ChannelDefinition);
@@ -371,6 +406,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             }
             context.Media_MediaFileUri = this.Media_MediaFileUri;
             context.Media_RedactedMediaFileUri = this.Media_RedactedMediaFileUri;
+            context.PatientContext_Pronoun = this.PatientContext_Pronoun;
             context.MedicalScribeJobName = this.MedicalScribeJobName;
             #if MODULAR
             if (this.MedicalScribeJobName == null && ParameterWasBound(nameof(this.MedicalScribeJobName)))
@@ -387,6 +423,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             #endif
             context.OutputEncryptionKMSKeyId = this.OutputEncryptionKMSKeyId;
             context.Settings_ChannelIdentification = this.Settings_ChannelIdentification;
+            context.ClinicalNoteGenerationSettings_NoteTemplate = this.ClinicalNoteGenerationSettings_NoteTemplate;
             context.Settings_MaxSpeakerLabel = this.Settings_MaxSpeakerLabel;
             context.Settings_ShowSpeakerLabel = this.Settings_ShowSpeakerLabel;
             context.Settings_VocabularyFilterMethod = this.Settings_VocabularyFilterMethod;
@@ -452,6 +489,40 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             if (requestMediaIsNull)
             {
                 request.Media = null;
+            }
+            
+             // populate MedicalScribeContext
+            var requestMedicalScribeContextIsNull = true;
+            request.MedicalScribeContext = new Amazon.TranscribeService.Model.MedicalScribeContext();
+            Amazon.TranscribeService.Model.MedicalScribePatientContext requestMedicalScribeContext_medicalScribeContext_PatientContext = null;
+            
+             // populate PatientContext
+            var requestMedicalScribeContext_medicalScribeContext_PatientContextIsNull = true;
+            requestMedicalScribeContext_medicalScribeContext_PatientContext = new Amazon.TranscribeService.Model.MedicalScribePatientContext();
+            Amazon.TranscribeService.Pronouns requestMedicalScribeContext_medicalScribeContext_PatientContext_patientContext_Pronoun = null;
+            if (cmdletContext.PatientContext_Pronoun != null)
+            {
+                requestMedicalScribeContext_medicalScribeContext_PatientContext_patientContext_Pronoun = cmdletContext.PatientContext_Pronoun;
+            }
+            if (requestMedicalScribeContext_medicalScribeContext_PatientContext_patientContext_Pronoun != null)
+            {
+                requestMedicalScribeContext_medicalScribeContext_PatientContext.Pronouns = requestMedicalScribeContext_medicalScribeContext_PatientContext_patientContext_Pronoun;
+                requestMedicalScribeContext_medicalScribeContext_PatientContextIsNull = false;
+            }
+             // determine if requestMedicalScribeContext_medicalScribeContext_PatientContext should be set to null
+            if (requestMedicalScribeContext_medicalScribeContext_PatientContextIsNull)
+            {
+                requestMedicalScribeContext_medicalScribeContext_PatientContext = null;
+            }
+            if (requestMedicalScribeContext_medicalScribeContext_PatientContext != null)
+            {
+                request.MedicalScribeContext.PatientContext = requestMedicalScribeContext_medicalScribeContext_PatientContext;
+                requestMedicalScribeContextIsNull = false;
+            }
+             // determine if request.MedicalScribeContext should be set to null
+            if (requestMedicalScribeContextIsNull)
+            {
+                request.MedicalScribeContext = null;
             }
             if (cmdletContext.MedicalScribeJobName != null)
             {
@@ -529,6 +600,31 @@ namespace Amazon.PowerShell.Cmdlets.TRS
                 request.Settings.VocabularyName = requestSettings_settings_VocabularyName;
                 requestSettingsIsNull = false;
             }
+            Amazon.TranscribeService.Model.ClinicalNoteGenerationSettings requestSettings_settings_ClinicalNoteGenerationSettings = null;
+            
+             // populate ClinicalNoteGenerationSettings
+            var requestSettings_settings_ClinicalNoteGenerationSettingsIsNull = true;
+            requestSettings_settings_ClinicalNoteGenerationSettings = new Amazon.TranscribeService.Model.ClinicalNoteGenerationSettings();
+            Amazon.TranscribeService.MedicalScribeNoteTemplate requestSettings_settings_ClinicalNoteGenerationSettings_clinicalNoteGenerationSettings_NoteTemplate = null;
+            if (cmdletContext.ClinicalNoteGenerationSettings_NoteTemplate != null)
+            {
+                requestSettings_settings_ClinicalNoteGenerationSettings_clinicalNoteGenerationSettings_NoteTemplate = cmdletContext.ClinicalNoteGenerationSettings_NoteTemplate;
+            }
+            if (requestSettings_settings_ClinicalNoteGenerationSettings_clinicalNoteGenerationSettings_NoteTemplate != null)
+            {
+                requestSettings_settings_ClinicalNoteGenerationSettings.NoteTemplate = requestSettings_settings_ClinicalNoteGenerationSettings_clinicalNoteGenerationSettings_NoteTemplate;
+                requestSettings_settings_ClinicalNoteGenerationSettingsIsNull = false;
+            }
+             // determine if requestSettings_settings_ClinicalNoteGenerationSettings should be set to null
+            if (requestSettings_settings_ClinicalNoteGenerationSettingsIsNull)
+            {
+                requestSettings_settings_ClinicalNoteGenerationSettings = null;
+            }
+            if (requestSettings_settings_ClinicalNoteGenerationSettings != null)
+            {
+                request.Settings.ClinicalNoteGenerationSettings = requestSettings_settings_ClinicalNoteGenerationSettings;
+                requestSettingsIsNull = false;
+            }
              // determine if request.Settings should be set to null
             if (requestSettingsIsNull)
             {
@@ -576,13 +672,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Transcribe Service", "StartMedicalScribeJob");
             try
             {
-                #if DESKTOP
-                return client.StartMedicalScribeJob(request);
-                #elif CORECLR
-                return client.StartMedicalScribeJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartMedicalScribeJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -604,10 +694,12 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             public Dictionary<System.String, System.String> KMSEncryptionContext { get; set; }
             public System.String Media_MediaFileUri { get; set; }
             public System.String Media_RedactedMediaFileUri { get; set; }
+            public Amazon.TranscribeService.Pronouns PatientContext_Pronoun { get; set; }
             public System.String MedicalScribeJobName { get; set; }
             public System.String OutputBucketName { get; set; }
             public System.String OutputEncryptionKMSKeyId { get; set; }
             public System.Boolean? Settings_ChannelIdentification { get; set; }
+            public Amazon.TranscribeService.MedicalScribeNoteTemplate ClinicalNoteGenerationSettings_NoteTemplate { get; set; }
             public System.Int32? Settings_MaxSpeakerLabel { get; set; }
             public System.Boolean? Settings_ShowSpeakerLabel { get; set; }
             public Amazon.TranscribeService.VocabularyFilterMethod Settings_VocabularyFilterMethod { get; set; }

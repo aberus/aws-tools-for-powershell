@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The Inspector2 module of AWS Tools for PowerShell lets developers and administrators manage Inspector2 from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.Inspector2.dll'
     )
@@ -98,6 +99,13 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-INS2CisScanResultDetail', 
         'Get-INS2CisScanResultsAggregatedByCheckList', 
         'Get-INS2CisScanResultsAggregatedByTargetResourceList', 
+        'Get-INS2ClustersForImage', 
+        'Get-INS2CodeSecurityIntegration', 
+        'Get-INS2CodeSecurityIntegrationList', 
+        'Get-INS2CodeSecurityScan', 
+        'Get-INS2CodeSecurityScanConfiguration', 
+        'Get-INS2CodeSecurityScanConfigurationAssociationList', 
+        'Get-INS2CodeSecurityScanConfigurationList', 
         'Get-INS2Configuration', 
         'Get-INS2CoverageList', 
         'Get-INS2CoverageStatisticList', 
@@ -119,11 +127,16 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-INS2SbomExport', 
         'Get-INS2UsageTotalList', 
         'New-INS2CisScanConfiguration', 
+        'New-INS2CodeSecurityIntegration', 
+        'New-INS2CodeSecurityScanConfiguration', 
         'New-INS2Filter', 
         'New-INS2FindingsReport', 
         'New-INS2SbomExport', 
+        'Register-INS2CodeSecurityScanConfigurationBatch', 
         'Register-INS2Member', 
         'Remove-INS2CisScanConfiguration', 
+        'Remove-INS2CodeSecurityIntegration', 
+        'Remove-INS2CodeSecurityScanConfiguration', 
         'Remove-INS2Filter', 
         'Remove-INS2ResourceTag', 
         'Reset-INS2EncryptionKey', 
@@ -131,14 +144,18 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Send-INS2CisSessionHealth', 
         'Send-INS2CisSessionTelemetry', 
         'Start-INS2CisSession', 
+        'Start-INS2CodeSecurityScan', 
         'Stop-INS2CisSession', 
         'Stop-INS2FindingsReport', 
         'Stop-INS2Inspector', 
         'Stop-INS2SbomExport', 
         'Stop-INS2Service', 
+        'Unregister-INS2CodeSecurityScanConfigurationBatch', 
         'Unregister-INS2Member', 
         'Update-INS2BatchMemberEc2DeepInspectionStatus', 
         'Update-INS2CisScanConfiguration', 
+        'Update-INS2CodeSecurityIntegration', 
+        'Update-INS2CodeSecurityScanConfiguration', 
         'Update-INS2Configuration', 
         'Update-INS2Ec2DeepInspectionConfiguration', 
         'Update-INS2EncryptionKey', 
@@ -168,7 +185,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

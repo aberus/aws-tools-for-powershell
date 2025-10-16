@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Athena;
 using Amazon.Athena.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ATH
 {
     /// <summary>
     /// Returns query execution runtime statistics related to a single execution of a query
-    /// if you have access to the workgroup in which the query ran. Query execution runtime
-    /// statistics are returned only when <a>QueryExecutionStatus$State</a> is in a SUCCEEDED
-    /// or FAILED state. Stage-level input and output row count and data size statistics are
-    /// not shown when a query has row-level filters defined in Lake Formation.
+    /// if you have access to the workgroup in which the query ran. Statistics from the <c>Timeline</c>
+    /// section of the response object are available as soon as <a>QueryExecutionStatus$State</a>
+    /// is in a SUCCEEDED or FAILED state. The remaining non-timeline statistics in the response
+    /// (like stage-level input and output row count and data size) are updated asynchronously
+    /// and may not be available immediately after a query completes. The non-timeline statistics
+    /// are also not included when a query has row-level filters defined in Lake Formation.
     /// </summary>
     [Cmdlet("Get", "ATHQueryRuntimeStatistic")]
     [OutputType("Amazon.Athena.Model.GetQueryRuntimeStatisticsResponse")]
     [AWSCmdlet("Calls the Amazon Athena GetQueryRuntimeStatistics API operation.", Operation = new[] {"GetQueryRuntimeStatistics"}, SelectReturnType = typeof(Amazon.Athena.Model.GetQueryRuntimeStatisticsResponse))]
     [AWSCmdletOutput("Amazon.Athena.Model.GetQueryRuntimeStatisticsResponse",
-        "This cmdlet returns an Amazon.Athena.Model.GetQueryRuntimeStatisticsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Athena.Model.GetQueryRuntimeStatisticsResponse object containing multiple properties."
     )]
     public partial class GetATHQueryRuntimeStatisticCmdlet : AmazonAthenaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter QueryExecutionId
         /// <summary>
@@ -73,19 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueryExecutionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueryExecutionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueryExecutionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -93,21 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Athena.Model.GetQueryRuntimeStatisticsResponse, GetATHQueryRuntimeStatisticCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueryExecutionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.QueryExecutionId = this.QueryExecutionId;
             #if MODULAR
             if (this.QueryExecutionId == null && ParameterWasBound(nameof(this.QueryExecutionId)))
@@ -173,13 +162,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Athena", "GetQueryRuntimeStatistics");
             try
             {
-                #if DESKTOP
-                return client.GetQueryRuntimeStatistics(request);
-                #elif CORECLR
-                return client.GetQueryRuntimeStatisticsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetQueryRuntimeStatisticsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

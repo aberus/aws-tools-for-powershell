@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,37 +22,51 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKMeetings;
 using Amazon.ChimeSDKMeetings.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMTG
 {
     /// <summary>
     /// Creates a new Amazon Chime SDK meeting in the specified media Region, with attendees.
-    /// For more information about specifying media Regions, see <a href="https://docs.aws.amazon.com/chime/latest/dg/chime-sdk-meetings-regions.html">Amazon
-    /// Chime SDK Media Regions</a> in the <i>Amazon Chime Developer Guide</i>. For more information
-    /// about the Amazon Chime SDK, see <a href="https://docs.aws.amazon.com/chime/latest/dg/meetings-sdk.html">Using
-    /// the Amazon Chime SDK</a> in the <i>Amazon Chime Developer Guide</i>.
+    /// For more information about specifying media Regions, see <a href="https://docs.aws.amazon.com/chime-sdk/latest/dg/sdk-available-regions">Available
+    /// Regions</a> and <a href="https://docs.aws.amazon.com/chime-sdk/latest/dg/chime-sdk-meetings-regions.html">Using
+    /// meeting Regions</a>, both in the <i>Amazon Chime SDK Developer Guide</i>. For more
+    /// information about the Amazon Chime SDK, see <a href="https://docs.aws.amazon.com/chime-sdk/latest/dg/meetings-sdk.html">Using
+    /// the Amazon Chime SDK</a> in the <i>Amazon Chime SDK Developer Guide</i>. 
+    /// 
+    ///  <note><para>
+    /// If you use this API in conjuction with the and APIs, and you don't specify the <c>MeetingFeatures.Content.MaxResolution</c>
+    /// or <c>MeetingFeatures.Video.MaxResolution</c> parameters, the following defaults are
+    /// used:
+    /// </para><ul><li><para>
+    /// Content.MaxResolution: FHD
+    /// </para></li><li><para>
+    /// Video.MaxResolution: HD
+    /// </para></li></ul></note>
     /// </summary>
     [Cmdlet("New", "CHMTGMeetingWithAttendee", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ChimeSDKMeetings.Model.CreateMeetingWithAttendeesResponse")]
     [AWSCmdlet("Calls the Amazon Chime SDK Meetings CreateMeetingWithAttendees API operation.", Operation = new[] {"CreateMeetingWithAttendees"}, SelectReturnType = typeof(Amazon.ChimeSDKMeetings.Model.CreateMeetingWithAttendeesResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKMeetings.Model.CreateMeetingWithAttendeesResponse",
-        "This cmdlet returns an Amazon.ChimeSDKMeetings.Model.CreateMeetingWithAttendeesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ChimeSDKMeetings.Model.CreateMeetingWithAttendeesResponse object containing multiple properties."
     )]
     public partial class NewCHMTGMeetingWithAttendeeCmdlet : AmazonChimeSDKMeetingsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attendee
         /// <summary>
         /// <para>
-        /// <para>The attendee information, including attendees' IDs and join tokens.</para>
+        /// <para>The attendee information, including attendees' IDs and join tokens.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -155,6 +169,18 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
         public Amazon.ChimeSDKMeetings.VideoResolution Video_MaxResolution { get; set; }
         #endregion
         
+        #region Parameter MediaPlacementNetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The type of network for the media placement. Either IPv4 only or dual-stack (IPv4
+        /// and IPv6).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ChimeSDKMeetings.MediaPlacementNetworkType")]
+        public Amazon.ChimeSDKMeetings.MediaPlacementNetworkType MediaPlacementNetworkType { get; set; }
+        #endregion
+        
         #region Parameter MediaRegion
         /// <summary>
         /// <para>
@@ -220,7 +246,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags in the request.</para>
+        /// <para>The tags in the request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,7 +262,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
         /// <summary>
         /// <para>
         /// <para>A consistent and opaque identifier, created and maintained by the builder to represent
-        /// a segment of their users.</para>
+        /// a segment of their users.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -251,16 +285,6 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClientRequestToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClientRequestToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClientRequestToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -271,9 +295,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ExternalMeetingId), MyInvocation.BoundParameters);
@@ -287,21 +315,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ChimeSDKMeetings.Model.CreateMeetingWithAttendeesResponse, NewCHMTGMeetingWithAttendeeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClientRequestToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attendee != null)
             {
                 context.Attendee = new List<Amazon.ChimeSDKMeetings.Model.CreateAttendeeRequestItem>(this.Attendee);
@@ -320,6 +338,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
                 WriteWarning("You are passing $null as a value for parameter ExternalMeetingId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.MediaPlacementNetworkType = this.MediaPlacementNetworkType;
             context.MediaRegion = this.MediaRegion;
             #if MODULAR
             if (this.MediaRegion == null && ParameterWasBound(nameof(this.MediaRegion)))
@@ -371,6 +390,10 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
             if (cmdletContext.ExternalMeetingId != null)
             {
                 request.ExternalMeetingId = cmdletContext.ExternalMeetingId;
+            }
+            if (cmdletContext.MediaPlacementNetworkType != null)
+            {
+                request.MediaPlacementNetworkType = cmdletContext.MediaPlacementNetworkType;
             }
             if (cmdletContext.MediaRegion != null)
             {
@@ -578,13 +601,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Meetings", "CreateMeetingWithAttendees");
             try
             {
-                #if DESKTOP
-                return client.CreateMeetingWithAttendees(request);
-                #elif CORECLR
-                return client.CreateMeetingWithAttendeesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMeetingWithAttendeesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -604,6 +621,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMTG
             public List<Amazon.ChimeSDKMeetings.Model.CreateAttendeeRequestItem> Attendee { get; set; }
             public System.String ClientRequestToken { get; set; }
             public System.String ExternalMeetingId { get; set; }
+            public Amazon.ChimeSDKMeetings.MediaPlacementNetworkType MediaPlacementNetworkType { get; set; }
             public System.String MediaRegion { get; set; }
             public System.Int32? Attendee_MaxCount { get; set; }
             public Amazon.ChimeSDKMeetings.MeetingFeatureStatus Audio_EchoReduction { get; set; }

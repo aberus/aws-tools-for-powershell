@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SsmSap;
 using Amazon.SsmSap.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSAP
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
     [AWSCmdlet("Calls the AWS Systems Manager for SAP PutResourcePermission API operation.", Operation = new[] {"PutResourcePermission"}, SelectReturnType = typeof(Amazon.SsmSap.Model.PutResourcePermissionResponse))]
     [AWSCmdletOutput("System.String or Amazon.SsmSap.Model.PutResourcePermissionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SsmSap.Model.PutResourcePermissionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SsmSap.Model.PutResourcePermissionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteSMSAPResourcePermissionCmdlet : AmazonSsmSapClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionType
         /// <summary>
@@ -114,9 +117,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -222,13 +229,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSAP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager for SAP", "PutResourcePermission");
             try
             {
-                #if DESKTOP
-                return client.PutResourcePermission(request);
-                #elif CORECLR
-                return client.PutResourcePermissionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutResourcePermissionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

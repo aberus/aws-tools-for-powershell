@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppConfig;
 using Amazon.AppConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APPC
 {
     /// <summary>
@@ -37,22 +39,21 @@ namespace Amazon.PowerShell.Cmdlets.APPC
     /// <a href="https://docs.aws.amazon.com/appconfig/2019-10-09/APIReference/API_appconfigdata_StartConfigurationSession.html">StartConfigurationSession</a>
     /// and <a href="https://docs.aws.amazon.com/appconfig/2019-10-09/APIReference/API_appconfigdata_GetLatestConfiguration.html">GetLatestConfiguration</a>
     /// APIs instead. 
-    /// </para></li><li><para><c>GetConfiguration</c> is a priced call. For more information, see <a href="https://aws.amazon.com/systems-manager/pricing/">Pricing</a>.
+    /// </para></li><li><para><a>GetConfiguration</a> is a priced call. For more information, see <a href="https://aws.amazon.com/systems-manager/pricing/">Pricing</a>.
     /// </para></li></ul></important><br/><br/>This operation is deprecated.
     /// </summary>
     [Cmdlet("Get", "APPCConfiguration")]
     [OutputType("Amazon.AppConfig.Model.GetConfigurationResponse")]
     [AWSCmdlet("Calls the AWS AppConfig GetConfiguration API operation.", Operation = new[] {"GetConfiguration"}, SelectReturnType = typeof(Amazon.AppConfig.Model.GetConfigurationResponse))]
     [AWSCmdletOutput("Amazon.AppConfig.Model.GetConfigurationResponse",
-        "This cmdlet returns an Amazon.AppConfig.Model.GetConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AppConfig.Model.GetConfigurationResponse object containing multiple properties."
     )]
     [System.ObsoleteAttribute("This API has been deprecated in favor of the GetLatestConfiguration API used in conjunction with StartConfigurationSession.")]
     public partial class GetAPPCConfigurationCmdlet : AmazonAppConfigClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Application
         /// <summary>
@@ -74,17 +75,17 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         #region Parameter ClientConfigurationVersion
         /// <summary>
         /// <para>
-        /// <para>The configuration version returned in the most recent <c>GetConfiguration</c> response.</para><important><para>AppConfig uses the value of the <c>ClientConfigurationVersion</c> parameter to identify
+        /// <para>The configuration version returned in the most recent <a>GetConfiguration</a> response.</para><important><para>AppConfig uses the value of the <c>ClientConfigurationVersion</c> parameter to identify
         /// the configuration version on your clients. If you don’t send <c>ClientConfigurationVersion</c>
-        /// with each call to <c>GetConfiguration</c>, your clients receive the current configuration.
+        /// with each call to <a>GetConfiguration</a>, your clients receive the current configuration.
         /// You are charged each time your clients receive a configuration.</para><para>To avoid excess charges, we recommend you use the <a href="https://docs.aws.amazon.com/appconfig/2019-10-09/APIReference/StartConfigurationSession.html">StartConfigurationSession</a>
         /// and <a href="https://docs.aws.amazon.com/appconfig/2019-10-09/APIReference/GetLatestConfiguration.html">GetLatestConfiguration</a>
         /// APIs, which track the client configuration version on your behalf. If you choose to
-        /// continue using <c>GetConfiguration</c>, we recommend that you include the <c>ClientConfigurationVersion</c>
-        /// value with every call to <c>GetConfiguration</c>. The value to use for <c>ClientConfigurationVersion</c>
-        /// comes from the <c>ConfigurationVersion</c> attribute returned by <c>GetConfiguration</c>
-        /// when there is new or updated data, and should be saved for subsequent calls to <c>GetConfiguration</c>.</para></important><para>For more information about working with configurations, see <a href="http://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-retrieving-the-configuration.html">Retrieving
-        /// the Configuration</a> in the <i>AppConfig User Guide</i>.</para>
+        /// continue using <a>GetConfiguration</a>, we recommend that you include the <c>ClientConfigurationVersion</c>
+        /// value with every call to <a>GetConfiguration</a>. The value to use for <c>ClientConfigurationVersion</c>
+        /// comes from the <c>ConfigurationVersion</c> attribute returned by <a>GetConfiguration</a>
+        /// when there is new or updated data, and should be saved for subsequent calls to <a>GetConfiguration</a>.</para></important><para>For more information about working with configurations, see <a href="http://docs.aws.amazon.com/appconfig/latest/userguide/retrieving-feature-flags.html">Retrieving
+        /// feature flags and configuration data in AppConfig</a> in the <i>AppConfig User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,19 +157,13 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Configuration parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Configuration' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Configuration' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -176,21 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppConfig.Model.GetConfigurationResponse, GetAPPCConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Configuration;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Application = this.Application;
             #if MODULAR
             if (this.Application == null && ParameterWasBound(nameof(this.Application)))
@@ -294,13 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppConfig", "GetConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetConfiguration(request);
-                #elif CORECLR
-                return client.GetConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkMail;
 using Amazon.WorkMail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WM
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
     [OutputType("Amazon.WorkMail.Model.DeleteOrganizationResponse")]
     [AWSCmdlet("Calls the Amazon WorkMail DeleteOrganization API operation.", Operation = new[] {"DeleteOrganization"}, SelectReturnType = typeof(Amazon.WorkMail.Model.DeleteOrganizationResponse))]
     [AWSCmdletOutput("Amazon.WorkMail.Model.DeleteOrganizationResponse",
-        "This cmdlet returns an Amazon.WorkMail.Model.DeleteOrganizationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.WorkMail.Model.DeleteOrganizationResponse object containing multiple properties."
     )]
     public partial class RemoveWMOrganizationCmdlet : AmazonWorkMailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeleteDirectory
         /// <summary>
@@ -58,6 +61,17 @@ namespace Amazon.PowerShell.Cmdlets.WM
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Boolean? DeleteDirectory { get; set; }
+        #endregion
+        
+        #region Parameter DeleteIdentityCenterApplication
+        /// <summary>
+        /// <para>
+        /// <para>Deletes IAM Identity Center application for WorkMail. This action does not affect
+        /// authentication settings for any organization.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DeleteIdentityCenterApplication { get; set; }
         #endregion
         
         #region Parameter ForceDelete
@@ -108,16 +122,6 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OrganizationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OrganizationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OrganizationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -128,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.OrganizationId), MyInvocation.BoundParameters);
@@ -144,21 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.WM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkMail.Model.DeleteOrganizationResponse, RemoveWMOrganizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OrganizationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.DeleteDirectory = this.DeleteDirectory;
             #if MODULAR
@@ -167,6 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
                 WriteWarning("You are passing $null as a value for parameter DeleteDirectory which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DeleteIdentityCenterApplication = this.DeleteIdentityCenterApplication;
             context.ForceDelete = this.ForceDelete;
             context.OrganizationId = this.OrganizationId;
             #if MODULAR
@@ -198,6 +197,10 @@ namespace Amazon.PowerShell.Cmdlets.WM
             if (cmdletContext.DeleteDirectory != null)
             {
                 request.DeleteDirectory = cmdletContext.DeleteDirectory.Value;
+            }
+            if (cmdletContext.DeleteIdentityCenterApplication != null)
+            {
+                request.DeleteIdentityCenterApplication = cmdletContext.DeleteIdentityCenterApplication.Value;
             }
             if (cmdletContext.ForceDelete != null)
             {
@@ -245,13 +248,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkMail", "DeleteOrganization");
             try
             {
-                #if DESKTOP
-                return client.DeleteOrganization(request);
-                #elif CORECLR
-                return client.DeleteOrganizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteOrganizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -270,6 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
         {
             public System.String ClientToken { get; set; }
             public System.Boolean? DeleteDirectory { get; set; }
+            public System.Boolean? DeleteIdentityCenterApplication { get; set; }
             public System.Boolean? ForceDelete { get; set; }
             public System.String OrganizationId { get; set; }
             public System.Func<Amazon.WorkMail.Model.DeleteOrganizationResponse, RemoveWMOrganizationCmdlet, object> Select { get; set; } =

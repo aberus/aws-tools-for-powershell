@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TimestreamQuery;
 using Amazon.TimestreamQuery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TSQ
 {
     /// <summary>
     /// <c>Query</c> is a synchronous operation that enables you to run a query against your
-    /// Amazon Timestream data. <c>Query</c> will time out after 60 seconds. You must update
-    /// the default timeout in the SDK to support a timeout of 60 seconds. See the <a href="https://docs.aws.amazon.com/timestream/latest/developerguide/code-samples.run-query.html">code
-    /// sample</a> for details. 
+    /// Amazon Timestream data.
     /// 
     ///  
     /// <para>
+    /// If you enabled <c>QueryInsights</c>, this API also returns insights and metrics related
+    /// to the query that you executed. <c>QueryInsights</c> helps with performance tuning
+    /// of your query. For more information about <c>QueryInsights</c>, see <a href="https://docs.aws.amazon.com/timestream/latest/developerguide/using-query-insights.html">Using
+    /// query insights to optimize queries in Amazon Timestream</a>.
+    /// </para><note><para>
+    /// The maximum number of <c>Query</c> API requests you're allowed to make with <c>QueryInsights</c>
+    /// enabled is 1 query per second (QPS). If you exceed this query rate, it might result
+    /// in throttling.
+    /// </para></note><para><c>Query</c> will time out after 60 seconds. You must update the default timeout
+    /// in the SDK to support a timeout of 60 seconds. See the <a href="https://docs.aws.amazon.com/timestream/latest/developerguide/code-samples.run-query.html">code
+    /// sample</a> for details. 
+    /// </para><para>
     /// Your query request will fail in the following cases:
     /// </para><ul><li><para>
     ///  If you submit a <c>Query</c> request with the same client token outside of the 5-minute
@@ -58,14 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
     [AWSCmdlet("Calls the Amazon Timestream Query Query API operation.", Operation = new[] {"Query"}, SelectReturnType = typeof(Amazon.TimestreamQuery.Model.QueryResponse))]
     [AWSCmdletOutput("Amazon.TimestreamQuery.Model.Row or Amazon.TimestreamQuery.Model.QueryResponse",
         "This cmdlet returns a collection of Amazon.TimestreamQuery.Model.Row objects.",
-        "The service call response (type Amazon.TimestreamQuery.Model.QueryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.TimestreamQuery.Model.QueryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class InvokeTSQQueryCmdlet : AmazonTimestreamQueryClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxRow
         /// <summary>
@@ -82,6 +93,19 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("MaxRows")]
         public System.Int32? MaxRow { get; set; }
+        #endregion
+        
+        #region Parameter QueryInsights_Mode
+        /// <summary>
+        /// <para>
+        /// <para>Provides the following modes to enable <c>QueryInsights</c>:</para><ul><li><para><c>ENABLED_WITH_RATE_CONTROL</c> – Enables <c>QueryInsights</c> for the queries being
+        /// processed. This mode also includes a rate control mechanism, which limits the <c>QueryInsights</c>
+        /// feature to 1 query per second (QPS).</para></li><li><para><c>DISABLED</c> – Disables <c>QueryInsights</c>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.TimestreamQuery.QueryInsightsMode")]
+        public Amazon.TimestreamQuery.QueryInsightsMode QueryInsights_Mode { get; set; }
         #endregion
         
         #region Parameter QueryString
@@ -141,7 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,16 +183,6 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
         public string Select { get; set; } = "Rows";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueryString parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueryString' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueryString' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -179,9 +193,13 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -189,24 +207,15 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.TimestreamQuery.Model.QueryResponse, InvokeTSQQueryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueryString;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.MaxRow = this.MaxRow;
             context.NextToken = this.NextToken;
+            context.QueryInsights_Mode = this.QueryInsights_Mode;
             context.QueryString = this.QueryString;
             #if MODULAR
             if (this.QueryString == null && ParameterWasBound(nameof(this.QueryString)))
@@ -227,9 +236,7 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.TimestreamQuery.Model.QueryRequest();
@@ -241,6 +248,25 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
             if (cmdletContext.MaxRow != null)
             {
                 request.MaxRows = cmdletContext.MaxRow.Value;
+            }
+            
+             // populate QueryInsights
+            var requestQueryInsightsIsNull = true;
+            request.QueryInsights = new Amazon.TimestreamQuery.Model.QueryInsights();
+            Amazon.TimestreamQuery.QueryInsightsMode requestQueryInsights_queryInsights_Mode = null;
+            if (cmdletContext.QueryInsights_Mode != null)
+            {
+                requestQueryInsights_queryInsights_Mode = cmdletContext.QueryInsights_Mode;
+            }
+            if (requestQueryInsights_queryInsights_Mode != null)
+            {
+                request.QueryInsights.Mode = requestQueryInsights_queryInsights_Mode;
+                requestQueryInsightsIsNull = false;
+            }
+             // determine if request.QueryInsights should be set to null
+            if (requestQueryInsightsIsNull)
+            {
+                request.QueryInsights = null;
             }
             if (cmdletContext.QueryString != null)
             {
@@ -308,13 +334,7 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Timestream Query", "Query");
             try
             {
-                #if DESKTOP
-                return client.Query(request);
-                #elif CORECLR
-                return client.QueryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.QueryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -334,6 +354,7 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
             public System.String ClientToken { get; set; }
             public System.Int32? MaxRow { get; set; }
             public System.String NextToken { get; set; }
+            public Amazon.TimestreamQuery.QueryInsightsMode QueryInsights_Mode { get; set; }
             public System.String QueryString { get; set; }
             public System.Func<Amazon.TimestreamQuery.Model.QueryResponse, InvokeTSQQueryCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Rows;

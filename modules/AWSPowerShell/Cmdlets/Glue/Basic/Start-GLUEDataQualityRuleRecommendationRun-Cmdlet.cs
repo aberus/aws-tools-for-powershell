@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -43,24 +45,57 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue StartDataQualityRuleRecommendationRun API operation.", Operation = new[] {"StartDataQualityRuleRecommendationRun"}, SelectReturnType = typeof(Amazon.Glue.Model.StartDataQualityRuleRecommendationRunResponse))]
     [AWSCmdletOutput("System.String or Amazon.Glue.Model.StartDataQualityRuleRecommendationRunResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Glue.Model.StartDataQualityRuleRecommendationRunResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Glue.Model.StartDataQualityRuleRecommendationRunResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartGLUEDataQualityRuleRecommendationRunCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DataQualityGlueTable_AdditionalOption
+        /// <summary>
+        /// <para>
+        /// <para>Additional options for the table. Currently there are two keys supported:</para><ul><li><para><c>pushDownPredicate</c>: to filter on partitions without having to list and read
+        /// all the files in your dataset.</para></li><li><para><c>catalogPartitionPredicate</c>: to use server-side partition pruning using partition
+        /// indexes in the Glue Data Catalog.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSource_DataQualityGlueTable_AdditionalOptions")]
+        public System.Collections.Hashtable DataQualityGlueTable_AdditionalOption { get; set; }
+        #endregion
         
         #region Parameter GlueTable_AdditionalOption
         /// <summary>
         /// <para>
         /// <para>Additional options for the table. Currently there are two keys supported:</para><ul><li><para><c>pushDownPredicate</c>: to filter on partitions without having to list and read
         /// all the files in your dataset.</para></li><li><para><c>catalogPartitionPredicate</c>: to use server-side partition pruning using partition
-        /// indexes in the Glue Data Catalog.</para></li></ul>
+        /// indexes in the Glue Data Catalog.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DataSource_GlueTable_AdditionalOptions")]
         public System.Collections.Hashtable GlueTable_AdditionalOption { get; set; }
+        #endregion
+        
+        #region Parameter DataQualityGlueTable_CatalogId
+        /// <summary>
+        /// <para>
+        /// <para>A unique identifier for the Glue Data Catalog.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSource_DataQualityGlueTable_CatalogId")]
+        public System.String DataQualityGlueTable_CatalogId { get; set; }
         #endregion
         
         #region Parameter GlueTable_CatalogId
@@ -72,6 +107,17 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DataSource_GlueTable_CatalogId")]
         public System.String GlueTable_CatalogId { get; set; }
+        #endregion
+        
+        #region Parameter DataQualityGlueTable_ConnectionName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the connection to the Glue Data Catalog.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSource_DataQualityGlueTable_ConnectionName")]
+        public System.String DataQualityGlueTable_ConnectionName { get; set; }
         #endregion
         
         #region Parameter GlueTable_ConnectionName
@@ -95,22 +141,36 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String CreatedRulesetName { get; set; }
         #endregion
         
+        #region Parameter DataQualityGlueTable_DatabaseName
+        /// <summary>
+        /// <para>
+        /// <para>A database name in the Glue Data Catalog.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSource_DataQualityGlueTable_DatabaseName")]
+        public System.String DataQualityGlueTable_DatabaseName { get; set; }
+        #endregion
+        
         #region Parameter GlueTable_DatabaseName
         /// <summary>
         /// <para>
         /// <para>A database name in the Glue Data Catalog.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("DataSource_GlueTable_DatabaseName")]
         public System.String GlueTable_DatabaseName { get; set; }
+        #endregion
+        
+        #region Parameter DataQualitySecurityConfiguration
+        /// <summary>
+        /// <para>
+        /// <para>The name of the security configuration created with the data quality encryption option.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DataQualitySecurityConfiguration { get; set; }
         #endregion
         
         #region Parameter NumberOfWorker
@@ -122,6 +182,18 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("NumberOfWorkers")]
         public System.Int32? NumberOfWorker { get; set; }
+        #endregion
+        
+        #region Parameter DataQualityGlueTable_PreProcessingQuery
+        /// <summary>
+        /// <para>
+        /// <para>SQL Query of SparkSQL format that can be used to pre-process the data for the table
+        /// in Glue Data Catalog, before running the Data Quality Operation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSource_DataQualityGlueTable_PreProcessingQuery")]
+        public System.String DataQualityGlueTable_PreProcessingQuery { get; set; }
         #endregion
         
         #region Parameter Role
@@ -141,20 +213,24 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String Role { get; set; }
         #endregion
         
+        #region Parameter DataQualityGlueTable_TableName
+        /// <summary>
+        /// <para>
+        /// <para>A table name in the Glue Data Catalog.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataSource_DataQualityGlueTable_TableName")]
+        public System.String DataQualityGlueTable_TableName { get; set; }
+        #endregion
+        
         #region Parameter GlueTable_TableName
         /// <summary>
         /// <para>
         /// <para>A table name in the Glue Data Catalog.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("DataSource_GlueTable_TableName")]
         public System.String GlueTable_TableName { get; set; }
         #endregion
@@ -193,16 +269,6 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "RunId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Role parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Role' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Role' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -213,12 +279,16 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
-            var resourceIdentifiersText = string.Empty;
+            var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CreatedRulesetName), MyInvocation.BoundParameters);
             if (!ConfirmShouldProceed(this.Force.IsPresent, resourceIdentifiersText, "Start-GLUEDataQualityRuleRecommendationRun (StartDataQualityRuleRecommendationRun)"))
             {
                 return;
@@ -229,23 +299,27 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.StartDataQualityRuleRecommendationRunResponse, StartGLUEDataQualityRuleRecommendationRunCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Role;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.CreatedRulesetName = this.CreatedRulesetName;
+            context.DataQualitySecurityConfiguration = this.DataQualitySecurityConfiguration;
+            if (this.DataQualityGlueTable_AdditionalOption != null)
+            {
+                context.DataQualityGlueTable_AdditionalOption = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.DataQualityGlueTable_AdditionalOption.Keys)
+                {
+                    context.DataQualityGlueTable_AdditionalOption.Add((String)hashKey, (System.String)(this.DataQualityGlueTable_AdditionalOption[hashKey]));
+                }
+            }
+            context.DataQualityGlueTable_CatalogId = this.DataQualityGlueTable_CatalogId;
+            context.DataQualityGlueTable_ConnectionName = this.DataQualityGlueTable_ConnectionName;
+            context.DataQualityGlueTable_DatabaseName = this.DataQualityGlueTable_DatabaseName;
+            context.DataQualityGlueTable_PreProcessingQuery = this.DataQualityGlueTable_PreProcessingQuery;
+            context.DataQualityGlueTable_TableName = this.DataQualityGlueTable_TableName;
             if (this.GlueTable_AdditionalOption != null)
             {
                 context.GlueTable_AdditionalOption = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -257,19 +331,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             context.GlueTable_CatalogId = this.GlueTable_CatalogId;
             context.GlueTable_ConnectionName = this.GlueTable_ConnectionName;
             context.GlueTable_DatabaseName = this.GlueTable_DatabaseName;
-            #if MODULAR
-            if (this.GlueTable_DatabaseName == null && ParameterWasBound(nameof(this.GlueTable_DatabaseName)))
-            {
-                WriteWarning("You are passing $null as a value for parameter GlueTable_DatabaseName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.GlueTable_TableName = this.GlueTable_TableName;
-            #if MODULAR
-            if (this.GlueTable_TableName == null && ParameterWasBound(nameof(this.GlueTable_TableName)))
-            {
-                WriteWarning("You are passing $null as a value for parameter GlueTable_TableName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.NumberOfWorker = this.NumberOfWorker;
             context.Role = this.Role;
             #if MODULAR
@@ -302,6 +364,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             if (cmdletContext.CreatedRulesetName != null)
             {
                 request.CreatedRulesetName = cmdletContext.CreatedRulesetName;
+            }
+            if (cmdletContext.DataQualitySecurityConfiguration != null)
+            {
+                request.DataQualitySecurityConfiguration = cmdletContext.DataQualitySecurityConfiguration;
             }
             
              // populate DataSource
@@ -372,6 +438,81 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
                 request.DataSource.GlueTable = requestDataSource_dataSource_GlueTable;
                 requestDataSourceIsNull = false;
             }
+            Amazon.Glue.Model.DataQualityGlueTable requestDataSource_dataSource_DataQualityGlueTable = null;
+            
+             // populate DataQualityGlueTable
+            var requestDataSource_dataSource_DataQualityGlueTableIsNull = true;
+            requestDataSource_dataSource_DataQualityGlueTable = new Amazon.Glue.Model.DataQualityGlueTable();
+            Dictionary<System.String, System.String> requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_AdditionalOption = null;
+            if (cmdletContext.DataQualityGlueTable_AdditionalOption != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_AdditionalOption = cmdletContext.DataQualityGlueTable_AdditionalOption;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_AdditionalOption != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable.AdditionalOptions = requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_AdditionalOption;
+                requestDataSource_dataSource_DataQualityGlueTableIsNull = false;
+            }
+            System.String requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_CatalogId = null;
+            if (cmdletContext.DataQualityGlueTable_CatalogId != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_CatalogId = cmdletContext.DataQualityGlueTable_CatalogId;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_CatalogId != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable.CatalogId = requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_CatalogId;
+                requestDataSource_dataSource_DataQualityGlueTableIsNull = false;
+            }
+            System.String requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_ConnectionName = null;
+            if (cmdletContext.DataQualityGlueTable_ConnectionName != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_ConnectionName = cmdletContext.DataQualityGlueTable_ConnectionName;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_ConnectionName != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable.ConnectionName = requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_ConnectionName;
+                requestDataSource_dataSource_DataQualityGlueTableIsNull = false;
+            }
+            System.String requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_DatabaseName = null;
+            if (cmdletContext.DataQualityGlueTable_DatabaseName != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_DatabaseName = cmdletContext.DataQualityGlueTable_DatabaseName;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_DatabaseName != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable.DatabaseName = requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_DatabaseName;
+                requestDataSource_dataSource_DataQualityGlueTableIsNull = false;
+            }
+            System.String requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_PreProcessingQuery = null;
+            if (cmdletContext.DataQualityGlueTable_PreProcessingQuery != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_PreProcessingQuery = cmdletContext.DataQualityGlueTable_PreProcessingQuery;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_PreProcessingQuery != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable.PreProcessingQuery = requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_PreProcessingQuery;
+                requestDataSource_dataSource_DataQualityGlueTableIsNull = false;
+            }
+            System.String requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_TableName = null;
+            if (cmdletContext.DataQualityGlueTable_TableName != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_TableName = cmdletContext.DataQualityGlueTable_TableName;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_TableName != null)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable.TableName = requestDataSource_dataSource_DataQualityGlueTable_dataQualityGlueTable_TableName;
+                requestDataSource_dataSource_DataQualityGlueTableIsNull = false;
+            }
+             // determine if requestDataSource_dataSource_DataQualityGlueTable should be set to null
+            if (requestDataSource_dataSource_DataQualityGlueTableIsNull)
+            {
+                requestDataSource_dataSource_DataQualityGlueTable = null;
+            }
+            if (requestDataSource_dataSource_DataQualityGlueTable != null)
+            {
+                request.DataSource.DataQualityGlueTable = requestDataSource_dataSource_DataQualityGlueTable;
+                requestDataSourceIsNull = false;
+            }
              // determine if request.DataSource should be set to null
             if (requestDataSourceIsNull)
             {
@@ -427,13 +568,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "StartDataQualityRuleRecommendationRun");
             try
             {
-                #if DESKTOP
-                return client.StartDataQualityRuleRecommendationRun(request);
-                #elif CORECLR
-                return client.StartDataQualityRuleRecommendationRunAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartDataQualityRuleRecommendationRunAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -452,6 +587,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         {
             public System.String ClientToken { get; set; }
             public System.String CreatedRulesetName { get; set; }
+            public System.String DataQualitySecurityConfiguration { get; set; }
+            public Dictionary<System.String, System.String> DataQualityGlueTable_AdditionalOption { get; set; }
+            public System.String DataQualityGlueTable_CatalogId { get; set; }
+            public System.String DataQualityGlueTable_ConnectionName { get; set; }
+            public System.String DataQualityGlueTable_DatabaseName { get; set; }
+            public System.String DataQualityGlueTable_PreProcessingQuery { get; set; }
+            public System.String DataQualityGlueTable_TableName { get; set; }
             public Dictionary<System.String, System.String> GlueTable_AdditionalOption { get; set; }
             public System.String GlueTable_CatalogId { get; set; }
             public System.String GlueTable_ConnectionName { get; set; }

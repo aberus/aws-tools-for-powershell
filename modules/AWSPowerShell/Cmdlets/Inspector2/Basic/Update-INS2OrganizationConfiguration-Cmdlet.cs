@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector2;
 using Amazon.Inspector2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS2
 {
     /// <summary>
@@ -35,12 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.INS2
     [AWSCmdlet("Calls the Inspector2 UpdateOrganizationConfiguration API operation.", Operation = new[] {"UpdateOrganizationConfiguration"}, SelectReturnType = typeof(Amazon.Inspector2.Model.UpdateOrganizationConfigurationResponse))]
     [AWSCmdletOutput("Amazon.Inspector2.Model.AutoEnable or Amazon.Inspector2.Model.UpdateOrganizationConfigurationResponse",
         "This cmdlet returns an Amazon.Inspector2.Model.AutoEnable object.",
-        "The service call response (type Amazon.Inspector2.Model.UpdateOrganizationConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Inspector2.Model.UpdateOrganizationConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateINS2OrganizationConfigurationCmdlet : AmazonInspector2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AutoEnable_CodeRepository
+        /// <summary>
+        /// <para>
+        /// <para>Represents whether code repository scans are automatically enabled for new members
+        /// of your Amazon Inspector organization.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? AutoEnable_CodeRepository { get; set; }
+        #endregion
         
         #region Parameter AutoEnable_Ec2
         /// <summary>
@@ -90,7 +104,8 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter AutoEnable_LambdaCode
         /// <summary>
         /// <para>
-        /// Amazon.Inspector2.Model.AutoEnable.LambdaCode
+        /// <para>Represents whether Lambda code scans are automatically enabled for new members of
+        /// your Amazon Inspector organization. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -139,6 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
                 context.Select = CreateSelectDelegate<Amazon.Inspector2.Model.UpdateOrganizationConfigurationResponse, UpdateINS2OrganizationConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.AutoEnable_CodeRepository = this.AutoEnable_CodeRepository;
             context.AutoEnable_Ec2 = this.AutoEnable_Ec2;
             #if MODULAR
             if (this.AutoEnable_Ec2 == null && ParameterWasBound(nameof(this.AutoEnable_Ec2)))
@@ -175,6 +195,16 @@ namespace Amazon.PowerShell.Cmdlets.INS2
              // populate AutoEnable
             var requestAutoEnableIsNull = true;
             request.AutoEnable = new Amazon.Inspector2.Model.AutoEnable();
+            System.Boolean? requestAutoEnable_autoEnable_CodeRepository = null;
+            if (cmdletContext.AutoEnable_CodeRepository != null)
+            {
+                requestAutoEnable_autoEnable_CodeRepository = cmdletContext.AutoEnable_CodeRepository.Value;
+            }
+            if (requestAutoEnable_autoEnable_CodeRepository != null)
+            {
+                request.AutoEnable.CodeRepository = requestAutoEnable_autoEnable_CodeRepository.Value;
+                requestAutoEnableIsNull = false;
+            }
             System.Boolean? requestAutoEnable_autoEnable_Ec2 = null;
             if (cmdletContext.AutoEnable_Ec2 != null)
             {
@@ -258,13 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Inspector2", "UpdateOrganizationConfiguration");
             try
             {
-                #if DESKTOP
-                return client.UpdateOrganizationConfiguration(request);
-                #elif CORECLR
-                return client.UpdateOrganizationConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateOrganizationConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -281,6 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? AutoEnable_CodeRepository { get; set; }
             public System.Boolean? AutoEnable_Ec2 { get; set; }
             public System.Boolean? AutoEnable_Ecr { get; set; }
             public System.Boolean? AutoEnable_Lambda { get; set; }

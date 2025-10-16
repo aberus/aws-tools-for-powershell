@@ -80,10 +80,130 @@ $BAR_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.BedrockAgentRuntime.AgentCollaboration
+        "Invoke-BARInlineAgent/AgentCollaboration"
+        {
+            $v = "DISABLED","SUPERVISOR","SUPERVISOR_ROUTER"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.FlowExecutionEventType
+        "Get-BARFlowExecutionEventList/EventType"
+        {
+            $v = "Flow","Node"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.InputQueryType
+        "Invoke-BARGenerateQuery/QueryGenerationInput_Type"
+        {
+            $v = "TEXT"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.MemoryType
+        "Get-BARAgentMemory/MemoryType"
+        {
+            $v = "SESSION_SUMMARY"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.OrchestrationType
+        "Invoke-BARInlineAgent/OrchestrationType"
+        {
+            $v = "CUSTOM_ORCHESTRATION","DEFAULT"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.PerformanceConfigLatency
+        {
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/ExternalSourcesConfig_PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/KnowledgeBaseConfig_GenerationConfig_PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/KnowledgeBaseConfig_OrchestrationConfig_PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARAgent/PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARFlow/PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARInlineAgent/PerformanceConfig_Latency") -Or
+            ($_ -eq "Start-BARFlowExecution/PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/Stream_ExternalSourcesConfig_PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/Stream_KnowledgeBaseConfig_GenerationConfig_PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/Stream_KnowledgeBaseConfig_OrchestrationConfig_PerformanceConfig_Latency")
+        }
+        {
+            $v = "optimized","standard"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.QueryTransformationMode
+        "Invoke-BARGenerateQuery/TransformationConfiguration_Mode"
+        {
+            $v = "TEXT_TO_SQL"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.QueryTransformationType
+        {
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/QueryTransformationConfiguration_Type") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/QueryTransformationConfiguration_Type")
+        }
+        {
+            $v = "QUERY_DECOMPOSITION"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.RerankingConfigurationType
+        "Invoke-BARRerank/RerankingConfiguration_Type"
+        {
+            $v = "BEDROCK_RERANKING_MODEL"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.RerankingMetadataSelectionMode
+        {
+            ($_ -eq "Invoke-BARRetrieve/MetadataConfiguration_SelectionMode") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/MetadataConfiguration_SelectionMode") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/MetadataConfiguration_SelectionMode")
+        }
+        {
+            $v = "ALL","SELECTIVE"
+            break
+        }
+
         # Amazon.BedrockAgentRuntime.RetrieveAndGenerateType
-        "Invoke-BARRetrieveAndGenerate/RetrieveAndGenerateConfiguration_Type"
+        {
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/RetrieveAndGenerateConfiguration_Type") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/RetrieveAndGenerateConfiguration_Type")
+        }
+        {
+            $v = "EXTERNAL_SOURCES","KNOWLEDGE_BASE"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.SearchType
+        {
+            ($_ -eq "Invoke-BARRetrieve/VectorSearchConfiguration_OverrideSearchType") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/VectorSearchConfiguration_OverrideSearchType") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/VectorSearchConfiguration_OverrideSearchType")
+        }
+        {
+            $v = "HYBRID","SEMANTIC"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.TextToSqlConfigurationType
+        "Invoke-BARGenerateQuery/TextToSqlConfiguration_Type"
         {
             $v = "KNOWLEDGE_BASE"
+            break
+        }
+
+        # Amazon.BedrockAgentRuntime.VectorSearchRerankingConfigurationType
+        {
+            ($_ -eq "Invoke-BARRetrieve/RerankingConfiguration_Type") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerate/RerankingConfiguration_Type") -Or
+            ($_ -eq "Invoke-BARRetrieveAndGenerateStream/RerankingConfiguration_Type")
+        }
+        {
+            $v = "BEDROCK_RERANKING_MODEL"
             break
         }
 
@@ -96,7 +216,25 @@ $BAR_Completers = {
 }
 
 $BAR_map = @{
-    "RetrieveAndGenerateConfiguration_Type"=@("Invoke-BARRetrieveAndGenerate")
+    "AgentCollaboration"=@("Invoke-BARInlineAgent")
+    "EventType"=@("Get-BARFlowExecutionEventList")
+    "ExternalSourcesConfig_PerformanceConfig_Latency"=@("Invoke-BARRetrieveAndGenerate")
+    "KnowledgeBaseConfig_GenerationConfig_PerformanceConfig_Latency"=@("Invoke-BARRetrieveAndGenerate")
+    "KnowledgeBaseConfig_OrchestrationConfig_PerformanceConfig_Latency"=@("Invoke-BARRetrieveAndGenerate")
+    "MemoryType"=@("Get-BARAgentMemory")
+    "MetadataConfiguration_SelectionMode"=@("Invoke-BARRetrieve","Invoke-BARRetrieveAndGenerate","Invoke-BARRetrieveAndGenerateStream")
+    "OrchestrationType"=@("Invoke-BARInlineAgent")
+    "PerformanceConfig_Latency"=@("Invoke-BARAgent","Invoke-BARFlow","Invoke-BARInlineAgent","Start-BARFlowExecution")
+    "QueryGenerationInput_Type"=@("Invoke-BARGenerateQuery")
+    "QueryTransformationConfiguration_Type"=@("Invoke-BARRetrieveAndGenerate","Invoke-BARRetrieveAndGenerateStream")
+    "RerankingConfiguration_Type"=@("Invoke-BARRerank","Invoke-BARRetrieve","Invoke-BARRetrieveAndGenerate","Invoke-BARRetrieveAndGenerateStream")
+    "RetrieveAndGenerateConfiguration_Type"=@("Invoke-BARRetrieveAndGenerate","Invoke-BARRetrieveAndGenerateStream")
+    "Stream_ExternalSourcesConfig_PerformanceConfig_Latency"=@("Invoke-BARRetrieveAndGenerateStream")
+    "Stream_KnowledgeBaseConfig_GenerationConfig_PerformanceConfig_Latency"=@("Invoke-BARRetrieveAndGenerateStream")
+    "Stream_KnowledgeBaseConfig_OrchestrationConfig_PerformanceConfig_Latency"=@("Invoke-BARRetrieveAndGenerateStream")
+    "TextToSqlConfiguration_Type"=@("Invoke-BARGenerateQuery")
+    "TransformationConfiguration_Mode"=@("Invoke-BARGenerateQuery")
+    "VectorSearchConfiguration_OverrideSearchType"=@("Invoke-BARRetrieve","Invoke-BARRetrieveAndGenerate","Invoke-BARRetrieveAndGenerateStream")
 }
 
 _awsArgumentCompleterRegistration $BAR_Completers $BAR_map
@@ -149,9 +287,37 @@ $BAR_SelectCompleters = {
 }
 
 $BAR_SelectMap = @{
-    "Select"=@("Invoke-BARAgent",
+    "Select"=@("New-BARInvocation",
+               "New-BARSession",
+               "Remove-BARAgentMemory",
+               "Remove-BARSession",
+               "Close-BARSession",
+               "Invoke-BARGenerateQuery",
+               "Get-BARAgentMemory",
+               "Get-BARExecutionFlowSnapshot",
+               "Get-BARFlowExecution",
+               "Get-BARInvocationStep",
+               "Get-BARSession",
+               "Invoke-BARAgent",
+               "Invoke-BARFlow",
+               "Invoke-BARInlineAgent",
+               "Get-BARFlowExecutionEventList",
+               "Get-BARFlowExecutionList",
+               "Get-BARInvocationList",
+               "Get-BARInvocationStepList",
+               "Get-BARSessionList",
+               "Get-BARResourceTag",
+               "Get-BAROptimizePrompt",
+               "Write-BARInvocationStep",
+               "Invoke-BARRerank",
                "Invoke-BARRetrieve",
-               "Invoke-BARRetrieveAndGenerate")
+               "Invoke-BARRetrieveAndGenerate",
+               "Invoke-BARRetrieveAndGenerateStream",
+               "Start-BARFlowExecution",
+               "Stop-BARFlowExecution",
+               "Add-BARResourceTag",
+               "Remove-BARResourceTag",
+               "Update-BARSession")
 }
 
 _awsArgumentCompleterRegistration $BAR_SelectCompleters $BAR_SelectMap

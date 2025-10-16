@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- *  Copyright 2012-2013 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -21,7 +21,6 @@ using System.Linq;
 using System.Management.Automation;
 using Amazon.PowerShell.Common;
 using Amazon.EC2.Model;
-using Amazon.EC2.Util;
 using Amazon.EC2;
 using Amazon.Runtime;
 

@@ -80,6 +80,16 @@ $RSS_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.RedshiftServerless.PerformanceTargetStatus
+        {
+            ($_ -eq "New-RSSWorkgroup/PricePerformanceTarget_Status") -Or
+            ($_ -eq "Update-RSSWorkgroup/PricePerformanceTarget_Status")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
         # Amazon.RedshiftServerless.UsageLimitBreachAction
         {
             ($_ -eq "New-RSSUsageLimit/BreachAction") -Or
@@ -118,6 +128,7 @@ $RSS_Completers = {
 $RSS_map = @{
     "BreachAction"=@("New-RSSUsageLimit","Update-RSSUsageLimit")
     "Period"=@("New-RSSUsageLimit")
+    "PricePerformanceTarget_Status"=@("New-RSSWorkgroup","Update-RSSWorkgroup")
     "UsageType"=@("Get-RSSUsageLimitList","New-RSSUsageLimit")
 }
 
@@ -175,6 +186,7 @@ $RSS_SelectMap = @{
                "New-RSSCustomDomainAssociation",
                "New-RSSEndpointAccess",
                "New-RSSNamespace",
+               "New-RSSReservation",
                "New-RSSScheduledAction",
                "New-RSSSnapshot",
                "New-RSSSnapshotCopyConfiguration",
@@ -194,21 +206,28 @@ $RSS_SelectMap = @{
                "Get-RSSEndpointAccess",
                "Get-RSSNamespace",
                "Get-RSSRecoveryPoint",
+               "Get-RSSReservation",
+               "Get-RSSReservationOffering",
                "Get-RSSResourcePolicy",
                "Get-RSSScheduledAction",
                "Get-RSSSnapshot",
                "Get-RSSTableRestoreStatus",
+               "Get-RSSTrack",
                "Get-RSSUsageLimit",
                "Get-RSSWorkgroup",
                "Get-RSSCustomDomainAssociationList",
                "Get-RSSEndpointAccessList",
+               "Get-RSSManagedWorkgroupList",
                "Get-RSSNamespaceList",
                "Get-RSSRecoveryPointList",
+               "Get-RSSReservationOfferingList",
+               "Get-RSSReservationList",
                "Get-RSSScheduledActionList",
                "Get-RSSSnapshotCopyConfigurationList",
                "Get-RSSSnapshotList",
                "Get-RSSTableRestoreStatusList",
                "Get-RSSResourceTag",
+               "Get-RSSTrackList",
                "Get-RSSUsageLimitList",
                "Get-RSSWorkgroupList",
                "Write-RSSResourcePolicy",

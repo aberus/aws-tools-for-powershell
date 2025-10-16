@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EMRServerless;
 using Amazon.EMRServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMRServerless
 {
     /// <summary>
@@ -34,19 +36,22 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
     [OutputType("Amazon.EMRServerless.Model.StartJobRunResponse")]
     [AWSCmdlet("Calls the EMR Serverless StartJobRun API operation.", Operation = new[] {"StartJobRun"}, SelectReturnType = typeof(Amazon.EMRServerless.Model.StartJobRunResponse))]
     [AWSCmdletOutput("Amazon.EMRServerless.Model.StartJobRunResponse",
-        "This cmdlet returns an Amazon.EMRServerless.Model.StartJobRunResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EMRServerless.Model.StartJobRunResponse object containing multiple properties."
     )]
     public partial class StartEMRServerlessJobRunCmdlet : AmazonEMRServerlessClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigurationOverrides_ApplicationConfiguration
         /// <summary>
         /// <para>
-        /// <para>The override configurations for the application.</para>
+        /// <para>The override configurations for the application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,7 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         #region Parameter SparkSubmit_EntryPointArgument
         /// <summary>
         /// <para>
-        /// <para>The arguments for the Spark submit job run.</para>
+        /// <para>The arguments for the Spark submit job run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -221,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         /// <a href="https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/logging.html#jobs-log-storage-cw">Logging
         /// for EMR Serverless with CloudWatch</a>.</para><ul><li><para><b>Key Valid Values</b>: <c>SPARK_DRIVER</c>, <c>SPARK_EXECUTOR</c>, <c>HIVE_DRIVER</c>,
         /// <c>TEZ_TASK</c></para></li><li><para><b>Array Members Valid Values</b>: <c>STDOUT</c>, <c>STDERR</c>, <c>HIVE_LOG</c>,
-        /// <c>TEZ_AM</c>, <c>SYSTEM_LOGS</c></para></li></ul>
+        /// <c>TEZ_AM</c>, <c>SYSTEM_LOGS</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -238,6 +251,40 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ConfigurationOverrides_MonitoringConfiguration_S3MonitoringConfiguration_LogUri")]
         public System.String S3MonitoringConfiguration_LogUri { get; set; }
+        #endregion
+        
+        #region Parameter RetryPolicy_MaxAttempt
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of attempts for the job run. This parameter is only applicable for
+        /// <c>BATCH</c> mode.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RetryPolicy_MaxAttempts")]
+        public System.Int32? RetryPolicy_MaxAttempt { get; set; }
+        #endregion
+        
+        #region Parameter RetryPolicy_MaxFailedAttemptsPerHour
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of failed attempts per hour. This [arameter is only applicable for
+        /// <c>STREAMING</c> mode.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? RetryPolicy_MaxFailedAttemptsPerHour { get; set; }
+        #endregion
+        
+        #region Parameter Mode
+        /// <summary>
+        /// <para>
+        /// <para>The mode of the job run when it starts.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EMRServerless.JobRunMode")]
+        public Amazon.EMRServerless.JobRunMode Mode { get; set; }
         #endregion
         
         #region Parameter Name
@@ -261,6 +308,31 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public System.String Hive_Parameter { get; set; }
         #endregion
         
+        #region Parameter ExecutionIamPolicy_Policy
+        /// <summary>
+        /// <para>
+        /// <para>An IAM inline policy to use as an execution IAM policy.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ExecutionIamPolicy_Policy { get; set; }
+        #endregion
+        
+        #region Parameter ExecutionIamPolicy_PolicyArn
+        /// <summary>
+        /// <para>
+        /// <para>A list of Amazon Resource Names (ARNs) to use as an execution IAM policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExecutionIamPolicy_PolicyArns")]
+        public System.String[] ExecutionIamPolicy_PolicyArn { get; set; }
+        #endregion
+        
         #region Parameter Hive_Query
         /// <summary>
         /// <para>
@@ -270,6 +342,18 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("JobDriver_Hive_Query")]
         public System.String Hive_Query { get; set; }
+        #endregion
+        
+        #region Parameter PrometheusMonitoringConfiguration_RemoteWriteUrl
+        /// <summary>
+        /// <para>
+        /// <para>The remote write URL in the Amazon Managed Service for Prometheus workspace to send
+        /// metrics to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ConfigurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration_RemoteWriteUrl")]
+        public System.String PrometheusMonitoringConfiguration_RemoteWriteUrl { get; set; }
         #endregion
         
         #region Parameter SparkSubmit_SparkSubmitParameter
@@ -286,7 +370,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags assigned to the job run.</para>
+        /// <para>The tags assigned to the job run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -316,16 +404,6 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -336,9 +414,13 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -352,21 +434,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EMRServerless.Model.StartJobRunResponse, StartEMRServerlessJobRunCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -405,8 +477,14 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             }
             context.ManagedPersistenceMonitoringConfiguration_Enabled = this.ManagedPersistenceMonitoringConfiguration_Enabled;
             context.ManagedPersistenceMonitoringConfiguration_EncryptionKeyArn = this.ManagedPersistenceMonitoringConfiguration_EncryptionKeyArn;
+            context.PrometheusMonitoringConfiguration_RemoteWriteUrl = this.PrometheusMonitoringConfiguration_RemoteWriteUrl;
             context.S3MonitoringConfiguration_EncryptionKeyArn = this.S3MonitoringConfiguration_EncryptionKeyArn;
             context.S3MonitoringConfiguration_LogUri = this.S3MonitoringConfiguration_LogUri;
+            context.ExecutionIamPolicy_Policy = this.ExecutionIamPolicy_Policy;
+            if (this.ExecutionIamPolicy_PolicyArn != null)
+            {
+                context.ExecutionIamPolicy_PolicyArn = new List<System.String>(this.ExecutionIamPolicy_PolicyArn);
+            }
             context.ExecutionRoleArn = this.ExecutionRoleArn;
             #if MODULAR
             if (this.ExecutionRoleArn == null && ParameterWasBound(nameof(this.ExecutionRoleArn)))
@@ -424,7 +502,10 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
                 context.SparkSubmit_EntryPointArgument = new List<System.String>(this.SparkSubmit_EntryPointArgument);
             }
             context.SparkSubmit_SparkSubmitParameter = this.SparkSubmit_SparkSubmitParameter;
+            context.Mode = this.Mode;
             context.Name = this.Name;
+            context.RetryPolicy_MaxAttempt = this.RetryPolicy_MaxAttempt;
+            context.RetryPolicy_MaxFailedAttemptsPerHour = this.RetryPolicy_MaxFailedAttemptsPerHour;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -476,6 +557,31 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
              // populate MonitoringConfiguration
             var requestConfigurationOverrides_configurationOverrides_MonitoringConfigurationIsNull = true;
             requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration = new Amazon.EMRServerless.Model.MonitoringConfiguration();
+            Amazon.EMRServerless.Model.PrometheusMonitoringConfiguration requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration = null;
+            
+             // populate PrometheusMonitoringConfiguration
+            var requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfigurationIsNull = true;
+            requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration = new Amazon.EMRServerless.Model.PrometheusMonitoringConfiguration();
+            System.String requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl = null;
+            if (cmdletContext.PrometheusMonitoringConfiguration_RemoteWriteUrl != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl = cmdletContext.PrometheusMonitoringConfiguration_RemoteWriteUrl;
+            }
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration.RemoteWriteUrl = requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration_prometheusMonitoringConfiguration_RemoteWriteUrl;
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfigurationIsNull = false;
+            }
+             // determine if requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration should be set to null
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfigurationIsNull)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration = null;
+            }
+            if (requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration != null)
+            {
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration.PrometheusMonitoringConfiguration = requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_PrometheusMonitoringConfiguration;
+                requestConfigurationOverrides_configurationOverrides_MonitoringConfigurationIsNull = false;
+            }
             Amazon.EMRServerless.Model.ManagedPersistenceMonitoringConfiguration requestConfigurationOverrides_configurationOverrides_MonitoringConfiguration_configurationOverrides_MonitoringConfiguration_ManagedPersistenceMonitoringConfiguration = null;
             
              // populate ManagedPersistenceMonitoringConfiguration
@@ -626,6 +732,35 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             {
                 request.ConfigurationOverrides = null;
             }
+            
+             // populate ExecutionIamPolicy
+            var requestExecutionIamPolicyIsNull = true;
+            request.ExecutionIamPolicy = new Amazon.EMRServerless.Model.JobRunExecutionIamPolicy();
+            System.String requestExecutionIamPolicy_executionIamPolicy_Policy = null;
+            if (cmdletContext.ExecutionIamPolicy_Policy != null)
+            {
+                requestExecutionIamPolicy_executionIamPolicy_Policy = cmdletContext.ExecutionIamPolicy_Policy;
+            }
+            if (requestExecutionIamPolicy_executionIamPolicy_Policy != null)
+            {
+                request.ExecutionIamPolicy.Policy = requestExecutionIamPolicy_executionIamPolicy_Policy;
+                requestExecutionIamPolicyIsNull = false;
+            }
+            List<System.String> requestExecutionIamPolicy_executionIamPolicy_PolicyArn = null;
+            if (cmdletContext.ExecutionIamPolicy_PolicyArn != null)
+            {
+                requestExecutionIamPolicy_executionIamPolicy_PolicyArn = cmdletContext.ExecutionIamPolicy_PolicyArn;
+            }
+            if (requestExecutionIamPolicy_executionIamPolicy_PolicyArn != null)
+            {
+                request.ExecutionIamPolicy.PolicyArns = requestExecutionIamPolicy_executionIamPolicy_PolicyArn;
+                requestExecutionIamPolicyIsNull = false;
+            }
+             // determine if request.ExecutionIamPolicy should be set to null
+            if (requestExecutionIamPolicyIsNull)
+            {
+                request.ExecutionIamPolicy = null;
+            }
             if (cmdletContext.ExecutionRoleArn != null)
             {
                 request.ExecutionRoleArn = cmdletContext.ExecutionRoleArn;
@@ -733,9 +868,42 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             {
                 request.JobDriver = null;
             }
+            if (cmdletContext.Mode != null)
+            {
+                request.Mode = cmdletContext.Mode;
+            }
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            
+             // populate RetryPolicy
+            var requestRetryPolicyIsNull = true;
+            request.RetryPolicy = new Amazon.EMRServerless.Model.RetryPolicy();
+            System.Int32? requestRetryPolicy_retryPolicy_MaxAttempt = null;
+            if (cmdletContext.RetryPolicy_MaxAttempt != null)
+            {
+                requestRetryPolicy_retryPolicy_MaxAttempt = cmdletContext.RetryPolicy_MaxAttempt.Value;
+            }
+            if (requestRetryPolicy_retryPolicy_MaxAttempt != null)
+            {
+                request.RetryPolicy.MaxAttempts = requestRetryPolicy_retryPolicy_MaxAttempt.Value;
+                requestRetryPolicyIsNull = false;
+            }
+            System.Int32? requestRetryPolicy_retryPolicy_MaxFailedAttemptsPerHour = null;
+            if (cmdletContext.RetryPolicy_MaxFailedAttemptsPerHour != null)
+            {
+                requestRetryPolicy_retryPolicy_MaxFailedAttemptsPerHour = cmdletContext.RetryPolicy_MaxFailedAttemptsPerHour.Value;
+            }
+            if (requestRetryPolicy_retryPolicy_MaxFailedAttemptsPerHour != null)
+            {
+                request.RetryPolicy.MaxFailedAttemptsPerHour = requestRetryPolicy_retryPolicy_MaxFailedAttemptsPerHour.Value;
+                requestRetryPolicyIsNull = false;
+            }
+             // determine if request.RetryPolicy should be set to null
+            if (requestRetryPolicyIsNull)
+            {
+                request.RetryPolicy = null;
             }
             if (cmdletContext.Tag != null)
             {
@@ -779,13 +947,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EMR Serverless", "StartJobRun");
             try
             {
-                #if DESKTOP
-                return client.StartJobRun(request);
-                #elif CORECLR
-                return client.StartJobRunAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartJobRunAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -812,8 +974,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             public Dictionary<System.String, List<System.String>> CloudWatchLoggingConfiguration_LogType { get; set; }
             public System.Boolean? ManagedPersistenceMonitoringConfiguration_Enabled { get; set; }
             public System.String ManagedPersistenceMonitoringConfiguration_EncryptionKeyArn { get; set; }
+            public System.String PrometheusMonitoringConfiguration_RemoteWriteUrl { get; set; }
             public System.String S3MonitoringConfiguration_EncryptionKeyArn { get; set; }
             public System.String S3MonitoringConfiguration_LogUri { get; set; }
+            public System.String ExecutionIamPolicy_Policy { get; set; }
+            public List<System.String> ExecutionIamPolicy_PolicyArn { get; set; }
             public System.String ExecutionRoleArn { get; set; }
             public System.Int64? ExecutionTimeoutMinute { get; set; }
             public System.String Hive_InitQueryFile { get; set; }
@@ -822,7 +987,10 @@ namespace Amazon.PowerShell.Cmdlets.EMRServerless
             public System.String SparkSubmit_EntryPoint { get; set; }
             public List<System.String> SparkSubmit_EntryPointArgument { get; set; }
             public System.String SparkSubmit_SparkSubmitParameter { get; set; }
+            public Amazon.EMRServerless.JobRunMode Mode { get; set; }
             public System.String Name { get; set; }
+            public System.Int32? RetryPolicy_MaxAttempt { get; set; }
+            public System.Int32? RetryPolicy_MaxFailedAttemptsPerHour { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.EMRServerless.Model.StartJobRunResponse, StartEMRServerlessJobRunCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

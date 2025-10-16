@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KafkaConnect;
 using Amazon.KafkaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MSKC
 {
     /// <summary>
@@ -34,14 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
     [OutputType("Amazon.KafkaConnect.Model.CreateConnectorResponse")]
     [AWSCmdlet("Calls the Managed Streaming for Kafka Connect CreateConnector API operation.", Operation = new[] {"CreateConnector"}, SelectReturnType = typeof(Amazon.KafkaConnect.Model.CreateConnectorResponse))]
     [AWSCmdletOutput("Amazon.KafkaConnect.Model.CreateConnectorResponse",
-        "This cmdlet returns an Amazon.KafkaConnect.Model.CreateConnectorResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KafkaConnect.Model.CreateConnectorResponse object containing multiple properties."
     )]
     public partial class NewMSKCConnectorCmdlet : AmazonKafkaConnectClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KafkaClusterClientAuthentication_AuthenticationType
         /// <summary>
@@ -93,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         #region Parameter ConnectorConfiguration
         /// <summary>
         /// <para>
-        /// <para>A map of keys to values that represent the configuration for the connector.</para>
+        /// <para>A map of keys to values that represent the configuration for the connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -298,7 +303,14 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         #region Parameter Plugin
         /// <summary>
         /// <para>
-        /// <para>Specifies which plugins to use for the connector.</para>
+        /// <important><para>Amazon MSK Connect does not currently support specifying multiple plugins as a list.
+        /// To use more than one plugin for your connector, you can create a single custom plugin
+        /// using a ZIP file that bundles multiple plugins together.</para></important><para>Specifies which plugin to use for the connector. You must specify a single-element
+        /// list containing one <c>customPlugin</c> object.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -337,7 +349,11 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         #region Parameter Vpc_SecurityGroup
         /// <summary>
         /// <para>
-        /// <para>The security groups for the connector.</para>
+        /// <para>The security groups for the connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -368,7 +384,11 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         #region Parameter Vpc_Subnet
         /// <summary>
         /// <para>
-        /// <para>The subnets for the connector.</para>
+        /// <para>The subnets for the connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -381,6 +401,21 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("KafkaCluster_ApacheKafkaCluster_Vpc_Subnets")]
         public System.String[] Vpc_Subnet { get; set; }
+        #endregion
+        
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>The tags you want to attach to the connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
         #endregion
         
         #region Parameter WorkerConfiguration_WorkerConfigurationArn
@@ -415,16 +450,6 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectorName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectorName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectorName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -435,9 +460,13 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectorName), MyInvocation.BoundParameters);
@@ -451,21 +480,11 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KafkaConnect.Model.CreateConnectorResponse, NewMSKCConnectorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectorName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScaling_MaxWorkerCount = this.AutoScaling_MaxWorkerCount;
             context.AutoScaling_McuCount = this.AutoScaling_McuCount;
             context.AutoScaling_MinWorkerCount = this.AutoScaling_MinWorkerCount;
@@ -561,6 +580,14 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
                 WriteWarning("You are passing $null as a value for parameter ServiceExecutionRoleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             context.WorkerConfiguration_Revision = this.WorkerConfiguration_Revision;
             context.WorkerConfiguration_WorkerConfigurationArn = this.WorkerConfiguration_WorkerConfigurationArn;
             
@@ -988,6 +1015,10 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             {
                 request.ServiceExecutionRoleArn = cmdletContext.ServiceExecutionRoleArn;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
              // populate WorkerConfiguration
             var requestWorkerConfigurationIsNull = true;
@@ -1055,13 +1086,7 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Managed Streaming for Kafka Connect", "CreateConnector");
             try
             {
-                #if DESKTOP
-                return client.CreateConnector(request);
-                #elif CORECLR
-                return client.CreateConnectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConnectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1103,6 +1128,7 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             public System.String S3_Prefix { get; set; }
             public List<Amazon.KafkaConnect.Model.Plugin> Plugin { get; set; }
             public System.String ServiceExecutionRoleArn { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Int64? WorkerConfiguration_Revision { get; set; }
             public System.String WorkerConfiguration_WorkerConfigurationArn { get; set; }
             public System.Func<Amazon.KafkaConnect.Model.CreateConnectorResponse, NewMSKCConnectorCmdlet, object> Select { get; set; } =

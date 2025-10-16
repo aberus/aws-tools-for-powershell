@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -35,19 +37,26 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// 
     ///  
     /// <para>
-    /// You can allocate an Elastic IP address from an address pool owned by Amazon Web Services
-    /// or from an address pool created from a public IPv4 address range that you have brought
-    /// to Amazon Web Services for use with your Amazon Web Services resources using bring
-    /// your own IP addresses (BYOIP). For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html">Bring
-    /// Your Own IP Addresses (BYOIP)</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// You can allocate an Elastic IP address from one of the following address pools:
+    /// </para><ul><li><para>
+    /// Amazon's pool of IPv4 addresses
+    /// </para></li><li><para>
+    /// Public IPv4 address range that you own and bring to your Amazon Web Services account
+    /// using <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-byoip.html">Bring
+    /// Your Own IP Addresses (BYOIP)</a></para></li><li><para>
+    /// An IPv4 IPAM pool with an Amazon-provided or BYOIP public IPv4 address range
+    /// </para></li><li><para>
+    /// IPv4 addresses from your on-premises network made available for use with an Outpost
+    /// using a <a href="https://docs.aws.amazon.com/outposts/latest/userguide/routing.html#ip-addressing">customer-owned
+    /// IP address pool</a> (CoIP pool)
+    /// </para></li></ul><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Elastic
+    /// IP Addresses</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
     /// If you release an Elastic IP address, you might be able to recover it. You cannot
     /// recover an Elastic IP address that you released after it is allocated to another Amazon
     /// Web Services account. To attempt to recover an Elastic IP address that you released,
     /// specify it in this operation.
-    /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Elastic
-    /// IP Addresses</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
     /// </para><para>
     /// You can allocate a carrier IP address which is a public IP address from a telecommunication
     /// carrier, to a network interface which resides in a subnet in a Wavelength Zone (for
@@ -58,12 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [OutputType("Amazon.EC2.Model.AllocateAddressResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) AllocateAddress API operation.", Operation = new[] {"AllocateAddress"}, SelectReturnType = typeof(Amazon.EC2.Model.AllocateAddressResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.AllocateAddressResponse",
-        "This cmdlet returns an Amazon.EC2.Model.AllocateAddressResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.AllocateAddressResponse object containing multiple properties."
     )]
     public partial class NewEC2AddressCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Address
         /// <summary>
@@ -98,13 +108,37 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public Amazon.EC2.DomainType Domain { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter IpamPoolId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of an IPAM pool which has an Amazon-provided or BYOIP public IPv4 CIDR provisioned
+        /// to it. For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/ipam/tutorials-eip-pool.html">Allocate
+        /// sequential Elastic IP addresses from an IPAM pool</a> in the <i>Amazon VPC IPAM User
+        /// Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IpamPoolId { get; set; }
+        #endregion
+        
         #region Parameter NetworkBorderGroup
         /// <summary>
         /// <para>
         /// <para> A unique set of Availability Zones, Local Zones, or Wavelength Zones from which Amazon
         /// Web Services advertises IP addresses. Use this parameter to limit the IP address to
-        /// this location. IP addresses cannot move between network border groups.</para><para>Use <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAvailabilityZones.html">DescribeAvailabilityZones</a>
-        /// to view the network border groups.</para>
+        /// this location. IP addresses cannot move between network border groups.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,7 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to assign to the Elastic IP address.</para>
+        /// <para>The tags to assign to the Elastic IP address.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,9 +193,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -179,6 +221,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.Address = this.Address;
             context.CustomerOwnedIpv4Pool = this.CustomerOwnedIpv4Pool;
             context.Domain = this.Domain;
+            context.DryRun = this.DryRun;
+            context.IpamPoolId = this.IpamPoolId;
             context.NetworkBorderGroup = this.NetworkBorderGroup;
             context.PublicIpv4Pool = this.PublicIpv4Pool;
             if (this.TagSpecification != null)
@@ -212,6 +256,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Domain != null)
             {
                 request.Domain = cmdletContext.Domain;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.IpamPoolId != null)
+            {
+                request.IpamPoolId = cmdletContext.IpamPoolId;
             }
             if (cmdletContext.NetworkBorderGroup != null)
             {
@@ -263,13 +315,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "AllocateAddress");
             try
             {
-                #if DESKTOP
-                return client.AllocateAddress(request);
-                #elif CORECLR
-                return client.AllocateAddressAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AllocateAddressAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -289,6 +335,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String Address { get; set; }
             public System.String CustomerOwnedIpv4Pool { get; set; }
             public Amazon.EC2.DomainType Domain { get; set; }
+            public System.Boolean? DryRun { get; set; }
+            public System.String IpamPoolId { get; set; }
             public System.String NetworkBorderGroup { get; set; }
             public System.String PublicIpv4Pool { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }

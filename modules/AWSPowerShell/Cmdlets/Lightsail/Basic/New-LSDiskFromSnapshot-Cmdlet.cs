@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -36,7 +38,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// <para>
     /// The <c>create disk from snapshot</c> operation supports tag-based access control via
     /// request tags and resource tags applied to the resource identified by <c>disk snapshot
-    /// name</c>. For more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-controlling-access-using-tags">Amazon
+    /// name</c>. For more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-controlling-access-using-tags">Amazon
     /// Lightsail Developer Guide</a>.
     /// </para>
     /// </summary>
@@ -45,17 +47,22 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail CreateDiskFromSnapshot API operation.", Operation = new[] {"CreateDiskFromSnapshot"}, SelectReturnType = typeof(Amazon.Lightsail.Model.CreateDiskFromSnapshotResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.Operation or Amazon.Lightsail.Model.CreateDiskFromSnapshotResponse",
         "This cmdlet returns a collection of Amazon.Lightsail.Model.Operation objects.",
-        "The service call response (type Amazon.Lightsail.Model.CreateDiskFromSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.CreateDiskFromSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewLSDiskFromSnapshotCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddOn
         /// <summary>
         /// <para>
-        /// <para>An array of objects that represent the add-ons to enable for the new disk.</para>
+        /// <para>An array of objects that represent the add-ons to enable for the new disk.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -120,7 +127,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// operation to identify the dates of the available automatic snapshots.</para><para>Constraints:</para><ul><li><para>Must be specified in <c>YYYY-MM-DD</c> format.</para></li><li><para>This parameter cannot be defined together with the <c>use latest restorable auto snapshot</c>
         /// parameter. The <c>restore date</c> and <c>use latest restorable auto snapshot</c>
         /// parameters are mutually exclusive.</para></li><li><para>Define this parameter only when creating a new disk from an automatic snapshot. For
-        /// more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+        /// more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
         /// Lightsail Developer Guide</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -150,7 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <para>The name of the source disk from which the source automatic snapshot was created.</para><para>Constraints:</para><ul><li><para>This parameter cannot be defined together with the <c>disk snapshot name</c> parameter.
         /// The <c>source disk name</c> and <c>disk snapshot name</c> parameters are mutually
         /// exclusive.</para></li><li><para>Define this parameter only when creating a new disk from an automatic snapshot. For
-        /// more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+        /// more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
         /// Lightsail Developer Guide</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -161,7 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tag keys and optional values to add to the resource during create.</para><para>Use the <c>TagResource</c> action to tag a resource after it's created.</para>
+        /// <para>The tag keys and optional values to add to the resource during create.</para><para>Use the <c>TagResource</c> action to tag a resource after it's created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,7 +186,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <para>A Boolean value to indicate whether to use the latest available automatic snapshot.</para><para>Constraints:</para><ul><li><para>This parameter cannot be defined together with the <c>restore date</c> parameter.
         /// The <c>use latest restorable auto snapshot</c> and <c>restore date</c> parameters
         /// are mutually exclusive.</para></li><li><para>Define this parameter only when creating a new disk from an automatic snapshot. For
-        /// more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+        /// more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
         /// Lightsail Developer Guide</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -194,16 +205,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "Operations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DiskSnapshotName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DiskSnapshotName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DiskSnapshotName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -214,9 +215,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DiskSnapshotName), MyInvocation.BoundParameters);
@@ -230,21 +235,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.CreateDiskFromSnapshotResponse, NewLSDiskFromSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DiskSnapshotName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AddOn != null)
             {
                 context.AddOn = new List<Amazon.Lightsail.Model.AddOnRequest>(this.AddOn);
@@ -368,13 +363,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "CreateDiskFromSnapshot");
             try
             {
-                #if DESKTOP
-                return client.CreateDiskFromSnapshot(request);
-                #elif CORECLR
-                return client.CreateDiskFromSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDiskFromSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

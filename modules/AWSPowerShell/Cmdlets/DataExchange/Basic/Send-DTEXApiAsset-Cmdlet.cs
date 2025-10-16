@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataExchange;
 using Amazon.DataExchange.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTEX
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
     [OutputType("Amazon.DataExchange.Model.SendApiAssetResponse")]
     [AWSCmdlet("Calls the AWS Data Exchange SendApiAsset API operation.", Operation = new[] {"SendApiAsset"}, SelectReturnType = typeof(Amazon.DataExchange.Model.SendApiAssetResponse))]
     [AWSCmdletOutput("Amazon.DataExchange.Model.SendApiAssetResponse",
-        "This cmdlet returns an Amazon.DataExchange.Model.SendApiAssetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataExchange.Model.SendApiAssetResponse object containing multiple properties."
     )]
     public partial class SendDTEXApiAssetCmdlet : AmazonDataExchangeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetId
         /// <summary>
@@ -111,7 +114,11 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
         #region Parameter QueryStringParameter
         /// <summary>
         /// <para>
-        /// <para>Attach query string parameters to the end of the URI (for example, /v1/examplePath?exampleParam=exampleValue).</para>
+        /// <para>Attach query string parameters to the end of the URI (for example, /v1/examplePath?exampleParam=exampleValue).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,7 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
         /// <para>Any header value prefixed with x-amzn-dataexchange-header- will have that stripped
         /// before sending the Asset API request. Use this when you want to override a header
         /// that AWS Data Exchange uses. Alternatively, you can use the header without a prefix
-        /// to the HTTP request.</para>
+        /// to the HTTP request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,9 +182,13 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AssetId), MyInvocation.BoundParameters);
@@ -318,13 +333,7 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Data Exchange", "SendApiAsset");
             try
             {
-                #if DESKTOP
-                return client.SendApiAsset(request);
-                #elif CORECLR
-                return client.SendApiAssetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendApiAssetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

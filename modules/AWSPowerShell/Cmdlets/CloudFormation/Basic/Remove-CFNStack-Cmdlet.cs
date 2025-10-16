@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
     /// Deletes a specified stack. Once the call completes successfully, stack deletion starts.
     /// Deleted stacks don't show up in the <a>DescribeStacks</a> operation if the deletion
     /// has been completed successfully.
+    /// 
+    ///  
+    /// <para>
+    /// For more information about deleting a stack, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-delete-stack.html">Delete
+    /// a stack from the CloudFormation console</a> in the <i>CloudFormation User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("Remove", "CFNStack", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS CloudFormation DeleteStack API operation.", Operation = new[] {"DeleteStack"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.DeleteStackResponse))]
     [AWSCmdletOutput("None or Amazon.CloudFormation.Model.DeleteStackResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudFormation.Model.DeleteStackResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudFormation.Model.DeleteStackResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveCFNStackCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -64,13 +73,30 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public System.String ClientRequestToken { get; set; }
         #endregion
         
+        #region Parameter DeletionMode
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the deletion mode for the stack. Possible values are:</para><ul><li><para><c>STANDARD</c> - Use the standard behavior. Specifying this value is the same as
+        /// not specifying this parameter.</para></li><li><para><c>FORCE_DELETE_STACK</c> - Delete the stack if it's stuck in a <c>DELETE_FAILED</c>
+        /// state due to resource deletion failure.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CloudFormation.DeletionMode")]
+        public Amazon.CloudFormation.DeletionMode DeletionMode { get; set; }
+        #endregion
+        
         #region Parameter RetainResource
         /// <summary>
         /// <para>
         /// <para>For stacks in the <c>DELETE_FAILED</c> state, a list of resource logical IDs that
         /// are associated with the resources you want to retain. During deletion, CloudFormation
         /// deletes the stack but doesn't delete the retained resources.</para><para>Retaining resources is useful when you can't delete a resource, such as a non-empty
-        /// S3 bucket, but you want to delete the stack.</para>
+        /// S3 bucket, but you want to delete the stack.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,9 +107,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter RoleARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of an Identity and Access Management (IAM) role that
-        /// CloudFormation assumes to delete the stack. CloudFormation uses the role's credentials
-        /// to make calls on your behalf.</para><para>If you don't specify a value, CloudFormation uses the role that was previously associated
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that CloudFormation assumes to delete
+        /// the stack. CloudFormation uses the role's credentials to make calls on your behalf.</para><para>If you don't specify a value, CloudFormation uses the role that was previously associated
         /// with the stack. If no role is available, CloudFormation uses a temporary session that's
         /// generated from your user credentials.</para>
         /// </para>
@@ -119,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StackName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -139,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.StackName), MyInvocation.BoundParameters);
@@ -155,22 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFormation.Model.DeleteStackResponse, RemoveCFNStackCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StackName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
+            context.DeletionMode = this.DeletionMode;
             if (this.RetainResource != null)
             {
                 context.RetainResource = new List<System.String>(this.RetainResource);
@@ -202,6 +212,10 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             if (cmdletContext.ClientRequestToken != null)
             {
                 request.ClientRequestToken = cmdletContext.ClientRequestToken;
+            }
+            if (cmdletContext.DeletionMode != null)
+            {
+                request.DeletionMode = cmdletContext.DeletionMode;
             }
             if (cmdletContext.RetainResource != null)
             {
@@ -253,13 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "DeleteStack");
             try
             {
-                #if DESKTOP
-                return client.DeleteStack(request);
-                #elif CORECLR
-                return client.DeleteStackAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteStackAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -277,6 +285,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientRequestToken { get; set; }
+            public Amazon.CloudFormation.DeletionMode DeletionMode { get; set; }
             public List<System.String> RetainResource { get; set; }
             public System.String RoleARN { get; set; }
             public System.String StackName { get; set; }

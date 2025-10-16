@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Organizations;
 using Amazon.Organizations.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ORG
 {
     /// <summary>
@@ -65,18 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     /// delegated administrator, you must first change the delegated administrator account
     /// to another account that is remaining in the organization.
     /// </para></li><li><para>
-    /// You can leave an organization only after you enable IAM user access to billing in
-    /// your account. For more information, see <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/grantaccess.html#ControllingAccessWebsite-Activate">About
-    /// IAM access to the Billing and Cost Management console</a> in the <i>Amazon Web Services
-    /// Billing and Cost Management User Guide</i>.
-    /// </para></li><li><para>
     /// After the account leaves the organization, all tags that were attached to the account
     /// object in the organization are deleted. Amazon Web Services accounts outside of an
     /// organization do not support tags.
     /// </para></li><li><para>
     /// A newly created account has a waiting period before it can be removed from its organization.
-    /// If you get an error that indicates that a wait period is required, then try again
-    /// in a few days.
+    /// You must wait until at least seven days after the account was created. Invited accounts
+    /// aren't subject to this waiting period.
     /// </para></li><li><para>
     /// If you are using an organization principal to call <c>LeaveOrganization</c> across
     /// multiple accounts, you can only do this up to 5 accounts per second in a single organization.
@@ -87,12 +84,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     [AWSCmdlet("Calls the AWS Organizations LeaveOrganization API operation.", Operation = new[] {"LeaveOrganization"}, SelectReturnType = typeof(Amazon.Organizations.Model.LeaveOrganizationResponse))]
     [AWSCmdletOutput("None or Amazon.Organizations.Model.LeaveOrganizationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Organizations.Model.LeaveOrganizationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Organizations.Model.LeaveOrganizationResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveORGOrganizationAssociationCmdlet : AmazonOrganizationsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -114,9 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -189,13 +191,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Organizations", "LeaveOrganization");
             try
             {
-                #if DESKTOP
-                return client.LeaveOrganization(request);
-                #elif CORECLR
-                return client.LeaveOrganizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.LeaveOrganizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

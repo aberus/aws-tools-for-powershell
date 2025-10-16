@@ -1,0 +1,1 @@
+New-CTTrail -Name "awscloudtrail-example" -S3BucketName "amzn-s3-demo-bucket"

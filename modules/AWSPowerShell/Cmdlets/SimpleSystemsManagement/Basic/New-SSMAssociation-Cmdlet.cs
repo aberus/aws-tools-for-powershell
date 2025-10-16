@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -33,33 +35,34 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// and running on your managed nodes, or that certain ports must be closed. For static
     /// targets, the association specifies a schedule for when the configuration is reapplied.
     /// For dynamic targets, such as an Amazon Web Services resource group or an Amazon Web
-    /// Services autoscaling group, State Manager, a capability of Amazon Web Services Systems
-    /// Manager applies the configuration when new managed nodes are added to the group. The
-    /// association also specifies actions to take when applying the configuration. For example,
-    /// an association for anti-virus software might run once a day. If the software isn't
-    /// installed, then State Manager installs it. If the software is installed, but the service
-    /// isn't running, then the association might instruct State Manager to start the service.
+    /// Services autoscaling group, State Manager, a tool in Amazon Web Services Systems Manager
+    /// applies the configuration when new managed nodes are added to the group. The association
+    /// also specifies actions to take when applying the configuration. For example, an association
+    /// for anti-virus software might run once a day. If the software isn't installed, then
+    /// State Manager installs it. If the software is installed, but the service isn't running,
+    /// then the association might instruct State Manager to start the service.
     /// </summary>
     [Cmdlet("New", "SSMAssociation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SimpleSystemsManagement.Model.AssociationDescription")]
     [AWSCmdlet("Calls the AWS Systems Manager CreateAssociation API operation.", Operation = new[] {"CreateAssociation"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.CreateAssociationResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.AssociationDescription or Amazon.SimpleSystemsManagement.Model.CreateAssociationResponse",
         "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.AssociationDescription object.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.CreateAssociationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.CreateAssociationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSSMAssociationCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlarmConfiguration_Alarm
         /// <summary>
         /// <para>
-        /// <para>The name of the CloudWatch alarm specified in the configuration.</para>
+        /// <para>The name of the CloudWatch alarm specified in the configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,9 +74,12 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>By default, when you create a new association, the system runs it immediately after
-        /// it is created and then according to the schedule you specified. Specify this option
-        /// if you don't want an association to run immediately after you create it. This parameter
-        /// isn't supported for rate expressions.</para>
+        /// it is created and then according to the schedule you specified and when target changes
+        /// are detected. Specify <c>true</c> for <c>ApplyOnlyAtCronInterval</c>if you want the
+        /// association to run only according to the schedule you specified.</para><para>For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/state-manager-about.html#state-manager-about-scheduling">Understanding
+        /// when associations are applied to resources</a> and <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/state-manager-about.html#runbook-target-updates">&gt;About
+        /// target updates with Automation runbooks</a> in the <i>Amazon Web Services Systems
+        /// Manager User Guide</i>.</para><para>This parameter isn't supported for rate expressions.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,7 +101,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>Choose the parameter that will define how your automation will branch out. This target
         /// is required for associations that use an Automation runbook and target resources by
-        /// using rate controls. Automation is a capability of Amazon Web Services Systems Manager.</para>
+        /// using rate controls. Automation is a tool in Amazon Web Services Systems Manager.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,10 +111,15 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter CalendarName
         /// <summary>
         /// <para>
-        /// <para>The names or Amazon Resource Names (ARNs) of the Change Calendar type documents you
+        /// <para>The names of Amazon Resource Names (ARNs) of the Change Calendar type documents you
         /// want to gate your associations under. The associations only run when that change calendar
         /// is open. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-change-calendar">Amazon
-        /// Web Services Systems Manager Change Calendar</a>.</para>
+        /// Web Services Systems Manager Change Calendar</a> in the <i>Amazon Web Services Systems
+        /// Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -130,7 +141,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter DocumentVersion
         /// <summary>
         /// <para>
-        /// <para>The document version you want to associate with the target(s). Can be a specific version
+        /// <para>The document version you want to associate with the targets. Can be a specific version
         /// or the default version.</para><important><para>State Manager doesn't support running associations that use a new version of a document
         /// if that document is shared from another account. State Manager always runs the <c>default</c>
         /// version of a document if shared from another account, even though the Systems Manager
@@ -283,7 +294,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter Parameter
         /// <summary>
         /// <para>
-        /// <para>The parameters for the runtime configuration of the document.</para>
+        /// <para>The parameters for the runtime configuration of the document.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -294,7 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter ScheduleExpression
         /// <summary>
         /// <para>
-        /// <para>A cron expression when the association will be applied to the target(s).</para>
+        /// <para>A cron expression when the association will be applied to the targets.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -343,7 +358,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// metadata that you can assign to your Amazon Web Services resources. Tags enable you
         /// to categorize your resources in different ways, for example, by purpose, owner, or
         /// environment. Each tag consists of a key and an optional value, both of which you define.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -356,7 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>A location is a combination of Amazon Web Services Regions and Amazon Web Services
         /// accounts where you want to run the association. Use this action to create an association
-        /// in multiple Regions and multiple accounts.</para>
+        /// in multiple Regions and multiple accounts.</para><note><para>The <c>IncludeChildOrganizationUnits</c> parameter is not supported by State Manager.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -368,7 +391,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>A key-value mapping of document parameters to target resources. Both Targets and TargetMaps
-        /// can't be specified together.</para>
+        /// can't be specified together.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -383,9 +410,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// Web Services resource groups, all managed nodes in an Amazon Web Services account,
         /// or individual managed node IDs. You can target all managed nodes in an Amazon Web
         /// Services account by specifying the <c>InstanceIds</c> key with a value of <c>*</c>.
-        /// For more information about choosing targets for an association, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-state-manager-targets-and-rate-controls.html">Using
-        /// targets and rate controls with State Manager associations</a> in the <i>Amazon Web
-        /// Services Systems Manager User Guide</i>.</para>
+        /// For more information about choosing targets for an association, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-state-manager-targets-and-rate-controls.html">Understanding
+        /// targets and rate controls in State Manager associations</a> in the <i>Amazon Web Services
+        /// Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -404,16 +435,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "AssociationDescription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -424,9 +445,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -440,21 +465,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.CreateAssociationResponse, NewSSMAssociationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AlarmConfiguration_Alarm != null)
             {
                 context.AlarmConfiguration_Alarm = new List<Amazon.SimpleSystemsManagement.Model.Alarm>(this.AlarmConfiguration_Alarm);
@@ -756,13 +771,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "CreateAssociation");
             try
             {
-                #if DESKTOP
-                return client.CreateAssociation(request);
-                #elif CORECLR
-                return client.CreateAssociationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAssociationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

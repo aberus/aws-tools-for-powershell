@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Finspace;
 using Amazon.Finspace.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FINSP
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
     [AWSCmdlet("Calls the FinSpace User Environment Management Service ListKxClusters API operation.", Operation = new[] {"ListKxClusters"}, SelectReturnType = typeof(Amazon.Finspace.Model.ListKxClustersResponse))]
     [AWSCmdletOutput("Amazon.Finspace.Model.KxCluster or Amazon.Finspace.Model.ListKxClustersResponse",
         "This cmdlet returns a collection of Amazon.Finspace.Model.KxCluster objects.",
-        "The service call response (type Amazon.Finspace.Model.ListKxClustersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Finspace.Model.ListKxClustersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetFINSPKxClusterListCmdlet : AmazonFinspaceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterType
         /// <summary>
@@ -117,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
         public string Select { get; set; } = "KxClusterSummaries";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -212,13 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "FinSpace User Environment Management Service", "ListKxClusters");
             try
             {
-                #if DESKTOP
-                return client.ListKxClusters(request);
-                #elif CORECLR
-                return client.ListKxClustersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListKxClustersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

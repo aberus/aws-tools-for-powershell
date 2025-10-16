@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifySubnetAttribute API operation.", Operation = new[] {"ModifySubnetAttribute"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifySubnetAttributeResponse))]
     [AWSCmdletOutput("None or Amazon.EC2.Model.ModifySubnetAttributeResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.EC2.Model.ModifySubnetAttributeResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.EC2.Model.ModifySubnetAttributeResponse) be returned by specifying '-Select *'."
     )]
     public partial class EditEC2SubnetAttributeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssignIpv6AddressOnCreation
         /// <summary>
@@ -97,7 +100,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Indicates whether DNS queries made to the Amazon-provided DNS Resolver in this subnet
-        /// should return synthetic IPv6 addresses for IPv4-only destinations.</para>
+        /// should return synthetic IPv6 addresses for IPv4-only destinations.</para><para>You must first configure a NAT gateway in a public subnet (separate from the subnet
+        /// containing the IPv6-only workloads). For example, the subnet containing the NAT gateway
+        /// should have a <c>0.0.0.0/0</c> route pointing to the internet gateway. For more information,
+        /// see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-nat64-dns64.html#nat-gateway-nat64-dns64-walkthrough">Configure
+        /// DNS64 and NAT64</a> in the <i>Amazon VPC User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,10 +160,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Specify <c>true</c> to indicate that network interfaces attached to instances created
-        /// in the specified subnet should be assigned a public IPv4 address.</para><para>Starting on February 1, 2024, Amazon Web Services will charge for all public IPv4
-        /// addresses, including public IPv4 addresses associated with running instances and Elastic
-        /// IP addresses. For more information, see the <i>Public IPv4 Address</i> tab on the
-        /// <a href="http://aws.amazon.com/vpc/pricing/">Amazon VPC pricing page</a>.</para>
+        /// in the specified subnet should be assigned a public IPv4 address.</para><para>Amazon Web Services charges for all public IPv4 addresses, including public IPv4 addresses
+        /// associated with running instances and Elastic IP addresses. For more information,
+        /// see the <i>Public IPv4 Address</i> tab on the <a href="http://aws.amazon.com/vpc/pricing/">Amazon
+        /// VPC pricing page</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -204,16 +211,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SubnetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SubnetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SubnetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -224,9 +221,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SubnetId), MyInvocation.BoundParameters);
@@ -240,21 +241,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifySubnetAttributeResponse, EditEC2SubnetAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SubnetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssignIpv6AddressOnCreation = this.AssignIpv6AddressOnCreation;
             context.CustomerOwnedIpv4Pool = this.CustomerOwnedIpv4Pool;
             context.DisableLniAtDeviceIndex = this.DisableLniAtDeviceIndex;
@@ -370,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifySubnetAttribute");
             try
             {
-                #if DESKTOP
-                return client.ModifySubnetAttribute(request);
-                #elif CORECLR
-                return client.ModifySubnetAttributeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifySubnetAttributeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

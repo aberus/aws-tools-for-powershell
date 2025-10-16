@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
     [OutputType("Amazon.Omics.Model.CreateAnnotationStoreVersionResponse")]
     [AWSCmdlet("Calls the Amazon Omics CreateAnnotationStoreVersion API operation.", Operation = new[] {"CreateAnnotationStoreVersion"}, SelectReturnType = typeof(Amazon.Omics.Model.CreateAnnotationStoreVersionResponse))]
     [AWSCmdletOutput("Amazon.Omics.Model.CreateAnnotationStoreVersionResponse",
-        "This cmdlet returns an Amazon.Omics.Model.CreateAnnotationStoreVersionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Omics.Model.CreateAnnotationStoreVersionResponse object containing multiple properties."
     )]
     public partial class NewOMICSAnnotationStoreVersionCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TsvVersionOptions_AnnotationType
         /// <summary>
@@ -66,7 +69,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter TsvVersionOptions_FormatToHeader
         /// <summary>
         /// <para>
-        /// <para> The annotation store version's header key to column name mapping. </para>
+        /// <para> The annotation store version's header key to column name mapping. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter TsvVersionOptions_Schema
         /// <summary>
         /// <para>
-        /// <para> The TSV schema for an annotation store version. </para>
+        /// <para> The TSV schema for an annotation store version. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,7 +116,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para> Any tags added to annotation store version. </para>
+        /// <para> Any tags added to annotation store version. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VersionName), MyInvocation.BoundParameters);
@@ -342,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "CreateAnnotationStoreVersion");
             try
             {
-                #if DESKTOP
-                return client.CreateAnnotationStoreVersion(request);
-                #elif CORECLR
-                return client.CreateAnnotationStoreVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAnnotationStoreVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

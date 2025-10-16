@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -41,10 +43,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// The maximum batch size is 1,048,576 bytes. This size is calculated as the sum of all
     /// event messages in UTF-8, plus 26 bytes for each log event.
     /// </para></li><li><para>
-    /// None of the log events in the batch can be more than 2 hours in the future.
+    /// Events more than 2 hours in the future are rejected while processing remaining valid
+    /// events.
     /// </para></li><li><para>
-    /// None of the log events in the batch can be more than 14 days in the past. Also, none
-    /// of the log events can be from earlier than the retention period of the log group.
+    /// Events older than 14 days or preceding the log group's retention period are rejected
+    /// while processing remaining valid events.
     /// </para></li><li><para>
     /// The log events in the batch must be in chronological order by their timestamp. The
     /// timestamp is the time that the event occurred, expressed as the number of milliseconds
@@ -52,17 +55,20 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// and the Amazon Web Services SDK for .NET, the timestamp is specified in .NET format:
     /// <c>yyyy-mm-ddThh:mm:ss</c>. For example, <c>2017-09-15T13:45:30</c>.) 
     /// </para></li><li><para>
-    /// A batch of log events in a single request cannot span more than 24 hours. Otherwise,
+    ///  A batch of log events in a single request must be in a chronological order. Otherwise,
     /// the operation fails.
     /// </para></li><li><para>
-    /// Each log event can be no larger than 256 KB.
+    /// Each log event can be no larger than 1 MB.
     /// </para></li><li><para>
     /// The maximum number of log events in a batch is 10,000.
-    /// </para></li><li><important><para>
+    /// </para></li><li><para>
+    /// For valid events (within 14 days in the past to 2 hours in future), the time span
+    /// in a single batch cannot exceed 24 hours. Otherwise, the operation fails.
+    /// </para></li></ul><important><para>
     /// The quota of five requests per second per log stream has been removed. Instead, <c>PutLogEvents</c>
     /// actions are throttled based on a per-second per-account quota. You can request an
     /// increase to the per-second throttling quota by using the Service Quotas service.
-    /// </para></important></li></ul><para>
+    /// </para></important><para>
     /// If a call to <c>PutLogEvents</c> returns "UnrecognizedClientException" the most likely
     /// cause is a non-valid Amazon Web Services access key ID or secret key. 
     /// </para>
@@ -72,17 +78,56 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs PutLogEvents API operation.", Operation = new[] {"PutLogEvents"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.PutLogEventsResponse), LegacyAlias="Write-CWLLogEvents")]
     [AWSCmdletOutput("System.String or Amazon.CloudWatchLogs.Model.PutLogEventsResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.PutLogEventsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.PutLogEventsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCWLLogEventCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Entity_Attribute
+        /// <summary>
+        /// <para>
+        /// <para>Additional attributes of the entity that are not used to specify the identity of the
+        /// entity. A list of key-value pairs.</para><para>For details about how to use the attributes, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/adding-your-own-related-telemetry.html">How
+        /// to add related information to telemetry</a> in the <i>CloudWatch User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Entity_Attributes")]
+        public System.Collections.Hashtable Entity_Attribute { get; set; }
+        #endregion
+        
+        #region Parameter Entity_KeyAttribute
+        /// <summary>
+        /// <para>
+        /// <para>The attributes of the entity which identify the specific entity, as a list of key-value
+        /// pairs. Entities with the same <c>keyAttributes</c> are considered to be the same entity.</para><para>There are five allowed attributes (key names): <c>Type</c>, <c>ResourceType</c>, <c>Identifier</c><c>Name</c>, and <c>Environment</c>.</para><para>For details about how to use the key attributes, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/adding-your-own-related-telemetry.html">How
+        /// to add related information to telemetry</a> in the <i>CloudWatch User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Entity_KeyAttributes")]
+        public System.Collections.Hashtable Entity_KeyAttribute { get; set; }
+        #endregion
         
         #region Parameter LogEvent
         /// <summary>
         /// <para>
-        /// <para>The log events.</para>
+        /// <para>The log events.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -155,16 +200,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "NextSequenceToken";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SequenceToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SequenceToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SequenceToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -175,9 +210,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LogStreamName), MyInvocation.BoundParameters);
@@ -191,21 +230,27 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.PutLogEventsResponse, WriteCWLLogEventCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
+            }
+            if (this.Entity_Attribute != null)
+            {
+                context.Entity_Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Entity_Attribute.Keys)
                 {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
+                    context.Entity_Attribute.Add((String)hashKey, (System.String)(this.Entity_Attribute[hashKey]));
                 }
             }
-            else if (this.PassThru.IsPresent)
+            if (this.Entity_KeyAttribute != null)
             {
-                context.Select = (response, cmdlet) => this.SequenceToken;
+                context.Entity_KeyAttribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Entity_KeyAttribute.Keys)
+                {
+                    context.Entity_KeyAttribute.Add((String)hashKey, (System.String)(this.Entity_KeyAttribute[hashKey]));
+                }
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.LogEvent != null)
             {
                 context.LogEvent = new List<Amazon.CloudWatchLogs.Model.InputLogEvent>(this.LogEvent);
@@ -247,6 +292,35 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // create request
             var request = new Amazon.CloudWatchLogs.Model.PutLogEventsRequest();
             
+            
+             // populate Entity
+            var requestEntityIsNull = true;
+            request.Entity = new Amazon.CloudWatchLogs.Model.Entity();
+            Dictionary<System.String, System.String> requestEntity_entity_Attribute = null;
+            if (cmdletContext.Entity_Attribute != null)
+            {
+                requestEntity_entity_Attribute = cmdletContext.Entity_Attribute;
+            }
+            if (requestEntity_entity_Attribute != null)
+            {
+                request.Entity.Attributes = requestEntity_entity_Attribute;
+                requestEntityIsNull = false;
+            }
+            Dictionary<System.String, System.String> requestEntity_entity_KeyAttribute = null;
+            if (cmdletContext.Entity_KeyAttribute != null)
+            {
+                requestEntity_entity_KeyAttribute = cmdletContext.Entity_KeyAttribute;
+            }
+            if (requestEntity_entity_KeyAttribute != null)
+            {
+                request.Entity.KeyAttributes = requestEntity_entity_KeyAttribute;
+                requestEntityIsNull = false;
+            }
+             // determine if request.Entity should be set to null
+            if (requestEntityIsNull)
+            {
+                request.Entity = null;
+            }
             if (cmdletContext.LogEvent != null)
             {
                 request.LogEvents = cmdletContext.LogEvent;
@@ -301,13 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "PutLogEvents");
             try
             {
-                #if DESKTOP
-                return client.PutLogEvents(request);
-                #elif CORECLR
-                return client.PutLogEventsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutLogEventsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -324,6 +392,8 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Dictionary<System.String, System.String> Entity_Attribute { get; set; }
+            public Dictionary<System.String, System.String> Entity_KeyAttribute { get; set; }
             public List<Amazon.CloudWatchLogs.Model.InputLogEvent> LogEvent { get; set; }
             public System.String LogGroupName { get; set; }
             public System.String LogStreamName { get; set; }

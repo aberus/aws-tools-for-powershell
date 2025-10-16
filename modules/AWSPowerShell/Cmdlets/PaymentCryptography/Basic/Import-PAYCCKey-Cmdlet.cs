@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PaymentCryptography;
 using Amazon.PaymentCryptography.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PAYCC
 {
     /// <summary>
@@ -39,23 +41,21 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// </para><para>
     /// For symmetric key exchange, Amazon Web Services Payment Cryptography uses the ANSI
     /// X9 TR-31 norm in accordance with PCI PIN guidelines. And for asymmetric key exchange,
-    /// Amazon Web Services Payment Cryptography supports ANSI X9 TR-34 norm and RSA wrap
-    /// and unwrap key exchange mechanisms. Asymmetric key exchange methods are typically
-    /// used to establish bi-directional trust between the two parties exhanging keys and
-    /// are used for initial key exchange such as Key Encryption Key (KEK) or Zone Master
-    /// Key (ZMK). After which you can import working keys using symmetric method to perform
-    /// various cryptographic operations within Amazon Web Services Payment Cryptography.
+    /// Amazon Web Services Payment Cryptography supports ANSI X9 TR-34 norm, RSA unwrap,
+    /// and ECDH (Elliptic Curve Diffie-Hellman) key exchange mechanisms. Asymmetric key exchange
+    /// methods are typically used to establish bi-directional trust between the two parties
+    /// exhanging keys and are used for initial key exchange such as Key Encryption Key (KEK)
+    /// or Zone Master Key (ZMK). After which you can import working keys using symmetric
+    /// method to perform various cryptographic operations within Amazon Web Services Payment
+    /// Cryptography.
     /// </para><para>
-    /// The TR-34 norm is intended for exchanging 3DES keys only and keys are imported in
-    /// a WrappedKeyBlock format. Key attributes (such as KeyUsage, KeyAlgorithm, KeyModesOfUse,
-    /// Exportability) are contained within the key block. With RSA wrap and unwrap, you can
-    /// exchange both 3DES and AES-128 keys. The keys are imported in a WrappedKeyCryptogram
-    /// format and you will need to specify the key attributes during import. 
+    /// PCI requires specific minimum key strength of wrapping keys used to protect the keys
+    /// being exchanged electronically. These requirements can change when PCI standards are
+    /// revised. The rules specify that wrapping keys used for transport must be at least
+    /// as strong as the key being protected. For more information on recommended key strength
+    /// of wrapping keys and key exchange mechanism, see <a href="https://docs.aws.amazon.com/payment-cryptography/latest/userguide/keys-importexport.html">Importing
+    /// and exporting keys</a> in the <i>Amazon Web Services Payment Cryptography User Guide</i>.
     /// </para><para>
-    /// You can also import a <i>root public key certificate</i>, used to sign other public
-    /// key certificates, or a <i>trusted public key certificate</i> under an already established
-    /// root public key certificate.
-    /// </para><para><b>To import a public root key certificate</b></para><para>
     /// You can also import a <i>root public key certificate</i>, used to sign other public
     /// key certificates, or a <i>trusted public key certificate</i> under an already established
     /// root public key certificate.
@@ -84,13 +84,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// the key import process, KDH is the user who initiates the key import and KRD is Amazon
     /// Web Services Payment Cryptography who receives the key.
     /// </para><para>
-    /// To initiate TR-34 key import, the KDH must obtain an import token by calling <a>GetParametersForImport</a>.
+    /// To initiate TR-34 key import, the KDH must obtain an import token by calling <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_GetParametersForImport.html">GetParametersForImport</a>.
     /// This operation generates an encryption keypair for the purpose of key import, signs
     /// the key and returns back the wrapping key certificate (also known as KRD wrapping
     /// certificate) and the root certificate chain. The KDH must trust and install the KRD
     /// wrapping certificate on its HSM and use it to encrypt (wrap) the KDH key during TR-34
     /// WrappedKeyBlock generation. The import token and associated KRD wrapping certificate
-    /// expires after 7 days.
+    /// expires after 30 days.
     /// </para><para>
     /// Next the KDH generates a key pair for the purpose of signing the encrypted KDH key
     /// and provides the public certificate of the signing key to Amazon Web Services Payment
@@ -103,7 +103,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// </para><ul><li><para><c>KeyMaterial</c>: Use <c>Tr34KeyBlock</c> parameters.
     /// </para></li><li><para><c>CertificateAuthorityPublicKeyIdentifier</c>: The <c>KeyARN</c> of the certificate
     /// chain that signed the KDH signing key certificate.
-    /// </para></li><li><para><c>ImportToken</c>: Obtained from KRD by calling <a>GetParametersForImport</a>.
+    /// </para></li><li><para><c>ImportToken</c>: Obtained from KRD by calling <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_GetParametersForImport.html">GetParametersForImport</a>.
     /// </para></li><li><para><c>WrappedKeyBlock</c>: The TR-34 wrapped key material from KDH. It contains the
     /// KDH key under import, wrapped with KRD wrapping certificate and signed by KDH signing
     /// private key. This TR-34 key block is typically generated by the KDH Hardware Security
@@ -113,12 +113,12 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// imported in Amazon Web Services Payment Cryptography.
     /// </para></li></ul><para><b>To import initial keys (KEK or ZMK or similar) using RSA Wrap and Unwrap</b></para><para>
     /// Using this operation, you can import initial key using asymmetric RSA wrap and unwrap
-    /// key exchange method. To initiate import, call <a>GetParametersForImport</a> with <c>KeyMaterial</c>
-    /// set to <c>KEY_CRYPTOGRAM</c> to generate an import token. This operation also generates
-    /// an encryption keypair for the purpose of key import, signs the key and returns back
-    /// the wrapping key certificate in PEM format (base64 encoded) and its root certificate
-    /// chain. The import token and associated KRD wrapping certificate expires after 7 days.
-    /// 
+    /// key exchange method. To initiate import, call <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_GetParametersForImport.html">GetParametersForImport</a>
+    /// with <c>KeyMaterial</c> set to <c>KEY_CRYPTOGRAM</c> to generate an import token.
+    /// This operation also generates an encryption keypair for the purpose of key import,
+    /// signs the key and returns back the wrapping key certificate in PEM format (base64
+    /// encoded) and its root certificate chain. The import token and associated KRD wrapping
+    /// certificate expires after 30 days. 
     /// </para><para>
     /// You must trust and install the wrapping certificate and its certificate chain on the
     /// sending HSM and use it to wrap the key under export for WrappedKeyCryptogram generation.
@@ -127,31 +127,66 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// </para><para><b>To import working keys using TR-31</b></para><para>
     /// Amazon Web Services Payment Cryptography uses TR-31 symmetric key exchange norm to
     /// import working keys. A KEK must be established within Amazon Web Services Payment
-    /// Cryptography by using TR-34 key import or by using <a>CreateKey</a>. To initiate a
-    /// TR-31 key import, set the following parameters:
+    /// Cryptography by using TR-34 key import or by using <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_CreateKey.html">CreateKey</a>.
+    /// To initiate a TR-31 key import, set the following parameters:
     /// </para><ul><li><para><c>KeyMaterial</c>: Use <c>Tr31KeyBlock</c> parameters.
     /// </para></li><li><para><c>WrappedKeyBlock</c>: The TR-31 wrapped key material. It contains the key under
     /// import, encrypted using KEK. The TR-31 key block is typically generated by a HSM outside
     /// of Amazon Web Services Payment Cryptography. 
     /// </para></li><li><para><c>WrappingKeyIdentifier</c>: The <c>KeyArn</c> of the KEK that Amazon Web Services
     /// Payment Cryptography uses to decrypt or unwrap the key under import.
+    /// </para></li></ul><para><b>To import working keys using ECDH</b></para><para>
+    /// You can also use ECDH key agreement to import working keys as a TR-31 keyblock, where
+    /// the wrapping key is an ECDH derived key.
+    /// </para><para>
+    /// To initiate a TR-31 key import using ECDH, both sides must create an ECC key pair
+    /// with key usage K3 and exchange public key certificates. In Amazon Web Services Payment
+    /// Cryptography, you can do this by calling <c>CreateKey</c> and then <c>GetPublicKeyCertificate</c>
+    /// to retrieve its public key certificate. Next, you can then generate a TR-31 WrappedKeyBlock
+    /// using your own ECC key pair, the public certificate of the service's ECC key pair,
+    /// and the key derivation parameters including key derivation function, hash algorithm,
+    /// derivation data, and key algorithm. If you have not already done so, you must import
+    /// the CA chain that issued the receiving public key certificate by calling <c>ImportKey</c>
+    /// with input <c>RootCertificatePublicKey</c> for root CA or <c>TrustedPublicKey</c>
+    /// for intermediate CA. To complete the TR-31 key import, you can use the following parameters.
+    /// It is important that the ECDH key derivation parameters you use should match those
+    /// used during import to derive the same shared wrapping key within Amazon Web Services
+    /// Payment Cryptography.
+    /// </para><ul><li><para><c>KeyMaterial</c>: Use <c>DiffieHellmanTr31KeyBlock</c> parameters.
+    /// </para></li><li><para><c>PrivateKeyIdentifier</c>: The <c>KeyArn</c> of the ECC key pair created within
+    /// Amazon Web Services Payment Cryptography to derive a shared KEK.
+    /// </para></li><li><para><c>PublicKeyCertificate</c>: The public key certificate of the receiving ECC key
+    /// pair in PEM format (base64 encoded) to derive a shared KEK.
+    /// </para></li><li><para><c>CertificateAuthorityPublicKeyIdentifier</c>: The <c>keyARN</c> of the CA that
+    /// signed the public key certificate of the receiving ECC key pair.
     /// </para></li></ul><para><b>Cross-account use:</b> This operation can't be used across different Amazon Web
     /// Services accounts.
-    /// </para><para><b>Related operations:</b></para><ul><li><para><a>ExportKey</a></para></li><li><para><a>GetParametersForImport</a></para></li></ul>
+    /// </para><para><b>Related operations:</b></para><ul><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_ExportKey.html">ExportKey</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_GetParametersForImport.html">GetParametersForImport</a></para></li></ul>
     /// </summary>
     [Cmdlet("Import", "PAYCCKey", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PaymentCryptography.Model.Key")]
     [AWSCmdlet("Calls the Payment Cryptography Control Plane ImportKey API operation.", Operation = new[] {"ImportKey"}, SelectReturnType = typeof(Amazon.PaymentCryptography.Model.ImportKeyResponse))]
     [AWSCmdletOutput("Amazon.PaymentCryptography.Model.Key or Amazon.PaymentCryptography.Model.ImportKeyResponse",
         "This cmdlet returns an Amazon.PaymentCryptography.Model.Key object.",
-        "The service call response (type Amazon.PaymentCryptography.Model.ImportKeyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PaymentCryptography.Model.ImportKeyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportPAYCCKeyCmdlet : AmazonPaymentCryptographyClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The <c>keyARN</c> of the CA that signed the <c>PublicKeyCertificate</c> for the client's
+        /// receiving ECC key pair.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier")]
+        public System.String DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier { get; set; }
+        #endregion
         
         #region Parameter Tr34KeyBlock_CertificateAuthorityPublicKeyIdentifier
         /// <summary>
@@ -243,6 +278,18 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("KeyMaterial_TrustedCertificatePublicKey_KeyAttributes_KeyModesOfUse_DeriveKey")]
         public System.Boolean? KeyModesOfUse_DeriveKey { get; set; }
+        #endregion
+        
+        #region Parameter DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm
+        /// <summary>
+        /// <para>
+        /// <para>The key algorithm of the shared derived ECDH key.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm")]
+        [AWSConstantClassSource("Amazon.PaymentCryptography.SymmetricKeyAlgorithm")]
+        public Amazon.PaymentCryptography.SymmetricKeyAlgorithm DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm { get; set; }
         #endregion
         
         #region Parameter Enabled
@@ -338,7 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         /// <summary>
         /// <para>
         /// <para>The import token that initiates key import using the asymmetric RSA wrap and unwrap
-        /// key exchange method into AWS Payment Cryptography. It expires after 7 days. You can
+        /// key exchange method into AWS Payment Cryptography. It expires after 30 days. You can
         /// use the same import token to import multiple keys to the same service account.</para>
         /// </para>
         /// </summary>
@@ -351,7 +398,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         /// <summary>
         /// <para>
         /// <para>The import token that initiates key import using the asymmetric TR-34 key exchange
-        /// method into Amazon Web Services Payment Cryptography. It expires after 7 days. You
+        /// method into Amazon Web Services Payment Cryptography. It expires after 30 days. You
         /// can use the same import token to import multiple keys to the same service account.</para>
         /// </para>
         /// </summary>
@@ -470,6 +517,30 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public Amazon.PaymentCryptography.KeyClass KeyAttributes_KeyClass { get; set; }
         #endregion
         
+        #region Parameter DiffieHellmanTr31KeyBlock_KeyDerivationFunction
+        /// <summary>
+        /// <para>
+        /// <para>The key derivation function to use when deriving a key using ECDH.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_KeyDerivationFunction")]
+        [AWSConstantClassSource("Amazon.PaymentCryptography.KeyDerivationFunction")]
+        public Amazon.PaymentCryptography.KeyDerivationFunction DiffieHellmanTr31KeyBlock_KeyDerivationFunction { get; set; }
+        #endregion
+        
+        #region Parameter DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm
+        /// <summary>
+        /// <para>
+        /// <para>The hash type to use when deriving a key using ECDH.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm")]
+        [AWSConstantClassSource("Amazon.PaymentCryptography.KeyDerivationHashAlgorithm")]
+        public Amazon.PaymentCryptography.KeyDerivationHashAlgorithm DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm { get; set; }
+        #endregion
+        
         #region Parameter KeyMaterial_KeyCryptogram_KeyAttributes_KeyUsage
         /// <summary>
         /// <para>
@@ -541,6 +612,30 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public System.Boolean? KeyModesOfUse_NoRestriction { get; set; }
         #endregion
         
+        #region Parameter DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The <c>keyARN</c> of the asymmetric ECC key created within Amazon Web Services Payment
+        /// Cryptography.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier")]
+        public System.String DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier { get; set; }
+        #endregion
+        
+        #region Parameter DiffieHellmanTr31KeyBlock_PublicKeyCertificate
+        /// <summary>
+        /// <para>
+        /// <para>The public key certificate of the client's receiving ECC key pair, in PEM format (base64
+        /// encoded), to use for ECDH key derivation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_PublicKeyCertificate")]
+        public System.String DiffieHellmanTr31KeyBlock_PublicKeyCertificate { get; set; }
+        #endregion
+        
         #region Parameter RootCertificatePublicKey_PublicKeyCertificate
         /// <summary>
         /// <para>
@@ -574,6 +669,36 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("KeyMaterial_Tr34KeyBlock_RandomNonce")]
         public System.String Tr34KeyBlock_RandomNonce { get; set; }
+        #endregion
+        
+        #region Parameter ReplicationRegion
+        /// <summary>
+        /// <para>
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ReplicationRegions")]
+        public System.String[] ReplicationRegion { get; set; }
+        #endregion
+        
+        #region Parameter DerivationData_SharedInformation
+        /// <summary>
+        /// <para>
+        /// <para>A string containing information that binds the ECDH derived key to the two parties
+        /// involved or to the context of the key.</para><para>It may include details like identities of the two parties deriving the key, context
+        /// of the operation, session IDs, and optionally a nonce. It must not contain zero bytes.
+        /// It is not recommended to reuse shared information for multiple ECDH key derivations,
+        /// as it could result in derived key material being the same across different derivations.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_DerivationData_SharedInformation")]
+        public System.String DerivationData_SharedInformation { get; set; }
         #endregion
         
         #region Parameter KeyMaterial_KeyCryptogram_KeyAttributes_KeyModesOfUse_Sign
@@ -624,13 +749,18 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         /// <para>
         /// <para>Assigns one or more tags to the Amazon Web Services Payment Cryptography key. Use
         /// this parameter to tag a key when it is imported. To tag an existing Amazon Web Services
-        /// Payment Cryptography key, use the <a>TagResource</a> operation.</para><para>Each tag consists of a tag key and a tag value. Both the tag key and the tag value
+        /// Payment Cryptography key, use the <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_TagResource.html">TagResource</a>
+        /// operation.</para><para>Each tag consists of a tag key and a tag value. Both the tag key and the tag value
         /// are required, but the tag value can be an empty (null) string. You can't have more
         /// than one tag on an Amazon Web Services Payment Cryptography key with the same tag
         /// key. If you specify an existing tag key with a different tag value, Amazon Web Services
         /// Payment Cryptography replaces the current tag value with the specified one.</para><important><para>Don't include personal, confidential or sensitive information in this field. This
         /// field may be displayed in plaintext in CloudTrail logs and other output.</para></important><note><para>Tagging or untagging an Amazon Web Services Payment Cryptography key can allow or
-        /// deny permission to the key.</para></note>
+        /// deny permission to the key.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -740,6 +870,17 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public System.Boolean? KeyModesOfUse_Wrap { get; set; }
         #endregion
         
+        #region Parameter DiffieHellmanTr31KeyBlock_WrappedKeyBlock
+        /// <summary>
+        /// <para>
+        /// <para>The ECDH wrapped key block to import.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_DiffieHellmanTr31KeyBlock_WrappedKeyBlock")]
+        public System.String DiffieHellmanTr31KeyBlock_WrappedKeyBlock { get; set; }
+        #endregion
+        
         #region Parameter Tr31KeyBlock_WrappedKeyBlock
         /// <summary>
         /// <para>
@@ -773,6 +914,17 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public System.String KeyCryptogram_WrappedKeyCryptogram { get; set; }
         #endregion
         
+        #region Parameter Tr34KeyBlock_WrappingKeyCertificate
+        /// <summary>
+        /// <para>
+        /// <para>Key Identifier used for unwrapping the import key</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_Tr34KeyBlock_WrappingKeyCertificate")]
+        public System.String Tr34KeyBlock_WrappingKeyCertificate { get; set; }
+        #endregion
+        
         #region Parameter Tr31KeyBlock_WrappingKeyIdentifier
         /// <summary>
         /// <para>
@@ -783,6 +935,17 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("KeyMaterial_Tr31KeyBlock_WrappingKeyIdentifier")]
         public System.String Tr31KeyBlock_WrappingKeyIdentifier { get; set; }
+        #endregion
+        
+        #region Parameter Tr34KeyBlock_WrappingKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>Key Identifier used for unwrapping the import key</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("KeyMaterial_Tr34KeyBlock_WrappingKeyIdentifier")]
+        public System.String Tr34KeyBlock_WrappingKeyIdentifier { get; set; }
         #endregion
         
         #region Parameter KeyCryptogram_WrappingSpec
@@ -818,9 +981,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -841,6 +1008,14 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             }
             context.Enabled = this.Enabled;
             context.KeyCheckValueAlgorithm = this.KeyCheckValueAlgorithm;
+            context.DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier = this.DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier;
+            context.DerivationData_SharedInformation = this.DerivationData_SharedInformation;
+            context.DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm = this.DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm;
+            context.DiffieHellmanTr31KeyBlock_KeyDerivationFunction = this.DiffieHellmanTr31KeyBlock_KeyDerivationFunction;
+            context.DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm = this.DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm;
+            context.DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier = this.DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier;
+            context.DiffieHellmanTr31KeyBlock_PublicKeyCertificate = this.DiffieHellmanTr31KeyBlock_PublicKeyCertificate;
+            context.DiffieHellmanTr31KeyBlock_WrappedKeyBlock = this.DiffieHellmanTr31KeyBlock_WrappedKeyBlock;
             context.KeyCryptogram_Exportable = this.KeyCryptogram_Exportable;
             context.KeyCryptogram_ImportToken = this.KeyCryptogram_ImportToken;
             context.KeyMaterial_KeyCryptogram_KeyAttributes_KeyAlgorithm = this.KeyMaterial_KeyCryptogram_KeyAttributes_KeyAlgorithm;
@@ -878,6 +1053,8 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             context.Tr34KeyBlock_RandomNonce = this.Tr34KeyBlock_RandomNonce;
             context.Tr34KeyBlock_SigningKeyCertificate = this.Tr34KeyBlock_SigningKeyCertificate;
             context.Tr34KeyBlock_WrappedKeyBlock = this.Tr34KeyBlock_WrappedKeyBlock;
+            context.Tr34KeyBlock_WrappingKeyCertificate = this.Tr34KeyBlock_WrappingKeyCertificate;
+            context.Tr34KeyBlock_WrappingKeyIdentifier = this.Tr34KeyBlock_WrappingKeyIdentifier;
             context.TrustedCertificatePublicKey_CertificateAuthorityPublicKeyIdentifier = this.TrustedCertificatePublicKey_CertificateAuthorityPublicKeyIdentifier;
             context.KeyAttributes_KeyAlgorithm = this.KeyAttributes_KeyAlgorithm;
             context.KeyAttributes_KeyClass = this.KeyAttributes_KeyClass;
@@ -892,6 +1069,10 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             context.KeyModesOfUse_Wrap = this.KeyModesOfUse_Wrap;
             context.KeyAttributes_KeyUsage = this.KeyAttributes_KeyUsage;
             context.TrustedCertificatePublicKey_PublicKeyCertificate = this.TrustedCertificatePublicKey_PublicKeyCertificate;
+            if (this.ReplicationRegion != null)
+            {
+                context.ReplicationRegion = new List<System.String>(this.ReplicationRegion);
+            }
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.PaymentCryptography.Model.Tag>(this.Tag);
@@ -1524,6 +1705,116 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
                 request.KeyMaterial.KeyCryptogram = requestKeyMaterial_keyMaterial_KeyCryptogram;
                 requestKeyMaterialIsNull = false;
             }
+            Amazon.PaymentCryptography.Model.ImportDiffieHellmanTr31KeyBlock requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock = null;
+            
+             // populate DiffieHellmanTr31KeyBlock
+            var requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = true;
+            requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock = new Amazon.PaymentCryptography.Model.ImportDiffieHellmanTr31KeyBlock();
+            System.String requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier = cmdletContext.DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.CertificateAuthorityPublicKeyIdentifier = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            Amazon.PaymentCryptography.SymmetricKeyAlgorithm requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_DeriveKeyAlgorithm = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_DeriveKeyAlgorithm = cmdletContext.DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_DeriveKeyAlgorithm != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.DeriveKeyAlgorithm = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_DeriveKeyAlgorithm;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            Amazon.PaymentCryptography.KeyDerivationFunction requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationFunction = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_KeyDerivationFunction != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationFunction = cmdletContext.DiffieHellmanTr31KeyBlock_KeyDerivationFunction;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationFunction != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.KeyDerivationFunction = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationFunction;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            Amazon.PaymentCryptography.KeyDerivationHashAlgorithm requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm = cmdletContext.DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.KeyDerivationHashAlgorithm = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            System.String requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PrivateKeyIdentifier = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PrivateKeyIdentifier = cmdletContext.DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PrivateKeyIdentifier != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.PrivateKeyIdentifier = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PrivateKeyIdentifier;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            System.String requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PublicKeyCertificate = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_PublicKeyCertificate != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PublicKeyCertificate = cmdletContext.DiffieHellmanTr31KeyBlock_PublicKeyCertificate;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PublicKeyCertificate != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.PublicKeyCertificate = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_PublicKeyCertificate;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            System.String requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_WrappedKeyBlock = null;
+            if (cmdletContext.DiffieHellmanTr31KeyBlock_WrappedKeyBlock != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_WrappedKeyBlock = cmdletContext.DiffieHellmanTr31KeyBlock_WrappedKeyBlock;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_WrappedKeyBlock != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.WrappedKeyBlock = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_diffieHellmanTr31KeyBlock_WrappedKeyBlock;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+            Amazon.PaymentCryptography.Model.DiffieHellmanDerivationData requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData = null;
+            
+             // populate DerivationData
+            var requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationDataIsNull = true;
+            requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData = new Amazon.PaymentCryptography.Model.DiffieHellmanDerivationData();
+            System.String requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData_derivationData_SharedInformation = null;
+            if (cmdletContext.DerivationData_SharedInformation != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData_derivationData_SharedInformation = cmdletContext.DerivationData_SharedInformation;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData_derivationData_SharedInformation != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData.SharedInformation = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData_derivationData_SharedInformation;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationDataIsNull = false;
+            }
+             // determine if requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData should be set to null
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationDataIsNull)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData = null;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData != null)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock.DerivationData = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock_keyMaterial_DiffieHellmanTr31KeyBlock_DerivationData;
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull = false;
+            }
+             // determine if requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock should be set to null
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlockIsNull)
+            {
+                requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock = null;
+            }
+            if (requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock != null)
+            {
+                request.KeyMaterial.DiffieHellmanTr31KeyBlock = requestKeyMaterial_keyMaterial_DiffieHellmanTr31KeyBlock;
+                requestKeyMaterialIsNull = false;
+            }
             Amazon.PaymentCryptography.Model.ImportTr34KeyBlock requestKeyMaterial_keyMaterial_Tr34KeyBlock = null;
             
              // populate Tr34KeyBlock
@@ -1589,6 +1880,26 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
                 requestKeyMaterial_keyMaterial_Tr34KeyBlock.WrappedKeyBlock = requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappedKeyBlock;
                 requestKeyMaterial_keyMaterial_Tr34KeyBlockIsNull = false;
             }
+            System.String requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyCertificate = null;
+            if (cmdletContext.Tr34KeyBlock_WrappingKeyCertificate != null)
+            {
+                requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyCertificate = cmdletContext.Tr34KeyBlock_WrappingKeyCertificate;
+            }
+            if (requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyCertificate != null)
+            {
+                requestKeyMaterial_keyMaterial_Tr34KeyBlock.WrappingKeyCertificate = requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyCertificate;
+                requestKeyMaterial_keyMaterial_Tr34KeyBlockIsNull = false;
+            }
+            System.String requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyIdentifier = null;
+            if (cmdletContext.Tr34KeyBlock_WrappingKeyIdentifier != null)
+            {
+                requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyIdentifier = cmdletContext.Tr34KeyBlock_WrappingKeyIdentifier;
+            }
+            if (requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyIdentifier != null)
+            {
+                requestKeyMaterial_keyMaterial_Tr34KeyBlock.WrappingKeyIdentifier = requestKeyMaterial_keyMaterial_Tr34KeyBlock_tr34KeyBlock_WrappingKeyIdentifier;
+                requestKeyMaterial_keyMaterial_Tr34KeyBlockIsNull = false;
+            }
              // determine if requestKeyMaterial_keyMaterial_Tr34KeyBlock should be set to null
             if (requestKeyMaterial_keyMaterial_Tr34KeyBlockIsNull)
             {
@@ -1603,6 +1914,10 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             if (requestKeyMaterialIsNull)
             {
                 request.KeyMaterial = null;
+            }
+            if (cmdletContext.ReplicationRegion != null)
+            {
+                request.ReplicationRegions = cmdletContext.ReplicationRegion;
             }
             if (cmdletContext.Tag != null)
             {
@@ -1646,13 +1961,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Payment Cryptography Control Plane", "ImportKey");
             try
             {
-                #if DESKTOP
-                return client.ImportKey(request);
-                #elif CORECLR
-                return client.ImportKeyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportKeyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1671,6 +1980,14 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         {
             public System.Boolean? Enabled { get; set; }
             public Amazon.PaymentCryptography.KeyCheckValueAlgorithm KeyCheckValueAlgorithm { get; set; }
+            public System.String DiffieHellmanTr31KeyBlock_CertificateAuthorityPublicKeyIdentifier { get; set; }
+            public System.String DerivationData_SharedInformation { get; set; }
+            public Amazon.PaymentCryptography.SymmetricKeyAlgorithm DiffieHellmanTr31KeyBlock_DeriveKeyAlgorithm { get; set; }
+            public Amazon.PaymentCryptography.KeyDerivationFunction DiffieHellmanTr31KeyBlock_KeyDerivationFunction { get; set; }
+            public Amazon.PaymentCryptography.KeyDerivationHashAlgorithm DiffieHellmanTr31KeyBlock_KeyDerivationHashAlgorithm { get; set; }
+            public System.String DiffieHellmanTr31KeyBlock_PrivateKeyIdentifier { get; set; }
+            public System.String DiffieHellmanTr31KeyBlock_PublicKeyCertificate { get; set; }
+            public System.String DiffieHellmanTr31KeyBlock_WrappedKeyBlock { get; set; }
             public System.Boolean? KeyCryptogram_Exportable { get; set; }
             public System.String KeyCryptogram_ImportToken { get; set; }
             public Amazon.PaymentCryptography.KeyAlgorithm KeyMaterial_KeyCryptogram_KeyAttributes_KeyAlgorithm { get; set; }
@@ -1708,6 +2025,8 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             public System.String Tr34KeyBlock_RandomNonce { get; set; }
             public System.String Tr34KeyBlock_SigningKeyCertificate { get; set; }
             public System.String Tr34KeyBlock_WrappedKeyBlock { get; set; }
+            public System.String Tr34KeyBlock_WrappingKeyCertificate { get; set; }
+            public System.String Tr34KeyBlock_WrappingKeyIdentifier { get; set; }
             public System.String TrustedCertificatePublicKey_CertificateAuthorityPublicKeyIdentifier { get; set; }
             public Amazon.PaymentCryptography.KeyAlgorithm KeyAttributes_KeyAlgorithm { get; set; }
             public Amazon.PaymentCryptography.KeyClass KeyAttributes_KeyClass { get; set; }
@@ -1722,6 +2041,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             public System.Boolean? KeyModesOfUse_Wrap { get; set; }
             public Amazon.PaymentCryptography.KeyUsage KeyAttributes_KeyUsage { get; set; }
             public System.String TrustedCertificatePublicKey_PublicKeyCertificate { get; set; }
+            public List<System.String> ReplicationRegion { get; set; }
             public List<Amazon.PaymentCryptography.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.PaymentCryptography.Model.ImportKeyResponse, ImportPAYCCKeyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Key;

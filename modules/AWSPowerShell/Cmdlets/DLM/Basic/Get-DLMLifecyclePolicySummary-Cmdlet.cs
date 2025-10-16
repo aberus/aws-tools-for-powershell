@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DLM;
 using Amazon.DLM.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DLM
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.DLM
     [AWSCmdlet("Calls the Amazon Data Lifecycle Manager GetLifecyclePolicies API operation.", Operation = new[] {"GetLifecyclePolicies"}, SelectReturnType = typeof(Amazon.DLM.Model.GetLifecyclePoliciesResponse))]
     [AWSCmdletOutput("Amazon.DLM.Model.LifecyclePolicySummary or Amazon.DLM.Model.GetLifecyclePoliciesResponse",
         "This cmdlet returns a collection of Amazon.DLM.Model.LifecyclePolicySummary objects.",
-        "The service call response (type Amazon.DLM.Model.GetLifecyclePoliciesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DLM.Model.GetLifecyclePoliciesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDLMLifecyclePolicySummaryCmdlet : AmazonDLMClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DefaultPolicyType
         /// <summary>
@@ -62,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         #region Parameter PolicyId
         /// <summary>
         /// <para>
-        /// <para>The identifiers of the data lifecycle policies.</para>
+        /// <para>The identifiers of the data lifecycle policies.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>The resource type.</para>
+        /// <para>The resource type.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         /// <summary>
         /// <para>
         /// <para>The tags to add to objects created by the policy.</para><para>Tags are strings in the format <c>key=value</c>.</para><para>These user-defined tags are added in addition to the Amazon Web Services-added lifecycle
-        /// tags.</para>
+        /// tags.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         #region Parameter TargetTag
         /// <summary>
         /// <para>
-        /// <para>The target tag for a policy.</para><para>Tags are strings in the format <c>key=value</c>.</para>
+        /// <para>The target tag for a policy.</para><para>Tags are strings in the format <c>key=value</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,9 +144,13 @@ namespace Amazon.PowerShell.Cmdlets.DLM
         public string Select { get; set; } = "Policies";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -236,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.DLM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Data Lifecycle Manager", "GetLifecyclePolicies");
             try
             {
-                #if DESKTOP
-                return client.GetLifecyclePolicies(request);
-                #elif CORECLR
-                return client.GetLifecyclePoliciesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetLifecyclePoliciesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

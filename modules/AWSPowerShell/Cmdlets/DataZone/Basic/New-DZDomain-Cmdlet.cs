@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
     [OutputType("Amazon.DataZone.Model.CreateDomainResponse")]
     [AWSCmdlet("Calls the Amazon DataZone CreateDomain API operation.", Operation = new[] {"CreateDomain"}, SelectReturnType = typeof(Amazon.DataZone.Model.CreateDomainResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.CreateDomainResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.CreateDomainResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.CreateDomainResponse object containing multiple properties."
     )]
     public partial class NewDZDomainCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -70,6 +73,27 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public System.String DomainExecutionRole { get; set; }
         #endregion
         
+        #region Parameter DomainVersion
+        /// <summary>
+        /// <para>
+        /// <para>The version of the domain that is created.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DataZone.DomainVersion")]
+        public Amazon.DataZone.DomainVersion DomainVersion { get; set; }
+        #endregion
+        
+        #region Parameter SingleSignOn_IdcInstanceArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the IDC instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SingleSignOn_IdcInstanceArn { get; set; }
+        #endregion
+        
         #region Parameter KmsKeyIdentifier
         /// <summary>
         /// <para>
@@ -98,10 +122,24 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter ServiceRole
+        /// <summary>
+        /// <para>
+        /// <para>The service role of the domain that is created.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ServiceRole { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags specified for the Amazon DataZone domain.</para>
+        /// <para>The tags specified for the Amazon DataZone domain.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -193,6 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
                 WriteWarning("You are passing $null as a value for parameter DomainExecutionRole which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DomainVersion = this.DomainVersion;
             context.KmsKeyIdentifier = this.KmsKeyIdentifier;
             context.Name = this.Name;
             #if MODULAR
@@ -201,6 +244,8 @@ namespace Amazon.PowerShell.Cmdlets.DZ
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ServiceRole = this.ServiceRole;
+            context.SingleSignOn_IdcInstanceArn = this.SingleSignOn_IdcInstanceArn;
             context.SingleSignOn_Type = this.SingleSignOn_Type;
             context.SingleSignOn_UserAssignment = this.SingleSignOn_UserAssignment;
             if (this.Tag != null)
@@ -239,6 +284,10 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             {
                 request.DomainExecutionRole = cmdletContext.DomainExecutionRole;
             }
+            if (cmdletContext.DomainVersion != null)
+            {
+                request.DomainVersion = cmdletContext.DomainVersion;
+            }
             if (cmdletContext.KmsKeyIdentifier != null)
             {
                 request.KmsKeyIdentifier = cmdletContext.KmsKeyIdentifier;
@@ -247,10 +296,24 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.ServiceRole != null)
+            {
+                request.ServiceRole = cmdletContext.ServiceRole;
+            }
             
              // populate SingleSignOn
             var requestSingleSignOnIsNull = true;
             request.SingleSignOn = new Amazon.DataZone.Model.SingleSignOn();
+            System.String requestSingleSignOn_singleSignOn_IdcInstanceArn = null;
+            if (cmdletContext.SingleSignOn_IdcInstanceArn != null)
+            {
+                requestSingleSignOn_singleSignOn_IdcInstanceArn = cmdletContext.SingleSignOn_IdcInstanceArn;
+            }
+            if (requestSingleSignOn_singleSignOn_IdcInstanceArn != null)
+            {
+                request.SingleSignOn.IdcInstanceArn = requestSingleSignOn_singleSignOn_IdcInstanceArn;
+                requestSingleSignOnIsNull = false;
+            }
             Amazon.DataZone.AuthType requestSingleSignOn_singleSignOn_Type = null;
             if (cmdletContext.SingleSignOn_Type != null)
             {
@@ -318,13 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "CreateDomain");
             try
             {
-                #if DESKTOP
-                return client.CreateDomain(request);
-                #elif CORECLR
-                return client.CreateDomainAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDomainAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -344,8 +401,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
             public System.String DomainExecutionRole { get; set; }
+            public Amazon.DataZone.DomainVersion DomainVersion { get; set; }
             public System.String KmsKeyIdentifier { get; set; }
             public System.String Name { get; set; }
+            public System.String ServiceRole { get; set; }
+            public System.String SingleSignOn_IdcInstanceArn { get; set; }
             public Amazon.DataZone.AuthType SingleSignOn_Type { get; set; }
             public Amazon.DataZone.UserAssignment SingleSignOn_UserAssignment { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }

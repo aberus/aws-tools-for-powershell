@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,19 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
     /// Creates a multiplayer game session for players in a specific fleet location. This
     /// operation prompts an available server process to start a game session and retrieves
     /// connection information for the new game session. As an alternative, consider using
-    /// the Amazon GameLift game session placement feature with <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_StartGameSessionPlacement.html">StartGameSessionPlacement</a>
-    /// , which uses the FleetIQ algorithm and queues to optimize the placement process.
+    /// the Amazon GameLift Servers game session placement feature with <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_StartGameSessionPlacement.html">StartGameSessionPlacement</a>,
+    /// which uses the FleetIQ algorithm and queues to optimize the placement process.
     /// 
     ///  
     /// <para>
@@ -51,17 +53,18 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// To create a game session on an instance in an Anywhere fleet, specify the fleet's
     /// custom location.
     /// </para></li></ul><para>
-    /// If successful, Amazon GameLift initiates a workflow to start a new game session and
-    /// returns a <c>GameSession</c> object containing the game session configuration and
-    /// status. When the game session status is <c>ACTIVE</c>, it is updated with connection
+    /// If successful, Amazon GameLift Servers initiates a workflow to start a new game session
+    /// and returns a <c>GameSession</c> object containing the game session configuration
+    /// and status. When the game session status is <c>ACTIVE</c>, it is updated with connection
     /// information and you can create player sessions for the game session. By default, newly
     /// created game sessions are open to new players. You can restrict new player access
     /// by using <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_UpdateGameSession.html">UpdateGameSession</a>
     /// to change the game session's player session creation policy.
     /// </para><para>
-    /// Amazon GameLift retains logs for active for 14 days. To access the logs, call <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_GetGameSessionLogUrl.html">GetGameSessionLogUrl</a>
+    /// Amazon GameLift Servers retains logs for active for 14 days. To access the logs, call
+    /// <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_GetGameSessionLogUrl.html">GetGameSessionLogUrl</a>
     /// to download the log files.
-    /// </para><para><i>Available in Amazon GameLift Local.</i></para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
+    /// </para><para><i>Available in Amazon GameLift Servers Local.</i></para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
     /// a game session</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/reference-awssdk.html#reference-awssdk-resources-fleets">All
     /// APIs by task</a></para>
     /// </summary>
@@ -70,14 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service CreateGameSession API operation.", Operation = new[] {"CreateGameSession"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreateGameSessionResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GameSession or Amazon.GameLift.Model.CreateGameSessionResponse",
         "This cmdlet returns an Amazon.GameLift.Model.GameSession object.",
-        "The service call response (type Amazon.GameLift.Model.CreateGameSessionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.CreateGameSessionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGMLGameSessionCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AliasId
         /// <summary>
@@ -95,10 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A unique identifier for a player or entity creating the game session. </para><para>If you add a resource creation limit policy to a fleet, the <c>CreateGameSession</c>
-        /// operation requires a <c>CreatorId</c>. Amazon GameLift limits the number of game session
-        /// creation requests with the same <c>CreatorId</c> in a specified time period.</para><para>If you your fleet doesn't have a resource creation limit policy and you provide a
-        /// <c>CreatorId</c> in your <c>CreateGameSession</c> requests, Amazon GameLift limits
-        /// requests to one request per <c>CreatorId</c> per second.</para><para>To not limit <c>CreateGameSession</c> requests with the same <c>CreatorId</c>, don't
+        /// operation requires a <c>CreatorId</c>. Amazon GameLift Servers limits the number of
+        /// game session creation requests with the same <c>CreatorId</c> in a specified time
+        /// period.</para><para>If you your fleet doesn't have a resource creation limit policy and you provide a
+        /// <c>CreatorId</c> in your <c>CreateGameSession</c> requests, Amazon GameLift Servers
+        /// limits requests to one request per <c>CreatorId</c> per second.</para><para>To not limit <c>CreateGameSession</c> requests with the same <c>CreatorId</c>, don't
         /// provide a <c>CreatorId</c> in your <c>CreateGameSession</c> request.</para>
         /// </para>
         /// </summary>
@@ -123,7 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>
         /// <para>A set of key-value pairs that can store custom data in a game session. For example:
         /// <c>{"Key": "difficulty", "Value": "novice"}</c>. For an example, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-client-api.html#game-properties-create">Create
-        /// a game session with custom properties</a>. </para>
+        /// a game session with custom properties</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,9 +142,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A set of custom game session properties, formatted as a single string value. This
-        /// data is passed to a game server process with a request to start a new game session
-        /// (see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
-        /// a Game Session</a>).</para>
+        /// data is passed to a game server process with a request to start a new game session.
+        /// For more information, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
+        /// a game session</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -164,7 +171,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// only once. Subsequent requests with the same string return the original <c>GameSession</c>
         /// object, with an updated status. Maximum token length is 48 characters. If provided,
         /// this string is included in the new game session's ID. A game session ARN has the following
-        /// format: <c>arn:aws:gamelift:&lt;region&gt;::gamesession/&lt;fleet ID&gt;/&lt;custom
+        /// format: <c>arn:aws:gamelift:&lt;location&gt;::gamesession/&lt;fleet ID&gt;/&lt;custom
         /// ID string or idempotency token&gt;</c>. Idempotency tokens remain in use for 30 days
         /// after a game session has ended; game session objects are retained for this time period
         /// and then deleted.</para>
@@ -225,16 +232,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "GameSession";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -245,9 +242,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -261,21 +262,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreateGameSessionResponse, NewGMLGameSessionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AliasId = this.AliasId;
             context.CreatorId = this.CreatorId;
             context.FleetId = this.FleetId;
@@ -389,13 +380,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreateGameSession");
             try
             {
-                #if DESKTOP
-                return client.CreateGameSession(request);
-                #elif CORECLR
-                return client.CreateGameSessionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGameSessionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

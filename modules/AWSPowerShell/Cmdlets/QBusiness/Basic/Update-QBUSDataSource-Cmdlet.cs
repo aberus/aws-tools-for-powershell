@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QBusiness;
 using Amazon.QBusiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QBUS
 {
     /// <summary>
-    /// Updates an existing Amazon Q data source connector.
+    /// Updates an existing Amazon Q Business data source connector.
     /// </summary>
     [Cmdlet("Update", "QBUSDataSource", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon QBusiness UpdateDataSource API operation.", Operation = new[] {"UpdateDataSource"}, SelectReturnType = typeof(Amazon.QBusiness.Model.UpdateDataSourceResponse))]
     [AWSCmdletOutput("None or Amazon.QBusiness.Model.UpdateDataSourceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.QBusiness.Model.UpdateDataSourceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.QBusiness.Model.UpdateDataSourceResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateQBUSDataSourceCmdlet : AmazonQBusinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
         /// <para>
-        /// <para> The identifier of the Amazon Q application the data source is attached to.</para>
+        /// <para> The identifier of the Amazon Q Business application the data source is attached to.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -57,6 +60,19 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ApplicationId { get; set; }
+        #endregion
+        
+        #region Parameter AudioExtractionConfiguration_AudioExtractionStatus
+        /// <summary>
+        /// <para>
+        /// <para>The status of audio extraction (ENABLED or DISABLED) for processing audio content
+        /// from files.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MediaExtractionConfiguration_AudioExtractionConfiguration_AudioExtractionStatus")]
+        [AWSConstantClassSource("Amazon.QBusiness.AudioExtractionStatus")]
+        public Amazon.QBusiness.AudioExtractionStatus AudioExtractionConfiguration_AudioExtractionStatus { get; set; }
         #endregion
         
         #region Parameter Configuration
@@ -132,6 +148,18 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public System.String DisplayName { get; set; }
         #endregion
         
+        #region Parameter ImageExtractionConfiguration_ImageExtractionStatus
+        /// <summary>
+        /// <para>
+        /// <para>Specify whether to extract semantic meaning from images and visuals from documents.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MediaExtractionConfiguration_ImageExtractionConfiguration_ImageExtractionStatus")]
+        [AWSConstantClassSource("Amazon.QBusiness.ImageExtractionStatus")]
+        public Amazon.QBusiness.ImageExtractionStatus ImageExtractionConfiguration_ImageExtractionStatus { get; set; }
+        #endregion
+        
         #region Parameter IndexId
         /// <summary>
         /// <para>
@@ -153,7 +181,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>Configuration information to alter document attributes or metadata fields and content
-        /// when ingesting documents into Amazon Q.</para>
+        /// when ingesting documents into Amazon Q Business.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -165,8 +197,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>The identifier of the document attribute used for the condition.</para><para>For example, 'Source_URI' could be an identifier for the attribute or metadata field
-        /// that contains source URIs associated with the documents.</para><para>Amazon Q currently doesn't support <c>_document_body</c> as an attribute key used
-        /// for the condition.</para>
+        /// that contains source URIs associated with the documents.</para><para>Amazon Q Business currently doesn't support <c>_document_body</c> as an attribute
+        /// key used for the condition.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -178,8 +210,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>The identifier of the document attribute used for the condition.</para><para>For example, 'Source_URI' could be an identifier for the attribute or metadata field
-        /// that contains source URIs associated with the documents.</para><para>Amazon Q currently doesn't support <c>_document_body</c> as an attribute key used
-        /// for the condition.</para>
+        /// that contains source URIs associated with the documents.</para><para>Amazon Q Business currently doesn't support <c>_document_body</c> as an attribute
+        /// key used for the condition.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -190,9 +222,9 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter PostExtractionHookConfiguration_LambdaArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of a role with permission to run a Lambda function
-        /// during ingestion. For more information, see <a href="https://docs.aws.amazon.com/amazonq/latest/business-use-dg/iam-roles.html#cde-iam-role">IAM
-        /// roles for Custom Document Enrichment (CDE)</a>.</para>
+        /// <para>The Amazon Resource Name (ARN) of the Lambda function during ingestion. For more information,
+        /// see <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/cde-lambda-operations.html">Using
+        /// Lambda functions for Amazon Q Business document enrichment</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -203,9 +235,9 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter PreExtractionHookConfiguration_LambdaArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of a role with permission to run a Lambda function
-        /// during ingestion. For more information, see <a href="https://docs.aws.amazon.com/amazonq/latest/business-use-dg/iam-roles.html#cde-iam-role">IAM
-        /// roles for Custom Document Enrichment (CDE)</a>.</para>
+        /// <para>The Amazon Resource Name (ARN) of the Lambda function during ingestion. For more information,
+        /// see <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/cde-lambda-operations.html">Using
+        /// Lambda functions for Amazon Q Business document enrichment</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -239,8 +271,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>The identifier of the document attribute used for the condition.</para><para>For example, 'Source_URI' could be an identifier for the attribute or metadata field
-        /// that contains source URIs associated with the documents.</para><para>Amazon Kendra currently does not support <c>_document_body</c> as an attribute key
-        /// used for the condition.</para>
+        /// that contains source URIs associated with the documents.</para><para>Amazon Q Business currently does not support <c>_document_body</c> as an attribute
+        /// key used for the condition.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -253,8 +285,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>The identifier of the document attribute used for the condition.</para><para>For example, 'Source_URI' could be an identifier for the attribute or metadata field
-        /// that contains source URIs associated with the documents.</para><para>Amazon Kendra currently does not support <c>_document_body</c> as an attribute key
-        /// used for the condition.</para>
+        /// that contains source URIs associated with the documents.</para><para>Amazon Q Business currently does not support <c>_document_body</c> as an attribute
+        /// key used for the condition.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -330,7 +362,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>A list of identifiers of security groups within your Amazon VPC. The security groups
-        /// should enable Amazon Q to connect to the data source.</para>
+        /// should enable Amazon Q Business to connect to the data source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -341,7 +377,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter DocumentEnrichmentConfiguration_PostInvocationCondition_StringListValue
         /// <summary>
         /// <para>
-        /// <para>A list of strings.</para>
+        /// <para>A list of strings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -352,7 +392,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter DocumentEnrichmentConfiguration_PreInvocationCondition_StringListValue
         /// <summary>
         /// <para>
-        /// <para>A list of strings.</para>
+        /// <para>A list of strings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -387,7 +431,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <para>
         /// <para>A list of identifiers for subnets within your Amazon VPC. The subnets should be able
         /// to connect to each other in the VPC, and they should have outgoing access to the Internet
-        /// through a NAT device.</para>
+        /// through a NAT device.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -405,6 +453,19 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public System.String SyncSchedule { get; set; }
         #endregion
         
+        #region Parameter VideoExtractionConfiguration_VideoExtractionStatus
+        /// <summary>
+        /// <para>
+        /// <para>The status of video extraction (ENABLED or DISABLED) for processing video content
+        /// from files.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MediaExtractionConfiguration_VideoExtractionConfiguration_VideoExtractionStatus")]
+        [AWSConstantClassSource("Amazon.QBusiness.VideoExtractionStatus")]
+        public Amazon.QBusiness.VideoExtractionStatus VideoExtractionConfiguration_VideoExtractionStatus { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -413,16 +474,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DataSourceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DataSourceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DataSourceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -435,9 +486,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DataSourceId), MyInvocation.BoundParameters);
@@ -451,21 +506,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QBusiness.Model.UpdateDataSourceResponse, UpdateQBUSDataSourceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DataSourceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -518,6 +563,9 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
                 WriteWarning("You are passing $null as a value for parameter IndexId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.AudioExtractionConfiguration_AudioExtractionStatus = this.AudioExtractionConfiguration_AudioExtractionStatus;
+            context.ImageExtractionConfiguration_ImageExtractionStatus = this.ImageExtractionConfiguration_ImageExtractionStatus;
+            context.VideoExtractionConfiguration_VideoExtractionStatus = this.VideoExtractionConfiguration_VideoExtractionStatus;
             context.RoleArn = this.RoleArn;
             context.SyncSchedule = this.SyncSchedule;
             if (this.VpcConfiguration_SecurityGroupId != null)
@@ -857,6 +905,90 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             {
                 request.IndexId = cmdletContext.IndexId;
             }
+            
+             // populate MediaExtractionConfiguration
+            var requestMediaExtractionConfigurationIsNull = true;
+            request.MediaExtractionConfiguration = new Amazon.QBusiness.Model.MediaExtractionConfiguration();
+            Amazon.QBusiness.Model.AudioExtractionConfiguration requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration = null;
+            
+             // populate AudioExtractionConfiguration
+            var requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfigurationIsNull = true;
+            requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration = new Amazon.QBusiness.Model.AudioExtractionConfiguration();
+            Amazon.QBusiness.AudioExtractionStatus requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration_audioExtractionConfiguration_AudioExtractionStatus = null;
+            if (cmdletContext.AudioExtractionConfiguration_AudioExtractionStatus != null)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration_audioExtractionConfiguration_AudioExtractionStatus = cmdletContext.AudioExtractionConfiguration_AudioExtractionStatus;
+            }
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration_audioExtractionConfiguration_AudioExtractionStatus != null)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration.AudioExtractionStatus = requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration_audioExtractionConfiguration_AudioExtractionStatus;
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfigurationIsNull = false;
+            }
+             // determine if requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration should be set to null
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfigurationIsNull)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration = null;
+            }
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration != null)
+            {
+                request.MediaExtractionConfiguration.AudioExtractionConfiguration = requestMediaExtractionConfiguration_mediaExtractionConfiguration_AudioExtractionConfiguration;
+                requestMediaExtractionConfigurationIsNull = false;
+            }
+            Amazon.QBusiness.Model.ImageExtractionConfiguration requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration = null;
+            
+             // populate ImageExtractionConfiguration
+            var requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfigurationIsNull = true;
+            requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration = new Amazon.QBusiness.Model.ImageExtractionConfiguration();
+            Amazon.QBusiness.ImageExtractionStatus requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration_imageExtractionConfiguration_ImageExtractionStatus = null;
+            if (cmdletContext.ImageExtractionConfiguration_ImageExtractionStatus != null)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration_imageExtractionConfiguration_ImageExtractionStatus = cmdletContext.ImageExtractionConfiguration_ImageExtractionStatus;
+            }
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration_imageExtractionConfiguration_ImageExtractionStatus != null)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration.ImageExtractionStatus = requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration_imageExtractionConfiguration_ImageExtractionStatus;
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfigurationIsNull = false;
+            }
+             // determine if requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration should be set to null
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfigurationIsNull)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration = null;
+            }
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration != null)
+            {
+                request.MediaExtractionConfiguration.ImageExtractionConfiguration = requestMediaExtractionConfiguration_mediaExtractionConfiguration_ImageExtractionConfiguration;
+                requestMediaExtractionConfigurationIsNull = false;
+            }
+            Amazon.QBusiness.Model.VideoExtractionConfiguration requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration = null;
+            
+             // populate VideoExtractionConfiguration
+            var requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfigurationIsNull = true;
+            requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration = new Amazon.QBusiness.Model.VideoExtractionConfiguration();
+            Amazon.QBusiness.VideoExtractionStatus requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration_videoExtractionConfiguration_VideoExtractionStatus = null;
+            if (cmdletContext.VideoExtractionConfiguration_VideoExtractionStatus != null)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration_videoExtractionConfiguration_VideoExtractionStatus = cmdletContext.VideoExtractionConfiguration_VideoExtractionStatus;
+            }
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration_videoExtractionConfiguration_VideoExtractionStatus != null)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration.VideoExtractionStatus = requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration_videoExtractionConfiguration_VideoExtractionStatus;
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfigurationIsNull = false;
+            }
+             // determine if requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration should be set to null
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfigurationIsNull)
+            {
+                requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration = null;
+            }
+            if (requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration != null)
+            {
+                request.MediaExtractionConfiguration.VideoExtractionConfiguration = requestMediaExtractionConfiguration_mediaExtractionConfiguration_VideoExtractionConfiguration;
+                requestMediaExtractionConfigurationIsNull = false;
+            }
+             // determine if request.MediaExtractionConfiguration should be set to null
+            if (requestMediaExtractionConfigurationIsNull)
+            {
+                request.MediaExtractionConfiguration = null;
+            }
             if (cmdletContext.RoleArn != null)
             {
                 request.RoleArn = cmdletContext.RoleArn;
@@ -932,13 +1064,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QBusiness", "UpdateDataSource");
             try
             {
-                #if DESKTOP
-                return client.UpdateDataSource(request);
-                #elif CORECLR
-                return client.UpdateDataSourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDataSourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -980,6 +1106,9 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             public System.String PreExtractionHookConfiguration_RoleArn { get; set; }
             public System.String PreExtractionHookConfiguration_S3BucketName { get; set; }
             public System.String IndexId { get; set; }
+            public Amazon.QBusiness.AudioExtractionStatus AudioExtractionConfiguration_AudioExtractionStatus { get; set; }
+            public Amazon.QBusiness.ImageExtractionStatus ImageExtractionConfiguration_ImageExtractionStatus { get; set; }
+            public Amazon.QBusiness.VideoExtractionStatus VideoExtractionConfiguration_VideoExtractionStatus { get; set; }
             public System.String RoleArn { get; set; }
             public System.String SyncSchedule { get; set; }
             public List<System.String> VpcConfiguration_SecurityGroupId { get; set; }

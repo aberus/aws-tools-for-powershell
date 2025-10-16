@@ -158,81 +158,6 @@ namespace Amazon.PowerShell.Common
                 }
             }
 
-            // no explicit command-level or shell instance override set, start to inspect the environment
-            // starting environment variables
-            if (innerCredentials == null)
-            {
-                try
-                {
-                    var environmentCredentials = new EnvironmentVariablesAWSCredentials();
-                    innerCredentials = environmentCredentials;
-                    source = CredentialsSource.Environment;
-                    name = "Environment Variables";
-                    // no need to set proxy and callback - only basic or session credentials
-                }
-                catch { }
-            }
-
-            // get credentials from a 'default' profile?
-            if (innerCredentials == null && !userSpecifiedProfile)
-            {
-                CredentialProfile credentialProfile;
-                if (profileChain.TryGetProfile(SettingsStore.PSDefaultSettingName, out credentialProfile) &&
-                    credentialProfile.CanCreateAWSCredentials)
-                {
-                    innerCredentials = AWSCredentialsFactory.GetAWSCredentials(credentialProfile, profileChain);
-                    source = CredentialsSource.Profile;
-                    name = SettingsStore.PSDefaultSettingName;
-                    SetProxyAndCallbackIfNecessary(innerCredentials, self, psHost, sessionState);
-                }
-            }
-
-            // get credentials from a legacy default profile name?
-            if (innerCredentials == null)
-            {
-                CredentialProfile credentialProfile;
-                if (profileChain.TryGetProfile(SettingsStore.PSLegacyDefaultSettingName, out credentialProfile) &&
-                    credentialProfile.CanCreateAWSCredentials)
-                {
-                    if (AWSCredentialsFactory.TryGetAWSCredentials(credentialProfile, profileChain, out innerCredentials))
-                    {
-                        source = CredentialsSource.Profile;
-                        name = SettingsStore.PSLegacyDefaultSettingName;
-                        SetProxyAndCallbackIfNecessary(innerCredentials, self, psHost, sessionState);
-                    }
-                }
-            }
-
-            if (innerCredentials == null)
-            {
-                // try and load credentials from ECS endpoint (if the relevant environment variable is set)
-                // or EC2 Instance Profile as a last resort
-                try
-                {
-                    string relativeUri = System.Environment.GetEnvironmentVariable(ECSTaskCredentials.ContainerCredentialsURIEnvVariable);
-                    string fullUri = System.Environment.GetEnvironmentVariable(ECSTaskCredentials.ContainerCredentialsFullURIEnvVariable);
-
-                    if (!string.IsNullOrEmpty(relativeUri) || !string.IsNullOrEmpty(fullUri))
-                    {
-                        innerCredentials = new ECSTaskCredentials();
-                        source = CredentialsSource.Container;
-                        name = "Container";
-                        // no need to set proxy and callback
-                    }
-                    else
-                    {
-                        innerCredentials = new InstanceProfileAWSCredentials();
-                        source = CredentialsSource.InstanceProfile;
-                        name = "Instance Profile";
-                        // no need to set proxy and callback
-                    }
-                }
-                catch
-                {
-                    innerCredentials = null;
-                }
-            }
-
             if (credentials == null && innerCredentials != null)
             {
                 credentials = new AWSPSCredentials(innerCredentials, name, source);
@@ -798,8 +723,9 @@ namespace Amazon.PowerShell.Common
     {
         public const string AWSCredentialsVariableName = "StoredAWSCredentials";
         public const string AWSRegionVariableName = "StoredAWSRegion";
-        public const string AWSCallHistoryName = "AWSHistory";
+        public const string AWSShowSensitiveData = "AWSPowerShell_Show_Sensitive_Data";
         public const string AWSProxyVariableName = "AWSProxy";
+        public const string AWSAutoIterationMode = "AWSPowerShell_AutoIteration_Mode";
     }
 
     internal static class CredentialProfileOptionsExtractor
@@ -808,9 +734,6 @@ namespace Amazon.PowerShell.Common
         private static HashSet<Type> PassThroughExtractTypes = new HashSet<Type>
         {
             typeof(InstanceProfileAWSCredentials),
-#if DESKTOP
-            typeof(StoredProfileFederatedCredentials),
-#endif
             typeof(FederatedAWSCredentials),
         };
 
@@ -819,12 +742,9 @@ namespace Amazon.PowerShell.Common
             typeof(AssumeRoleAWSCredentials),
             typeof(URIBasedRefreshingCredentialHelper),
             typeof(AnonymousAWSCredentials),
-            typeof(ECSTaskCredentials),
+            typeof(GenericContainerCredentials),
             typeof(EnvironmentVariablesAWSCredentials),
-            typeof(StoredProfileAWSCredentials),
-#if DESKTOP
-            typeof(EnvironmentAWSCredentials),
-#endif
+            typeof(SharedCredentialsFile),
             typeof(EnvironmentVariablesAWSCredentials)
         };
 #pragma warning restore CS0618 //A class was marked with the Obsolete attribute

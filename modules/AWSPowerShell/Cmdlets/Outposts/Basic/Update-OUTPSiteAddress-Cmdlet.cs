@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Outposts;
 using Amazon.Outposts.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OUTP
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
     [OutputType("Amazon.Outposts.Model.UpdateSiteAddressResponse")]
     [AWSCmdlet("Calls the AWS Outposts UpdateSiteAddress API operation.", Operation = new[] {"UpdateSiteAddress"}, SelectReturnType = typeof(Amazon.Outposts.Model.UpdateSiteAddressResponse))]
     [AWSCmdletOutput("Amazon.Outposts.Model.UpdateSiteAddressResponse",
-        "This cmdlet returns an Amazon.Outposts.Model.UpdateSiteAddressResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Outposts.Model.UpdateSiteAddressResponse object containing multiple properties."
     )]
     public partial class UpdateOUTPSiteAddressCmdlet : AmazonOutpostsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Address_AddressLine1
         /// <summary>
@@ -127,7 +130,14 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         /// <para>The name of the contact.</para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        #else
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Address_ContactName { get; set; }
         #endregion
         
@@ -137,7 +147,14 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         /// <para>The phone number of the contact.</para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        #else
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Address_ContactPhoneNumber { get; set; }
         #endregion
         
@@ -240,16 +257,6 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SiteId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SiteId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SiteId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -260,9 +267,13 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SiteId), MyInvocation.BoundParameters);
@@ -276,21 +287,11 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Outposts.Model.UpdateSiteAddressResponse, UpdateOUTPSiteAddressCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SiteId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Address_AddressLine1 = this.Address_AddressLine1;
             #if MODULAR
             if (this.Address_AddressLine1 == null && ParameterWasBound(nameof(this.Address_AddressLine1)))
@@ -308,7 +309,19 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
             }
             #endif
             context.Address_ContactName = this.Address_ContactName;
+            #if MODULAR
+            if (this.Address_ContactName == null && ParameterWasBound(nameof(this.Address_ContactName)))
+            {
+                WriteWarning("You are passing $null as a value for parameter Address_ContactName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.Address_ContactPhoneNumber = this.Address_ContactPhoneNumber;
+            #if MODULAR
+            if (this.Address_ContactPhoneNumber == null && ParameterWasBound(nameof(this.Address_ContactPhoneNumber)))
+            {
+                WriteWarning("You are passing $null as a value for parameter Address_ContactPhoneNumber which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.Address_CountryCode = this.Address_CountryCode;
             #if MODULAR
             if (this.Address_CountryCode == null && ParameterWasBound(nameof(this.Address_CountryCode)))
@@ -527,13 +540,7 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Outposts", "UpdateSiteAddress");
             try
             {
-                #if DESKTOP
-                return client.UpdateSiteAddress(request);
-                #elif CORECLR
-                return client.UpdateSiteAddressAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSiteAddressAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

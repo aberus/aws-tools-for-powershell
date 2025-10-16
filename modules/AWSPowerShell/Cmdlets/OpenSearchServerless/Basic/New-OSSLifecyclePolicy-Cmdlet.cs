@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OpenSearchServerless;
 using Amazon.OpenSearchServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OSS
 {
     /// <summary>
@@ -38,12 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.OSS
     [AWSCmdlet("Calls the OpenSearch Serverless CreateLifecyclePolicy API operation.", Operation = new[] {"CreateLifecyclePolicy"}, SelectReturnType = typeof(Amazon.OpenSearchServerless.Model.CreateLifecyclePolicyResponse))]
     [AWSCmdletOutput("Amazon.OpenSearchServerless.Model.LifecyclePolicyDetail or Amazon.OpenSearchServerless.Model.CreateLifecyclePolicyResponse",
         "This cmdlet returns an Amazon.OpenSearchServerless.Model.LifecyclePolicyDetail object.",
-        "The service call response (type Amazon.OpenSearchServerless.Model.CreateLifecyclePolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OpenSearchServerless.Model.CreateLifecyclePolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewOSSLifecyclePolicyCmdlet : AmazonOpenSearchServerlessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -137,9 +140,13 @@ namespace Amazon.PowerShell.Cmdlets.OSS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -255,13 +262,7 @@ namespace Amazon.PowerShell.Cmdlets.OSS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "OpenSearch Serverless", "CreateLifecyclePolicy");
             try
             {
-                #if DESKTOP
-                return client.CreateLifecyclePolicy(request);
-                #elif CORECLR
-                return client.CreateLifecyclePolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLifecyclePolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

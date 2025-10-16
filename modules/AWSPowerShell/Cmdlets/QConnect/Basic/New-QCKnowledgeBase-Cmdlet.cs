@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QConnect;
 using Amazon.QConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QC
 {
     /// <summary>
@@ -54,12 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.QC
     [AWSCmdlet("Calls the Amazon Q Connect CreateKnowledgeBase API operation.", Operation = new[] {"CreateKnowledgeBase"}, SelectReturnType = typeof(Amazon.QConnect.Model.CreateKnowledgeBaseResponse))]
     [AWSCmdletOutput("Amazon.QConnect.Model.KnowledgeBaseData or Amazon.QConnect.Model.CreateKnowledgeBaseResponse",
         "This cmdlet returns an Amazon.QConnect.Model.KnowledgeBaseData object.",
-        "The service call response (type Amazon.QConnect.Model.CreateKnowledgeBaseResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.QConnect.Model.CreateKnowledgeBaseResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewQCKnowledgeBaseCmdlet : AmazonQConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppIntegrations_AppIntegrationArn
         /// <summary>
@@ -78,7 +81,7 @@ namespace Amazon.PowerShell.Cmdlets.QC
         /// <c>updated_at</c>, and <c>draft</c> as source fields. </para></li><li><para> For <a href="https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/sharepoint-net-server-csom-jsom-and-rest-api-index">SharePoint</a>,
         /// your AppIntegrations DataIntegration must have a FileConfiguration, including only
         /// file extensions that are among <c>docx</c>, <c>pdf</c>, <c>html</c>, <c>htm</c>, and
-        /// <c>txt</c>. </para></li><li><para> For <a href="https://aws.amazon.com/s3/">Amazon S3</a>, the ObjectConfiguration and
+        /// <c>txt</c>. </para></li><li><para> For <a href="http://aws.amazon.com/s3/">Amazon S3</a>, the ObjectConfiguration and
         /// FileConfiguration of your AppIntegrations DataIntegration must be null. The <c>SourceURI</c>
         /// of your DataIntegration must use the following format: <c>s3://your_s3_bucket_name</c>.</para><important><para>The bucket policy of the corresponding S3 bucket must allow the Amazon Web Services
         /// principal <c>app-integrations.amazonaws.com</c> to perform <c>s3:ListBucket</c>, <c>s3:GetObject</c>,
@@ -88,6 +91,44 @@ namespace Amazon.PowerShell.Cmdlets.QC
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SourceConfiguration_AppIntegrations_AppIntegrationArn")]
         public System.String AppIntegrations_AppIntegrationArn { get; set; }
+        #endregion
+        
+        #region Parameter SemanticChunkingConfiguration_BreakpointPercentileThreshold
+        /// <summary>
+        /// <para>
+        /// <para>The dissimilarity threshold for splitting chunks.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_BreakpointPercentileThreshold")]
+        public System.Int32? SemanticChunkingConfiguration_BreakpointPercentileThreshold { get; set; }
+        #endregion
+        
+        #region Parameter SemanticChunkingConfiguration_BufferSize
+        /// <summary>
+        /// <para>
+        /// <para>The buffer size.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_BufferSize")]
+        public System.Int32? SemanticChunkingConfiguration_BufferSize { get; set; }
+        #endregion
+        
+        #region Parameter ChunkingConfiguration_ChunkingStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Knowledge base can split your source data into chunks. A chunk refers to an excerpt
+        /// from a data source that is returned when the knowledge base that it belongs to is
+        /// queried. You have the following options for chunking your data. If you opt for <c>NONE</c>,
+        /// then you may want to pre-process your files by splitting them up such that each file
+        /// corresponds to a chunk.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_ChunkingStrategy")]
+        [AWSConstantClassSource("Amazon.QConnect.ChunkingStrategy")]
+        public Amazon.QConnect.ChunkingStrategy ChunkingConfiguration_ChunkingStrategy { get; set; }
         #endregion
         
         #region Parameter Description
@@ -100,11 +141,45 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter WebCrawlerConfiguration_ExclusionFilter
+        /// <summary>
+        /// <para>
+        /// <para>A list of one or more exclusion regular expression patterns to exclude certain URLs.
+        /// If you specify an inclusion and exclusion filter/pattern and both match a URL, the
+        /// exclusion filter takes precedence and the web content of the URL isn’t crawled.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_ExclusionFilters")]
+        public System.String[] WebCrawlerConfiguration_ExclusionFilter { get; set; }
+        #endregion
+        
+        #region Parameter WebCrawlerConfiguration_InclusionFilter
+        /// <summary>
+        /// <para>
+        /// <para>A list of one or more inclusion regular expression patterns to include certain URLs.
+        /// If you specify an inclusion and exclusion filter/pattern and both match a URL, the
+        /// exclusion filter takes precedence and the web content of the URL isn’t crawled.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_InclusionFilters")]
+        public System.String[] WebCrawlerConfiguration_InclusionFilter { get; set; }
+        #endregion
+        
         #region Parameter ServerSideEncryptionConfiguration_KmsKeyId
         /// <summary>
         /// <para>
         /// <para>The customer managed key used for encryption. For more information about setting up
-        /// a customer managed key for Amazon Q, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/enable-q.html">Enable
+        /// a customer managed key for Amazon Q in Connect, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/enable-q.html">Enable
         /// Amazon Q in Connect for your instance</a>. For information about valid ID values,
         /// see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#key-id">Key
         /// identifiers (KeyId)</a>.</para>
@@ -133,6 +208,54 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public Amazon.QConnect.KnowledgeBaseType KnowledgeBaseType { get; set; }
         #endregion
         
+        #region Parameter HierarchicalChunkingConfiguration_LevelConfiguration
+        /// <summary>
+        /// <para>
+        /// <para>Token settings for each layer.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_LevelConfigurations")]
+        public Amazon.QConnect.Model.HierarchicalChunkingLevelConfiguration[] HierarchicalChunkingConfiguration_LevelConfiguration { get; set; }
+        #endregion
+        
+        #region Parameter FixedSizeChunkingConfiguration_MaxToken
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of tokens to include in a chunk.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_MaxTokens")]
+        public System.Int32? FixedSizeChunkingConfiguration_MaxToken { get; set; }
+        #endregion
+        
+        #region Parameter SemanticChunkingConfiguration_MaxToken
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of tokens that a chunk can contain.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_MaxTokens")]
+        public System.Int32? SemanticChunkingConfiguration_MaxToken { get; set; }
+        #endregion
+        
+        #region Parameter BedrockFoundationModelConfiguration_ModelArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the foundation model.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ModelArn")]
+        public System.String BedrockFoundationModelConfiguration_ModelArn { get; set; }
+        #endregion
+        
         #region Parameter Name
         /// <summary>
         /// <para>
@@ -153,15 +276,19 @@ namespace Amazon.PowerShell.Cmdlets.QC
         #region Parameter AppIntegrations_ObjectField
         /// <summary>
         /// <para>
-        /// <para>The fields from the source that are made available to your agents in Amazon Q. Optional
-        /// if ObjectConfiguration is included in the provided DataIntegration. </para><ul><li><para> For <a href="https://developer.salesforce.com/docs/atlas.en-us.knowledge_dev.meta/knowledge_dev/sforce_api_objects_knowledge__kav.htm">
+        /// <para>The fields from the source that are made available to your agents in Amazon Q in Connect.
+        /// Optional if ObjectConfiguration is included in the provided DataIntegration. </para><ul><li><para> For <a href="https://developer.salesforce.com/docs/atlas.en-us.knowledge_dev.meta/knowledge_dev/sforce_api_objects_knowledge__kav.htm">
         /// Salesforce</a>, you must include at least <c>Id</c>, <c>ArticleNumber</c>, <c>VersionNumber</c>,
         /// <c>Title</c>, <c>PublishStatus</c>, and <c>IsDeleted</c>. </para></li><li><para>For <a href="https://developer.servicenow.com/dev.do#!/reference/api/rome/rest/knowledge-management-api">
         /// ServiceNow</a>, you must include at least <c>number</c>, <c>short_description</c>,
         /// <c>sys_mod_count</c>, <c>workflow_state</c>, and <c>active</c>. </para></li><li><para>For <a href="https://developer.zendesk.com/api-reference/help_center/help-center-api/articles/">
         /// Zendesk</a>, you must include at least <c>id</c>, <c>title</c>, <c>updated_at</c>,
         /// and <c>draft</c>. </para></li></ul><para>Make sure to include additional fields. These fields are indexed and used to source
-        /// recommendations. </para>
+        /// recommendations. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,10 +296,102 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public System.String[] AppIntegrations_ObjectField { get; set; }
         #endregion
         
+        #region Parameter FixedSizeChunkingConfiguration_OverlapPercentage
+        /// <summary>
+        /// <para>
+        /// <para>The percentage of overlap between adjacent chunks of a data source.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_OverlapPercentage")]
+        public System.Int32? FixedSizeChunkingConfiguration_OverlapPercentage { get; set; }
+        #endregion
+        
+        #region Parameter HierarchicalChunkingConfiguration_OverlapToken
+        /// <summary>
+        /// <para>
+        /// <para>The number of tokens to repeat across chunks in the same layer.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_OverlapTokens")]
+        public System.Int32? HierarchicalChunkingConfiguration_OverlapToken { get; set; }
+        #endregion
+        
+        #region Parameter ParsingPrompt_ParsingPromptText
+        /// <summary>
+        /// <para>
+        /// <para>Instructions for interpreting the contents of a document.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt_ParsingPromptText")]
+        public System.String ParsingPrompt_ParsingPromptText { get; set; }
+        #endregion
+        
+        #region Parameter ParsingConfiguration_ParsingStrategy
+        /// <summary>
+        /// <para>
+        /// <para>The parsing strategy for the data source.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VectorIngestionConfiguration_ParsingConfiguration_ParsingStrategy")]
+        [AWSConstantClassSource("Amazon.QConnect.ParsingStrategy")]
+        public Amazon.QConnect.ParsingStrategy ParsingConfiguration_ParsingStrategy { get; set; }
+        #endregion
+        
+        #region Parameter CrawlerLimits_RateLimit
+        /// <summary>
+        /// <para>
+        /// <para>Rate of web URLs retrieved per minute.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits_RateLimit")]
+        public System.Int32? CrawlerLimits_RateLimit { get; set; }
+        #endregion
+        
+        #region Parameter WebCrawlerConfiguration_Scope
+        /// <summary>
+        /// <para>
+        /// <para>The scope of what is crawled for your URLs. You can choose to crawl only web pages
+        /// that belong to the same host or primary domain. For example, only web pages that contain
+        /// the seed URL <c>https://docs.aws.amazon.com/bedrock/latest/userguide/</c> and no other
+        /// domains. You can choose to include sub domains in addition to the host or primary
+        /// domain. For example, web pages that contain <c>aws.amazon.com</c> can also include
+        /// sub domain <c>docs.aws.amazon.com</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_Scope")]
+        [AWSConstantClassSource("Amazon.QConnect.WebScopeType")]
+        public Amazon.QConnect.WebScopeType WebCrawlerConfiguration_Scope { get; set; }
+        #endregion
+        
+        #region Parameter UrlConfiguration_SeedUrl
+        /// <summary>
+        /// <para>
+        /// <para>List of URLs for crawling.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration_SeedUrls")]
+        public Amazon.QConnect.Model.SeedUrl[] UrlConfiguration_SeedUrl { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags used to organize, track, or control access for this resource.</para>
+        /// <para>The tags used to organize, track, or control access for this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -201,7 +420,7 @@ namespace Amazon.PowerShell.Cmdlets.QC
         /// <para>
         /// <para>A unique, case-sensitive identifier that you provide to ensure the idempotency of
         /// the request. If not provided, the Amazon Web Services SDK populates this field. For
-        /// more information about idempotency, see <a href="https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/">Making
+        /// more information about idempotency, see <a href="http://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/">Making
         /// retries safe with idempotent APIs</a>.</para>
         /// </para>
         /// </summary>
@@ -220,16 +439,6 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public string Select { get; set; } = "KnowledgeBase";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KnowledgeBaseType parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KnowledgeBaseType' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KnowledgeBaseType' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -240,9 +449,13 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -256,21 +469,11 @@ namespace Amazon.PowerShell.Cmdlets.QC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QConnect.Model.CreateKnowledgeBaseResponse, NewQCKnowledgeBaseCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KnowledgeBaseType;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.KnowledgeBaseType = this.KnowledgeBaseType;
@@ -294,6 +497,20 @@ namespace Amazon.PowerShell.Cmdlets.QC
             {
                 context.AppIntegrations_ObjectField = new List<System.String>(this.AppIntegrations_ObjectField);
             }
+            context.CrawlerLimits_RateLimit = this.CrawlerLimits_RateLimit;
+            if (this.WebCrawlerConfiguration_ExclusionFilter != null)
+            {
+                context.WebCrawlerConfiguration_ExclusionFilter = new List<System.String>(this.WebCrawlerConfiguration_ExclusionFilter);
+            }
+            if (this.WebCrawlerConfiguration_InclusionFilter != null)
+            {
+                context.WebCrawlerConfiguration_InclusionFilter = new List<System.String>(this.WebCrawlerConfiguration_InclusionFilter);
+            }
+            context.WebCrawlerConfiguration_Scope = this.WebCrawlerConfiguration_Scope;
+            if (this.UrlConfiguration_SeedUrl != null)
+            {
+                context.UrlConfiguration_SeedUrl = new List<Amazon.QConnect.Model.SeedUrl>(this.UrlConfiguration_SeedUrl);
+            }
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -302,6 +519,20 @@ namespace Amazon.PowerShell.Cmdlets.QC
                     context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
                 }
             }
+            context.ChunkingConfiguration_ChunkingStrategy = this.ChunkingConfiguration_ChunkingStrategy;
+            context.FixedSizeChunkingConfiguration_MaxToken = this.FixedSizeChunkingConfiguration_MaxToken;
+            context.FixedSizeChunkingConfiguration_OverlapPercentage = this.FixedSizeChunkingConfiguration_OverlapPercentage;
+            if (this.HierarchicalChunkingConfiguration_LevelConfiguration != null)
+            {
+                context.HierarchicalChunkingConfiguration_LevelConfiguration = new List<Amazon.QConnect.Model.HierarchicalChunkingLevelConfiguration>(this.HierarchicalChunkingConfiguration_LevelConfiguration);
+            }
+            context.HierarchicalChunkingConfiguration_OverlapToken = this.HierarchicalChunkingConfiguration_OverlapToken;
+            context.SemanticChunkingConfiguration_BreakpointPercentileThreshold = this.SemanticChunkingConfiguration_BreakpointPercentileThreshold;
+            context.SemanticChunkingConfiguration_BufferSize = this.SemanticChunkingConfiguration_BufferSize;
+            context.SemanticChunkingConfiguration_MaxToken = this.SemanticChunkingConfiguration_MaxToken;
+            context.BedrockFoundationModelConfiguration_ModelArn = this.BedrockFoundationModelConfiguration_ModelArn;
+            context.ParsingPrompt_ParsingPromptText = this.ParsingPrompt_ParsingPromptText;
+            context.ParsingConfiguration_ParsingStrategy = this.ParsingConfiguration_ParsingStrategy;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -376,6 +607,116 @@ namespace Amazon.PowerShell.Cmdlets.QC
              // populate SourceConfiguration
             var requestSourceConfigurationIsNull = true;
             request.SourceConfiguration = new Amazon.QConnect.Model.SourceConfiguration();
+            Amazon.QConnect.Model.ManagedSourceConfiguration requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration = null;
+            
+             // populate ManagedSourceConfiguration
+            var requestSourceConfiguration_sourceConfiguration_ManagedSourceConfigurationIsNull = true;
+            requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration = new Amazon.QConnect.Model.ManagedSourceConfiguration();
+            Amazon.QConnect.Model.WebCrawlerConfiguration requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration = null;
+            
+             // populate WebCrawlerConfiguration
+            var requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull = true;
+            requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration = new Amazon.QConnect.Model.WebCrawlerConfiguration();
+            List<System.String> requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_ExclusionFilter = null;
+            if (cmdletContext.WebCrawlerConfiguration_ExclusionFilter != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_ExclusionFilter = cmdletContext.WebCrawlerConfiguration_ExclusionFilter;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_ExclusionFilter != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration.ExclusionFilters = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_ExclusionFilter;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull = false;
+            }
+            List<System.String> requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_InclusionFilter = null;
+            if (cmdletContext.WebCrawlerConfiguration_InclusionFilter != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_InclusionFilter = cmdletContext.WebCrawlerConfiguration_InclusionFilter;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_InclusionFilter != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration.InclusionFilters = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_InclusionFilter;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull = false;
+            }
+            Amazon.QConnect.WebScopeType requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_Scope = null;
+            if (cmdletContext.WebCrawlerConfiguration_Scope != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_Scope = cmdletContext.WebCrawlerConfiguration_Scope;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_Scope != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration.Scope = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_webCrawlerConfiguration_Scope;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.WebCrawlerLimits requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits = null;
+            
+             // populate CrawlerLimits
+            var requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimitsIsNull = true;
+            requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits = new Amazon.QConnect.Model.WebCrawlerLimits();
+            System.Int32? requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits_crawlerLimits_RateLimit = null;
+            if (cmdletContext.CrawlerLimits_RateLimit != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits_crawlerLimits_RateLimit = cmdletContext.CrawlerLimits_RateLimit.Value;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits_crawlerLimits_RateLimit != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits.RateLimit = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits_crawlerLimits_RateLimit.Value;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimitsIsNull = false;
+            }
+             // determine if requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits should be set to null
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimitsIsNull)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits = null;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration.CrawlerLimits = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_CrawlerLimits;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.UrlConfiguration requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration = null;
+            
+             // populate UrlConfiguration
+            var requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfigurationIsNull = true;
+            requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration = new Amazon.QConnect.Model.UrlConfiguration();
+            List<Amazon.QConnect.Model.SeedUrl> requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration_urlConfiguration_SeedUrl = null;
+            if (cmdletContext.UrlConfiguration_SeedUrl != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration_urlConfiguration_SeedUrl = cmdletContext.UrlConfiguration_SeedUrl;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration_urlConfiguration_SeedUrl != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration.SeedUrls = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration_urlConfiguration_SeedUrl;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfigurationIsNull = false;
+            }
+             // determine if requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration should be set to null
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfigurationIsNull)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration = null;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration.UrlConfiguration = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration_UrlConfiguration;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull = false;
+            }
+             // determine if requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration should be set to null
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfigurationIsNull)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration = null;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration != null)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration.WebCrawlerConfiguration = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration_WebCrawlerConfiguration;
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfigurationIsNull = false;
+            }
+             // determine if requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration should be set to null
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfigurationIsNull)
+            {
+                requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration = null;
+            }
+            if (requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration != null)
+            {
+                request.SourceConfiguration.ManagedSourceConfiguration = requestSourceConfiguration_sourceConfiguration_ManagedSourceConfiguration;
+                requestSourceConfigurationIsNull = false;
+            }
             Amazon.QConnect.Model.AppIntegrationsConfiguration requestSourceConfiguration_sourceConfiguration_AppIntegrations = null;
             
              // populate AppIntegrations
@@ -421,6 +762,230 @@ namespace Amazon.PowerShell.Cmdlets.QC
                 request.Tags = cmdletContext.Tag;
             }
             
+             // populate VectorIngestionConfiguration
+            var requestVectorIngestionConfigurationIsNull = true;
+            request.VectorIngestionConfiguration = new Amazon.QConnect.Model.VectorIngestionConfiguration();
+            Amazon.QConnect.Model.ParsingConfiguration requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration = null;
+            
+             // populate ParsingConfiguration
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfigurationIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration = new Amazon.QConnect.Model.ParsingConfiguration();
+            Amazon.QConnect.ParsingStrategy requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_parsingConfiguration_ParsingStrategy = null;
+            if (cmdletContext.ParsingConfiguration_ParsingStrategy != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_parsingConfiguration_ParsingStrategy = cmdletContext.ParsingConfiguration_ParsingStrategy;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_parsingConfiguration_ParsingStrategy != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration.ParsingStrategy = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_parsingConfiguration_ParsingStrategy;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.BedrockFoundationModelConfigurationForParsing requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration = null;
+            
+             // populate BedrockFoundationModelConfiguration
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfigurationIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration = new Amazon.QConnect.Model.BedrockFoundationModelConfigurationForParsing();
+            System.String requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_bedrockFoundationModelConfiguration_ModelArn = null;
+            if (cmdletContext.BedrockFoundationModelConfiguration_ModelArn != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_bedrockFoundationModelConfiguration_ModelArn = cmdletContext.BedrockFoundationModelConfiguration_ModelArn;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_bedrockFoundationModelConfiguration_ModelArn != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration.ModelArn = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_bedrockFoundationModelConfiguration_ModelArn;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.ParsingPrompt requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt = null;
+            
+             // populate ParsingPrompt
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPromptIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt = new Amazon.QConnect.Model.ParsingPrompt();
+            System.String requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt_parsingPrompt_ParsingPromptText = null;
+            if (cmdletContext.ParsingPrompt_ParsingPromptText != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt_parsingPrompt_ParsingPromptText = cmdletContext.ParsingPrompt_ParsingPromptText;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt_parsingPrompt_ParsingPromptText != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt.ParsingPromptText = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt_parsingPrompt_ParsingPromptText;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPromptIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPromptIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration.ParsingPrompt = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration_ParsingPrompt;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfigurationIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfigurationIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration.BedrockFoundationModelConfiguration = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration_vectorIngestionConfiguration_ParsingConfiguration_BedrockFoundationModelConfiguration;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfigurationIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfigurationIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration != null)
+            {
+                request.VectorIngestionConfiguration.ParsingConfiguration = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ParsingConfiguration;
+                requestVectorIngestionConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.ChunkingConfiguration requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration = null;
+            
+             // populate ChunkingConfiguration
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfigurationIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration = new Amazon.QConnect.Model.ChunkingConfiguration();
+            Amazon.QConnect.ChunkingStrategy requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_chunkingConfiguration_ChunkingStrategy = null;
+            if (cmdletContext.ChunkingConfiguration_ChunkingStrategy != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_chunkingConfiguration_ChunkingStrategy = cmdletContext.ChunkingConfiguration_ChunkingStrategy;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_chunkingConfiguration_ChunkingStrategy != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration.ChunkingStrategy = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_chunkingConfiguration_ChunkingStrategy;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.FixedSizeChunkingConfiguration requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration = null;
+            
+             // populate FixedSizeChunkingConfiguration
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfigurationIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration = new Amazon.QConnect.Model.FixedSizeChunkingConfiguration();
+            System.Int32? requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_MaxToken = null;
+            if (cmdletContext.FixedSizeChunkingConfiguration_MaxToken != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_MaxToken = cmdletContext.FixedSizeChunkingConfiguration_MaxToken.Value;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_MaxToken != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration.MaxTokens = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_MaxToken.Value;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfigurationIsNull = false;
+            }
+            System.Int32? requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_OverlapPercentage = null;
+            if (cmdletContext.FixedSizeChunkingConfiguration_OverlapPercentage != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_OverlapPercentage = cmdletContext.FixedSizeChunkingConfiguration_OverlapPercentage.Value;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_OverlapPercentage != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration.OverlapPercentage = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration_fixedSizeChunkingConfiguration_OverlapPercentage.Value;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfigurationIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfigurationIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration.FixedSizeChunkingConfiguration = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_FixedSizeChunkingConfiguration;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.HierarchicalChunkingConfiguration requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration = null;
+            
+             // populate HierarchicalChunkingConfiguration
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfigurationIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration = new Amazon.QConnect.Model.HierarchicalChunkingConfiguration();
+            List<Amazon.QConnect.Model.HierarchicalChunkingLevelConfiguration> requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_LevelConfiguration = null;
+            if (cmdletContext.HierarchicalChunkingConfiguration_LevelConfiguration != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_LevelConfiguration = cmdletContext.HierarchicalChunkingConfiguration_LevelConfiguration;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_LevelConfiguration != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration.LevelConfigurations = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_LevelConfiguration;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfigurationIsNull = false;
+            }
+            System.Int32? requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_OverlapToken = null;
+            if (cmdletContext.HierarchicalChunkingConfiguration_OverlapToken != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_OverlapToken = cmdletContext.HierarchicalChunkingConfiguration_OverlapToken.Value;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_OverlapToken != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration.OverlapTokens = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration_hierarchicalChunkingConfiguration_OverlapToken.Value;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfigurationIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfigurationIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration.HierarchicalChunkingConfiguration = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_HierarchicalChunkingConfiguration;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfigurationIsNull = false;
+            }
+            Amazon.QConnect.Model.SemanticChunkingConfiguration requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration = null;
+            
+             // populate SemanticChunkingConfiguration
+            var requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfigurationIsNull = true;
+            requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration = new Amazon.QConnect.Model.SemanticChunkingConfiguration();
+            System.Int32? requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BreakpointPercentileThreshold = null;
+            if (cmdletContext.SemanticChunkingConfiguration_BreakpointPercentileThreshold != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BreakpointPercentileThreshold = cmdletContext.SemanticChunkingConfiguration_BreakpointPercentileThreshold.Value;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BreakpointPercentileThreshold != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration.BreakpointPercentileThreshold = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BreakpointPercentileThreshold.Value;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfigurationIsNull = false;
+            }
+            System.Int32? requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BufferSize = null;
+            if (cmdletContext.SemanticChunkingConfiguration_BufferSize != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BufferSize = cmdletContext.SemanticChunkingConfiguration_BufferSize.Value;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BufferSize != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration.BufferSize = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_BufferSize.Value;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfigurationIsNull = false;
+            }
+            System.Int32? requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_MaxToken = null;
+            if (cmdletContext.SemanticChunkingConfiguration_MaxToken != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_MaxToken = cmdletContext.SemanticChunkingConfiguration_MaxToken.Value;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_MaxToken != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration.MaxTokens = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration_semanticChunkingConfiguration_MaxToken.Value;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfigurationIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfigurationIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration != null)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration.SemanticChunkingConfiguration = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_vectorIngestionConfiguration_ChunkingConfiguration_SemanticChunkingConfiguration;
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfigurationIsNull = false;
+            }
+             // determine if requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration should be set to null
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfigurationIsNull)
+            {
+                requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration = null;
+            }
+            if (requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration != null)
+            {
+                request.VectorIngestionConfiguration.ChunkingConfiguration = requestVectorIngestionConfiguration_vectorIngestionConfiguration_ChunkingConfiguration;
+                requestVectorIngestionConfigurationIsNull = false;
+            }
+             // determine if request.VectorIngestionConfiguration should be set to null
+            if (requestVectorIngestionConfigurationIsNull)
+            {
+                request.VectorIngestionConfiguration = null;
+            }
+            
             CmdletOutput output;
             
             // issue call
@@ -458,13 +1023,7 @@ namespace Amazon.PowerShell.Cmdlets.QC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Q Connect", "CreateKnowledgeBase");
             try
             {
-                #if DESKTOP
-                return client.CreateKnowledgeBase(request);
-                #elif CORECLR
-                return client.CreateKnowledgeBaseAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateKnowledgeBaseAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -489,7 +1048,23 @@ namespace Amazon.PowerShell.Cmdlets.QC
             public System.String ServerSideEncryptionConfiguration_KmsKeyId { get; set; }
             public System.String AppIntegrations_AppIntegrationArn { get; set; }
             public List<System.String> AppIntegrations_ObjectField { get; set; }
+            public System.Int32? CrawlerLimits_RateLimit { get; set; }
+            public List<System.String> WebCrawlerConfiguration_ExclusionFilter { get; set; }
+            public List<System.String> WebCrawlerConfiguration_InclusionFilter { get; set; }
+            public Amazon.QConnect.WebScopeType WebCrawlerConfiguration_Scope { get; set; }
+            public List<Amazon.QConnect.Model.SeedUrl> UrlConfiguration_SeedUrl { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
+            public Amazon.QConnect.ChunkingStrategy ChunkingConfiguration_ChunkingStrategy { get; set; }
+            public System.Int32? FixedSizeChunkingConfiguration_MaxToken { get; set; }
+            public System.Int32? FixedSizeChunkingConfiguration_OverlapPercentage { get; set; }
+            public List<Amazon.QConnect.Model.HierarchicalChunkingLevelConfiguration> HierarchicalChunkingConfiguration_LevelConfiguration { get; set; }
+            public System.Int32? HierarchicalChunkingConfiguration_OverlapToken { get; set; }
+            public System.Int32? SemanticChunkingConfiguration_BreakpointPercentileThreshold { get; set; }
+            public System.Int32? SemanticChunkingConfiguration_BufferSize { get; set; }
+            public System.Int32? SemanticChunkingConfiguration_MaxToken { get; set; }
+            public System.String BedrockFoundationModelConfiguration_ModelArn { get; set; }
+            public System.String ParsingPrompt_ParsingPromptText { get; set; }
+            public Amazon.QConnect.ParsingStrategy ParsingConfiguration_ParsingStrategy { get; set; }
             public System.Func<Amazon.QConnect.Model.CreateKnowledgeBaseResponse, NewQCKnowledgeBaseCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.KnowledgeBase;
         }

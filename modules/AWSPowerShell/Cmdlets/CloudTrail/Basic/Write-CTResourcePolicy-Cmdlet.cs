@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudTrail;
 using Amazon.CloudTrail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CT
 {
     /// <summary>
-    /// Attaches a resource-based permission policy to a CloudTrail channel that is used
-    /// for an integration with an event source outside of Amazon Web Services. For more information
-    /// about resource-based policies, see <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/security_iam_resource-based-policy-examples.html">CloudTrail
+    /// Attaches a resource-based permission policy to a CloudTrail event data store, dashboard,
+    /// or channel. For more information about resource-based policies, see <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/security_iam_resource-based-policy-examples.html">CloudTrail
     /// resource-based policy examples</a> in the <i>CloudTrail User Guide</i>.
     /// </summary>
     [Cmdlet("Write", "CTResourcePolicy", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CloudTrail.Model.PutResourcePolicyResponse")]
     [AWSCmdlet("Calls the AWS CloudTrail PutResourcePolicy API operation.", Operation = new[] {"PutResourcePolicy"}, SelectReturnType = typeof(Amazon.CloudTrail.Model.PutResourcePolicyResponse))]
     [AWSCmdletOutput("Amazon.CloudTrail.Model.PutResourcePolicyResponse",
-        "This cmdlet returns an Amazon.CloudTrail.Model.PutResourcePolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudTrail.Model.PutResourcePolicyResponse object containing multiple properties."
     )]
     public partial class WriteCTResourcePolicyCmdlet : AmazonCloudTrailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceArn
         /// <summary>
         /// <para>
-        /// <para> The Amazon Resource Name (ARN) of the CloudTrail channel attached to the resource-based
-        /// policy. The following is the format of a resource ARN: <c>arn:aws:cloudtrail:us-east-2:123456789012:channel/MyChannel</c>.
-        /// </para>
+        /// <para> The Amazon Resource Name (ARN) of the CloudTrail event data store, dashboard, or
+        /// channel attached to the resource-based policy.</para><para>Example event data store ARN format: <c>arn:aws:cloudtrail:us-east-2:123456789012:eventdatastore/EXAMPLE-f852-4e8f-8bd1-bcf6cEXAMPLE</c></para><para>Example dashboard ARN format: <c>arn:aws:cloudtrail:us-east-1:123456789012:dashboard/exampleDash</c></para><para>Example channel ARN format: <c>arn:aws:cloudtrail:us-east-2:123456789012:channel/01234567890</c></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -66,9 +67,8 @@ namespace Amazon.PowerShell.Cmdlets.CT
         #region Parameter ResourcePolicy
         /// <summary>
         /// <para>
-        /// <para> A JSON-formatted string for an Amazon Web Services resource-based policy. </para><para>The following are requirements for the resource policy:</para><ul><li><para> Contains only one action: cloudtrail-data:PutAuditEvents </para></li><li><para> Contains at least one statement. The policy can have a maximum of 20 statements.
-        /// </para></li><li><para> Each statement contains at least one principal. A statement can have a maximum of
-        /// 50 principals. </para></li></ul>
+        /// <para> A JSON-formatted string for an Amazon Web Services resource-based policy. </para><para> For example resource-based policies, see <a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/security_iam_resource-based-policy-examples.html">CloudTrail
+        /// resource-based policy examples</a> in the <i>CloudTrail User Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,16 +93,6 @@ namespace Amazon.PowerShell.Cmdlets.CT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -113,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.CT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceArn), MyInvocation.BoundParameters);
@@ -129,21 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.CT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudTrail.Model.PutResourcePolicyResponse, WriteCTResourcePolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceArn = this.ResourceArn;
             #if MODULAR
             if (this.ResourceArn == null && ParameterWasBound(nameof(this.ResourceArn)))
@@ -220,13 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.CT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudTrail", "PutResourcePolicy");
             try
             {
-                #if DESKTOP
-                return client.PutResourcePolicy(request);
-                #elif CORECLR
-                return client.PutResourcePolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutResourcePolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

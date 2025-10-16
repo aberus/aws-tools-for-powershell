@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeArtifact;
 using Amazon.CodeArtifact.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CA
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.CA
     [OutputType("Amazon.CodeArtifact.Model.ListPackageVersionDependenciesResponse")]
     [AWSCmdlet("Calls the AWS CodeArtifact ListPackageVersionDependencies API operation.", Operation = new[] {"ListPackageVersionDependencies"}, SelectReturnType = typeof(Amazon.CodeArtifact.Model.ListPackageVersionDependenciesResponse))]
     [AWSCmdletOutput("Amazon.CodeArtifact.Model.ListPackageVersionDependenciesResponse",
-        "This cmdlet returns an Amazon.CodeArtifact.Model.ListPackageVersionDependenciesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CodeArtifact.Model.ListPackageVersionDependenciesResponse object containing multiple properties."
     )]
     public partial class GetCAPackageVersionDependencyListCmdlet : AmazonCodeArtifactClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Domain
         /// <summary>
@@ -96,8 +99,9 @@ namespace Amazon.PowerShell.Cmdlets.CA
         /// <summary>
         /// <para>
         /// <para>The namespace of the package version with the requested dependencies. The package
-        /// version component that specifies its namespace depends on its type. For example:</para><ul><li><para> The namespace of a Maven package version is its <c>groupId</c>. </para></li><li><para> The namespace of an npm package version is its <c>scope</c>. </para></li><li><para> Python and NuGet package versions do not contain a corresponding component, package
-        /// versions of those formats do not have a namespace. </para></li><li><para> The namespace of a generic package is its <c>namespace</c>. </para></li></ul>
+        /// component that specifies its namespace depends on its type. For example:</para><note><para>The namespace is required when listing dependencies from package versions of the following
+        /// formats:</para><ul><li><para>Maven</para></li></ul></note><ul><li><para> The namespace of a Maven package version is its <c>groupId</c>. </para></li><li><para> The namespace of an npm package version is its <c>scope</c>. </para></li><li><para> Python and NuGet package versions do not contain a corresponding component, package
+        /// versions of those formats do not have a namespace. </para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -177,9 +181,13 @@ namespace Amazon.PowerShell.Cmdlets.CA
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -316,13 +324,7 @@ namespace Amazon.PowerShell.Cmdlets.CA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeArtifact", "ListPackageVersionDependencies");
             try
             {
-                #if DESKTOP
-                return client.ListPackageVersionDependencies(request);
-                #elif CORECLR
-                return client.ListPackageVersionDependenciesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListPackageVersionDependenciesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

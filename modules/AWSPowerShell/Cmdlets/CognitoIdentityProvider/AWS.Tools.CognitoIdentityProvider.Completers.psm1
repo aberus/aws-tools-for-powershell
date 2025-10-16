@@ -82,12 +82,22 @@ $CGIP_Completers = {
     {
         # Amazon.CognitoIdentityProvider.AccountTakeoverEventActionType
         {
-            ($_ -eq "Set-CGIPRiskConfiguration/AccountTakeoverRiskConfiguration_Actions_HighAction_EventAction") -Or
-            ($_ -eq "Set-CGIPRiskConfiguration/AccountTakeoverRiskConfiguration_Actions_LowAction_EventAction") -Or
-            ($_ -eq "Set-CGIPRiskConfiguration/AccountTakeoverRiskConfiguration_Actions_MediumAction_EventAction")
+            ($_ -eq "Set-CGIPRiskConfiguration/HighAction_EventAction") -Or
+            ($_ -eq "Set-CGIPRiskConfiguration/LowAction_EventAction") -Or
+            ($_ -eq "Set-CGIPRiskConfiguration/MediumAction_EventAction")
         }
         {
             $v = "BLOCK","MFA_IF_CONFIGURED","MFA_REQUIRED","NO_ACTION"
+            break
+        }
+
+        # Amazon.CognitoIdentityProvider.AdvancedSecurityEnabledModeType
+        {
+            ($_ -eq "New-CGIPUserPool/AdvancedSecurityAdditionalFlows_CustomAuthMode") -Or
+            ($_ -eq "Update-CGIPUserPool/AdvancedSecurityAdditionalFlows_CustomAuthMode")
+        }
+        {
+            $v = "AUDIT","ENFORCED"
             break
         }
 
@@ -107,7 +117,7 @@ $CGIP_Completers = {
             ($_ -eq "Start-CGIPAuthAdmin/AuthFlow")
         }
         {
-            $v = "ADMIN_NO_SRP_AUTH","ADMIN_USER_PASSWORD_AUTH","CUSTOM_AUTH","REFRESH_TOKEN","REFRESH_TOKEN_AUTH","USER_PASSWORD_AUTH","USER_SRP_AUTH"
+            $v = "ADMIN_NO_SRP_AUTH","ADMIN_USER_PASSWORD_AUTH","CUSTOM_AUTH","REFRESH_TOKEN","REFRESH_TOKEN_AUTH","USER_AUTH","USER_PASSWORD_AUTH","USER_SRP_AUTH"
             break
         }
 
@@ -117,12 +127,12 @@ $CGIP_Completers = {
             ($_ -eq "Send-CGIPAuthChallengeResponseAdmin/ChallengeName")
         }
         {
-            $v = "ADMIN_NO_SRP_AUTH","CUSTOM_CHALLENGE","DEVICE_PASSWORD_VERIFIER","DEVICE_SRP_AUTH","MFA_SETUP","NEW_PASSWORD_REQUIRED","PASSWORD_VERIFIER","SELECT_MFA_TYPE","SMS_MFA","SOFTWARE_TOKEN_MFA"
+            $v = "ADMIN_NO_SRP_AUTH","CUSTOM_CHALLENGE","DEVICE_PASSWORD_VERIFIER","DEVICE_SRP_AUTH","EMAIL_OTP","MFA_SETUP","NEW_PASSWORD_REQUIRED","PASSWORD","PASSWORD_SRP","PASSWORD_VERIFIER","SELECT_CHALLENGE","SELECT_MFA_TYPE","SMS_MFA","SMS_OTP","SOFTWARE_TOKEN_MFA","WEB_AUTHN"
             break
         }
 
         # Amazon.CognitoIdentityProvider.CompromisedCredentialsEventActionType
-        "Set-CGIPRiskConfiguration/CompromisedCredentialsRiskConfiguration_Actions_EventAction"
+        "Set-CGIPRiskConfiguration/Actions_EventAction"
         {
             $v = "BLOCK","NO_ACTION"
             break
@@ -130,8 +140,8 @@ $CGIP_Completers = {
 
         # Amazon.CognitoIdentityProvider.CustomEmailSenderLambdaVersionType
         {
-            ($_ -eq "New-CGIPUserPool/LambdaConfig_CustomEmailSender_LambdaVersion") -Or
-            ($_ -eq "Update-CGIPUserPool/LambdaConfig_CustomEmailSender_LambdaVersion")
+            ($_ -eq "New-CGIPUserPool/CustomEmailSender_LambdaVersion") -Or
+            ($_ -eq "Update-CGIPUserPool/CustomEmailSender_LambdaVersion")
         }
         {
             $v = "V1_0"
@@ -140,8 +150,8 @@ $CGIP_Completers = {
 
         # Amazon.CognitoIdentityProvider.CustomSMSSenderLambdaVersionType
         {
-            ($_ -eq "New-CGIPUserPool/LambdaConfig_CustomSMSSender_LambdaVersion") -Or
-            ($_ -eq "Update-CGIPUserPool/LambdaConfig_CustomSMSSender_LambdaVersion")
+            ($_ -eq "New-CGIPUserPool/CustomSMSSender_LambdaVersion") -Or
+            ($_ -eq "Update-CGIPUserPool/CustomSMSSender_LambdaVersion")
         }
         {
             $v = "V1_0"
@@ -188,6 +198,16 @@ $CGIP_Completers = {
             break
         }
 
+        # Amazon.CognitoIdentityProvider.FeatureType
+        {
+            ($_ -eq "New-CGIPUserPoolClient/RefreshTokenRotation_Feature") -Or
+            ($_ -eq "Update-CGIPUserPoolClient/RefreshTokenRotation_Feature")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
         # Amazon.CognitoIdentityProvider.FeedbackValueType
         {
             ($_ -eq "Update-CGIPAuthEventFeedback/FeedbackValue") -Or
@@ -214,21 +234,41 @@ $CGIP_Completers = {
 
         # Amazon.CognitoIdentityProvider.PreTokenGenerationLambdaVersionType
         {
-            ($_ -eq "New-CGIPUserPool/LambdaConfig_PreTokenGenerationConfig_LambdaVersion") -Or
-            ($_ -eq "Update-CGIPUserPool/LambdaConfig_PreTokenGenerationConfig_LambdaVersion")
+            ($_ -eq "New-CGIPUserPool/PreTokenGenerationConfig_LambdaVersion") -Or
+            ($_ -eq "Update-CGIPUserPool/PreTokenGenerationConfig_LambdaVersion")
         }
         {
-            $v = "V1_0","V2_0"
+            $v = "V1_0","V2_0","V3_0"
             break
         }
 
         # Amazon.CognitoIdentityProvider.PreventUserExistenceErrorTypes
         {
-            ($_ -eq "New-CGIPUserPoolClient/PreventUserExistenceErrors") -Or
-            ($_ -eq "Update-CGIPUserPoolClient/PreventUserExistenceErrors")
+            ($_ -eq "New-CGIPUserPoolClient/PreventUserExistenceError") -Or
+            ($_ -eq "Update-CGIPUserPoolClient/PreventUserExistenceError")
         }
         {
             $v = "ENABLED","LEGACY"
+            break
+        }
+
+        # Amazon.CognitoIdentityProvider.TermsEnforcementType
+        {
+            ($_ -eq "New-CGIPTerm/Enforcement") -Or
+            ($_ -eq "Update-CGIPTerm/Enforcement")
+        }
+        {
+            $v = "NONE"
+            break
+        }
+
+        # Amazon.CognitoIdentityProvider.TermsSourceType
+        {
+            ($_ -eq "New-CGIPTerm/TermsSource") -Or
+            ($_ -eq "Update-CGIPTerm/TermsSource")
+        }
+        {
+            $v = "LINK"
             break
         }
 
@@ -257,6 +297,23 @@ $CGIP_Completers = {
             break
         }
 
+        # Amazon.CognitoIdentityProvider.UserPoolTierType
+        {
+            ($_ -eq "New-CGIPUserPool/UserPoolTier") -Or
+            ($_ -eq "Update-CGIPUserPool/UserPoolTier")
+        }
+        {
+            $v = "ESSENTIALS","LITE","PLUS"
+            break
+        }
+
+        # Amazon.CognitoIdentityProvider.UserVerificationType
+        "Set-CGIPUserPoolMfaConfig/WebAuthnConfiguration_UserVerification"
+        {
+            $v = "preferred","required"
+            break
+        }
+
 
     }
 
@@ -266,28 +323,34 @@ $CGIP_Completers = {
 }
 
 $CGIP_map = @{
-    "AccountTakeoverRiskConfiguration_Actions_HighAction_EventAction"=@("Set-CGIPRiskConfiguration")
-    "AccountTakeoverRiskConfiguration_Actions_LowAction_EventAction"=@("Set-CGIPRiskConfiguration")
-    "AccountTakeoverRiskConfiguration_Actions_MediumAction_EventAction"=@("Set-CGIPRiskConfiguration")
+    "Actions_EventAction"=@("Set-CGIPRiskConfiguration")
+    "AdvancedSecurityAdditionalFlows_CustomAuthMode"=@("New-CGIPUserPool","Update-CGIPUserPool")
     "AuthFlow"=@("Start-CGIPAuth","Start-CGIPAuthAdmin")
     "ChallengeName"=@("Send-CGIPAuthChallengeResponse","Send-CGIPAuthChallengeResponseAdmin")
-    "CompromisedCredentialsRiskConfiguration_Actions_EventAction"=@("Set-CGIPRiskConfiguration")
+    "CustomEmailSender_LambdaVersion"=@("New-CGIPUserPool","Update-CGIPUserPool")
+    "CustomSMSSender_LambdaVersion"=@("New-CGIPUserPool","Update-CGIPUserPool")
     "DeletionProtection"=@("New-CGIPUserPool","Update-CGIPUserPool")
     "DeviceRememberedStatus"=@("Edit-CGIPDeviceStatus","Edit-CGIPDeviceStatusAdmin")
     "EmailConfiguration_EmailSendingAccount"=@("New-CGIPUserPool","Update-CGIPUserPool")
+    "Enforcement"=@("New-CGIPTerm","Update-CGIPTerm")
     "FeedbackValue"=@("Update-CGIPAuthEventFeedback","Update-CGIPAuthEventFeedbackAdmin")
-    "LambdaConfig_CustomEmailSender_LambdaVersion"=@("New-CGIPUserPool","Update-CGIPUserPool")
-    "LambdaConfig_CustomSMSSender_LambdaVersion"=@("New-CGIPUserPool","Update-CGIPUserPool")
-    "LambdaConfig_PreTokenGenerationConfig_LambdaVersion"=@("New-CGIPUserPool","Update-CGIPUserPool")
+    "HighAction_EventAction"=@("Set-CGIPRiskConfiguration")
+    "LowAction_EventAction"=@("Set-CGIPRiskConfiguration")
+    "MediumAction_EventAction"=@("Set-CGIPRiskConfiguration")
     "MessageAction"=@("New-CGIPUserAdmin")
     "MfaConfiguration"=@("New-CGIPUserPool","Set-CGIPUserPoolMfaConfig","Update-CGIPUserPool")
-    "PreventUserExistenceErrors"=@("New-CGIPUserPoolClient","Update-CGIPUserPoolClient")
+    "PreTokenGenerationConfig_LambdaVersion"=@("New-CGIPUserPool","Update-CGIPUserPool")
+    "PreventUserExistenceError"=@("New-CGIPUserPoolClient","Update-CGIPUserPoolClient")
     "ProviderType"=@("New-CGIPIdentityProvider")
+    "RefreshTokenRotation_Feature"=@("New-CGIPUserPoolClient","Update-CGIPUserPoolClient")
+    "TermsSource"=@("New-CGIPTerm","Update-CGIPTerm")
     "TokenValidityUnits_AccessToken"=@("New-CGIPUserPoolClient","Update-CGIPUserPoolClient")
     "TokenValidityUnits_IdToken"=@("New-CGIPUserPoolClient","Update-CGIPUserPoolClient")
     "TokenValidityUnits_RefreshToken"=@("New-CGIPUserPoolClient","Update-CGIPUserPoolClient")
     "UserPoolAddOns_AdvancedSecurityMode"=@("New-CGIPUserPool","Update-CGIPUserPool")
+    "UserPoolTier"=@("New-CGIPUserPool","Update-CGIPUserPool")
     "VerificationMessageTemplate_DefaultEmailOption"=@("New-CGIPUserPool","Update-CGIPUserPool")
+    "WebAuthnConfiguration_UserVerification"=@("Set-CGIPUserPoolMfaConfig")
 }
 
 _awsArgumentCompleterRegistration $CGIP_Completers $CGIP_map
@@ -369,27 +432,36 @@ $CGIP_SelectMap = @{
                "Disconnect-CGIPUserGlobalAdmin",
                "Add-CGIPSoftwareToken",
                "Update-CGIPPassword",
+               "Complete-CGIPWebAuthnRegistration",
                "Approve-CGIPDevice",
                "Confirm-CGIPForgotPassword",
                "Confirm-CGIPUserRegistration",
                "New-CGIPGroup",
                "New-CGIPIdentityProvider",
+               "New-CGIPManagedLoginBranding",
                "New-CGIPResourceServer",
+               "New-CGIPTerm",
                "New-CGIPUserImportJob",
                "New-CGIPUserPool",
                "New-CGIPUserPoolClient",
                "New-CGIPUserPoolDomain",
                "Remove-CGIPGroup",
                "Remove-CGIPIdentityProvider",
+               "Remove-CGIPManagedLoginBranding",
                "Remove-CGIPResourceServer",
+               "Remove-CGIPTerm",
                "Remove-CGIPUser",
                "Remove-CGIPUserAttribute",
                "Remove-CGIPUserPool",
                "Remove-CGIPUserPoolClient",
                "Remove-CGIPUserPoolDomain",
+               "Remove-CGIPWebAuthnCredential",
                "Get-CGIPIdentityProvider",
+               "Get-CGIPManagedLoginBranding",
+               "Get-CGIPManagedLoginBrandingByClient",
                "Get-CGIPResourceServer",
                "Get-CGIPRiskConfiguration",
+               "Get-CGIPTerm",
                "Get-CGIPUserImportJob",
                "Get-CGIPUserPool",
                "Get-CGIPUserPoolClient",
@@ -402,9 +474,11 @@ $CGIP_SelectMap = @{
                "Get-CGIPIdentityProviderByIdentifier",
                "Get-CGIPLogDeliveryConfiguration",
                "Get-CGIPSigningCertificate",
+               "Get-CGIPTokensFromRefreshToken",
                "Get-CGIPUICustomization",
                "Get-CGIPUser",
                "Get-CGIPUserAttributeVerificationCode",
+               "Get-CGIPUserAuthFactor",
                "Get-CGIPUserPoolMfaConfig",
                "Disconnect-CGIPDeviceGlobal",
                "Start-CGIPAuth",
@@ -413,11 +487,13 @@ $CGIP_SelectMap = @{
                "Get-CGIPIdentityProviderList",
                "Get-CGIPResourceServerList",
                "Get-CGIPResourceTag",
+               "Get-CGIPTermList",
                "Get-CGIPUserImportJobList",
                "Get-CGIPUserPoolClientList",
                "Get-CGIPUserPoolList",
                "Get-CGIPUserList",
                "Get-CGIPUsersInGroup",
+               "Get-CGIPWebAuthnCredentialList",
                "Send-CGIPConfirmationCode",
                "Send-CGIPAuthChallengeResponse",
                "Revoke-CGIPToken",
@@ -429,6 +505,7 @@ $CGIP_SelectMap = @{
                "Set-CGIPUserSetting",
                "Register-CGIPUserInPool",
                "Start-CGIPUserImportJob",
+               "Start-CGIPWebAuthnRegistration",
                "Stop-CGIPUserImportJob",
                "Add-CGIPResourceTag",
                "Remove-CGIPResourceTag",
@@ -436,7 +513,9 @@ $CGIP_SelectMap = @{
                "Edit-CGIPDeviceStatus",
                "Update-CGIPGroup",
                "Update-CGIPIdentityProvider",
+               "Update-CGIPManagedLoginBranding",
                "Update-CGIPResourceServer",
+               "Update-CGIPTerm",
                "Update-CGIPUserAttribute",
                "Update-CGIPUserPool",
                "Update-CGIPUserPoolClient",

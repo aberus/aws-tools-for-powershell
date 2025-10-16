@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DocDB;
 using Amazon.DocDB.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DOC
 {
     /// <summary>
@@ -37,19 +39,20 @@ namespace Amazon.PowerShell.Cmdlets.DOC
     [AWSCmdlet("Calls the Amazon DocumentDB (with MongoDB compatibility) ModifyDBCluster API operation.", Operation = new[] {"ModifyDBCluster"}, SelectReturnType = typeof(Amazon.DocDB.Model.ModifyDBClusterResponse))]
     [AWSCmdletOutput("Amazon.DocDB.Model.DBCluster or Amazon.DocDB.Model.ModifyDBClusterResponse",
         "This cmdlet returns an Amazon.DocDB.Model.DBCluster object.",
-        "The service call response (type Amazon.DocDB.Model.ModifyDBClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DocDB.Model.ModifyDBClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditDOCDBClusterCmdlet : AmazonDocDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowMajorVersionUpgrade
         /// <summary>
         /// <para>
-        /// <para>A value that indicates whether major version upgrades are allowed.</para><para>Constraints: You must allow major version upgrades when specifying a value for the
-        /// <c>EngineVersion</c> parameter that is a different major version than the DB cluster's
-        /// current version.</para>
+        /// <para>A value that indicates whether major version upgrades are allowed.</para><para>Constraints:</para><ul><li><para>You must allow major version upgrades when specifying a value for the <c>EngineVersion</c>
+        /// parameter that is a different major version than the cluster's current version.</para></li><li><para>Since some parameters are version specific, changing them requires executing a new
+        /// <c>ModifyDBCluster</c> API call after the in-place MVU completes.</para></li></ul><note><para>Performing an MVU directly impacts the following parameters:</para><ul><li><para><c>MasterUserPassword</c></para></li><li><para><c>NewDBClusterIdentifier</c></para></li><li><para><c>VpcSecurityGroupIds</c></para></li><li><para><c>Port</c></para></li></ul></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         #region Parameter CloudwatchLogsExportConfiguration_DisableLogType
         /// <summary>
         /// <para>
-        /// <para>The list of log types to disable.</para>
+        /// <para>The list of log types to disable.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         #region Parameter CloudwatchLogsExportConfiguration_EnableLogType
         /// <summary>
         /// <para>
-        /// <para>The list of log types to enable.</para>
+        /// <para>The list of log types to enable.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,6 +170,23 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         public System.String EngineVersion { get; set; }
         #endregion
         
+        #region Parameter ManageMasterUserPassword
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to manage the master user password with Amazon Web Services Secrets
+        /// Manager. If the cluster doesn't manage the master user password with Amazon Web Services
+        /// Secrets Manager, you can turn on this management. In this case, you can't specify
+        /// <c>MasterUserPassword</c>. If the cluster already manages the master user password
+        /// with Amazon Web Services Secrets Manager, and you specify that the master user password
+        /// is not managed with Amazon Web Services Secrets Manager, then you must specify <c>MasterUserPassword</c>.
+        /// In this case, Amazon DocumentDB deletes the secret and uses the new password for the
+        /// master user specified by <c>MasterUserPassword</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ManageMasterUserPassword { get; set; }
+        #endregion
+        
         #region Parameter MasterUserPassword
         /// <summary>
         /// <para>
@@ -168,6 +196,64 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String MasterUserPassword { get; set; }
+        #endregion
+        
+        #region Parameter MasterUserSecretKmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Web Services KMS key identifier to encrypt a secret that is automatically
+        /// generated and managed in Amazon Web Services Secrets Manager.</para><para>This setting is valid only if both of the following conditions are met:</para><ul><li><para>The cluster doesn't manage the master user password in Amazon Web Services Secrets
+        /// Manager. If the cluster already manages the master user password in Amazon Web Services
+        /// Secrets Manager, you can't change the KMS key that is used to encrypt the secret.</para></li><li><para>You are enabling <c>ManageMasterUserPassword</c> to manage the master user password
+        /// in Amazon Web Services Secrets Manager. If you are turning on <c>ManageMasterUserPassword</c>
+        /// and don't specify <c>MasterUserSecretKmsKeyId</c>, then the <c>aws/secretsmanager</c>
+        /// KMS key is used to encrypt the secret. If the secret is in a different Amazon Web
+        /// Services account, then you can't use the <c>aws/secretsmanager</c> KMS key to encrypt
+        /// the secret, and you must use a customer managed KMS key.</para></li></ul><para>The Amazon Web Services KMS key identifier is the key ARN, key ID, alias ARN, or alias
+        /// name for the KMS key. To use a KMS key in a different Amazon Web Services account,
+        /// specify the key ARN or alias ARN.</para><para>There is a default KMS key for your Amazon Web Services account. Your Amazon Web Services
+        /// account has a different default KMS key for each Amazon Web Services Region.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MasterUserSecretKmsKeyId { get; set; }
+        #endregion
+        
+        #region Parameter ServerlessV2ScalingConfiguration_MaxCapacity
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of Amazon DocumentDB capacity units (DCUs) for an instance in an
+        /// Amazon DocumentDB Serverless cluster. You can specify DCU values in half-step increments,
+        /// such as 32, 32.5, 33, and so on.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Double? ServerlessV2ScalingConfiguration_MaxCapacity { get; set; }
+        #endregion
+        
+        #region Parameter ServerlessV2ScalingConfiguration_MinCapacity
+        /// <summary>
+        /// <para>
+        /// <para>The minimum number of Amazon DocumentDB capacity units (DCUs) for an instance in an
+        /// Amazon DocumentDB Serverless cluster. You can specify DCU values in half-step increments,
+        /// such as 8, 8.5, 9, and so on.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Double? ServerlessV2ScalingConfiguration_MinCapacity { get; set; }
+        #endregion
+        
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The network type of the cluster.</para><para>The network type is determined by the <c>DBSubnetGroup</c> specified for the cluster.
+        /// A <c>DBSubnetGroup</c> can support only the IPv4 protocol or the IPv4 and the IPv6
+        /// protocols (<c>DUAL</c>).</para><para>For more information, see <a href="https://docs.aws.amazon.com/documentdb/latest/developerguide/vpc-clusters.html">DocumentDB
+        /// clusters in a VPC</a> in the Amazon DocumentDB Developer Guide.</para><para>Valid Values: <c>IPV4</c> | <c>DUAL</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NetworkType { get; set; }
         #endregion
         
         #region Parameter NewDBClusterIdentifier
@@ -215,6 +301,19 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         public System.String PreferredMaintenanceWindow { get; set; }
         #endregion
         
+        #region Parameter RotateMasterUserPassword
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to rotate the secret managed by Amazon Web Services Secrets Manager
+        /// for the master user password.</para><para>This setting is valid only if the master user password is managed by Amazon DocumentDB
+        /// in Amazon Web Services Secrets Manager for the cluster. The secret value contains
+        /// the updated password.</para><para>Constraint: You must apply the change immediately when rotating the master user password.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? RotateMasterUserPassword { get; set; }
+        #endregion
+        
         #region Parameter StorageType
         /// <summary>
         /// <para>
@@ -230,7 +329,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         /// <summary>
         /// <para>
         /// <para>A list of virtual private cloud (VPC) security groups that the cluster will belong
-        /// to.</para>
+        /// to.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -249,16 +352,6 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         public string Select { get; set; } = "DBCluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -269,9 +362,13 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBClusterIdentifier), MyInvocation.BoundParameters);
@@ -285,21 +382,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DocDB.Model.ModifyDBClusterResponse, EditDOCDBClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllowMajorVersionUpgrade = this.AllowMajorVersionUpgrade;
             context.ApplyImmediately = this.ApplyImmediately;
             context.BackupRetentionPeriod = this.BackupRetentionPeriod;
@@ -321,11 +408,17 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             context.DBClusterParameterGroupName = this.DBClusterParameterGroupName;
             context.DeletionProtection = this.DeletionProtection;
             context.EngineVersion = this.EngineVersion;
+            context.ManageMasterUserPassword = this.ManageMasterUserPassword;
             context.MasterUserPassword = this.MasterUserPassword;
+            context.MasterUserSecretKmsKeyId = this.MasterUserSecretKmsKeyId;
+            context.NetworkType = this.NetworkType;
             context.NewDBClusterIdentifier = this.NewDBClusterIdentifier;
             context.Port = this.Port;
             context.PreferredBackupWindow = this.PreferredBackupWindow;
             context.PreferredMaintenanceWindow = this.PreferredMaintenanceWindow;
+            context.RotateMasterUserPassword = this.RotateMasterUserPassword;
+            context.ServerlessV2ScalingConfiguration_MaxCapacity = this.ServerlessV2ScalingConfiguration_MaxCapacity;
+            context.ServerlessV2ScalingConfiguration_MinCapacity = this.ServerlessV2ScalingConfiguration_MinCapacity;
             context.StorageType = this.StorageType;
             if (this.VpcSecurityGroupId != null)
             {
@@ -404,9 +497,21 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             {
                 request.EngineVersion = cmdletContext.EngineVersion;
             }
+            if (cmdletContext.ManageMasterUserPassword != null)
+            {
+                request.ManageMasterUserPassword = cmdletContext.ManageMasterUserPassword.Value;
+            }
             if (cmdletContext.MasterUserPassword != null)
             {
                 request.MasterUserPassword = cmdletContext.MasterUserPassword;
+            }
+            if (cmdletContext.MasterUserSecretKmsKeyId != null)
+            {
+                request.MasterUserSecretKmsKeyId = cmdletContext.MasterUserSecretKmsKeyId;
+            }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
             }
             if (cmdletContext.NewDBClusterIdentifier != null)
             {
@@ -423,6 +528,39 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             if (cmdletContext.PreferredMaintenanceWindow != null)
             {
                 request.PreferredMaintenanceWindow = cmdletContext.PreferredMaintenanceWindow;
+            }
+            if (cmdletContext.RotateMasterUserPassword != null)
+            {
+                request.RotateMasterUserPassword = cmdletContext.RotateMasterUserPassword.Value;
+            }
+            
+             // populate ServerlessV2ScalingConfiguration
+            var requestServerlessV2ScalingConfigurationIsNull = true;
+            request.ServerlessV2ScalingConfiguration = new Amazon.DocDB.Model.ServerlessV2ScalingConfiguration();
+            System.Double? requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity = null;
+            if (cmdletContext.ServerlessV2ScalingConfiguration_MaxCapacity != null)
+            {
+                requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity = cmdletContext.ServerlessV2ScalingConfiguration_MaxCapacity.Value;
+            }
+            if (requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity != null)
+            {
+                request.ServerlessV2ScalingConfiguration.MaxCapacity = requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity.Value;
+                requestServerlessV2ScalingConfigurationIsNull = false;
+            }
+            System.Double? requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity = null;
+            if (cmdletContext.ServerlessV2ScalingConfiguration_MinCapacity != null)
+            {
+                requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity = cmdletContext.ServerlessV2ScalingConfiguration_MinCapacity.Value;
+            }
+            if (requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity != null)
+            {
+                request.ServerlessV2ScalingConfiguration.MinCapacity = requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity.Value;
+                requestServerlessV2ScalingConfigurationIsNull = false;
+            }
+             // determine if request.ServerlessV2ScalingConfiguration should be set to null
+            if (requestServerlessV2ScalingConfigurationIsNull)
+            {
+                request.ServerlessV2ScalingConfiguration = null;
             }
             if (cmdletContext.StorageType != null)
             {
@@ -470,13 +608,7 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DocumentDB (with MongoDB compatibility)", "ModifyDBCluster");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBCluster(request);
-                #elif CORECLR
-                return client.ModifyDBClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -502,11 +634,17 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             public System.String DBClusterParameterGroupName { get; set; }
             public System.Boolean? DeletionProtection { get; set; }
             public System.String EngineVersion { get; set; }
+            public System.Boolean? ManageMasterUserPassword { get; set; }
             public System.String MasterUserPassword { get; set; }
+            public System.String MasterUserSecretKmsKeyId { get; set; }
+            public System.String NetworkType { get; set; }
             public System.String NewDBClusterIdentifier { get; set; }
             public System.Int32? Port { get; set; }
             public System.String PreferredBackupWindow { get; set; }
             public System.String PreferredMaintenanceWindow { get; set; }
+            public System.Boolean? RotateMasterUserPassword { get; set; }
+            public System.Double? ServerlessV2ScalingConfiguration_MaxCapacity { get; set; }
+            public System.Double? ServerlessV2ScalingConfiguration_MinCapacity { get; set; }
             public System.String StorageType { get; set; }
             public List<System.String> VpcSecurityGroupId { get; set; }
             public System.Func<Amazon.DocDB.Model.ModifyDBClusterResponse, EditDOCDBClusterCmdlet, object> Select { get; set; } =

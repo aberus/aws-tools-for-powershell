@@ -95,29 +95,44 @@ $AAS_Completers = {
         }
 
         # Amazon.ApplicationAutoScaling.MetricStatistic
-        "Set-AASScalingPolicy/TargetTrackingScalingPolicyConfiguration_CustomizedMetricSpecification_Statistic"
+        "Set-AASScalingPolicy/CustomizedMetricSpecification_Statistic"
         {
             $v = "Average","Maximum","Minimum","SampleCount","Sum"
             break
         }
 
         # Amazon.ApplicationAutoScaling.MetricType
-        "Set-AASScalingPolicy/TargetTrackingScalingPolicyConfiguration_PredefinedMetricSpecification_PredefinedMetricType"
+        "Set-AASScalingPolicy/PredefinedMetricSpecification_PredefinedMetricType"
         {
-            $v = "ALBRequestCountPerTarget","AppStreamAverageCapacityUtilization","CassandraReadCapacityUtilization","CassandraWriteCapacityUtilization","ComprehendInferenceUtilization","DynamoDBReadCapacityUtilization","DynamoDBWriteCapacityUtilization","EC2SpotFleetRequestAverageCPUUtilization","EC2SpotFleetRequestAverageNetworkIn","EC2SpotFleetRequestAverageNetworkOut","ECSServiceAverageCPUUtilization","ECSServiceAverageMemoryUtilization","ElastiCacheDatabaseCapacityUsageCountedForEvictPercentage","ElastiCacheDatabaseMemoryUsageCountedForEvictPercentage","ElastiCachePrimaryEngineCPUUtilization","ElastiCacheReplicaEngineCPUUtilization","KafkaBrokerStorageUtilization","LambdaProvisionedConcurrencyUtilization","NeptuneReaderAverageCPUUtilization","RDSReaderAverageCPUUtilization","RDSReaderAverageDatabaseConnections","SageMakerInferenceComponentInvocationsPerCopy","SageMakerVariantInvocationsPerInstance","SageMakerVariantProvisionedConcurrencyUtilization"
+            $v = "ALBRequestCountPerTarget","AppStreamAverageCapacityUtilization","CassandraReadCapacityUtilization","CassandraWriteCapacityUtilization","ComprehendInferenceUtilization","DynamoDBReadCapacityUtilization","DynamoDBWriteCapacityUtilization","EC2SpotFleetRequestAverageCPUUtilization","EC2SpotFleetRequestAverageNetworkIn","EC2SpotFleetRequestAverageNetworkOut","ECSServiceAverageCPUUtilization","ECSServiceAverageMemoryUtilization","ElastiCacheDatabaseCapacityUsageCountedForEvictPercentage","ElastiCacheDatabaseMemoryUsageCountedForEvictPercentage","ElastiCacheDatabaseMemoryUsagePercentage","ElastiCacheEngineCPUUtilization","ElastiCachePrimaryEngineCPUUtilization","ElastiCacheReplicaEngineCPUUtilization","KafkaBrokerStorageUtilization","LambdaProvisionedConcurrencyUtilization","NeptuneReaderAverageCPUUtilization","RDSReaderAverageCPUUtilization","RDSReaderAverageDatabaseConnections","SageMakerInferenceComponentConcurrentRequestsPerCopyHighResolution","SageMakerInferenceComponentInvocationsPerCopy","SageMakerVariantConcurrentRequestsPerModelHighResolution","SageMakerVariantInvocationsPerInstance","SageMakerVariantProvisionedConcurrencyUtilization","WorkSpacesAverageUserSessionsCapacityUtilization"
             break
         }
 
         # Amazon.ApplicationAutoScaling.PolicyType
         "Set-AASScalingPolicy/PolicyType"
         {
-            $v = "StepScaling","TargetTrackingScaling"
+            $v = "PredictiveScaling","StepScaling","TargetTrackingScaling"
+            break
+        }
+
+        # Amazon.ApplicationAutoScaling.PredictiveScalingMaxCapacityBreachBehavior
+        "Set-AASScalingPolicy/PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior"
+        {
+            $v = "HonorMaxCapacity","IncreaseMaxCapacity"
+            break
+        }
+
+        # Amazon.ApplicationAutoScaling.PredictiveScalingMode
+        "Set-AASScalingPolicy/PredictiveScalingPolicyConfiguration_Mode"
+        {
+            $v = "ForecastAndScale","ForecastOnly"
             break
         }
 
         # Amazon.ApplicationAutoScaling.ScalableDimension
         {
             ($_ -eq "Add-AASScalableTarget/ScalableDimension") -Or
+            ($_ -eq "Get-AASPredictiveScalingForecast/ScalableDimension") -Or
             ($_ -eq "Get-AASScalableTarget/ScalableDimension") -Or
             ($_ -eq "Get-AASScalingActivity/ScalableDimension") -Or
             ($_ -eq "Get-AASScalingPolicy/ScalableDimension") -Or
@@ -129,13 +144,14 @@ $AAS_Completers = {
             ($_ -eq "Set-AASScheduledAction/ScalableDimension")
         }
         {
-            $v = "appstream:fleet:DesiredCapacity","cassandra:table:ReadCapacityUnits","cassandra:table:WriteCapacityUnits","comprehend:document-classifier-endpoint:DesiredInferenceUnits","comprehend:entity-recognizer-endpoint:DesiredInferenceUnits","custom-resource:ResourceType:Property","dynamodb:index:ReadCapacityUnits","dynamodb:index:WriteCapacityUnits","dynamodb:table:ReadCapacityUnits","dynamodb:table:WriteCapacityUnits","ec2:spot-fleet-request:TargetCapacity","ecs:service:DesiredCount","elasticache:replication-group:NodeGroups","elasticache:replication-group:Replicas","elasticmapreduce:instancegroup:InstanceCount","kafka:broker-storage:VolumeSize","lambda:function:ProvisionedConcurrency","neptune:cluster:ReadReplicaCount","rds:cluster:ReadReplicaCount","sagemaker:inference-component:DesiredCopyCount","sagemaker:variant:DesiredInstanceCount","sagemaker:variant:DesiredProvisionedConcurrency"
+            $v = "appstream:fleet:DesiredCapacity","cassandra:table:ReadCapacityUnits","cassandra:table:WriteCapacityUnits","comprehend:document-classifier-endpoint:DesiredInferenceUnits","comprehend:entity-recognizer-endpoint:DesiredInferenceUnits","custom-resource:ResourceType:Property","dynamodb:index:ReadCapacityUnits","dynamodb:index:WriteCapacityUnits","dynamodb:table:ReadCapacityUnits","dynamodb:table:WriteCapacityUnits","ec2:spot-fleet-request:TargetCapacity","ecs:service:DesiredCount","elasticache:cache-cluster:Nodes","elasticache:replication-group:NodeGroups","elasticache:replication-group:Replicas","elasticmapreduce:instancegroup:InstanceCount","kafka:broker-storage:VolumeSize","lambda:function:ProvisionedConcurrency","neptune:cluster:ReadReplicaCount","rds:cluster:ReadReplicaCount","sagemaker:inference-component:DesiredCopyCount","sagemaker:variant:DesiredInstanceCount","sagemaker:variant:DesiredProvisionedConcurrency","workspaces:workspacespool:DesiredUserSessions"
             break
         }
 
         # Amazon.ApplicationAutoScaling.ServiceNamespace
         {
             ($_ -eq "Add-AASScalableTarget/ServiceNamespace") -Or
+            ($_ -eq "Get-AASPredictiveScalingForecast/ServiceNamespace") -Or
             ($_ -eq "Get-AASScalableTarget/ServiceNamespace") -Or
             ($_ -eq "Get-AASScalingActivity/ServiceNamespace") -Or
             ($_ -eq "Get-AASScalingPolicy/ServiceNamespace") -Or
@@ -147,7 +163,7 @@ $AAS_Completers = {
             ($_ -eq "Set-AASScheduledAction/ServiceNamespace")
         }
         {
-            $v = "appstream","cassandra","comprehend","custom-resource","dynamodb","ec2","ecs","elasticache","elasticmapreduce","kafka","lambda","neptune","rds","sagemaker"
+            $v = "appstream","cassandra","comprehend","custom-resource","dynamodb","ec2","ecs","elasticache","elasticmapreduce","kafka","lambda","neptune","rds","sagemaker","workspaces"
             break
         }
 
@@ -160,13 +176,15 @@ $AAS_Completers = {
 }
 
 $AAS_map = @{
+    "CustomizedMetricSpecification_Statistic"=@("Set-AASScalingPolicy")
     "PolicyType"=@("Set-AASScalingPolicy")
-    "ScalableDimension"=@("Add-AASScalableTarget","Get-AASScalableTarget","Get-AASScalingActivity","Get-AASScalingPolicy","Get-AASScheduledAction","Remove-AASScalableTarget","Remove-AASScalingPolicy","Remove-AASScheduledAction","Set-AASScalingPolicy","Set-AASScheduledAction")
-    "ServiceNamespace"=@("Add-AASScalableTarget","Get-AASScalableTarget","Get-AASScalingActivity","Get-AASScalingPolicy","Get-AASScheduledAction","Remove-AASScalableTarget","Remove-AASScalingPolicy","Remove-AASScheduledAction","Set-AASScalingPolicy","Set-AASScheduledAction")
+    "PredefinedMetricSpecification_PredefinedMetricType"=@("Set-AASScalingPolicy")
+    "PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior"=@("Set-AASScalingPolicy")
+    "PredictiveScalingPolicyConfiguration_Mode"=@("Set-AASScalingPolicy")
+    "ScalableDimension"=@("Add-AASScalableTarget","Get-AASPredictiveScalingForecast","Get-AASScalableTarget","Get-AASScalingActivity","Get-AASScalingPolicy","Get-AASScheduledAction","Remove-AASScalableTarget","Remove-AASScalingPolicy","Remove-AASScheduledAction","Set-AASScalingPolicy","Set-AASScheduledAction")
+    "ServiceNamespace"=@("Add-AASScalableTarget","Get-AASPredictiveScalingForecast","Get-AASScalableTarget","Get-AASScalingActivity","Get-AASScalingPolicy","Get-AASScheduledAction","Remove-AASScalableTarget","Remove-AASScalingPolicy","Remove-AASScheduledAction","Set-AASScalingPolicy","Set-AASScheduledAction")
     "StepScalingPolicyConfiguration_AdjustmentType"=@("Set-AASScalingPolicy")
     "StepScalingPolicyConfiguration_MetricAggregationType"=@("Set-AASScalingPolicy")
-    "TargetTrackingScalingPolicyConfiguration_CustomizedMetricSpecification_Statistic"=@("Set-AASScalingPolicy")
-    "TargetTrackingScalingPolicyConfiguration_PredefinedMetricSpecification_PredefinedMetricType"=@("Set-AASScalingPolicy")
 }
 
 _awsArgumentCompleterRegistration $AAS_Completers $AAS_map
@@ -226,6 +244,7 @@ $AAS_SelectMap = @{
                "Get-AASScalingActivity",
                "Get-AASScalingPolicy",
                "Get-AASScheduledAction",
+               "Get-AASPredictiveScalingForecast",
                "Get-AASResourceTag",
                "Set-AASScalingPolicy",
                "Set-AASScheduledAction",

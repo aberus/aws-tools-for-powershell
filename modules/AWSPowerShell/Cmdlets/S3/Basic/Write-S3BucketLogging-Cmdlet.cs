@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
-    /// <note><para>
-    /// This operation is not supported by directory buckets.
+    /// <important><para>
+    /// End of support notice: Beginning October 1, 2025, Amazon S3 will discontinue support
+    /// for creating new Email Grantee Access Control Lists (ACL). Email Grantee ACLs created
+    /// prior to this date will continue to work and remain accessible through the Amazon
+    /// Web Services Management Console, Command Line Interface (CLI), SDKs, and REST API.
+    /// However, you will no longer be able to create new Email Grantee ACLs. 
+    /// </para><para>
+    /// This change affects the following Amazon Web Services Regions: US East (N. Virginia)
+    /// Region, US West (N. California) Region, US West (Oregon) Region, Asia Pacific (Singapore)
+    /// Region, Asia Pacific (Sydney) Region, Asia Pacific (Tokyo) Region, Europe (Ireland)
+    /// Region, and South America (São Paulo) Region.
+    /// </para></important><note><para>
+    /// This operation is not supported for directory buckets.
     /// </para></note><para>
     /// Set the logging parameters for a bucket and to specify permissions for who can view
     /// and modify the logging parameters. All logs are saved to buckets in the same Amazon
@@ -47,7 +60,9 @@ namespace Amazon.PowerShell.Cmdlets.S3
     /// for server access log delivery</a> in the <i>Amazon S3 User Guide</i>.
     /// </para></important><dl><dt>Grantee Values</dt><dd><para>
     /// You can specify the person (grantee) to whom you're assigning access rights (by using
-    /// request elements) in the following ways:
+    /// request elements) in the following ways. For examples of how to specify these grantee
+    /// values in JSON format, see the Amazon Web Services CLI example in <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/enable-server-access-logging.html">
+    /// Enabling Amazon S3 server access logging</a> in the <i>Amazon S3 User Guide</i>.
     /// </para><ul><li><para>
     /// By the person's ID:
     /// </para><para><c>&lt;Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser"&gt;&lt;ID&gt;&lt;&gt;ID&lt;&gt;&lt;/ID&gt;&lt;DisplayName&gt;&lt;&gt;GranteesEmail&lt;&gt;&lt;/DisplayName&gt;
@@ -77,12 +92,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) PutBucketLogging API operation.", Operation = new[] {"PutBucketLogging"}, SelectReturnType = typeof(Amazon.S3.Model.PutBucketLoggingResponse))]
     [AWSCmdletOutput("None or Amazon.S3.Model.PutBucketLoggingResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.S3.Model.PutBucketLoggingResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.S3.Model.PutBucketLoggingResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteS3BucketLoggingCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
@@ -142,8 +158,14 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter PartitionedPrefix_PartitionDateSource
         /// <summary>
         /// <para>
-        /// <para>Specifies the partition date source for the partitioned prefix. PartitionDateSource
-        /// can be EventTime or DeliveryTime.</para>
+        /// <para>Specifies the partition date source for the partitioned prefix. 
+        /// <code>PartitionDateSource</code> can be <code>EventTime</code> or 
+        /// <code>DeliveryTime</code>.</para><para>For <code>DeliveryTime</code>, 
+        /// the time in the log file names corresponds to the delivery time for the 
+        /// log files. </para><para> For <code>EventTime</code>, The logs delivered 
+        /// are for a specific day only. The year, month, and day correspond to the 
+        /// day on which the event occurred, and the hour, minutes and seconds are 
+        /// set to 00 in the key.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -198,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -218,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BucketName), MyInvocation.BoundParameters);
@@ -234,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.PutBucketLoggingResponse, WriteS3BucketLoggingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
             context.ChecksumAlgorithm = this.ChecksumAlgorithm;
             context.LoggingConfig_TargetBucketName = this.LoggingConfig_TargetBucketName;
@@ -415,13 +421,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "PutBucketLogging");
             try
             {
-                #if DESKTOP
-                return client.PutBucketLogging(request);
-                #elif CORECLR
-                return client.PutBucketLoggingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutBucketLoggingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

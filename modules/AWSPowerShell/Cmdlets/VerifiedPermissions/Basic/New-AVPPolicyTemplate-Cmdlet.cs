@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AVP
 {
     /// <summary>
@@ -37,23 +39,21 @@ namespace Amazon.PowerShell.Cmdlets.AVP
     /// 
     ///  <note><para>
     /// Verified Permissions is <i><a href="https://wikipedia.org/wiki/Eventual_consistency">eventually
-    /// consistent</a></i>. It can take a few seconds for a new or changed element to be
-    /// propagate through the service and be visible in the results of other Verified Permissions
-    /// operations.
+    /// consistent</a></i>. It can take a few seconds for a new or changed element to propagate
+    /// through the service and be visible in the results of other Verified Permissions operations.
     /// </para></note>
     /// </summary>
     [Cmdlet("New", "AVPPolicyTemplate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.VerifiedPermissions.Model.CreatePolicyTemplateResponse")]
     [AWSCmdlet("Calls the Amazon Verified Permissions CreatePolicyTemplate API operation.", Operation = new[] {"CreatePolicyTemplate"}, SelectReturnType = typeof(Amazon.VerifiedPermissions.Model.CreatePolicyTemplateResponse))]
     [AWSCmdletOutput("Amazon.VerifiedPermissions.Model.CreatePolicyTemplateResponse",
-        "This cmdlet returns an Amazon.VerifiedPermissions.Model.CreatePolicyTemplateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VerifiedPermissions.Model.CreatePolicyTemplateResponse object containing multiple properties."
     )]
     public partial class NewAVPPolicyTemplateCmdlet : AmazonVerifiedPermissionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -110,7 +110,9 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         /// that you use a <a href="https://wikipedia.org/wiki/Universally_unique_identifier">UUID
         /// type of value.</a>.</para><para>If you don't provide this value, then Amazon Web Services generates a random one for
         /// you.</para><para>If you retry the operation with the same <c>ClientToken</c>, but with different parameters,
-        /// the retry fails with an <c>IdempotentParameterMismatch</c> error.</para>
+        /// the retry fails with an <c>ConflictException</c> error.</para><para>Verified Permissions recognizes a <c>ClientToken</c> for eight hours. After eight
+        /// hours, the next request with the same parameters performs the operation again regardless
+        /// of the value of <c>ClientToken</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,9 +140,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PolicyStoreId), MyInvocation.BoundParameters);
@@ -245,13 +251,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Verified Permissions", "CreatePolicyTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreatePolicyTemplate(request);
-                #elif CORECLR
-                return client.CreatePolicyTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePolicyTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

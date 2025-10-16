@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
@@ -32,11 +34,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
     /// 
     ///  
     /// <para>
-    /// An Asset Bundle import job imports specified Amazon QuickSight assets into an Amazon
-    /// QuickSight account. You can also choose to import a naming prefix and specified configuration
+    /// An Asset Bundle import job imports specified Amazon Quick Sight assets into an Amazon
+    /// Quick Sight account. You can also choose to import a naming prefix and specified configuration
     /// overrides. The assets that are contained in the bundle file that you provide are used
-    /// to create or update a new or existing asset in your Amazon QuickSight account. Each
-    /// Amazon QuickSight account can run up to 5 import jobs concurrently.
+    /// to create or update a new or existing asset in your Amazon Quick Sight account. Each
+    /// Amazon Quick Sight account can run up to 5 import jobs concurrently.
     /// </para><para>
     /// The API caller must have the necessary <c>"create"</c>, <c>"describe"</c>, and <c>"update"</c>
     /// permissions in their IAM role to access each resource type that is contained in the
@@ -47,20 +49,23 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [OutputType("Amazon.QuickSight.Model.StartAssetBundleImportJobResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight StartAssetBundleImportJob API operation.", Operation = new[] {"StartAssetBundleImportJob"}, SelectReturnType = typeof(Amazon.QuickSight.Model.StartAssetBundleImportJobResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.StartAssetBundleImportJobResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.StartAssetBundleImportJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.StartAssetBundleImportJobResponse object containing multiple properties."
     )]
     public partial class StartQSAssetBundleImportJobCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OverrideParameters_Analyses
         /// <summary>
         /// <para>
         /// <para>A list of overrides for any <c>Analysis</c> resources that are present in the asset
-        /// bundle that is imported.</para>
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,7 +76,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of permissions overrides for any <c>Analysis</c> resources that are present
-        /// in the asset bundle that is imported.</para>
+        /// in the asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +91,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of tag overrides for any <c>Analysis</c> resources that are present in the
-        /// asset bundle that is imported.</para>
+        /// asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,7 +141,8 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The bytes of the base64 encoded asset bundle import zip file. This file can't exceed
-        /// 20 MB.</para><para>If you are calling the API operations from the Amazon Web Services SDK for Java, JavaScript,
+        /// 20 MB. If the size of the file that you want to upload is more than 20 MB, add the
+        /// file to your Amazon S3 bucket and use <c>S3Uri</c> of the file for this operation.</para><para>If you are calling the API operations from the Amazon Web Services SDK for Java, JavaScript,
         /// Python, or PHP, the SDK encodes base64 automatically to allow the direct setting of
         /// the zip file's bytes. If you are using an SDK for a different language or receiving
         /// related errors, try to base64 encode your data.</para>
@@ -144,7 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of overrides for any <c>Dashboard</c> resources that are present in the asset
-        /// bundle that is imported.</para>
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,7 +174,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of permissions overrides for any <c>Dashboard</c> resources that are present
-        /// in the asset bundle that is imported.</para>
+        /// in the asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of tag overrides for any <c>Dashboard</c> resources that are present in the
-        /// asset bundle that is imported.</para>
+        /// asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of overrides for any <c>DataSet</c> resources that are present in the asset
-        /// bundle that is imported.</para>
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,7 +222,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of permissions overrides for any <c>DataSet</c> resources that are present
-        /// in the asset bundle that is imported.</para>
+        /// in the asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,7 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of tag overrides for any <c>DataSet</c> resources that are present in the asset
-        /// bundle that is imported.</para>
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -216,7 +254,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para> A list of overrides for any <c>DataSource</c> resources that are present in the asset
-        /// bundle that is imported.</para>
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -228,7 +270,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of permissions overrides for any <c>DataSource</c> resources that are present
-        /// in the asset bundle that is imported.</para>
+        /// in the asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -240,7 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of tag overrides for any <c>DataSource</c> resources that are present in the
-        /// asset bundle that is imported.</para>
+        /// asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -253,13 +303,60 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>The failure action for the import job.</para><para>If you choose <c>ROLLBACK</c>, failed import jobs will attempt to undo any asset changes
         /// caused by the failed job.</para><para>If you choose <c>DO_NOTHING</c>, failed import jobs will not attempt to roll back
-        /// any asset changes caused by the failed job, possibly keeping the Amazon QuickSight
+        /// any asset changes caused by the failed job, possibly keeping the Amazon Quick Sight
         /// account in an inconsistent state.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.QuickSight.AssetBundleImportFailureAction")]
         public Amazon.QuickSight.AssetBundleImportFailureAction FailureAction { get; set; }
+        #endregion
+        
+        #region Parameter OverrideParameters_Folder
+        /// <summary>
+        /// <para>
+        /// <para>A list of overrides for any <c>Folder</c> resources that are present in the asset
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OverrideParameters_Folders")]
+        public Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideParameters[] OverrideParameters_Folder { get; set; }
+        #endregion
+        
+        #region Parameter OverridePermissions_Folder
+        /// <summary>
+        /// <para>
+        /// <para>A list of permissions for the folders that you want to apply overrides to.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OverridePermissions_Folders")]
+        public Amazon.QuickSight.Model.AssetBundleImportJobFolderOverridePermissions[] OverridePermissions_Folder { get; set; }
+        #endregion
+        
+        #region Parameter OverrideTags_Folder
+        /// <summary>
+        /// <para>
+        /// <para>A list of tag overrides for any <c>Folder</c> resources that are present in the asset
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OverrideTags_Folders")]
+        public Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideTags[] OverrideTags_Folder { get; set; }
         #endregion
         
         #region Parameter ResourceIdOverrideConfiguration_PrefixForAllResource
@@ -279,7 +376,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of overrides for any <c>RefreshSchedule</c> resources that are present in the
-        /// asset bundle that is imported.</para>
+        /// asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -292,7 +393,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>The Amazon S3 URI for an asset bundle import file that exists in an Amazon S3 bucket
         /// that the caller has read access to. The file must be a zip format file and can't exceed
-        /// 20 MB.</para>
+        /// 1 GB.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -315,7 +416,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of overrides for any <c>Theme</c> resources that are present in the asset bundle
-        /// that is imported.</para>
+        /// that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -327,7 +432,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of permissions overrides for any <c>Theme</c> resources that are present in
-        /// the asset bundle that is imported.</para>
+        /// the asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -339,7 +448,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of tag overrides for any <c>Theme</c> resources that are present in the asset
-        /// bundle that is imported.</para>
+        /// bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -351,7 +464,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of overrides for any <c>VPCConnection</c> resources that are present in the
-        /// asset bundle that is imported.</para>
+        /// asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -363,7 +480,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>A list of tag overrides for any <c>VPCConnection</c> resources that are present in
-        /// the asset bundle that is imported.</para>
+        /// the asset bundle that is imported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -382,16 +503,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AssetBundleImportJobId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AssetBundleImportJobId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AssetBundleImportJobId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -402,9 +513,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -418,21 +533,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.StartAssetBundleImportJobResponse, StartQSAssetBundleImportJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AssetBundleImportJobId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssetBundleImportJobId = this.AssetBundleImportJobId;
             #if MODULAR
             if (this.AssetBundleImportJobId == null && ParameterWasBound(nameof(this.AssetBundleImportJobId)))
@@ -466,6 +571,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
             {
                 context.OverrideParameters_DataSource = new List<Amazon.QuickSight.Model.AssetBundleImportJobDataSourceOverrideParameters>(this.OverrideParameters_DataSource);
             }
+            if (this.OverrideParameters_Folder != null)
+            {
+                context.OverrideParameters_Folder = new List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideParameters>(this.OverrideParameters_Folder);
+            }
             if (this.OverrideParameters_RefreshSchedule != null)
             {
                 context.OverrideParameters_RefreshSchedule = new List<Amazon.QuickSight.Model.AssetBundleImportJobRefreshScheduleOverrideParameters>(this.OverrideParameters_RefreshSchedule);
@@ -495,6 +604,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
             {
                 context.OverridePermissions_DataSource = new List<Amazon.QuickSight.Model.AssetBundleImportJobDataSourceOverridePermissions>(this.OverridePermissions_DataSource);
             }
+            if (this.OverridePermissions_Folder != null)
+            {
+                context.OverridePermissions_Folder = new List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverridePermissions>(this.OverridePermissions_Folder);
+            }
             if (this.OverridePermissions_Theme != null)
             {
                 context.OverridePermissions_Theme = new List<Amazon.QuickSight.Model.AssetBundleImportJobThemeOverridePermissions>(this.OverridePermissions_Theme);
@@ -514,6 +627,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
             if (this.OverrideTags_DataSource != null)
             {
                 context.OverrideTags_DataSource = new List<Amazon.QuickSight.Model.AssetBundleImportJobDataSourceOverrideTags>(this.OverrideTags_DataSource);
+            }
+            if (this.OverrideTags_Folder != null)
+            {
+                context.OverrideTags_Folder = new List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideTags>(this.OverrideTags_Folder);
             }
             if (this.OverrideTags_Theme != null)
             {
@@ -630,6 +747,16 @@ namespace Amazon.PowerShell.Cmdlets.QS
                     request.OverrideParameters.DataSources = requestOverrideParameters_overrideParameters_DataSource;
                     requestOverrideParametersIsNull = false;
                 }
+                List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideParameters> requestOverrideParameters_overrideParameters_Folder = null;
+                if (cmdletContext.OverrideParameters_Folder != null)
+                {
+                    requestOverrideParameters_overrideParameters_Folder = cmdletContext.OverrideParameters_Folder;
+                }
+                if (requestOverrideParameters_overrideParameters_Folder != null)
+                {
+                    request.OverrideParameters.Folders = requestOverrideParameters_overrideParameters_Folder;
+                    requestOverrideParametersIsNull = false;
+                }
                 List<Amazon.QuickSight.Model.AssetBundleImportJobRefreshScheduleOverrideParameters> requestOverrideParameters_overrideParameters_RefreshSchedule = null;
                 if (cmdletContext.OverrideParameters_RefreshSchedule != null)
                 {
@@ -734,6 +861,16 @@ namespace Amazon.PowerShell.Cmdlets.QS
                     request.OverridePermissions.DataSources = requestOverridePermissions_overridePermissions_DataSource;
                     requestOverridePermissionsIsNull = false;
                 }
+                List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverridePermissions> requestOverridePermissions_overridePermissions_Folder = null;
+                if (cmdletContext.OverridePermissions_Folder != null)
+                {
+                    requestOverridePermissions_overridePermissions_Folder = cmdletContext.OverridePermissions_Folder;
+                }
+                if (requestOverridePermissions_overridePermissions_Folder != null)
+                {
+                    request.OverridePermissions.Folders = requestOverridePermissions_overridePermissions_Folder;
+                    requestOverridePermissionsIsNull = false;
+                }
                 List<Amazon.QuickSight.Model.AssetBundleImportJobThemeOverridePermissions> requestOverridePermissions_overridePermissions_Theme = null;
                 if (cmdletContext.OverridePermissions_Theme != null)
                 {
@@ -791,6 +928,16 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 if (requestOverrideTags_overrideTags_DataSource != null)
                 {
                     request.OverrideTags.DataSources = requestOverrideTags_overrideTags_DataSource;
+                    requestOverrideTagsIsNull = false;
+                }
+                List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideTags> requestOverrideTags_overrideTags_Folder = null;
+                if (cmdletContext.OverrideTags_Folder != null)
+                {
+                    requestOverrideTags_overrideTags_Folder = cmdletContext.OverrideTags_Folder;
+                }
+                if (requestOverrideTags_overrideTags_Folder != null)
+                {
+                    request.OverrideTags.Folders = requestOverrideTags_overrideTags_Folder;
                     requestOverrideTagsIsNull = false;
                 }
                 List<Amazon.QuickSight.Model.AssetBundleImportJobThemeOverrideTags> requestOverrideTags_overrideTags_Theme = null;
@@ -883,13 +1030,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "StartAssetBundleImportJob");
             try
             {
-                #if DESKTOP
-                return client.StartAssetBundleImportJob(request);
-                #elif CORECLR
-                return client.StartAssetBundleImportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartAssetBundleImportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -915,6 +1056,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDashboardOverrideParameters> OverrideParameters_Dashboard { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDataSetOverrideParameters> OverrideParameters_DataSet { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDataSourceOverrideParameters> OverrideParameters_DataSource { get; set; }
+            public List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideParameters> OverrideParameters_Folder { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobRefreshScheduleOverrideParameters> OverrideParameters_RefreshSchedule { get; set; }
             public System.String ResourceIdOverrideConfiguration_PrefixForAllResource { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobThemeOverrideParameters> OverrideParameters_Theme { get; set; }
@@ -923,11 +1065,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDashboardOverridePermissions> OverridePermissions_Dashboard { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDataSetOverridePermissions> OverridePermissions_DataSet { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDataSourceOverridePermissions> OverridePermissions_DataSource { get; set; }
+            public List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverridePermissions> OverridePermissions_Folder { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobThemeOverridePermissions> OverridePermissions_Theme { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobAnalysisOverrideTags> OverrideTags_Analyses { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDashboardOverrideTags> OverrideTags_Dashboard { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDataSetOverrideTags> OverrideTags_DataSet { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobDataSourceOverrideTags> OverrideTags_DataSource { get; set; }
+            public List<Amazon.QuickSight.Model.AssetBundleImportJobFolderOverrideTags> OverrideTags_Folder { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobThemeOverrideTags> OverrideTags_Theme { get; set; }
             public List<Amazon.QuickSight.Model.AssetBundleImportJobVPCConnectionOverrideTags> OverrideTags_VPCConnection { get; set; }
             public System.Boolean? OverrideValidationStrategy_StrictModeForAllResource { get; set; }

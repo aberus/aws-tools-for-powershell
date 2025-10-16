@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EKS;
 using Amazon.EKS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EKS
 {
     /// <summary>
@@ -35,9 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     /// You can only create a node group for your cluster that is equal to the current Kubernetes
     /// version for the cluster. All node groups are created with the latest AMI release version
     /// for the respective minor Kubernetes version of the cluster, unless you deploy a custom
-    /// AMI using a launch template. For more information about using launch templates, see
-    /// <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-    /// template support</a>.
+    /// AMI using a launch template.
+    /// </para><para>
+    /// For later updates, you will only be able to update a node group using a launch template
+    /// only if it was originally deployed with a launch template. Additionally, the launch
+    /// template ID or name must match what was used when the node group was created. You
+    /// can update the launch template version with necessary changes. For more information
+    /// about using launch templates, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+    /// managed nodes with launch templates</a>.
     /// </para><para>
     /// An Amazon EKS managed node group is an Amazon EC2 Auto Scaling group and associated
     /// Amazon EC2 instances that are managed by Amazon Web Services for an Amazon EKS cluster.
@@ -53,12 +60,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     [AWSCmdlet("Calls the Amazon Elastic Container Service for Kubernetes CreateNodegroup API operation.", Operation = new[] {"CreateNodegroup"}, SelectReturnType = typeof(Amazon.EKS.Model.CreateNodegroupResponse))]
     [AWSCmdletOutput("Amazon.EKS.Model.Nodegroup or Amazon.EKS.Model.CreateNodegroupResponse",
         "This cmdlet returns an Amazon.EKS.Model.Nodegroup object.",
-        "The service call response (type Amazon.EKS.Model.CreateNodegroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EKS.Model.CreateNodegroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEKSNodegroupCmdlet : AmazonEKSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AmiType
         /// <summary>
@@ -67,8 +75,8 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// template uses a custom AMI, then don't specify <c>amiType</c>, or the node group deployment
         /// will fail. If your launch template uses a Windows custom AMI, then add <c>eks:kube-proxy-windows</c>
         /// to your Windows nodes <c>rolearn</c> in the <c>aws-auth</c><c>ConfigMap</c>. For
-        /// more information about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// more information about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,8 +152,8 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// size is 20 GiB for Linux and Bottlerocket. The default disk size is 50 GiB for Windows.
         /// If you specify <c>launchTemplate</c>, then don't specify <c>diskSize</c>, or the node
         /// group deployment will fail. For more information about using launch templates with
-        /// Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,11 +176,22 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.String RemoteAccess_Ec2SshKey { get; set; }
         #endregion
         
+        #region Parameter NodeRepairConfig_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to enable node auto repair for the node group. Node auto repair
+        /// is disabled by default.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? NodeRepairConfig_Enabled { get; set; }
+        #endregion
+        
         #region Parameter LaunchTemplate_Id
         /// <summary>
         /// <para>
         /// <para>The ID of the launch template.</para><para>You must specify either the launch template ID or the launch template name in the
-        /// request, but not both.</para>
+        /// request, but not both. After node group creation, you cannot use a different ID.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,8 +210,12 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// an instance type in a launch template or for <c>instanceTypes</c>, then <c>t3.medium</c>
         /// is used, by default. If you specify <c>Spot</c> for <c>capacityType</c>, then we recommend
         /// specifying multiple values for <c>instanceTypes</c>. For more information, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html#managed-node-group-capacity-types">Managed
-        /// node group capacity types</a> and <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// node group capacity types</a> and <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,12 +227,42 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <summary>
         /// <para>
         /// <para>The Kubernetes <c>labels</c> to apply to the nodes in the node group when they are
-        /// created.</para>
+        /// created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Labels")]
         public System.Collections.Hashtable Label { get; set; }
+        #endregion
+        
+        #region Parameter NodeRepairConfig_MaxParallelNodesRepairedCount
+        /// <summary>
+        /// <para>
+        /// <para>Specify the maximum number of nodes that can be repaired concurrently or in parallel,
+        /// expressed as a count of unhealthy nodes. This gives you finer-grained control over
+        /// the pace of node replacements. When using this, you cannot also set <c>maxParallelNodesRepairedPercentage</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedCount { get; set; }
+        #endregion
+        
+        #region Parameter NodeRepairConfig_MaxParallelNodesRepairedPercentage
+        /// <summary>
+        /// <para>
+        /// <para>Specify the maximum number of nodes that can be repaired concurrently or in parallel,
+        /// expressed as a percentage of unhealthy nodes. This gives you finer-grained control
+        /// over the pace of node replacements. When using this, you cannot also set <c>maxParallelNodesRepairedCount</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedPercentage { get; set; }
         #endregion
         
         #region Parameter ScalingConfig_MaxSize
@@ -248,6 +301,30 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.Int32? UpdateConfig_MaxUnavailablePercentage { get; set; }
         #endregion
         
+        #region Parameter NodeRepairConfig_MaxUnhealthyNodeThresholdCount
+        /// <summary>
+        /// <para>
+        /// <para>Specify a count threshold of unhealthy nodes, above which node auto repair actions
+        /// will stop. When using this, you cannot also set <c>maxUnhealthyNodeThresholdPercentage</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdCount { get; set; }
+        #endregion
+        
+        #region Parameter NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage
+        /// <summary>
+        /// <para>
+        /// <para>Specify a percentage threshold of unhealthy nodes, above which node auto repair actions
+        /// will stop. When using this, you cannot also set <c>maxUnhealthyNodeThresholdCount</c>
+        /// at the same time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage { get; set; }
+        #endregion
+        
         #region Parameter ScalingConfig_MinSize
         /// <summary>
         /// <para>
@@ -262,7 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <summary>
         /// <para>
         /// <para>The name of the launch template.</para><para>You must specify either the launch template name or the launch template ID in the
-        /// request, but not both.</para>
+        /// request, but not both. After node group creation, you cannot use a different name.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -286,6 +363,23 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.String NodegroupName { get; set; }
         #endregion
         
+        #region Parameter NodeRepairConfig_NodeRepairConfigOverride
+        /// <summary>
+        /// <para>
+        /// <para>Specify granular overrides for specific repair actions. These overrides control the
+        /// repair action and the repair delay time before a node is considered eligible for repair.
+        /// If you use this, you must specify all the values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("NodeRepairConfig_NodeRepairConfigOverrides")]
+        public Amazon.EKS.Model.NodeRepairConfigOverrides[] NodeRepairConfig_NodeRepairConfigOverride { get; set; }
+        #endregion
+        
         #region Parameter NodeRole
         /// <summary>
         /// <para>
@@ -297,8 +391,8 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// are launched. For more information, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/create-node-role.html">Amazon
         /// EKS node IAM role</a> in the <i><i>Amazon EKS User Guide</i></i>. If you specify
         /// <c>launchTemplate</c>, then don't specify <c><a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_IamInstanceProfile.html">IamInstanceProfile</a></c> in your launch template, or the node group deployment will fail. For more information
-        /// about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -323,8 +417,8 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// AMIs. For information about Windows versions, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/eks-ami-versions-windows.html">Amazon
         /// EKS optimized Windows AMI versions</a> in the <i>Amazon EKS User Guide</i>.</para><para>If you specify <c>launchTemplate</c>, and your launch template uses a custom AMI,
         /// then don't specify <c>releaseVersion</c>, or the node group deployment will fail.
-        /// For more information about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// For more information about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -338,7 +432,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// the port is 3389. If you specify an Amazon EC2 SSH key but don't specify a source
         /// security group when you create a managed node group, then the port on the nodes is
         /// opened to the internet (<c>0.0.0.0/0</c>). For more information, see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_SecurityGroups.html">Security
-        /// Groups for Your VPC</a> in the <i>Amazon Virtual Private Cloud User Guide</i>.</para>
+        /// Groups for Your VPC</a> in the <i>Amazon Virtual Private Cloud User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -351,8 +449,12 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>
         /// <para>The subnets to use for the Auto Scaling group that is created for your node group.
         /// If you specify <c>launchTemplate</c>, then don't specify <c><a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateNetworkInterface.html">SubnetId</a></c> in your launch template, or the node group deployment will fail. For more information
-        /// about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// about using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -372,7 +474,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>
         /// <para>Metadata that assists with categorization and organization. Each tag consists of a
         /// key and an optional value. You define both. Tags don't propagate to any other cluster
-        /// or Amazon Web Services resources.</para>
+        /// or Amazon Web Services resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -385,7 +491,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>
         /// <para>The Kubernetes taints to be applied to the nodes in the node group. For more information,
         /// see <a href="https://docs.aws.amazon.com/eks/latest/userguide/node-taints-managed-node-groups.html">Node
-        /// taints on managed node groups</a>.</para>
+        /// taints on managed node groups</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -393,11 +503,32 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public Amazon.EKS.Model.Taint[] Taint { get; set; }
         #endregion
         
+        #region Parameter UpdateConfig_UpdateStrategy
+        /// <summary>
+        /// <para>
+        /// <para>The configuration for the behavior to follow during a node group version update of
+        /// this managed node group. You choose between two possible strategies for replacing
+        /// nodes during an <a href="https://docs.aws.amazon.com/eks/latest/APIReference/API_UpdateNodegroupVersion.html"><c>UpdateNodegroupVersion</c></a> action.</para><para>An Amazon EKS managed node group updates by replacing nodes with new nodes of newer
+        /// AMI versions in parallel. The <i>update strategy</i> changes the managed node update
+        /// behavior of the managed node group for each quantity. The <i>default</i> strategy
+        /// has guardrails to protect you from misconfiguration and launches the new instances
+        /// first, before terminating the old instances. The <i>minimal</i> strategy removes the
+        /// guardrails and terminates the old instances before launching the new instances. This
+        /// minimal strategy is useful in scenarios where you are constrained to resources or
+        /// costs (for example, with hardware accelerators such as GPUs).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EKS.NodegroupUpdateStrategies")]
+        public Amazon.EKS.NodegroupUpdateStrategies UpdateConfig_UpdateStrategy { get; set; }
+        #endregion
+        
         #region Parameter LaunchTemplate_Version
         /// <summary>
         /// <para>
         /// <para>The version number of the launch template to use. If no version is specified, then
-        /// the template's default version is used.</para>
+        /// the template's default version is used. You can use a different version for node group
+        /// updates.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -411,8 +542,8 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// of the cluster is used, and this is the only accepted specified value. If you specify
         /// <c>launchTemplate</c>, and your launch template uses a custom AMI, then don't specify
         /// <c>version</c>, or the node group deployment will fail. For more information about
-        /// using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Launch
-        /// template support</a> in the <i>Amazon EKS User Guide</i>.</para>
+        /// using launch templates with Amazon EKS, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/launch-templates.html">Customizing
+        /// managed nodes with launch templates</a> in the <i>Amazon EKS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -430,16 +561,6 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public string Select { get; set; } = "Nodegroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NodegroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NodegroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NodegroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -450,9 +571,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NodegroupName), MyInvocation.BoundParameters);
@@ -466,21 +591,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EKS.Model.CreateNodegroupResponse, NewEKSNodegroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NodegroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AmiType = this.AmiType;
             context.CapacityType = this.CapacityType;
             context.ClientRequestToken = this.ClientRequestToken;
@@ -514,6 +629,15 @@ namespace Amazon.PowerShell.Cmdlets.EKS
                 WriteWarning("You are passing $null as a value for parameter NodegroupName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.NodeRepairConfig_Enabled = this.NodeRepairConfig_Enabled;
+            context.NodeRepairConfig_MaxParallelNodesRepairedCount = this.NodeRepairConfig_MaxParallelNodesRepairedCount;
+            context.NodeRepairConfig_MaxParallelNodesRepairedPercentage = this.NodeRepairConfig_MaxParallelNodesRepairedPercentage;
+            context.NodeRepairConfig_MaxUnhealthyNodeThresholdCount = this.NodeRepairConfig_MaxUnhealthyNodeThresholdCount;
+            context.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage = this.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage;
+            if (this.NodeRepairConfig_NodeRepairConfigOverride != null)
+            {
+                context.NodeRepairConfig_NodeRepairConfigOverride = new List<Amazon.EKS.Model.NodeRepairConfigOverrides>(this.NodeRepairConfig_NodeRepairConfigOverride);
+            }
             context.NodeRole = this.NodeRole;
             #if MODULAR
             if (this.NodeRole == null && ParameterWasBound(nameof(this.NodeRole)))
@@ -554,6 +678,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             }
             context.UpdateConfig_MaxUnavailable = this.UpdateConfig_MaxUnavailable;
             context.UpdateConfig_MaxUnavailablePercentage = this.UpdateConfig_MaxUnavailablePercentage;
+            context.UpdateConfig_UpdateStrategy = this.UpdateConfig_UpdateStrategy;
             context.Version = this.Version;
             
             // allow further manipulation of loaded context prior to processing
@@ -641,6 +766,75 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             if (cmdletContext.NodegroupName != null)
             {
                 request.NodegroupName = cmdletContext.NodegroupName;
+            }
+            
+             // populate NodeRepairConfig
+            var requestNodeRepairConfigIsNull = true;
+            request.NodeRepairConfig = new Amazon.EKS.Model.NodeRepairConfig();
+            System.Boolean? requestNodeRepairConfig_nodeRepairConfig_Enabled = null;
+            if (cmdletContext.NodeRepairConfig_Enabled != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_Enabled = cmdletContext.NodeRepairConfig_Enabled.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_Enabled != null)
+            {
+                request.NodeRepairConfig.Enabled = requestNodeRepairConfig_nodeRepairConfig_Enabled.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount = null;
+            if (cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedCount != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount = cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedCount.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount != null)
+            {
+                request.NodeRepairConfig.MaxParallelNodesRepairedCount = requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedCount.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage = null;
+            if (cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedPercentage != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage = cmdletContext.NodeRepairConfig_MaxParallelNodesRepairedPercentage.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage != null)
+            {
+                request.NodeRepairConfig.MaxParallelNodesRepairedPercentage = requestNodeRepairConfig_nodeRepairConfig_MaxParallelNodesRepairedPercentage.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount = null;
+            if (cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdCount != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount = cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdCount.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount != null)
+            {
+                request.NodeRepairConfig.MaxUnhealthyNodeThresholdCount = requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdCount.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            System.Int32? requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage = null;
+            if (cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage = cmdletContext.NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage.Value;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage != null)
+            {
+                request.NodeRepairConfig.MaxUnhealthyNodeThresholdPercentage = requestNodeRepairConfig_nodeRepairConfig_MaxUnhealthyNodeThresholdPercentage.Value;
+                requestNodeRepairConfigIsNull = false;
+            }
+            List<Amazon.EKS.Model.NodeRepairConfigOverrides> requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride = null;
+            if (cmdletContext.NodeRepairConfig_NodeRepairConfigOverride != null)
+            {
+                requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride = cmdletContext.NodeRepairConfig_NodeRepairConfigOverride;
+            }
+            if (requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride != null)
+            {
+                request.NodeRepairConfig.NodeRepairConfigOverrides = requestNodeRepairConfig_nodeRepairConfig_NodeRepairConfigOverride;
+                requestNodeRepairConfigIsNull = false;
+            }
+             // determine if request.NodeRepairConfig should be set to null
+            if (requestNodeRepairConfigIsNull)
+            {
+                request.NodeRepairConfig = null;
             }
             if (cmdletContext.NodeRole != null)
             {
@@ -754,6 +948,16 @@ namespace Amazon.PowerShell.Cmdlets.EKS
                 request.UpdateConfig.MaxUnavailablePercentage = requestUpdateConfig_updateConfig_MaxUnavailablePercentage.Value;
                 requestUpdateConfigIsNull = false;
             }
+            Amazon.EKS.NodegroupUpdateStrategies requestUpdateConfig_updateConfig_UpdateStrategy = null;
+            if (cmdletContext.UpdateConfig_UpdateStrategy != null)
+            {
+                requestUpdateConfig_updateConfig_UpdateStrategy = cmdletContext.UpdateConfig_UpdateStrategy;
+            }
+            if (requestUpdateConfig_updateConfig_UpdateStrategy != null)
+            {
+                request.UpdateConfig.UpdateStrategy = requestUpdateConfig_updateConfig_UpdateStrategy;
+                requestUpdateConfigIsNull = false;
+            }
              // determine if request.UpdateConfig should be set to null
             if (requestUpdateConfigIsNull)
             {
@@ -801,13 +1005,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Container Service for Kubernetes", "CreateNodegroup");
             try
             {
-                #if DESKTOP
-                return client.CreateNodegroup(request);
-                #elif CORECLR
-                return client.CreateNodegroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateNodegroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -835,6 +1033,12 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             public System.String LaunchTemplate_Name { get; set; }
             public System.String LaunchTemplate_Version { get; set; }
             public System.String NodegroupName { get; set; }
+            public System.Boolean? NodeRepairConfig_Enabled { get; set; }
+            public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedCount { get; set; }
+            public System.Int32? NodeRepairConfig_MaxParallelNodesRepairedPercentage { get; set; }
+            public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdCount { get; set; }
+            public System.Int32? NodeRepairConfig_MaxUnhealthyNodeThresholdPercentage { get; set; }
+            public List<Amazon.EKS.Model.NodeRepairConfigOverrides> NodeRepairConfig_NodeRepairConfigOverride { get; set; }
             public System.String NodeRole { get; set; }
             public System.String ReleaseVersion { get; set; }
             public System.String RemoteAccess_Ec2SshKey { get; set; }
@@ -847,6 +1051,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             public List<Amazon.EKS.Model.Taint> Taint { get; set; }
             public System.Int32? UpdateConfig_MaxUnavailable { get; set; }
             public System.Int32? UpdateConfig_MaxUnavailablePercentage { get; set; }
+            public Amazon.EKS.NodegroupUpdateStrategies UpdateConfig_UpdateStrategy { get; set; }
             public System.String Version { get; set; }
             public System.Func<Amazon.EKS.Model.CreateNodegroupResponse, NewEKSNodegroupCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Nodegroup;

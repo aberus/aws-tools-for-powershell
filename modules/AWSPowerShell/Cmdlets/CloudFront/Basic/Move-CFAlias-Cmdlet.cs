@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,46 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
-    /// Associates an alias (also known as a CNAME or an alternate domain name) with a CloudFront
-    /// distribution.
-    /// 
-    ///  
-    /// <para>
-    /// With this operation you can move an alias that's already in use on a CloudFront distribution
-    /// to a different distribution in one step. This prevents the downtime that could occur
-    /// if you first remove the alias from one distribution and then separately add the alias
-    /// to another distribution.
-    /// </para><para>
-    /// To use this operation to associate an alias with a distribution, you provide the alias
-    /// and the ID of the target distribution for the alias. For more information, including
-    /// how to set up the target distribution, prerequisites that you must complete, and other
-    /// restrictions, see <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CNAMEs.html#alternate-domain-names-move">Moving
-    /// an alternate domain name to a different distribution</a> in the <i>Amazon CloudFront
-    /// Developer Guide</i>.
-    /// </para>
+    /// Amazon.CloudFront.IAmazonCloudFront.AssociateAlias
     /// </summary>
     [Cmdlet("Move", "CFAlias", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon CloudFront AssociateAlias API operation.", Operation = new[] {"AssociateAlias"}, SelectReturnType = typeof(Amazon.CloudFront.Model.AssociateAliasResponse))]
     [AWSCmdletOutput("None or Amazon.CloudFront.Model.AssociateAliasResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudFront.Model.AssociateAliasResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudFront.Model.AssociateAliasResponse) be returned by specifying '-Select *'."
     )]
     public partial class MoveCFAliasCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Alias
         /// <summary>
         /// <para>
-        /// <para>The alias (also known as a CNAME) to add to the target distribution.</para>
+        /// <para>The alias (also known as a CNAME) to add to the target standard distribution.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -78,7 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter TargetDistributionId
         /// <summary>
         /// <para>
-        /// <para>The ID of the distribution that you're associating the alias with.</para>
+        /// <para>The ID of the standard distribution that you're associating the alias with.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,16 +89,6 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Alias parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Alias' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Alias' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -122,9 +99,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TargetDistributionId), MyInvocation.BoundParameters);
@@ -138,21 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFront.Model.AssociateAliasResponse, MoveCFAliasCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Alias;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Alias = this.Alias;
             #if MODULAR
             if (this.Alias == null && ParameterWasBound(nameof(this.Alias)))
@@ -229,13 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "AssociateAlias");
             try
             {
-                #if DESKTOP
-                return client.AssociateAlias(request);
-                #elif CORECLR
-                return client.AssociateAliasAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateAliasAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

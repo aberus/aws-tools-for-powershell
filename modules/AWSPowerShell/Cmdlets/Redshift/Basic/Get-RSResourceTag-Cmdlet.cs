@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
@@ -59,12 +61,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
     [AWSCmdlet("Calls the Amazon Redshift DescribeTags API operation.", Operation = new[] {"DescribeTags"}, SelectReturnType = typeof(Amazon.Redshift.Model.DescribeTagsResponse), LegacyAlias="Get-RSTags")]
     [AWSCmdletOutput("Amazon.Redshift.Model.TaggedResource or Amazon.Redshift.Model.DescribeTagsResponse",
         "This cmdlet returns a collection of Amazon.Redshift.Model.TaggedResource objects.",
-        "The service call response (type Amazon.Redshift.Model.DescribeTagsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.DescribeTagsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetRSResourceTagCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceName
         /// <summary>
@@ -80,7 +83,8 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>The type of resource with which you want to view tags. Valid resource types are: </para><ul><li><para>Cluster</para></li><li><para>CIDR/IP</para></li><li><para>EC2 security group</para></li><li><para>Snapshot</para></li><li><para>Cluster security group</para></li><li><para>Subnet group</para></li><li><para>HSM connection</para></li><li><para>HSM certificate</para></li><li><para>Parameter group</para></li><li><para>Snapshot copy grant</para></li></ul><para>For more information about Amazon Redshift resource types and constructing ARNs, go
+        /// <para>The type of resource with which you want to view tags. Valid resource types are: </para><ul><li><para>Cluster</para></li><li><para>CIDR/IP</para></li><li><para>EC2 security group</para></li><li><para>Snapshot</para></li><li><para>Cluster security group</para></li><li><para>Subnet group</para></li><li><para>HSM connection</para></li><li><para>HSM certificate</para></li><li><para>Parameter group</para></li><li><para>Snapshot copy grant</para></li><li><para>Integration (zero-ETL integration or S3 event integration)</para><note><para>To describe the tags associated with an <c>integration</c>, don't specify <c>ResourceType</c>,
+        /// instead specify the <c>ResourceName</c> of the integration.</para></note></li></ul><para>For more information about Amazon Redshift resource types and constructing ARNs, go
         /// to <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/redshift-iam-access-control-overview.html#redshift-iam-access-control-specify-actions">Specifying
         /// Policy Elements: Actions, Effects, Resources, and Principals</a> in the Amazon Redshift
         /// Cluster Management Guide. </para>
@@ -97,7 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// with the specified key or keys. For example, suppose that you have resources tagged
         /// with keys called <c>owner</c> and <c>environment</c>. If you specify both of these
         /// tag keys in the request, Amazon Redshift returns a response with all resources that
-        /// have either or both of these tag keys associated with them.</para>
+        /// have either or both of these tag keys associated with them.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,7 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// associated with the specified value or values. For example, suppose that you have
         /// resources tagged with values called <c>admin</c> and <c>test</c>. If you specify both
         /// of these tag values in the request, Amazon Redshift returns a response with all resources
-        /// that have either or both of these tag values associated with them.</para>
+        /// that have either or both of these tag values associated with them.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,7 +143,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,9 +192,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -384,7 +400,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.TaggedResources.Count;
+                    int _receivedThisCall = response.TaggedResources?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -433,13 +449,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "DescribeTags");
             try
             {
-                #if DESKTOP
-                return client.DescribeTags(request);
-                #elif CORECLR
-                return client.DescribeTagsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeTagsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

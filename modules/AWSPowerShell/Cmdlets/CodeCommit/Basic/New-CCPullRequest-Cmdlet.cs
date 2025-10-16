@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeCommit;
 using Amazon.CodeCommit.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CC
     [AWSCmdlet("Calls the AWS CodeCommit CreatePullRequest API operation.", Operation = new[] {"CreatePullRequest"}, SelectReturnType = typeof(Amazon.CodeCommit.Model.CreatePullRequestResponse))]
     [AWSCmdletOutput("Amazon.CodeCommit.Model.PullRequest or Amazon.CodeCommit.Model.CreatePullRequestResponse",
         "This cmdlet returns an Amazon.CodeCommit.Model.PullRequest object.",
-        "The service call response (type Amazon.CodeCommit.Model.CreatePullRequestResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeCommit.Model.CreatePullRequestResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCCPullRequestCmdlet : AmazonCodeCommitClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -71,7 +74,11 @@ namespace Amazon.PowerShell.Cmdlets.CC
         /// <para>
         /// <para>The targets for the pull request, including the source of the code to be reviewed
         /// (the source branch) and the destination where the creator of the pull request intends
-        /// the code to be merged after the pull request is closed (the destination branch).</para>
+        /// the code to be merged after the pull request is closed (the destination branch).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -125,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.CC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Title), MyInvocation.BoundParameters);
@@ -235,13 +246,7 @@ namespace Amazon.PowerShell.Cmdlets.CC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeCommit", "CreatePullRequest");
             try
             {
-                #if DESKTOP
-                return client.CreatePullRequest(request);
-                #elif CORECLR
-                return client.CreatePullRequestAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePullRequestAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

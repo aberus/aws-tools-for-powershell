@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticFileSystem;
 using Amazon.ElasticFileSystem.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EFS
 {
     /// <summary>
@@ -40,7 +42,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     /// Therefore, TransitionToArchive must either not be set or must be later than TransitionToIA.
     /// </para><note><para>
     ///  The Archive storage class is available only for file systems that use the Elastic
-    /// Throughput mode and the General Purpose Performance mode. 
+    /// throughput mode and the General Purpose performance mode. 
     /// </para></note></li></ul><ul><li><para><b><c>TransitionToPrimaryStorageClass</c></b> – Whether to move files in the file
     /// system back to primary storage (Standard storage class) after they are accessed in
     /// IA or Archive storage.
@@ -55,7 +57,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     /// array in the request body deletes any existing <c>LifecycleConfiguration</c>. In the
     /// request, specify the following: 
     /// </para><ul><li><para>
-    /// The ID for the file system for which you are enabling, disabling, or modifying Lifecycle
+    /// The ID for the file system for which you are enabling, disabling, or modifying lifecycle
     /// management.
     /// </para></li><li><para>
     /// A <c>LifecyclePolicies</c> array of <c>LifecyclePolicy</c> objects that define when
@@ -79,12 +81,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     [AWSCmdlet("Calls the Amazon Elastic File System PutLifecycleConfiguration API operation.", Operation = new[] {"PutLifecycleConfiguration"}, SelectReturnType = typeof(Amazon.ElasticFileSystem.Model.PutLifecycleConfigurationResponse))]
     [AWSCmdletOutput("Amazon.ElasticFileSystem.Model.LifecyclePolicy or Amazon.ElasticFileSystem.Model.PutLifecycleConfigurationResponse",
         "This cmdlet returns a collection of Amazon.ElasticFileSystem.Model.LifecyclePolicy objects.",
-        "The service call response (type Amazon.ElasticFileSystem.Model.PutLifecycleConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticFileSystem.Model.PutLifecycleConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteEFSLifecycleConfigurationCmdlet : AmazonElasticFileSystemClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FileSystemId
         /// <summary>
@@ -108,18 +111,22 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         /// <summary>
         /// <para>
         /// <para>An array of <c>LifecyclePolicy</c> objects that define the file system's <c>LifecycleConfiguration</c>
-        /// object. A <c>LifecycleConfiguration</c> object informs EFS Lifecycle management of
-        /// the following:</para><ul><li><para><b><c>TransitionToIA</c></b> – When to move files in the file system from primary
+        /// object. A <c>LifecycleConfiguration</c> object informs lifecycle management of the
+        /// following:</para><ul><li><para><b><c>TransitionToIA</c></b> – When to move files in the file system from primary
         /// storage (Standard storage class) into the Infrequent Access (IA) storage.</para></li><li><para><b><c>TransitionToArchive</c></b> – When to move files in the file system from
         /// their current storage class (either IA or Standard storage) into the Archive storage.</para><para>File systems cannot transition into Archive storage before transitioning into IA storage.
-        /// Therefore, TransitionToArchive must either not be set or must be later than TransitionToIA.</para><note><para> The Archive storage class is available only for file systems that use the Elastic
-        /// Throughput mode and the General Purpose Performance mode. </para></note></li><li><para><b><c>TransitionToPrimaryStorageClass</c></b> – Whether to move files in the file
+        /// Therefore, TransitionToArchive must either not be set or must be later than TransitionToIA.</para><note><para>The Archive storage class is available only for file systems that use the Elastic
+        /// throughput mode and the General Purpose performance mode. </para></note></li><li><para><b><c>TransitionToPrimaryStorageClass</c></b> – Whether to move files in the file
         /// system back to primary storage (Standard storage class) after they are accessed in
         /// IA or Archive storage.</para></li></ul><note><para>When using the <c>put-lifecycle-configuration</c> CLI command or the <c>PutLifecycleConfiguration</c>
         /// API action, Amazon EFS requires that each <c>LifecyclePolicy</c> object have only
         /// a single transition. This means that in a request body, <c>LifecyclePolicies</c> must
         /// be structured as an array of <c>LifecyclePolicy</c> objects, one object for each storage
-        /// transition. See the example requests in the following section for more information.</para></note>
+        /// transition. See the example requests in the following section for more information.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -145,16 +152,6 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public string Select { get; set; } = "LifecyclePolicies";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileSystemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -165,9 +162,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FileSystemId), MyInvocation.BoundParameters);
@@ -181,21 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticFileSystem.Model.PutLifecycleConfigurationResponse, WriteEFSLifecycleConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FileSystemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FileSystemId = this.FileSystemId;
             #if MODULAR
             if (this.FileSystemId == null && ParameterWasBound(nameof(this.FileSystemId)))
@@ -275,13 +266,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic File System", "PutLifecycleConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutLifecycleConfiguration(request);
-                #elif CORECLR
-                return client.PutLifecycleConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutLifecycleConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
-    /// Creates a new configuration recorder to record configuration changes for specified
-    /// resource types.
+    /// Creates or updates the customer managed configuration recorder.
     /// 
     ///  
     /// <para>
-    /// You can also use this action to change the <c>roleARN</c> or the <c>recordingGroup</c>
-    /// of an existing recorder. For more information, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/stop-start-recorder.html"><b>Managing the Configuration Recorder</b></a> in the <i>Config Developer Guide</i>.
-    /// </para><note><para>
-    /// You can specify only one configuration recorder for each Amazon Web Services Region
-    /// for each account.
+    /// You can use this operation to create a new customer managed configuration recorder
+    /// or to update the <c>roleARN</c> and the <c>recordingGroup</c> for an existing customer
+    /// managed configuration recorder.
     /// </para><para>
-    /// If the configuration recorder does not have the <c>recordingGroup</c> field specified,
-    /// the default is to record all supported resource types.
+    /// To start the customer managed configuration recorder and begin recording configuration
+    /// changes for the resource types you specify, use the <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_StartConfigurationRecorder.html">StartConfigurationRecorder</a>
+    /// operation.
+    /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/stop-start-recorder.html"><b>Working with the Configuration Recorder</b></a> in the <i>Config Developer Guide</i>.
+    /// </para><note><para><b>One customer managed configuration recorder per account per Region</b></para><para>
+    /// You can create only one customer managed configuration recorder for each account for
+    /// each Amazon Web Services Region.
+    /// </para><para><b>Default is to record all supported resource types, excluding the global IAM resource
+    /// types</b></para><para>
+    /// If you have not specified values for the <c>recordingGroup</c> field, the default
+    /// for the customer managed configuration recorder is to record all supported resource
+    /// types, excluding the global IAM resource types: <c>AWS::IAM::Group</c>, <c>AWS::IAM::Policy</c>,
+    /// <c>AWS::IAM::Role</c>, and <c>AWS::IAM::User</c>.
+    /// </para><para><b>Tags are added at creation and cannot be updated</b></para><para><c>PutConfigurationRecorder</c> is an idempotent API. Subsequent requests won’t create
+    /// a duplicate resource if one was already created. If a following request has different
+    /// tags values, Config will ignore these differences and treat it as an idempotent request
+    /// of the previous. In this case, tags will not be updated, even if they are different.
+    /// </para><para>
+    /// Use <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_TagResource.html">TagResource</a>
+    /// and <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_UntagResource.html">UntagResource</a>
+    /// to update tags after creation.
     /// </para></note>
     /// </summary>
     [Cmdlet("Write", "CFGConfigurationRecorder", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -48,12 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config PutConfigurationRecorder API operation.", Operation = new[] {"PutConfigurationRecorder"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutConfigurationRecorderResponse))]
     [AWSCmdletOutput("None or Amazon.ConfigService.Model.PutConfigurationRecorderResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ConfigService.Model.PutConfigurationRecorderResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ConfigService.Model.PutConfigurationRecorderResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGConfigurationRecorderCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RecordingGroup_AllSupported
         /// <summary>
@@ -72,6 +92,16 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public System.Boolean? RecordingGroup_AllSupported { get; set; }
         #endregion
         
+        #region Parameter ConfigurationRecorder_Arn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the specified configuration recorder.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ConfigurationRecorder_Arn { get; set; }
+        #endregion
+        
         #region Parameter RecordingGroup_IncludeGlobalResourceType
         /// <summary>
         /// <para>
@@ -79,14 +109,24 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// groups, roles, and customer managed policies. These global IAM resource types can
         /// only be recorded by Config in Regions where Config was available before February 2022.
         /// You cannot be record the global IAM resouce types in Regions supported by Config after
-        /// February 2022. This list where you cannot record the global IAM resource types includes
-        /// the following Regions:</para><ul><li><para>Asia Pacific (Hyderabad)</para></li><li><para>Asia Pacific (Melbourne)</para></li><li><para>Europe (Spain)</para></li><li><para>Europe (Zurich)</para></li><li><para>Israel (Tel Aviv)</para></li><li><para>Middle East (UAE)</para></li></ul><important><para><b>Aurora global clusters are recorded in all enabled Regions</b></para><para>The <c>AWS::RDS::GlobalCluster</c> resource type will be recorded in all supported
+        /// February 2022. For a list of those Regions, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/select-resources.html#select-resources-all">Recording
+        /// Amazon Web Services Resources | Global Resources</a>.</para><important><para><b>Aurora global clusters are recorded in all enabled Regions</b></para><para>The <c>AWS::RDS::GlobalCluster</c> resource type will be recorded in all supported
         /// Config Regions where the configuration recorder is enabled, even if <c>includeGlobalResourceTypes</c>
-        /// is not set to <c>true</c>. The <c>includeGlobalResourceTypes</c> option is a bundle
-        /// which only applies to IAM users, groups, roles, and customer managed policies. </para><para>If you do not want to record <c>AWS::RDS::GlobalCluster</c> in all enabled Regions,
+        /// is set<c>false</c>. The <c>includeGlobalResourceTypes</c> option is a bundle which
+        /// only applies to IAM users, groups, roles, and customer managed policies. </para><para>If you do not want to record <c>AWS::RDS::GlobalCluster</c> in all enabled Regions,
         /// use one of the following recording strategies:</para><ol><li><para><b>Record all current and future resource types with exclusions</b> (<c>EXCLUSION_BY_RESOURCE_TYPES</c>),
         /// or</para></li><li><para><b>Record specific resource types</b> (<c>INCLUSION_BY_RESOURCE_TYPES</c>).</para></li></ol><para>For more information, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/select-resources.html#select-resources-all">Selecting
-        /// Which Resources are Recorded</a> in the <i>Config developer guide</i>.</para></important><note><para>Before you set this field to <c>true</c>, set the <c>allSupported</c> field of <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_RecordingGroup.html">RecordingGroup</a>
+        /// Which Resources are Recorded</a> in the <i>Config developer guide</i>.</para></important><important><para><b>includeGlobalResourceTypes and the exclusion recording strategy</b></para><para>The <c>includeGlobalResourceTypes</c> field has no impact on the <c>EXCLUSION_BY_RESOURCE_TYPES</c>
+        /// recording strategy. This means that the global IAM resource types (IAM users, groups,
+        /// roles, and customer managed policies) will not be automatically added as exclusions
+        /// for <c>exclusionByResourceTypes</c> when <c>includeGlobalResourceTypes</c> is set
+        /// to <c>false</c>.</para><para>The <c>includeGlobalResourceTypes</c> field should only be used to modify the <c>AllSupported</c>
+        /// field, as the default for the <c>AllSupported</c> field is to record configuration
+        /// changes for all supported resource types excluding the global IAM resource types.
+        /// To include the global IAM resource types when <c>AllSupported</c> is set to <c>true</c>,
+        /// make sure to set <c>includeGlobalResourceTypes</c> to <c>true</c>.</para><para>To exclude the global IAM resource types for the <c>EXCLUSION_BY_RESOURCE_TYPES</c>
+        /// recording strategy, you need to manually add them to the <c>resourceTypes</c> field
+        /// of <c>exclusionByResourceTypes</c>.</para></important><note><para><b>Required and optional fields</b></para><para>Before you set this field to <c>true</c>, set the <c>allSupported</c> field of <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_RecordingGroup.html">RecordingGroup</a>
         /// to <c>true</c>. Optionally, you can set the <c>useOnly</c> field of <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_RecordingStrategy.html">RecordingStrategy</a>
         /// to <c>ALL_SUPPORTED_RESOURCE_TYPES</c>.</para></note><note><para><b>Overriding fields</b></para><para>If you set this field to <c>false</c> but list global IAM resource types in the <c>resourceTypes</c>
         /// field of <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_RecordingGroup.html">RecordingGroup</a>,
@@ -105,10 +145,12 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         #region Parameter ConfigurationRecorderName
         /// <summary>
         /// <para>
-        /// <para>The name of the configuration recorder. Config automatically assigns the name of "default"
-        /// when creating the configuration recorder.</para><note><para>You cannot change the name of the configuration recorder after it has been created.
-        /// To change the configuration recorder name, you must delete it and create a new configuration
-        /// recorder with a new name. </para></note>
+        /// <para>The name of the configuration recorder.</para><para>For customer managed configuration recorders, Config automatically assigns the name
+        /// of "default" when creating a configuration recorder if you do not specify a name at
+        /// creation time.</para><para>For service-linked configuration recorders, Config automatically assigns a name that
+        /// has the prefix "<c>AWSConfigurationRecorderFor</c>" to a new service-linked configuration
+        /// recorder.</para><note><para><b>Changing the name of a configuration recorder</b></para><para>To change the name of the customer managed configuration recorder, you must delete
+        /// it and create a new customer managed configuration recorder with a new name.</para><para>You cannot change the name of a service-linked configuration recorder.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -119,7 +161,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         #region Parameter RecordingMode_RecordingFrequency
         /// <summary>
         /// <para>
-        /// <para>The default recording frequency that Config uses to record configuration changes.</para><important><para>Daily recording is not supported for the following resource types:</para><ul><li><para><c>AWS::Config::ResourceCompliance</c></para></li><li><para><c>AWS::Config::ConformancePackCompliance</c></para></li><li><para><c>AWS::Config::ConfigurationRecorder</c></para></li></ul><para>For the <b>allSupported</b> (<c>ALL_SUPPORTED_RESOURCE_TYPES</c>) recording strategy,
+        /// <para>The default recording frequency that Config uses to record configuration changes.</para><important><para>Daily recording cannot be specified for the following resource types:</para><ul><li><para><c>AWS::Config::ResourceCompliance</c></para></li><li><para><c>AWS::Config::ConformancePackCompliance</c></para></li><li><para><c>AWS::Config::ConfigurationRecorder</c></para></li></ul><para>For the <b>allSupported</b> (<c>ALL_SUPPORTED_RESOURCE_TYPES</c>) recording strategy,
         /// these resource types will be set to Continuous recording.</para></important>
         /// </para>
         /// </summary>
@@ -135,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// <para>An array of <c>recordingModeOverride</c> objects for you to specify your overrides
         /// for the recording mode. The <c>recordingModeOverride</c> object in the <c>recordingModeOverrides</c>
         /// array consists of three fields: a <c>description</c>, the new <c>recordingFrequency</c>,
-        /// and an array of <c>resourceTypes</c> to override.</para>
+        /// and an array of <c>resourceTypes</c> to override.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,11 +189,28 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public Amazon.ConfigService.Model.RecordingModeOverride[] RecordingMode_RecordingModeOverride { get; set; }
         #endregion
         
+        #region Parameter ConfigurationRecorder_RecordingScope
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether the <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_ConfigurationItem.html">ConfigurationItems</a>
+        /// in scope for the specified configuration recorder are recorded for free (<c>INTERNAL</c>)
+        /// or if it impacts the costs to your bill (<c>PAID</c>).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ConfigService.RecordingScope")]
+        public Amazon.ConfigService.RecordingScope ConfigurationRecorder_RecordingScope { get; set; }
+        #endregion
+        
         #region Parameter ExclusionByResourceTypes_ResourceType
         /// <summary>
         /// <para>
         /// <para>A comma-separated list of resource types to exclude from recording by the configuration
-        /// recorder.</para>
+        /// recorder.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,7 +234,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// Amazon Web Services Region where you set up Config. If a resource type is supported
         /// by Config in at least one Region, you can enable the recording of that resource type
         /// in all Regions supported by Config, even if the specified resource type is not supported
-        /// in the Amazon Web Services Region where you set up Config.</para></note>
+        /// in the Amazon Web Services Region where you set up Config.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,21 +249,55 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         #region Parameter ConfigurationRecorder_RoleARN
         /// <summary>
         /// <para>
-        /// <para>Amazon Resource Name (ARN) of the IAM role assumed by Config and used by the configuration
-        /// recorder.</para><note><para>While the API model does not require this field, the server will reject a request
-        /// without a defined <c>roleARN</c> for the configuration recorder.</para></note><note><para><b>Pre-existing Config role</b></para><para>If you have used an Amazon Web Services service that uses Config, such as Security
-        /// Hub or Control Tower, and an Config role has already been created, make sure that
-        /// the IAM role that you use when setting up Config keeps the same minimum permissions
-        /// as the already created Config role. You must do this so that the other Amazon Web
-        /// Services service continues to run as expected. </para><para>For example, if Control Tower has an IAM role that allows Config to read Amazon Simple
-        /// Storage Service (Amazon S3) objects, make sure that the same permissions are granted
-        /// within the IAM role you use when setting up Config. Otherwise, it may interfere with
-        /// how Control Tower operates. For more information about IAM roles for Config, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/security-iam.html"><b>Identity and Access Management for Config</b></a> in the <i>Config Developer Guide</i>.
-        /// </para></note>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role assumed by Config and used by the specified
+        /// configuration recorder.</para><note><para><b>The server will reject a request without a defined <c>roleARN</c> for the configuration
+        /// recorder</b></para><para>While the API model does not require this field, the server will reject a request
+        /// without a defined <c>roleARN</c> for the configuration recorder.</para><para><b>Policies and compliance results</b></para><para><a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html">IAM
+        /// policies</a> and <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies.html">other
+        /// policies managed in Organizations</a> can impact whether Config has permissions to
+        /// record configuration changes for your resources. Additionally, rules directly evaluate
+        /// the configuration of a resource and rules don't take into account these policies when
+        /// running evaluations. Make sure that the policies in effect align with how you intend
+        /// to use Config.</para><para><b>Keep Minimum Permisions When Reusing an IAM role</b></para><para>If you use an Amazon Web Services service that uses Config, such as Security Hub or
+        /// Control Tower, and an IAM role has already been created, make sure that the IAM role
+        /// that you use when setting up Config keeps the same minimum permissions as the pre-existing
+        /// IAM role. You must do this to ensure that the other Amazon Web Services service continues
+        /// to run as expected. </para><para>For example, if Control Tower has an IAM role that allows Config to read S3 objects,
+        /// make sure that the same permissions are granted to the IAM role you use when setting
+        /// up Config. Otherwise, it may interfere with how Control Tower operates.</para><para><b>The service-linked IAM role for Config must be used for service-linked configuration
+        /// recorders</b></para><para>For service-linked configuration recorders, you must use the service-linked IAM role
+        /// for Config: <a href="https://docs.aws.amazon.com/config/latest/developerguide/using-service-linked-roles.html">AWSServiceRoleForConfig</a>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ConfigurationRecorder_RoleARN { get; set; }
+        #endregion
+        
+        #region Parameter ConfigurationRecorder_ServicePrincipal
+        /// <summary>
+        /// <para>
+        /// <para>For service-linked configuration recorders, specifies the linked Amazon Web Services
+        /// service for the configuration recorder.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ConfigurationRecorder_ServicePrincipal { get; set; }
+        #endregion
+        
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>The tags for the customer managed configuration recorder. Each tag consists of a key
+        /// and an optional value, both of which you define.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.ConfigService.Model.Tag[] Tag { get; set; }
         #endregion
         
         #region Parameter RecordingStrategy_UseOnly
@@ -227,7 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// where you set up the configuration recorder if that is a Region where Config was available
         /// before February 2022. You cannot be record the global IAM resouce types in Regions
         /// supported by Config after February 2022. This list where you cannot record the global
-        /// IAM resource types includes the following Regions:</para><ul><li><para>Asia Pacific (Hyderabad)</para></li><li><para>Asia Pacific (Melbourne)</para></li><li><para>Europe (Spain)</para></li><li><para>Europe (Zurich)</para></li><li><para>Israel (Tel Aviv)</para></li><li><para>Middle East (UAE)</para></li></ul></note>
+        /// IAM resource types includes the following Regions:</para><ul><li><para>Asia Pacific (Hyderabad)</para></li><li><para>Asia Pacific (Melbourne)</para></li><li><para>Canada West (Calgary)</para></li><li><para>Europe (Spain)</para></li><li><para>Europe (Zurich)</para></li><li><para>Israel (Tel Aviv)</para></li><li><para>Middle East (UAE)</para></li></ul></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -246,16 +347,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigurationRecorderName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigurationRecorderName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigurationRecorderName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -266,9 +357,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigurationRecorderName), MyInvocation.BoundParameters);
@@ -282,21 +377,12 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutConfigurationRecorderResponse, WriteCFGConfigurationRecorderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigurationRecorderName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ConfigurationRecorder_Arn = this.ConfigurationRecorder_Arn;
             context.ConfigurationRecorderName = this.ConfigurationRecorderName;
             context.RecordingGroup_AllSupported = this.RecordingGroup_AllSupported;
             if (this.ExclusionByResourceTypes_ResourceType != null)
@@ -314,7 +400,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             {
                 context.RecordingMode_RecordingModeOverride = new List<Amazon.ConfigService.Model.RecordingModeOverride>(this.RecordingMode_RecordingModeOverride);
             }
+            context.ConfigurationRecorder_RecordingScope = this.ConfigurationRecorder_RecordingScope;
             context.ConfigurationRecorder_RoleARN = this.ConfigurationRecorder_RoleARN;
+            context.ConfigurationRecorder_ServicePrincipal = this.ConfigurationRecorder_ServicePrincipal;
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.ConfigService.Model.Tag>(this.Tag);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -335,6 +427,16 @@ namespace Amazon.PowerShell.Cmdlets.CFG
              // populate ConfigurationRecorder
             var requestConfigurationRecorderIsNull = true;
             request.ConfigurationRecorder = new Amazon.ConfigService.Model.ConfigurationRecorder();
+            System.String requestConfigurationRecorder_configurationRecorder_Arn = null;
+            if (cmdletContext.ConfigurationRecorder_Arn != null)
+            {
+                requestConfigurationRecorder_configurationRecorder_Arn = cmdletContext.ConfigurationRecorder_Arn;
+            }
+            if (requestConfigurationRecorder_configurationRecorder_Arn != null)
+            {
+                request.ConfigurationRecorder.Arn = requestConfigurationRecorder_configurationRecorder_Arn;
+                requestConfigurationRecorderIsNull = false;
+            }
             System.String requestConfigurationRecorder_configurationRecorderName = null;
             if (cmdletContext.ConfigurationRecorderName != null)
             {
@@ -345,6 +447,16 @@ namespace Amazon.PowerShell.Cmdlets.CFG
                 request.ConfigurationRecorder.Name = requestConfigurationRecorder_configurationRecorderName;
                 requestConfigurationRecorderIsNull = false;
             }
+            Amazon.ConfigService.RecordingScope requestConfigurationRecorder_configurationRecorder_RecordingScope = null;
+            if (cmdletContext.ConfigurationRecorder_RecordingScope != null)
+            {
+                requestConfigurationRecorder_configurationRecorder_RecordingScope = cmdletContext.ConfigurationRecorder_RecordingScope;
+            }
+            if (requestConfigurationRecorder_configurationRecorder_RecordingScope != null)
+            {
+                request.ConfigurationRecorder.RecordingScope = requestConfigurationRecorder_configurationRecorder_RecordingScope;
+                requestConfigurationRecorderIsNull = false;
+            }
             System.String requestConfigurationRecorder_configurationRecorder_RoleARN = null;
             if (cmdletContext.ConfigurationRecorder_RoleARN != null)
             {
@@ -353,6 +465,16 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             if (requestConfigurationRecorder_configurationRecorder_RoleARN != null)
             {
                 request.ConfigurationRecorder.RoleARN = requestConfigurationRecorder_configurationRecorder_RoleARN;
+                requestConfigurationRecorderIsNull = false;
+            }
+            System.String requestConfigurationRecorder_configurationRecorder_ServicePrincipal = null;
+            if (cmdletContext.ConfigurationRecorder_ServicePrincipal != null)
+            {
+                requestConfigurationRecorder_configurationRecorder_ServicePrincipal = cmdletContext.ConfigurationRecorder_ServicePrincipal;
+            }
+            if (requestConfigurationRecorder_configurationRecorder_ServicePrincipal != null)
+            {
+                request.ConfigurationRecorder.ServicePrincipal = requestConfigurationRecorder_configurationRecorder_ServicePrincipal;
                 requestConfigurationRecorderIsNull = false;
             }
             Amazon.ConfigService.Model.RecordingMode requestConfigurationRecorder_configurationRecorder_RecordingMode = null;
@@ -490,6 +612,10 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             {
                 request.ConfigurationRecorder = null;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
             CmdletOutput output;
             
@@ -528,13 +654,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutConfigurationRecorder");
             try
             {
-                #if DESKTOP
-                return client.PutConfigurationRecorder(request);
-                #elif CORECLR
-                return client.PutConfigurationRecorderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutConfigurationRecorderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -551,6 +671,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String ConfigurationRecorder_Arn { get; set; }
             public System.String ConfigurationRecorderName { get; set; }
             public System.Boolean? RecordingGroup_AllSupported { get; set; }
             public List<System.String> ExclusionByResourceTypes_ResourceType { get; set; }
@@ -559,7 +680,10 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             public List<System.String> RecordingGroup_ResourceType { get; set; }
             public Amazon.ConfigService.RecordingFrequency RecordingMode_RecordingFrequency { get; set; }
             public List<Amazon.ConfigService.Model.RecordingModeOverride> RecordingMode_RecordingModeOverride { get; set; }
+            public Amazon.ConfigService.RecordingScope ConfigurationRecorder_RecordingScope { get; set; }
             public System.String ConfigurationRecorder_RoleARN { get; set; }
+            public System.String ConfigurationRecorder_ServicePrincipal { get; set; }
+            public List<Amazon.ConfigService.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.ConfigService.Model.PutConfigurationRecorderResponse, WriteCFGConfigurationRecorderCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

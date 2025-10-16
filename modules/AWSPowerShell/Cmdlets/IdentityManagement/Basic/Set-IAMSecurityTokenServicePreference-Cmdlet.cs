@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -50,7 +52,8 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// and deactivating STS in an Amazon Web Services Region</a> in the <i>IAM User Guide</i>.
     /// </para><para>
     /// To view the current session token version, see the <c>GlobalEndpointTokenVersion</c>
-    /// entry in the response of the <a>GetAccountSummary</a> operation.
+    /// entry in the response of the <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetAccountSummary.html">GetAccountSummary</a>
+    /// operation.
     /// </para>
     /// </summary>
     [Cmdlet("Set", "IAMSecurityTokenServicePreference", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -58,12 +61,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management SetSecurityTokenServicePreferences API operation.", Operation = new[] {"SetSecurityTokenServicePreferences"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.SetSecurityTokenServicePreferencesResponse))]
     [AWSCmdletOutput("None or Amazon.IdentityManagement.Model.SetSecurityTokenServicePreferencesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IdentityManagement.Model.SetSecurityTokenServicePreferencesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IdentityManagement.Model.SetSecurityTokenServicePreferencesResponse) be returned by specifying '-Select *'."
     )]
     public partial class SetIAMSecurityTokenServicePreferenceCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GlobalEndpointTokenVersion
         /// <summary>
@@ -97,16 +101,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GlobalEndpointTokenVersion parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GlobalEndpointTokenVersion' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GlobalEndpointTokenVersion' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -117,9 +111,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GlobalEndpointTokenVersion), MyInvocation.BoundParameters);
@@ -133,21 +131,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.SetSecurityTokenServicePreferencesResponse, SetIAMSecurityTokenServicePreferenceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GlobalEndpointTokenVersion;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.GlobalEndpointTokenVersion = this.GlobalEndpointTokenVersion;
             #if MODULAR
             if (this.GlobalEndpointTokenVersion == null && ParameterWasBound(nameof(this.GlobalEndpointTokenVersion)))
@@ -213,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "SetSecurityTokenServicePreferences");
             try
             {
-                #if DESKTOP
-                return client.SetSecurityTokenServicePreferences(request);
-                #elif CORECLR
-                return client.SetSecurityTokenServicePreferencesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetSecurityTokenServicePreferencesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

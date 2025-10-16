@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES2
 {
     /// <summary>
@@ -35,17 +37,38 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     [AWSCmdlet("Calls the Amazon Simple Email Service V2 (SES V2) SendBulkEmail API operation.", Operation = new[] {"SendBulkEmail"}, SelectReturnType = typeof(Amazon.SimpleEmailV2.Model.SendBulkEmailResponse))]
     [AWSCmdletOutput("Amazon.SimpleEmailV2.Model.BulkEmailEntryResult or Amazon.SimpleEmailV2.Model.SendBulkEmailResponse",
         "This cmdlet returns a collection of Amazon.SimpleEmailV2.Model.BulkEmailEntryResult objects.",
-        "The service call response (type Amazon.SimpleEmailV2.Model.SendBulkEmailResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleEmailV2.Model.SendBulkEmailResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SendSES2BulkEmailCmdlet : AmazonSimpleEmailServiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Template_Attachment
+        /// <summary>
+        /// <para>
+        /// <para> The List of attachments to include in your email. All recipients will receive the
+        /// same attachments.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DefaultContent_Template_Attachments")]
+        public Amazon.SimpleEmailV2.Model.Attachment[] Template_Attachment { get; set; }
+        #endregion
         
         #region Parameter BulkEmailEntry
         /// <summary>
         /// <para>
-        /// <para>The list of bulk email entry objects.</para>
+        /// <para>The list of bulk email entry objects.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -75,12 +98,26 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         /// <para>
         /// <para>A list of tags, in the form of name/value pairs, to apply to an email that you send
         /// using the <c>SendEmail</c> operation. Tags correspond to characteristics of the email
-        /// that you define, so that you can publish email sending events.</para>
+        /// that you define, so that you can publish email sending events.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DefaultEmailTags")]
         public Amazon.SimpleEmailV2.Model.MessageTag[] DefaultEmailTag { get; set; }
+        #endregion
+        
+        #region Parameter EndpointId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the multi-region endpoint (global-endpoint).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String EndpointId { get; set; }
         #endregion
         
         #region Parameter FeedbackForwardingEmailAddress
@@ -136,16 +173,57 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public System.String FromEmailAddressIdentityArn { get; set; }
         #endregion
         
+        #region Parameter Template_Header
+        /// <summary>
+        /// <para>
+        /// <para>The list of message headers that will be added to the email message.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DefaultContent_Template_Headers")]
+        public Amazon.SimpleEmailV2.Model.MessageHeader[] Template_Header { get; set; }
+        #endregion
+        
+        #region Parameter TemplateContent_Html
+        /// <summary>
+        /// <para>
+        /// <para>The HTML body of the email.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DefaultContent_Template_TemplateContent_Html")]
+        public System.String TemplateContent_Html { get; set; }
+        #endregion
+        
         #region Parameter ReplyToAddress
         /// <summary>
         /// <para>
         /// <para>The "Reply-to" email addresses for the message. When the recipient replies to the
-        /// message, each Reply-to address receives the reply.</para>
+        /// message, each Reply-to address receives the reply.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ReplyToAddresses")]
         public System.String[] ReplyToAddress { get; set; }
+        #endregion
+        
+        #region Parameter TemplateContent_Subject
+        /// <summary>
+        /// <para>
+        /// <para>The subject line of the email.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DefaultContent_Template_TemplateContent_Subject")]
+        public System.String TemplateContent_Subject { get; set; }
         #endregion
         
         #region Parameter Template_TemplateArn
@@ -176,12 +254,35 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         /// <summary>
         /// <para>
         /// <para>The name of the template. You will refer to this name when you send email using the
-        /// <c>SendTemplatedEmail</c> or <c>SendBulkTemplatedEmail</c> operations. </para>
+        /// <c>SendEmail</c> or <c>SendBulkEmail</c> operations. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DefaultContent_Template_TemplateName")]
         public System.String Template_TemplateName { get; set; }
+        #endregion
+        
+        #region Parameter TenantName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the tenant through which this bulk email will be sent.</para><note><para> The email sending operation will only succeed if all referenced resources (identities,
+        /// configuration sets, and templates) are associated with this tenant. </para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TenantName { get; set; }
+        #endregion
+        
+        #region Parameter TemplateContent_Text
+        /// <summary>
+        /// <para>
+        /// <para>The email body that will be visible to recipients whose email clients do not display
+        /// HTML.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DefaultContent_Template_TemplateContent_Text")]
+        public System.String TemplateContent_Text { get; set; }
         #endregion
         
         #region Parameter Select
@@ -205,9 +306,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -237,13 +342,25 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             }
             #endif
             context.ConfigurationSetName = this.ConfigurationSetName;
+            if (this.Template_Attachment != null)
+            {
+                context.Template_Attachment = new List<Amazon.SimpleEmailV2.Model.Attachment>(this.Template_Attachment);
+            }
+            if (this.Template_Header != null)
+            {
+                context.Template_Header = new List<Amazon.SimpleEmailV2.Model.MessageHeader>(this.Template_Header);
+            }
             context.Template_TemplateArn = this.Template_TemplateArn;
+            context.TemplateContent_Html = this.TemplateContent_Html;
+            context.TemplateContent_Subject = this.TemplateContent_Subject;
+            context.TemplateContent_Text = this.TemplateContent_Text;
             context.Template_TemplateData = this.Template_TemplateData;
             context.Template_TemplateName = this.Template_TemplateName;
             if (this.DefaultEmailTag != null)
             {
                 context.DefaultEmailTag = new List<Amazon.SimpleEmailV2.Model.MessageTag>(this.DefaultEmailTag);
             }
+            context.EndpointId = this.EndpointId;
             context.FeedbackForwardingEmailAddress = this.FeedbackForwardingEmailAddress;
             context.FeedbackForwardingEmailAddressIdentityArn = this.FeedbackForwardingEmailAddressIdentityArn;
             context.FromEmailAddress = this.FromEmailAddress;
@@ -252,6 +369,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             {
                 context.ReplyToAddress = new List<System.String>(this.ReplyToAddress);
             }
+            context.TenantName = this.TenantName;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -285,6 +403,26 @@ namespace Amazon.PowerShell.Cmdlets.SES2
              // populate Template
             var requestDefaultContent_defaultContent_TemplateIsNull = true;
             requestDefaultContent_defaultContent_Template = new Amazon.SimpleEmailV2.Model.Template();
+            List<Amazon.SimpleEmailV2.Model.Attachment> requestDefaultContent_defaultContent_Template_template_Attachment = null;
+            if (cmdletContext.Template_Attachment != null)
+            {
+                requestDefaultContent_defaultContent_Template_template_Attachment = cmdletContext.Template_Attachment;
+            }
+            if (requestDefaultContent_defaultContent_Template_template_Attachment != null)
+            {
+                requestDefaultContent_defaultContent_Template.Attachments = requestDefaultContent_defaultContent_Template_template_Attachment;
+                requestDefaultContent_defaultContent_TemplateIsNull = false;
+            }
+            List<Amazon.SimpleEmailV2.Model.MessageHeader> requestDefaultContent_defaultContent_Template_template_Header = null;
+            if (cmdletContext.Template_Header != null)
+            {
+                requestDefaultContent_defaultContent_Template_template_Header = cmdletContext.Template_Header;
+            }
+            if (requestDefaultContent_defaultContent_Template_template_Header != null)
+            {
+                requestDefaultContent_defaultContent_Template.Headers = requestDefaultContent_defaultContent_Template_template_Header;
+                requestDefaultContent_defaultContent_TemplateIsNull = false;
+            }
             System.String requestDefaultContent_defaultContent_Template_template_TemplateArn = null;
             if (cmdletContext.Template_TemplateArn != null)
             {
@@ -315,6 +453,51 @@ namespace Amazon.PowerShell.Cmdlets.SES2
                 requestDefaultContent_defaultContent_Template.TemplateName = requestDefaultContent_defaultContent_Template_template_TemplateName;
                 requestDefaultContent_defaultContent_TemplateIsNull = false;
             }
+            Amazon.SimpleEmailV2.Model.EmailTemplateContent requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent = null;
+            
+             // populate TemplateContent
+            var requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContentIsNull = true;
+            requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent = new Amazon.SimpleEmailV2.Model.EmailTemplateContent();
+            System.String requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Html = null;
+            if (cmdletContext.TemplateContent_Html != null)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Html = cmdletContext.TemplateContent_Html;
+            }
+            if (requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Html != null)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent.Html = requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Html;
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContentIsNull = false;
+            }
+            System.String requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Subject = null;
+            if (cmdletContext.TemplateContent_Subject != null)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Subject = cmdletContext.TemplateContent_Subject;
+            }
+            if (requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Subject != null)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent.Subject = requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Subject;
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContentIsNull = false;
+            }
+            System.String requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Text = null;
+            if (cmdletContext.TemplateContent_Text != null)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Text = cmdletContext.TemplateContent_Text;
+            }
+            if (requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Text != null)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent.Text = requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent_templateContent_Text;
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContentIsNull = false;
+            }
+             // determine if requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent should be set to null
+            if (requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContentIsNull)
+            {
+                requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent = null;
+            }
+            if (requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent != null)
+            {
+                requestDefaultContent_defaultContent_Template.TemplateContent = requestDefaultContent_defaultContent_Template_defaultContent_Template_TemplateContent;
+                requestDefaultContent_defaultContent_TemplateIsNull = false;
+            }
              // determine if requestDefaultContent_defaultContent_Template should be set to null
             if (requestDefaultContent_defaultContent_TemplateIsNull)
             {
@@ -333,6 +516,10 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             if (cmdletContext.DefaultEmailTag != null)
             {
                 request.DefaultEmailTags = cmdletContext.DefaultEmailTag;
+            }
+            if (cmdletContext.EndpointId != null)
+            {
+                request.EndpointId = cmdletContext.EndpointId;
             }
             if (cmdletContext.FeedbackForwardingEmailAddress != null)
             {
@@ -353,6 +540,10 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             if (cmdletContext.ReplyToAddress != null)
             {
                 request.ReplyToAddresses = cmdletContext.ReplyToAddress;
+            }
+            if (cmdletContext.TenantName != null)
+            {
+                request.TenantName = cmdletContext.TenantName;
             }
             
             CmdletOutput output;
@@ -392,13 +583,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service V2 (SES V2)", "SendBulkEmail");
             try
             {
-                #if DESKTOP
-                return client.SendBulkEmail(request);
-                #elif CORECLR
-                return client.SendBulkEmailAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendBulkEmailAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -417,15 +602,22 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         {
             public List<Amazon.SimpleEmailV2.Model.BulkEmailEntry> BulkEmailEntry { get; set; }
             public System.String ConfigurationSetName { get; set; }
+            public List<Amazon.SimpleEmailV2.Model.Attachment> Template_Attachment { get; set; }
+            public List<Amazon.SimpleEmailV2.Model.MessageHeader> Template_Header { get; set; }
             public System.String Template_TemplateArn { get; set; }
+            public System.String TemplateContent_Html { get; set; }
+            public System.String TemplateContent_Subject { get; set; }
+            public System.String TemplateContent_Text { get; set; }
             public System.String Template_TemplateData { get; set; }
             public System.String Template_TemplateName { get; set; }
             public List<Amazon.SimpleEmailV2.Model.MessageTag> DefaultEmailTag { get; set; }
+            public System.String EndpointId { get; set; }
             public System.String FeedbackForwardingEmailAddress { get; set; }
             public System.String FeedbackForwardingEmailAddressIdentityArn { get; set; }
             public System.String FromEmailAddress { get; set; }
             public System.String FromEmailAddressIdentityArn { get; set; }
             public List<System.String> ReplyToAddress { get; set; }
+            public System.String TenantName { get; set; }
             public System.Func<Amazon.SimpleEmailV2.Model.SendBulkEmailResponse, SendSES2BulkEmailCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.BulkEmailEntryResults;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Detective;
 using Amazon.Detective.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTCT
 {
     /// <summary>
-    /// List all Investigations.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Detective investigations lets you investigate IAM users and IAM roles using indicators
+    /// of compromise. An indicator of compromise (IOC) is an artifact observed in or on a
+    /// network, system, or environment that can (with a high level of confidence) identify
+    /// malicious activity or a security incident. <c>ListInvestigations</c> lists all active
+    /// Detective investigations.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "DTCTInvestigationList")]
     [OutputType("Amazon.Detective.Model.InvestigationDetail")]
     [AWSCmdlet("Calls the Amazon Detective ListInvestigations API operation.", Operation = new[] {"ListInvestigations"}, SelectReturnType = typeof(Amazon.Detective.Model.ListInvestigationsResponse))]
     [AWSCmdletOutput("Amazon.Detective.Model.InvestigationDetail or Amazon.Detective.Model.ListInvestigationsResponse",
         "This cmdlet returns a collection of Amazon.Detective.Model.InvestigationDetail objects.",
-        "The service call response (type Amazon.Detective.Model.ListInvestigationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Detective.Model.ListInvestigationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDTCTInvestigationListCmdlet : AmazonDetectiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CreatedTime_EndInclusive
         /// <summary>
         /// <para>
-        /// <para>A timestamp representing the end date of the time period until when data is filtered
-        /// , including the end date.</para>
+        /// <para>A timestamp representing the end date of the time period until when data is filtered,
+        /// including the end date.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +75,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         #region Parameter GraphArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the behavior graph.</para>
+        /// <para>The Amazon Resource Name (ARN) of the behavior graph.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -152,7 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>List the maximum number of investigations in a page.</para>
+        /// <para>Lists the maximum number of investigations in a page.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,14 +170,14 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// <para>List if there are more results available. The value of nextToken is a unique pagination
+        /// <para>Lists if there are more results available. The value of nextToken is a unique pagination
         /// token for each page. Repeat the call using the returned token to retrieve the next
         /// page. Keep all other arguments unchanged.</para><para>Each pagination token expires after 24 hours. Using an expired pagination token will
         /// return a Validation Exception error.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -188,16 +195,6 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public string Select { get; set; } = "InvestigationDetails";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GraphArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GraphArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GraphArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -208,9 +205,13 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -218,21 +219,11 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Detective.Model.ListInvestigationsResponse, GetDTCTInvestigationListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GraphArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CreatedTime_EndInclusive = this.CreatedTime_EndInclusive;
             context.CreatedTime_StartInclusive = this.CreatedTime_StartInclusive;
             context.EntityArn_Value = this.EntityArn_Value;
@@ -263,9 +254,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Detective.Model.ListInvestigationsRequest();
@@ -513,13 +502,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Detective", "ListInvestigations");
             try
             {
-                #if DESKTOP
-                return client.ListInvestigations(request);
-                #elif CORECLR
-                return client.ListInvestigationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListInvestigationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

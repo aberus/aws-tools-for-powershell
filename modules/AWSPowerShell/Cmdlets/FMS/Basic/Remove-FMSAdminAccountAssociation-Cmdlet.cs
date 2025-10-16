@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FMS;
 using Amazon.FMS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FMS
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.FMS
     [AWSCmdlet("Calls the Firewall Management Service DisassociateAdminAccount API operation.", Operation = new[] {"DisassociateAdminAccount"}, SelectReturnType = typeof(Amazon.FMS.Model.DisassociateAdminAccountResponse))]
     [AWSCmdletOutput("None or Amazon.FMS.Model.DisassociateAdminAccountResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.FMS.Model.DisassociateAdminAccountResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.FMS.Model.DisassociateAdminAccountResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveFMSAdminAccountAssociationCmdlet : AmazonFMSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -73,9 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -148,13 +155,7 @@ namespace Amazon.PowerShell.Cmdlets.FMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Firewall Management Service", "DisassociateAdminAccount");
             try
             {
-                #if DESKTOP
-                return client.DisassociateAdminAccount(request);
-                #elif CORECLR
-                return client.DisassociateAdminAccountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisassociateAdminAccountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

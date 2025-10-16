@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -36,18 +38,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [AWSCmdlet("Calls the EC2 Image Builder CreateContainerRecipe API operation.", Operation = new[] {"CreateContainerRecipe"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.CreateContainerRecipeResponse))]
     [AWSCmdletOutput("System.String or Amazon.Imagebuilder.Model.CreateContainerRecipeResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Imagebuilder.Model.CreateContainerRecipeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Imagebuilder.Model.CreateContainerRecipeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2IBContainerRecipeCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InstanceConfiguration_BlockDeviceMapping
         /// <summary>
         /// <para>
         /// <para>Defines the block devices to attach for building an instance from this Image Builder
-        /// AMI.</para>
+        /// AMI.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -60,7 +67,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// <para>
         /// <para>Components for build and test that are included in the container recipe. Recipes require
         /// a minimum of one build component, and can have a maximum of 20 build and test components
-        /// in any combination.</para>
+        /// in any combination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -125,8 +136,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter InstanceConfiguration_Image
         /// <summary>
         /// <para>
-        /// <para>The AMI ID to use as the base image for a container build and test instance. If not
-        /// specified, Image Builder will use the appropriate ECS-optimized AMI as a base image.</para>
+        /// <para>The base image for a container build and test instance. This can contain an AMI ID
+        /// or it can specify an Amazon Web Services Systems Manager (SSM) Parameter Store Parameter,
+        /// prefixed by <c>ssm:</c>, followed by the parameter name or ARN.</para><para>If not specified, Image Builder uses the appropriate ECS-optimized AMI as a base image.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -146,7 +158,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>Identifies which KMS key is used to encrypt the container image.</para>
+        /// <para>The Amazon Resource Name (ARN) that uniquely identifies which KMS key is used to encrypt
+        /// the Dockerfile template. This can be either the Key ARN or the Alias ARN. For more
+        /// information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#key-id-key-ARN">Key
+        /// identifiers (KeyId)</a> in the <i>Key Management Service Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,7 +217,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// <summary>
         /// <para>
         /// <para>The name of the container repository where the output container image is stored. This
-        /// name is prefixed by the repository location.</para>
+        /// name is prefixed by the repository location. For example, <c>&lt;repository location
+        /// url&gt;/repository_name</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -259,7 +275,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags that are attached to the container recipe.</para>
+        /// <para>Tags that are attached to the container recipe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -310,9 +330,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -572,13 +596,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "CreateContainerRecipe");
             try
             {
-                #if DESKTOP
-                return client.CreateContainerRecipe(request);
-                #elif CORECLR
-                return client.CreateContainerRecipeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateContainerRecipeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

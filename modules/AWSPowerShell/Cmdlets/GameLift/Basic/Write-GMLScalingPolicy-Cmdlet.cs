@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
     /// Creates or updates a scaling policy for a fleet. Scaling policies are used to automatically
     /// scale a fleet's hosting capacity to meet player demand. An active scaling policy instructs
-    /// Amazon GameLift to track a fleet metric and automatically change the fleet's capacity
-    /// when a certain threshold is reached. There are two types of scaling policies: target-based
-    /// and rule-based. Use a target-based policy to quickly and efficiently manage fleet
-    /// scaling; this option is the most commonly used. Use rule-based policies when you need
-    /// to exert fine-grained control over auto-scaling. 
+    /// Amazon GameLift Servers to track a fleet metric and automatically change the fleet's
+    /// capacity when a certain threshold is reached. There are two types of scaling policies:
+    /// target-based and rule-based. Use a target-based policy to quickly and efficiently
+    /// manage fleet scaling; this option is the most commonly used. Use rule-based policies
+    /// when you need to exert fine-grained control over auto-scaling. 
     /// 
     ///  
     /// <para>
@@ -50,14 +52,14 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// tells us how much of a fleet's hosting capacity is ready to host game sessions but
     /// is not currently in use. This is the fleet's buffer; it measures the additional player
     /// demand that the fleet could handle at current capacity. With a target-based policy,
-    /// you set your ideal buffer size and leave it to Amazon GameLift to take whatever action
-    /// is needed to maintain that target. 
+    /// you set your ideal buffer size and leave it to Amazon GameLift Servers to take whatever
+    /// action is needed to maintain that target. 
     /// </para><para>
     /// For example, you might choose to maintain a 10% buffer for a fleet that has the capacity
-    /// to host 100 simultaneous game sessions. This policy tells Amazon GameLift to take
-    /// action whenever the fleet's available capacity falls below or rises above 10 game
-    /// sessions. Amazon GameLift will start new instances or stop unused instances in order
-    /// to return to the 10% buffer. 
+    /// to host 100 simultaneous game sessions. This policy tells Amazon GameLift Servers
+    /// to take action whenever the fleet's available capacity falls below or rises above
+    /// 10 game sessions. Amazon GameLift Servers will start new instances or stop unused
+    /// instances in order to return to the 10% buffer. 
     /// </para><para>
     /// To create or update a target-based policy, specify a fleet ID and name, and set the
     /// policy type to "TargetBased". Specify the metric to track (PercentAvailableGameSessions)
@@ -99,12 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service PutScalingPolicy API operation.", Operation = new[] {"PutScalingPolicy"}, SelectReturnType = typeof(Amazon.GameLift.Model.PutScalingPolicyResponse))]
     [AWSCmdletOutput("System.String or Amazon.GameLift.Model.PutScalingPolicyResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GameLift.Model.PutScalingPolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.PutScalingPolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteGMLScalingPolicyCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComparisonOperator
         /// <summary>
@@ -151,9 +154,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter MetricName
         /// <summary>
         /// <para>
-        /// <para>Name of the Amazon GameLift-defined metric that is used to trigger a scaling adjustment.
-        /// For detailed descriptions of fleet metrics, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/monitoring-cloudwatch.html">Monitor
-        /// Amazon GameLift with Amazon CloudWatch</a>. </para><ul><li><para><b>ActivatingGameSessions</b> -- Game sessions in the process of being created.</para></li><li><para><b>ActiveGameSessions</b> -- Game sessions that are currently running.</para></li><li><para><b>ActiveInstances</b> -- Fleet instances that are currently running at least one
+        /// <para>Name of the Amazon GameLift Servers-defined metric that is used to trigger a scaling
+        /// adjustment. For detailed descriptions of fleet metrics, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/monitoring-cloudwatch.html">Monitor
+        /// Amazon GameLift Servers with Amazon CloudWatch</a>. </para><ul><li><para><b>ActivatingGameSessions</b> -- Game sessions in the process of being created.</para></li><li><para><b>ActiveGameSessions</b> -- Game sessions that are currently running.</para></li><li><para><b>ActiveInstances</b> -- Fleet instances that are currently running at least one
         /// game session.</para></li><li><para><b>AvailableGameSessions</b> -- Additional game sessions that fleet could host simultaneously,
         /// given current capacity.</para></li><li><para><b>AvailablePlayerSessions</b> -- Empty player slots in currently active game sessions.
         /// This includes game sessions that are not currently accepting players. Reserved player
@@ -269,16 +272,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "Name";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FleetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -289,9 +282,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FleetId), MyInvocation.BoundParameters);
@@ -305,21 +302,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.PutScalingPolicyResponse, WriteGMLScalingPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FleetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ComparisonOperator = this.ComparisonOperator;
             context.EvaluationPeriod = this.EvaluationPeriod;
             context.FleetId = this.FleetId;
@@ -457,13 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "PutScalingPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutScalingPolicy(request);
-                #elif CORECLR
-                return client.PutScalingPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutScalingPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,45 +22,49 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Updates capacity settings for a fleet. For fleets with multiple locations, use this
-    /// operation to manage capacity settings in each location individually. Fleet capacity
-    /// determines the number of game sessions and players that can be hosted based on the
-    /// fleet configuration. Use this operation to set the following fleet capacity properties:
+    /// Updates capacity settings for a managed EC2 fleet or managed container fleet. For
+    /// these fleets, you adjust capacity by changing the number of instances in the fleet.
+    /// Fleet capacity determines the number of game sessions and players that the fleet can
+    /// host based on its configuration. For fleets with multiple locations, use this operation
+    /// to manage capacity settings in each location individually.
     /// 
-    /// 
-    ///  <ul><li><para>
-    /// Minimum/maximum size: Set hard limits on fleet capacity. Amazon GameLift cannot set
-    /// the fleet's capacity to a value outside of this range, whether the capacity is changed
-    /// manually or through automatic scaling. 
-    /// </para></li><li><para>
-    /// Desired capacity: Manually set the number of Amazon EC2 instances to be maintained
-    /// in a fleet location. Before changing a fleet's desired capacity, you may want to call
-    /// <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeEC2InstanceLimits.html">DescribeEC2InstanceLimits</a>
-    /// to get the maximum capacity of the fleet's Amazon EC2 instance type. Alternatively,
-    /// consider using automatic scaling to adjust capacity based on player demand.
-    /// </para></li></ul><para>
-    /// This operation can be used in the following ways: 
+    ///  
+    /// <para>
+    /// Use this operation to set these fleet capacity properties: 
     /// </para><ul><li><para>
+    /// Minimum/maximum size: Set hard limits on the number of Amazon EC2 instances allowed.
+    /// If Amazon GameLift Servers receives a request--either through manual update or automatic
+    /// scaling--it won't change the capacity to a value outside of this range.
+    /// </para></li><li><para>
+    /// Desired capacity: As an alternative to automatic scaling, manually set the number
+    /// of Amazon EC2 instances to be maintained. Before changing a fleet's desired capacity,
+    /// check the maximum capacity of the fleet's Amazon EC2 instance type by calling <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeEC2InstanceLimits.html">DescribeEC2InstanceLimits</a>.
+    /// </para></li></ul><para>
     /// To update capacity for a fleet's home Region, or if the fleet has no remote locations,
     /// omit the <c>Location</c> parameter. The fleet must be in <c>ACTIVE</c> status. 
-    /// </para></li><li><para>
-    /// To update capacity for a fleet's remote location, include the <c>Location</c> parameter
-    /// set to the location to be updated. The location must be in <c>ACTIVE</c> status.
-    /// </para></li></ul><para>
-    /// If successful, capacity settings are updated immediately. In response a change in
-    /// desired capacity, Amazon GameLift initiates steps to start new instances or terminate
-    /// existing instances in the requested fleet location. This continues until the location's
-    /// active instance count matches the new desired instance count. You can track a fleet's
-    /// current capacity by calling <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeFleetCapacity.html">DescribeFleetCapacity</a>
+    /// </para><para>
+    /// To update capacity for a fleet's remote location, set the <c>Location</c> parameter
+    /// to the location to update. The location must be in <c>ACTIVE</c> status.
+    /// </para><para>
+    /// If successful, Amazon GameLift Servers updates the capacity settings and returns the
+    /// identifiers for the updated fleet and/or location. If a requested change to desired
+    /// capacity exceeds the instance type's limit, the <c>LimitExceeded</c> exception occurs.
+    /// 
+    /// </para><para>
+    /// Updates often prompt an immediate change in fleet capacity, such as when current capacity
+    /// is different than the new desired capacity or outside the new limits. In this scenario,
+    /// Amazon GameLift Servers automatically initiates steps to add or remove instances in
+    /// the fleet location. You can track a fleet's current capacity by calling <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeFleetCapacity.html">DescribeFleetCapacity</a>
     /// or <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeFleetLocationCapacity.html">DescribeFleetLocationCapacity</a>.
-    /// If the requested desired instance count is higher than the instance type's limit,
-    /// the <c>LimitExceeded</c> exception occurs.
+    /// 
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-manage-capacity.html">Scaling
     /// fleet capacity</a></para>
     /// </summary>
@@ -69,12 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service UpdateFleetCapacity API operation.", Operation = new[] {"UpdateFleetCapacity"}, SelectReturnType = typeof(Amazon.GameLift.Model.UpdateFleetCapacityResponse))]
     [AWSCmdletOutput("System.String or Amazon.GameLift.Model.UpdateFleetCapacityResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GameLift.Model.UpdateFleetCapacityResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.UpdateFleetCapacityResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateGMLFleetCapacityCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DesiredInstance
         /// <summary>
@@ -152,16 +157,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "FleetId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FleetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -172,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FleetId), MyInvocation.BoundParameters);
@@ -188,21 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.UpdateFleetCapacityResponse, UpdateGMLFleetCapacityCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FleetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DesiredInstance = this.DesiredInstance;
             context.FleetId = this.FleetId;
             #if MODULAR
@@ -288,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "UpdateFleetCapacity");
             try
             {
-                #if DESKTOP
-                return client.UpdateFleetCapacity(request);
-                #elif CORECLR
-                return client.UpdateFleetCapacityAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFleetCapacityAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

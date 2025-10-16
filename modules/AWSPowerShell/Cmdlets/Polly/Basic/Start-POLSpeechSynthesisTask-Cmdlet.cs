@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Polly;
 using Amazon.Polly.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.POL
 {
     /// <summary>
@@ -42,19 +44,20 @@ namespace Amazon.PowerShell.Cmdlets.POL
     [AWSCmdlet("Calls the Amazon Polly StartSpeechSynthesisTask API operation.", Operation = new[] {"StartSpeechSynthesisTask"}, SelectReturnType = typeof(Amazon.Polly.Model.StartSpeechSynthesisTaskResponse))]
     [AWSCmdletOutput("Amazon.Polly.Model.SynthesisTask or Amazon.Polly.Model.StartSpeechSynthesisTaskResponse",
         "This cmdlet returns an Amazon.Polly.Model.SynthesisTask object.",
-        "The service call response (type Amazon.Polly.Model.StartSpeechSynthesisTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Polly.Model.StartSpeechSynthesisTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartPOLSpeechSynthesisTaskCmdlet : AmazonPollyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Engine
         /// <summary>
         /// <para>
-        /// <para>Specifies the engine (<c>standard</c>, <c>neural</c> or <c>long-form</c>) for Amazon
-        /// Polly to use when processing input text for speech synthesis. Using a voice that is
-        /// not supported for the engine selected will result in an error.</para>
+        /// <para>Specifies the engine (<c>standard</c>, <c>neural</c>, <c>long-form</c> or <c>generative</c>)
+        /// for Amazon Polly to use when processing input text for speech synthesis. Using a voice
+        /// that is not supported for the engine selected will result in an error.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,7 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.POL
         /// <para>
         /// <para>List of one or more pronunciation lexicon names you want the service to apply during
         /// synthesis. Lexicons are applied only if the language of the lexicon is the same as
-        /// the language of the voice. </para>
+        /// the language of the voice. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,7 +149,8 @@ namespace Amazon.PowerShell.Cmdlets.POL
         /// <para>
         /// <para>The audio frequency specified in Hz.</para><para>The valid values for mp3 and ogg_vorbis are "8000", "16000", "22050", and "24000".
         /// The default value for standard voices is "22050". The default value for neural voices
-        /// is "24000". The default value for long-form voices is "24000".</para><para>Valid values for pcm are "8000" and "16000" The default value is "16000". </para>
+        /// is "24000". The default value for long-form voices is "24000". The default value for
+        /// generative voices is "24000".</para><para>Valid values for pcm are "8000" and "16000" The default value is "16000". </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.POL
         #region Parameter SpeechMarkType
         /// <summary>
         /// <para>
-        /// <para>The type of speech marks returned for the input text.</para>
+        /// <para>The type of speech marks returned for the input text.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,16 +241,6 @@ namespace Amazon.PowerShell.Cmdlets.POL
         public string Select { get; set; } = "SynthesisTask";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Text parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Text' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Text' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -249,9 +251,13 @@ namespace Amazon.PowerShell.Cmdlets.POL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -265,21 +271,11 @@ namespace Amazon.PowerShell.Cmdlets.POL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Polly.Model.StartSpeechSynthesisTaskResponse, StartPOLSpeechSynthesisTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Text;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Engine = this.Engine;
             context.LanguageCode = this.LanguageCode;
             if (this.LexiconName != null)
@@ -424,13 +420,7 @@ namespace Amazon.PowerShell.Cmdlets.POL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Polly", "StartSpeechSynthesisTask");
             try
             {
-                #if DESKTOP
-                return client.StartSpeechSynthesisTask(request);
-                #elif CORECLR
-                return client.StartSpeechSynthesisTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartSpeechSynthesisTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

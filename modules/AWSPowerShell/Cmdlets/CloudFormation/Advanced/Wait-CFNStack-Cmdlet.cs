@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -36,12 +36,14 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Pauses execution of a script until a stack reaches a specified status or timeout occurs. The DescribeStacks API is used to obtain the status of the stack.", Operation = new[] { "DescribeStacks" })]
     [AWSCmdletOutput("None or Amazon.CloudFormation.Model.Stack",
         "If the stack exists when one of the requested states is reached the cmdlet returns an Amazon.CloudFormation.Model.Stack object, otherwise it returns nothing.",
-        "The service call response (type Amazon.CloudFormation.Model.DescribeStacksResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.DescribeStacksResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WaitCFNStackCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         private const int DefaultTimeoutInSeconds = 120;
         private const int PollSleepInSeconds = 2;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
 
         #region Parameter StackName
         /// <summary>
@@ -87,6 +89,12 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         {
             base.BeginProcessing();
             _startTime = DateTime.UtcNow;
+        }
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
         }
 
         protected override void ProcessRecord()
@@ -219,13 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
 
             try
             {
-#if DESKTOP
-                return client.DescribeStacks(request);
-#elif CORECLR
-                return client.DescribeStacksAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.DescribeStacksAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

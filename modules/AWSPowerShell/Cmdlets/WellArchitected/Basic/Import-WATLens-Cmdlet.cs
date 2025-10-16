@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WellArchitected;
 using Amazon.WellArchitected.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAT
 {
     /// <summary>
@@ -56,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
     [OutputType("Amazon.WellArchitected.Model.ImportLensResponse")]
     [AWSCmdlet("Calls the AWS Well-Architected Tool ImportLens API operation.", Operation = new[] {"ImportLens"}, SelectReturnType = typeof(Amazon.WellArchitected.Model.ImportLensResponse))]
     [AWSCmdletOutput("Amazon.WellArchitected.Model.ImportLensResponse",
-        "This cmdlet returns an Amazon.WellArchitected.Model.ImportLensResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.WellArchitected.Model.ImportLensResponse object containing multiple properties."
     )]
     public partial class ImportWATLensCmdlet : AmazonWellArchitectedClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -103,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags to associate to a lens.</para>
+        /// <para>Tags to associate to a lens.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -240,13 +251,7 @@ namespace Amazon.PowerShell.Cmdlets.WAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Well-Architected Tool", "ImportLens");
             try
             {
-                #if DESKTOP
-                return client.ImportLens(request);
-                #elif CORECLR
-                return client.ImportLensAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportLensAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

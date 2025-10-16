@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
     [AWSCmdlet("Calls the AWS IoT Wireless GetPositionEstimate API operation.", Operation = new[] {"GetPositionEstimate"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.GetPositionEstimateResponse))]
     [AWSCmdletOutput("System.IO.MemoryStream or Amazon.IoTWireless.Model.GetPositionEstimateResponse",
         "This cmdlet returns a System.IO.MemoryStream object.",
-        "The service call response (type Amazon.IoTWireless.Model.GetPositionEstimateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTWireless.Model.GetPositionEstimateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTWPositionEstimateCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Gnss_AssistAltitude
         /// <summary>
@@ -58,7 +61,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         /// <summary>
         /// <para>
         /// <para>Optional assistance position information, specified using latitude and longitude values
-        /// in degrees. The coordinates are inside the WGS84 reference frame.</para>
+        /// in degrees. The coordinates are inside the WGS84 reference frame.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,7 +98,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter CellTowers_Cdma
         /// <summary>
         /// <para>
-        /// <para>CDMA object information.</para>
+        /// <para>CDMA object information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,7 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter CellTowers_Gsm
         /// <summary>
         /// <para>
-        /// <para>GSM object information.</para>
+        /// <para>GSM object information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,7 +136,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter CellTowers_Lte
         /// <summary>
         /// <para>
-        /// <para>LTE object information.</para>
+        /// <para>LTE object information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,7 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter CellTowers_Tdscdma
         /// <summary>
         /// <para>
-        /// <para>TD-SCDMA object information.</para>
+        /// <para>TD-SCDMA object information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,7 +198,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter CellTowers_Wcdma
         /// <summary>
         /// <para>
-        /// <para>WCDMA object information.</para>
+        /// <para>WCDMA object information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,7 +213,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         /// <summary>
         /// <para>
         /// <para>Retrieves an estimated device position by resolving WLAN measurement data. The position
-        /// is resolved using HERE's Wi-Fi based solver.</para>
+        /// is resolved using HERE's Wi-Fi based solver.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,19 +236,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public string Select { get; set; } = "GeoJsonPayload";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Timestamp parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Timestamp' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Timestamp' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -225,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTWireless.Model.GetPositionEstimateResponse, GetIOTWPositionEstimateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Timestamp;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.CellTowers_Cdma != null)
             {
                 context.CellTowers_Cdma = new List<Amazon.IoTWireless.Model.CdmaObj>(this.CellTowers_Cdma);
@@ -484,13 +499,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "GetPositionEstimate");
             try
             {
-                #if DESKTOP
-                return client.GetPositionEstimate(request);
-                #elif CORECLR
-                return client.GetPositionEstimateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPositionEstimateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

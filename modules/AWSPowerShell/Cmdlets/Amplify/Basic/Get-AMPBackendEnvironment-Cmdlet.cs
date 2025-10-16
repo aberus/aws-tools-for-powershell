@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Amplify;
 using Amazon.Amplify.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMP
 {
     /// <summary>
-    /// Returns a backend environment for an Amplify app.
+    /// Returns a backend environment for an Amplify app. 
+    /// 
+    ///  
+    /// <para>
+    /// This API is available only to Amplify Gen 1 applications where the backend is created
+    /// using Amplify Studio or the Amplify command line interface (CLI). This API isn’t available
+    /// to Amplify Gen 2 applications. When you deploy an application with Amplify Gen 2,
+    /// you provision the app's backend infrastructure using Typescript code.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "AMPBackendEnvironment")]
     [OutputType("Amazon.Amplify.Model.BackendEnvironment")]
     [AWSCmdlet("Calls the AWS Amplify GetBackendEnvironment API operation.", Operation = new[] {"GetBackendEnvironment"}, SelectReturnType = typeof(Amazon.Amplify.Model.GetBackendEnvironmentResponse))]
     [AWSCmdletOutput("Amazon.Amplify.Model.BackendEnvironment or Amazon.Amplify.Model.GetBackendEnvironmentResponse",
         "This cmdlet returns an Amazon.Amplify.Model.BackendEnvironment object.",
-        "The service call response (type Amazon.Amplify.Model.GetBackendEnvironmentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Amplify.Model.GetBackendEnvironmentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAMPBackendEnvironmentCmdlet : AmazonAmplifyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppId
         /// <summary>
@@ -87,19 +98,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public string Select { get; set; } = "BackendEnvironment";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EnvironmentName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EnvironmentName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EnvironmentName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,21 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Amplify.Model.GetBackendEnvironmentResponse, GetAMPBackendEnvironmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EnvironmentName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppId = this.AppId;
             #if MODULAR
             if (this.AppId == null && ParameterWasBound(nameof(this.AppId)))
@@ -198,13 +193,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify", "GetBackendEnvironment");
             try
             {
-                #if DESKTOP
-                return client.GetBackendEnvironment(request);
-                #elif CORECLR
-                return client.GetBackendEnvironmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetBackendEnvironmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

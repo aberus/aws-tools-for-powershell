@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,44 +22,51 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
     /// Enables the Availability Zones for the specified public subnets for the specified
     /// Application Load Balancer, Network Load Balancer or Gateway Load Balancer. The specified
     /// subnets replace the previously enabled subnets.
-    /// 
-    ///  
-    /// <para>
-    /// When you specify subnets for a Network Load Balancer, or Gateway Load Balancer you
-    /// must include all subnets that were enabled previously, with their existing configurations,
-    /// plus any additional subnets.
-    /// </para>
     /// </summary>
     [Cmdlet("Set", "ELB2Subnet", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ElasticLoadBalancingV2.Model.AvailabilityZone")]
     [AWSCmdlet("Calls the Elastic Load Balancing V2 SetSubnets API operation.", Operation = new[] {"SetSubnets"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.SetSubnetsResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.AvailabilityZone or Amazon.ElasticLoadBalancingV2.Model.SetSubnetsResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.AvailabilityZone objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.SetSubnetsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.SetSubnetsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetELB2SubnetCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter EnablePrefixForIpv6SourceNat
+        /// <summary>
+        /// <para>
+        /// <para>[Network Load Balancers with UDP listeners] Indicates whether to use an IPv6 prefix
+        /// from each subnet for source NAT. The IP address type must be <c>dualstack</c>. The
+        /// default value is <c>off</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ElasticLoadBalancingV2.EnablePrefixForIpv6SourceNatEnum")]
+        public Amazon.ElasticLoadBalancingV2.EnablePrefixForIpv6SourceNatEnum EnablePrefixForIpv6SourceNat { get; set; }
+        #endregion
         
         #region Parameter IpAddressType
         /// <summary>
         /// <para>
-        /// <para>[Network Load Balancers] The type of IP addresses used by the subnets for your load
-        /// balancer. The possible values are <c>ipv4</c> (for IPv4 addresses) and <c>dualstack</c>
-        /// (for IPv4 and IPv6 addresses). You can’t specify <c>dualstack</c> for a load balancer
-        /// with a UDP or TCP_UDP listener.</para><para>[Gateway Load Balancers] The type of IP addresses used by the subnets for your load
-        /// balancer. The possible values are <c>ipv4</c> (for IPv4 addresses) and <c>dualstack</c>
-        /// (for IPv4 and IPv6 addresses).</para>
+        /// <para>The IP address type.</para><para>[Application Load Balancers] The possible values are <c>ipv4</c> (IPv4 addresses),
+        /// <c>dualstack</c> (IPv4 and IPv6 addresses), and <c>dualstack-without-public-ipv4</c>
+        /// (public IPv6 addresses and private IPv4 and IPv6 addresses).</para><para>[Network Load Balancers and Gateway Load Balancers] The possible values are <c>ipv4</c>
+        /// (IPv4 addresses) and <c>dualstack</c> (IPv4 and IPv6 addresses).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -89,12 +96,16 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// <para>
         /// <para>The IDs of the public subnets. You can specify only one subnet per Availability Zone.
         /// You must specify either subnets or subnet mappings.</para><para>[Application Load Balancers] You must specify subnets from at least two Availability
-        /// Zones. You cannot specify Elastic IP addresses for your subnets.</para><para>[Application Load Balancers on Outposts] You must specify one Outpost subnet.</para><para>[Application Load Balancers on Local Zones] You can specify subnets from one or more
+        /// Zones. You can't specify Elastic IP addresses for your subnets.</para><para>[Application Load Balancers on Outposts] You must specify one Outpost subnet.</para><para>[Application Load Balancers on Local Zones] You can specify subnets from one or more
         /// Local Zones.</para><para>[Network Load Balancers] You can specify subnets from one or more Availability Zones.
         /// You can specify one Elastic IP address per subnet if you need static IP addresses
         /// for your internet-facing load balancer. For internal load balancers, you can specify
         /// one private IP address per subnet from the IPv4 range of the subnet. For internet-facing
-        /// load balancer, you can specify one IPv6 address per subnet.</para><para>[Gateway Load Balancers] You can specify subnets from one or more Availability Zones.</para>
+        /// load balancer, you can specify one IPv6 address per subnet.</para><para>[Gateway Load Balancers] You can specify subnets from one or more Availability Zones.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,7 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// <para>The IDs of the public subnets. You can specify only one subnet per Availability Zone.
         /// You must specify either subnets or subnet mappings.</para><para>[Application Load Balancers] You must specify subnets from at least two Availability
         /// Zones.</para><para>[Application Load Balancers on Outposts] You must specify one Outpost subnet.</para><para>[Application Load Balancers on Local Zones] You can specify subnets from one or more
-        /// Local Zones.</para><para>[Network Load Balancers] You can specify subnets from one or more Availability Zones.</para><para>[Gateway Load Balancers] You can specify subnets from one or more Availability Zones.</para>
+        /// Local Zones.</para><para>[Network Load Balancers] You can specify subnets from one or more Availability Zones.</para><para>[Gateway Load Balancers] You can specify subnets from one or more Availability Zones.
+        /// You must include all subnets that were enabled previously, with their existing configurations,
+        /// plus any additional subnets.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public string Select { get; set; } = "AvailabilityZones";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LoadBalancerArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LoadBalancerArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LoadBalancerArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -147,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LoadBalancerArn), MyInvocation.BoundParameters);
@@ -163,21 +174,12 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticLoadBalancingV2.Model.SetSubnetsResponse, SetELB2SubnetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LoadBalancerArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.EnablePrefixForIpv6SourceNat = this.EnablePrefixForIpv6SourceNat;
             context.IpAddressType = this.IpAddressType;
             context.LoadBalancerArn = this.LoadBalancerArn;
             #if MODULAR
@@ -210,6 +212,10 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             // create request
             var request = new Amazon.ElasticLoadBalancingV2.Model.SetSubnetsRequest();
             
+            if (cmdletContext.EnablePrefixForIpv6SourceNat != null)
+            {
+                request.EnablePrefixForIpv6SourceNat = cmdletContext.EnablePrefixForIpv6SourceNat;
+            }
             if (cmdletContext.IpAddressType != null)
             {
                 request.IpAddressType = cmdletContext.IpAddressType;
@@ -264,13 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "SetSubnets");
             try
             {
-                #if DESKTOP
-                return client.SetSubnets(request);
-                #elif CORECLR
-                return client.SetSubnetsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetSubnetsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -287,6 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.ElasticLoadBalancingV2.EnablePrefixForIpv6SourceNatEnum EnablePrefixForIpv6SourceNat { get; set; }
             public Amazon.ElasticLoadBalancingV2.IpAddressType IpAddressType { get; set; }
             public System.String LoadBalancerArn { get; set; }
             public List<Amazon.ElasticLoadBalancingV2.Model.SubnetMapping> SubnetMapping { get; set; }

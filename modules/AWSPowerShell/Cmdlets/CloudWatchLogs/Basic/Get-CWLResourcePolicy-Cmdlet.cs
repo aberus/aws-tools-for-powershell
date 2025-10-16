@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -35,12 +37,35 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs DescribeResourcePolicies API operation.", Operation = new[] {"DescribeResourcePolicies"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.DescribeResourcePoliciesResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchLogs.Model.ResourcePolicy or Amazon.CloudWatchLogs.Model.DescribeResourcePoliciesResponse",
         "This cmdlet returns a collection of Amazon.CloudWatchLogs.Model.ResourcePolicy objects.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.DescribeResourcePoliciesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.DescribeResourcePoliciesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCWLResourcePolicyCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter PolicyScope
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the scope of the resource policy. Valid values are <c>ACCOUNT</c> or <c>RESOURCE</c>.
+        /// When not specified, defaults to <c>ACCOUNT</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CloudWatchLogs.PolicyScope")]
+        public Amazon.CloudWatchLogs.PolicyScope PolicyScope { get; set; }
+        #endregion
+        
+        #region Parameter ResourceArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the CloudWatch Logs resource for which to query the resource policy.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ResourceArn { get; set; }
+        #endregion
         
         #region Parameter Limit
         /// <summary>
@@ -65,7 +90,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -93,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -119,6 +148,8 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             }
             #endif
             context.NextToken = this.NextToken;
+            context.PolicyScope = this.PolicyScope;
+            context.ResourceArn = this.ResourceArn;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -141,6 +172,14 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             if (cmdletContext.Limit != null)
             {
                 request.Limit = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.Limit.Value);
+            }
+            if (cmdletContext.PolicyScope != null)
+            {
+                request.PolicyScope = cmdletContext.PolicyScope;
+            }
+            if (cmdletContext.ResourceArn != null)
+            {
+                request.ResourceArn = cmdletContext.ResourceArn;
             }
             
             // Initialize loop variant and commence piping
@@ -197,6 +236,14 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             
             // create request and set iteration invariants
             var request = new Amazon.CloudWatchLogs.Model.DescribeResourcePoliciesRequest();
+            if (cmdletContext.PolicyScope != null)
+            {
+                request.PolicyScope = cmdletContext.PolicyScope;
+            }
+            if (cmdletContext.ResourceArn != null)
+            {
+                request.ResourceArn = cmdletContext.ResourceArn;
+            }
             
             // Initialize loop variants and commence piping
             System.String _nextToken = null;
@@ -244,7 +291,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ResourcePolicies.Count;
+                    int _receivedThisCall = response.ResourcePolicies?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -293,13 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "DescribeResourcePolicies");
             try
             {
-                #if DESKTOP
-                return client.DescribeResourcePolicies(request);
-                #elif CORECLR
-                return client.DescribeResourcePoliciesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeResourcePoliciesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -318,6 +359,8 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         {
             public int? Limit { get; set; }
             public System.String NextToken { get; set; }
+            public Amazon.CloudWatchLogs.PolicyScope PolicyScope { get; set; }
+            public System.String ResourceArn { get; set; }
             public System.Func<Amazon.CloudWatchLogs.Model.DescribeResourcePoliciesResponse, GetCWLResourcePolicyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ResourcePolicies;
         }

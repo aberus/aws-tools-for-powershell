@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,49 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
     /// Modifies a cluster subnet group to include the specified list of VPC subnets. The
     /// operation replaces the existing list of subnets with the new list of subnets.
+    /// 
+    ///  
+    /// <para>
+    /// VPC Block Public Access (BPA) enables you to block resources in VPCs and subnets that
+    /// you own in a Region from reaching or being reached from the internet through internet
+    /// gateways and egress-only internet gateways. If a subnet group for a provisioned cluster
+    /// is in an account with VPC BPA turned on, the following capabilities are blocked:
+    /// </para><ul><li><para>
+    /// Creating a public cluster
+    /// </para></li><li><para>
+    /// Restoring a public cluster
+    /// </para></li><li><para>
+    /// Modifying a private cluster to be public
+    /// </para></li><li><para>
+    /// Adding a subnet with VPC BPA turned on to the subnet group when there's at least one
+    /// public cluster within the group
+    /// </para></li></ul><para>
+    /// For more information about VPC BPA, see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/security-vpc-bpa.html">Block
+    /// public access to VPCs and subnets</a> in the <i>Amazon VPC User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("Edit", "RSClusterSubnetGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Redshift.Model.ClusterSubnetGroup")]
     [AWSCmdlet("Calls the Amazon Redshift ModifyClusterSubnetGroup API operation.", Operation = new[] {"ModifyClusterSubnetGroup"}, SelectReturnType = typeof(Amazon.Redshift.Model.ModifyClusterSubnetGroupResponse))]
     [AWSCmdletOutput("Amazon.Redshift.Model.ClusterSubnetGroup or Amazon.Redshift.Model.ModifyClusterSubnetGroupResponse",
         "This cmdlet returns an Amazon.Redshift.Model.ClusterSubnetGroup object.",
-        "The service call response (type Amazon.Redshift.Model.ModifyClusterSubnetGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.ModifyClusterSubnetGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRSClusterSubnetGroupCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterSubnetGroupName
         /// <summary>
@@ -73,7 +96,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter SubnetId
         /// <summary>
         /// <para>
-        /// <para>An array of VPC subnet IDs. A maximum of 20 subnets can be modified in a single request.</para>
+        /// <para>An array of VPC subnet IDs. A maximum of 20 subnets can be modified in a single request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public string Select { get; set; } = "ClusterSubnetGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterSubnetGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterSubnetGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterSubnetGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -119,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterSubnetGroupName), MyInvocation.BoundParameters);
@@ -135,21 +156,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Redshift.Model.ModifyClusterSubnetGroupResponse, EditRSClusterSubnetGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterSubnetGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterSubnetGroupName = this.ClusterSubnetGroupName;
             #if MODULAR
             if (this.ClusterSubnetGroupName == null && ParameterWasBound(nameof(this.ClusterSubnetGroupName)))
@@ -234,13 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "ModifyClusterSubnetGroup");
             try
             {
-                #if DESKTOP
-                return client.ModifyClusterSubnetGroup(request);
-                #elif CORECLR
-                return client.ModifyClusterSubnetGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyClusterSubnetGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

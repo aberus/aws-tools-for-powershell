@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RedshiftServerless;
 using Amazon.RedshiftServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RSS
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.RSS
     [AWSCmdlet("Calls the Redshift Serverless RestoreTableFromSnapshot API operation.", Operation = new[] {"RestoreTableFromSnapshot"}, SelectReturnType = typeof(Amazon.RedshiftServerless.Model.RestoreTableFromSnapshotResponse))]
     [AWSCmdletOutput("Amazon.RedshiftServerless.Model.TableRestoreStatus or Amazon.RedshiftServerless.Model.RestoreTableFromSnapshotResponse",
         "This cmdlet returns an Amazon.RedshiftServerless.Model.TableRestoreStatus object.",
-        "The service call response (type Amazon.RedshiftServerless.Model.RestoreTableFromSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RedshiftServerless.Model.RestoreTableFromSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreRSSTableFromSnapshotCmdlet : AmazonRedshiftServerlessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActivateCaseSensitiveIdentifier
         /// <summary>
@@ -199,16 +202,6 @@ namespace Amazon.PowerShell.Cmdlets.RSS
         public string Select { get; set; } = "TableRestoreStatus";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -219,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.RSS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SnapshotName), MyInvocation.BoundParameters);
@@ -235,21 +232,11 @@ namespace Amazon.PowerShell.Cmdlets.RSS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RedshiftServerless.Model.RestoreTableFromSnapshotResponse, RestoreRSSTableFromSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ActivateCaseSensitiveIdentifier = this.ActivateCaseSensitiveIdentifier;
             context.NamespaceName = this.NamespaceName;
             #if MODULAR
@@ -390,13 +377,7 @@ namespace Amazon.PowerShell.Cmdlets.RSS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Redshift Serverless", "RestoreTableFromSnapshot");
             try
             {
-                #if DESKTOP
-                return client.RestoreTableFromSnapshot(request);
-                #elif CORECLR
-                return client.RestoreTableFromSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreTableFromSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

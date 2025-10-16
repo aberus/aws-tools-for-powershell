@@ -82,11 +82,23 @@ $ERES_Completers = {
     {
         # Amazon.EntityResolution.AttributeMatchingModel
         {
-            ($_ -eq "New-ERESMatchingWorkflow/ResolutionTechniques_RuleBasedProperties_AttributeMatchingModel") -Or
-            ($_ -eq "Update-ERESMatchingWorkflow/ResolutionTechniques_RuleBasedProperties_AttributeMatchingModel")
+            ($_ -eq "New-ERESIdMappingWorkflow/RuleBasedProperties_AttributeMatchingModel") -Or
+            ($_ -eq "New-ERESMatchingWorkflow/RuleBasedProperties_AttributeMatchingModel") -Or
+            ($_ -eq "Update-ERESIdMappingWorkflow/RuleBasedProperties_AttributeMatchingModel") -Or
+            ($_ -eq "Update-ERESMatchingWorkflow/RuleBasedProperties_AttributeMatchingModel")
         }
         {
             $v = "MANY_TO_MANY","ONE_TO_ONE"
+            break
+        }
+
+        # Amazon.EntityResolution.IdMappingIncrementalRunType
+        {
+            ($_ -eq "New-ERESIdMappingWorkflow/IncrementalRunConfig_IncrementalRunType") -Or
+            ($_ -eq "Update-ERESIdMappingWorkflow/IncrementalRunConfig_IncrementalRunType")
+        }
+        {
+            $v = "ON_DEMAND"
             break
         }
 
@@ -96,7 +108,24 @@ $ERES_Completers = {
             ($_ -eq "Update-ERESIdMappingWorkflow/IdMappingTechniques_IdMappingType")
         }
         {
-            $v = "PROVIDER"
+            $v = "PROVIDER","RULE_BASED"
+            break
+        }
+
+        # Amazon.EntityResolution.IdMappingWorkflowRuleDefinitionType
+        {
+            ($_ -eq "New-ERESIdMappingWorkflow/RuleBasedProperties_RuleDefinitionType") -Or
+            ($_ -eq "Update-ERESIdMappingWorkflow/RuleBasedProperties_RuleDefinitionType")
+        }
+        {
+            $v = "SOURCE","TARGET"
+            break
+        }
+
+        # Amazon.EntityResolution.IdNamespaceType
+        "New-ERESIdNamespace/Type"
+        {
+            $v = "SOURCE","TARGET"
             break
         }
 
@@ -110,6 +139,40 @@ $ERES_Completers = {
             break
         }
 
+        # Amazon.EntityResolution.JobType
+        "Start-ERESIdMappingJob/JobType"
+        {
+            $v = "BATCH","DELETE_ONLY","INCREMENTAL"
+            break
+        }
+
+        # Amazon.EntityResolution.MatchPurpose
+        {
+            ($_ -eq "New-ERESMatchingWorkflow/RuleBasedProperties_MatchPurpose") -Or
+            ($_ -eq "Update-ERESMatchingWorkflow/RuleBasedProperties_MatchPurpose")
+        }
+        {
+            $v = "IDENTIFIER_GENERATION","INDEXING"
+            break
+        }
+
+        # Amazon.EntityResolution.ProcessingType
+        "Set-ERESMatchId/ProcessingType"
+        {
+            $v = "CONSISTENT","EVENTUAL","EVENTUAL_NO_LOOKUP"
+            break
+        }
+
+        # Amazon.EntityResolution.RecordMatchingModel
+        {
+            ($_ -eq "New-ERESIdMappingWorkflow/RuleBasedProperties_RecordMatchingModel") -Or
+            ($_ -eq "Update-ERESIdMappingWorkflow/RuleBasedProperties_RecordMatchingModel")
+        }
+        {
+            $v = "MANY_SOURCE_TO_ONE_TARGET","ONE_SOURCE_TO_ONE_TARGET"
+            break
+        }
+
         # Amazon.EntityResolution.ResolutionType
         {
             ($_ -eq "New-ERESMatchingWorkflow/ResolutionTechniques_ResolutionType") -Or
@@ -117,6 +180,13 @@ $ERES_Completers = {
         }
         {
             $v = "ML_MATCHING","PROVIDER","RULE_MATCHING"
+            break
+        }
+
+        # Amazon.EntityResolution.StatementEffect
+        "Add-ERESPolicyStatement/Effect"
+        {
+            $v = "Allow","Deny"
             break
         }
 
@@ -129,10 +199,17 @@ $ERES_Completers = {
 }
 
 $ERES_map = @{
+    "Effect"=@("Add-ERESPolicyStatement")
     "IdMappingTechniques_IdMappingType"=@("New-ERESIdMappingWorkflow","Update-ERESIdMappingWorkflow")
-    "IncrementalRunConfig_IncrementalRunType"=@("New-ERESMatchingWorkflow","Update-ERESMatchingWorkflow")
+    "IncrementalRunConfig_IncrementalRunType"=@("New-ERESIdMappingWorkflow","New-ERESMatchingWorkflow","Update-ERESIdMappingWorkflow","Update-ERESMatchingWorkflow")
+    "JobType"=@("Start-ERESIdMappingJob")
+    "ProcessingType"=@("Set-ERESMatchId")
     "ResolutionTechniques_ResolutionType"=@("New-ERESMatchingWorkflow","Update-ERESMatchingWorkflow")
-    "ResolutionTechniques_RuleBasedProperties_AttributeMatchingModel"=@("New-ERESMatchingWorkflow","Update-ERESMatchingWorkflow")
+    "RuleBasedProperties_AttributeMatchingModel"=@("New-ERESIdMappingWorkflow","New-ERESMatchingWorkflow","Update-ERESIdMappingWorkflow","Update-ERESMatchingWorkflow")
+    "RuleBasedProperties_MatchPurpose"=@("New-ERESMatchingWorkflow","Update-ERESMatchingWorkflow")
+    "RuleBasedProperties_RecordMatchingModel"=@("New-ERESIdMappingWorkflow","Update-ERESIdMappingWorkflow")
+    "RuleBasedProperties_RuleDefinitionType"=@("New-ERESIdMappingWorkflow","Update-ERESIdMappingWorkflow")
+    "Type"=@("New-ERESIdNamespace")
 }
 
 _awsArgumentCompleterRegistration $ERES_Completers $ERES_map
@@ -185,31 +262,42 @@ $ERES_SelectCompleters = {
 }
 
 $ERES_SelectMap = @{
-    "Select"=@("New-ERESIdMappingWorkflow",
+    "Select"=@("Add-ERESPolicyStatement",
+               "Remove-ERESDeleteUniqueId",
+               "New-ERESIdMappingWorkflow",
+               "New-ERESIdNamespace",
                "New-ERESMatchingWorkflow",
                "New-ERESSchemaMapping",
                "Remove-ERESIdMappingWorkflow",
+               "Remove-ERESIdNamespace",
                "Remove-ERESMatchingWorkflow",
+               "Remove-ERESPolicyStatement",
                "Remove-ERESSchemaMapping",
+               "Set-ERESMatchId",
                "Get-ERESIdMappingJob",
                "Get-ERESIdMappingWorkflow",
+               "Get-ERESIdNamespace",
                "Get-ERESMatchId",
                "Get-ERESMatchingJob",
                "Get-ERESMatchingWorkflow",
+               "Get-ERESPolicy",
                "Get-ERESProviderService",
                "Get-ERESSchemaMapping",
                "Get-ERESIdMappingJobList",
                "Get-ERESIdMappingWorkflowList",
+               "Get-ERESIdNamespaceList",
                "Get-ERESMatchingJobList",
                "Get-ERESMatchingWorkflowList",
                "Get-ERESProviderServiceList",
                "Get-ERESSchemaMappingList",
                "Get-ERESResourceTag",
+               "Write-ERESPolicy",
                "Start-ERESIdMappingJob",
                "Start-ERESMatchingJob",
                "Add-ERESResourceTag",
                "Remove-ERESResourceTag",
                "Update-ERESIdMappingWorkflow",
+               "Update-ERESIdNamespace",
                "Update-ERESMatchingWorkflow",
                "Update-ERESSchemaMapping")
 }

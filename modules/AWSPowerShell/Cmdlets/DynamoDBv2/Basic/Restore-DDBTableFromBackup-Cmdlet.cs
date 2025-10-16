@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
@@ -55,12 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB RestoreTableFromBackup API operation.", Operation = new[] {"RestoreTableFromBackup"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.RestoreTableFromBackupResponse))]
     [AWSCmdletOutput("Amazon.DynamoDBv2.Model.TableDescription or Amazon.DynamoDBv2.Model.RestoreTableFromBackupResponse",
         "This cmdlet returns an Amazon.DynamoDBv2.Model.TableDescription object.",
-        "The service call response (type Amazon.DynamoDBv2.Model.RestoreTableFromBackupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.RestoreTableFromBackupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreDDBTableFromBackupCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupArn
         /// <summary>
@@ -109,7 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <para>
         /// <para>List of global secondary indexes for the restored table. The indexes provided should
         /// match existing secondary indexes. You can choose to exclude some or all of the indexes
-        /// at the time of restore.</para>
+        /// at the time of restore.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,11 +141,41 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <para>
         /// <para>List of local secondary indexes for the restored table. The indexes provided should
         /// match existing secondary indexes. You can choose to exclude some or all of the indexes
-        /// at the time of restore.</para>
+        /// at the time of restore.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.DynamoDBv2.Model.LocalSecondaryIndex[] LocalSecondaryIndexOverride { get; set; }
+        #endregion
+        
+        #region Parameter OnDemandThroughputOverride_MaxReadRequestUnit
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of read request units for the specified table.</para><para>To specify a maximum <c>OnDemandThroughput</c> on your table, set the value of <c>MaxReadRequestUnits</c>
+        /// as greater than or equal to 1. To remove the maximum <c>OnDemandThroughput</c> that
+        /// is currently set on your table, set the value of <c>MaxReadRequestUnits</c> to -1.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OnDemandThroughputOverride_MaxReadRequestUnits")]
+        public System.Int64? OnDemandThroughputOverride_MaxReadRequestUnit { get; set; }
+        #endregion
+        
+        #region Parameter OnDemandThroughputOverride_MaxWriteRequestUnit
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of write request units for the specified table.</para><para>To specify a maximum <c>OnDemandThroughput</c> on your table, set the value of <c>MaxWriteRequestUnits</c>
+        /// as greater than or equal to 1. To remove the maximum <c>OnDemandThroughput</c> that
+        /// is currently set on your table, set the value of <c>MaxWriteRequestUnits</c> to -1.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OnDemandThroughputOverride_MaxWriteRequestUnits")]
+        public System.Int64? OnDemandThroughputOverride_MaxWriteRequestUnit { get; set; }
         #endregion
         
         #region Parameter ProvisionedThroughputOverride_ReadCapacityUnit
@@ -207,16 +244,6 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "TableDescription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TargetTableName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TargetTableName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TargetTableName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -227,9 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TargetTableName), MyInvocation.BoundParameters);
@@ -243,21 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.RestoreTableFromBackupResponse, RestoreDDBTableFromBackupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TargetTableName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BackupArn = this.BackupArn;
             #if MODULAR
             if (this.BackupArn == null && ParameterWasBound(nameof(this.BackupArn)))
@@ -274,6 +295,8 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             {
                 context.LocalSecondaryIndexOverride = new List<Amazon.DynamoDBv2.Model.LocalSecondaryIndex>(this.LocalSecondaryIndexOverride);
             }
+            context.OnDemandThroughputOverride_MaxReadRequestUnit = this.OnDemandThroughputOverride_MaxReadRequestUnit;
+            context.OnDemandThroughputOverride_MaxWriteRequestUnit = this.OnDemandThroughputOverride_MaxWriteRequestUnit;
             context.ProvisionedThroughputOverride_ReadCapacityUnit = this.ProvisionedThroughputOverride_ReadCapacityUnit;
             context.ProvisionedThroughputOverride_WriteCapacityUnit = this.ProvisionedThroughputOverride_WriteCapacityUnit;
             context.SSESpecificationOverride_Enabled = this.SSESpecificationOverride_Enabled;
@@ -317,6 +340,35 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             if (cmdletContext.LocalSecondaryIndexOverride != null)
             {
                 request.LocalSecondaryIndexOverride = cmdletContext.LocalSecondaryIndexOverride;
+            }
+            
+             // populate OnDemandThroughputOverride
+            var requestOnDemandThroughputOverrideIsNull = true;
+            request.OnDemandThroughputOverride = new Amazon.DynamoDBv2.Model.OnDemandThroughput();
+            System.Int64? requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxReadRequestUnit = null;
+            if (cmdletContext.OnDemandThroughputOverride_MaxReadRequestUnit != null)
+            {
+                requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxReadRequestUnit = cmdletContext.OnDemandThroughputOverride_MaxReadRequestUnit.Value;
+            }
+            if (requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxReadRequestUnit != null)
+            {
+                request.OnDemandThroughputOverride.MaxReadRequestUnits = requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxReadRequestUnit.Value;
+                requestOnDemandThroughputOverrideIsNull = false;
+            }
+            System.Int64? requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxWriteRequestUnit = null;
+            if (cmdletContext.OnDemandThroughputOverride_MaxWriteRequestUnit != null)
+            {
+                requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxWriteRequestUnit = cmdletContext.OnDemandThroughputOverride_MaxWriteRequestUnit.Value;
+            }
+            if (requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxWriteRequestUnit != null)
+            {
+                request.OnDemandThroughputOverride.MaxWriteRequestUnits = requestOnDemandThroughputOverride_onDemandThroughputOverride_MaxWriteRequestUnit.Value;
+                requestOnDemandThroughputOverrideIsNull = false;
+            }
+             // determine if request.OnDemandThroughputOverride should be set to null
+            if (requestOnDemandThroughputOverrideIsNull)
+            {
+                request.OnDemandThroughputOverride = null;
             }
             
              // populate ProvisionedThroughputOverride
@@ -428,13 +480,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "RestoreTableFromBackup");
             try
             {
-                #if DESKTOP
-                return client.RestoreTableFromBackup(request);
-                #elif CORECLR
-                return client.RestoreTableFromBackupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreTableFromBackupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -455,6 +501,8 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             public Amazon.DynamoDBv2.BillingMode BillingModeOverride { get; set; }
             public List<Amazon.DynamoDBv2.Model.GlobalSecondaryIndex> GlobalSecondaryIndexOverride { get; set; }
             public List<Amazon.DynamoDBv2.Model.LocalSecondaryIndex> LocalSecondaryIndexOverride { get; set; }
+            public System.Int64? OnDemandThroughputOverride_MaxReadRequestUnit { get; set; }
+            public System.Int64? OnDemandThroughputOverride_MaxWriteRequestUnit { get; set; }
             public System.Int64? ProvisionedThroughputOverride_ReadCapacityUnit { get; set; }
             public System.Int64? ProvisionedThroughputOverride_WriteCapacityUnit { get; set; }
             public System.Boolean? SSESpecificationOverride_Enabled { get; set; }

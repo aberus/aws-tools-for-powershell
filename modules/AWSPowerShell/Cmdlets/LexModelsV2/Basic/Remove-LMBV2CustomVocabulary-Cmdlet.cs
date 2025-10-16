@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexModelsV2;
 using Amazon.LexModelsV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LMBV2
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
     [OutputType("Amazon.LexModelsV2.Model.DeleteCustomVocabularyResponse")]
     [AWSCmdlet("Calls the Amazon Lex Model Building V2 DeleteCustomVocabulary API operation.", Operation = new[] {"DeleteCustomVocabulary"}, SelectReturnType = typeof(Amazon.LexModelsV2.Model.DeleteCustomVocabularyResponse))]
     [AWSCmdletOutput("Amazon.LexModelsV2.Model.DeleteCustomVocabularyResponse",
-        "This cmdlet returns an Amazon.LexModelsV2.Model.DeleteCustomVocabularyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexModelsV2.Model.DeleteCustomVocabularyResponse object containing multiple properties."
     )]
     public partial class RemoveLMBV2CustomVocabularyCmdlet : AmazonLexModelsV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BotId
         /// <summary>
@@ -113,9 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -221,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.LMBV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Model Building V2", "DeleteCustomVocabulary");
             try
             {
-                #if DESKTOP
-                return client.DeleteCustomVocabulary(request);
-                #elif CORECLR
-                return client.DeleteCustomVocabularyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteCustomVocabularyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

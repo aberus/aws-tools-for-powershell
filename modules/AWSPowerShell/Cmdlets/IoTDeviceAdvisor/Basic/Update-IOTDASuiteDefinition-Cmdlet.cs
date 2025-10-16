@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTDeviceAdvisor;
 using Amazon.IoTDeviceAdvisor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTDA
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTDA
     [OutputType("Amazon.IoTDeviceAdvisor.Model.UpdateSuiteDefinitionResponse")]
     [AWSCmdlet("Calls the AWS IoT Core Device Advisor UpdateSuiteDefinition API operation.", Operation = new[] {"UpdateSuiteDefinition"}, SelectReturnType = typeof(Amazon.IoTDeviceAdvisor.Model.UpdateSuiteDefinitionResponse))]
     [AWSCmdletOutput("Amazon.IoTDeviceAdvisor.Model.UpdateSuiteDefinitionResponse",
-        "This cmdlet returns an Amazon.IoTDeviceAdvisor.Model.UpdateSuiteDefinitionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTDeviceAdvisor.Model.UpdateSuiteDefinitionResponse object containing multiple properties."
     )]
     public partial class UpdateIOTDASuiteDefinitionCmdlet : AmazonIoTDeviceAdvisorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SuiteDefinitionConfiguration_DevicePermissionRoleArn
         /// <summary>
@@ -67,7 +70,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTDA
         #region Parameter SuiteDefinitionConfiguration_Device
         /// <summary>
         /// <para>
-        /// <para>Gets the devices configured.</para>
+        /// <para>Gets the devices configured.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,16 +181,6 @@ namespace Amazon.PowerShell.Cmdlets.IOTDA
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SuiteDefinitionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SuiteDefinitionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SuiteDefinitionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -194,9 +191,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTDA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SuiteDefinitionId), MyInvocation.BoundParameters);
@@ -210,21 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTDA
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTDeviceAdvisor.Model.UpdateSuiteDefinitionResponse, UpdateIOTDASuiteDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SuiteDefinitionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SuiteDefinitionConfiguration_DevicePermissionRoleArn = this.SuiteDefinitionConfiguration_DevicePermissionRoleArn;
             #if MODULAR
             if (this.SuiteDefinitionConfiguration_DevicePermissionRoleArn == null && ParameterWasBound(nameof(this.SuiteDefinitionConfiguration_DevicePermissionRoleArn)))
@@ -397,13 +388,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTDA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Core Device Advisor", "UpdateSuiteDefinition");
             try
             {
-                #if DESKTOP
-                return client.UpdateSuiteDefinition(request);
-                #elif CORECLR
-                return client.UpdateSuiteDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSuiteDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

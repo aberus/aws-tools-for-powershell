@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SNS
 {
     /// <summary>
@@ -47,17 +49,19 @@ namespace Amazon.PowerShell.Cmdlets.SNS
     [AWSCmdlet("Calls the Amazon Simple Notification Service (SNS) ListEndpointsByPlatformApplication API operation.", Operation = new[] {"ListEndpointsByPlatformApplication"}, SelectReturnType = typeof(Amazon.SimpleNotificationService.Model.ListEndpointsByPlatformApplicationResponse))]
     [AWSCmdletOutput("Amazon.SimpleNotificationService.Model.Endpoint or Amazon.SimpleNotificationService.Model.ListEndpointsByPlatformApplicationResponse",
         "This cmdlet returns a collection of Amazon.SimpleNotificationService.Model.Endpoint objects.",
-        "The service call response (type Amazon.SimpleNotificationService.Model.ListEndpointsByPlatformApplicationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleNotificationService.Model.ListEndpointsByPlatformApplicationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSNSEndpointsByPlatformApplicationCmdlet : AmazonSimpleNotificationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PlatformApplicationArn
         /// <summary>
         /// <para>
-        /// <para>PlatformApplicationArn for ListEndpointsByPlatformApplicationInput action.</para>
+        /// <para><c>PlatformApplicationArn</c> for <c>ListEndpointsByPlatformApplicationInput</c>
+        /// action.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -74,12 +78,12 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// <para>NextToken string is used when calling ListEndpointsByPlatformApplication action to
-        /// retrieve additional records that are available after the first page results.</para>
+        /// <para><c>NextToken</c> string is used when calling <c>ListEndpointsByPlatformApplication</c>
+        /// action to retrieve additional records that are available after the first page results.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,16 +101,6 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public string Select { get; set; } = "Endpoints";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PlatformApplicationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PlatformApplicationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PlatformApplicationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -117,9 +111,13 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -127,21 +125,11 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleNotificationService.Model.ListEndpointsByPlatformApplicationResponse, GetSNSEndpointsByPlatformApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PlatformApplicationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.NextToken = this.NextToken;
             context.PlatformApplicationArn = this.PlatformApplicationArn;
             #if MODULAR
@@ -163,9 +151,7 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.SimpleNotificationService.Model.ListEndpointsByPlatformApplicationRequest();
@@ -236,13 +222,7 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Notification Service (SNS)", "ListEndpointsByPlatformApplication");
             try
             {
-                #if DESKTOP
-                return client.ListEndpointsByPlatformApplication(request);
-                #elif CORECLR
-                return client.ListEndpointsByPlatformApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListEndpointsByPlatformApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

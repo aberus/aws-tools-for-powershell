@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -34,25 +36,42 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// <para>
     /// For more information about Reserved Instances, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/concepts-on-demand-reserved-instances.html">Reserved
     /// Instances</a> in the <i>Amazon EC2 User Guide</i>.
-    /// </para>
+    /// </para><note><para>
+    /// The order of the elements in the response, including those within nested structures,
+    /// might vary. Applications should not assume the elements appear in a particular order.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Get", "EC2ReservedInstance")]
     [OutputType("Amazon.EC2.Model.ReservedInstances")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeReservedInstances API operation.", Operation = new[] {"DescribeReservedInstances"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeReservedInstancesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.ReservedInstances or Amazon.EC2.Model.DescribeReservedInstancesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.ReservedInstances objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeReservedInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeReservedInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2ReservedInstanceCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
         /// <para>
         /// <para>One or more filters.</para><ul><li><para><c>availability-zone</c> - The Availability Zone where the Reserved Instance can
-        /// be used.</para></li><li><para><c>duration</c> - The duration of the Reserved Instance (one year or three years),
+        /// be used.</para></li><li><para><c>availability-zone-id</c> - The ID of the Availability Zone where the Reserved
+        /// Instance can be used.</para></li><li><para><c>duration</c> - The duration of the Reserved Instance (one year or three years),
         /// in seconds (<c>31536000</c> | <c>94608000</c>).</para></li><li><para><c>end</c> - The time when the Reserved Instance expires (for example, 2015-08-07T11:54:42.000Z).</para></li><li><para><c>fixed-price</c> - The purchase price of the Reserved Instance (for example, 9800.0).</para></li><li><para><c>instance-type</c> - The instance type that is covered by the reservation.</para></li><li><para><c>scope</c> - The scope of the Reserved Instance (<c>Region</c> or <c>Availability
         /// Zone</c>).</para></li><li><para><c>product-description</c> - The Reserved Instance product platform description (<c>Linux/UNIX</c>
         /// | <c>Linux with SQL Server Standard</c> | <c>Linux with SQL Server Web</c> | <c>Linux
@@ -65,7 +84,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// to find all resources that have a tag with the key <c>Owner</c> and the value <c>TeamA</c>,
         /// specify <c>tag:Owner</c> for the filter name and <c>TeamA</c> for the filter value.</para></li><li><para><c>tag-key</c> - The key of a tag assigned to the resource. Use this filter to find
         /// all resources assigned a tag with a specific key, regardless of the tag value.</para></li><li><para><c>usage-price</c> - The usage price of the Reserved Instance, per hour (for example,
-        /// 0.84).</para></li></ul>
+        /// 0.84).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -100,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ReservedInstancesId
         /// <summary>
         /// <para>
-        /// <para>One or more Reserved Instance IDs.</para><para>Default: Describes all your Reserved Instances, or only those otherwise specified.</para>
+        /// <para>One or more Reserved Instance IDs.</para><para>Default: Describes all your Reserved Instances, or only those otherwise specified.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -119,19 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "ReservedInstances";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReservedInstancesId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReservedInstancesId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReservedInstancesId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -139,21 +160,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeReservedInstancesResponse, GetEC2ReservedInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReservedInstancesId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -180,6 +192,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.DescribeReservedInstancesRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -234,13 +250,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeReservedInstances");
             try
             {
-                #if DESKTOP
-                return client.DescribeReservedInstances(request);
-                #elif CORECLR
-                return client.DescribeReservedInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeReservedInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -257,6 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public Amazon.EC2.OfferingClassType OfferingClass { get; set; }
             public Amazon.EC2.OfferingTypeValues OfferingType { get; set; }

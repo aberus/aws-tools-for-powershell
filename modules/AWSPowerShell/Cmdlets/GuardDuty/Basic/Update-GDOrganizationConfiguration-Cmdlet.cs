@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
@@ -34,6 +36,12 @@ namespace Amazon.PowerShell.Cmdlets.GD
     /// 
     ///  
     /// <para>
+    /// Specifying both EKS Runtime Monitoring (<c>EKS_RUNTIME_MONITORING</c>) and Runtime
+    /// Monitoring (<c>RUNTIME_MONITORING</c>) will cause an error. You can add only one of
+    /// these two features because Runtime Monitoring already includes the threat detection
+    /// for Amazon EKS resources. For more information, see <a href="https://docs.aws.amazon.com/guardduty/latest/ug/runtime-monitoring.html">Runtime
+    /// Monitoring</a>.
+    /// </para><para>
     /// There might be regional differences because some data sources might not be available
     /// in all the Amazon Web Services Regions where GuardDuty is presently supported. For
     /// more information, see <a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_regions.html">Regions
@@ -45,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
     [AWSCmdlet("Calls the Amazon GuardDuty UpdateOrganizationConfiguration API operation.", Operation = new[] {"UpdateOrganizationConfiguration"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.UpdateOrganizationConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.GuardDuty.Model.UpdateOrganizationConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.GuardDuty.Model.UpdateOrganizationConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.GuardDuty.Model.UpdateOrganizationConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateGDOrganizationConfigurationCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuditLogs_AutoEnable
         /// <summary>
@@ -97,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
         /// automatically. This includes <c>NEW</c> accounts that join the organization and accounts
         /// that may have been suspended or removed from the organization in GuardDuty.</para><para>It may take up to 24 hours to update the configuration for all the member accounts.</para></li><li><para><c>NONE</c>: Indicates that GuardDuty will not be automatically enabled for any account
         /// in the organization. The administrator must manage GuardDuty for each account in the
-        /// organization individually.</para></li></ul>
+        /// organization individually.</para><para>When you update the auto-enable setting from <c>ALL</c> or <c>NEW</c> to <c>NONE</c>,
+        /// this action doesn't disable the corresponding option for your existing accounts. This
+        /// configuration will apply to the new accounts that join the organization. After you
+        /// update the auto-enable settings, no new account will have the corresponding option
+        /// as enabled.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,7 +122,9 @@ namespace Amazon.PowerShell.Cmdlets.GD
         #region Parameter DetectorId
         /// <summary>
         /// <para>
-        /// <para>The ID of the detector that configures the delegated administrator.</para>
+        /// <para>The ID of the detector that configures the delegated administrator.</para><para>To find the <c>detectorId</c> in the current Region, see the Settings page in the
+        /// GuardDuty console, or run the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_ListDetectors.html">ListDetectors</a>
+        /// API.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -126,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
         #region Parameter Feature
         /// <summary>
         /// <para>
-        /// <para>A list of features that will be configured for the organization.</para>
+        /// <para>A list of features that will be configured for the organization.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,7 +156,9 @@ namespace Amazon.PowerShell.Cmdlets.GD
         #region Parameter AutoEnable
         /// <summary>
         /// <para>
-        /// <para>Represents whether or not to automatically enable member accounts in the organization.</para><para>Even though this is still supported, we recommend using <c>AutoEnableOrganizationMembers</c>
+        /// <para>Represents whether to automatically enable member accounts in the organization. This
+        /// applies to only new member accounts, not the existing member accounts. When a new
+        /// account joins the organization, the chosen features will be enabled for them by default.</para><para>Even though this is still supported, we recommend using <c>AutoEnableOrganizationMembers</c>
         /// to achieve the similar results. You must provide a value for either <c>autoEnableOrganizationMembers</c>
         /// or <c>autoEnable</c>.</para>
         /// </para>
@@ -158,16 +179,6 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DetectorId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -178,9 +189,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DetectorId), MyInvocation.BoundParameters);
@@ -194,21 +209,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GuardDuty.Model.UpdateOrganizationConfigurationResponse, UpdateGDOrganizationConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DetectorId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoEnable = this.AutoEnable;
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -428,13 +433,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "UpdateOrganizationConfiguration");
             try
             {
-                #if DESKTOP
-                return client.UpdateOrganizationConfiguration(request);
-                #elif CORECLR
-                return client.UpdateOrganizationConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateOrganizationConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

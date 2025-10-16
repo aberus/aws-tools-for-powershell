@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The Glue module of AWS Tools for PowerShell lets developers and administrators manage AWS Glue from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.Glue.dll'
     )
@@ -87,6 +88,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
     # Cmdlets to export from this module
     CmdletsToExport = @(
         'Add-GLUEResourceTag', 
+        'Edit-GLUEIntegration', 
         'Find-GLUESchemaVersionMetadata', 
         'Find-GLUETable', 
         'Get-GLUEBlueprint', 
@@ -94,7 +96,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-GLUEBlueprintList', 
         'Get-GLUEBlueprintRun', 
         'Get-GLUEBlueprintRunList', 
+        'Get-GLUECatalog', 
         'Get-GLUECatalogImportStatus', 
+        'Get-GLUECatalogList', 
         'Get-GLUEClassifier', 
         'Get-GLUEClassifierList', 
         'Get-GLUEColumnStatisticsForPartition', 
@@ -102,8 +106,11 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-GLUEColumnStatisticsTaskList', 
         'Get-GLUEColumnStatisticsTaskRun', 
         'Get-GLUEColumnStatisticsTaskRunList', 
+        'Get-GLUEColumnStatisticsTaskSetting', 
         'Get-GLUEConnection', 
         'Get-GLUEConnectionList', 
+        'Get-GLUEConnectionType', 
+        'Get-GLUEConnectionTypeList', 
         'Get-GLUECrawler', 
         'Get-GLUECrawlerBatch', 
         'Get-GLUECrawlerList', 
@@ -116,6 +123,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-GLUEDatabaseList', 
         'Get-GLUEDataCatalogEncryptionSetting', 
         'Get-GLUEDataflowGraph', 
+        'Get-GLUEDataQualityModel', 
+        'Get-GLUEDataQualityModelResult', 
         'Get-GLUEDataQualityResult', 
         'Get-GLUEDataQualityResultBatch', 
         'Get-GLUEDataQualityResultList', 
@@ -125,12 +134,22 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-GLUEDataQualityRulesetEvaluationRun', 
         'Get-GLUEDataQualityRulesetEvaluationRunList', 
         'Get-GLUEDataQualityRulesetList', 
+        'Get-GLUEDataQualityStatisticAnnotationList', 
+        'Get-GLUEDataQualityStatisticList', 
         'Get-GLUEDevEndpoint', 
         'Get-GLUEDevEndpointBatch', 
         'Get-GLUEDevEndpointList', 
         'Get-GLUEDevEndpointNameList', 
+        'Get-GLUEEntity', 
+        'Get-GLUEEntityList', 
+        'Get-GLUEEntityRecord', 
         'Get-GLUEGetCustomEntityType', 
+        'Get-GLUEGlueIdentityCenterConfiguration', 
         'Get-GLUEGluePolicyList', 
+        'Get-GLUEInboundIntegration', 
+        'Get-GLUEIntegration', 
+        'Get-GLUEIntegrationResourceProperty', 
+        'Get-GLUEIntegrationTableProperty', 
         'Get-GLUEJob', 
         'Get-GLUEJobBatch', 
         'Get-GLUEJobBookmark', 
@@ -180,6 +199,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-GLUEUnfilteredPartitionMetadata', 
         'Get-GLUEUnfilteredPartitionsMetadata', 
         'Get-GLUEUnfilteredTableMetadata', 
+        'Get-GLUEUsageProfile', 
+        'Get-GLUEUsageProfileList', 
         'Get-GLUEUserDefinedFunction', 
         'Get-GLUEUserDefinedFunctionList', 
         'Get-GLUEWorkflow', 
@@ -191,13 +212,19 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Import-GLUECatalog', 
         'Invoke-GLUEStatement', 
         'New-GLUEBlueprint', 
+        'New-GLUECatalog', 
         'New-GLUEClassifier', 
+        'New-GLUEColumnStatisticsTaskSetting', 
         'New-GLUEConnection', 
         'New-GLUECrawler', 
         'New-GLUECustomEntityType', 
         'New-GLUEDatabase', 
         'New-GLUEDataQualityRuleset', 
         'New-GLUEDevEndpoint', 
+        'New-GLUEGlueIdentityCenterConfiguration', 
+        'New-GLUEIntegration', 
+        'New-GLUEIntegrationResourceProperty', 
+        'New-GLUEIntegrationTableProperty', 
         'New-GLUEJob', 
         'New-GLUEMLTransform', 
         'New-GLUEPartition', 
@@ -211,13 +238,16 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-GLUETable', 
         'New-GLUETableOptimizer', 
         'New-GLUETrigger', 
+        'New-GLUEUsageProfile', 
         'New-GLUEUserDefinedFunction', 
         'New-GLUEWorkflow', 
         'Register-GLUESchemaVersion', 
         'Remove-GLUEBlueprint', 
+        'Remove-GLUECatalog', 
         'Remove-GLUEClassifier', 
         'Remove-GLUEColumnStatisticsForPartition', 
         'Remove-GLUEColumnStatisticsForTable', 
+        'Remove-GLUEColumnStatisticsTaskSetting', 
         'Remove-GLUEConnection', 
         'Remove-GLUEConnectionBatch', 
         'Remove-GLUECrawler', 
@@ -225,6 +255,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-GLUEDatabase', 
         'Remove-GLUEDataQualityRuleset', 
         'Remove-GLUEDevEndpoint', 
+        'Remove-GLUEGlueIdentityCenterConfiguration', 
+        'Remove-GLUEIntegration', 
+        'Remove-GLUEIntegrationTableProperty', 
         'Remove-GLUEJob', 
         'Remove-GLUEMLTransform', 
         'Remove-GLUEPartition', 
@@ -244,14 +277,17 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-GLUETableVersion', 
         'Remove-GLUETableVersionBatch', 
         'Remove-GLUETrigger', 
+        'Remove-GLUEUsageProfile', 
         'Remove-GLUEUserDefinedFunction', 
         'Remove-GLUEWorkflow', 
         'Reset-GLUEJobBookmark', 
         'Resume-GLUEWorkflowRun', 
+        'Set-GLUEBatchDataQualityStatisticAnnotation', 
         'Set-GLUEDataCatalogEncryptionSetting', 
         'Set-GLUEResourcePolicy', 
         'Start-GLUEBlueprintRun', 
         'Start-GLUEColumnStatisticsTaskRun', 
+        'Start-GLUEColumnStatisticsTaskRunSchedule', 
         'Start-GLUECrawler', 
         'Start-GLUECrawlerSchedule', 
         'Start-GLUEDataQualityRuleRecommendationRun', 
@@ -264,6 +300,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Start-GLUETrigger', 
         'Start-GLUEWorkflowRun', 
         'Stop-GLUEColumnStatisticsTaskRun', 
+        'Stop-GLUEColumnStatisticsTaskRunSchedule', 
         'Stop-GLUECrawler', 
         'Stop-GLUECrawlerSchedule', 
         'Stop-GLUEDataQualityRuleRecommendationRun', 
@@ -274,16 +311,22 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Stop-GLUEStatement', 
         'Stop-GLUETrigger', 
         'Stop-GLUEWorkflowRun', 
+        'Test-GLUEConnection', 
         'Update-GLUEBlueprint', 
+        'Update-GLUECatalog', 
         'Update-GLUEClassifier', 
         'Update-GLUEColumnStatisticsForPartition', 
         'Update-GLUEColumnStatisticsForTable', 
+        'Update-GLUEColumnStatisticsTaskSetting', 
         'Update-GLUEConnection', 
         'Update-GLUECrawler', 
         'Update-GLUECrawlerSchedule', 
         'Update-GLUEDatabase', 
         'Update-GLUEDataQualityRuleset', 
         'Update-GLUEDevEndpoint', 
+        'Update-GLUEGlueIdentityCenterConfiguration', 
+        'Update-GLUEIntegrationResourceProperty', 
+        'Update-GLUEIntegrationTableProperty', 
         'Update-GLUEJob', 
         'Update-GLUEJobFromSourceControl', 
         'Update-GLUEMLTransform', 
@@ -295,8 +338,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-GLUETable', 
         'Update-GLUETableOptimizer', 
         'Update-GLUETrigger', 
+        'Update-GLUEUsageProfile', 
         'Update-GLUEUserDefinedFunction', 
         'Update-GLUEWorkflow', 
+        'Write-GLUEDataQualityProfileAnnotation', 
         'Write-GLUESchemaVersionMetadata', 
         'Write-GLUEWorkflowRunProperty')
 
@@ -323,7 +368,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

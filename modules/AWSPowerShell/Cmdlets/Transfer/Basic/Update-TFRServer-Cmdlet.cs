@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Transfer;
 using Amazon.Transfer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TFR
 {
     /// <summary>
@@ -41,21 +43,34 @@ namespace Amazon.PowerShell.Cmdlets.TFR
     [AWSCmdlet("Calls the AWS Transfer for SFTP UpdateServer API operation.", Operation = new[] {"UpdateServer"}, SelectReturnType = typeof(Amazon.Transfer.Model.UpdateServerResponse))]
     [AWSCmdletOutput("System.String or Amazon.Transfer.Model.UpdateServerResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Transfer.Model.UpdateServerResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Transfer.Model.UpdateServerResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateTFRServerCmdlet : AmazonTransferClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndpointDetails_AddressAllocationId
         /// <summary>
         /// <para>
         /// <para>A list of address allocation IDs that are required to attach an Elastic IP address
-        /// to your server's endpoint.</para><note><para>This property can only be set when <c>EndpointType</c> is set to <c>VPC</c> and it
-        /// is only valid in the <c>UpdateServer</c> API.</para></note>
+        /// to your server's endpoint.</para><para>An address allocation ID corresponds to the allocation ID of an Elastic IP address.
+        /// This value can be retrieved from the <c>allocationId</c> field from the Amazon EC2
+        /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Address.html">Address</a>
+        /// data type. One way to retrieve this value is by calling the EC2 <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAddresses.html">DescribeAddresses</a>
+        /// API.</para><para>This parameter is optional. Set this parameter if you want to make your VPC endpoint
+        /// public-facing. For details, see <a href="https://docs.aws.amazon.com/transfer/latest/userguide/create-server-in-vpc.html#create-internet-facing-endpoint">Create
+        /// an internet-facing endpoint for your server</a>.</para><note><para>This property can only be set as follows:</para><ul><li><para><c>EndpointType</c> must be set to <c>VPC</c></para></li><li><para>The Transfer Family server must be offline.</para></li><li><para>You cannot set this parameter for Transfer Family servers that use the FTP protocol.</para></li><li><para>The server must already have <c>SubnetIds</c> populated (<c>SubnetIds</c> and <c>AddressAllocationIds</c>
+        /// cannot be updated simultaneously).</para></li><li><para><c>AddressAllocationIds</c> can't contain duplicates, and must be equal in length
+        /// to <c>SubnetIds</c>. For example, if you have three subnet IDs, you must also specify
+        /// three address allocation IDs.</para></li><li><para>Call the <c>UpdateServer</c> API to set or change this parameter.</para></li><li><para>You can't set address allocation IDs for servers that have an <c>IpAddressType</c>
+        /// set to <c>DUALSTACK</c> You can only set this property if <c>IpAddressType</c> is
+        /// set to <c>IPV4</c>.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -66,7 +81,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter ProtocolDetails_As2Transport
         /// <summary>
         /// <para>
-        /// <para>Indicates the transport method for the AS2 messages. Currently, only HTTP is supported.</para>
+        /// <para>Indicates the transport method for the AS2 messages. Currently, only HTTP is supported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,8 +122,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter S3StorageOptions_DirectoryListingOptimization
         /// <summary>
         /// <para>
-        /// <para>Specifies whether or not performance for your Amazon S3 directories is optimized.
-        /// This is disabled by default.</para><para>By default, home directory mappings have a <c>TYPE</c> of <c>DIRECTORY</c>. If you
+        /// <para>Specifies whether or not performance for your Amazon S3 directories is optimized.</para><ul><li><para>If using the console, this is enabled by default.</para></li><li><para>If using the API or CLI, this is disabled by default.</para></li></ul><para>By default, home directory mappings have a <c>TYPE</c> of <c>DIRECTORY</c>. If you
         /// enable this option, you would then need to explicitly set the <c>HomeDirectoryMapEntry</c><c>Type</c> to <c>FILE</c> if you want a mapping to have a file target.</para>
         /// </para>
         /// </summary>
@@ -121,9 +139,9 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// endpoint that is hosted in a VPC, you can restrict access to your server and resources
         /// only within your VPC or choose to make it internet facing by attaching Elastic IP
         /// addresses directly to it.</para><note><para> After May 19, 2021, you won't be able to create a server using <c>EndpointType=VPC_ENDPOINT</c>
-        /// in your Amazon Web Servicesaccount if your account hasn't already done so before May
-        /// 19, 2021. If you have already created servers with <c>EndpointType=VPC_ENDPOINT</c>
-        /// in your Amazon Web Servicesaccount on or before May 19, 2021, you will not be affected.
+        /// in your Amazon Web Services account if your account hasn't already done so before
+        /// May 19, 2021. If you have already created servers with <c>EndpointType=VPC_ENDPOINT</c>
+        /// in your Amazon Web Services account on or before May 19, 2021, you will not be affected.
         /// After this date, use <c>EndpointType</c>=<c>VPC</c>.</para><para>For more information, see https://docs.aws.amazon.com/transfer/latest/userguide/create-server-in-vpc.html#deprecate-vpc-endpoint.</para><para>It is recommended that you use <c>VPC</c> as the <c>EndpointType</c>. With this endpoint
         /// type, you have the option to directly associate up to three Elastic IPv4 addresses
         /// (BYO IP included) with your server's endpoint and use VPC security groups to restrict
@@ -163,6 +181,25 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public System.String HostKey { get; set; }
         #endregion
         
+        #region Parameter IdentityProviderType
+        /// <summary>
+        /// <para>
+        /// <para>The mode of authentication for a server. The default value is <c>SERVICE_MANAGED</c>,
+        /// which allows you to store and access user credentials within the Transfer Family service.</para><para>Use <c>AWS_DIRECTORY_SERVICE</c> to provide access to Active Directory groups in Directory
+        /// Service for Microsoft Active Directory or Microsoft Active Directory in your on-premises
+        /// environment or in Amazon Web Services using AD Connector. This option also requires
+        /// you to provide a Directory ID by using the <c>IdentityProviderDetails</c> parameter.</para><para>Use the <c>API_GATEWAY</c> value to integrate with an identity provider of your choosing.
+        /// The <c>API_GATEWAY</c> setting requires you to provide an Amazon API Gateway endpoint
+        /// URL to call for authentication by using the <c>IdentityProviderDetails</c> parameter.</para><para>Use the <c>AWS_LAMBDA</c> value to directly use an Lambda function as your identity
+        /// provider. If you choose this value, you must specify the ARN for the Lambda function
+        /// in the <c>Function</c> parameter for the <c>IdentityProviderDetails</c> data type.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Transfer.IdentityProviderType")]
+        public Amazon.Transfer.IdentityProviderType IdentityProviderType { get; set; }
+        #endregion
+        
         #region Parameter IdentityProviderDetails_InvocationRole
         /// <summary>
         /// <para>
@@ -174,11 +211,27 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public System.String IdentityProviderDetails_InvocationRole { get; set; }
         #endregion
         
+        #region Parameter IpAddressType
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to use IPv4 only, or to use dual-stack (IPv4 and IPv6) for your
+        /// Transfer Family endpoint. The default value is <c>IPV4</c>.</para><important><para>The <c>IpAddressType</c> parameter has the following limitations:</para><ul><li><para>It cannot be changed while the server is online. You must stop the server before modifying
+        /// this parameter.</para></li><li><para>It cannot be updated to <c>DUALSTACK</c> if the server has <c>AddressAllocationIds</c>
+        /// specified.</para></li></ul></important><note><para>When using <c>DUALSTACK</c> as the <c>IpAddressType</c>, you cannot set the <c>AddressAllocationIds</c>
+        /// parameter for the <a href="https://docs.aws.amazon.com/transfer/latest/APIReference/API_EndpointDetails.html">EndpointDetails</a>
+        /// for the server.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Transfer.IpAddressType")]
+        public Amazon.Transfer.IpAddressType IpAddressType { get; set; }
+        #endregion
+        
         #region Parameter LoggingRole
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of the Identity and Access Management (IAM) role that
-        /// allows a server to turn on Amazon CloudWatch logging for Amazon S3 or Amazon EFSevents.
+        /// allows a server to turn on Amazon CloudWatch logging for Amazon S3 or Amazon EFS events.
         /// When set, you can view user activity in your CloudWatch logs.</para>
         /// </para>
         /// </summary>
@@ -190,7 +243,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// <summary>
         /// <para>
         /// <para>A trigger that starts a workflow if a file is only partially uploaded. You can attach
-        /// a workflow to a server that executes whenever there is a partial upload.</para><para>A <i>partial upload</i> occurs when a file is open when the session disconnects.</para>
+        /// a workflow to a server that executes whenever there is a partial upload.</para><para>A <i>partial upload</i> occurs when a file is open when the session disconnects.</para><note><para><c>OnPartialUpload</c> can contain a maximum of one <c>WorkflowDetail</c> object.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,7 +259,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// <para>
         /// <para>A trigger that starts a workflow: the workflow begins to execute after a file is uploaded.</para><para>To remove an associated workflow from a server, you can provide an empty <c>OnUpload</c>
         /// object, as in the following example.</para><para><c>aws transfer update-server --server-id s-01234567890abcdef --workflow-details
-        /// '{"OnUpload":[]}'</c></para>
+        /// '{"OnUpload":[]}'</c></para><note><para><c>OnUpload</c> can contain a maximum of one <c>WorkflowDetail</c> object.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -218,7 +279,15 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// use.</para><note><para> If you change the <c>PassiveIp</c> value, you must stop and then restart your Transfer
         /// Family server for the change to take effect. For details on using passive mode (PASV)
         /// in a NAT environment, see <a href="http://aws.amazon.com/blogs/storage/configuring-your-ftps-server-behind-a-firewall-or-nat-with-aws-transfer-family/">Configuring
-        /// your FTPS server behind a firewall or NAT with Transfer Family</a>. </para></note><para><i>Special values</i></para><para>The <c>AUTO</c> and <c>0.0.0.0</c> are special values for the <c>PassiveIp</c> parameter.
+        /// your FTPS server behind a firewall or NAT with Transfer Family</a>. </para><para>Additionally, avoid placing Network Load Balancers (NLBs) or NAT gateways in front
+        /// of Transfer Family servers. This configuration increases costs and can cause performance
+        /// issues. When NLBs or NATs are in the communication path, Transfer Family cannot accurately
+        /// recognize client IP addresses, which impacts connection sharding and limits FTPS servers
+        /// to only 300 simultaneous connections instead of 10,000. If you must use an NLB, use
+        /// port 21 for health checks and enable TLS session resumption by setting <c>TlsSessionResumptionMode
+        /// = ENFORCED</c>. For optimal performance, migrate to VPC endpoints with Elastic IP
+        /// addresses instead of using NLBs. For more details, see <a href="https://docs.aws.amazon.com/transfer/latest/userguide/infrastructure-security.html#nlb-considerations">
+        /// Avoid placing NLBs and NATs in front of Transfer Family</a>. </para></note><para><i>Special values</i></para><para>The <c>AUTO</c> and <c>0.0.0.0</c> are special values for the <c>PassiveIp</c> parameter.
         /// The value <c>PassiveIp=AUTO</c> is assigned by default to FTP and FTPS type servers.
         /// In this case, the server automatically responds with one of the endpoint IPs within
         /// the PASV response. <c>PassiveIp=0.0.0.0</c> has a more unique application for its
@@ -274,7 +343,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// to <c>PUBLIC</c> and the <c>IdentityProviderType</c> can be set any of the supported
         /// identity types: <c>SERVICE_MANAGED</c>, <c>AWS_DIRECTORY_SERVICE</c>, <c>AWS_LAMBDA</c>,
         /// or <c>API_GATEWAY</c>.</para></li><li><para>If <c>Protocol</c> includes <c>AS2</c>, then the <c>EndpointType</c> must be <c>VPC</c>,
-        /// and domain must be Amazon S3.</para></li></ul></note>
+        /// and domain must be Amazon S3.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,11 +358,20 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter EndpointDetails_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of security groups IDs that are available to attach to your server's endpoint.</para><note><para>This property can only be set when <c>EndpointType</c> is set to <c>VPC</c>.</para><para>You can edit the <c>SecurityGroupIds</c> property in the <a href="https://docs.aws.amazon.com/transfer/latest/userguide/API_UpdateServer.html">UpdateServer</a>
+        /// <para>A list of security groups IDs that are available to attach to your server's endpoint.</para><note><para>While <c>SecurityGroupIds</c> appears in the response syntax for consistency with
+        /// <c>CreateServer</c> and <c>UpdateServer</c> operations, this field is not populated
+        /// in <c>DescribeServer</c> responses. Security groups are managed at the VPC endpoint
+        /// level and can be modified outside of the Transfer Family service. To retrieve current
+        /// security group information, use the EC2 <c>DescribeVpcEndpoints</c> API with the <c>VpcEndpointId</c>
+        /// returned in the response.</para><para>This property can only be set when <c>EndpointType</c> is set to <c>VPC</c>.</para><para>You can edit the <c>SecurityGroupIds</c> property in the <a href="https://docs.aws.amazon.com/transfer/latest/userguide/API_UpdateServer.html">UpdateServer</a>
         /// API only if you are changing the <c>EndpointType</c> from <c>PUBLIC</c> or <c>VPC_ENDPOINT</c>
         /// to <c>VPC</c>. To change security groups associated with your server's VPC endpoint
         /// after creation, use the Amazon EC2 <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_ModifyVpcEndpoint.html">ModifyVpcEndpoint</a>
-        /// API.</para></note>
+        /// API.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -300,7 +382,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter SecurityPolicyName
         /// <summary>
         /// <para>
-        /// <para>Specifies the name of the security policy that is attached to the server.</para>
+        /// <para>Specifies the name of the security policy for the server.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -370,7 +452,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// <para>Specifies the log groups to which your server logs are sent.</para><para>To specify a log group, you must provide the ARN for an existing log group. In this
         /// case, the format of the log group is as follows:</para><para><c>arn:aws:logs:region-name:amazon-account-id:log-group:log-group-name:*</c></para><para>For example, <c>arn:aws:logs:us-east-1:111122223333:log-group:mytestgroup:*</c></para><para>If you have previously specified a log group for a server, you can clear it, and in
         /// effect turn off structured logging, by providing an empty value for this parameter
-        /// in an <c>update-server</c> call. For example:</para><para><c>update-server --server-id s-1234567890abcdef0 --structured-log-destinations</c></para>
+        /// in an <c>update-server</c> call. For example:</para><para><c>update-server --server-id s-1234567890abcdef0 --structured-log-destinations</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -381,7 +467,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter EndpointDetails_SubnetId
         /// <summary>
         /// <para>
-        /// <para>A list of subnet IDs that are required to host your server endpoint in your VPC.</para><note><para>This property can only be set when <c>EndpointType</c> is set to <c>VPC</c>.</para></note>
+        /// <para>A list of subnet IDs that are required to host your server endpoint in your VPC.</para><note><para>This property can only be set when <c>EndpointType</c> is set to <c>VPC</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -456,16 +546,6 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public string Select { get; set; } = "ServerId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServerId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServerId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServerId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -476,9 +556,13 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ServerId), MyInvocation.BoundParameters);
@@ -492,21 +576,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Transfer.Model.UpdateServerResponse, UpdateTFRServerCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServerId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Certificate = this.Certificate;
             if (this.EndpointDetails_AddressAllocationId != null)
             {
@@ -529,6 +603,8 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             context.IdentityProviderDetails_InvocationRole = this.IdentityProviderDetails_InvocationRole;
             context.IdentityProviderDetails_SftpAuthenticationMethod = this.IdentityProviderDetails_SftpAuthenticationMethod;
             context.IdentityProviderDetails_Url = this.IdentityProviderDetails_Url;
+            context.IdentityProviderType = this.IdentityProviderType;
+            context.IpAddressType = this.IpAddressType;
             context.LoggingRole = this.LoggingRole;
             context.PostAuthenticationLoginBanner = this.PostAuthenticationLoginBanner;
             context.PreAuthenticationLoginBanner = this.PreAuthenticationLoginBanner;
@@ -710,6 +786,14 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             {
                 request.IdentityProviderDetails = null;
             }
+            if (cmdletContext.IdentityProviderType != null)
+            {
+                request.IdentityProviderType = cmdletContext.IdentityProviderType;
+            }
+            if (cmdletContext.IpAddressType != null)
+            {
+                request.IpAddressType = cmdletContext.IpAddressType;
+            }
             if (cmdletContext.LoggingRole != null)
             {
                 request.LoggingRole = cmdletContext.LoggingRole;
@@ -873,13 +957,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Transfer for SFTP", "UpdateServer");
             try
             {
-                #if DESKTOP
-                return client.UpdateServer(request);
-                #elif CORECLR
-                return client.UpdateServerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateServerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -909,6 +987,8 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             public System.String IdentityProviderDetails_InvocationRole { get; set; }
             public Amazon.Transfer.SftpAuthenticationMethods IdentityProviderDetails_SftpAuthenticationMethod { get; set; }
             public System.String IdentityProviderDetails_Url { get; set; }
+            public Amazon.Transfer.IdentityProviderType IdentityProviderType { get; set; }
+            public Amazon.Transfer.IpAddressType IpAddressType { get; set; }
             public System.String LoggingRole { get; set; }
             public System.String PostAuthenticationLoginBanner { get; set; }
             public System.String PreAuthenticationLoginBanner { get; set; }

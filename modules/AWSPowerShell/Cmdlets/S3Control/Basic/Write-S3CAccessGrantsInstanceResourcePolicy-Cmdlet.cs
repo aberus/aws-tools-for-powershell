@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -33,23 +35,28 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     ///  <dl><dt>Permissions</dt><dd><para>
     /// You must have the <c>s3:PutAccessGrantsInstanceResourcePolicy</c> permission to use
     /// this operation. 
-    /// </para></dd></dl>
+    /// </para></dd></dl><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Write", "S3CAccessGrantsInstanceResourcePolicy", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.S3Control.Model.PutAccessGrantsInstanceResourcePolicyResponse")]
     [AWSCmdlet("Calls the Amazon S3 Control PutAccessGrantsInstanceResourcePolicy API operation.", Operation = new[] {"PutAccessGrantsInstanceResourcePolicy"}, SelectReturnType = typeof(Amazon.S3Control.Model.PutAccessGrantsInstanceResourcePolicyResponse))]
     [AWSCmdletOutput("Amazon.S3Control.Model.PutAccessGrantsInstanceResourcePolicyResponse",
-        "This cmdlet returns an Amazon.S3Control.Model.PutAccessGrantsInstanceResourcePolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.S3Control.Model.PutAccessGrantsInstanceResourcePolicyResponse object containing multiple properties."
     )]
     public partial class WriteS3CAccessGrantsInstanceResourcePolicyCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
-        /// <para>The ID of the Amazon Web Services account that is making this request.</para>
+        /// <para>The Amazon Web Services account ID of the S3 Access Grants instance.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -111,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Policy), MyInvocation.BoundParameters);
@@ -213,13 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "PutAccessGrantsInstanceResourcePolicy");
             try
             {
-                #if DESKTOP
-                return client.PutAccessGrantsInstanceResourcePolicy(request);
-                #elif CORECLR
-                return client.PutAccessGrantsInstanceResourcePolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutAccessGrantsInstanceResourcePolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

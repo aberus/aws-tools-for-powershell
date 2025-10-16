@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
+    /// <note><para>
+    /// We recommend using Organizations instead of Security Hub invitations to manage your
+    /// member accounts. For information, see <a href="https://docs.aws.amazon.com/securityhub/latest/userguide/securityhub-accounts-orgs.html">Managing
+    /// Security Hub administrator and member accounts with Organizations</a> in the <i>Security
+    /// Hub User Guide</i>.
+    /// </para></note><para>
     /// Returns the count of all Security Hub membership invitations that were sent to the
-    /// current member account, not including the currently accepted invitation.
+    /// calling member account, not including the currently accepted invitation. 
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "SHUBInvitationsCount")]
     [OutputType("System.Int32")]
     [AWSCmdlet("Calls the AWS Security Hub GetInvitationsCount API operation.", Operation = new[] {"GetInvitationsCount"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.GetInvitationsCountResponse))]
     [AWSCmdletOutput("System.Int32 or Amazon.SecurityHub.Model.GetInvitationsCountResponse",
-        "This cmdlet returns a System.Int32 object.",
-        "The service call response (type Amazon.SecurityHub.Model.GetInvitationsCountResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Int32 objects.",
+        "The service call response (type Amazon.SecurityHub.Model.GetInvitationsCountResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSHUBInvitationsCountCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -54,9 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public string Select { get; set; } = "InvitationsCount";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,13 +137,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "GetInvitationsCount");
             try
             {
-                #if DESKTOP
-                return client.GetInvitationsCount(request);
-                #elif CORECLR
-                return client.GetInvitationsCountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetInvitationsCountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

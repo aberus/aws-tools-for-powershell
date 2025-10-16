@@ -25,6 +25,10 @@ namespace PSReleaseNotesGenerator
         private const string OutputFilePathOptionName = "out-file";
         private const string BreakingChangesOutputFilePathOptionName = "breaking-changes-out-file";
         private const string OverridesFilePathOptionName = "overrides-file";
+        private const string PreviewLabelOptionName = "preview-label";
+        private const string NewVersionOptionName = "new-version";
+
+
 
         private const string BreakingChangeText = "[Breaking Change]"; //The build system will look for this string in the output to validate the build
 
@@ -62,6 +66,12 @@ namespace PSReleaseNotesGenerator
 
         [Option("-or|--" + OverridesFilePathOptionName + " <FILE_PATH>", Description = "Optional path to the overrides file.")]
         public string OverridesFilePath { get; set; }
+
+        [Option("-pl|--" + PreviewLabelOptionName + " <NAME>", Description = "Preview Label.")]
+        public string PreviewLabel { get; set; }
+
+        [Option("-nv|--" + NewVersionOptionName + " <Z.Y.X.W>", Description = "Version of the new PS Module.")]
+        public string NewVersion { get; set; }
                 
         public static int Main(string[] args)
         {
@@ -82,6 +92,7 @@ namespace PSReleaseNotesGenerator
             try
             {
                 Console.WriteLine($"Start analysing new assembly: {NewAssemblyPath}");
+                Console.WriteLine($"IsPreviewLabelNullorEmpty: {string.IsNullOrEmpty(PreviewLabel)} PreviewLabel: {PreviewLabel}");
                 newModule = new PSModuleAnalyzer(NewAssemblyPath).Analyze();
             }
             catch (Exception e)
@@ -89,14 +100,20 @@ namespace PSReleaseNotesGenerator
                 throw new Exception($"Error while opening new assembly", e);
             }
 
-            if (string.IsNullOrWhiteSpace(OldAssemblyPath))
+            if (string.IsNullOrWhiteSpace(OldAssemblyPath) && string.IsNullOrEmpty(PreviewLabel))
             {
                 if (string.IsNullOrWhiteSpace(ModuleName) || string.IsNullOrWhiteSpace(AssemblyFileName) || string.IsNullOrWhiteSpace(DownloadFolder))
                     throw new Exception($"Either --{OldAssemblyPathOptionName} or --{ModuleNameOptionName}, --{DownloadFolderOptionName} and --{AssemblyFileNameOptionName} must be specified");
 
+                if (string.IsNullOrWhiteSpace(NewVersion) || NewVersion == "0.0.0.0")
+                    throw new Exception($"NewVersion cannot be empty or default value 0.0.0.0");
+
+                int majorVersion = (new Version(NewVersion)).Major;
+                string maxVersion = $"{majorVersion}.99.999";
+                Console.WriteLine($"NewVersion: {NewVersion}, MaxVersion: {maxVersion}");
                 try
-                {                    
-                    OldAssemblyPath = DownloadModule(ModuleName, string.IsNullOrWhiteSpace(ModuleVersion) ? null : ModuleVersion, AssemblyFileName, DownloadFolder);
+                {
+                    OldAssemblyPath = DownloadModule(ModuleName, string.IsNullOrWhiteSpace(ModuleVersion) ? null : ModuleVersion, maxVersion, AssemblyFileName, DownloadFolder);
                 }
                 catch (Exception e)
                 {
@@ -128,7 +145,18 @@ namespace PSReleaseNotesGenerator
 
             string report;
             var breakingChanges = new BreakingChanges();
-            if (oldModule != null)
+            
+            
+            // powershell release notes generator compares the latest module in PowerShellGallery to current version.
+            // during the first release, v5 will be compared with latest v4 and the generated release notes is extremely verbose
+            // this should be set to false after the first GA release.
+            bool previewReleaseNotes = false;
+
+            if (!string.IsNullOrEmpty(PreviewLabel) || previewReleaseNotes)
+            {
+                report = CreatePreviewReleaseNotes(sdkNewVersion);
+            }
+            else if (oldModule != null)
             {
                 report = CreateReleaseNotes(newModule, oldModule, sdkNewVersion, breakingChanges);
             }
@@ -190,6 +218,11 @@ namespace PSReleaseNotesGenerator
         private static string CreateErrorReleaseNotes()
         {
             return "Unable to generate release notes. Release notes will need to be created manually.";
+        }
+
+        private static string CreatePreviewReleaseNotes(string sdkNewVersion)
+        {
+            return $"  * AWS Tools for PowerShell now use AWS .NET SDK {sdkNewVersion} and leverage its new features and improvements. Please find a description of the changes at https://github.com/aws/aws-sdk-net/blob/main/changelogs/SDK.CHANGELOG.ALL.md.";
         }
 
         private static string CreateReleaseNotes(IDictionary<string, Cmdlet> newModule, 
@@ -428,7 +461,7 @@ namespace PSReleaseNotesGenerator
             }
         }
 
-        private string DownloadModule(string moduleName, string moduleVersion, string assemblyFileName, string downloadFolder)
+        private string DownloadModule(string moduleName, string moduleVersion, string maxVersion, string assemblyFileName, string downloadFolder)
         {
             var downloadFullPath = Path.GetFullPath(DownloadFolder);
 
@@ -442,16 +475,21 @@ namespace PSReleaseNotesGenerator
 
             using (Process process = new Process())
             {
-                string moduleVersionParameter = "";
+                string moduleVersionParameter = $" -MaximumVersion '{maxVersion}'";
                 if (moduleVersion != null)
                 {
                     moduleVersionParameter = $" -RequiredVersion '{moduleVersion}'";
                 }
 
+                var downloadModuleArguments =
+                    $"-NonInteractive -NoProfile -Command $ErrorActionPreference='Stop'; Save-Module -Name '{moduleName}'{moduleVersionParameter} -Path '{downloadFolder}'";
+
+                Console.WriteLine($"Download PowerShell Module from PSGallary with arguments: {downloadModuleArguments}");
+
                 process.StartInfo = new ProcessStartInfo
                 {
                     FileName = "pwsh",
-                    Arguments = $"-NonInteractive -NoProfile -Command $ErrorActionPreference='Stop'; Save-Module -Name '{moduleName}'{moduleVersionParameter} -Path '{downloadFolder}'",
+                    Arguments = downloadModuleArguments,
                     UseShellExecute = false,
                     RedirectStandardError = true
                 };
@@ -462,7 +500,7 @@ namespace PSReleaseNotesGenerator
 
                 if (process.ExitCode != 0)
                 {
-                    throw new Exception($"Powershell invokation failed. Standard error: {error}");
+                    throw new Exception($"Powershell invocation failed. Standard error: {error}");
                 }
             }
 

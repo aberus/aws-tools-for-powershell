@@ -81,19 +81,25 @@ $ECR_Completers = {
     switch ($("$commandName/$parameterName"))
     {
         # Amazon.ECR.EncryptionType
-        "New-ECRRepository/EncryptionConfiguration_EncryptionType"
         {
-            $v = "AES256","KMS"
+            ($_ -eq "New-ECRRepository/EncryptionConfiguration_EncryptionType") -Or
+            ($_ -eq "New-ECRRepositoryCreationTemplate/EncryptionConfiguration_EncryptionType") -Or
+            ($_ -eq "Update-ECRRepositoryCreationTemplate/EncryptionConfiguration_EncryptionType")
+        }
+        {
+            $v = "AES256","KMS","KMS_DSSE"
             break
         }
 
         # Amazon.ECR.ImageTagMutability
         {
             ($_ -eq "New-ECRRepository/ImageTagMutability") -Or
+            ($_ -eq "New-ECRRepositoryCreationTemplate/ImageTagMutability") -Or
+            ($_ -eq "Update-ECRRepositoryCreationTemplate/ImageTagMutability") -Or
             ($_ -eq "Write-ECRImageTagMutability/ImageTagMutability")
         }
         {
-            $v = "IMMUTABLE","MUTABLE"
+            $v = "IMMUTABLE","IMMUTABLE_WITH_EXCLUSION","MUTABLE","MUTABLE_WITH_EXCLUSION"
             break
         }
 
@@ -118,7 +124,7 @@ $ECR_Completers = {
         # Amazon.ECR.UpstreamRegistry
         "New-ECRPullThroughCacheRule/UpstreamRegistry"
         {
-            $v = "azure-container-registry","docker-hub","ecr-public","github-container-registry","k8s","quay"
+            $v = "azure-container-registry","docker-hub","ecr","ecr-public","github-container-registry","gitlab-container-registry","k8s","quay"
             break
         }
 
@@ -131,9 +137,9 @@ $ECR_Completers = {
 }
 
 $ECR_map = @{
-    "EncryptionConfiguration_EncryptionType"=@("New-ECRRepository")
+    "EncryptionConfiguration_EncryptionType"=@("New-ECRRepository","New-ECRRepositoryCreationTemplate","Update-ECRRepositoryCreationTemplate")
     "Filter_TagStatus"=@("Get-ECRImage","Get-ECRImageMetadata","Get-ECRLifecyclePolicyPreview")
-    "ImageTagMutability"=@("New-ECRRepository","Write-ECRImageTagMutability")
+    "ImageTagMutability"=@("New-ECRRepository","New-ECRRepositoryCreationTemplate","Update-ECRRepositoryCreationTemplate","Write-ECRImageTagMutability")
     "ScanType"=@("Write-ECRRegistryScanningConfiguration")
     "UpstreamRegistry"=@("New-ECRPullThroughCacheRule")
 }
@@ -195,10 +201,12 @@ $ECR_SelectMap = @{
                "Complete-ECRLayerUpload",
                "New-ECRPullThroughCacheRule",
                "New-ECRRepository",
+               "New-ECRRepositoryCreationTemplate",
                "Remove-ECRLifecyclePolicy",
                "Remove-ECRPullThroughCacheRule",
                "Remove-ECRRegistryPolicy",
                "Remove-ECRRepository",
+               "Remove-ECRRepositoryCreationTemplate",
                "Remove-ECRRepositoryPolicy",
                "Get-ECRImageReplicationStatus",
                "Get-ECRImageMetadata",
@@ -206,6 +214,8 @@ $ECR_SelectMap = @{
                "Get-ECRPullThroughCacheRule",
                "Get-ECRRegistry",
                "Get-ECRRepository",
+               "Get-ECRRepositoryCreationTemplate",
+               "Get-ECRAccountSetting",
                "Get-ECRAuthorizationToken",
                "Get-ECRDownloadUrlForLayer",
                "Get-ECRLifecyclePolicy",
@@ -216,6 +226,7 @@ $ECR_SelectMap = @{
                "Start-ECRLayerUpload",
                "Get-ECRImage",
                "Get-ECRResourceTag",
+               "Write-ECRAccountSetting",
                "Write-ECRImage",
                "Write-ECRImageScanningConfiguration",
                "Write-ECRImageTagMutability",
@@ -229,6 +240,7 @@ $ECR_SelectMap = @{
                "Add-ECRResourceTag",
                "Remove-ECRResourceTag",
                "Update-ECRPullThroughCacheRule",
+               "Update-ECRRepositoryCreationTemplate",
                "Send-ECRLayerPart",
                "Test-ECRPullThroughCacheRule",
                "Get-ECRLoginCommand")

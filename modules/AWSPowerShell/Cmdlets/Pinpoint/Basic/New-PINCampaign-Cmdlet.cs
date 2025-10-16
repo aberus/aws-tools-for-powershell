@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Pinpoint;
 using Amazon.Pinpoint.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PIN
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.PIN
     [AWSCmdlet("Calls the Amazon Pinpoint CreateCampaign API operation.", Operation = new[] {"CreateCampaign"}, SelectReturnType = typeof(Amazon.Pinpoint.Model.CreateCampaignResponse))]
     [AWSCmdletOutput("Amazon.Pinpoint.Model.CampaignResponse or Amazon.Pinpoint.Model.CreateCampaignResponse",
         "This cmdlet returns an Amazon.Pinpoint.Model.CampaignResponse object.",
-        "The service call response (type Amazon.Pinpoint.Model.CreateCampaignResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Pinpoint.Model.CreateCampaignResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPINCampaignCmdlet : AmazonPinpointClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ADMMessage_Action
         /// <summary>
@@ -122,7 +125,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <summary>
         /// <para>
         /// <para>An array of requests that defines additional treatments for the campaign, in addition
-        /// to the default treatment for the campaign.</para>
+        /// to the default treatment for the campaign.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,7 +159,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <summary>
         /// <para>
         /// <para>One or more custom attributes that your application reports to Amazon Pinpoint. You
-        /// can use these attributes as selection criteria when you create an event filter.</para>
+        /// can use these attributes as selection criteria when you create an event filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -251,7 +262,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter InAppMessage_Content
         /// <summary>
         /// <para>
-        /// <para>In-app message content.</para>
+        /// <para>In-app message content.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -262,7 +277,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         #region Parameter InAppMessage_CustomConfig
         /// <summary>
         /// <para>
-        /// <para>Custom config to be sent to client.</para>
+        /// <para>Custom config to be sent to client.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -353,7 +372,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <para>
         /// <para>The types of endpoints to send the campaign or treatment to. Each valid value maps
         /// to a type of channel that you can associate with an endpoint by using the ChannelType
-        /// property of an endpoint.</para>
+        /// property of an endpoint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -422,6 +445,22 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("WriteCampaignRequest_MessageConfiguration_EmailMessage_FromAddress")]
         public System.String EmailMessage_FromAddress { get; set; }
+        #endregion
+        
+        #region Parameter EmailMessage_Header
+        /// <summary>
+        /// <para>
+        /// <para>The list of <a href="https://docs.aws.amazon.com/pinpoint/latest/apireference/apps-application-id-campaigns-campaign-id.html#apps-application-id-campaigns-campaign-id-model-messageheader">MessageHeaders</a>
+        /// for the email. You can have up to 15 MessageHeaders for each email.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WriteCampaignRequest_MessageConfiguration_EmailMessage_Headers")]
+        public Amazon.Pinpoint.Model.MessageHeader[] EmailMessage_Header { get; set; }
         #endregion
         
         #region Parameter WriteCampaignRequest_HoldoutPercent
@@ -823,7 +862,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <summary>
         /// <para>
         /// <para>One or more custom metrics that your application reports to Amazon Pinpoint. You can
-        /// use these metrics as selection criteria when you create an event filter.</para>
+        /// use these metrics as selection criteria when you create an event filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1149,7 +1192,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// in the <i>API Reference for Amazon Pinpoint</i>, <a href="https://docs.aws.amazon.com/cli/latest/reference/resourcegroupstaggingapi/index.html">resourcegroupstaggingapi</a>
         /// commands in the <i>AWS Command Line Interface Documentation</i> or <a href="https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/resourcegroupstaggingapi/package-summary.html">resourcegroupstaggingapi</a>
         /// in the <i>AWS SDK</i>.</para></note><para>(Deprecated) A string-to-string map of key-value pairs that defines the tags to associate
-        /// with the campaign. Each tag consists of a required tag key and an associated tag value.</para>
+        /// with the campaign. Each tag consists of a required tag key and an associated tag value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1429,7 +1476,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         /// <para>
         /// <para>The criteria values to use for the segment dimension. Depending on the value of the
         /// DimensionType property, endpoints are included or excluded from the segment if their
-        /// values match the criteria values.</para>
+        /// values match the criteria values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1544,16 +1595,6 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         public string Select { get; set; } = "CampaignResponse";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -1564,9 +1605,13 @@ namespace Amazon.PowerShell.Cmdlets.PIN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -1580,21 +1625,11 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Pinpoint.Model.CreateCampaignResponse, NewPINCampaignCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -1673,6 +1708,10 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             context.DefaultMessage_Url = this.DefaultMessage_Url;
             context.EmailMessage_Body = this.EmailMessage_Body;
             context.EmailMessage_FromAddress = this.EmailMessage_FromAddress;
+            if (this.EmailMessage_Header != null)
+            {
+                context.EmailMessage_Header = new List<Amazon.Pinpoint.Model.MessageHeader>(this.EmailMessage_Header);
+            }
             context.EmailMessage_HtmlBody = this.EmailMessage_HtmlBody;
             context.EmailMessage_Title = this.EmailMessage_Title;
             context.GCMMessage_Action = this.GCMMessage_Action;
@@ -2454,61 +2493,6 @@ namespace Amazon.PowerShell.Cmdlets.PIN
                 requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration.CustomMessage = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_CustomMessage;
                 requestWriteCampaignRequest_writeCampaignRequest_MessageConfigurationIsNull = false;
             }
-            Amazon.Pinpoint.Model.CampaignEmailMessage requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage = null;
-            
-             // populate EmailMessage
-            var requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = true;
-            requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage = new Amazon.Pinpoint.Model.CampaignEmailMessage();
-            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body = null;
-            if (cmdletContext.EmailMessage_Body != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body = cmdletContext.EmailMessage_Body;
-            }
-            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.Body = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body;
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
-            }
-            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress = null;
-            if (cmdletContext.EmailMessage_FromAddress != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress = cmdletContext.EmailMessage_FromAddress;
-            }
-            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.FromAddress = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress;
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
-            }
-            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody = null;
-            if (cmdletContext.EmailMessage_HtmlBody != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody = cmdletContext.EmailMessage_HtmlBody;
-            }
-            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.HtmlBody = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody;
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
-            }
-            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title = null;
-            if (cmdletContext.EmailMessage_Title != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title = cmdletContext.EmailMessage_Title;
-            }
-            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.Title = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title;
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
-            }
-             // determine if requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage should be set to null
-            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage = null;
-            }
-            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage != null)
-            {
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration.EmailMessage = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage;
-                requestWriteCampaignRequest_writeCampaignRequest_MessageConfigurationIsNull = false;
-            }
             Amazon.Pinpoint.Model.CampaignInAppMessage requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_InAppMessage = null;
             
              // populate InAppMessage
@@ -2562,6 +2546,71 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_InAppMessage != null)
             {
                 requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration.InAppMessage = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_InAppMessage;
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfigurationIsNull = false;
+            }
+            Amazon.Pinpoint.Model.CampaignEmailMessage requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage = null;
+            
+             // populate EmailMessage
+            var requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = true;
+            requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage = new Amazon.Pinpoint.Model.CampaignEmailMessage();
+            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body = null;
+            if (cmdletContext.EmailMessage_Body != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body = cmdletContext.EmailMessage_Body;
+            }
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.Body = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Body;
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
+            }
+            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress = null;
+            if (cmdletContext.EmailMessage_FromAddress != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress = cmdletContext.EmailMessage_FromAddress;
+            }
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.FromAddress = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_FromAddress;
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
+            }
+            List<Amazon.Pinpoint.Model.MessageHeader> requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Header = null;
+            if (cmdletContext.EmailMessage_Header != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Header = cmdletContext.EmailMessage_Header;
+            }
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Header != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.Headers = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Header;
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
+            }
+            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody = null;
+            if (cmdletContext.EmailMessage_HtmlBody != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody = cmdletContext.EmailMessage_HtmlBody;
+            }
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.HtmlBody = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_HtmlBody;
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
+            }
+            System.String requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title = null;
+            if (cmdletContext.EmailMessage_Title != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title = cmdletContext.EmailMessage_Title;
+            }
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage.Title = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage_emailMessage_Title;
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull = false;
+            }
+             // determine if requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage should be set to null
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessageIsNull)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage = null;
+            }
+            if (requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage != null)
+            {
+                requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration.EmailMessage = requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_EmailMessage;
                 requestWriteCampaignRequest_writeCampaignRequest_MessageConfigurationIsNull = false;
             }
             Amazon.Pinpoint.Model.CampaignSmsMessage requestWriteCampaignRequest_writeCampaignRequest_MessageConfiguration_writeCampaignRequest_MessageConfiguration_SMSMessage = null;
@@ -3367,13 +3416,7 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint", "CreateCampaign");
             try
             {
-                #if DESKTOP
-                return client.CreateCampaign(request);
-                #elif CORECLR
-                return client.CreateCampaignAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCampaignAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -3456,6 +3499,7 @@ namespace Amazon.PowerShell.Cmdlets.PIN
             public System.String DefaultMessage_Url { get; set; }
             public System.String EmailMessage_Body { get; set; }
             public System.String EmailMessage_FromAddress { get; set; }
+            public List<Amazon.Pinpoint.Model.MessageHeader> EmailMessage_Header { get; set; }
             public System.String EmailMessage_HtmlBody { get; set; }
             public System.String EmailMessage_Title { get; set; }
             public Amazon.Pinpoint.Action GCMMessage_Action { get; set; }

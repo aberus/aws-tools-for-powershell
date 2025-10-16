@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -38,8 +40,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// for those volumes. When you launch an instance from this new AMI, the instance automatically
     /// launches with those additional volumes.
     /// </para><para>
+    /// The location of the source instance determines where you can create the snapshots
+    /// of the AMI:
+    /// </para><ul><li><para>
+    /// If the source instance is in a Region, you must create the snapshots in the same Region
+    /// as the instance.
+    /// </para></li><li><para>
+    /// If the source instance is in a Local Zone, you can create the snapshots in the same
+    /// Local Zone or in its parent Region.
+    /// </para></li></ul><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html">Create
-    /// an Amazon EBS-backed Linux AMI</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// an Amazon EBS-backed AMI</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EC2Image", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -47,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateImage API operation.", Operation = new[] {"CreateImage"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateImageResponse))]
     [AWSCmdletOutput("System.String or Amazon.EC2.Model.CreateImageResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EC2.Model.CreateImageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateImageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2ImageCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BlockDeviceMapping
         /// <summary>
@@ -61,7 +73,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// volume size, you must first change the volume size of the source instance.</para></li><li><para>You can't modify the encryption status of existing volumes or snapshots. To create
         /// an AMI with volumes or snapshots that have a different encryption status (for example,
         /// where the source volume and snapshots are unencrypted, and you want to create an AMI
-        /// with encrypted volumes or snapshots), use the <a>CopyImage</a> action.</para></li><li><para>The only option that can be changed for existing mappings or snapshots is <c>DeleteOnTermination</c>.</para></li></ul>
+        /// with encrypted volumes or snapshots), copy the image instead.</para></li><li><para>The only option that can be changed for existing mappings or snapshots is <c>DeleteOnTermination</c>.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 4, ValueFromPipelineByPropertyName = true)]
@@ -77,6 +93,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter InstanceId
@@ -131,6 +159,19 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.Boolean? NoReboot { get; set; }
         #endregion
         
+        #region Parameter SnapshotLocation
+        /// <summary>
+        /// <para>
+        /// <note><para>Only supported for instances in Local Zones. If the source instance is not in a Local
+        /// Zone, omit this parameter.</para></note><para>The Amazon S3 location where the snapshots will be stored.</para><ul><li><para>To create local snapshots in the same Local Zone as the source instance, specify <c>local</c>.</para></li><li><para>To create regional snapshots in the parent Region of the Local Zone, specify <c>regional</c>
+        /// or omit this parameter.</para></li></ul><para>Default: <c>regional</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EC2.SnapshotLocationEnum")]
+        public Amazon.EC2.SnapshotLocationEnum SnapshotLocation { get; set; }
+        #endregion
+        
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
@@ -138,7 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// or both.</para><ul><li><para>To tag the AMI, the value for <c>ResourceType</c> must be <c>image</c>.</para></li><li><para>To tag the snapshots that are created of the root volume and of other Amazon EBS volumes
         /// that are attached to the instance, the value for <c>ResourceType</c> must be <c>snapshot</c>.
         /// The same tag is applied to all of the snapshots that are created.</para></li></ul><para>If you specify other values for <c>ResourceType</c>, the request fails.</para><para>To tag an AMI or snapshot after it has been created, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html">CreateTags</a>.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,16 +202,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "ImageId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -177,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -193,26 +232,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateImageResponse, NewEC2ImageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.BlockDeviceMapping != null)
             {
                 context.BlockDeviceMapping = new List<Amazon.EC2.Model.BlockDeviceMapping>(this.BlockDeviceMapping);
             }
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
             context.InstanceId = this.InstanceId;
             #if MODULAR
             if (this.InstanceId == null && ParameterWasBound(nameof(this.InstanceId)))
@@ -228,6 +258,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             }
             #endif
             context.NoReboot = this.NoReboot;
+            context.SnapshotLocation = this.SnapshotLocation;
             if (this.TagSpecification != null)
             {
                 context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
@@ -256,6 +287,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.InstanceId != null)
             {
                 request.InstanceId = cmdletContext.InstanceId;
@@ -267,6 +302,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.NoReboot != null)
             {
                 request.NoReboot = cmdletContext.NoReboot.Value;
+            }
+            if (cmdletContext.SnapshotLocation != null)
+            {
+                request.SnapshotLocation = cmdletContext.SnapshotLocation;
             }
             if (cmdletContext.TagSpecification != null)
             {
@@ -310,13 +349,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateImage");
             try
             {
-                #if DESKTOP
-                return client.CreateImage(request);
-                #elif CORECLR
-                return client.CreateImageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateImageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -335,9 +368,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         {
             public List<Amazon.EC2.Model.BlockDeviceMapping> BlockDeviceMapping { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String InstanceId { get; set; }
             public System.String Name { get; set; }
             public System.Boolean? NoReboot { get; set; }
+            public Amazon.EC2.SnapshotLocationEnum SnapshotLocation { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public System.Func<Amazon.EC2.Model.CreateImageResponse, NewEC2ImageCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ImageId;

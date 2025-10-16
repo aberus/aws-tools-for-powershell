@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QBusiness;
 using Amazon.QBusiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QBUS
 {
     /// <summary>
@@ -36,7 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
     /// Property Teams" includes sub groups "Research" and "Engineering". These sub groups
     /// include their own list of users or people who work in these teams. Only users who
     /// work in research and engineering, and therefore belong in the intellectual property
-    /// group, can see top-secret company documents in their Amazon Q chat results.
+    /// group, can see top-secret company documents in their Amazon Q Business chat results.
+    /// </para><para>
+    /// There are two options for creating groups, either passing group members inline or
+    /// using an S3 file via the S3PathForGroupMembers field. For inline groups, there is
+    /// a limit of 1000 members per group and for provided S3 files there is a limit of 100
+    /// thousand members. When creating a group using an S3 file, you provide both an S3 file
+    /// and a <c>RoleArn</c> for Amazon Q Buisness to access the file.
     /// </para>
     /// </summary>
     [Cmdlet("Write", "QBUSGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -44,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
     [AWSCmdlet("Calls the Amazon QBusiness PutGroup API operation.", Operation = new[] {"PutGroup"}, SelectReturnType = typeof(Amazon.QBusiness.Model.PutGroupResponse))]
     [AWSCmdletOutput("None or Amazon.QBusiness.Model.PutGroupResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.QBusiness.Model.PutGroupResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.QBusiness.Model.PutGroupResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteQBUSGroupCmdlet : AmazonQBusinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -66,6 +75,17 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ApplicationId { get; set; }
+        #endregion
+        
+        #region Parameter S3PathForGroupMembers_Bucket
+        /// <summary>
+        /// <para>
+        /// <para>The name of the S3 bucket that contains the file.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("GroupMembers_S3PathForGroupMembers_Bucket")]
+        public System.String S3PathForGroupMembers_Bucket { get; set; }
         #endregion
         
         #region Parameter DataSourceId
@@ -88,10 +108,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <para>
         /// <para>The list that contains your users or sub groups that belong the same group. For example,
         /// the group "Company" includes the user "CEO" and the sub groups "Research", "Engineering",
-        /// and "Sales and Marketing".</para><para>If you have more than 1000 users and/or sub groups for a single group, you need to
-        /// provide the path to the S3 file that lists your users and sub groups for a group.
-        /// Your sub groups can contain more than 1000 users, but the list of sub groups that
-        /// belong to a group (and/or users) must be no more than 1000.</para>
+        /// and "Sales and Marketing".</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -122,11 +139,26 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public System.String IndexId { get; set; }
         #endregion
         
+        #region Parameter S3PathForGroupMembers_Key
+        /// <summary>
+        /// <para>
+        /// <para>The name of the file.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("GroupMembers_S3PathForGroupMembers_Key")]
+        public System.String S3PathForGroupMembers_Key { get; set; }
+        #endregion
+        
         #region Parameter GroupMembers_MemberGroup
         /// <summary>
         /// <para>
         /// <para>A list of sub groups that belong to a group. For example, the sub groups "Research",
-        /// "Engineering", and "Sales and Marketing" all belong to the group "Company".</para>
+        /// "Engineering", and "Sales and Marketing" all belong to the group "Company".</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,12 +170,27 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>A list of users that belong to a group. For example, a list of interns all belong
-        /// to the "Interns" group.</para>
+        /// to the "Interns" group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("GroupMembers_MemberUsers")]
         public Amazon.QBusiness.Model.MemberUser[] GroupMembers_MemberUser { get; set; }
+        #endregion
+        
+        #region Parameter RoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that has access to the S3 file that
+        /// contains your list of users that belong to a group.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String RoleArn { get; set; }
         #endregion
         
         #region Parameter Type
@@ -173,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -193,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GroupName), MyInvocation.BoundParameters);
@@ -209,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QBusiness.Model.PutGroupResponse, WriteQBUSGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -240,6 +271,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             {
                 context.GroupMembers_MemberUser = new List<Amazon.QBusiness.Model.MemberUser>(this.GroupMembers_MemberUser);
             }
+            context.S3PathForGroupMembers_Bucket = this.S3PathForGroupMembers_Bucket;
+            context.S3PathForGroupMembers_Key = this.S3PathForGroupMembers_Key;
             context.GroupName = this.GroupName;
             #if MODULAR
             if (this.GroupName == null && ParameterWasBound(nameof(this.GroupName)))
@@ -254,6 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
                 WriteWarning("You are passing $null as a value for parameter IndexId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.RoleArn = this.RoleArn;
             context.Type = this.Type;
             #if MODULAR
             if (this.Type == null && ParameterWasBound(nameof(this.Type)))
@@ -309,6 +343,41 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
                 request.GroupMembers.MemberUsers = requestGroupMembers_groupMembers_MemberUser;
                 requestGroupMembersIsNull = false;
             }
+            Amazon.QBusiness.Model.S3 requestGroupMembers_groupMembers_S3PathForGroupMembers = null;
+            
+             // populate S3PathForGroupMembers
+            var requestGroupMembers_groupMembers_S3PathForGroupMembersIsNull = true;
+            requestGroupMembers_groupMembers_S3PathForGroupMembers = new Amazon.QBusiness.Model.S3();
+            System.String requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Bucket = null;
+            if (cmdletContext.S3PathForGroupMembers_Bucket != null)
+            {
+                requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Bucket = cmdletContext.S3PathForGroupMembers_Bucket;
+            }
+            if (requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Bucket != null)
+            {
+                requestGroupMembers_groupMembers_S3PathForGroupMembers.Bucket = requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Bucket;
+                requestGroupMembers_groupMembers_S3PathForGroupMembersIsNull = false;
+            }
+            System.String requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Key = null;
+            if (cmdletContext.S3PathForGroupMembers_Key != null)
+            {
+                requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Key = cmdletContext.S3PathForGroupMembers_Key;
+            }
+            if (requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Key != null)
+            {
+                requestGroupMembers_groupMembers_S3PathForGroupMembers.Key = requestGroupMembers_groupMembers_S3PathForGroupMembers_s3PathForGroupMembers_Key;
+                requestGroupMembers_groupMembers_S3PathForGroupMembersIsNull = false;
+            }
+             // determine if requestGroupMembers_groupMembers_S3PathForGroupMembers should be set to null
+            if (requestGroupMembers_groupMembers_S3PathForGroupMembersIsNull)
+            {
+                requestGroupMembers_groupMembers_S3PathForGroupMembers = null;
+            }
+            if (requestGroupMembers_groupMembers_S3PathForGroupMembers != null)
+            {
+                request.GroupMembers.S3PathForGroupMembers = requestGroupMembers_groupMembers_S3PathForGroupMembers;
+                requestGroupMembersIsNull = false;
+            }
              // determine if request.GroupMembers should be set to null
             if (requestGroupMembersIsNull)
             {
@@ -321,6 +390,10 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             if (cmdletContext.IndexId != null)
             {
                 request.IndexId = cmdletContext.IndexId;
+            }
+            if (cmdletContext.RoleArn != null)
+            {
+                request.RoleArn = cmdletContext.RoleArn;
             }
             if (cmdletContext.Type != null)
             {
@@ -364,13 +437,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QBusiness", "PutGroup");
             try
             {
-                #if DESKTOP
-                return client.PutGroup(request);
-                #elif CORECLR
-                return client.PutGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -391,8 +458,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             public System.String DataSourceId { get; set; }
             public List<Amazon.QBusiness.Model.MemberGroup> GroupMembers_MemberGroup { get; set; }
             public List<Amazon.QBusiness.Model.MemberUser> GroupMembers_MemberUser { get; set; }
+            public System.String S3PathForGroupMembers_Bucket { get; set; }
+            public System.String S3PathForGroupMembers_Key { get; set; }
             public System.String GroupName { get; set; }
             public System.String IndexId { get; set; }
+            public System.String RoleArn { get; set; }
             public Amazon.QBusiness.MembershipType Type { get; set; }
             public System.Func<Amazon.QBusiness.Model.PutGroupResponse, WriteQBUSGroupCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

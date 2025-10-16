@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -41,7 +43,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// </para></li></ul><para>
     /// For more information about how to develop extensions and ready them for registration,
     /// see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-types.html">Creating
-    /// Resource Providers</a> in the <i>CloudFormation CLI User Guide</i>.
+    /// resource types using the CloudFormation CLI</a> in the <i>CloudFormation Command Line
+    /// Interface (CLI) User Guide</i>.
     /// </para><para>
     /// You can have a maximum of 50 resource extension versions registered at a time. This
     /// maximum is per account and per Region. Use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DeregisterType.html">DeregisterType</a>
@@ -51,8 +54,9 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// use <a>DescribeTypeRegistration</a> to monitor the progress of the registration request.
     /// </para><para>
     /// Once you have registered a private extension in your account and Region, use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_SetTypeConfiguration.html">SetTypeConfiguration</a>
-    /// to specify configuration properties for the extension. For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-register.html#registry-set-configuration">Configuring
-    /// extensions at the account level</a> in the <i>CloudFormation User Guide</i>.
+    /// to specify configuration properties for the extension. For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-set-configuration.html">Edit
+    /// configuration data for extensions in your account</a> in the <i>CloudFormation User
+    /// Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Register", "CFNType", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -60,12 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation RegisterType API operation.", Operation = new[] {"RegisterType"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.RegisterTypeResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudFormation.Model.RegisterTypeResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudFormation.Model.RegisterTypeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.RegisterTypeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterCFNTypeCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -125,10 +130,10 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter SchemaHandlerPackage
         /// <summary>
         /// <para>
-        /// <para>A URL to the S3 bucket containing the extension project package that contains the
+        /// <para>A URL to the S3 bucket that contains the extension project package that contains the
         /// necessary files for the extension you want to register.</para><para>For information about generating a schema handler package for the extension you want
         /// to register, see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-cli-submit.html">submit</a>
-        /// in the <i>CloudFormation CLI User Guide</i>.</para><note><para>The user registering the extension must be able to access the package in the S3 bucket.
+        /// in the <i>CloudFormation Command Line Interface (CLI) User Guide</i>.</para><note><para>The user registering the extension must be able to access the package in the S3 bucket.
         /// That's, the user needs to have <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html">GetObject</a>
         /// permissions for the schema handler package. For more information, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/list_amazons3.html">Actions,
         /// Resources, and Condition Keys for Amazon S3</a> in the <i>Identity and Access Management
@@ -160,7 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TypeName
         /// <summary>
         /// <para>
-        /// <para>The name of the extension being registered.</para><para>We suggest that extension names adhere to the following patterns:</para><ul><li><para>For resource types, <i>company_or_organization</i>::<i>service</i>::<i>type</i>.</para></li><li><para>For modules, <i>company_or_organization</i>::<i>service</i>::<i>type</i>::MODULE.</para></li><li><para>For hooks, <i>MyCompany</i>::<i>Testing</i>::<i>MyTestHook</i>.</para></li></ul><note><para>The following organization namespaces are reserved and can't be used in your extension
+        /// <para>The name of the extension being registered.</para><para>We suggest that extension names adhere to the following patterns:</para><ul><li><para>For resource types, <c>company_or_organization::service::type</c>.</para></li><li><para>For modules, <c>company_or_organization::service::type::MODULE</c>.</para></li><li><para>For Hooks, <c>MyCompany::Testing::MyTestHook</c>.</para></li></ul><note><para>The following organization namespaces are reserved and can't be used in your extension
         /// names:</para><ul><li><para><c>Alexa</c></para></li><li><para><c>AMZN</c></para></li><li><para><c>Amazon</c></para></li><li><para><c>AWS</c></para></li><li><para><c>Custom</c></para></li><li><para><c>Dev</c></para></li></ul></note>
         /// </para>
         /// </summary>
@@ -186,16 +191,6 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "RegistrationToken";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TypeName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TypeName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TypeName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -206,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TypeName), MyInvocation.BoundParameters);
@@ -222,21 +221,11 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFormation.Model.RegisterTypeResponse, RegisterCFNTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TypeName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.ExecutionRoleArn = this.ExecutionRoleArn;
             context.LoggingConfig_LogGroupName = this.LoggingConfig_LogGroupName;
@@ -359,13 +348,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "RegisterType");
             try
             {
-                #if DESKTOP
-                return client.RegisterType(request);
-                #elif CORECLR
-                return client.RegisterTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

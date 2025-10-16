@@ -129,9 +129,16 @@ $EC2IB_Completers = {
         }
 
         # Amazon.Imagebuilder.LifecyclePolicyTimeUnit
-        "Start-EC2IBResourceStateUpdate/ExclusionRules_Amis_LastLaunched_Unit"
+        "Start-EC2IBResourceStateUpdate/LastLaunched_Unit"
         {
             $v = "DAYS","MONTHS","WEEKS","YEARS"
+            break
+        }
+
+        # Amazon.Imagebuilder.MarketplaceResourceType
+        "Get-EC2IBMarketplaceResource/ResourceType"
+        {
+            $v = "COMPONENT_ARTIFACT","COMPONENT_DATA"
             break
         }
 
@@ -144,7 +151,7 @@ $EC2IB_Completers = {
             ($_ -eq "Get-EC2IBWorkflowList/Owner")
         }
         {
-            $v = "Amazon","Self","Shared","ThirdParty"
+            $v = "Amazon","AWSMarketplace","Self","Shared","ThirdParty"
             break
         }
 
@@ -176,7 +183,7 @@ $EC2IB_Completers = {
             ($_ -eq "New-EC2IBContainerRecipe/PlatformOverride")
         }
         {
-            $v = "Linux","Windows"
+            $v = "Linux","macOS","Windows"
             break
         }
 
@@ -184,6 +191,16 @@ $EC2IB_Completers = {
         "Start-EC2IBResourceStateUpdate/State_Status"
         {
             $v = "AVAILABLE","DELETED","DEPRECATED","DISABLED"
+            break
+        }
+
+        # Amazon.Imagebuilder.TenancyType
+        {
+            ($_ -eq "New-EC2IBInfrastructureConfiguration/Placement_Tenancy") -Or
+            ($_ -eq "Update-EC2IBInfrastructureConfiguration/Placement_Tenancy")
+        }
+        {
+            $v = "dedicated","default","host"
             break
         }
 
@@ -212,12 +229,13 @@ $EC2IB_Completers = {
 $EC2IB_map = @{
     "Action"=@("Send-EC2IBWorkflowStepAction")
     "ContainerType"=@("New-EC2IBContainerRecipe")
-    "ExclusionRules_Amis_LastLaunched_Unit"=@("Start-EC2IBResourceStateUpdate")
     "Format"=@("Import-EC2IBComponent")
+    "LastLaunched_Unit"=@("Start-EC2IBResourceStateUpdate")
     "Owner"=@("Get-EC2IBComponentList","Get-EC2IBContainerRecipeList","Get-EC2IBImageList","Get-EC2IBImageRecipeList","Get-EC2IBWorkflowList")
+    "Placement_Tenancy"=@("New-EC2IBInfrastructureConfiguration","Update-EC2IBInfrastructureConfiguration")
     "Platform"=@("Import-EC2IBComponent","Import-EC2IBVmImage","New-EC2IBComponent")
     "PlatformOverride"=@("New-EC2IBContainerRecipe")
-    "ResourceType"=@("New-EC2IBLifecyclePolicy","Update-EC2IBLifecyclePolicy")
+    "ResourceType"=@("Get-EC2IBMarketplaceResource","New-EC2IBLifecyclePolicy","Update-EC2IBLifecyclePolicy")
     "Schedule_PipelineExecutionStartCondition"=@("New-EC2IBImagePipeline","Update-EC2IBImagePipeline")
     "State_Status"=@("Start-EC2IBResourceStateUpdate")
     "Status"=@("New-EC2IBImagePipeline","New-EC2IBLifecyclePolicy","Update-EC2IBImagePipeline","Update-EC2IBLifecyclePolicy")
@@ -308,10 +326,12 @@ $EC2IB_SelectMap = @{
                "Get-EC2IBInfrastructureConfiguration",
                "Get-EC2IBLifecycleExecution",
                "Get-EC2IBLifecyclePolicy",
+               "Get-EC2IBMarketplaceResource",
                "Get-EC2IBWorkflow",
                "Get-EC2IBWorkflowExecution",
                "Get-EC2IBWorkflowStepExecution",
                "Import-EC2IBComponent",
+               "Import-EC2IBDiskImage",
                "Import-EC2IBVmImage",
                "Get-EC2IBComponentBuildVersionList",
                "Get-EC2IBComponentList",

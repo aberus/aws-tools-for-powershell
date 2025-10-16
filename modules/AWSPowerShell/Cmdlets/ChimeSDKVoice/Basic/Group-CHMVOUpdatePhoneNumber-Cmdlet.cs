@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,43 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKVoice;
 using Amazon.ChimeSDKVoice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMVO
 {
     /// <summary>
-    /// Updates one or more phone numbers.
+    /// Updates phone number product types, calling names, or phone number names. You can
+    /// update one attribute at a time for each <c>UpdatePhoneNumberRequestItem</c>. For example,
+    /// you can update the product type, the calling name, or phone name. 
+    /// 
+    ///  <note><para>
+    /// You cannot have a duplicate <c>phoneNumberId</c> in a request.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Group", "CHMVOUpdatePhoneNumber", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ChimeSDKVoice.Model.PhoneNumberError")]
     [AWSCmdlet("Calls the Amazon Chime SDK Voice BatchUpdatePhoneNumber API operation.", Operation = new[] {"BatchUpdatePhoneNumber"}, SelectReturnType = typeof(Amazon.ChimeSDKVoice.Model.BatchUpdatePhoneNumberResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKVoice.Model.PhoneNumberError or Amazon.ChimeSDKVoice.Model.BatchUpdatePhoneNumberResponse",
         "This cmdlet returns a collection of Amazon.ChimeSDKVoice.Model.PhoneNumberError objects.",
-        "The service call response (type Amazon.ChimeSDKVoice.Model.BatchUpdatePhoneNumberResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ChimeSDKVoice.Model.BatchUpdatePhoneNumberResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GroupCHMVOUpdatePhoneNumberCmdlet : AmazonChimeSDKVoiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter UpdatePhoneNumberRequestItem
         /// <summary>
         /// <para>
-        /// <para>Lists the phone numbers in the update request.</para>
+        /// <para>Lists the phone numbers in the update request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -85,9 +94,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UpdatePhoneNumberRequestItem), MyInvocation.BoundParameters);
@@ -174,13 +187,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Voice", "BatchUpdatePhoneNumber");
             try
             {
-                #if DESKTOP
-                return client.BatchUpdatePhoneNumber(request);
-                #elif CORECLR
-                return client.BatchUpdatePhoneNumberAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchUpdatePhoneNumberAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

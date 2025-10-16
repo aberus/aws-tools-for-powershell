@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,35 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
     /// Describes auto scaling settings across replicas of the global table at once.
-    /// 
-    ///  <important><para>
-    /// This operation only applies to <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/globaltables.V2.html">Version
-    /// 2019.11.21 (Current)</a> of global tables.
-    /// </para></important>
     /// </summary>
     [Cmdlet("Get", "DDBTableReplicaAutoScaling")]
     [OutputType("Amazon.DynamoDBv2.Model.TableAutoScalingDescription")]
     [AWSCmdlet("Calls the Amazon DynamoDB DescribeTableReplicaAutoScaling API operation.", Operation = new[] {"DescribeTableReplicaAutoScaling"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.DescribeTableReplicaAutoScalingResponse))]
     [AWSCmdletOutput("Amazon.DynamoDBv2.Model.TableAutoScalingDescription or Amazon.DynamoDBv2.Model.DescribeTableReplicaAutoScalingResponse",
         "This cmdlet returns an Amazon.DynamoDBv2.Model.TableAutoScalingDescription object.",
-        "The service call response (type Amazon.DynamoDBv2.Model.DescribeTableReplicaAutoScalingResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.DescribeTableReplicaAutoScalingResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDDBTableReplicaAutoScalingCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TableName
         /// <summary>
         /// <para>
-        /// <para>The name of the table.</para>
+        /// <para>The name of the table. You can also provide the Amazon Resource Name (ARN) of the
+        /// table in this parameter.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -75,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "TableAutoScalingDescription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TableName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TableName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TableName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -95,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.DescribeTableReplicaAutoScalingResponse, GetDDBTableReplicaAutoScalingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TableName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.TableName = this.TableName;
             #if MODULAR
             if (this.TableName == null && ParameterWasBound(nameof(this.TableName)))
@@ -175,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "DescribeTableReplicaAutoScaling");
             try
             {
-                #if DESKTOP
-                return client.DescribeTableReplicaAutoScaling(request);
-                #elif CORECLR
-                return client.DescribeTableReplicaAutoScalingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeTableReplicaAutoScalingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

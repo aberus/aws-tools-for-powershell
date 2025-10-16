@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GroundStation;
 using Amazon.GroundStation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GS
 {
     /// <summary>
@@ -41,18 +43,19 @@ namespace Amazon.PowerShell.Cmdlets.GS
     [AWSCmdlet("Calls the AWS Ground Station UpdateMissionProfile API operation.", Operation = new[] {"UpdateMissionProfile"}, SelectReturnType = typeof(Amazon.GroundStation.Model.UpdateMissionProfileResponse))]
     [AWSCmdletOutput("System.String or Amazon.GroundStation.Model.UpdateMissionProfileResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GroundStation.Model.UpdateMissionProfileResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GroundStation.Model.UpdateMissionProfileResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateGSMissionProfileCmdlet : AmazonGroundStationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactPostPassDurationSecond
         /// <summary>
         /// <para>
-        /// <para>Amount of time after a contact ends that you’d like to receive a CloudWatch event
-        /// indicating the pass has finished.</para>
+        /// <para>Amount of time after a contact ends that you’d like to receive a Ground Station Contact
+        /// State Change event indicating the pass has finished.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,8 +66,8 @@ namespace Amazon.PowerShell.Cmdlets.GS
         #region Parameter ContactPrePassDurationSecond
         /// <summary>
         /// <para>
-        /// <para>Amount of time after a contact ends that you’d like to receive a CloudWatch event
-        /// indicating the pass has finished.</para>
+        /// <para>Amount of time after a contact ends that you’d like to receive a Ground Station Contact
+        /// State Change event indicating the pass has finished.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,7 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.GS
         /// <summary>
         /// <para>
         /// <para>A list of lists of ARNs. Each list of ARNs is an edge, with a <i>from</i><c>Config</c>
-        /// and a <i>to</i><c>Config</c>.</para>
+        /// and a <i>to</i><c>Config</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,16 +191,6 @@ namespace Amazon.PowerShell.Cmdlets.GS
         public string Select { get; set; } = "MissionProfileId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MissionProfileId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MissionProfileId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MissionProfileId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -204,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.GS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MissionProfileId), MyInvocation.BoundParameters);
@@ -220,21 +221,11 @@ namespace Amazon.PowerShell.Cmdlets.GS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GroundStation.Model.UpdateMissionProfileResponse, UpdateGSMissionProfileCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MissionProfileId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContactPostPassDurationSecond = this.ContactPostPassDurationSecond;
             context.ContactPrePassDurationSecond = this.ContactPrePassDurationSecond;
             if (this.DataflowEdge != null)
@@ -384,13 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.GS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Ground Station", "UpdateMissionProfile");
             try
             {
-                #if DESKTOP
-                return client.UpdateMissionProfile(request);
-                #elif CORECLR
-                return client.UpdateMissionProfileAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateMissionProfileAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,39 +22,45 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Copies a point-in-time snapshot of an EBS volume and stores it in Amazon S3. You can
-    /// copy a snapshot within the same Region, from one Region to another, or from a Region
-    /// to an Outpost. You can't copy a snapshot from an Outpost to a Region, from one Outpost
-    /// to another, or within the same Outpost.
+    /// Creates an exact copy of an Amazon EBS snapshot.
     /// 
     ///  
     /// <para>
-    /// You can use the snapshot to create EBS volumes or Amazon Machine Images (AMIs).
+    /// The location of the source snapshot determines whether you can copy it or not, and
+    /// the allowed destinations for the snapshot copy.
+    /// </para><ul><li><para>
+    /// If the source snapshot is in a Region, you can copy it within that Region, to another
+    /// Region, to an Outpost associated with that Region, or to a Local Zone in that Region.
+    /// </para></li><li><para>
+    /// If the source snapshot is in a Local Zone, you can copy it within that Local Zone,
+    /// to another Local Zone in the same zone group, or to the parent Region of the Local
+    /// Zone.
+    /// </para></li><li><para>
+    /// If the source snapshot is on an Outpost, you can't copy it.
+    /// </para></li></ul><para>
+    /// When copying snapshots to a Region, the encryption outcome for the snapshot copy depends
+    /// on the Amazon EBS encryption by default setting for the destination Region, the encryption
+    /// status of the source snapshot, and the encryption parameters you specify in the request.
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-copy-snapshot.html#creating-encrypted-snapshots">
+    /// Encryption and snapshot copying</a>.
     /// </para><para>
-    /// When copying snapshots to a Region, copies of encrypted EBS snapshots remain encrypted.
-    /// Copies of unencrypted snapshots remain unencrypted, unless you enable encryption for
-    /// the snapshot copy operation. By default, encrypted snapshot copies use the default
-    /// Key Management Service (KMS) KMS key; however, you can specify a different KMS key.
-    /// To copy an encrypted snapshot that has been shared from another account, you must
-    /// have permissions for the KMS key used to encrypt the snapshot.
-    /// </para><para>
-    /// Snapshots copied to an Outpost are encrypted by default using the default encryption
-    /// key for the Region, or a different key that you specify in the request using <b>KmsKeyId</b>.
-    /// Outposts do not support unencrypted snapshots. For more information, <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#ami">
-    /// Amazon EBS local snapshots on Outposts</a> in the <i>Amazon Elastic Compute Cloud
-    /// User Guide</i>.
-    /// </para><para>
-    /// Snapshots created by copying another snapshot have an arbitrary volume ID that should
-    /// not be used for any purpose.
-    /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-copy-snapshot.html">Copy
-    /// an Amazon EBS snapshot</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// Snapshots copied to an Outpost must be encrypted. Unencrypted snapshots are not supported
+    /// on Outposts. For more information, <a href="https://docs.aws.amazon.com/ebs/latest/userguide/snapshots-outposts.html#considerations">
+    /// Amazon EBS local snapshots on Outposts</a>.
+    /// </para><note><para>
+    /// Snapshots copies have an arbitrary source volume ID. Do not use this volume ID for
+    /// any purpose.
+    /// </para></note><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-copy-snapshot.html">Copy
+    /// an Amazon EBS snapshot</a> in the <i>Amazon EBS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Copy", "EC2Snapshot", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -62,12 +68,28 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CopySnapshot API operation.", Operation = new[] {"CopySnapshot"}, SelectReturnType = typeof(Amazon.EC2.Model.CopySnapshotResponse))]
     [AWSCmdletOutput("System.String or Amazon.EC2.Model.CopySnapshotResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EC2.Model.CopySnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CopySnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class CopyEC2SnapshotCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter CompletionDurationMinute
+        /// <summary>
+        /// <para>
+        /// <note><para>Not supported when copying snapshots to or from Local Zones or Outposts.</para></note><para>Specify a completion duration, in 15 minute increments, to initiate a time-based snapshot
+        /// copy. Time-based snapshot copy operations complete within the specified duration.
+        /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/time-based-copies.html">
+        /// Time-based copies</a>.</para><para>If you do not specify a value, the snapshot copy operation is completed on a best-effort
+        /// basis.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CompletionDurationMinutes")]
+        public System.Int32? CompletionDurationMinute { get; set; }
+        #endregion
         
         #region Parameter Description
         /// <summary>
@@ -79,16 +101,22 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DestinationAvailabilityZone
+        /// <summary>
+        /// <para>
+        /// <para>The Local Zone, for example, <c>cn-north-1-pkx-1a</c> to which to copy the snapshot.</para><note><para>Only supported when copying a snapshot to a Local Zone.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DestinationAvailabilityZone { get; set; }
+        #endregion
+        
         #region Parameter DestinationOutpostArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Outpost to which to copy the snapshot. Only
-        /// specify this parameter when copying a snapshot from an Amazon Web Services Region
-        /// to an Outpost. The snapshot must be in the Region for the destination Outpost. You
-        /// cannot copy a snapshot from an Outpost to a Region, from one Outpost to another, or
-        /// within the same Outpost.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#copy-snapshots">
+        /// <para>The Amazon Resource Name (ARN) of the Outpost to which to copy the snapshot.</para><note><para>Only supported when copying a snapshot to an Outpost.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/snapshots-outposts.html#copy-snapshots">
         /// Copy snapshots from an Amazon Web Services Region to an Outpost</a> in the <i>Amazon
-        /// Elastic Compute Cloud User Guide</i>.</para>
+        /// EBS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,15 +138,27 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String DestinationRegion { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter Encrypted
         /// <summary>
         /// <para>
         /// <para>To encrypt a copy of an unencrypted snapshot if encryption by default is not enabled,
-        /// enable encryption using this parameter. Otherwise, omit this parameter. Encrypted
-        /// snapshots are encrypted, even if you omit this parameter and encryption by default
-        /// is not enabled. You cannot set this parameter to false. For more information, see
-        /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html">Amazon
-        /// EBS encryption</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.</para>
+        /// enable encryption using this parameter. Otherwise, omit this parameter. Copies of
+        /// encrypted snapshots are encrypted, even if you omit this parameter and encryption
+        /// by default is not enabled. You cannot set this parameter to false. For more information,
+        /// see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-encryption.html">Amazon
+        /// EBS encryption</a> in the <i>Amazon EBS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,9 +168,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Key Management Service (KMS) KMS key to use for Amazon EBS encryption.
-        /// If this parameter is not specified, your KMS key for Amazon EBS is used. If <c>KmsKeyId</c>
-        /// is specified, the encrypted state must be <c>true</c>.</para><para>You can specify the KMS key using any of the following:</para><ul><li><para>Key ID. For example, 1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Key alias. For example, alias/ExampleAlias.</para></li><li><para>Key ARN. For example, arn:aws:kms:us-east-1:012345678910:key/1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Alias ARN. For example, arn:aws:kms:us-east-1:012345678910:alias/ExampleAlias.</para></li></ul><para>Amazon Web Services authenticates the KMS key asynchronously. Therefore, if you specify
+        /// <para>The identifier of the KMS key to use for Amazon EBS encryption. If this parameter
+        /// is not specified, your KMS key for Amazon EBS is used. If <c>KmsKeyId</c> is specified,
+        /// the encrypted state must be <c>true</c>.</para><para>You can specify the KMS key using any of the following:</para><ul><li><para>Key ID. For example, 1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Key alias. For example, alias/ExampleAlias.</para></li><li><para>Key ARN. For example, arn:aws:kms:us-east-1:012345678910:key/1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Alias ARN. For example, arn:aws:kms:us-east-1:012345678910:alias/ExampleAlias.</para></li></ul><para>Amazon Web Services authenticates the KMS key asynchronously. Therefore, if you specify
         /// an ID, alias, or ARN that is not valid, the action can appear to complete, but eventually
         /// fails.</para>
         /// </para>
@@ -176,7 +216,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the new snapshot.</para>
+        /// <para>The tags to apply to the new snapshot.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -195,16 +239,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "SnapshotId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SourceSnapshotId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SourceSnapshotId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SourceSnapshotId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -215,9 +249,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceSnapshotId), MyInvocation.BoundParameters);
@@ -231,24 +269,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CopySnapshotResponse, CopyEC2SnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SourceSnapshotId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.CompletionDurationMinute = this.CompletionDurationMinute;
             context.Description = this.Description;
+            context.DestinationAvailabilityZone = this.DestinationAvailabilityZone;
             context.DestinationOutpostArn = this.DestinationOutpostArn;
             context.DestinationRegion = this.DestinationRegion;
+            context.DryRun = this.DryRun;
             context.Encrypted = this.Encrypted;
             context.KmsKeyId = this.KmsKeyId;
             context.SourceRegion = this.SourceRegion;
@@ -285,9 +316,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.CopySnapshotRequest();
             
+            if (cmdletContext.CompletionDurationMinute != null)
+            {
+                request.CompletionDurationMinutes = cmdletContext.CompletionDurationMinute.Value;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.DestinationAvailabilityZone != null)
+            {
+                request.DestinationAvailabilityZone = cmdletContext.DestinationAvailabilityZone;
             }
             if (cmdletContext.DestinationOutpostArn != null)
             {
@@ -296,6 +335,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.DestinationRegion != null)
             {
                 request.DestinationRegion = cmdletContext.DestinationRegion;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Encrypted != null)
             {
@@ -355,13 +398,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CopySnapshot");
             try
             {
-                #if DESKTOP
-                return client.CopySnapshot(request);
-                #elif CORECLR
-                return client.CopySnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CopySnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -378,9 +415,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Int32? CompletionDurationMinute { get; set; }
             public System.String Description { get; set; }
+            public System.String DestinationAvailabilityZone { get; set; }
             public System.String DestinationOutpostArn { get; set; }
             public System.String DestinationRegion { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? Encrypted { get; set; }
             public System.String KmsKeyId { get; set; }
             public System.String SourceRegion { get; set; }

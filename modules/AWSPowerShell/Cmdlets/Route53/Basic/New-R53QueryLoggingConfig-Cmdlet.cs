@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -66,11 +68,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
     /// policy for all the log groups that you create for query logging.
     /// </para></li></ul></li><li><para>
     /// Create a CloudWatch Logs resource policy, and give it the permissions that Route 53
-    /// needs to create log streams and to send query logs to log streams. For the value of
-    /// <c>Resource</c>, specify the ARN for the log group that you created in the previous
-    /// step. To use the same resource policy for all the CloudWatch Logs log groups that
-    /// you created for query logging configurations, replace the hosted zone name with <c>*</c>,
-    /// for example:
+    /// needs to create log streams and to send query logs to log streams. You must create
+    /// the CloudWatch Logs resource policy in the us-east-1 region. For the value of <c>Resource</c>,
+    /// specify the ARN for the log group that you created in the previous step. To use the
+    /// same resource policy for all the CloudWatch Logs log groups that you created for query
+    /// logging configurations, replace the hosted zone name with <c>*</c>, for example:
     /// </para><para><c>arn:aws:logs:us-east-1:123412341234:log-group:/aws/route53/*</c></para><para>
     /// To avoid the confused deputy problem, a security issue where an entity without a permission
     /// for an action can coerce a more-privileged entity to perform it, you can optionally
@@ -133,12 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [OutputType("Amazon.Route53.Model.CreateQueryLoggingConfigResponse")]
     [AWSCmdlet("Calls the Amazon Route 53 CreateQueryLoggingConfig API operation.", Operation = new[] {"CreateQueryLoggingConfig"}, SelectReturnType = typeof(Amazon.Route53.Model.CreateQueryLoggingConfigResponse))]
     [AWSCmdletOutput("Amazon.Route53.Model.CreateQueryLoggingConfigResponse",
-        "This cmdlet returns an Amazon.Route53.Model.CreateQueryLoggingConfigResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53.Model.CreateQueryLoggingConfigResponse object containing multiple properties."
     )]
     public partial class NewR53QueryLoggingConfigCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CloudWatchLogsLogGroupArn
         /// <summary>
@@ -189,16 +192,6 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the HostedZoneId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^HostedZoneId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^HostedZoneId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -209,9 +202,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.HostedZoneId), MyInvocation.BoundParameters);
@@ -225,21 +222,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Route53.Model.CreateQueryLoggingConfigResponse, NewR53QueryLoggingConfigCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.HostedZoneId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HostedZoneId = this.HostedZoneId;
             #if MODULAR
             if (this.HostedZoneId == null && ParameterWasBound(nameof(this.HostedZoneId)))
@@ -316,13 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "CreateQueryLoggingConfig");
             try
             {
-                #if DESKTOP
-                return client.CreateQueryLoggingConfig(request);
-                #elif CORECLR
-                return client.CreateQueryLoggingConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateQueryLoggingConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

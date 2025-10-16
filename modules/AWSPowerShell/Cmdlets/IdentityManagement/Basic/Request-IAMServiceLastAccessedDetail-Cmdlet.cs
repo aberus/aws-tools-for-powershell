@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -51,23 +53,24 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// The <c>GenerateServiceLastAccessedDetails</c> operation returns a <c>JobId</c>. Use
     /// this parameter in the following operations to retrieve the following details from
     /// your report: 
-    /// </para><ul><li><para><a>GetServiceLastAccessedDetails</a> – Use this operation for users, groups, roles,
-    /// or policies to list every Amazon Web Services service that the resource could access
-    /// using permissions policies. For each service, the response includes information about
-    /// the most recent access attempt.
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetServiceLastAccessedDetails.html">GetServiceLastAccessedDetails</a>
+    /// – Use this operation for users, groups, roles, or policies to list every Amazon Web
+    /// Services service that the resource could access using permissions policies. For each
+    /// service, the response includes information about the most recent access attempt.
     /// </para><para>
     /// The <c>JobId</c> returned by <c>GenerateServiceLastAccessedDetail</c> must be used
     /// by the same role within a session, or by the same user when used to call <c>GetServiceLastAccessedDetail</c>.
-    /// </para></li><li><para><a>GetServiceLastAccessedDetailsWithEntities</a> – Use this operation for groups
-    /// and policies to list information about the associated entities (users or roles) that
-    /// attempted to access a specific Amazon Web Services service. 
+    /// </para></li><li><para><a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetServiceLastAccessedDetailsWithEntities.html">GetServiceLastAccessedDetailsWithEntities</a>
+    /// – Use this operation for groups and policies to list information about the associated
+    /// entities (users or roles) that attempted to access a specific Amazon Web Services
+    /// service. 
     /// </para></li></ul><para>
     /// To check the status of the <c>GenerateServiceLastAccessedDetails</c> request, use
     /// the <c>JobId</c> parameter in the same operations and test the <c>JobStatus</c> response
     /// parameter.
     /// </para><para>
     /// For additional information about the permissions policies that allow an identity (user,
-    /// group, or role) to access specific services, use the <a>ListPoliciesGrantingServiceAccess</a>
+    /// group, or role) to access specific services, use the <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_ListPoliciesGrantingServiceAccess.html">ListPoliciesGrantingServiceAccess</a>
     /// operation.
     /// </para><note><para>
     /// Service last accessed data does not use other policy types when determining whether
@@ -86,12 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management GenerateServiceLastAccessedDetails API operation.", Operation = new[] {"GenerateServiceLastAccessedDetails"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.GenerateServiceLastAccessedDetailsResponse))]
     [AWSCmdletOutput("System.String or Amazon.IdentityManagement.Model.GenerateServiceLastAccessedDetailsResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.IdentityManagement.Model.GenerateServiceLastAccessedDetailsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.GenerateServiceLastAccessedDetailsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RequestIAMServiceLastAccessedDetailCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Arn
         /// <summary>
@@ -138,16 +142,6 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "JobId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Arn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Arn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Arn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -158,9 +152,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Arn), MyInvocation.BoundParameters);
@@ -174,21 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IdentityManagement.Model.GenerateServiceLastAccessedDetailsResponse, RequestIAMServiceLastAccessedDetailCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Arn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Arn = this.Arn;
             #if MODULAR
             if (this.Arn == null && ParameterWasBound(nameof(this.Arn)))
@@ -259,13 +247,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "GenerateServiceLastAccessedDetails");
             try
             {
-                #if DESKTOP
-                return client.GenerateServiceLastAccessedDetails(request);
-                #elif CORECLR
-                return client.GenerateServiceLastAccessedDetailsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GenerateServiceLastAccessedDetailsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

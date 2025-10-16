@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,6 +22,7 @@ using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.CloudSearchDomain;
 using Amazon.CloudSearchDomain.Model;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.CSD
 {
@@ -57,12 +58,14 @@ namespace Amazon.PowerShell.Cmdlets.CSD
     [OutputType("Amazon.CloudSearchDomain.Model.UploadDocumentsResponse")]
     [AWSCmdlet("Calls the Amazon CloudSearchDomain UploadDocuments API operation.", Operation = new[] { "UploadDocuments" }, SelectReturnType = typeof(Amazon.CloudSearchDomain.Model.UploadDocumentsResponse), LegacyAlias = "Write-CSDDocuments")]
     [AWSCmdletOutput("Amazon.CloudSearchDomain.Model.UploadDocumentsResponse",
-        "This cmdlet returns an Amazon.CloudSearchDomain.Model.UploadDocumentsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudSearchDomain.Model.UploadDocumentsResponse object containing multiple properties. The object can be returned by specifying '-Select *'."
     )]
     public class WriteCSDDocumentCmdlet : AmazonCloudSearchDomainClientCmdlet, IExecutor
     {
         const string ParamSet_FromLocalFile = "FromLocalFile";
         const string ParamSet_FromStream = "FromStream";
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
 
         #region Parameter ServiceUrl
         /// <summary>
@@ -139,6 +142,12 @@ namespace Amazon.PowerShell.Cmdlets.CSD
         [System.Management.Automation.Parameter]
         public string Select { get; set; } = "*";
         #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
 
         protected override void ProcessRecord()
         {
@@ -225,16 +234,9 @@ namespace Amazon.PowerShell.Cmdlets.CSD
         private Amazon.CloudSearchDomain.Model.UploadDocumentsResponse CallAWSServiceOperation(IAmazonCloudSearchDomain client, Amazon.CloudSearchDomain.Model.UploadDocumentsRequest request)
         {
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudSearchDomain", "UploadDocuments");
-
             try
             {
-#if DESKTOP
-                return client.UploadDocuments(request);
-#elif CORECLR
-                return client.UploadDocumentsAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.UploadDocumentsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectConnect;
 using Amazon.DirectConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DC
 {
     /// <summary>
@@ -37,7 +39,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
     /// 
     ///  
     /// <para>
-    /// Setting the MTU of a virtual interface to 9001 (jumbo frames) can cause an update
+    /// Setting the MTU of a virtual interface to 8500 (jumbo frames) can cause an update
     /// to the underlying physical connection if it wasn't updated to support jumbo frames.
     /// Updating the connection disrupts network connectivity for all virtual interfaces associated
     /// with the connection for up to 30 seconds. To check whether your connection supports
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
     [OutputType("Amazon.DirectConnect.Model.CreatePrivateVirtualInterfaceResponse")]
     [AWSCmdlet("Calls the AWS Direct Connect CreatePrivateVirtualInterface API operation.", Operation = new[] {"CreatePrivateVirtualInterface"}, SelectReturnType = typeof(Amazon.DirectConnect.Model.CreatePrivateVirtualInterfaceResponse))]
     [AWSCmdletOutput("Amazon.DirectConnect.Model.CreatePrivateVirtualInterfaceResponse",
-        "This cmdlet returns an Amazon.DirectConnect.Model.CreatePrivateVirtualInterfaceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DirectConnect.Model.CreatePrivateVirtualInterfaceResponse object containing multiple properties."
     )]
     public partial class NewDCPrivateVirtualInterfaceCmdlet : AmazonDirectConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NewPrivateVirtualInterface_AddressFamily
         /// <summary>
@@ -80,17 +83,28 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter NewPrivateVirtualInterface_Asn
         /// <summary>
         /// <para>
-        /// <para>The autonomous system (AS) number for Border Gateway Protocol (BGP) configuration.</para><para>The valid values are 1-2147483647.</para>
+        /// <para>The autonomous system number (ASN). The valid range is from 1 to 2147483646 for Border
+        /// Gateway Protocol (BGP) configuration. If you provide a number greater than the maximum,
+        /// an error is returned. Use <c>asnLong</c> instead.</para><note><para>You can use <c>asnLong</c> or <c>asn</c>, but not both. We recommend using <c>asnLong</c>
+        /// as it supports a greater pool of numbers. </para><ul><li><para>The <c>asnLong</c> attribute accepts both ASN and long ASN ranges.</para></li><li><para>If you provide a value in the same API call for both <c>asn</c> and <c>asnLong</c>,
+        /// the API will only accept the value for <c>asnLong</c>.</para></li></ul></note><para>The valid values are 1-2147483646.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Int32? NewPrivateVirtualInterface_Asn { get; set; }
+        #endregion
+        
+        #region Parameter NewPrivateVirtualInterface_AsnLong
+        /// <summary>
+        /// <para>
+        /// <para>The long ASN for a new private virtual interface. The valid range is from 1 to 4294967294
+        /// for BGP configuration.</para><note><para>You can use <c>asnLong</c> or <c>asn</c>, but not both. We recommend using <c>asnLong</c>
+        /// as it supports a greater pool of numbers. </para><ul><li><para>The <c>asnLong</c> attribute accepts both ASN and long ASN ranges.</para></li><li><para>If you provide a value in the same API call for both <c>asn</c> and <c>asnLong</c>,
+        /// the API will only accept the value for <c>asnLong</c>.</para></li></ul></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int64? NewPrivateVirtualInterface_AsnLong { get; set; }
         #endregion
         
         #region Parameter NewPrivateVirtualInterface_AuthKey
@@ -154,7 +168,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter NewPrivateVirtualInterface_Mtu
         /// <summary>
         /// <para>
-        /// <para>The maximum transmission unit (MTU), in bytes. The supported values are 1500 and 9001.
+        /// <para>The maximum transmission unit (MTU), in bytes. The supported values are 1500 and 8500.
         /// The default value is 1500.</para>
         /// </para>
         /// </summary>
@@ -165,7 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter NewPrivateVirtualInterface_Tag
         /// <summary>
         /// <para>
-        /// <para>The tags associated with the private virtual interface.</para>
+        /// <para>The tags associated with the private virtual interface.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,16 +247,6 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -249,9 +257,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectionId), MyInvocation.BoundParameters);
@@ -265,21 +277,11 @@ namespace Amazon.PowerShell.Cmdlets.DC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectConnect.Model.CreatePrivateVirtualInterfaceResponse, NewDCPrivateVirtualInterfaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConnectionId = this.ConnectionId;
             #if MODULAR
             if (this.ConnectionId == null && ParameterWasBound(nameof(this.ConnectionId)))
@@ -290,12 +292,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             context.NewPrivateVirtualInterface_AddressFamily = this.NewPrivateVirtualInterface_AddressFamily;
             context.NewPrivateVirtualInterface_AmazonAddress = this.NewPrivateVirtualInterface_AmazonAddress;
             context.NewPrivateVirtualInterface_Asn = this.NewPrivateVirtualInterface_Asn;
-            #if MODULAR
-            if (this.NewPrivateVirtualInterface_Asn == null && ParameterWasBound(nameof(this.NewPrivateVirtualInterface_Asn)))
-            {
-                WriteWarning("You are passing $null as a value for parameter NewPrivateVirtualInterface_Asn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.NewPrivateVirtualInterface_AsnLong = this.NewPrivateVirtualInterface_AsnLong;
             context.NewPrivateVirtualInterface_AuthKey = this.NewPrivateVirtualInterface_AuthKey;
             context.NewPrivateVirtualInterface_CustomerAddress = this.NewPrivateVirtualInterface_CustomerAddress;
             context.NewPrivateVirtualInterface_DirectConnectGatewayId = this.NewPrivateVirtualInterface_DirectConnectGatewayId;
@@ -372,6 +369,16 @@ namespace Amazon.PowerShell.Cmdlets.DC
             if (requestNewPrivateVirtualInterface_newPrivateVirtualInterface_Asn != null)
             {
                 request.NewPrivateVirtualInterface.Asn = requestNewPrivateVirtualInterface_newPrivateVirtualInterface_Asn.Value;
+                requestNewPrivateVirtualInterfaceIsNull = false;
+            }
+            System.Int64? requestNewPrivateVirtualInterface_newPrivateVirtualInterface_AsnLong = null;
+            if (cmdletContext.NewPrivateVirtualInterface_AsnLong != null)
+            {
+                requestNewPrivateVirtualInterface_newPrivateVirtualInterface_AsnLong = cmdletContext.NewPrivateVirtualInterface_AsnLong.Value;
+            }
+            if (requestNewPrivateVirtualInterface_newPrivateVirtualInterface_AsnLong != null)
+            {
+                request.NewPrivateVirtualInterface.AsnLong = requestNewPrivateVirtualInterface_newPrivateVirtualInterface_AsnLong.Value;
                 requestNewPrivateVirtualInterfaceIsNull = false;
             }
             System.String requestNewPrivateVirtualInterface_newPrivateVirtualInterface_AuthKey = null;
@@ -507,13 +514,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Direct Connect", "CreatePrivateVirtualInterface");
             try
             {
-                #if DESKTOP
-                return client.CreatePrivateVirtualInterface(request);
-                #elif CORECLR
-                return client.CreatePrivateVirtualInterfaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePrivateVirtualInterfaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -534,6 +535,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             public Amazon.DirectConnect.AddressFamily NewPrivateVirtualInterface_AddressFamily { get; set; }
             public System.String NewPrivateVirtualInterface_AmazonAddress { get; set; }
             public System.Int32? NewPrivateVirtualInterface_Asn { get; set; }
+            public System.Int64? NewPrivateVirtualInterface_AsnLong { get; set; }
             public System.String NewPrivateVirtualInterface_AuthKey { get; set; }
             public System.String NewPrivateVirtualInterface_CustomerAddress { get; set; }
             public System.String NewPrivateVirtualInterface_DirectConnectGatewayId { get; set; }

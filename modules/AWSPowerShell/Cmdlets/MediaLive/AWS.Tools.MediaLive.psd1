@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The MediaLive module of AWS Tools for PowerShell lets developers and administrators manage AWS Elemental MediaLive from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.MediaLive.dll'
     )
@@ -91,6 +92,18 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-EMLAccountConfiguration', 
         'Get-EMLChannel', 
         'Get-EMLChannelList', 
+        'Get-EMLChannelPlacementGroup', 
+        'Get-EMLChannelPlacementGroupList', 
+        'Get-EMLCloudWatchAlarmTemplate', 
+        'Get-EMLCloudWatchAlarmTemplateGroup', 
+        'Get-EMLCloudWatchAlarmTemplateGroupList', 
+        'Get-EMLCloudWatchAlarmTemplateList', 
+        'Get-EMLCluster', 
+        'Get-EMLClusterList', 
+        'Get-EMLEventBridgeRuleTemplate', 
+        'Get-EMLEventBridgeRuleTemplateGroup', 
+        'Get-EMLEventBridgeRuleTemplateGroupList', 
+        'Get-EMLEventBridgeRuleTemplateList', 
         'Get-EMLInput', 
         'Get-EMLInputDevice', 
         'Get-EMLInputDeviceList', 
@@ -103,38 +116,72 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-EMLMultiplexList', 
         'Get-EMLMultiplexProgram', 
         'Get-EMLMultiplexProgramList', 
+        'Get-EMLNetwork', 
+        'Get-EMLNetworkList', 
+        'Get-EMLNode', 
+        'Get-EMLNodeList', 
         'Get-EMLOffering', 
         'Get-EMLOfferingList', 
         'Get-EMLReservation', 
         'Get-EMLReservationList', 
         'Get-EMLResourceTag', 
         'Get-EMLSchedule', 
+        'Get-EMLSdiSource', 
+        'Get-EMLSdiSourceList', 
+        'Get-EMLSignalMap', 
+        'Get-EMLSignalMapList', 
         'Get-EMLThumbnail', 
+        'Get-EMLVersionList', 
         'Move-EMLInputDevice', 
         'New-EMLChannel', 
+        'New-EMLChannelPlacementGroup', 
+        'New-EMLCloudWatchAlarmTemplate', 
+        'New-EMLCloudWatchAlarmTemplateGroup', 
+        'New-EMLCluster', 
+        'New-EMLEventBridgeRuleTemplate', 
+        'New-EMLEventBridgeRuleTemplateGroup', 
         'New-EMLInput', 
         'New-EMLInputSecurityGroup', 
         'New-EMLMultiplex', 
         'New-EMLMultiplexProgram', 
+        'New-EMLNetwork', 
+        'New-EMLNode', 
+        'New-EMLNodeRegistrationScript', 
         'New-EMLOfferingPurchase', 
         'New-EMLPartnerInput', 
+        'New-EMLSdiSource', 
+        'New-EMLSignalMap', 
         'Receive-EMLInputDeviceTransfer', 
         'Remove-EMLChannel', 
+        'Remove-EMLChannelPlacementGroup', 
+        'Remove-EMLCloudWatchAlarmTemplate', 
+        'Remove-EMLCloudWatchAlarmTemplateGroup', 
+        'Remove-EMLCluster', 
+        'Remove-EMLEventBridgeRuleTemplate', 
+        'Remove-EMLEventBridgeRuleTemplateGroup', 
         'Remove-EMLInput', 
         'Remove-EMLInputSecurityGroup', 
         'Remove-EMLMultiplex', 
         'Remove-EMLMultiplexProgram', 
+        'Remove-EMLNetwork', 
+        'Remove-EMLNode', 
         'Remove-EMLReservation', 
         'Remove-EMLResourceBatch', 
         'Remove-EMLResourceTag', 
         'Remove-EMLSchedule', 
+        'Remove-EMLSdiSource', 
+        'Remove-EMLSignalMap', 
         'Request-EMLDevice', 
+        'Restart-EMLChannelPipeline', 
         'Restart-EMLInputDevice', 
         'Start-EMLChannel', 
+        'Start-EMLDeleteMonitorDeployment', 
         'Start-EMLInputDevice', 
         'Start-EMLInputDeviceMaintenanceWindow', 
+        'Start-EMLMonitorDeployment', 
         'Start-EMLMultiplex', 
         'Start-EMLResourceBatch', 
+        'Start-EMLUpdateSignalMap', 
         'Stop-EMLChannel', 
         'Stop-EMLInputDevice', 
         'Stop-EMLInputDeviceTransfer', 
@@ -143,13 +190,23 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-EMLAccountConfiguration', 
         'Update-EMLChannel', 
         'Update-EMLChannelClass', 
+        'Update-EMLChannelPlacementGroup', 
+        'Update-EMLCloudWatchAlarmTemplate', 
+        'Update-EMLCloudWatchAlarmTemplateGroup', 
+        'Update-EMLCluster', 
+        'Update-EMLEventBridgeRuleTemplate', 
+        'Update-EMLEventBridgeRuleTemplateGroup', 
         'Update-EMLInput', 
         'Update-EMLInputDevice', 
         'Update-EMLInputSecurityGroup', 
         'Update-EMLMultiplex', 
         'Update-EMLMultiplexProgram', 
+        'Update-EMLNetwork', 
+        'Update-EMLNode', 
+        'Update-EMLNodeState', 
         'Update-EMLReservation', 
-        'Update-EMLScheduleBatch')
+        'Update-EMLScheduleBatch', 
+        'Update-EMLSdiSource')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -173,7 +230,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

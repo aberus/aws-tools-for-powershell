@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service ListTrainingJobs API operation.", Operation = new[] {"ListTrainingJobs"}, SelectReturnType = typeof(Amazon.SageMaker.Model.ListTrainingJobsResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.TrainingJobSummary or Amazon.SageMaker.Model.ListTrainingJobsResponse",
         "This cmdlet returns a collection of Amazon.SageMaker.Model.TrainingJobSummary objects.",
-        "The service call response (type Amazon.SageMaker.Model.ListTrainingJobsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.ListTrainingJobsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSMTrainingJobListCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CreationTimeAfter
         /// <summary>
@@ -143,6 +146,19 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public Amazon.SageMaker.TrainingJobStatus StatusEqual { get; set; }
         #endregion
         
+        #region Parameter TrainingPlanArnEqual
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN); of the training plan to filter training jobs by. For
+        /// more information about reserving GPU capacity for your SageMaker training jobs using
+        /// Amazon SageMaker Training Plan, see <c><a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingPlan.html">CreateTrainingPlan</a></c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TrainingPlanArnEquals")]
+        public System.String TrainingPlanArnEqual { get; set; }
+        #endregion
+        
         #region Parameter WarmPoolStatusEqual
         /// <summary>
         /// <para>
@@ -181,7 +197,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,9 +225,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -250,6 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             context.SortBy = this.SortBy;
             context.SortOrder = this.SortOrder;
             context.StatusEqual = this.StatusEqual;
+            context.TrainingPlanArnEqual = this.TrainingPlanArnEqual;
             context.WarmPoolStatusEqual = this.WarmPoolStatusEqual;
             
             // allow further manipulation of loaded context prior to processing
@@ -305,6 +326,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (cmdletContext.StatusEqual != null)
             {
                 request.StatusEquals = cmdletContext.StatusEqual;
+            }
+            if (cmdletContext.TrainingPlanArnEqual != null)
+            {
+                request.TrainingPlanArnEquals = cmdletContext.TrainingPlanArnEqual;
             }
             if (cmdletContext.WarmPoolStatusEqual != null)
             {
@@ -397,6 +422,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 request.StatusEquals = cmdletContext.StatusEqual;
             }
+            if (cmdletContext.TrainingPlanArnEqual != null)
+            {
+                request.TrainingPlanArnEquals = cmdletContext.TrainingPlanArnEqual;
+            }
             if (cmdletContext.WarmPoolStatusEqual != null)
             {
                 request.WarmPoolStatusEquals = cmdletContext.WarmPoolStatusEqual;
@@ -452,7 +481,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.TrainingJobSummaries.Count;
+                    int _receivedThisCall = response.TrainingJobSummaries?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -501,13 +530,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "ListTrainingJobs");
             try
             {
-                #if DESKTOP
-                return client.ListTrainingJobs(request);
-                #elif CORECLR
-                return client.ListTrainingJobsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTrainingJobsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -534,6 +557,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public Amazon.SageMaker.SortBy SortBy { get; set; }
             public Amazon.SageMaker.SortOrder SortOrder { get; set; }
             public Amazon.SageMaker.TrainingJobStatus StatusEqual { get; set; }
+            public System.String TrainingPlanArnEqual { get; set; }
             public Amazon.SageMaker.WarmPoolResourceStatus WarmPoolStatusEqual { get; set; }
             public System.Func<Amazon.SageMaker.Model.ListTrainingJobsResponse, GetSMTrainingJobListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.TrainingJobSummaries;

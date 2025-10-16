@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// resources that don't exist in your account.
     /// </para><para>
     /// If you want to simulate existing policies that are attached to an IAM user, group,
-    /// or role, use <a>SimulatePrincipalPolicy</a> instead.
+    /// or role, use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html">SimulatePrincipalPolicy</a>
+    /// instead.
     /// </para><para>
     /// Context keys are variables that are maintained by Amazon Web Services and its services
     /// and which provide details about the context of an API query request. You can use the
     /// <c>Condition</c> element of an IAM policy to evaluate context keys. To get the list
-    /// of context keys that the policies require for correct simulation, use <a>GetContextKeysForCustomPolicy</a>.
+    /// of context keys that the policies require for correct simulation, use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetContextKeysForCustomPolicy.html">GetContextKeysForCustomPolicy</a>.
     /// </para><para>
     /// If the output is long, you can use <c>MaxItems</c> and <c>Marker</c> parameters to
     /// paginate the results.
@@ -63,12 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management SimulateCustomPolicy API operation.", Operation = new[] {"SimulateCustomPolicy"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.SimulateCustomPolicyResponse))]
     [AWSCmdletOutput("Amazon.IdentityManagement.Model.EvaluationResult or Amazon.IdentityManagement.Model.SimulateCustomPolicyResponse",
         "This cmdlet returns a collection of Amazon.IdentityManagement.Model.EvaluationResult objects.",
-        "The service call response (type Amazon.IdentityManagement.Model.SimulateCustomPolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.SimulateCustomPolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class TestIAMCustomPolicyCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionName
         /// <summary>
@@ -76,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// <para>A list of names of API operations to evaluate in the simulation. Each operation is
         /// evaluated against each resource. Each operation must include the service identifier,
         /// such as <c>iam:CreateUser</c>. This operation does not support using wildcards (*)
-        /// in an action name.</para>
+        /// in an action name.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// <para>
         /// <para>A list of context keys and corresponding values for the simulation to use. Whenever
         /// a context key is evaluated in one of the simulated IAM permissions policies, the corresponding
-        /// value is supplied.</para>
+        /// value is supplied.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// parameter is a string of characters consisting of the following:</para><ul><li><para>Any printable ASCII character ranging from the space character (<c>\u0020</c>) through
         /// the end of the ASCII character range</para></li><li><para>The printable characters in the Basic Latin and Latin-1 Supplement character set (through
         /// <c>\u00FF</c>)</para></li><li><para>The special characters tab (<c>\u0009</c>), line feed (<c>\u000A</c>), and carriage
-        /// return (<c>\u000D</c>)</para></li></ul>
+        /// return (<c>\u000D</c>)</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +173,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// parameter is a string of characters consisting of the following:</para><ul><li><para>Any printable ASCII character ranging from the space character (<c>\u0020</c>) through
         /// the end of the ASCII character range</para></li><li><para>The printable characters in the Basic Latin and Latin-1 Supplement character set (through
         /// <c>\u00FF</c>)</para></li><li><para>The special characters tab (<c>\u0009</c>), line feed (<c>\u000A</c>), and carriage
-        /// return (<c>\u000D</c>)</para></li></ul>
+        /// return (<c>\u000D</c>)</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -183,7 +203,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// If you want to include a resource policy in the simulation, then you must include
         /// the policy as a string in the <c>ResourcePolicy</c> parameter.</para><para>If you include a <c>ResourcePolicy</c>, then it must be applicable to all of the resources
         /// included in the simulation or you receive an invalid input error.</para><para>For more information about ARNs, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
-        /// Resource Names (ARNs)</a> in the <i>Amazon Web Services General Reference</i>.</para><note><para>Simulation of resource-based policies isn't supported for IAM roles.</para></note>
+        /// Resource Names (ARNs)</a> in the <i>Amazon Web Services General Reference</i>.</para><note><para>Simulation of resource-based policies isn't supported for IAM roles.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,11 +224,12 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// to ensure reliable simulation results. If your simulation does not match one of the
         /// following scenarios, then you can omit this parameter. The following list shows each
         /// of the supported scenario values and the resources that you must define to run the
-        /// simulation.</para><para>Each of the EC2 scenarios requires that you specify instance, image, and security
+        /// simulation.</para><para>Each of the Amazon EC2 scenarios requires that you specify instance, image, and security
         /// group resources. If your scenario includes an EBS volume, then you must specify that
-        /// volume as a resource. If the EC2 scenario includes VPC, then you must supply the network
-        /// interface resource. If it includes an IP subnet, then you must specify the subnet
-        /// resource. For more information on the EC2 scenario options, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-supported-platforms.html">Supported
+        /// volume as a resource. If the Amazon EC2 scenario includes VPC, then you must supply
+        /// the network interface resource. If it includes an IP subnet, then you must specify
+        /// the subnet resource. For more information on the Amazon EC2 scenario options, see
+        /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-supported-platforms.html">Supported
         /// platforms</a> in the <i>Amazon EC2 User Guide</i>.</para><ul><li><para><b>EC2-VPC-InstanceStore</b></para><para>instance, image, security group, network interface</para></li><li><para><b>EC2-VPC-InstanceStore-Subnet</b></para><para>instance, image, security group, network interface, subnet</para></li><li><para><b>EC2-VPC-EBS</b></para><para>instance, image, security group, network interface, volume</para></li><li><para><b>EC2-VPC-EBS-Subnet</b></para><para>instance, image, security group, network interface, subnet, volume</para></li></ul>
         /// </para>
         /// </summary>
@@ -260,7 +285,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -311,9 +336,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -570,7 +599,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.EvaluationResults.Count;
+                    int _receivedThisCall = response.EvaluationResults?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -619,13 +648,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "SimulateCustomPolicy");
             try
             {
-                #if DESKTOP
-                return client.SimulateCustomPolicy(request);
-                #elif CORECLR
-                return client.SimulateCustomPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SimulateCustomPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

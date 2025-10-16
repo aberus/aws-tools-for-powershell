@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
@@ -37,12 +39,28 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     [AWSCmdlet("Calls the Amazon WorkSpaces ModifyWorkspaceAccessProperties API operation.", Operation = new[] {"ModifyWorkspaceAccessProperties"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.ModifyWorkspaceAccessPropertiesResponse))]
     [AWSCmdletOutput("None or Amazon.WorkSpaces.Model.ModifyWorkspaceAccessPropertiesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkSpaces.Model.ModifyWorkspaceAccessPropertiesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WorkSpaces.Model.ModifyWorkspaceAccessPropertiesResponse) be returned by specifying '-Select *'."
     )]
     public partial class EditWKSWorkspaceAccessPropertyCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AccessEndpointConfig_AccessEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>Indicates a list of access endpoints associated with this directory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WorkspaceAccessProperties_AccessEndpointConfig_AccessEndpoints")]
+        public Amazon.WorkSpaces.Model.AccessEndpoint[] AccessEndpointConfig_AccessEndpoint { get; set; }
+        #endregion
         
         #region Parameter WorkspaceAccessProperties_DeviceTypeAndroid
         /// <summary>
@@ -124,6 +142,17 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeWindow { get; set; }
         #endregion
         
+        #region Parameter WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether users can access their WorkSpaces through a WorkSpaces Thin Client.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpaces.AccessPropertyValue")]
+        public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient { get; set; }
+        #endregion
+        
         #region Parameter WorkspaceAccessProperties_DeviceTypeZeroClient
         /// <summary>
         /// <para>
@@ -133,6 +162,22 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.WorkSpaces.AccessPropertyValue")]
         public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeZeroClient { get; set; }
+        #endregion
+        
+        #region Parameter AccessEndpointConfig_InternetFallbackProtocol
+        /// <summary>
+        /// <para>
+        /// <para>Indicates a list of protocols that fallback to using the public Internet when streaming
+        /// over a VPC endpoint is not available.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WorkspaceAccessProperties_AccessEndpointConfig_InternetFallbackProtocols")]
+        public System.String[] AccessEndpointConfig_InternetFallbackProtocol { get; set; }
         #endregion
         
         #region Parameter ResourceId
@@ -162,16 +207,6 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -182,9 +217,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceId), MyInvocation.BoundParameters);
@@ -198,21 +237,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpaces.Model.ModifyWorkspaceAccessPropertiesResponse, EditWKSWorkspaceAccessPropertyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceId = this.ResourceId;
             #if MODULAR
             if (this.ResourceId == null && ParameterWasBound(nameof(this.ResourceId)))
@@ -220,6 +249,14 @@ namespace Amazon.PowerShell.Cmdlets.WKS
                 WriteWarning("You are passing $null as a value for parameter ResourceId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.AccessEndpointConfig_AccessEndpoint != null)
+            {
+                context.AccessEndpointConfig_AccessEndpoint = new List<Amazon.WorkSpaces.Model.AccessEndpoint>(this.AccessEndpointConfig_AccessEndpoint);
+            }
+            if (this.AccessEndpointConfig_InternetFallbackProtocol != null)
+            {
+                context.AccessEndpointConfig_InternetFallbackProtocol = new List<System.String>(this.AccessEndpointConfig_InternetFallbackProtocol);
+            }
             context.WorkspaceAccessProperties_DeviceTypeAndroid = this.WorkspaceAccessProperties_DeviceTypeAndroid;
             context.WorkspaceAccessProperties_DeviceTypeChromeOs = this.WorkspaceAccessProperties_DeviceTypeChromeOs;
             context.WorkspaceAccessProperties_DeviceTypeIo = this.WorkspaceAccessProperties_DeviceTypeIo;
@@ -227,6 +264,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             context.WorkspaceAccessProperties_DeviceTypeOsx = this.WorkspaceAccessProperties_DeviceTypeOsx;
             context.WorkspaceAccessProperties_DeviceTypeWeb = this.WorkspaceAccessProperties_DeviceTypeWeb;
             context.WorkspaceAccessProperties_DeviceTypeWindow = this.WorkspaceAccessProperties_DeviceTypeWindow;
+            context.WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient = this.WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient;
             context.WorkspaceAccessProperties_DeviceTypeZeroClient = this.WorkspaceAccessProperties_DeviceTypeZeroClient;
             
             // allow further manipulation of loaded context prior to processing
@@ -322,6 +360,16 @@ namespace Amazon.PowerShell.Cmdlets.WKS
                 request.WorkspaceAccessProperties.DeviceTypeWindows = requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeWindow;
                 requestWorkspaceAccessPropertiesIsNull = false;
             }
+            Amazon.WorkSpaces.AccessPropertyValue requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeWorkSpacesThinClient = null;
+            if (cmdletContext.WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient != null)
+            {
+                requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeWorkSpacesThinClient = cmdletContext.WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient;
+            }
+            if (requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeWorkSpacesThinClient != null)
+            {
+                request.WorkspaceAccessProperties.DeviceTypeWorkSpacesThinClient = requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeWorkSpacesThinClient;
+                requestWorkspaceAccessPropertiesIsNull = false;
+            }
             Amazon.WorkSpaces.AccessPropertyValue requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeZeroClient = null;
             if (cmdletContext.WorkspaceAccessProperties_DeviceTypeZeroClient != null)
             {
@@ -330,6 +378,41 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             if (requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeZeroClient != null)
             {
                 request.WorkspaceAccessProperties.DeviceTypeZeroClient = requestWorkspaceAccessProperties_workspaceAccessProperties_DeviceTypeZeroClient;
+                requestWorkspaceAccessPropertiesIsNull = false;
+            }
+            Amazon.WorkSpaces.Model.AccessEndpointConfig requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig = null;
+            
+             // populate AccessEndpointConfig
+            var requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfigIsNull = true;
+            requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig = new Amazon.WorkSpaces.Model.AccessEndpointConfig();
+            List<Amazon.WorkSpaces.Model.AccessEndpoint> requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_AccessEndpoint = null;
+            if (cmdletContext.AccessEndpointConfig_AccessEndpoint != null)
+            {
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_AccessEndpoint = cmdletContext.AccessEndpointConfig_AccessEndpoint;
+            }
+            if (requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_AccessEndpoint != null)
+            {
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig.AccessEndpoints = requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_AccessEndpoint;
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfigIsNull = false;
+            }
+            List<System.String> requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_InternetFallbackProtocol = null;
+            if (cmdletContext.AccessEndpointConfig_InternetFallbackProtocol != null)
+            {
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_InternetFallbackProtocol = cmdletContext.AccessEndpointConfig_InternetFallbackProtocol;
+            }
+            if (requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_InternetFallbackProtocol != null)
+            {
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig.InternetFallbackProtocols = requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig_accessEndpointConfig_InternetFallbackProtocol;
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfigIsNull = false;
+            }
+             // determine if requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig should be set to null
+            if (requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfigIsNull)
+            {
+                requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig = null;
+            }
+            if (requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig != null)
+            {
+                request.WorkspaceAccessProperties.AccessEndpointConfig = requestWorkspaceAccessProperties_workspaceAccessProperties_AccessEndpointConfig;
                 requestWorkspaceAccessPropertiesIsNull = false;
             }
              // determine if request.WorkspaceAccessProperties should be set to null
@@ -375,13 +458,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "ModifyWorkspaceAccessProperties");
             try
             {
-                #if DESKTOP
-                return client.ModifyWorkspaceAccessProperties(request);
-                #elif CORECLR
-                return client.ModifyWorkspaceAccessPropertiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyWorkspaceAccessPropertiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -399,6 +476,8 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ResourceId { get; set; }
+            public List<Amazon.WorkSpaces.Model.AccessEndpoint> AccessEndpointConfig_AccessEndpoint { get; set; }
+            public List<System.String> AccessEndpointConfig_InternetFallbackProtocol { get; set; }
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeAndroid { get; set; }
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeChromeOs { get; set; }
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeIo { get; set; }
@@ -406,6 +485,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeOsx { get; set; }
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeWeb { get; set; }
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeWindow { get; set; }
+            public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeWorkSpacesThinClient { get; set; }
             public Amazon.WorkSpaces.AccessPropertyValue WorkspaceAccessProperties_DeviceTypeZeroClient { get; set; }
             public System.Func<Amazon.WorkSpaces.Model.ModifyWorkspaceAccessPropertiesResponse, EditWKSWorkspaceAccessPropertyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

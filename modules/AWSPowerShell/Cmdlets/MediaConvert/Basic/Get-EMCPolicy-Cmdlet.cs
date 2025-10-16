@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConvert;
 using Amazon.MediaConvert.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EMC
     [AWSCmdlet("Calls the AWS Elemental MediaConvert GetPolicy API operation.", Operation = new[] {"GetPolicy"}, SelectReturnType = typeof(Amazon.MediaConvert.Model.GetPolicyResponse))]
     [AWSCmdletOutput("Amazon.MediaConvert.Model.Policy or Amazon.MediaConvert.Model.GetPolicyResponse",
         "This cmdlet returns an Amazon.MediaConvert.Model.Policy object.",
-        "The service call response (type Amazon.MediaConvert.Model.GetPolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaConvert.Model.GetPolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEMCPolicyCmdlet : AmazonMediaConvertClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.EMC
         public string Select { get; set; } = "Policy";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.EMC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConvert", "GetPolicy");
             try
             {
-                #if DESKTOP
-                return client.GetPolicy(request);
-                #elif CORECLR
-                return client.GetPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

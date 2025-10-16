@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
@@ -35,18 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     [AWSCmdlet("Calls the Elastic Load Balancing V2 DescribeLoadBalancers API operation.", Operation = new[] {"DescribeLoadBalancers"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancersResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.LoadBalancer or Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancersResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.LoadBalancer objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.DescribeLoadBalancersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetELB2LoadBalancerCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LoadBalancerArn
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Names (ARN) of the load balancers. You can specify up to 20 load
-        /// balancers in a single call.</para>
+        /// balancers in a single call.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The names of the load balancers.</para>
+        /// <para>The names of the load balancers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.NextMarker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,9 +129,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -293,7 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.LoadBalancers.Count;
+                    int _receivedThisCall = response.LoadBalancers?.Count ?? 0;
                     
                     _nextToken = response.NextMarker;
                     _retrievedSoFar += _receivedThisCall;
@@ -342,13 +357,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "DescribeLoadBalancers");
             try
             {
-                #if DESKTOP
-                return client.DescribeLoadBalancers(request);
-                #elif CORECLR
-                return client.DescribeLoadBalancersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeLoadBalancersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

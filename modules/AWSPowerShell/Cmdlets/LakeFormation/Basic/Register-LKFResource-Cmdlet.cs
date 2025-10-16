@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LakeFormation;
 using Amazon.LakeFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LKF
 {
     /// <summary>
@@ -32,8 +34,8 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     /// 
     ///  
     /// <para>
-    /// To add or update data, Lake Formation needs read/write access to the chosen Amazon
-    /// S3 path. Choose a role that you know has permission to do this, or choose the AWSServiceRoleForLakeFormationDataAccess
+    /// To add or update data, Lake Formation needs read/write access to the chosen data location.
+    /// Choose a role that you know has permission to do this, or choose the AWSServiceRoleForLakeFormationDataAccess
     /// service-linked role. When you register the first Amazon S3 path, the service-linked
     /// role and a new inline policy are created on your behalf. Lake Formation adds the first
     /// path to the inline policy and attaches it to the service-linked role. When you register
@@ -41,7 +43,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     /// </para><para>
     /// The following request registers a new location and gives Lake Formation permission
     /// to use the service-linked role to access that location.
-    /// </para><para><c>ResourceArn = arn:aws:s3:::my-bucket UseServiceLinkedRole = true</c></para><para>
+    /// </para><para><c>ResourceArn = arn:aws:s3:::my-bucket/ UseServiceLinkedRole = true</c></para><para>
     /// If <c>UseServiceLinkedRole</c> is not set to true, you must provide or set the <c>RoleArn</c>:
     /// </para><para><c>arn:aws:iam::12345:role/my-data-access-role</c></para>
     /// </summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     [AWSCmdlet("Calls the AWS Lake Formation RegisterResource API operation.", Operation = new[] {"RegisterResource"}, SelectReturnType = typeof(Amazon.LakeFormation.Model.RegisterResourceResponse))]
     [AWSCmdletOutput("None or Amazon.LakeFormation.Model.RegisterResourceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.LakeFormation.Model.RegisterResourceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.LakeFormation.Model.RegisterResourceResponse) be returned by specifying '-Select *'."
     )]
     public partial class RegisterLKFResourceCmdlet : AmazonLakeFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HybridAccessEnabled
         /// <summary>
@@ -118,6 +121,17 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public System.Boolean? WithFederation { get; set; }
         #endregion
         
+        #region Parameter WithPrivilegedAccess
+        /// <summary>
+        /// <para>
+        /// <para>Grants the calling principal the permissions to perform all supported Lake Formation
+        /// operations on the registered data location. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? WithPrivilegedAccess { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -126,16 +140,6 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -148,9 +152,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceArn), MyInvocation.BoundParameters);
@@ -164,21 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LakeFormation.Model.RegisterResourceResponse, RegisterLKFResourceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HybridAccessEnabled = this.HybridAccessEnabled;
             context.ResourceArn = this.ResourceArn;
             #if MODULAR
@@ -190,6 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             context.RoleArn = this.RoleArn;
             context.UseServiceLinkedRole = this.UseServiceLinkedRole;
             context.WithFederation = this.WithFederation;
+            context.WithPrivilegedAccess = this.WithPrivilegedAccess;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -225,6 +224,10 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             if (cmdletContext.WithFederation != null)
             {
                 request.WithFederation = cmdletContext.WithFederation.Value;
+            }
+            if (cmdletContext.WithPrivilegedAccess != null)
+            {
+                request.WithPrivilegedAccess = cmdletContext.WithPrivilegedAccess.Value;
             }
             
             CmdletOutput output;
@@ -264,13 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lake Formation", "RegisterResource");
             try
             {
-                #if DESKTOP
-                return client.RegisterResource(request);
-                #elif CORECLR
-                return client.RegisterResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -292,6 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             public System.String RoleArn { get; set; }
             public System.Boolean? UseServiceLinkedRole { get; set; }
             public System.Boolean? WithFederation { get; set; }
+            public System.Boolean? WithPrivilegedAccess { get; set; }
             public System.Func<Amazon.LakeFormation.Model.RegisterResourceResponse, RegisterLKFResourceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRooms;
 using Amazon.CleanRooms.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRS
 {
     /// <summary>
@@ -35,12 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.CRS
     [AWSCmdlet("Calls the AWS Clean Rooms Service UpdateMembership API operation.", Operation = new[] {"UpdateMembership"}, SelectReturnType = typeof(Amazon.CleanRooms.Model.UpdateMembershipResponse))]
     [AWSCmdletOutput("Amazon.CleanRooms.Model.Membership or Amazon.CleanRooms.Model.UpdateMembershipResponse",
         "This cmdlet returns an Amazon.CleanRooms.Model.Membership object.",
-        "The service call response (type Amazon.CleanRooms.Model.UpdateMembershipResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRooms.Model.UpdateMembershipResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCRSMembershipCmdlet : AmazonCleanRoomsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket
+        /// <summary>
+        /// <para>
+        /// <para> The S3 bucket for job output.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Default_Job_S3_Bucket")]
+        public System.String DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket { get; set; }
+        #endregion
         
         #region Parameter S3_Bucket
         /// <summary>
@@ -51,6 +65,30 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DefaultResultConfiguration_OutputConfiguration_S3_Bucket")]
         public System.String S3_Bucket { get; set; }
+        #endregion
+        
+        #region Parameter JobLogStatus
+        /// <summary>
+        /// <para>
+        /// <para>An indicator as to whether job logging has been enabled or disabled for the collaboration.
+        /// </para><para>When <c>ENABLED</c>, Clean Rooms logs details about jobs run within this collaboration
+        /// and those logs can be viewed in Amazon CloudWatch Logs. The default value is <c>DISABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CleanRooms.MembershipJobLogStatus")]
+        public Amazon.CleanRooms.MembershipJobLogStatus JobLogStatus { get; set; }
+        #endregion
+        
+        #region Parameter DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix
+        /// <summary>
+        /// <para>
+        /// <para>The S3 prefix to unload the protected job results.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Default_Job_S3_KeyPrefix")]
+        public System.String DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix { get; set; }
         #endregion
         
         #region Parameter S3_KeyPrefix
@@ -84,7 +122,8 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         #region Parameter QueryLogStatus
         /// <summary>
         /// <para>
-        /// <para>An indicator as to whether query logging has been enabled or disabled for the membership.</para>
+        /// <para>An indicator as to whether query logging has been enabled or disabled for the membership.</para><para>When <c>ENABLED</c>, Clean Rooms logs details about queries run within this collaboration
+        /// and those logs can be viewed in Amazon CloudWatch Logs. The default value is <c>DISABLED</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,6 +143,17 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public Amazon.CleanRooms.ResultFormat S3_ResultFormat { get; set; }
         #endregion
         
+        #region Parameter DefaultJobResultConfiguration_RoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The unique ARN for an IAM role that is used by Clean Rooms to write protected job
+        /// results to the result location, given by the member who can receive results.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DefaultJobResultConfiguration_RoleArn { get; set; }
+        #endregion
+        
         #region Parameter DefaultResultConfiguration_RoleArn
         /// <summary>
         /// <para>
@@ -113,6 +163,19 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DefaultResultConfiguration_RoleArn { get; set; }
+        #endregion
+        
+        #region Parameter S3_SingleFileOutput
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether files should be output as a single file (<c>TRUE</c>) or output
+        /// as multiple files (<c>FALSE</c>). This parameter is only supported for analyses with
+        /// the Spark analytics engine.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DefaultResultConfiguration_OutputConfiguration_S3_SingleFileOutput")]
+        public System.Boolean? S3_SingleFileOutput { get; set; }
         #endregion
         
         #region Parameter Select
@@ -126,16 +189,6 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public string Select { get; set; } = "Membership";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MembershipIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MembershipIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MembershipIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -146,9 +199,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MembershipIdentifier), MyInvocation.BoundParameters);
@@ -162,25 +219,20 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CleanRooms.Model.UpdateMembershipResponse, UpdateCRSMembershipCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MembershipIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket = this.DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket;
+            context.DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix = this.DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix;
+            context.DefaultJobResultConfiguration_RoleArn = this.DefaultJobResultConfiguration_RoleArn;
             context.S3_Bucket = this.S3_Bucket;
             context.S3_KeyPrefix = this.S3_KeyPrefix;
             context.S3_ResultFormat = this.S3_ResultFormat;
+            context.S3_SingleFileOutput = this.S3_SingleFileOutput;
             context.DefaultResultConfiguration_RoleArn = this.DefaultResultConfiguration_RoleArn;
+            context.JobLogStatus = this.JobLogStatus;
             context.MembershipIdentifier = this.MembershipIdentifier;
             #if MODULAR
             if (this.MembershipIdentifier == null && ParameterWasBound(nameof(this.MembershipIdentifier)))
@@ -205,6 +257,75 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             // create request
             var request = new Amazon.CleanRooms.Model.UpdateMembershipRequest();
             
+            
+             // populate DefaultJobResultConfiguration
+            var requestDefaultJobResultConfigurationIsNull = true;
+            request.DefaultJobResultConfiguration = new Amazon.CleanRooms.Model.MembershipProtectedJobResultConfiguration();
+            System.String requestDefaultJobResultConfiguration_defaultJobResultConfiguration_RoleArn = null;
+            if (cmdletContext.DefaultJobResultConfiguration_RoleArn != null)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_RoleArn = cmdletContext.DefaultJobResultConfiguration_RoleArn;
+            }
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_RoleArn != null)
+            {
+                request.DefaultJobResultConfiguration.RoleArn = requestDefaultJobResultConfiguration_defaultJobResultConfiguration_RoleArn;
+                requestDefaultJobResultConfigurationIsNull = false;
+            }
+            Amazon.CleanRooms.Model.MembershipProtectedJobOutputConfiguration requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration = null;
+            
+             // populate OutputConfiguration
+            var requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfigurationIsNull = true;
+            requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration = new Amazon.CleanRooms.Model.MembershipProtectedJobOutputConfiguration();
+            Amazon.CleanRooms.Model.ProtectedJobS3OutputConfigurationInput requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3 = null;
+            
+             // populate S3
+            var requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3IsNull = true;
+            requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3 = new Amazon.CleanRooms.Model.ProtectedJobS3OutputConfigurationInput();
+            System.String requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_Bucket = null;
+            if (cmdletContext.DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket != null)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_Bucket = cmdletContext.DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket;
+            }
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_Bucket != null)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3.Bucket = requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_Bucket;
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3IsNull = false;
+            }
+            System.String requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix = null;
+            if (cmdletContext.DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix != null)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix = cmdletContext.DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix;
+            }
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix != null)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3.KeyPrefix = requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3_defaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix;
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3IsNull = false;
+            }
+             // determine if requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3 should be set to null
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3IsNull)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3 = null;
+            }
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3 != null)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration.S3 = requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration_defaultJobResultConfiguration_OutputConfiguration_S3;
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfigurationIsNull = false;
+            }
+             // determine if requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration should be set to null
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfigurationIsNull)
+            {
+                requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration = null;
+            }
+            if (requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration != null)
+            {
+                request.DefaultJobResultConfiguration.OutputConfiguration = requestDefaultJobResultConfiguration_defaultJobResultConfiguration_OutputConfiguration;
+                requestDefaultJobResultConfigurationIsNull = false;
+            }
+             // determine if request.DefaultJobResultConfiguration should be set to null
+            if (requestDefaultJobResultConfigurationIsNull)
+            {
+                request.DefaultJobResultConfiguration = null;
+            }
             
              // populate DefaultResultConfiguration
             var requestDefaultResultConfigurationIsNull = true;
@@ -259,6 +380,16 @@ namespace Amazon.PowerShell.Cmdlets.CRS
                 requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3.ResultFormat = requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3_s3_ResultFormat;
                 requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3IsNull = false;
             }
+            System.Boolean? requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput = null;
+            if (cmdletContext.S3_SingleFileOutput != null)
+            {
+                requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput = cmdletContext.S3_SingleFileOutput.Value;
+            }
+            if (requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput != null)
+            {
+                requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3.SingleFileOutput = requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput.Value;
+                requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3IsNull = false;
+            }
              // determine if requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3 should be set to null
             if (requestDefaultResultConfiguration_defaultResultConfiguration_OutputConfiguration_defaultResultConfiguration_OutputConfiguration_S3IsNull)
             {
@@ -283,6 +414,10 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             if (requestDefaultResultConfigurationIsNull)
             {
                 request.DefaultResultConfiguration = null;
+            }
+            if (cmdletContext.JobLogStatus != null)
+            {
+                request.JobLogStatus = cmdletContext.JobLogStatus;
             }
             if (cmdletContext.MembershipIdentifier != null)
             {
@@ -330,13 +465,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Clean Rooms Service", "UpdateMembership");
             try
             {
-                #if DESKTOP
-                return client.UpdateMembership(request);
-                #elif CORECLR
-                return client.UpdateMembershipAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateMembershipAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -353,10 +482,15 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String DefaultJobResultConfiguration_OutputConfiguration_S3_Bucket { get; set; }
+            public System.String DefaultJobResultConfiguration_OutputConfiguration_S3_KeyPrefix { get; set; }
+            public System.String DefaultJobResultConfiguration_RoleArn { get; set; }
             public System.String S3_Bucket { get; set; }
             public System.String S3_KeyPrefix { get; set; }
             public Amazon.CleanRooms.ResultFormat S3_ResultFormat { get; set; }
+            public System.Boolean? S3_SingleFileOutput { get; set; }
             public System.String DefaultResultConfiguration_RoleArn { get; set; }
+            public Amazon.CleanRooms.MembershipJobLogStatus JobLogStatus { get; set; }
             public System.String MembershipIdentifier { get; set; }
             public Amazon.CleanRooms.MembershipQueryLogStatus QueryLogStatus { get; set; }
             public System.Func<Amazon.CleanRooms.Model.UpdateMembershipResponse, UpdateCRSMembershipCmdlet, object> Select { get; set; } =

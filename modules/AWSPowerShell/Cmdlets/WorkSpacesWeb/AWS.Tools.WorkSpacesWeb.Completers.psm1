@@ -94,6 +94,8 @@ $WSW_Completers = {
         {
             ($_ -eq "New-WSWUserSetting/CopyAllowed") -Or
             ($_ -eq "Update-WSWUserSetting/CopyAllowed") -Or
+            ($_ -eq "New-WSWUserSetting/DeepLinkAllowed") -Or
+            ($_ -eq "Update-WSWUserSetting/DeepLinkAllowed") -Or
             ($_ -eq "New-WSWUserSetting/DownloadAllowed") -Or
             ($_ -eq "Update-WSWUserSetting/DownloadAllowed") -Or
             ($_ -eq "New-WSWUserSetting/PasteAllowed") -Or
@@ -108,6 +110,16 @@ $WSW_Completers = {
             break
         }
 
+        # Amazon.WorkSpacesWeb.FolderStructure
+        {
+            ($_ -eq "New-WSWSessionLogger/S3_FolderStructure") -Or
+            ($_ -eq "Update-WSWSessionLogger/S3_FolderStructure")
+        }
+        {
+            $v = "Flat","NestedByDate"
+            break
+        }
+
         # Amazon.WorkSpacesWeb.IdentityProviderType
         {
             ($_ -eq "New-WSWIdentityProvider/IdentityProviderType") -Or
@@ -115,6 +127,70 @@ $WSW_Completers = {
         }
         {
             $v = "Facebook","Google","LoginWithAmazon","OIDC","SAML","SignInWithApple"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.InstanceType
+        {
+            ($_ -eq "New-WSWPortal/InstanceType") -Or
+            ($_ -eq "Update-WSWPortal/InstanceType")
+        }
+        {
+            $v = "standard.large","standard.regular","standard.xlarge"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.LogFileFormat
+        {
+            ($_ -eq "New-WSWSessionLogger/S3_LogFileFormat") -Or
+            ($_ -eq "Update-WSWSessionLogger/S3_LogFileFormat")
+        }
+        {
+            $v = "Json","JSONLines"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.MaxDisplayResolution
+        {
+            ($_ -eq "New-WSWUserSetting/ToolbarConfiguration_MaxDisplayResolution") -Or
+            ($_ -eq "Update-WSWUserSetting/ToolbarConfiguration_MaxDisplayResolution")
+        }
+        {
+            $v = "size1024X768","size1280X720","size1920X1080","size2560X1440","size3440X1440","size3840X2160","size4096X2160","size800X600"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.SessionSortBy
+        "Get-WSWSessionList/SortBy"
+        {
+            $v = "StartTimeAscending","StartTimeDescending"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.SessionStatus
+        "Get-WSWSessionList/Status"
+        {
+            $v = "Active","Terminated"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.ToolbarType
+        {
+            ($_ -eq "New-WSWUserSetting/ToolbarConfiguration_ToolbarType") -Or
+            ($_ -eq "Update-WSWUserSetting/ToolbarConfiguration_ToolbarType")
+        }
+        {
+            $v = "Docked","Floating"
+            break
+        }
+
+        # Amazon.WorkSpacesWeb.VisualMode
+        {
+            ($_ -eq "New-WSWUserSetting/ToolbarConfiguration_VisualMode") -Or
+            ($_ -eq "Update-WSWUserSetting/ToolbarConfiguration_VisualMode")
+        }
+        {
+            $v = "Dark","Light"
             break
         }
 
@@ -129,10 +205,19 @@ $WSW_Completers = {
 $WSW_map = @{
     "AuthenticationType"=@("New-WSWPortal","Update-WSWPortal")
     "CopyAllowed"=@("New-WSWUserSetting","Update-WSWUserSetting")
+    "DeepLinkAllowed"=@("New-WSWUserSetting","Update-WSWUserSetting")
     "DownloadAllowed"=@("New-WSWUserSetting","Update-WSWUserSetting")
     "IdentityProviderType"=@("New-WSWIdentityProvider","Update-WSWIdentityProvider")
+    "InstanceType"=@("New-WSWPortal","Update-WSWPortal")
     "PasteAllowed"=@("New-WSWUserSetting","Update-WSWUserSetting")
     "PrintAllowed"=@("New-WSWUserSetting","Update-WSWUserSetting")
+    "S3_FolderStructure"=@("New-WSWSessionLogger","Update-WSWSessionLogger")
+    "S3_LogFileFormat"=@("New-WSWSessionLogger","Update-WSWSessionLogger")
+    "SortBy"=@("Get-WSWSessionList")
+    "Status"=@("Get-WSWSessionList")
+    "ToolbarConfiguration_MaxDisplayResolution"=@("New-WSWUserSetting","Update-WSWUserSetting")
+    "ToolbarConfiguration_ToolbarType"=@("New-WSWUserSetting","Update-WSWUserSetting")
+    "ToolbarConfiguration_VisualMode"=@("New-WSWUserSetting","Update-WSWUserSetting")
     "UploadAllowed"=@("New-WSWUserSetting","Update-WSWUserSetting")
 }
 
@@ -187,48 +272,63 @@ $WSW_SelectCompleters = {
 
 $WSW_SelectMap = @{
     "Select"=@("Register-WSWBrowserSetting",
+               "Register-WSWDataProtectionSetting",
                "Register-WSWIpAccessSetting",
                "Register-WSWNetworkSetting",
+               "Register-WSWSessionLogger",
                "Register-WSWTrustStore",
                "Register-WSWUserAccessLoggingSetting",
                "Register-WSWUserSetting",
                "New-WSWBrowserSetting",
+               "New-WSWDataProtectionSetting",
                "New-WSWIdentityProvider",
                "New-WSWIpAccessSetting",
                "New-WSWNetworkSetting",
                "New-WSWPortal",
+               "New-WSWSessionLogger",
                "New-WSWTrustStore",
                "New-WSWUserAccessLoggingSetting",
                "New-WSWUserSetting",
                "Remove-WSWBrowserSetting",
+               "Remove-WSWDataProtectionSetting",
                "Remove-WSWIdentityProvider",
                "Remove-WSWIpAccessSetting",
                "Remove-WSWNetworkSetting",
                "Remove-WSWPortal",
+               "Remove-WSWSessionLogger",
                "Remove-WSWTrustStore",
                "Remove-WSWUserAccessLoggingSetting",
                "Remove-WSWUserSetting",
                "Unregister-WSWBrowserSetting",
+               "Unregister-WSWDataProtectionSetting",
                "Unregister-WSWIpAccessSetting",
                "Unregister-WSWNetworkSetting",
+               "Unregister-WSWSessionLogger",
                "Unregister-WSWTrustStore",
                "Unregister-WSWUserAccessLoggingSetting",
                "Unregister-WSWUserSetting",
+               "Revoke-WSWSession",
                "Get-WSWBrowserSetting",
+               "Get-WSWDataProtectionSetting",
                "Get-WSWIdentityProvider",
                "Get-WSWIpAccessSetting",
                "Get-WSWNetworkSetting",
                "Get-WSWPortal",
                "Get-WSWPortalServiceProviderMetadata",
+               "Get-WSWSession",
+               "Get-WSWSessionLogger",
                "Get-WSWTrustStore",
                "Get-WSWTrustStoreCertificate",
                "Get-WSWUserAccessLoggingSetting",
                "Get-WSWUserSetting",
                "Get-WSWBrowserSettingList",
+               "Get-WSWDataProtectionSettingList",
                "Get-WSWIdentityProviderList",
                "Get-WSWIpAccessSettingList",
                "Get-WSWNetworkSettingList",
                "Get-WSWPortalList",
+               "Get-WSWSessionLoggerList",
+               "Get-WSWSessionList",
                "Get-WSWResourceTag",
                "Get-WSWTrustStoreCertificateList",
                "Get-WSWTrustStoreList",
@@ -237,10 +337,12 @@ $WSW_SelectMap = @{
                "Add-WSWResourceTag",
                "Remove-WSWResourceTag",
                "Update-WSWBrowserSetting",
+               "Update-WSWDataProtectionSetting",
                "Update-WSWIdentityProvider",
                "Update-WSWIpAccessSetting",
                "Update-WSWNetworkSetting",
                "Update-WSWPortal",
+               "Update-WSWSessionLogger",
                "Update-WSWTrustStore",
                "Update-WSWUserAccessLoggingSetting",
                "Update-WSWUserSetting")

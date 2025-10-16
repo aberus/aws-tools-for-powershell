@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
     /// Creates a Capacity Reservation Fleet. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/work-with-cr-fleets.html#create-crfleet">Create
-    /// a Capacity Reservation Fleet</a> in the Amazon EC2 User Guide.
+    /// a Capacity Reservation Fleet</a> in the <i>Amazon EC2 User Guide</i>.
     /// </summary>
     [Cmdlet("New", "EC2CapacityReservationFleet", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EC2.Model.CreateCapacityReservationFleetResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateCapacityReservationFleet API operation.", Operation = new[] {"CreateCapacityReservationFleet"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateCapacityReservationFleetResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.CreateCapacityReservationFleetResponse",
-        "This cmdlet returns an Amazon.EC2.Model.CreateCapacityReservationFleetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.CreateCapacityReservationFleetResponse object containing multiple properties."
     )]
     public partial class NewEC2CapacityReservationFleetCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocationStrategy
         /// <summary>
@@ -48,11 +51,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The strategy used by the Capacity Reservation Fleet to determine which of the specified
         /// instance types to use. Currently, only the <c>prioritized</c> allocation strategy
         /// is supported. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/crfleet-concepts.html#allocation-strategy">
-        /// Allocation strategy</a> in the Amazon EC2 User Guide.</para><para>Valid values: <c>prioritized</c></para>
+        /// Allocation strategy</a> in the <i>Amazon EC2 User Guide</i>.</para><para>Valid values: <c>prioritized</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AllocationStrategy { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EndDate
@@ -89,7 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceTypeSpecification
         /// <summary>
         /// <para>
-        /// <para>Information about the instance types for which to reserve the capacity.</para>
+        /// <para>Information about the instance types for which to reserve the capacity.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The tags to assign to the Capacity Reservation Fleet. The tags are automatically assigned
-        /// to the Capacity Reservations in the Fleet.</para>
+        /// to the Capacity Reservations in the Fleet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,8 +161,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// This value, together with the instance type weights that you assign to each instance
         /// type used by the Fleet determine the number of instances for which the Fleet reserves
         /// capacity. Both values are based on units that make sense for your workload. For more
-        /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/crfleet-concepts.html#target-capacity">
-        /// Total target capacity</a> in the Amazon EC2 User Guide.</para>
+        /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/crfleet-concepts.html#target-capacity">Total
+        /// target capacity</a> in the <i>Amazon EC2 User Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -175,16 +198,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TotalTargetCapacity parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TotalTargetCapacity' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TotalTargetCapacity' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -195,9 +208,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TotalTargetCapacity), MyInvocation.BoundParameters);
@@ -211,23 +228,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateCapacityReservationFleetResponse, NewEC2CapacityReservationFleetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TotalTargetCapacity;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocationStrategy = this.AllocationStrategy;
             context.ClientToken = this.ClientToken;
+            context.DryRun = this.DryRun;
             context.EndDate = this.EndDate;
             context.InstanceMatchCriterion = this.InstanceMatchCriterion;
             if (this.InstanceTypeSpecification != null)
@@ -275,6 +283,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.EndDate != null)
             {
@@ -338,13 +350,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateCapacityReservationFleet");
             try
             {
-                #if DESKTOP
-                return client.CreateCapacityReservationFleet(request);
-                #elif CORECLR
-                return client.CreateCapacityReservationFleetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCapacityReservationFleetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -363,6 +369,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         {
             public System.String AllocationStrategy { get; set; }
             public System.String ClientToken { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.DateTime? EndDate { get; set; }
             public Amazon.EC2.FleetInstanceMatchCriteria InstanceMatchCriterion { get; set; }
             public List<Amazon.EC2.Model.ReservationFleetInstanceSpecification> InstanceTypeSpecification { get; set; }

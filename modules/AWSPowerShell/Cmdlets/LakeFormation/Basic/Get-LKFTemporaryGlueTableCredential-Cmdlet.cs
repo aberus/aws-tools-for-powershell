@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LakeFormation;
 using Amazon.LakeFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LKF
 {
     /// <summary>
@@ -32,17 +34,24 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     /// Amazon S3. In order to vend such credentials, Lake Formation assumes the role associated
     /// with a registered location, for example an Amazon S3 bucket, with a scope down policy
     /// which restricts the access to a single prefix.
+    /// 
+    ///  
+    /// <para>
+    /// To call this API, the role that the service assumes must have <c>lakeformation:GetDataAccess</c>
+    /// permission on the resource.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "LKFTemporaryGlueTableCredential")]
     [OutputType("Amazon.LakeFormation.Model.GetTemporaryGlueTableCredentialsResponse")]
     [AWSCmdlet("Calls the AWS Lake Formation GetTemporaryGlueTableCredentials API operation.", Operation = new[] {"GetTemporaryGlueTableCredentials"}, SelectReturnType = typeof(Amazon.LakeFormation.Model.GetTemporaryGlueTableCredentialsResponse))]
     [AWSCmdletOutput("Amazon.LakeFormation.Model.GetTemporaryGlueTableCredentialsResponse",
-        "This cmdlet returns an Amazon.LakeFormation.Model.GetTemporaryGlueTableCredentialsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LakeFormation.Model.GetTemporaryGlueTableCredentialsResponse object containing multiple properties."
     )]
     public partial class GetLKFTemporaryGlueTableCredentialCmdlet : AmazonLakeFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuditContext_AdditionalAuditContext
         /// <summary>
@@ -59,7 +68,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         #region Parameter QuerySessionContext_AdditionalContext
         /// <summary>
         /// <para>
-        /// <para>An opaque string-string map passed by the query engine.</para>
+        /// <para>An opaque string-string map passed by the query engine.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +105,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <summary>
         /// <para>
         /// <para>Filters the request based on the user having been granted a list of specified permissions
-        /// on the requested resource(s).</para>
+        /// on the requested resource(s).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,7 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <summary>
         /// <para>
         /// <para>A list of supported permission types for the table. Valid values are <c>COLUMN_PERMISSION</c>
-        /// and <c>CELL_FILTER_PERMISSION</c>.</para>
+        /// and <c>CELL_FILTER_PERMISSION</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,19 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TableArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TableArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TableArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -200,21 +215,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LakeFormation.Model.GetTemporaryGlueTableCredentialsResponse, GetLKFTemporaryGlueTableCredentialCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TableArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuditContext_AdditionalAuditContext = this.AuditContext_AdditionalAuditContext;
             context.DurationSecond = this.DurationSecond;
             if (this.Permission != null)
@@ -397,13 +402,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lake Formation", "GetTemporaryGlueTableCredentials");
             try
             {
-                #if DESKTOP
-                return client.GetTemporaryGlueTableCredentials(request);
-                #elif CORECLR
-                return client.GetTemporaryGlueTableCredentialsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTemporaryGlueTableCredentialsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

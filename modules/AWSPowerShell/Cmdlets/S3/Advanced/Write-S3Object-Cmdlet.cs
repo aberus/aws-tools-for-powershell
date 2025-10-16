@@ -27,6 +27,7 @@ using Amazon.S3.Model;
 using Amazon.Runtime;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.S3
 {
@@ -48,9 +49,12 @@ namespace Amazon.PowerShell.Cmdlets.S3
     public class WriteS3ObjectCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         const string ParamSet_FromLocalFile = "UploadSingleFile";
+        const string ParamSet_FromLocalFileChecksum = "UploadSingleFileChecksum";
         const string ParamSet_FromContent = "UploadFromContent";
         const string ParamSet_FromLocalFolder = "UploadFolder";
         const string ParamSet_FromStream = "UploadFromStream";
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
 
         // Part size range in bytes (refer https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html)
         const long MinPartSize = 5L * 1024 * 1024;
@@ -59,10 +63,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         // try and anticipate all the ways a user might mean 'write everything to root'
         readonly string[] rootIndicators = new string[] { "/", @"\" };
 
-        protected override bool IsSensitiveRequest { get; set; } = true;
-
-        protected override bool IsSensitiveResponse { get; set; } = true;
-
         #region Parameter BucketName
         /// <summary>
         /// <para>
@@ -70,21 +70,38 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </para>
         ///  
         /// <para>
-        /// When using this action with an access point, you must direct requests to the access
-        /// point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
+        ///  <b>Directory buckets</b> - When you use this operation with a directory bucket, you
+        /// must use virtual-hosted-style requests in the format <c> <i>Bucket_name</i>.s3express-<i>az_id</i>.<i>region</i>.amazonaws.com</c>.
+        /// Path-style requests are not supported. Directory bucket names must be unique in the
+        /// chosen Availability Zone. Bucket names must follow the format <c> <i>bucket_base_name</i>--<i>az-id</i>--x-s3</c>
+        /// (for example, <c> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</c>). For information
+        /// about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        ///  
+        /// <para>
+        ///  <b>Access points</b> - When you use this action with an access point, you must provide
+        /// the alias of the access point in place of the bucket name or specify the access point
+        /// ARN. When using the access point ARN, you must direct requests to the access point
+        /// hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
         /// When using this action with an access point through the Amazon Web Services SDKs,
         /// you provide the access point ARN in place of the bucket name. For more information
         /// about access point ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using
         /// access points</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
-        ///  
+        ///  <note> 
         /// <para>
-        /// When you use this action with Amazon S3 on Outposts, you must direct requests to the
-        /// S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>.
+        /// Access points and Object Lambda access points are not supported by directory buckets.
+        /// </para>
+        ///  </note> 
+        /// <para>
+        ///  <b>S3 on Outposts</b> - When you use this action with Amazon S3 on Outposts, you
+        /// must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes
+        /// the form <c> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</c>.
         /// When you use this action with S3 on Outposts through the Amazon Web Services SDKs,
         /// you provide the Outposts access point ARN in place of the bucket name. For more information
         /// about S3 on Outposts ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html">What
-        /// is S3 on Outposts</a> in the <i>Amazon S3 User Guide</i>.
+        /// is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
         /// </summary>
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
@@ -100,6 +117,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// and the object key can be inferred from the filename value supplied to the -File parameter.
         /// </summary>
         [Parameter(Position = 1, ParameterSetName = ParamSet_FromLocalFile, ValueFromPipelineByPropertyName = true)]
+        [Parameter(Position = 1, ParameterSetName = ParamSet_FromLocalFileChecksum, ValueFromPipelineByPropertyName = true)]
         [Parameter(Position = 1, ParameterSetName = ParamSet_FromContent, Mandatory = true, ValueFromPipelineByPropertyName = true)]
         [Parameter(Position = 1, ParameterSetName = ParamSet_FromStream, Mandatory = true, ValueFromPipelineByPropertyName = true)]
         [Amazon.PowerShell.Common.AWSRequiredParameter(ParameterSets = new[] { ParamSet_FromContent, ParamSet_FromStream })]
@@ -111,6 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// The full path to the local file to be uploaded.
         /// </summary>
         [Parameter(Position = 2, ParameterSetName = ParamSet_FromLocalFile, Mandatory = true, ValueFromPipelineByPropertyName = true)]
+        [Parameter(Position = 2, ParameterSetName = ParamSet_FromLocalFileChecksum, Mandatory = true, ValueFromPipelineByPropertyName = true)]
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String File { get; set; }
         #endregion
@@ -201,7 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter CannedACLName
         /// <summary>
         /// Specifies the name of the canned ACL (access control list) of permissions to be applied to the S3 object(s).
-        /// Please refer to <a href="http://docs.aws.amazon.com/sdkfornet/v3/apidocs/Index.html?page=S3/TS3_S3CannedACL.html&tocid=Amazon_S3_S3CannedACL">Amazon.S3.Model.S3CannedACL</a> for information on S3 Canned ACLs.
+        /// Please refer to <a href="http://docs.aws.amazon.com/sdkfornet/v4/apidocs/Index.html?page=S3/TS3_S3CannedACL.html&tocid=Amazon_S3_S3CannedACL">Amazon.S3.Model.S3CannedACL</a> for information on S3 Canned ACLs.
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.S3.S3CannedACL")]
@@ -243,6 +262,56 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ContentType { get; set; }
+        #endregion
+
+        #region Parameter DisableDefaultChecksumValidation
+        /// <summary>
+        /// <para><b>WARNING: Setting DisableDefaultChecksumValidation to true disables the default data 
+        /// integrity check on upload requests.</b></para>
+        /// <para>When true, checksum verification will not be used in upload requests. This may increase upload 
+        /// performance under high CPU loads. Setting DisableDefaultChecksumValidation sets the deprecated property
+        /// DisableMD5Stream to the same value. The default value is false.</para>
+        /// <para>Checksums, SigV4 payload signing, and HTTPS each provide some data integrity 
+        /// verification. If DisableDefaultChecksumValidation is true and DisablePayloadSigning is true, then the 
+        /// possibility of data corruption is completely dependent on HTTPS being the only remaining 
+        /// source of data integrity verification.</para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public bool? DisableDefaultChecksumValidation { get; set; }
+        #endregion
+
+        #region Parameter DisablePayloadSigning
+        /// <summary>
+        /// <para><b>WARNING: Setting DisablePayloadSigning to true disables the SigV4 payload signing 
+        /// data integrity check on this request.</b></para>  
+        /// <para>If using SigV4, the DisablePayloadSigning flag controls if the payload should be 
+        /// signed on a request by request basis. By default this flag is null which will use the 
+        /// default client behavior. The default client behavior is to sign the payload. When 
+        /// DisablePayloadSigning is true, the request will be signed with an UNSIGNED-PAYLOAD value. 
+        /// Setting DisablePayloadSigning to true requires that the request is sent over a HTTPS 
+        /// connection.</para>
+        /// <para>Under certain circumstances, such as uploading to S3 while using MD5 hashing, it may 
+        /// be desireable to use UNSIGNED-PAYLOAD to decrease signing CPU usage. This flag only applies 
+        /// to Amazon S3 PutObject and UploadPart requests.</para>
+        /// <para>MD5Stream, SigV4 payload signing, and HTTPS each provide some data integrity 
+        /// verification. If DisableMD5Stream is true and DisablePayloadSigning is true, then the 
+        /// possibility of data corruption is completely dependant on HTTPS being the only remaining 
+        /// source of data integrity verification.</para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public bool? DisablePayloadSigning { get; set; }
+        #endregion
+
+        #region Parameter ExpectedBucketOwner
+        /// <summary>
+        /// <para>
+        /// <para>The account ID of the expected bucket owner. If the account ID that you provide does
+        /// not match the actual owner of the bucket, the request fails with the HTTP status code
+        /// <code>403 Forbidden</code> (access denied).</para>
+        /// </para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ExpectedBucketOwner { get; set; }
         #endregion
 
         #region Parameter StorageClass
@@ -384,8 +453,96 @@ namespace Amazon.PowerShell.Cmdlets.S3
         [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromLocalFile)]
         [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromContent)]
         [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromStream)]
+        [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromLocalFileChecksum, Mandatory = true)]
+        [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromLocalFolder)]
+        [AWSRequiredParameter(ParameterSets = new[] { ParamSet_FromLocalFileChecksum })]
         [AWSConstantClassSource("Amazon.S3.ChecksumAlgorithm")]
         public ChecksumAlgorithm ChecksumAlgorithm { get; set; }
+        #endregion
+
+        #region Parameter ChecksumValue
+        /// <summary>
+        /// The checksum of the object base64 encoded with the alorithm specified in the <code>ChecksumAlgorithm</code> parameter. This checksum is only present if the checksum was uploaded
+        /// with the object. When you use an API operation on an object that was uploaded using multipart uploads, this value may not be a direct checksum value of the full object. 
+        /// Instead, it's a calculation based on the checksum values of each individual part. For more information about how checksums are calculated
+        /// with multipart uploads, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums">
+        /// Checking object integrity</a> in the <i>Amazon S3 User Guide</i>."
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromLocalFileChecksum)]
+        public String ChecksumValue { get; set; }
+        #endregion
+
+        #region Parameter MpuObjectSize
+        /// <summary>
+        /// The expected total object size of the multipart upload request. If there's a mismatch
+        /// between the specified object size value and the actual object size value, it results in an
+        /// <code>HTTP 400 InvalidRequest</code> error. This value is ignored if the operation is not a
+        /// multipart upload.
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromLocalFile)]
+        [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = ParamSet_FromLocalFileChecksum)]
+        public long? MpuObjectSize { get; set; }
+        #endregion
+
+        #region Parameter ObjectLockLegalHoldStatus
+        /// <summary>
+        /// <para>
+        /// Specifies whether a legal hold will be applied to this object. For more information
+        /// about S3 Object Lock, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock.html">Object
+        /// Lock</a> in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        ///  <note> 
+        /// <para>
+        /// This functionality is not supported for directory buckets.
+        /// </para>
+        ///  </note>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.S3.ObjectLockLegalHoldStatus")]
+        public Amazon.S3.ObjectLockLegalHoldStatus ObjectLockLegalHoldStatus { get; set; }
+        #endregion
+
+        #region Parameter ObjectLockMode
+        /// <summary>
+        /// <para>
+        /// The Object Lock mode that you want to apply to this object.
+        /// </para>
+        ///  <note> 
+        /// <para>
+        /// This functionality is not supported for directory buckets.
+        /// </para>
+        ///  </note>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.S3.ObjectLockMode")]
+        public Amazon.S3.ObjectLockMode ObjectLockMode { get; set; }
+        #endregion
+
+        #region Parameter ObjectLockRetainUntilDate
+        /// <summary>
+        /// <para>
+        /// The date and time when you want this object's Object Lock to expire.
+        /// </para>
+        ///  <note> 
+        /// <para>
+        /// This functionality is not supported for directory buckets.
+        /// </para>
+        ///  </note>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public DateTime? ObjectLockRetainUntilDate { get; set; }
+        #endregion
+
+        #region Parameter RequestPayer
+        /// <summary>
+        /// <para>
+        /// <para>Confirms that the requester knows that they will be charged for the request. 
+        /// Bucket owners need not specify this parameter in their requests.</para>
+        /// </para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.S3.RequestPayer")]
+        public Amazon.S3.RequestPayer RequestPayer { get; set; }
         #endregion
 
         #endregion
@@ -404,14 +561,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public System.Int32? ConcurrentServiceRequest { get; set; }
         #endregion
 
-        #region Parameter CalculateContentMD5Header
-        /// <summary>
-        /// This property determines whether the Content-MD5 header should be calculated for upload.
-        /// </summary>
-        [Parameter(ValueFromPipelineByPropertyName = true)]
-        public bool CalculateContentMD5Header { get; set; }
-        #endregion
-
         #region Parameter PartSize
         /// <summary>
         /// This property determines the part size of the upload. 
@@ -427,6 +576,31 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
         #endregion
 
+        #region Parameter IfMatch
+        /// <summary>
+        /// <para>Uploads the object only if the ETag (entity tag) value provided during the WRITE operation matches the ETag of the object in S3. If the ETag values do not match, the operation returns a <code>412 Precondition Failed</code> error.</para>
+        /// <para>If a conflicting operation occurs during the upload S3 returns a <code>409 ConditionalRequestConflict</code> response. On a 409 failure you should fetch the object's ETag and retry the upload.</para>
+        /// <para>Expects the ETag value as a string.</para>
+        /// <para>For more information about conditional requests, see <a href="https://tools.ietf.org/html/rfc7232">RFC 7232</a>, or <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html">Conditional requests</a> in the <i>Amazon S3 User Guide</i>.</para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IfMatch { get; set; }
+        #endregion
+
+        #region Parameter IfNoneMatch
+        /// <summary>
+        /// <para>Uploads the object only if the object key name does not already exist in the bucket specified. Otherwise, 
+        /// Amazon S3 returns a <code>412 Precondition Failed</code> error.</para> <para>If a conflicting operation occurs 
+        /// during the upload S3 returns a <code>409 ConditionalRequestConflict</code> response. On a 409 failure you should 
+        /// re-initiate the multipart upload with <code>CreateMultipartUpload</code> and re-upload each part.</para> <para>Expects 
+        /// the '*' (asterisk) character.</para> <para>For more information about conditional requests, 
+        /// see <a href="https://tools.ietf.org/html/rfc7232">RFC 7232</a>, or <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html">Conditional requests</a> 
+        /// in the <i>Amazon S3 User Guide</i>.</para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IfNoneMatch { get; set; }
+        #endregion
+
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -436,6 +610,23 @@ namespace Amazon.PowerShell.Cmdlets.S3
         [Parameter(ValueFromPipelineByPropertyName = true)]
         public SwitchParameter Force { get; set; }
         #endregion
+
+        #region Parameter EnableLegacyKeyCleaning
+        /// <summary>
+        /// Specifies whether to use legacy key cleaning behavior for S3 key names. When this switch is present,
+        /// the cmdlet will clean key names by removing leading spaces, forward slashes (/), and backslashes (\),
+        /// converting all backslashes to forward slashes, and removing trailing spaces. When not specified,
+        /// the legacy key cleaning is disabled.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter EnableLegacyKeyCleaning { get; set; }
+        #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
 
         protected override void ProcessRecord()
         {
@@ -450,9 +641,17 @@ namespace Amazon.PowerShell.Cmdlets.S3
             };
 
             if (this.Key != null)
-                context.Key = AmazonS3Helper.CleanKey(this.Key);
+            {
+                context.Key = this.Key;
 
-            if (this.ParameterSetName == ParamSet_FromLocalFile)
+                if (this.EnableLegacyKeyCleaning.IsPresent)
+                {
+                    context.Key= AmazonS3Helper.CleanKey(this.Key);
+                    base.UserAgentAddition = AmazonS3Helper.GetCleanKeyUserAgentAdditionString(this.Key, context.Key);
+                }
+            }
+
+            if (this.ParameterSetName == ParamSet_FromLocalFile || this.ParameterSetName == ParamSet_FromLocalFileChecksum)
             {
                 context.File = PSHelpers.PSPathToAbsolute(this.SessionState.Path, this.File.Trim());
                 if (string.IsNullOrEmpty(context.Key))
@@ -472,7 +671,15 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 context.Recurse = this.Recurse.IsPresent;
                 context.OriginalKeyPrefix = this.KeyPrefix;
                 if (!rootIndicators.Contains<string>(this.KeyPrefix, StringComparer.OrdinalIgnoreCase))
-                    context.KeyPrefix = AmazonS3Helper.CleanKey(this.KeyPrefix);
+                {
+                    context.KeyPrefix = this.KeyPrefix;
+
+                    if (this.EnableLegacyKeyCleaning.IsPresent)
+                    {
+                        context.KeyPrefix = AmazonS3Helper.CleanKey(this.KeyPrefix);
+                        base.UserAgentAddition = AmazonS3Helper.GetCleanKeyUserAgentAdditionString(this.KeyPrefix, context.KeyPrefix);
+                    }
+                }
                 if (!string.IsNullOrEmpty(this.SearchPattern))
                     context.SearchPattern = this.SearchPattern;
             }
@@ -485,6 +692,9 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 context.CannedACL = S3CannedACL.PublicRead;
             else if (this.PublicReadWrite.IsPresent)
                 context.CannedACL = S3CannedACL.PublicReadWrite;
+
+            if (this.ExpectedBucketOwner != null)
+                context.ExpectedBucketOwner = this.ExpectedBucketOwner;
 
             context.ContentType = this.ContentType;
 
@@ -520,12 +730,26 @@ namespace Amazon.PowerShell.Cmdlets.S3
             context.Metadata = this.Metadata;
             context.Headers = this.HeaderCollection;
             context.TagSet = this.TagSet;
-            context.CalculateContentMD5Header = this.CalculateContentMD5Header;
-            
+
             if (this.ChecksumAlgorithm != null)
             {
                 context.ChecksumAlgorithm = this.ChecksumAlgorithm;
             }
+
+            if (!string.IsNullOrEmpty(this.ChecksumValue))
+                context.ChecksumValue = this.ChecksumValue;
+
+            if (this.MpuObjectSize != null)
+            {
+                long mpuObjectSize = this.MpuObjectSize.Value;
+                context.MpuObjectSize = mpuObjectSize;
+            }
+
+            context.DisableDefaultChecksumValidation = this.DisableDefaultChecksumValidation;
+            context.DisablePayloadSigning = this.DisablePayloadSigning;
+            context.ObjectLockLegalHoldStatus = this.ObjectLockLegalHoldStatus;
+            context.ObjectLockMode = this.ObjectLockMode;
+            context.ObjectLockRetainUntilDate = this.ObjectLockRetainUntilDate;
 
             if (this.PartSize != null)
             {
@@ -534,6 +758,14 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
                 context.PartSize = this.PartSize.FileSizeInBytes;
             }
+
+            if (!string.IsNullOrEmpty(this.IfMatch))
+                context.IfMatch = this.IfMatch;
+
+            if (!string.IsNullOrEmpty(this.IfNoneMatch))
+                context.IfNoneMatch = this.IfNoneMatch;
+
+            context.RequestPayer = this.RequestPayer;
 
             var output = Execute(context) as CmdletOutput;
             ProcessOutput(output);
@@ -545,7 +777,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             var cmdletContext = context as CmdletContext;
 
-            if (!string.IsNullOrEmpty(cmdletContext.File) || cmdletContext.Stream!=null)
+            if (!string.IsNullOrEmpty(cmdletContext.File) || cmdletContext.Stream != null)
                 return UploadFileToS3(cmdletContext);
 
             if (!string.IsNullOrEmpty(cmdletContext.Content))
@@ -601,7 +833,38 @@ namespace Amazon.PowerShell.Cmdlets.S3
             if (cmdletContext.ChecksumAlgorithm != null)
                 request.ChecksumAlgorithm = cmdletContext.ChecksumAlgorithm;
 
-            request.CalculateContentMD5Header = cmdletContext.CalculateContentMD5Header;
+            if (cmdletContext.DisableDefaultChecksumValidation != null)
+                request.DisableDefaultChecksumValidation = cmdletContext.DisableDefaultChecksumValidation;
+
+            if (cmdletContext.DisablePayloadSigning != null)
+                request.DisablePayloadSigning = cmdletContext.DisablePayloadSigning;
+
+            if (!string.IsNullOrEmpty(cmdletContext.IfMatch))
+                request.IfMatch = cmdletContext.IfMatch;
+            if (!string.IsNullOrEmpty(cmdletContext.IfNoneMatch))
+                request.IfNoneMatch = cmdletContext.IfNoneMatch;
+            if (cmdletContext.ExpectedBucketOwner != null)
+                request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
+
+            if (cmdletContext.ObjectLockLegalHoldStatus != null)
+            {
+                request.ObjectLockLegalHoldStatus = cmdletContext.ObjectLockLegalHoldStatus;
+            }
+
+            if (cmdletContext.ObjectLockMode != null)
+            {
+                request.ObjectLockMode = cmdletContext.ObjectLockMode;
+            }
+
+            if (cmdletContext.ObjectLockRetainUntilDate != null)
+            {
+                request.ObjectLockRetainUntilDate = cmdletContext.ObjectLockRetainUntilDate;
+            }
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
 
             AmazonS3Helper.SetMetadataAndHeaders(request, cmdletContext.Metadata, cmdletContext.Headers);
 
@@ -637,11 +900,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 {
                     request.FilePath = cmdletContext.File;
                 }
-                else if(cmdletContext.Stream!=null)
+                else if (cmdletContext.Stream != null)
                 {
                     _Stream = Amazon.PowerShell.Common.StreamParameterConverter.TransformToStream(cmdletContext.Stream);
                     request.InputStream = _Stream;
-                }            
+                }
 
                 if (cmdletContext.CannedACL != null)
                     request.CannedACL = cmdletContext.CannedACL.Value;
@@ -665,10 +928,68 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 if (cmdletContext.ChecksumAlgorithm != null)
                     request.ChecksumAlgorithm = cmdletContext.ChecksumAlgorithm;
 
-                request.CalculateContentMD5Header = cmdletContext.CalculateContentMD5Header;
+                if (!string.IsNullOrEmpty(cmdletContext.ChecksumValue))
+                {
+                    switch (cmdletContext.ChecksumAlgorithm.Value)
+                    {
+                        case "CRC32":
+                            request.ChecksumCRC32 = cmdletContext.ChecksumValue;
+                            break;
+                        case "CRC32C":
+                            request.ChecksumCRC32C = cmdletContext.ChecksumValue;
+                            break;
+                        case "CRC64NVME":
+                            request.ChecksumCRC64NVME = cmdletContext.ChecksumValue;
+                            break;
+                        case "SHA1":
+                            request.ChecksumSHA1 = cmdletContext.ChecksumValue;
+                            break;
+                        case "SHA256":
+                            request.ChecksumSHA256 = cmdletContext.ChecksumValue;
+                            break;
+                    }
+                }
+
+                if (cmdletContext.MpuObjectSize != null)
+                {
+                    long mpuObjectSize = cmdletContext.MpuObjectSize.Value;
+                    request.MpuObjectSize = mpuObjectSize;
+                }
+
+                if (cmdletContext.DisableDefaultChecksumValidation != null)
+                    request.DisableDefaultChecksumValidation = cmdletContext.DisableDefaultChecksumValidation;
+
+                if (cmdletContext.DisablePayloadSigning != null)
+                    request.DisablePayloadSigning = cmdletContext.DisablePayloadSigning;
+
+                if (!string.IsNullOrEmpty(cmdletContext.IfMatch))
+                    request.IfMatch = cmdletContext.IfMatch;
+
+                if (!string.IsNullOrEmpty(cmdletContext.IfNoneMatch))
+                    request.IfNoneMatch = cmdletContext.IfNoneMatch;
+
+                if (cmdletContext.ObjectLockLegalHoldStatus != null)
+                {
+                    request.ObjectLockLegalHoldStatus = cmdletContext.ObjectLockLegalHoldStatus;
+                }
+
+                if (cmdletContext.ObjectLockMode != null)
+                {
+                    request.ObjectLockMode = cmdletContext.ObjectLockMode;
+                }
+
+                if (cmdletContext.ObjectLockRetainUntilDate != null)
+                {
+                    request.ObjectLockRetainUntilDate = cmdletContext.ObjectLockRetainUntilDate.Value;
+                }
 
                 if (cmdletContext.PartSize != null)
                     request.PartSize = cmdletContext.PartSize.Value;
+
+                if (cmdletContext.RequestPayer != null)
+                {
+                    request.RequestPayer = cmdletContext.RequestPayer;
+                }
 
                 var transferUtilityConfig = new TransferUtilityConfig();
                 if (cmdletContext.ConcurrentServiceRequests.HasValue)
@@ -728,8 +1049,37 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 request.ServerSideEncryptionKeyManagementServiceKeyId = cmdletContext.ServerSideEncryptionKeyManagementServiceKeyId;
             if (cmdletContext.TagSet != null)
                 request.TagSet = new List<Tag>(cmdletContext.TagSet);
+            if (cmdletContext.ChecksumAlgorithm != null)
+            {
+                request.ChecksumAlgorithm = cmdletContext.ChecksumAlgorithm;
+            }
 
-            request.CalculateContentMD5Header = cmdletContext.CalculateContentMD5Header;
+            if (cmdletContext.DisableDefaultChecksumValidation != null)
+                request.DisableDefaultChecksumValidation = cmdletContext.DisableDefaultChecksumValidation;
+
+            if (cmdletContext.DisablePayloadSigning != null)
+                request.DisablePayloadSigning = cmdletContext.DisablePayloadSigning.Value;
+
+            if (cmdletContext.ObjectLockLegalHoldStatus != null)
+            {
+                request.ObjectLockLegalHoldStatus = cmdletContext.ObjectLockLegalHoldStatus;
+            }
+
+            if (cmdletContext.ObjectLockMode != null)
+            {
+                request.ObjectLockMode = cmdletContext.ObjectLockMode;
+            }
+
+            if (cmdletContext.ObjectLockRetainUntilDate != null)
+            {
+                request.ObjectLockRetainUntilDate = cmdletContext.ObjectLockRetainUntilDate.Value;
+            }
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
+            
 
             AmazonS3Helper.SetExtraRequestFields(request, cmdletContext);
 
@@ -758,13 +1108,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             try
             {
-#if DESKTOP
-                return client.PutObject(request);
-#elif CORECLR
-                return client.PutObjectAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.PutObjectAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -805,7 +1149,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
             public string ServerSideEncryptionCustomerProvidedKeyMD5 { get; set; }
 
             public ChecksumAlgorithm ChecksumAlgorithm { get; set; }
+            public String ChecksumValue { get; set; }
+            public long? MpuObjectSize { get; set; }
 
+            public string ExpectedBucketOwner { get; set;}
             public Hashtable Metadata { get; set; }
             public Hashtable Headers { get; set; }
 
@@ -813,9 +1160,19 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             public int? ConcurrentServiceRequests { get; set; }
 
-            public bool CalculateContentMD5Header { get; set; }
+            public bool? DisableDefaultChecksumValidation { get; set; }
+            public bool? DisablePayloadSigning { get; set; }
+
+            public ObjectLockLegalHoldStatus ObjectLockLegalHoldStatus { get; set; }
+            public ObjectLockMode ObjectLockMode { get; set; }
+            public DateTime? ObjectLockRetainUntilDate { get; set; }
 
             public long? PartSize { get; set; }
+
+            public String IfMatch { get; set; }
+            public String IfNoneMatch { get; set; }
+
+            public RequestPayer RequestPayer { get; set; }
         }
 
         #region Progress Trackers

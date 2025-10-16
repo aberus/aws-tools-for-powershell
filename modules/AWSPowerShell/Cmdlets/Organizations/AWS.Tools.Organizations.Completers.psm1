@@ -98,9 +98,13 @@ $ORG_Completers = {
         }
 
         # Amazon.Organizations.EffectivePolicyType
-        "Get-ORGEffectivePolicy/PolicyType"
         {
-            $v = "AISERVICES_OPT_OUT_POLICY","BACKUP_POLICY","TAG_POLICY"
+            ($_ -eq "Get-ORGAccountsWithInvalidEffectivePolicyList/PolicyType") -Or
+            ($_ -eq "Get-ORGEffectivePolicy/PolicyType") -Or
+            ($_ -eq "Get-ORGEffectivePolicyValidationErrorList/PolicyType")
+        }
+        {
+            $v = "AISERVICES_OPT_OUT_POLICY","BACKUP_POLICY","CHATBOT_POLICY","DECLARATIVE_POLICY_EC2","SECURITYHUB_POLICY","TAG_POLICY"
             break
         }
 
@@ -137,7 +141,7 @@ $ORG_Completers = {
             ($_ -eq "New-ORGPolicy/Type")
         }
         {
-            $v = "AISERVICES_OPT_OUT_POLICY","BACKUP_POLICY","SERVICE_CONTROL_POLICY","TAG_POLICY"
+            $v = "AISERVICES_OPT_OUT_POLICY","BACKUP_POLICY","CHATBOT_POLICY","DECLARATIVE_POLICY_EC2","RESOURCE_CONTROL_POLICY","SECURITYHUB_POLICY","SERVICE_CONTROL_POLICY","TAG_POLICY"
             break
         }
 
@@ -155,7 +159,7 @@ $ORG_map = @{
     "Filter"=@("Get-ORGPolicyForTarget","Get-ORGPolicyList")
     "Filter_ActionType"=@("Get-ORGAccountHandshakeList","Get-ORGOrganizationHandshakeList")
     "IamUserAccessToBilling"=@("New-ORGAccount","New-ORGGovCloudAccount")
-    "PolicyType"=@("Disable-ORGPolicyType","Enable-ORGPolicyType","Get-ORGEffectivePolicy")
+    "PolicyType"=@("Disable-ORGPolicyType","Enable-ORGPolicyType","Get-ORGAccountsWithInvalidEffectivePolicyList","Get-ORGEffectivePolicy","Get-ORGEffectivePolicyValidationErrorList")
     "Target_Type"=@("New-ORGAccountInvitation")
     "Type"=@("New-ORGPolicy")
 }
@@ -243,11 +247,13 @@ $ORG_SelectMap = @{
                "Remove-ORGOrganizationAssociation",
                "Get-ORGAccountList",
                "Get-ORGAccountForParent",
+               "Get-ORGAccountsWithInvalidEffectivePolicyList",
                "Get-ORGAWSServiceAccessForOrganization",
                "Get-ORGChild",
                "Get-ORGAccountCreationStatusList",
                "Get-ORGDelegatedAdministratorList",
                "Get-ORGDelegatedServicesForAccountList",
+               "Get-ORGEffectivePolicyValidationErrorList",
                "Get-ORGAccountHandshakeList",
                "Get-ORGOrganizationHandshakeList",
                "Get-ORGOrganizationalUnitList",

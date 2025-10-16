@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.HealthLake;
 using Amazon.HealthLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AHL
 {
     /// <summary>
-    /// Displays the properties of a FHIR import job, including the ID, ARN, name, and the
-    /// status of the job.
+    /// Get the import job properties to learn more about the job or job progress.
     /// </summary>
     [Cmdlet("Get", "AHLFHIRImportJob")]
     [OutputType("Amazon.HealthLake.Model.ImportJobProperties")]
     [AWSCmdlet("Calls the Amazon HealthLake DescribeFHIRImportJob API operation.", Operation = new[] {"DescribeFHIRImportJob"}, SelectReturnType = typeof(Amazon.HealthLake.Model.DescribeFHIRImportJobResponse))]
     [AWSCmdletOutput("Amazon.HealthLake.Model.ImportJobProperties or Amazon.HealthLake.Model.DescribeFHIRImportJobResponse",
         "This cmdlet returns an Amazon.HealthLake.Model.ImportJobProperties object.",
-        "The service call response (type Amazon.HealthLake.Model.DescribeFHIRImportJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.HealthLake.Model.DescribeFHIRImportJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAHLFHIRImportJobCmdlet : AmazonHealthLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DatastoreId
         /// <summary>
         /// <para>
-        /// <para>The AWS-generated ID of the data store.</para>
+        /// <para>The data store identifier.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -63,7 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter JobId
         /// <summary>
         /// <para>
-        /// <para>The AWS-generated job ID.</para>
+        /// <para>The import job identifier.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -88,9 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public string Select { get; set; } = "ImportJobProperties";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -179,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon HealthLake", "DescribeFHIRImportJob");
             try
             {
-                #if DESKTOP
-                return client.DescribeFHIRImportJob(request);
-                #elif CORECLR
-                return client.DescribeFHIRImportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeFHIRImportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

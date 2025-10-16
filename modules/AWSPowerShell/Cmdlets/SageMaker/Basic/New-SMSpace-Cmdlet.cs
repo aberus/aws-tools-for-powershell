@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
-    /// Creates a space used for real time collaboration in a domain.
+    /// Creates a private space or a space used for real time collaboration in a domain.
     /// </summary>
     [Cmdlet("New", "SMSpace", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateSpace API operation.", Operation = new[] {"CreateSpace"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateSpaceResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateSpaceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateSpaceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateSpaceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMSpaceCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SpaceSettings_AppType
         /// <summary>
         /// <para>
-        /// <para>The type of app created within the space.</para>
+        /// <para>The type of app created within the space.</para><para>If using the <a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_UpdateSpace.html">
+        /// UpdateSpace</a> API, you can't change the app type of your space by specifying a different
+        /// value for this field.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,7 +62,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of Git repositories that SageMaker automatically displays to users for cloning
-        /// in the JupyterLab application.</para>
+        /// in the JupyterLab application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,8 +77,12 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter JupyterServerAppSettings_CodeRepository
         /// <summary>
         /// <para>
-        /// <para>A list of Git repositories that SageMaker automatically displays to users for cloning
-        /// in the JupyterServer application.</para>
+        /// <para>A list of Git repositories that SageMaker AI automatically displays to users for cloning
+        /// in the JupyterServer application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A file system, created by you, that you assign to a space for an Amazon SageMaker
-        /// Domain. Permitted users can access this file system in Amazon SageMaker Studio.</para>
+        /// AI Domain. Permitted users can access this file system in Amazon SageMaker AI Studio.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +109,12 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter KernelGatewayAppSettings_CustomImage
         /// <summary>
         /// <para>
-        /// <para>A list of custom SageMaker images that are configured to run as a KernelGateway app.</para>
+        /// <para>A list of custom SageMaker AI images that are configured to run as a KernelGateway
+        /// app.</para><para>The maximum number of custom images are as follows.</para><ul><li><para>On a domain level: 200</para></li><li><para>On a space level: 5</para></li><li><para>On a user profile level: 5</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -120,12 +142,35 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter EbsStorageSettings_EbsVolumeSizeInGb
         /// <summary>
         /// <para>
-        /// <para>The size of an EBS storage volume for a private space.</para>
+        /// <para>The size of an EBS storage volume for a space.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SpaceSettings_SpaceStorageSettings_EbsStorageSettings_EbsVolumeSizeInGb")]
         public System.Int32? EbsStorageSettings_EbsVolumeSizeInGb { get; set; }
+        #endregion
+        
+        #region Parameter SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes
+        /// <summary>
+        /// <para>
+        /// <para>The time that SageMaker waits after the application becomes idle before shutting it
+        /// down.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes")]
+        public System.Int32? SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes { get; set; }
+        #endregion
+        
+        #region Parameter SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes
+        /// <summary>
+        /// <para>
+        /// <para>The time that SageMaker waits after the application becomes idle before shutting it
+        /// down.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes { get; set; }
         #endregion
         
         #region Parameter SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_InstanceType
@@ -229,7 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para> The Amazon Resource Name (ARN) of the Lifecycle Configurations attached to the JupyterServerApp.
         /// If you use this parameter, the <c>DefaultResourceSpec</c> parameter is also required.</para><note><para>To remove a Lifecycle Config, you must set <c>LifecycleConfigArns</c> to an empty
-        /// list.</para></note>
+        /// list.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -242,7 +291,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para> The Amazon Resource Name (ARN) of the Lifecycle Configurations attached to the the
         /// user profile or domain.</para><note><para>To remove a Lifecycle Config, you must set <c>LifecycleConfigArns</c> to an empty
-        /// list.</para></note>
+        /// list.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -253,17 +306,29 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter OwnershipSettings_OwnerUserProfileName
         /// <summary>
         /// <para>
-        /// <para>The user profile who is the owner of the private space.</para>
+        /// <para>The user profile who is the owner of the space.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OwnershipSettings_OwnerUserProfileName { get; set; }
         #endregion
         
+        #region Parameter SpaceSettings_RemoteAccess
+        /// <summary>
+        /// <para>
+        /// <para>A setting that enables or disables remote access for a SageMaker space. When enabled,
+        /// this allows you to connect to the remote space from your local IDE.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.FeatureStatus")]
+        public Amazon.SageMaker.FeatureStatus SpaceSettings_RemoteAccess { get; set; }
+        #endregion
+        
         #region Parameter SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the SageMaker image that the image version belongs to.</para>
+        /// <para>The ARN of the SageMaker AI image that the image version belongs to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -274,7 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_JupyterLabAppSettings_DefaultResourceSpec_SageMakerImageArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the SageMaker image that the image version belongs to.</para>
+        /// <para>The ARN of the SageMaker AI image that the image version belongs to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,7 +350,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_JupyterServerAppSettings_DefaultResourceSpec_SageMakerImageArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the SageMaker image that the image version belongs to.</para>
+        /// <para>The ARN of the SageMaker AI image that the image version belongs to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -296,7 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_KernelGatewayAppSettings_DefaultResourceSpec_SageMakerImageArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the SageMaker image that the image version belongs to.</para>
+        /// <para>The ARN of the SageMaker AI image that the image version belongs to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -355,7 +420,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageVersionArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the image version created on the instance.</para>
+        /// <para>The ARN of the image version created on the instance. To clear the value set for <c>SageMakerImageVersionArn</c>,
+        /// pass <c>None</c> as the value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -366,7 +432,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_JupyterLabAppSettings_DefaultResourceSpec_SageMakerImageVersionArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the image version created on the instance.</para>
+        /// <para>The ARN of the image version created on the instance. To clear the value set for <c>SageMakerImageVersionArn</c>,
+        /// pass <c>None</c> as the value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -377,7 +444,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_JupyterServerAppSettings_DefaultResourceSpec_SageMakerImageVersionArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the image version created on the instance.</para>
+        /// <para>The ARN of the image version created on the instance. To clear the value set for <c>SageMakerImageVersionArn</c>,
+        /// pass <c>None</c> as the value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -388,7 +456,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SpaceSettings_KernelGatewayAppSettings_DefaultResourceSpec_SageMakerImageVersionArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the image version created on the instance.</para>
+        /// <para>The ARN of the image version created on the instance. To clear the value set for <c>SageMakerImageVersionArn</c>,
+        /// pass <c>None</c> as the value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -417,6 +486,19 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.String SpaceDisplayName { get; set; }
         #endregion
         
+        #region Parameter SpaceSettings_SpaceManagedResource
+        /// <summary>
+        /// <para>
+        /// <para>If you enable this option, SageMaker AI creates the following resources on your behalf
+        /// when you create the space:</para><ul><li><para>The user profile that possesses the space.</para></li><li><para>The app that the space contains.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SpaceSettings_SpaceManagedResources")]
+        [AWSConstantClassSource("Amazon.SageMaker.FeatureStatus")]
+        public Amazon.SageMaker.FeatureStatus SpaceSettings_SpaceManagedResource { get; set; }
+        #endregion
+        
         #region Parameter SpaceName
         /// <summary>
         /// <para>
@@ -439,7 +521,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>Tags to associated with the space. Each tag consists of a key and an optional value.
         /// Tag keys must be unique for each resource. Tags are searchable using the <c>Search</c>
-        /// API.</para>
+        /// API.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -458,16 +544,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "SpaceArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SpaceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SpaceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SpaceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -478,9 +554,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SpaceName), MyInvocation.BoundParameters);
@@ -494,21 +574,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateSpaceResponse, NewSMSpaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SpaceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainId = this.DomainId;
             #if MODULAR
             if (this.DomainId == null && ParameterWasBound(nameof(this.DomainId)))
@@ -526,6 +596,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             }
             #endif
             context.SpaceSettings_AppType = this.SpaceSettings_AppType;
+            context.SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes = this.SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes;
             context.SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_InstanceType = this.SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_InstanceType;
             context.SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_LifecycleConfigArn = this.SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_LifecycleConfigArn;
             context.SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageArn = this.SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageArn;
@@ -535,6 +606,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 context.SpaceSettings_CustomFileSystem = new List<Amazon.SageMaker.Model.CustomFileSystem>(this.SpaceSettings_CustomFileSystem);
             }
+            context.SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes = this.SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes;
             if (this.JupyterLabAppSettings_CodeRepository != null)
             {
                 context.JupyterLabAppSettings_CodeRepository = new List<Amazon.SageMaker.Model.CodeRepository>(this.JupyterLabAppSettings_CodeRepository);
@@ -570,6 +642,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 context.KernelGatewayAppSettings_LifecycleConfigArn = new List<System.String>(this.KernelGatewayAppSettings_LifecycleConfigArn);
             }
+            context.SpaceSettings_RemoteAccess = this.SpaceSettings_RemoteAccess;
+            context.SpaceSettings_SpaceManagedResource = this.SpaceSettings_SpaceManagedResource;
             context.EbsStorageSettings_EbsVolumeSizeInGb = this.EbsStorageSettings_EbsVolumeSizeInGb;
             context.SpaceSharingSettings_SharingType = this.SpaceSharingSettings_SharingType;
             if (this.Tag != null)
@@ -647,11 +721,111 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 request.SpaceSettings.CustomFileSystems = requestSpaceSettings_spaceSettings_CustomFileSystem;
                 requestSpaceSettingsIsNull = false;
             }
+            Amazon.SageMaker.FeatureStatus requestSpaceSettings_spaceSettings_RemoteAccess = null;
+            if (cmdletContext.SpaceSettings_RemoteAccess != null)
+            {
+                requestSpaceSettings_spaceSettings_RemoteAccess = cmdletContext.SpaceSettings_RemoteAccess;
+            }
+            if (requestSpaceSettings_spaceSettings_RemoteAccess != null)
+            {
+                request.SpaceSettings.RemoteAccess = requestSpaceSettings_spaceSettings_RemoteAccess;
+                requestSpaceSettingsIsNull = false;
+            }
+            Amazon.SageMaker.FeatureStatus requestSpaceSettings_spaceSettings_SpaceManagedResource = null;
+            if (cmdletContext.SpaceSettings_SpaceManagedResource != null)
+            {
+                requestSpaceSettings_spaceSettings_SpaceManagedResource = cmdletContext.SpaceSettings_SpaceManagedResource;
+            }
+            if (requestSpaceSettings_spaceSettings_SpaceManagedResource != null)
+            {
+                request.SpaceSettings.SpaceManagedResources = requestSpaceSettings_spaceSettings_SpaceManagedResource;
+                requestSpaceSettingsIsNull = false;
+            }
+            Amazon.SageMaker.Model.SpaceStorageSettings requestSpaceSettings_spaceSettings_SpaceStorageSettings = null;
+            
+             // populate SpaceStorageSettings
+            var requestSpaceSettings_spaceSettings_SpaceStorageSettingsIsNull = true;
+            requestSpaceSettings_spaceSettings_SpaceStorageSettings = new Amazon.SageMaker.Model.SpaceStorageSettings();
+            Amazon.SageMaker.Model.EbsStorageSettings requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings = null;
+            
+             // populate EbsStorageSettings
+            var requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettingsIsNull = true;
+            requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings = new Amazon.SageMaker.Model.EbsStorageSettings();
+            System.Int32? requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb = null;
+            if (cmdletContext.EbsStorageSettings_EbsVolumeSizeInGb != null)
+            {
+                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb = cmdletContext.EbsStorageSettings_EbsVolumeSizeInGb.Value;
+            }
+            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb != null)
+            {
+                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings.EbsVolumeSizeInGb = requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb.Value;
+                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettingsIsNull = false;
+            }
+             // determine if requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings should be set to null
+            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettingsIsNull)
+            {
+                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings = null;
+            }
+            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings != null)
+            {
+                requestSpaceSettings_spaceSettings_SpaceStorageSettings.EbsStorageSettings = requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings;
+                requestSpaceSettings_spaceSettings_SpaceStorageSettingsIsNull = false;
+            }
+             // determine if requestSpaceSettings_spaceSettings_SpaceStorageSettings should be set to null
+            if (requestSpaceSettings_spaceSettings_SpaceStorageSettingsIsNull)
+            {
+                requestSpaceSettings_spaceSettings_SpaceStorageSettings = null;
+            }
+            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings != null)
+            {
+                request.SpaceSettings.SpaceStorageSettings = requestSpaceSettings_spaceSettings_SpaceStorageSettings;
+                requestSpaceSettingsIsNull = false;
+            }
             Amazon.SageMaker.Model.SpaceCodeEditorAppSettings requestSpaceSettings_spaceSettings_CodeEditorAppSettings = null;
             
              // populate CodeEditorAppSettings
             var requestSpaceSettings_spaceSettings_CodeEditorAppSettingsIsNull = true;
             requestSpaceSettings_spaceSettings_CodeEditorAppSettings = new Amazon.SageMaker.Model.SpaceCodeEditorAppSettings();
+            Amazon.SageMaker.Model.SpaceAppLifecycleManagement requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement = null;
+            
+             // populate AppLifecycleManagement
+            var requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagementIsNull = true;
+            requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement = new Amazon.SageMaker.Model.SpaceAppLifecycleManagement();
+            Amazon.SageMaker.Model.SpaceIdleSettings requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings = null;
+            
+             // populate IdleSettings
+            var requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettingsIsNull = true;
+            requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings = new Amazon.SageMaker.Model.SpaceIdleSettings();
+            System.Int32? requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes = null;
+            if (cmdletContext.SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes != null)
+            {
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes = cmdletContext.SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes.Value;
+            }
+            if (requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes != null)
+            {
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings.IdleTimeoutInMinutes = requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes.Value;
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettingsIsNull = false;
+            }
+             // determine if requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings should be set to null
+            if (requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettingsIsNull)
+            {
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings = null;
+            }
+            if (requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings != null)
+            {
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement.IdleSettings = requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings;
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagementIsNull = false;
+            }
+             // determine if requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement should be set to null
+            if (requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagementIsNull)
+            {
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement = null;
+            }
+            if (requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement != null)
+            {
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettings.AppLifecycleManagement = requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_AppLifecycleManagement;
+                requestSpaceSettings_spaceSettings_CodeEditorAppSettingsIsNull = false;
+            }
             Amazon.SageMaker.Model.ResourceSpec requestSpaceSettings_spaceSettings_CodeEditorAppSettings_spaceSettings_CodeEditorAppSettings_DefaultResourceSpec = null;
             
              // populate DefaultResourceSpec
@@ -727,46 +901,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 request.SpaceSettings.CodeEditorAppSettings = requestSpaceSettings_spaceSettings_CodeEditorAppSettings;
                 requestSpaceSettingsIsNull = false;
             }
-            Amazon.SageMaker.Model.SpaceStorageSettings requestSpaceSettings_spaceSettings_SpaceStorageSettings = null;
-            
-             // populate SpaceStorageSettings
-            var requestSpaceSettings_spaceSettings_SpaceStorageSettingsIsNull = true;
-            requestSpaceSettings_spaceSettings_SpaceStorageSettings = new Amazon.SageMaker.Model.SpaceStorageSettings();
-            Amazon.SageMaker.Model.EbsStorageSettings requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings = null;
-            
-             // populate EbsStorageSettings
-            var requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettingsIsNull = true;
-            requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings = new Amazon.SageMaker.Model.EbsStorageSettings();
-            System.Int32? requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb = null;
-            if (cmdletContext.EbsStorageSettings_EbsVolumeSizeInGb != null)
-            {
-                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb = cmdletContext.EbsStorageSettings_EbsVolumeSizeInGb.Value;
-            }
-            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb != null)
-            {
-                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings.EbsVolumeSizeInGb = requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings_ebsStorageSettings_EbsVolumeSizeInGb.Value;
-                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettingsIsNull = false;
-            }
-             // determine if requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings should be set to null
-            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettingsIsNull)
-            {
-                requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings = null;
-            }
-            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings != null)
-            {
-                requestSpaceSettings_spaceSettings_SpaceStorageSettings.EbsStorageSettings = requestSpaceSettings_spaceSettings_SpaceStorageSettings_spaceSettings_SpaceStorageSettings_EbsStorageSettings;
-                requestSpaceSettings_spaceSettings_SpaceStorageSettingsIsNull = false;
-            }
-             // determine if requestSpaceSettings_spaceSettings_SpaceStorageSettings should be set to null
-            if (requestSpaceSettings_spaceSettings_SpaceStorageSettingsIsNull)
-            {
-                requestSpaceSettings_spaceSettings_SpaceStorageSettings = null;
-            }
-            if (requestSpaceSettings_spaceSettings_SpaceStorageSettings != null)
-            {
-                request.SpaceSettings.SpaceStorageSettings = requestSpaceSettings_spaceSettings_SpaceStorageSettings;
-                requestSpaceSettingsIsNull = false;
-            }
             Amazon.SageMaker.Model.SpaceJupyterLabAppSettings requestSpaceSettings_spaceSettings_JupyterLabAppSettings = null;
             
              // populate JupyterLabAppSettings
@@ -780,6 +914,46 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (requestSpaceSettings_spaceSettings_JupyterLabAppSettings_jupyterLabAppSettings_CodeRepository != null)
             {
                 requestSpaceSettings_spaceSettings_JupyterLabAppSettings.CodeRepositories = requestSpaceSettings_spaceSettings_JupyterLabAppSettings_jupyterLabAppSettings_CodeRepository;
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettingsIsNull = false;
+            }
+            Amazon.SageMaker.Model.SpaceAppLifecycleManagement requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement = null;
+            
+             // populate AppLifecycleManagement
+            var requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagementIsNull = true;
+            requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement = new Amazon.SageMaker.Model.SpaceAppLifecycleManagement();
+            Amazon.SageMaker.Model.SpaceIdleSettings requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings = null;
+            
+             // populate IdleSettings
+            var requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettingsIsNull = true;
+            requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings = new Amazon.SageMaker.Model.SpaceIdleSettings();
+            System.Int32? requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes = null;
+            if (cmdletContext.SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes != null)
+            {
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes = cmdletContext.SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes.Value;
+            }
+            if (requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes != null)
+            {
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings.IdleTimeoutInMinutes = requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes.Value;
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettingsIsNull = false;
+            }
+             // determine if requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings should be set to null
+            if (requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettingsIsNull)
+            {
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings = null;
+            }
+            if (requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings != null)
+            {
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement.IdleSettings = requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings;
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagementIsNull = false;
+            }
+             // determine if requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement should be set to null
+            if (requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagementIsNull)
+            {
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement = null;
+            }
+            if (requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement != null)
+            {
+                requestSpaceSettings_spaceSettings_JupyterLabAppSettings.AppLifecycleManagement = requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_AppLifecycleManagement;
                 requestSpaceSettings_spaceSettings_JupyterLabAppSettingsIsNull = false;
             }
             Amazon.SageMaker.Model.ResourceSpec requestSpaceSettings_spaceSettings_JupyterLabAppSettings_spaceSettings_JupyterLabAppSettings_DefaultResourceSpec = null;
@@ -1123,13 +1297,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateSpace");
             try
             {
-                #if DESKTOP
-                return client.CreateSpace(request);
-                #elif CORECLR
-                return client.CreateSpaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSpaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1151,12 +1319,14 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String SpaceDisplayName { get; set; }
             public System.String SpaceName { get; set; }
             public Amazon.SageMaker.AppType SpaceSettings_AppType { get; set; }
+            public System.Int32? SpaceSettings_CodeEditorAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes { get; set; }
             public Amazon.SageMaker.AppInstanceType SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_InstanceType { get; set; }
             public System.String SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_LifecycleConfigArn { get; set; }
             public System.String SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageArn { get; set; }
             public System.String SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageVersionAlias { get; set; }
             public System.String SpaceSettings_CodeEditorAppSettings_DefaultResourceSpec_SageMakerImageVersionArn { get; set; }
             public List<Amazon.SageMaker.Model.CustomFileSystem> SpaceSettings_CustomFileSystem { get; set; }
+            public System.Int32? SpaceSettings_JupyterLabAppSettings_AppLifecycleManagement_IdleSettings_IdleTimeoutInMinutes { get; set; }
             public List<Amazon.SageMaker.Model.CodeRepository> JupyterLabAppSettings_CodeRepository { get; set; }
             public Amazon.SageMaker.AppInstanceType SpaceSettings_JupyterLabAppSettings_DefaultResourceSpec_InstanceType { get; set; }
             public System.String SpaceSettings_JupyterLabAppSettings_DefaultResourceSpec_LifecycleConfigArn { get; set; }
@@ -1177,6 +1347,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String SpaceSettings_KernelGatewayAppSettings_DefaultResourceSpec_SageMakerImageVersionAlias { get; set; }
             public System.String SpaceSettings_KernelGatewayAppSettings_DefaultResourceSpec_SageMakerImageVersionArn { get; set; }
             public List<System.String> KernelGatewayAppSettings_LifecycleConfigArn { get; set; }
+            public Amazon.SageMaker.FeatureStatus SpaceSettings_RemoteAccess { get; set; }
+            public Amazon.SageMaker.FeatureStatus SpaceSettings_SpaceManagedResource { get; set; }
             public System.Int32? EbsStorageSettings_EbsVolumeSizeInGb { get; set; }
             public Amazon.SageMaker.SharingType SpaceSharingSettings_SharingType { get; set; }
             public List<Amazon.SageMaker.Model.Tag> Tag { get; set; }

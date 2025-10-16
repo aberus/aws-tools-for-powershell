@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,35 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ControlTower;
 using Amazon.ControlTower.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACT
 {
     /// <summary>
     /// This API call activates a control. It starts an asynchronous operation that creates
     /// Amazon Web Services resources on the specified organizational unit and the accounts
     /// it contains. The resources created will vary according to the control that you specify.
-    /// For usage examples, see <a href="https://docs.aws.amazon.com/controltower/latest/userguide/control-api-examples-short.html"><i>the Amazon Web Services Control Tower User Guide</i></a>.
+    /// For usage examples, see the <a href="https://docs.aws.amazon.com/controltower/latest/controlreference/control-api-examples-short.html"><i>Controls Reference Guide</i></a>.
     /// </summary>
     [Cmdlet("Enable", "ACTControl", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Control Tower EnableControl API operation.", Operation = new[] {"EnableControl"}, SelectReturnType = typeof(Amazon.ControlTower.Model.EnableControlResponse))]
     [AWSCmdletOutput("System.String or Amazon.ControlTower.Model.EnableControlResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ControlTower.Model.EnableControlResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ControlTower.Model.EnableControlResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EnableACTControlCmdlet : AmazonControlTowerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ControlIdentifier
         /// <summary>
         /// <para>
         /// <para>The ARN of the control. Only <b>Strongly recommended</b> and <b>Elective</b> controls
-        /// are permitted, with the exception of the <b>landing zone Region deny</b> control.
-        /// For information on how to find the <c>controlIdentifier</c>, see <a href="https://docs.aws.amazon.com/controltower/latest/APIReference/Welcome.html">the
+        /// are permitted, with the exception of the <b>Region deny</b> control. For information
+        /// on how to find the <c>controlIdentifier</c>, see <a href="https://docs.aws.amazon.com/controltower/latest/APIReference/Welcome.html">the
         /// overview page</a>.</para>
         /// </para>
         /// </summary>
@@ -68,7 +71,12 @@ namespace Amazon.PowerShell.Cmdlets.ACT
         #region Parameter Parameter
         /// <summary>
         /// <para>
-        /// <para>An array of <c>EnabledControlParameter</c> objects</para>
+        /// <para>A list of input parameter values, which are specified to configure the control when
+        /// you enable it.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -79,7 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.ACT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags to be applied to the <c>EnabledControl</c> resource.</para>
+        /// <para>Tags to be applied to the <c>EnabledControl</c> resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,16 +129,6 @@ namespace Amazon.PowerShell.Cmdlets.ACT
         public string Select { get; set; } = "OperationIdentifier";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TargetIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TargetIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TargetIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -137,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.ACT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TargetIdentifier), MyInvocation.BoundParameters);
@@ -153,21 +159,11 @@ namespace Amazon.PowerShell.Cmdlets.ACT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ControlTower.Model.EnableControlResponse, EnableACTControlCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TargetIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ControlIdentifier = this.ControlIdentifier;
             #if MODULAR
             if (this.ControlIdentifier == null && ParameterWasBound(nameof(this.ControlIdentifier)))
@@ -264,13 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.ACT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Control Tower", "EnableControl");
             try
             {
-                #if DESKTOP
-                return client.EnableControl(request);
-                #elif CORECLR
-                return client.EnableControlAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.EnableControlAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

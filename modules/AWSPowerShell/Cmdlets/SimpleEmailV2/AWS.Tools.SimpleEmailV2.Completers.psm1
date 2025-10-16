@@ -95,7 +95,7 @@ $SES2_Completers = {
         }
 
         # Amazon.SimpleEmailV2.ContactListImportAction
-        "New-SES2ImportJob/ImportDestination_ContactListDestination_ContactListImportAction"
+        "New-SES2ImportJob/ContactListDestination_ContactListImportAction"
         {
             $v = "DELETE","PUT"
             break
@@ -112,9 +112,13 @@ $SES2_Completers = {
         }
 
         # Amazon.SimpleEmailV2.DkimSigningAttributesOrigin
-        "Write-SES2EmailIdentityDkimSigningAttribute/SigningAttributesOrigin"
         {
-            $v = "AWS_SES","EXTERNAL"
+            ($_ -eq "New-SES2EmailIdentity/DkimSigningAttributes_DomainSigningAttributesOrigin") -Or
+            ($_ -eq "Write-SES2EmailIdentityDkimSigningAttribute/SigningAttributes_DomainSigningAttributesOrigin") -Or
+            ($_ -eq "Write-SES2EmailIdentityDkimSigningAttribute/SigningAttributesOrigin")
+        }
+        {
+            $v = "AWS_SES","AWS_SES_AF_SOUTH_1","AWS_SES_AP_NORTHEAST_1","AWS_SES_AP_NORTHEAST_2","AWS_SES_AP_NORTHEAST_3","AWS_SES_AP_SOUTHEAST_1","AWS_SES_AP_SOUTHEAST_2","AWS_SES_AP_SOUTHEAST_3","AWS_SES_AP_SOUTH_1","AWS_SES_AP_SOUTH_2","AWS_SES_CA_CENTRAL_1","AWS_SES_EU_CENTRAL_1","AWS_SES_EU_CENTRAL_2","AWS_SES_EU_NORTH_1","AWS_SES_EU_SOUTH_1","AWS_SES_EU_WEST_1","AWS_SES_EU_WEST_2","AWS_SES_EU_WEST_3","AWS_SES_IL_CENTRAL_1","AWS_SES_ME_CENTRAL_1","AWS_SES_ME_SOUTH_1","AWS_SES_SA_EAST_1","AWS_SES_US_EAST_1","AWS_SES_US_EAST_2","AWS_SES_US_WEST_1","AWS_SES_US_WEST_2","EXTERNAL"
             break
         }
 
@@ -137,16 +141,26 @@ $SES2_Completers = {
 
         # Amazon.SimpleEmailV2.FeatureStatus
         {
-            ($_ -eq "Write-SES2AccountVdmAttribute/VdmAttributes_DashboardAttributes_EngagementMetrics") -Or
-            ($_ -eq "Write-SES2AccountVdmAttribute/VdmAttributes_GuardianAttributes_OptimizedSharedDelivery") -Or
-            ($_ -eq "Write-SES2AccountVdmAttribute/VdmAttributes_VdmEnabled") -Or
-            ($_ -eq "New-SES2ConfigurationSet/VdmOptions_DashboardOptions_EngagementMetrics") -Or
-            ($_ -eq "Write-SES2ConfigurationSetVdmOption/VdmOptions_DashboardOptions_EngagementMetrics") -Or
-            ($_ -eq "New-SES2ConfigurationSet/VdmOptions_GuardianOptions_OptimizedSharedDelivery") -Or
-            ($_ -eq "Write-SES2ConfigurationSetVdmOption/VdmOptions_GuardianOptions_OptimizedSharedDelivery")
+            ($_ -eq "Write-SES2AccountVdmAttribute/DashboardAttributes_EngagementMetric") -Or
+            ($_ -eq "New-SES2ConfigurationSet/DashboardOptions_EngagementMetric") -Or
+            ($_ -eq "Write-SES2ConfigurationSetVdmOption/DashboardOptions_EngagementMetric") -Or
+            ($_ -eq "Write-SES2AccountVdmAttribute/GuardianAttributes_OptimizedSharedDelivery") -Or
+            ($_ -eq "New-SES2ConfigurationSet/GuardianOptions_OptimizedSharedDelivery") -Or
+            ($_ -eq "Write-SES2ConfigurationSetVdmOption/GuardianOptions_OptimizedSharedDelivery") -Or
+            ($_ -eq "Write-SES2AccountVdmAttribute/VdmAttributes_VdmEnabled")
         }
         {
             $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.SimpleEmailV2.HttpsPolicy
+        {
+            ($_ -eq "Write-SES2ConfigurationSetTrackingOption/HttpsPolicy") -Or
+            ($_ -eq "New-SES2ConfigurationSet/TrackingOptions_HttpsPolicy")
+        }
+        {
+            $v = "OPTIONAL","REQUIRE","REQUIRE_OPEN_ONLY"
             break
         }
 
@@ -172,9 +186,20 @@ $SES2_Completers = {
         }
 
         # Amazon.SimpleEmailV2.MetricNamespace
-        "New-SES2ExportJob/ExportDataSource_MetricsDataSource_Namespace"
+        "New-SES2ExportJob/MetricsDataSource_Namespace"
         {
             $v = "VDM"
+            break
+        }
+
+        # Amazon.SimpleEmailV2.ReputationEntityType
+        {
+            ($_ -eq "Get-SES2ReputationEntity/ReputationEntityType") -Or
+            ($_ -eq "Update-SES2ReputationEntityCustomerManagedStatus/ReputationEntityType") -Or
+            ($_ -eq "Update-SES2ReputationEntityPolicy/ReputationEntityType")
+        }
+        {
+            $v = "RESOURCE"
             break
         }
 
@@ -188,6 +213,13 @@ $SES2_Completers = {
             break
         }
 
+        # Amazon.SimpleEmailV2.SendingStatus
+        "Update-SES2ReputationEntityCustomerManagedStatus/SendingStatus"
+        {
+            $v = "DISABLED","ENABLED","REINSTATED"
+            break
+        }
+
         # Amazon.SimpleEmailV2.SubscriptionStatus
         "Get-SES2ContactCollection/Filter_FilteredStatus"
         {
@@ -196,7 +228,7 @@ $SES2_Completers = {
         }
 
         # Amazon.SimpleEmailV2.SuppressionListImportAction
-        "New-SES2ImportJob/ImportDestination_SuppressionListDestination_SuppressionListImportAction"
+        "New-SES2ImportJob/SuppressionListDestination_SuppressionListImportAction"
         {
             $v = "DELETE","PUT"
             break
@@ -230,28 +262,34 @@ $SES2_Completers = {
 $SES2_map = @{
     "BehaviorOnMxFailure"=@("Write-SES2EmailIdentityMailFromAttribute")
     "ContactLanguage"=@("Write-SES2AccountDetail")
+    "ContactListDestination_ContactListImportAction"=@("New-SES2ImportJob")
+    "DashboardAttributes_EngagementMetric"=@("Write-SES2AccountVdmAttribute")
+    "DashboardOptions_EngagementMetric"=@("New-SES2ConfigurationSet","Write-SES2ConfigurationSetVdmOption")
     "DeliveryOptions_TlsPolicy"=@("New-SES2ConfigurationSet")
+    "DkimSigningAttributes_DomainSigningAttributesOrigin"=@("New-SES2EmailIdentity")
     "DkimSigningAttributes_NextSigningKeyLength"=@("New-SES2EmailIdentity")
-    "ExportDataSource_MetricsDataSource_Namespace"=@("New-SES2ExportJob")
     "ExportDestination_DataFormat"=@("New-SES2ExportJob")
     "ExportSourceType"=@("Get-SES2ExportJobList")
     "Filter_FilteredStatus"=@("Get-SES2ContactCollection")
+    "GuardianAttributes_OptimizedSharedDelivery"=@("Write-SES2AccountVdmAttribute")
+    "GuardianOptions_OptimizedSharedDelivery"=@("New-SES2ConfigurationSet","Write-SES2ConfigurationSetVdmOption")
+    "HttpsPolicy"=@("Write-SES2ConfigurationSetTrackingOption")
     "ImportDataSource_DataFormat"=@("New-SES2ImportJob")
-    "ImportDestination_ContactListDestination_ContactListImportAction"=@("New-SES2ImportJob")
-    "ImportDestination_SuppressionListDestination_SuppressionListImportAction"=@("New-SES2ImportJob")
     "ImportDestinationType"=@("Get-SES2ImportJobList")
     "JobStatus"=@("Get-SES2ExportJobList")
     "MailType"=@("Write-SES2AccountDetail")
+    "MetricsDataSource_Namespace"=@("New-SES2ExportJob")
     "Reason"=@("Write-SES2SuppressedDestination")
+    "ReputationEntityType"=@("Get-SES2ReputationEntity","Update-SES2ReputationEntityCustomerManagedStatus","Update-SES2ReputationEntityPolicy")
     "ScalingMode"=@("New-SES2DedicatedIpPool","Write-SES2DedicatedIpPoolScalingAttribute")
+    "SendingStatus"=@("Update-SES2ReputationEntityCustomerManagedStatus")
+    "SigningAttributes_DomainSigningAttributesOrigin"=@("Write-SES2EmailIdentityDkimSigningAttribute")
     "SigningAttributes_NextSigningKeyLength"=@("Write-SES2EmailIdentityDkimSigningAttribute")
     "SigningAttributesOrigin"=@("Write-SES2EmailIdentityDkimSigningAttribute")
+    "SuppressionListDestination_SuppressionListImportAction"=@("New-SES2ImportJob")
     "TlsPolicy"=@("Write-SES2ConfigurationSetDeliveryOption")
-    "VdmAttributes_DashboardAttributes_EngagementMetrics"=@("Write-SES2AccountVdmAttribute")
-    "VdmAttributes_GuardianAttributes_OptimizedSharedDelivery"=@("Write-SES2AccountVdmAttribute")
+    "TrackingOptions_HttpsPolicy"=@("New-SES2ConfigurationSet")
     "VdmAttributes_VdmEnabled"=@("Write-SES2AccountVdmAttribute")
-    "VdmOptions_DashboardOptions_EngagementMetrics"=@("New-SES2ConfigurationSet","Write-SES2ConfigurationSetVdmOption")
-    "VdmOptions_GuardianOptions_OptimizedSharedDelivery"=@("New-SES2ConfigurationSet","Write-SES2ConfigurationSetVdmOption")
 }
 
 _awsArgumentCompleterRegistration $SES2_Completers $SES2_map
@@ -318,6 +356,9 @@ $SES2_SelectMap = @{
                "New-SES2EmailTemplate",
                "New-SES2ExportJob",
                "New-SES2ImportJob",
+               "New-SES2MultiRegionEndpoint",
+               "New-SES2Tenant",
+               "New-SES2TenantResourceAssociation",
                "Remove-SES2ConfigurationSet",
                "Remove-SES2ConfigurationSetEventDestination",
                "Remove-SES2Contact",
@@ -327,7 +368,10 @@ $SES2_SelectMap = @{
                "Remove-SES2EmailIdentity",
                "Remove-SES2EmailIdentityPolicy",
                "Remove-SES2EmailTemplate",
+               "Remove-SES2MultiRegionEndpoint",
                "Remove-SES2SuppressedDestination",
+               "Remove-SES2Tenant",
+               "Remove-SES2TenantResourceAssociation",
                "Get-SES2Account",
                "Get-SES2BlacklistReport",
                "Get-SES2ConfigurationSet",
@@ -348,7 +392,10 @@ $SES2_SelectMap = @{
                "Get-SES2ExportJob",
                "Get-SES2ImportJob",
                "Get-SES2MessageInsight",
+               "Get-SES2MultiRegionEndpoint",
+               "Get-SES2ReputationEntity",
                "Get-SES2SuppressedDestination",
+               "Get-SES2Tenant",
                "Get-SES2ConfigurationSetList",
                "Get-SES2ContactListCollection",
                "Get-SES2ContactCollection",
@@ -360,14 +407,20 @@ $SES2_SelectMap = @{
                "Get-SES2EmailTemplateList",
                "Get-SES2ExportJobList",
                "Get-SES2ImportJobList",
+               "Get-SES2MultiRegionEndpointList",
                "Get-SES2RecommendationList",
+               "Get-SES2ReputationEntityList",
+               "Get-SES2ResourceTenantList",
                "Get-SES2SuppressedDestinationList",
                "Get-SES2ResourceTag",
+               "Get-SES2TenantResourceList",
+               "Get-SES2TenantList",
                "Write-SES2AccountDedicatedIpWarmupAttribute",
                "Write-SES2AccountDetail",
                "Write-SES2AccountSendingAttribute",
                "Write-SES2AccountSuppressionAttribute",
                "Write-SES2AccountVdmAttribute",
+               "Write-SES2ConfigurationSetArchivingOption",
                "Write-SES2ConfigurationSetDeliveryOption",
                "Write-SES2ConfigurationSetReputationOption",
                "Write-SES2ConfigurationSetSendingOption",
@@ -395,7 +448,9 @@ $SES2_SelectMap = @{
                "Update-SES2ContactList",
                "Update-SES2CustomVerificationEmailTemplate",
                "Update-SES2EmailIdentityPolicy",
-               "Update-SES2EmailTemplate")
+               "Update-SES2EmailTemplate",
+               "Update-SES2ReputationEntityCustomerManagedStatus",
+               "Update-SES2ReputationEntityPolicy")
 }
 
 _awsArgumentCompleterRegistration $SES2_SelectCompleters $SES2_SelectMap

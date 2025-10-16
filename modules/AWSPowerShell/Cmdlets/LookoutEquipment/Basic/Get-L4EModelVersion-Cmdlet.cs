@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LookoutEquipment;
 using Amazon.LookoutEquipment.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.L4E
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.L4E
     [OutputType("Amazon.LookoutEquipment.Model.DescribeModelVersionResponse")]
     [AWSCmdlet("Calls the Amazon Lookout for Equipment DescribeModelVersion API operation.", Operation = new[] {"DescribeModelVersion"}, SelectReturnType = typeof(Amazon.LookoutEquipment.Model.DescribeModelVersionResponse))]
     [AWSCmdletOutput("Amazon.LookoutEquipment.Model.DescribeModelVersionResponse",
-        "This cmdlet returns an Amazon.LookoutEquipment.Model.DescribeModelVersionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LookoutEquipment.Model.DescribeModelVersionResponse object containing multiple properties."
     )]
     public partial class GetL4EModelVersionCmdlet : AmazonLookoutEquipmentClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ModelName
         /// <summary>
@@ -85,9 +88,13 @@ namespace Amazon.PowerShell.Cmdlets.L4E
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -176,13 +183,7 @@ namespace Amazon.PowerShell.Cmdlets.L4E
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lookout for Equipment", "DescribeModelVersion");
             try
             {
-                #if DESKTOP
-                return client.DescribeModelVersion(request);
-                #elif CORECLR
-                return client.DescribeModelVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeModelVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,41 +22,52 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
+    /// <important><para>
+    /// This API controls public sharing settings for your entire Quick Sight account, affecting
+    /// data security and access. When you enable public sharing:
+    /// </para><ul><li><para>
+    /// Dashboards can be shared publicly
+    /// </para></li><li><para>
+    /// This setting affects your entire Amazon Web Services account and all Quick Sight users
+    /// </para></li></ul><para><b>Before proceeding:</b> Ensure you understand the security implications and have
+    /// proper IAM permissions configured.
+    /// </para></important><para>
     /// Use the <c>UpdatePublicSharingSettings</c> operation to turn on or turn off the public
-    /// sharing settings of an Amazon QuickSight dashboard.
-    /// 
-    ///  
-    /// <para>
-    /// To use this operation, turn on session capacity pricing for your Amazon QuickSight
+    /// sharing settings of an Amazon Quick Sight dashboard.
+    /// </para><para>
+    /// To use this operation, turn on session capacity pricing for your Amazon Quick Sight
     /// account.
     /// </para><para>
     /// Before you can turn on public sharing on your account, make sure to give public sharing
     /// permissions to an administrative user in the Identity and Access Management (IAM)
-    /// console. For more information on using IAM with Amazon QuickSight, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/security_iam_service-with-iam.html">Using
-    /// Amazon QuickSight with IAM</a> in the <i>Amazon QuickSight User Guide</i>.
+    /// console. For more information on using IAM with Amazon Quick Sight, see <a href="https://docs.aws.amazon.com/quicksight/latest/user/security_iam_service-with-iam.html">Using
+    /// QuickSight with IAM</a> in the <i>Amazon Quick Sight User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Update", "QSPublicSharingSetting", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QuickSight.Model.UpdatePublicSharingSettingsResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight UpdatePublicSharingSettings API operation.", Operation = new[] {"UpdatePublicSharingSettings"}, SelectReturnType = typeof(Amazon.QuickSight.Model.UpdatePublicSharingSettingsResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.UpdatePublicSharingSettingsResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.UpdatePublicSharingSettingsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.UpdatePublicSharingSettingsResponse object containing multiple properties."
     )]
     public partial class UpdateQSPublicSharingSettingCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services account ID associated with your Amazon QuickSight subscription.</para>
+        /// <para>The Amazon Web Services account ID associated with your Amazon Quick Sight subscription.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter PublicSharingEnabled
         /// <summary>
         /// <para>
-        /// <para>A Boolean value that indicates whether public sharing is turned on for an Amazon QuickSight
+        /// <para>A Boolean value that indicates whether public sharing is turned on for an QuickSight
         /// account.</para>
         /// </para>
         /// </summary>
@@ -92,16 +103,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AwsAccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -112,9 +113,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AwsAccountId), MyInvocation.BoundParameters);
@@ -128,21 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.UpdatePublicSharingSettingsResponse, UpdateQSPublicSharingSettingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AwsAccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -213,13 +208,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "UpdatePublicSharingSettings");
             try
             {
-                #if DESKTOP
-                return client.UpdatePublicSharingSettings(request);
-                #elif CORECLR
-                return client.UpdatePublicSharingSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePublicSharingSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

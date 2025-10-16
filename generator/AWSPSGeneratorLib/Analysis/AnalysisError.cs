@@ -71,16 +71,6 @@ namespace AWSPowerShellGenerator.Analysis
             new AnalysisError(service, operation, $"The specified 'OutputProperty=\"{operation.OutputProperty}\"' doesn't exist in the class returned by the service operation.");
         }
 
-        public static void InvalidPassThruConfiguration(ConfigModel service, ServiceOperation operation)
-        {
-            new AnalysisError(service, operation, $"Invalid 'PassThru' configuration.");
-        }
-
-        public static void InvalidPassThruType(ConfigModel service, ServiceOperation operation, SimplePropertyInfo.PropertyCollectionType type)
-        {
-            new AnalysisError(service, operation, $"Cannot configure a {type} parameter as 'PassThru'.");
-        }
-
         public static void MissingOutputWrapperProperty(ConfigModel service, ServiceOperation operation, string propertyName)
         {
             new AnalysisError(service, operation, $"The response type of the operation doesn't contain a property named '{propertyName}', the 'OutputWrapper' configuration is invalid.");
@@ -182,11 +172,6 @@ namespace AWSPowerShellGenerator.Analysis
             }
         }
 
-        public static void NonConfiguredPassThru(ConfigModel service, ServiceOperation operation)
-        {
-            new AnalysisError(service, operation, "'PassThru' must have valid 'Expression' and 'Documentation' configurations.");
-        }
-
         internal static void StreamParametersNotSupportedForPaginatedCmdlets(ConfigModel service, ServiceOperation operation, IEnumerable<SimplePropertyInfo> streamParameters)
         {
             new AnalysisError(service, operation, "Pagination is not supported for cmdlets with stream parameters.");
@@ -280,6 +265,111 @@ namespace AWSPowerShellGenerator.Analysis
         private static string FormatList(IEnumerable<string> list)
         {
             return string.Join(", ", list);
+        }
+        public static void ExceptionWhileGettingPaginatorAttributes(ConfigModel service, ServiceOperation operation, Exception exception)
+        {
+            new AnalysisError(service, operation, $"Error while getting paginator attributes: {exception}");
+        }
+        public static void ExceptionWhileLoadingPaginatorAttributes(ConfigModel service, Exception exception)
+        {
+            new AnalysisError(service, $"Error while loading paginator attributes: {exception}");
+        }
+    }
+
+    public struct InfoMessage
+    {
+        public readonly string Service;
+        public readonly string Operation;
+        public readonly string Message;
+
+        private InfoMessage(ConfigModel service, ServiceOperation operation, string message)
+        {
+            Service = service.ServiceName;
+            Operation = operation?.MethodName;
+            Message = message;
+
+            if (operation != null)
+            {
+                operation.InfoMessages.Add(this);
+            }
+        }
+
+        public override string ToString()
+        {
+            if (Operation != null)
+            {
+                return $"{Service} - {Operation}. {Message}";
+            }
+            return $"{Service}. {Message}";
+        }
+
+        public static void NoPipelineParameterCandidates(ConfigModel service, ServiceOperation operation)
+        {
+            new InfoMessage(service, operation, "No suitable pipeline parameter candidates found. Setting NoPipelineParameter=true for this new cmdlet.");
+        }
+
+        public static void SinglePipelineParameterCandidate(ConfigModel service, ServiceOperation operation, SimplePropertyInfo candidateParameter)
+        {
+            new InfoMessage(service, operation, $"Single pipeline parameter candidate found: {candidateParameter.AnalyzedName}. Automatically selected as PipelineParameter for this new cmdlet.");
+        }
+
+        public static void MultiplePipelineParameterCandidates(ConfigModel service, ServiceOperation operation, IEnumerable<SimplePropertyInfo> candidateParameters)
+        {
+            var candidateNames = string.Join(", ", candidateParameters.Select(param => param.AnalyzedName));
+            new InfoMessage(service, operation, $"Multiple pipeline parameter candidates found: {candidateNames}. Setting NoPipelineParameter=true for this new cmdlet.");
+        }
+
+        public static void NoShouldProcessTargetParameters(ConfigModel service, ServiceOperation operation, IEnumerable<string> filteredParameterNames)
+        {
+            var parameterList = filteredParameterNames?.ToList() ?? new List<string>();
+            var message = "No suitable ShouldProcessTarget parameters found after applying selection filters.";
+            if (parameterList.Any())
+            {
+                message += $" The following parameter(s) were filtered out as they were either complex collection types, deprecated, or metadata parameters: {string.Join(", ", parameterList)}.";
+            }
+            new InfoMessage(service, operation, message);
+        }
+
+        public static void ShouldProcessTargetSelectedSingleParameter(ConfigModel service, ServiceOperation operation, SimplePropertyInfo selectedParameter)
+        {
+            new InfoMessage(service, operation, $"ShouldProcessTarget selected single parameter: {selectedParameter.AnalyzedName}");
+        }
+
+        public static void ShouldProcessTargetSelectedExactNounMatch(ConfigModel service, ServiceOperation operation, SimplePropertyInfo selectedParameter)
+        {
+            new InfoMessage(service, operation, $"ShouldProcessTarget selected exact noun match: {selectedParameter.AnalyzedName}");
+        }
+
+        public static void ShouldProcessTargetSelectedSingularizedNounMatch(ConfigModel service, ServiceOperation operation, SimplePropertyInfo selectedParameter)
+        {
+            new InfoMessage(service, operation, $"ShouldProcessTarget selected singularized noun match: {selectedParameter.AnalyzedName}");
+        }
+
+        public static void ShouldProcessTargetSelectedSuffixMatch(ConfigModel service, ServiceOperation operation, SimplePropertyInfo selectedParameter)
+        {
+            new InfoMessage(service, operation, $"ShouldProcessTarget selected suffix match: {selectedParameter.AnalyzedName}");
+        }
+
+        public static void ShouldProcessTargetSelectedNounPrefixMatch(ConfigModel service, ServiceOperation operation, SimplePropertyInfo selectedParameter)
+        {
+            new InfoMessage(service, operation, $"ShouldProcessTarget selected noun prefix match: {selectedParameter.AnalyzedName}");
+        }
+
+        public static void ShouldProcessTargetSelectedMultipleParameters(ConfigModel service, ServiceOperation operation, IEnumerable<SimplePropertyInfo> selectedParameters)
+        {
+            var parameterNames = string.Join(", ", selectedParameters.Select(param => param.AnalyzedName));
+            new InfoMessage(service, operation, $"ShouldProcessTarget selected multiple parameters: {parameterNames}");
+        }
+
+        public static void ShouldProcessTargetMultipleCandidatesFound(ConfigModel service, ServiceOperation operation, IEnumerable<SimplePropertyInfo> candidateParameters)
+        {
+            var candidateNames = string.Join(", ", candidateParameters.Select(param => param.AnalyzedName));
+            new InfoMessage(service, operation, $"ShouldProcessTarget multiple candidates found: {candidateNames}");
+        }
+
+        public static void ShouldProcessTargetSetToAnonymous(ConfigModel service, ServiceOperation operation)
+        {
+            new InfoMessage(service, operation, $"ShouldProcessTarget set to anonymous");
         }
     }
 }

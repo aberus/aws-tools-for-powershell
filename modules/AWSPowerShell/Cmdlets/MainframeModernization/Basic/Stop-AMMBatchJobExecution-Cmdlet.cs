@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MainframeModernization;
 using Amazon.MainframeModernization.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMM
     [AWSCmdlet("Calls the M2 CancelBatchJobExecution API operation.", Operation = new[] {"CancelBatchJobExecution"}, SelectReturnType = typeof(Amazon.MainframeModernization.Model.CancelBatchJobExecutionResponse))]
     [AWSCmdletOutput("None or Amazon.MainframeModernization.Model.CancelBatchJobExecutionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.MainframeModernization.Model.CancelBatchJobExecutionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.MainframeModernization.Model.CancelBatchJobExecutionResponse) be returned by specifying '-Select *'."
     )]
     public partial class StopAMMBatchJobExecutionCmdlet : AmazonMainframeModernizationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -57,6 +60,17 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ApplicationId { get; set; }
+        #endregion
+        
+        #region Parameter AuthSecretsManagerArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Web Services Secrets Manager containing user's credentials for authentication
+        /// and authorization for Cancel Batch Job Execution operation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AuthSecretsManagerArn { get; set; }
         #endregion
         
         #region Parameter ExecutionId
@@ -86,16 +100,6 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ExecutionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ExecutionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ExecutionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -106,9 +110,13 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ExecutionId), MyInvocation.BoundParameters);
@@ -122,21 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MainframeModernization.Model.CancelBatchJobExecutionResponse, StopAMMBatchJobExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ExecutionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -144,6 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.AMM
                 WriteWarning("You are passing $null as a value for parameter ApplicationId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.AuthSecretsManagerArn = this.AuthSecretsManagerArn;
             context.ExecutionId = this.ExecutionId;
             #if MODULAR
             if (this.ExecutionId == null && ParameterWasBound(nameof(this.ExecutionId)))
@@ -170,6 +169,10 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             if (cmdletContext.ApplicationId != null)
             {
                 request.ApplicationId = cmdletContext.ApplicationId;
+            }
+            if (cmdletContext.AuthSecretsManagerArn != null)
+            {
+                request.AuthSecretsManagerArn = cmdletContext.AuthSecretsManagerArn;
             }
             if (cmdletContext.ExecutionId != null)
             {
@@ -213,13 +216,7 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "M2", "CancelBatchJobExecution");
             try
             {
-                #if DESKTOP
-                return client.CancelBatchJobExecution(request);
-                #elif CORECLR
-                return client.CancelBatchJobExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CancelBatchJobExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -237,6 +234,7 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ApplicationId { get; set; }
+            public System.String AuthSecretsManagerArn { get; set; }
             public System.String ExecutionId { get; set; }
             public System.Func<Amazon.MainframeModernization.Model.CancelBatchJobExecutionResponse, StopAMMBatchJobExecutionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeStarconnections;
 using Amazon.CodeStarconnections.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CSTC
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
     [AWSCmdlet("Calls the AWS CodeStar Connections CreateSyncConfiguration API operation.", Operation = new[] {"CreateSyncConfiguration"}, SelectReturnType = typeof(Amazon.CodeStarconnections.Model.CreateSyncConfigurationResponse))]
     [AWSCmdletOutput("Amazon.CodeStarconnections.Model.SyncConfiguration or Amazon.CodeStarconnections.Model.CreateSyncConfigurationResponse",
         "This cmdlet returns an Amazon.CodeStarconnections.Model.SyncConfiguration object.",
-        "The service call response (type Amazon.CodeStarconnections.Model.CreateSyncConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeStarconnections.Model.CreateSyncConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCSTCSyncConfigurationCmdlet : AmazonCodeStarconnectionsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Branch
         /// <summary>
@@ -77,6 +80,17 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ConfigFile { get; set; }
+        #endregion
+        
+        #region Parameter PublishDeploymentStatus
+        /// <summary>
+        /// <para>
+        /// <para>Whether to enable or disable publishing of deployment status to source providers.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CodeStarconnections.PublishDeploymentStatus")]
+        public Amazon.CodeStarconnections.PublishDeploymentStatus PublishDeploymentStatus { get; set; }
         #endregion
         
         #region Parameter RepositoryLinkId
@@ -150,6 +164,17 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
         public Amazon.CodeStarconnections.SyncConfigurationType SyncType { get; set; }
         #endregion
         
+        #region Parameter TriggerResourceUpdateOn
+        /// <summary>
+        /// <para>
+        /// <para>When to trigger Git sync to begin the stack update.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CodeStarconnections.TriggerResourceUpdateOn")]
+        public Amazon.CodeStarconnections.TriggerResourceUpdateOn TriggerResourceUpdateOn { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'SyncConfiguration'.
@@ -171,9 +196,13 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -206,6 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
                 WriteWarning("You are passing $null as a value for parameter ConfigFile which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.PublishDeploymentStatus = this.PublishDeploymentStatus;
             context.RepositoryLinkId = this.RepositoryLinkId;
             #if MODULAR
             if (this.RepositoryLinkId == null && ParameterWasBound(nameof(this.RepositoryLinkId)))
@@ -234,6 +264,7 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
                 WriteWarning("You are passing $null as a value for parameter SyncType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.TriggerResourceUpdateOn = this.TriggerResourceUpdateOn;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -258,6 +289,10 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
             {
                 request.ConfigFile = cmdletContext.ConfigFile;
             }
+            if (cmdletContext.PublishDeploymentStatus != null)
+            {
+                request.PublishDeploymentStatus = cmdletContext.PublishDeploymentStatus;
+            }
             if (cmdletContext.RepositoryLinkId != null)
             {
                 request.RepositoryLinkId = cmdletContext.RepositoryLinkId;
@@ -273,6 +308,10 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
             if (cmdletContext.SyncType != null)
             {
                 request.SyncType = cmdletContext.SyncType;
+            }
+            if (cmdletContext.TriggerResourceUpdateOn != null)
+            {
+                request.TriggerResourceUpdateOn = cmdletContext.TriggerResourceUpdateOn;
             }
             
             CmdletOutput output;
@@ -312,13 +351,7 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeStar Connections", "CreateSyncConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateSyncConfiguration(request);
-                #elif CORECLR
-                return client.CreateSyncConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSyncConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -337,10 +370,12 @@ namespace Amazon.PowerShell.Cmdlets.CSTC
         {
             public System.String Branch { get; set; }
             public System.String ConfigFile { get; set; }
+            public Amazon.CodeStarconnections.PublishDeploymentStatus PublishDeploymentStatus { get; set; }
             public System.String RepositoryLinkId { get; set; }
             public System.String ResourceName { get; set; }
             public System.String RoleArn { get; set; }
             public Amazon.CodeStarconnections.SyncConfigurationType SyncType { get; set; }
+            public Amazon.CodeStarconnections.TriggerResourceUpdateOn TriggerResourceUpdateOn { get; set; }
             public System.Func<Amazon.CodeStarconnections.Model.CreateSyncConfigurationResponse, NewCSTCSyncConfigurationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.SyncConfiguration;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Detective;
 using Amazon.Detective.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTCT
 {
     /// <summary>
@@ -33,12 +35,6 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
     /// 
     ///  
     /// <para>
-    /// Before you try to enable Detective, make sure that your account has been enrolled
-    /// in Amazon GuardDuty for at least 48 hours. If you do not meet this requirement, you
-    /// cannot enable Detective. If you do meet the GuardDuty prerequisite, then when you
-    /// make the request to enable Detective, it checks whether your data volume is within
-    /// the Detective quota. If it exceeds the quota, then you cannot enable Detective. 
-    /// </para><para>
     /// The operation also enables Detective for the calling account in the currently selected
     /// Region. It returns the ARN of the new behavior graph.
     /// </para><para><c>CreateGraph</c> triggers a process to create the corresponding data tables for
@@ -54,19 +50,24 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
     [AWSCmdlet("Calls the Amazon Detective CreateGraph API operation.", Operation = new[] {"CreateGraph"}, SelectReturnType = typeof(Amazon.Detective.Model.CreateGraphResponse))]
     [AWSCmdletOutput("System.String or Amazon.Detective.Model.CreateGraphResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Detective.Model.CreateGraphResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Detective.Model.CreateGraphResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDTCTGraphCmdlet : AmazonDetectiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>The tags to assign to the new behavior graph. You can add up to 50 tags. For each
         /// tag, you provide the tag key and the tag value. Each tag key can contain up to 128
-        /// characters. Each tag value can contain up to 256 characters.</para>
+        /// characters. Each tag value can contain up to 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,9 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Tag), MyInvocation.BoundParameters);
@@ -182,13 +187,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Detective", "CreateGraph");
             try
             {
-                #if DESKTOP
-                return client.CreateGraph(request);
-                #elif CORECLR
-                return client.CreateGraphAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGraphAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

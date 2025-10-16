@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
+    /// <important><para>
+    ///  End of support notice: On May 20, 2026, Amazon Web Services will end support for
+    /// Amazon Web Services DMS Fleet Advisor;. After May 20, 2026, you will no longer be
+    /// able to access the Amazon Web Services DMS Fleet Advisor; console or Amazon Web Services
+    /// DMS Fleet Advisor; resources. For more information, see <a href="https://docs.aws.amazon.com/dms/latest/userguide/dms_fleet.advisor-end-of-support.html">Amazon
+    /// Web Services DMS Fleet Advisor end of support</a>. 
+    /// </para></important><para>
     /// Creates a Fleet Advisor collector using the specified parameters.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "DMSFleetAdvisorCollector", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Database Migration Service CreateFleetAdvisorCollector API operation.", Operation = new[] {"CreateFleetAdvisorCollector"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.CreateFleetAdvisorCollectorResponse))]
     [AWSCmdletOutput("System.String or Amazon.DatabaseMigrationService.Model.CreateFleetAdvisorCollectorResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.CreateFleetAdvisorCollectorResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.CreateFleetAdvisorCollectorResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDMSFleetAdvisorCollectorCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CollectorName
         /// <summary>
@@ -114,16 +125,6 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public string Select { get; set; } = "CollectorReferencedId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CollectorName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CollectorName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CollectorName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -134,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CollectorName), MyInvocation.BoundParameters);
@@ -150,21 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DatabaseMigrationService.Model.CreateFleetAdvisorCollectorResponse, NewDMSFleetAdvisorCollectorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CollectorName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CollectorName = this.CollectorName;
             #if MODULAR
             if (this.CollectorName == null && ParameterWasBound(nameof(this.CollectorName)))
@@ -257,13 +252,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "CreateFleetAdvisorCollector");
             try
             {
-                #if DESKTOP
-                return client.CreateFleetAdvisorCollector(request);
-                #elif CORECLR
-                return client.CreateFleetAdvisorCollectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFleetAdvisorCollectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

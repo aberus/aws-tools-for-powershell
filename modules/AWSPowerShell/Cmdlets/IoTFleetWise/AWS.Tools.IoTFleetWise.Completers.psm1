@@ -87,6 +87,16 @@ $IFW_Completers = {
             break
         }
 
+        # Amazon.IoTFleetWise.DefaultForUnmappedSignalsType
+        {
+            ($_ -eq "New-IFWDecoderManifest/DefaultForUnmappedSignal") -Or
+            ($_ -eq "Update-IFWDecoderManifest/DefaultForUnmappedSignal")
+        }
+        {
+            $v = "CUSTOM_DECODING"
+            break
+        }
+
         # Amazon.IoTFleetWise.DiagnosticsMode
         "New-IFWCampaign/DiagnosticsMode"
         {
@@ -98,6 +108,20 @@ $IFW_Completers = {
         "Write-IFWEncryptionConfiguration/EncryptionType"
         {
             $v = "FLEETWISE_DEFAULT_ENCRYPTION","KMS_BASED_ENCRYPTION"
+            break
+        }
+
+        # Amazon.IoTFleetWise.ListResponseScope
+        {
+            ($_ -eq "Get-IFWCampaignList/ListResponseScope") -Or
+            ($_ -eq "Get-IFWDecoderManifestList/ListResponseScope") -Or
+            ($_ -eq "Get-IFWFleetList/ListResponseScope") -Or
+            ($_ -eq "Get-IFWModelManifestList/ListResponseScope") -Or
+            ($_ -eq "Get-IFWStateTemplateList/ListResponseScope") -Or
+            ($_ -eq "Get-IFWVehicleList/ListResponseScope")
+        }
+        {
+            $v = "METADATA_ONLY"
             break
         }
 
@@ -133,7 +157,7 @@ $IFW_Completers = {
         }
 
         # Amazon.IoTFleetWise.TriggerMode
-        "New-IFWCampaign/CollectionScheme_ConditionBasedCollectionScheme_TriggerMode"
+        "New-IFWCampaign/ConditionBasedCollectionScheme_TriggerMode"
         {
             $v = "ALWAYS","RISING_EDGE"
             break
@@ -173,10 +197,12 @@ $IFW_map = @{
     "AssociationBehavior"=@("New-IFWVehicle")
     "AttributeUpdateMode"=@("Update-IFWVehicle")
     "CloudWatchLogDelivery_LogType"=@("Write-IFWLoggingOption")
-    "CollectionScheme_ConditionBasedCollectionScheme_TriggerMode"=@("New-IFWCampaign")
     "Compression"=@("New-IFWCampaign")
+    "ConditionBasedCollectionScheme_TriggerMode"=@("New-IFWCampaign")
+    "DefaultForUnmappedSignal"=@("New-IFWDecoderManifest","Update-IFWDecoderManifest")
     "DiagnosticsMode"=@("New-IFWCampaign")
     "EncryptionType"=@("Write-IFWEncryptionConfiguration")
+    "ListResponseScope"=@("Get-IFWCampaignList","Get-IFWDecoderManifestList","Get-IFWFleetList","Get-IFWModelManifestList","Get-IFWStateTemplateList","Get-IFWVehicleList")
     "SignalNodeType"=@("Get-IFWSignalCatalogNodeList")
     "SpoolingMode"=@("New-IFWCampaign")
     "Status"=@("Update-IFWDecoderManifest","Update-IFWModelManifest")
@@ -240,12 +266,14 @@ $IFW_SelectMap = @{
                "New-IFWFleet",
                "New-IFWModelManifest",
                "New-IFWSignalCatalog",
+               "New-IFWStateTemplate",
                "New-IFWVehicle",
                "Remove-IFWCampaign",
                "Remove-IFWDecoderManifest",
                "Remove-IFWFleet",
                "Remove-IFWModelManifest",
                "Remove-IFWSignalCatalog",
+               "Remove-IFWStateTemplate",
                "Remove-IFWVehicle",
                "Remove-IFWVehicleFleet",
                "Get-IFWCampaign",
@@ -256,6 +284,7 @@ $IFW_SelectMap = @{
                "Get-IFWModelManifest",
                "Get-IFWRegisterAccountStatus",
                "Get-IFWSignalCatalog",
+               "Get-IFWStateTemplate",
                "Get-IFWVehicle",
                "Get-IFWVehicleStatus",
                "Import-IFWDecoderManifest",
@@ -270,6 +299,7 @@ $IFW_SelectMap = @{
                "Get-IFWModelManifestList",
                "Get-IFWSignalCatalogNodeList",
                "Get-IFWSignalCatalogList",
+               "Get-IFWStateTemplateList",
                "Get-IFWResourceTag",
                "Get-IFWVehicleList",
                "Get-IFWVehiclesInFleetList",
@@ -283,6 +313,7 @@ $IFW_SelectMap = @{
                "Update-IFWFleet",
                "Update-IFWModelManifest",
                "Update-IFWSignalCatalog",
+               "Update-IFWStateTemplate",
                "Update-IFWVehicle")
 }
 

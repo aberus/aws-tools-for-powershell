@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -38,12 +40,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// specified parameters. If you specify multiple values for a parameter, you get instance
     /// types that satisfy any of the specified values.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-attribute-based-instance-type-selection.html#spotfleet-get-instance-types-from-instance-requirements">Preview
-    /// instance types with specified attributes</a>, <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html">Attribute-based
-    /// instance type selection for EC2 Fleet</a>, <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-fleet-attribute-based-instance-type-selection.html">Attribute-based
-    /// instance type selection for Spot Fleet</a>, and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html">Spot
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html#ec2fleet-get-instance-types-from-instance-requirements">Preview
+    /// instance types with specified attributes</a>, <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-fleet-attribute-based-instance-type-selection.html">Specify
+    /// attributes for instance type selection for EC2 Fleet or Spot Fleet</a>, and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-placement-score.html">Spot
     /// placement score</a> in the <i>Amazon EC2 User Guide</i>, and <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/create-asg-instance-type-requirements.html">Creating
-    /// an Auto Scaling group using attribute-based instance type selection</a> in the <i>Amazon
+    /// mixed instance groups using attribute-based instance type selection</a> in the <i>Amazon
     /// EC2 Auto Scaling User Guide</i>.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
@@ -52,17 +53,22 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) GetInstanceTypesFromInstanceRequirements API operation.", Operation = new[] {"GetInstanceTypesFromInstanceRequirements"}, SelectReturnType = typeof(Amazon.EC2.Model.GetInstanceTypesFromInstanceRequirementsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.InstanceTypeInfoFromInstanceRequirements or Amazon.EC2.Model.GetInstanceTypesFromInstanceRequirementsResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.InstanceTypeInfoFromInstanceRequirements objects.",
-        "The service call response (type Amazon.EC2.Model.GetInstanceTypesFromInstanceRequirementsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.GetInstanceTypesFromInstanceRequirementsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2InstanceTypesFromInstanceRequirementCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InstanceRequirements_AcceleratorManufacturer
         /// <summary>
         /// <para>
-        /// <para>Indicates whether instance types must have accelerators by specific manufacturers.</para><ul><li><para>For instance types with Amazon Web Services devices, specify <c>amazon-web-services</c>.</para></li><li><para>For instance types with AMD devices, specify <c>amd</c>.</para></li><li><para>For instance types with Habana devices, specify <c>habana</c>.</para></li><li><para>For instance types with NVIDIA devices, specify <c>nvidia</c>.</para></li><li><para>For instance types with Xilinx devices, specify <c>xilinx</c>.</para></li></ul><para>Default: Any manufacturer</para>
+        /// <para>Indicates whether instance types must have accelerators by specific manufacturers.</para><ul><li><para>For instance types with Amazon Web Services devices, specify <c>amazon-web-services</c>.</para></li><li><para>For instance types with AMD devices, specify <c>amd</c>.</para></li><li><para>For instance types with Habana devices, specify <c>habana</c>.</para></li><li><para>For instance types with NVIDIA devices, specify <c>nvidia</c>.</para></li><li><para>For instance types with Xilinx devices, specify <c>xilinx</c>.</para></li></ul><para>Default: Any manufacturer</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceRequirements_AcceleratorName
         /// <summary>
         /// <para>
-        /// <para>The accelerators that must be on the instance type.</para><ul><li><para>For instance types with NVIDIA A10G GPUs, specify <c>a10g</c>.</para></li><li><para>For instance types with NVIDIA A100 GPUs, specify <c>a100</c>.</para></li><li><para>For instance types with NVIDIA H100 GPUs, specify <c>h100</c>.</para></li><li><para>For instance types with Amazon Web Services Inferentia chips, specify <c>inferentia</c>.</para></li><li><para>For instance types with NVIDIA GRID K520 GPUs, specify <c>k520</c>.</para></li><li><para>For instance types with NVIDIA K80 GPUs, specify <c>k80</c>.</para></li><li><para>For instance types with NVIDIA M60 GPUs, specify <c>m60</c>.</para></li><li><para>For instance types with AMD Radeon Pro V520 GPUs, specify <c>radeon-pro-v520</c>.</para></li><li><para>For instance types with NVIDIA T4 GPUs, specify <c>t4</c>.</para></li><li><para>For instance types with NVIDIA T4G GPUs, specify <c>t4g</c>.</para></li><li><para>For instance types with Xilinx VU9P FPGAs, specify <c>vu9p</c>.</para></li><li><para>For instance types with NVIDIA V100 GPUs, specify <c>v100</c>.</para></li></ul><para>Default: Any accelerator</para>
+        /// <para>The accelerators that must be on the instance type.</para><ul><li><para>For instance types with NVIDIA A10G GPUs, specify <c>a10g</c>.</para></li><li><para>For instance types with NVIDIA A100 GPUs, specify <c>a100</c>.</para></li><li><para>For instance types with NVIDIA H100 GPUs, specify <c>h100</c>.</para></li><li><para>For instance types with Amazon Web Services Inferentia chips, specify <c>inferentia</c>.</para></li><li><para>For instance types with NVIDIA GRID K520 GPUs, specify <c>k520</c>.</para></li><li><para>For instance types with NVIDIA K80 GPUs, specify <c>k80</c>.</para></li><li><para>For instance types with NVIDIA M60 GPUs, specify <c>m60</c>.</para></li><li><para>For instance types with AMD Radeon Pro V520 GPUs, specify <c>radeon-pro-v520</c>.</para></li><li><para>For instance types with NVIDIA T4 GPUs, specify <c>t4</c>.</para></li><li><para>For instance types with NVIDIA T4G GPUs, specify <c>t4g</c>.</para></li><li><para>For instance types with Xilinx VU9P FPGAs, specify <c>vu9p</c>.</para></li><li><para>For instance types with NVIDIA V100 GPUs, specify <c>v100</c>.</para></li></ul><para>Default: Any accelerator</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceRequirements_AcceleratorType
         /// <summary>
         /// <para>
-        /// <para>The accelerator types that must be on the instance type.</para><ul><li><para>To include instance types with GPU hardware, specify <c>gpu</c>.</para></li><li><para>To include instance types with FPGA hardware, specify <c>fpga</c>.</para></li><li><para>To include instance types with inference hardware, specify <c>inference</c>.</para></li></ul><para>Default: Any accelerator type</para>
+        /// <para>The accelerator types that must be on the instance type.</para><ul><li><para>For instance types with FPGA accelerators, specify <c>fpga</c>.</para></li><li><para>For instance types with GPU accelerators, specify <c>gpu</c>.</para></li><li><para>For instance types with Inference accelerators, specify <c>inference</c>.</para></li></ul><para>Default: Any accelerator type</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +114,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// to allow an instance type, size, or generation. The following are examples: <c>m5.8xlarge</c>,
         /// <c>c5*.*</c>, <c>m5a.*</c>, <c>r*</c>, <c>*3*</c>.</para><para>For example, if you specify <c>c5*</c>,Amazon EC2 will allow the entire C5 instance
         /// family, which includes all C5a and C5n instance types. If you specify <c>m5a.*</c>,
-        /// Amazon EC2 will allow all the M5a instance types, but not the M5n instance types.</para><note><para>If you specify <c>AllowedInstanceTypes</c>, you can't specify <c>ExcludedInstanceTypes</c>.</para></note><para>Default: All instance types</para>
+        /// Amazon EC2 will allow all the M5a instance types, but not the M5n instance types.</para><note><para>If you specify <c>AllowedInstanceTypes</c>, you can't specify <c>ExcludedInstanceTypes</c>.</para></note><para>Default: All instance types</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ArchitectureType
         /// <summary>
         /// <para>
-        /// <para>The processor architecture type.</para>
+        /// <para>The processor architecture type.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -150,17 +172,43 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public Amazon.EC2.BurstablePerformance InstanceRequirements_BurstablePerformance { get; set; }
         #endregion
         
+        #region Parameter Context
+        /// <summary>
+        /// <para>
+        /// <para>Reserved.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Context { get; set; }
+        #endregion
+        
         #region Parameter InstanceRequirements_CpuManufacturer
         /// <summary>
         /// <para>
-        /// <para>The CPU manufacturers to include.</para><ul><li><para>For instance types with Intel CPUs, specify <c>intel</c>.</para></li><li><para>For instance types with AMD CPUs, specify <c>amd</c>.</para></li><li><para>For instance types with Amazon Web Services CPUs, specify <c>amazon-web-services</c>.</para></li></ul><note><para>Don't confuse the CPU manufacturer with the CPU architecture. Instances will be launched
+        /// <para>The CPU manufacturers to include.</para><ul><li><para>For instance types with Intel CPUs, specify <c>intel</c>.</para></li><li><para>For instance types with AMD CPUs, specify <c>amd</c>.</para></li><li><para>For instance types with Amazon Web Services CPUs, specify <c>amazon-web-services</c>.</para></li><li><para>For instance types with Apple CPUs, specify <c>apple</c>.</para></li></ul><note><para>Don't confuse the CPU manufacturer with the CPU architecture. Instances will be launched
         /// with a compatible CPU architecture based on the Amazon Machine Image (AMI) that you
-        /// specify in your launch template.</para></note><para>Default: Any manufacturer</para>
+        /// specify in your launch template.</para></note><para>Default: Any manufacturer</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("InstanceRequirements_CpuManufacturers")]
         public System.String[] InstanceRequirements_CpuManufacturer { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter InstanceRequirements_ExcludedInstanceType
@@ -170,7 +218,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// to exclude an instance family, type, size, or generation. The following are examples:
         /// <c>m5.8xlarge</c>, <c>c5*.*</c>, <c>m5a.*</c>, <c>r*</c>, <c>*3*</c>.</para><para>For example, if you specify <c>c5*</c>,Amazon EC2 will exclude the entire C5 instance
         /// family, which includes all C5a and C5n instance types. If you specify <c>m5a.*</c>,
-        /// Amazon EC2 will exclude all the M5a instance types, but not the M5n instance types.</para><note><para>If you specify <c>ExcludedInstanceTypes</c>, you can't specify <c>AllowedInstanceTypes</c>.</para></note><para>Default: No excluded instance types</para>
+        /// Amazon EC2 will exclude all the M5a instance types, but not the M5n instance types.</para><note><para>If you specify <c>ExcludedInstanceTypes</c>, you can't specify <c>AllowedInstanceTypes</c>.</para></note><para>Default: No excluded instance types</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,7 +237,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// current generation instance types are recommended for use. Current generation instance
         /// types are typically the latest two to three generations in each instance family. For
         /// more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">Instance
-        /// types</a> in the <i>Amazon EC2 User Guide</i>.</para><para>For current generation instance types, specify <c>current</c>.</para><para>For previous generation instance types, specify <c>previous</c>.</para><para>Default: Current and previous generation instance types</para>
+        /// types</a> in the <i>Amazon EC2 User Guide</i>.</para><para>For current generation instance types, specify <c>current</c>.</para><para>For previous generation instance types, specify <c>previous</c>.</para><para>Default: Current and previous generation instance types</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,7 +265,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceRequirements_LocalStorageType
         /// <summary>
         /// <para>
-        /// <para>The type of local storage that is required.</para><ul><li><para>For instance types with hard disk drive (HDD) storage, specify <c>hdd</c>.</para></li><li><para>For instance types with solid state drive (SSD) storage, specify <c>ssd</c>.</para></li></ul><para>Default: <c>hdd</c> and <c>ssd</c></para>
+        /// <para>The type of local storage that is required.</para><ul><li><para>For instance types with hard disk drive (HDD) storage, specify <c>hdd</c>.</para></li><li><para>For instance types with solid state drive (SSD) storage, specify <c>ssd</c>.</para></li></ul><para>Default: <c>hdd</c> and <c>ssd</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -331,11 +391,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// identified price is from the lowest priced current generation instance types, and
         /// failing that, from the lowest priced previous generation instance types that match
         /// your attributes. When Amazon EC2 selects instance types with your attributes, it will
-        /// exclude instance types whose price exceeds your specified threshold.</para><para>The parameter accepts an integer, which Amazon EC2 interprets as a percentage.</para><para>To indicate no price protection threshold, specify a high value, such as <c>999999</c>.</para><para>If you set <c>DesiredCapacityType</c> to <c>vcpu</c> or <c>memory-mib</c>, the price
-        /// protection threshold is based on the per vCPU or per memory price instead of the per
-        /// instance price.</para><note><para>Only one of <c>SpotMaxPricePercentageOverLowestPrice</c> or <c>MaxSpotPriceAsPercentageOfOptimalOnDemandPrice</c>
-        /// can be specified. If you don't specify either, then <c>SpotMaxPricePercentageOverLowestPrice</c>
-        /// is used and the value for that parameter defaults to <c>100</c>.</para></note>
+        /// exclude instance types whose price exceeds your specified threshold.</para><para>The parameter accepts an integer, which Amazon EC2 interprets as a percentage.</para><para>If you set <c>TargetCapacityUnitType</c> to <c>vcpu</c> or <c>memory-mib</c>, the
+        /// price protection threshold is based on the per vCPU or per memory price instead of
+        /// the per instance price.</para><note><para>Only one of <c>SpotMaxPricePercentageOverLowestPrice</c> or <c>MaxSpotPriceAsPercentageOfOptimalOnDemandPrice</c>
+        /// can be specified. If you don't specify either, Amazon EC2 will automatically apply
+        /// optimal price protection to consistently select from a wide range of instance types.
+        /// To indicate no price protection threshold for Spot Instances, meaning you want to
+        /// consider all instance types that match your attributes, include one of these parameters
+        /// and specify a high value, such as <c>999999</c>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -474,6 +537,24 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.Int32? InstanceRequirements_OnDemandMaxPricePercentageOverLowestPrice { get; set; }
         #endregion
         
+        #region Parameter Cpu_Reference
+        /// <summary>
+        /// <para>
+        /// <para>Specify an instance family to use as the baseline reference for CPU performance. All
+        /// instance types that match your specified attributes will be compared against the CPU
+        /// performance of the referenced instance family, regardless of CPU manufacturer or architecture
+        /// differences.</para><note><para>Currently, only one instance family can be specified in the list.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("InstanceRequirements_BaselinePerformanceFactors_Cpu_References")]
+        public Amazon.EC2.Model.PerformanceFactorReferenceRequest[] Cpu_Reference { get; set; }
+        #endregion
+        
         #region Parameter InstanceRequirements_RequireHibernateSupport
         /// <summary>
         /// <para>
@@ -494,12 +575,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// then the identified Spot price is from the lowest priced current generation instance
         /// types, and failing that, from the lowest priced previous generation instance types
         /// that match your attributes. When Amazon EC2 selects instance types with your attributes,
-        /// it will exclude instance types whose Spot price exceeds your specified threshold.</para><para>The parameter accepts an integer, which Amazon EC2 interprets as a percentage.</para><para>To indicate no price protection threshold, specify a high value, such as <c>999999</c>.</para><para>If you set <c>TargetCapacityUnitType</c> to <c>vcpu</c> or <c>memory-mib</c>, the
+        /// it will exclude instance types whose Spot price exceeds your specified threshold.</para><para>The parameter accepts an integer, which Amazon EC2 interprets as a percentage.</para><para>If you set <c>TargetCapacityUnitType</c> to <c>vcpu</c> or <c>memory-mib</c>, the
         /// price protection threshold is applied based on the per-vCPU or per-memory price instead
         /// of the per-instance price.</para><para>This parameter is not supported for <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_GetSpotPlacementScores.html">GetSpotPlacementScores</a>
         /// and <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_GetInstanceTypesFromInstanceRequirements.html">GetInstanceTypesFromInstanceRequirements</a>.</para><note><para>Only one of <c>SpotMaxPricePercentageOverLowestPrice</c> or <c>MaxSpotPriceAsPercentageOfOptimalOnDemandPrice</c>
-        /// can be specified. If you don't specify either, then <c>SpotMaxPricePercentageOverLowestPrice</c>
-        /// is used and the value for that parameter defaults to <c>100</c>.</para></note><para>Default: <c>100</c></para>
+        /// can be specified. If you don't specify either, Amazon EC2 will automatically apply
+        /// optimal price protection to consistently select from a wide range of instance types.
+        /// To indicate no price protection threshold for Spot Instances, meaning you want to
+        /// consider all instance types that match your attributes, include one of these parameters
+        /// and specify a high value, such as <c>999999</c>.</para></note><para>Default: <c>100</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -509,7 +593,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter VirtualizationType
         /// <summary>
         /// <para>
-        /// <para>The virtualization type.</para>
+        /// <para>The virtualization type.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -545,7 +633,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -573,9 +661,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -598,6 +690,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter ArchitectureType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Context = this.Context;
+            context.DryRun = this.DryRun;
             context.AcceleratorCount_Max = this.AcceleratorCount_Max;
             context.AcceleratorCount_Min = this.AcceleratorCount_Min;
             if (this.InstanceRequirements_AcceleratorManufacturer != null)
@@ -621,6 +715,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.InstanceRequirements_BareMetal = this.InstanceRequirements_BareMetal;
             context.BaselineEbsBandwidthMbps_Max = this.BaselineEbsBandwidthMbps_Max;
             context.BaselineEbsBandwidthMbps_Min = this.BaselineEbsBandwidthMbps_Min;
+            if (this.Cpu_Reference != null)
+            {
+                context.Cpu_Reference = new List<Amazon.EC2.Model.PerformanceFactorReferenceRequest>(this.Cpu_Reference);
+            }
             context.InstanceRequirements_BurstablePerformance = this.InstanceRequirements_BurstablePerformance;
             if (this.InstanceRequirements_CpuManufacturer != null)
             {
@@ -700,6 +798,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ArchitectureType != null)
             {
                 request.ArchitectureTypes = cmdletContext.ArchitectureType;
+            }
+            if (cmdletContext.Context != null)
+            {
+                request.Context = cmdletContext.Context;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             
              // populate InstanceRequirements
@@ -853,6 +959,46 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (requestInstanceRequirements_instanceRequirements_SpotMaxPricePercentageOverLowestPrice != null)
             {
                 request.InstanceRequirements.SpotMaxPricePercentageOverLowestPrice = requestInstanceRequirements_instanceRequirements_SpotMaxPricePercentageOverLowestPrice.Value;
+                requestInstanceRequirementsIsNull = false;
+            }
+            Amazon.EC2.Model.BaselinePerformanceFactorsRequest requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors = null;
+            
+             // populate BaselinePerformanceFactors
+            var requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactorsIsNull = true;
+            requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors = new Amazon.EC2.Model.BaselinePerformanceFactorsRequest();
+            Amazon.EC2.Model.CpuPerformanceFactorRequest requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu = null;
+            
+             // populate Cpu
+            var requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_CpuIsNull = true;
+            requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu = new Amazon.EC2.Model.CpuPerformanceFactorRequest();
+            List<Amazon.EC2.Model.PerformanceFactorReferenceRequest> requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu_cpu_Reference = null;
+            if (cmdletContext.Cpu_Reference != null)
+            {
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu_cpu_Reference = cmdletContext.Cpu_Reference;
+            }
+            if (requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu_cpu_Reference != null)
+            {
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu.References = requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu_cpu_Reference;
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_CpuIsNull = false;
+            }
+             // determine if requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu should be set to null
+            if (requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_CpuIsNull)
+            {
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu = null;
+            }
+            if (requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu != null)
+            {
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors.Cpu = requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors_instanceRequirements_BaselinePerformanceFactors_Cpu;
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactorsIsNull = false;
+            }
+             // determine if requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors should be set to null
+            if (requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactorsIsNull)
+            {
+                requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors = null;
+            }
+            if (requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors != null)
+            {
+                request.InstanceRequirements.BaselinePerformanceFactors = requestInstanceRequirements_instanceRequirements_BaselinePerformanceFactors;
                 requestInstanceRequirementsIsNull = false;
             }
             Amazon.EC2.Model.AcceleratorCountRequest requestInstanceRequirements_instanceRequirements_AcceleratorCount = null;
@@ -1245,13 +1391,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "GetInstanceTypesFromInstanceRequirements");
             try
             {
-                #if DESKTOP
-                return client.GetInstanceTypesFromInstanceRequirements(request);
-                #elif CORECLR
-                return client.GetInstanceTypesFromInstanceRequirementsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetInstanceTypesFromInstanceRequirementsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1269,6 +1409,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> ArchitectureType { get; set; }
+            public System.String Context { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Int32? AcceleratorCount_Max { get; set; }
             public System.Int32? AcceleratorCount_Min { get; set; }
             public List<System.String> InstanceRequirements_AcceleratorManufacturer { get; set; }
@@ -1280,6 +1422,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public Amazon.EC2.BareMetal InstanceRequirements_BareMetal { get; set; }
             public System.Int32? BaselineEbsBandwidthMbps_Max { get; set; }
             public System.Int32? BaselineEbsBandwidthMbps_Min { get; set; }
+            public List<Amazon.EC2.Model.PerformanceFactorReferenceRequest> Cpu_Reference { get; set; }
             public Amazon.EC2.BurstablePerformance InstanceRequirements_BurstablePerformance { get; set; }
             public List<System.String> InstanceRequirements_CpuManufacturer { get; set; }
             public List<System.String> InstanceRequirements_ExcludedInstanceType { get; set; }

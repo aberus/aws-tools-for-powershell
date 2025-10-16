@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs DescribeQueryDefinitions API operation.", Operation = new[] {"DescribeQueryDefinitions"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchLogs.Model.QueryDefinition or Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsResponse",
         "This cmdlet returns a collection of Amazon.CloudWatchLogs.Model.QueryDefinition objects.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCWLQueryDefinitionCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter QueryDefinitionNamePrefix
         /// <summary>
@@ -59,6 +62,19 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
         public System.String QueryDefinitionNamePrefix { get; set; }
+        #endregion
+        
+        #region Parameter QueryLanguage
+        /// <summary>
+        /// <para>
+        /// <para>The query language used for this query. For more information about the query languages
+        /// that CloudWatch Logs supports, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_AnalyzeLogData_Languages.html">Supported
+        /// query languages</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CloudWatchLogs.QueryLanguage")]
+        public Amazon.CloudWatchLogs.QueryLanguage QueryLanguage { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -79,7 +95,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,16 +113,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "QueryDefinitions";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueryDefinitionNamePrefix parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueryDefinitionNamePrefix' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueryDefinitionNamePrefix' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -117,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -127,24 +137,15 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsResponse, GetCWLQueryDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueryDefinitionNamePrefix;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
             context.QueryDefinitionNamePrefix = this.QueryDefinitionNamePrefix;
+            context.QueryLanguage = this.QueryLanguage;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -158,9 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsRequest();
@@ -172,6 +171,10 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             if (cmdletContext.QueryDefinitionNamePrefix != null)
             {
                 request.QueryDefinitionNamePrefix = cmdletContext.QueryDefinitionNamePrefix;
+            }
+            if (cmdletContext.QueryLanguage != null)
+            {
+                request.QueryLanguage = cmdletContext.QueryLanguage;
             }
             
             // Initialize loop variant and commence piping
@@ -235,13 +238,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "DescribeQueryDefinitions");
             try
             {
-                #if DESKTOP
-                return client.DescribeQueryDefinitions(request);
-                #elif CORECLR
-                return client.DescribeQueryDefinitionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeQueryDefinitionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -261,6 +258,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.String QueryDefinitionNamePrefix { get; set; }
+            public Amazon.CloudWatchLogs.QueryLanguage QueryLanguage { get; set; }
             public System.Func<Amazon.CloudWatchLogs.Model.DescribeQueryDefinitionsResponse, GetCWLQueryDefinitionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.QueryDefinitions;
         }

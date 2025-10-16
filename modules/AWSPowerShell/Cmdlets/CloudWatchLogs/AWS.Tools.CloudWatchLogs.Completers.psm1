@@ -80,6 +80,13 @@ $CWL_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.CloudWatchLogs.DeliveryDestinationType
+        "Write-CWLDeliveryDestination/DeliveryDestinationType"
+        {
+            $v = "CWL","FH","S3","XRAY"
+            break
+        }
+
         # Amazon.CloudWatchLogs.Distribution
         "Write-CWLSubscriptionFilter/Distribution"
         {
@@ -104,13 +111,31 @@ $CWL_Completers = {
             break
         }
 
+        # Amazon.CloudWatchLogs.IntegrationStatus
+        "Get-CWLIntegrationList/IntegrationStatus"
+        {
+            $v = "ACTIVE","FAILED","PROVISIONING"
+            break
+        }
+
+        # Amazon.CloudWatchLogs.IntegrationType
+        {
+            ($_ -eq "Get-CWLIntegrationList/IntegrationType") -Or
+            ($_ -eq "Write-CWLIntegration/IntegrationType")
+        }
+        {
+            $v = "OPENSEARCH"
+            break
+        }
+
         # Amazon.CloudWatchLogs.LogGroupClass
         {
             ($_ -eq "Get-CWLLogGroup/LogGroupClass") -Or
+            ($_ -eq "Get-CWLLogGroupList/LogGroupClass") -Or
             ($_ -eq "New-CWLLogGroup/LogGroupClass")
         }
         {
-            $v = "INFREQUENT_ACCESS","STANDARD"
+            $v = "DELIVERY","INFREQUENT_ACCESS","STANDARD"
             break
         }
 
@@ -128,6 +153,13 @@ $CWL_Completers = {
             break
         }
 
+        # Amazon.CloudWatchLogs.PolicyScope
+        "Get-CWLResourcePolicy/PolicyScope"
+        {
+            $v = "ACCOUNT","RESOURCE"
+            break
+        }
+
         # Amazon.CloudWatchLogs.PolicyType
         {
             ($_ -eq "Get-CWLAccountPolicy/PolicyType") -Or
@@ -135,7 +167,19 @@ $CWL_Completers = {
             ($_ -eq "Write-CWLAccountPolicy/PolicyType")
         }
         {
-            $v = "DATA_PROTECTION_POLICY","SUBSCRIPTION_FILTER_POLICY"
+            $v = "DATA_PROTECTION_POLICY","FIELD_INDEX_POLICY","METRIC_EXTRACTION_POLICY","SUBSCRIPTION_FILTER_POLICY","TRANSFORMER_POLICY"
+            break
+        }
+
+        # Amazon.CloudWatchLogs.QueryLanguage
+        {
+            ($_ -eq "Get-CWLQuery/QueryLanguage") -Or
+            ($_ -eq "Get-CWLQueryDefinition/QueryLanguage") -Or
+            ($_ -eq "Start-CWLQuery/QueryLanguage") -Or
+            ($_ -eq "Write-CWLQueryDefinition/QueryLanguage")
+        }
+        {
+            $v = "CWLI","PPL","SQL"
             break
         }
 
@@ -183,12 +227,17 @@ $CWL_Completers = {
 }
 
 $CWL_map = @{
+    "DeliveryDestinationType"=@("Write-CWLDeliveryDestination")
     "Distribution"=@("Write-CWLSubscriptionFilter")
     "EvaluationFrequency"=@("New-CWLLogAnomalyDetector","Update-CWLLogAnomalyDetector")
-    "LogGroupClass"=@("Get-CWLLogGroup","New-CWLLogGroup")
+    "IntegrationStatus"=@("Get-CWLIntegrationList")
+    "IntegrationType"=@("Get-CWLIntegrationList","Write-CWLIntegration")
+    "LogGroupClass"=@("Get-CWLLogGroup","Get-CWLLogGroupList","New-CWLLogGroup")
     "OrderBy"=@("Get-CWLLogStream")
     "OutputFormat"=@("Write-CWLDeliveryDestination")
+    "PolicyScope"=@("Get-CWLResourcePolicy")
     "PolicyType"=@("Get-CWLAccountPolicy","Remove-CWLAccountPolicy","Write-CWLAccountPolicy")
+    "QueryLanguage"=@("Get-CWLQuery","Get-CWLQueryDefinition","Start-CWLQuery","Write-CWLQueryDefinition")
     "Scope"=@("Write-CWLAccountPolicy")
     "Status"=@("Get-CWLQuery")
     "StatusCode"=@("Get-CWLExportTask")
@@ -261,6 +310,8 @@ $CWL_SelectMap = @{
                "Remove-CWLDeliveryDestinationPolicy",
                "Remove-CWLDeliverySource",
                "Remove-CWLDestination",
+               "Remove-CWLIndexPolicy",
+               "Remove-CWLIntegration",
                "Remove-CWLLogAnomalyDetector",
                "Remove-CWLLogGroup",
                "Remove-CWLLogStream",
@@ -269,12 +320,16 @@ $CWL_SelectMap = @{
                "Remove-CWLResourcePolicy",
                "Remove-CWLRetentionPolicy",
                "Remove-CWLSubscriptionFilter",
+               "Remove-CWLTransformer",
                "Get-CWLAccountPolicy",
+               "Find-CWLConfigurationTemplate",
                "Find-CWLDelivery",
                "Find-CWLDeliveryDestination",
                "Find-CWLDeliverySource",
                "Get-CWLDestination",
                "Get-CWLExportTask",
+               "Get-CWLFieldIndex",
+               "Get-CWLIndexPolicy",
                "Get-CWLLogGroup",
                "Get-CWLLogStream",
                "Get-CWLMetricFilter",
@@ -289,13 +344,19 @@ $CWL_SelectMap = @{
                "Get-CWLDeliveryDestination",
                "Get-CWLDeliveryDestinationPolicy",
                "Get-CWLDeliverySource",
+               "Get-CWLIntegration",
                "Get-CWLLogAnomalyDetector",
                "Get-CWLLogEvent",
                "Get-CWLLogGroupField",
+               "Get-CWLLogObject",
                "Get-CWLLogRecord",
                "Get-CWLQueryResult",
+               "Get-CWLTransformer",
                "Get-CWLAnomalyList",
+               "Get-CWLIntegrationList",
                "Get-CWLLogAnomalyDetectorList",
+               "Get-CWLLogGroupList",
+               "Get-CWLLogGroupsForQueryList",
                "Get-CWLResourceTag",
                "Get-CWLLogGroupTag",
                "Write-CWLAccountPolicy",
@@ -305,21 +366,26 @@ $CWL_SelectMap = @{
                "Write-CWLDeliverySource",
                "Write-CWLDestination",
                "Write-CWLDestinationPolicy",
+               "Write-CWLIndexPolicy",
+               "Write-CWLIntegration",
                "Write-CWLLogEvent",
                "Write-CWLMetricFilter",
                "Write-CWLQueryDefinition",
                "Write-CWLResourcePolicy",
                "Write-CWLRetentionPolicy",
                "Write-CWLSubscriptionFilter",
+               "Write-CWLTransformer",
                "Start-CWLLiveTail",
                "Start-CWLQuery",
                "Stop-CWLQuery",
                "Add-CWLLogGroupTag",
                "Add-CWLResourceTag",
                "Test-CWLMetricFilter",
+               "Test-CWLTransformer",
                "Remove-CWLLogGroupTag",
                "Remove-CWLResourceTag",
                "Update-CWLAnomaly",
+               "Update-CWLDeliveryConfiguration",
                "Update-CWLLogAnomalyDetector")
 }
 

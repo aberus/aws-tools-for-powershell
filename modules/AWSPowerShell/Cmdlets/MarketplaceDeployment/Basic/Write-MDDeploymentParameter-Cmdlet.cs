@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MarketplaceDeployment;
 using Amazon.MarketplaceDeployment.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MD
 {
     /// <summary>
@@ -34,14 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MD
     [OutputType("Amazon.MarketplaceDeployment.Model.PutDeploymentParameterResponse")]
     [AWSCmdlet("Calls the AWS Marketplace Deployment Service PutDeploymentParameter API operation.", Operation = new[] {"PutDeploymentParameter"}, SelectReturnType = typeof(Amazon.MarketplaceDeployment.Model.PutDeploymentParameterResponse))]
     [AWSCmdletOutput("Amazon.MarketplaceDeployment.Model.PutDeploymentParameterResponse",
-        "This cmdlet returns an Amazon.MarketplaceDeployment.Model.PutDeploymentParameterResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MarketplaceDeployment.Model.PutDeploymentParameterResponse object containing multiple properties."
     )]
     public partial class WriteMDDeploymentParameterCmdlet : AmazonMarketplaceDeploymentClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AgreementId
         /// <summary>
@@ -63,7 +64,7 @@ namespace Amazon.PowerShell.Cmdlets.MD
         #region Parameter Catalog
         /// <summary>
         /// <para>
-        /// <para>The catalog related to the request. Fixed value: <c>AWS Marketplace</c></para>
+        /// <para>The catalog related to the request. Fixed value: <c>AWSMarketplace</c></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -145,7 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.MD
         /// <para>
         /// <para>A map of key-value pairs, where each pair represents a tag saved to the resource.
         /// Tags will only be applied for create operations, and they'll be ignored if the resource
-        /// already exists.</para>
+        /// already exists.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,7 +161,8 @@ namespace Amazon.PowerShell.Cmdlets.MD
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>The idempotency token for deployment parameters. A unique identifier for the new version.</para>
+        /// <para>The idempotency token for deployment parameters. A unique identifier for the new version.</para><note><para>This field is not required if you're calling using an AWS SDK. Otherwise, a <c>clientToken</c>
+        /// must be provided with the request.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,16 +180,6 @@ namespace Amazon.PowerShell.Cmdlets.MD
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeploymentParameter_Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeploymentParameter_Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeploymentParameter_Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -194,9 +190,13 @@ namespace Amazon.PowerShell.Cmdlets.MD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeploymentParameter_Name), MyInvocation.BoundParameters);
@@ -210,21 +210,11 @@ namespace Amazon.PowerShell.Cmdlets.MD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MarketplaceDeployment.Model.PutDeploymentParameterResponse, WriteMDDeploymentParameterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeploymentParameter_Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AgreementId = this.AgreementId;
             #if MODULAR
             if (this.AgreementId == null && ParameterWasBound(nameof(this.AgreementId)))
@@ -377,13 +367,7 @@ namespace Amazon.PowerShell.Cmdlets.MD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Deployment Service", "PutDeploymentParameter");
             try
             {
-                #if DESKTOP
-                return client.PutDeploymentParameter(request);
-                #elif CORECLR
-                return client.PutDeploymentParameterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutDeploymentParameterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

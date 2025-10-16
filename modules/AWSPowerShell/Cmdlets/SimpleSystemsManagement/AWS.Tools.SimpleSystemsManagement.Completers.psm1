@@ -128,8 +128,8 @@ $SSM_Completers = {
         # Amazon.SimpleSystemsManagement.DocumentHashType
         {
             ($_ -eq "Send-SSMCommand/DocumentHashType") -Or
-            ($_ -eq "Register-SSMTaskWithMaintenanceWindow/TaskInvocationParameters_RunCommand_DocumentHashType") -Or
-            ($_ -eq "Update-SSMMaintenanceWindowTask/TaskInvocationParameters_RunCommand_DocumentHashType")
+            ($_ -eq "Register-SSMTaskWithMaintenanceWindow/RunCommand_DocumentHashType") -Or
+            ($_ -eq "Update-SSMMaintenanceWindowTask/RunCommand_DocumentHashType")
         }
         {
             $v = "Sha1","Sha256"
@@ -163,7 +163,7 @@ $SSM_Completers = {
         # Amazon.SimpleSystemsManagement.DocumentType
         "New-SSMDocument/DocumentType"
         {
-            $v = "ApplicationConfiguration","ApplicationConfigurationSchema","Automation","Automation.ChangeTemplate","ChangeCalendar","CloudFormation","Command","ConformancePackTemplate","DeploymentStrategy","Package","Policy","ProblemAnalysis","ProblemAnalysisTemplate","QuickSetup","Session"
+            $v = "ApplicationConfiguration","ApplicationConfigurationSchema","AutoApprovalPolicy","Automation","Automation.ChangeTemplate","ChangeCalendar","CloudFormation","Command","ConformancePackTemplate","DeploymentStrategy","ManualApprovalPolicy","Package","Policy","ProblemAnalysis","ProblemAnalysisTemplate","QuickSetup","Session"
             break
         }
 
@@ -211,9 +211,9 @@ $SSM_Completers = {
 
         # Amazon.SimpleSystemsManagement.NotificationType
         {
+            ($_ -eq "Register-SSMTaskWithMaintenanceWindow/NotificationConfig_NotificationType") -Or
             ($_ -eq "Send-SSMCommand/NotificationConfig_NotificationType") -Or
-            ($_ -eq "Register-SSMTaskWithMaintenanceWindow/TaskInvocationParameters_RunCommand_NotificationConfig_NotificationType") -Or
-            ($_ -eq "Update-SSMMaintenanceWindowTask/TaskInvocationParameters_RunCommand_NotificationConfig_NotificationType")
+            ($_ -eq "Update-SSMMaintenanceWindowTask/NotificationConfig_NotificationType")
         }
         {
             $v = "Command","Invocation"
@@ -236,7 +236,7 @@ $SSM_Completers = {
         # Amazon.SimpleSystemsManagement.OpsItemStatus
         "Update-SSMOpsItem/Status"
         {
-            $v = "Approved","Cancelled","Cancelling","ChangeCalendarOverrideApproved","ChangeCalendarOverrideRejected","Closed","CompletedWithFailure","CompletedWithSuccess","Failed","InProgress","Open","Pending","PendingApproval","PendingChangeCalendarOverride","Rejected","Resolved","RunbookInProgress","Scheduled","TimedOut"
+            $v = "Approved","Cancelled","Cancelling","ChangeCalendarOverrideApproved","ChangeCalendarOverrideRejected","Closed","CompletedWithFailure","CompletedWithSuccess","Failed","InProgress","Open","Pending","PendingApproval","PendingChangeCalendarOverride","Rejected","Resolved","Revoked","RunbookInProgress","Scheduled","TimedOut"
             break
         }
 
@@ -273,6 +273,17 @@ $SSM_Completers = {
         }
         {
             $v = "CRITICAL","HIGH","INFORMATIONAL","LOW","MEDIUM","UNSPECIFIED"
+            break
+        }
+
+        # Amazon.SimpleSystemsManagement.PatchComplianceStatus
+        {
+            ($_ -eq "New-SSMPatchBaseline/AvailableSecurityUpdatesComplianceStatus") -Or
+            ($_ -eq "Update-SSMPatchBaseline/AvailableSecurityUpdatesComplianceStatus") -Or
+            ($_ -eq "Get-SSMDeployablePatchSnapshotForInstance/BaselineOverride_AvailableSecurityUpdatesComplianceStatus")
+        }
+        {
+            $v = "COMPLIANT","NON_COMPLIANT"
             break
         }
 
@@ -318,7 +329,7 @@ $SSM_Completers = {
         # Amazon.SimpleSystemsManagement.SignalType
         "Send-SSMAutomationSignal/SignalType"
         {
-            $v = "Approve","Reject","Resume","StartStep","StopStep"
+            $v = "Approve","Reject","Resume","Revoke","StartStep","StopStep"
             break
         }
 
@@ -340,7 +351,9 @@ $SSM_Completers = {
 $SSM_map = @{
     "ApprovedPatchesComplianceLevel"=@("New-SSMPatchBaseline","Update-SSMPatchBaseline")
     "AssociationStatus_Name"=@("Update-SSMAssociationStatus")
+    "AvailableSecurityUpdatesComplianceStatus"=@("New-SSMPatchBaseline","Update-SSMPatchBaseline")
     "BaselineOverride_ApprovedPatchesComplianceLevel"=@("Get-SSMDeployablePatchSnapshotForInstance")
+    "BaselineOverride_AvailableSecurityUpdatesComplianceStatus"=@("Get-SSMDeployablePatchSnapshotForInstance")
     "BaselineOverride_OperatingSystem"=@("Get-SSMDeployablePatchSnapshotForInstance")
     "BaselineOverride_RejectedPatchesAction"=@("Get-SSMDeployablePatchSnapshotForInstance")
     "ComplianceSeverity"=@("New-SSMAssociation","Update-SSMAssociation")
@@ -351,21 +364,20 @@ $SSM_map = @{
     "DocumentType"=@("New-SSMDocument")
     "Metadata"=@("Get-SSMDocumentMetadataHistory")
     "Mode"=@("Start-SSMAutomationExecution")
-    "NotificationConfig_NotificationType"=@("Send-SSMCommand")
+    "NotificationConfig_NotificationType"=@("Register-SSMTaskWithMaintenanceWindow","Send-SSMCommand","Update-SSMMaintenanceWindowTask")
     "OperatingSystem"=@("Get-SSMDefaultPatchBaseline","Get-SSMPatchBaselineForPatchGroup","Get-SSMPatchProperty","New-SSMPatchBaseline")
     "PatchSet"=@("Get-SSMPatchProperty")
     "PermissionType"=@("Edit-SSMDocumentPermission","Get-SSMDocumentPermission")
     "Property"=@("Get-SSMPatchProperty")
     "RejectedPatchesAction"=@("New-SSMPatchBaseline","Update-SSMPatchBaseline")
     "ResourceType"=@("Add-SSMResourceTag","Get-SSMMaintenanceWindowSchedule","Get-SSMMaintenanceWindowsForTarget","Get-SSMResourceTag","Register-SSMTargetWithMaintenanceWindow","Remove-SSMResourceTag")
+    "RunCommand_DocumentHashType"=@("Register-SSMTaskWithMaintenanceWindow","Update-SSMMaintenanceWindowTask")
     "S3Destination_SyncFormat"=@("New-SSMResourceDataSync")
     "SchemaDeleteOption"=@("Remove-SSMInventory")
     "SignalType"=@("Send-SSMAutomationSignal")
     "State"=@("Get-SSMSession")
     "Status"=@("Update-SSMOpsItem")
     "SyncCompliance"=@("New-SSMAssociation","Update-SSMAssociation")
-    "TaskInvocationParameters_RunCommand_DocumentHashType"=@("Register-SSMTaskWithMaintenanceWindow","Update-SSMMaintenanceWindowTask")
-    "TaskInvocationParameters_RunCommand_NotificationConfig_NotificationType"=@("Register-SSMTaskWithMaintenanceWindow","Update-SSMMaintenanceWindowTask")
     "TaskType"=@("Register-SSMTaskWithMaintenanceWindow")
     "Tier"=@("Write-SSMParameter")
     "Type"=@("Stop-SSMAutomationExecution","Write-SSMParameter")
@@ -467,6 +479,7 @@ $SSM_SelectMap = @{
                "Get-SSMInstancePatch",
                "Get-SSMInstancePatchState",
                "Get-SSMInstancePatchStatesForPatchGroup",
+               "Get-SSMInstanceProperty",
                "Get-SSMInventoryDeletionList",
                "Get-SSMMaintenanceWindowExecutionList",
                "Get-SSMMaintenanceWindowExecutionTaskInvocationList",
@@ -484,6 +497,7 @@ $SSM_SelectMap = @{
                "Get-SSMPatchProperty",
                "Get-SSMSession",
                "Unregister-SSMOpsItemRelatedItem",
+               "Get-SSMAccessToken",
                "Get-SSMAutomationExecution",
                "Get-SSMCalendarState",
                "Get-SSMCommandInvocationDetail",
@@ -491,6 +505,7 @@ $SSM_SelectMap = @{
                "Get-SSMDefaultPatchBaseline",
                "Get-SSMDeployablePatchSnapshotForInstance",
                "Get-SSMDocument",
+               "Get-SSMExecutionPreview",
                "Get-SSMInventory",
                "Get-SSMInventorySchema",
                "Get-SSMMaintenanceWindow",
@@ -520,6 +535,8 @@ $SSM_SelectMap = @{
                "Get-SSMDocumentList",
                "Get-SSMDocumentVersionList",
                "Get-SSMInventoryEntryList",
+               "Get-SSMNode",
+               "Get-SSMNodesSummary",
                "Get-SSMOpsItemEvent",
                "Get-SSMOpsItemRelatedItem",
                "Get-SSMOpsMetadataList",
@@ -540,9 +557,11 @@ $SSM_SelectMap = @{
                "Resume-SSMSession",
                "Send-SSMAutomationSignal",
                "Send-SSMCommand",
+               "Start-SSMAccessRequest",
                "Start-SSMAssociationsOnce",
                "Start-SSMAutomationExecution",
                "Start-SSMChangeRequestExecution",
+               "Start-SSMExecutionPreview",
                "Start-SSMSession",
                "Stop-SSMAutomationExecution",
                "Stop-SSMSession",

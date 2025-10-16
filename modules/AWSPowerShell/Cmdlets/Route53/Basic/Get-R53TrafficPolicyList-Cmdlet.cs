@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [AWSCmdlet("Calls the Amazon Route 53 ListTrafficPolicies API operation.", Operation = new[] {"ListTrafficPolicies"}, SelectReturnType = typeof(Amazon.Route53.Model.ListTrafficPoliciesResponse), LegacyAlias="Get-R53TrafficPolicies")]
     [AWSCmdletOutput("Amazon.Route53.Model.TrafficPolicySummary or Amazon.Route53.Model.ListTrafficPoliciesResponse",
         "This cmdlet returns a collection of Amazon.Route53.Model.TrafficPolicySummary objects.",
-        "The service call response (type Amazon.Route53.Model.ListTrafficPoliciesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Route53.Model.ListTrafficPoliciesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetR53TrafficPolicyListCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxItem
         /// <summary>
@@ -84,7 +87,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-TrafficPolicyIdMarker $null' for the first call and '-TrafficPolicyIdMarker $AWSHistory.LastServiceResponse.TrafficPolicyIdMarker' for subsequent calls.
+        /// <br/>'TrafficPolicyIdMarker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-TrafficPolicyIdMarker' to null for the first call then set the 'TrafficPolicyIdMarker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,9 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -275,7 +282,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.TrafficPolicySummaries.Count;
+                    int _receivedThisCall = response.TrafficPolicySummaries?.Count ?? 0;
                     
                     _nextToken = response.TrafficPolicyIdMarker;
                     _retrievedSoFar += _receivedThisCall;
@@ -324,13 +331,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "ListTrafficPolicies");
             try
             {
-                #if DESKTOP
-                return client.ListTrafficPolicies(request);
-                #elif CORECLR
-                return client.ListTrafficPoliciesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTrafficPoliciesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

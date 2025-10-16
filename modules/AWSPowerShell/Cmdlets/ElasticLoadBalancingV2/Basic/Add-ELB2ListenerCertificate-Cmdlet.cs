@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
@@ -36,9 +38,9 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     /// If the certificate in already in the certificate list, the call is successful but
     /// the certificate is not added again.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html">HTTPS
-    /// listeners</a> in the <i>Application Load Balancers Guide</i> or <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-tls-listener.html">TLS
-    /// listeners</a> in the <i>Network Load Balancers Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/https-listener-certificates.html">SSL
+    /// certificates</a> in the <i>Application Load Balancers Guide</i> or <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/tls-listener-certificates.html">Server
+    /// certificates</a> in the <i>Network Load Balancers Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Add", "ELB2ListenerCertificate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -46,18 +48,23 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     [AWSCmdlet("Calls the Elastic Load Balancing V2 AddListenerCertificates API operation.", Operation = new[] {"AddListenerCertificates"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.AddListenerCertificatesResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.Certificate or Amazon.ElasticLoadBalancingV2.Model.AddListenerCertificatesResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.Certificate objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.AddListenerCertificatesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.AddListenerCertificatesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class AddELB2ListenerCertificateCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Certificate
         /// <summary>
         /// <para>
         /// <para>The certificate to add. You can specify one certificate per call. Set <c>CertificateArn</c>
-        /// to the certificate ARN but do not set <c>IsDefault</c>.</para>
+        /// to the certificate ARN but do not set <c>IsDefault</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -100,16 +107,6 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public string Select { get; set; } = "Certificates";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Certificate parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Certificate' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Certificate' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -120,9 +117,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ListenerArn), MyInvocation.BoundParameters);
@@ -136,21 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticLoadBalancingV2.Model.AddListenerCertificatesResponse, AddELB2ListenerCertificateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Certificate;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Certificate != null)
             {
                 context.Certificate = new List<Amazon.ElasticLoadBalancingV2.Model.Certificate>(this.Certificate);
@@ -230,13 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "AddListenerCertificates");
             try
             {
-                #if DESKTOP
-                return client.AddListenerCertificates(request);
-                #elif CORECLR
-                return client.AddListenerCertificatesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AddListenerCertificatesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

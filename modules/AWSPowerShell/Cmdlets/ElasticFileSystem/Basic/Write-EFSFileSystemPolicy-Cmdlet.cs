@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticFileSystem;
 using Amazon.ElasticFileSystem.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EFS
 {
     /// <summary>
@@ -34,8 +36,8 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     /// policy or an explicit policy set or updated using this API operation. EFS file system
     /// policies have a 20,000 character limit. When an explicit policy is set, it overrides
     /// the default policy. For more information about the default file system policy, see
-    /// <a href="https://docs.aws.amazon.com/efs/latest/ug/iam-access-control-nfs-efs.html#default-filesystempolicy">Default
-    /// EFS File System Policy</a>. 
+    /// <a href="https://docs.aws.amazon.com/efs/latest/ug/iam-access-control-nfs-efs.html#default-filesystempolicy">
+    /// Default EFS file system policy</a>. 
     /// 
     ///  <note><para>
     /// EFS file system policies have a 20,000 character limit.
@@ -48,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     [OutputType("Amazon.ElasticFileSystem.Model.PutFileSystemPolicyResponse")]
     [AWSCmdlet("Calls the Amazon Elastic File System PutFileSystemPolicy API operation.", Operation = new[] {"PutFileSystemPolicy"}, SelectReturnType = typeof(Amazon.ElasticFileSystem.Model.PutFileSystemPolicyResponse))]
     [AWSCmdletOutput("Amazon.ElasticFileSystem.Model.PutFileSystemPolicyResponse",
-        "This cmdlet returns an Amazon.ElasticFileSystem.Model.PutFileSystemPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ElasticFileSystem.Model.PutFileSystemPolicyResponse object containing multiple properties."
     )]
     public partial class WriteEFSFileSystemPolicyCmdlet : AmazonElasticFileSystemClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BypassPolicyLockoutSafetyCheck
         /// <summary>
@@ -94,8 +97,8 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         /// <para>
         /// <para>The <c>FileSystemPolicy</c> that you're creating. Accepts a JSON formatted policy
         /// definition. EFS file system policies have a 20,000 character limit. To find out more
-        /// about the elements that make up a file system policy, see <a href="https://docs.aws.amazon.com/efs/latest/ug/access-control-overview.html#access-control-manage-access-intro-resource-policies">EFS
-        /// Resource-based Policies</a>. </para>
+        /// about the elements that make up a file system policy, see <a href="https://docs.aws.amazon.com/efs/latest/ug/security_iam_service-with-iam.html#security_iam_service-with-iam-resource-based-policies">Resource-based
+        /// policies within Amazon EFS</a>. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileSystemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -140,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FileSystemId), MyInvocation.BoundParameters);
@@ -156,21 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticFileSystem.Model.PutFileSystemPolicyResponse, WriteEFSFileSystemPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FileSystemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BypassPolicyLockoutSafetyCheck = this.BypassPolicyLockoutSafetyCheck;
             context.FileSystemId = this.FileSystemId;
             #if MODULAR
@@ -252,13 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic File System", "PutFileSystemPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutFileSystemPolicy(request);
-                #elif CORECLR
-                return client.PutFileSystemPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutFileSystemPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

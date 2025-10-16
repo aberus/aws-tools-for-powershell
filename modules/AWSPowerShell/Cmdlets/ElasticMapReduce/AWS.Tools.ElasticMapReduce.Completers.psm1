@@ -89,8 +89,8 @@ $EMR_Completers = {
 
         # Amazon.ElasticMapReduce.ComputeLimitsUnitType
         {
-            ($_ -eq "Start-EMRJobFlow/ManagedScalingPolicy_ComputeLimits_UnitType") -Or
-            ($_ -eq "Write-EMRManagedScalingPolicy/ManagedScalingPolicy_ComputeLimits_UnitType")
+            ($_ -eq "Start-EMRJobFlow/ComputeLimits_UnitType") -Or
+            ($_ -eq "Write-EMRManagedScalingPolicy/ComputeLimits_UnitType")
         }
         {
             $v = "InstanceFleetUnits","Instances","VCPU"
@@ -141,24 +141,43 @@ $EMR_Completers = {
             break
         }
 
+        # Amazon.ElasticMapReduce.OnClusterAppUIType
+        "Get-EMROnClusterAppUIPresignedURL/OnClusterAppUIType"
+        {
+            $v = "ApplicationMaster","JobHistoryServer","ResourceManager","SparkHistoryServer","TezUI","YarnTimelineService"
+            break
+        }
+
         # Amazon.ElasticMapReduce.OnDemandCapacityReservationPreference
-        "Add-EMRInstanceFleet/InstanceFleet_LaunchSpecifications_OnDemandSpecification_CapacityReservationOptions_CapacityReservationPreference"
+        {
+            ($_ -eq "Add-EMRInstanceFleet/CapacityReservationOptions_CapacityReservationPreference") -Or
+            ($_ -eq "Edit-EMRInstanceFleet/CapacityReservationOptions_CapacityReservationPreference") -Or
+            ($_ -eq "Add-EMRInstanceFleet/InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference")
+        }
         {
             $v = "none","open"
             break
         }
 
         # Amazon.ElasticMapReduce.OnDemandCapacityReservationUsageStrategy
-        "Add-EMRInstanceFleet/InstanceFleet_LaunchSpecifications_OnDemandSpecification_CapacityReservationOptions_UsageStrategy"
+        {
+            ($_ -eq "Add-EMRInstanceFleet/CapacityReservationOptions_UsageStrategy") -Or
+            ($_ -eq "Edit-EMRInstanceFleet/CapacityReservationOptions_UsageStrategy") -Or
+            ($_ -eq "Add-EMRInstanceFleet/InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy")
+        }
         {
             $v = "use-capacity-reservations-first"
             break
         }
 
         # Amazon.ElasticMapReduce.OnDemandProvisioningAllocationStrategy
-        "Add-EMRInstanceFleet/InstanceFleet_LaunchSpecifications_OnDemandSpecification_AllocationStrategy"
         {
-            $v = "lowest-price"
+            ($_ -eq "Add-EMRInstanceFleet/OnDemandResizeSpecification_AllocationStrategy") -Or
+            ($_ -eq "Edit-EMRInstanceFleet/OnDemandResizeSpecification_AllocationStrategy") -Or
+            ($_ -eq "Add-EMRInstanceFleet/OnDemandSpecification_AllocationStrategy")
+        }
+        {
+            $v = "lowest-price","prioritized"
             break
         }
 
@@ -166,6 +185,20 @@ $EMR_Completers = {
         "Start-EMRNotebookExecution/OutputNotebookFormat"
         {
             $v = "HTML"
+            break
+        }
+
+        # Amazon.ElasticMapReduce.PersistentAppUIType
+        "Get-EMRPersistentAppUIPresignedURL/PersistentAppUIType"
+        {
+            $v = "SHS","TEZ","YTS"
+            break
+        }
+
+        # Amazon.ElasticMapReduce.ProfilerType
+        "New-EMRPersistentAppUI/ProfilerType"
+        {
+            $v = "SHS","TEZUI","YTS"
             break
         }
 
@@ -183,15 +216,29 @@ $EMR_Completers = {
             break
         }
 
-        # Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy
-        "Add-EMRInstanceFleet/InstanceFleet_LaunchSpecifications_SpotSpecification_AllocationStrategy"
+        # Amazon.ElasticMapReduce.ScalingStrategy
         {
-            $v = "capacity-optimized","diversified","lowest-price","price-capacity-optimized"
+            ($_ -eq "Start-EMRJobFlow/ManagedScalingPolicy_ScalingStrategy") -Or
+            ($_ -eq "Write-EMRManagedScalingPolicy/ManagedScalingPolicy_ScalingStrategy")
+        }
+        {
+            $v = "ADVANCED","DEFAULT"
+            break
+        }
+
+        # Amazon.ElasticMapReduce.SpotProvisioningAllocationStrategy
+        {
+            ($_ -eq "Add-EMRInstanceFleet/SpotResizeSpecification_AllocationStrategy") -Or
+            ($_ -eq "Edit-EMRInstanceFleet/SpotResizeSpecification_AllocationStrategy") -Or
+            ($_ -eq "Add-EMRInstanceFleet/SpotSpecification_AllocationStrategy")
+        }
+        {
+            $v = "capacity-optimized","capacity-optimized-prioritized","diversified","lowest-price","price-capacity-optimized"
             break
         }
 
         # Amazon.ElasticMapReduce.SpotProvisioningTimeoutAction
-        "Add-EMRInstanceFleet/InstanceFleet_LaunchSpecifications_SpotSpecification_TimeoutAction"
+        "Add-EMRInstanceFleet/SpotSpecification_TimeoutAction"
         {
             $v = "SWITCH_TO_ON_DEMAND","TERMINATE_CLUSTER"
             break
@@ -214,20 +261,28 @@ $EMR_Completers = {
 
 $EMR_map = @{
     "AuthMode"=@("New-EMRStudio")
+    "CapacityReservationOptions_CapacityReservationPreference"=@("Add-EMRInstanceFleet","Edit-EMRInstanceFleet")
+    "CapacityReservationOptions_UsageStrategy"=@("Add-EMRInstanceFleet","Edit-EMRInstanceFleet")
+    "ComputeLimits_UnitType"=@("Start-EMRJobFlow","Write-EMRManagedScalingPolicy")
     "ExecutionEngine_Type"=@("Start-EMRNotebookExecution")
     "IdcUserAssignment"=@("New-EMRStudio")
     "IdentityType"=@("Get-EMRStudioSessionMapping","Get-EMRStudioSessionMappingList","New-EMRStudioSessionMapping","Remove-EMRStudioSessionMapping","Update-EMRStudioSessionMapping")
     "InstanceFleet_InstanceFleetType"=@("Add-EMRInstanceFleet")
-    "InstanceFleet_LaunchSpecifications_OnDemandSpecification_AllocationStrategy"=@("Add-EMRInstanceFleet")
-    "InstanceFleet_LaunchSpecifications_OnDemandSpecification_CapacityReservationOptions_CapacityReservationPreference"=@("Add-EMRInstanceFleet")
-    "InstanceFleet_LaunchSpecifications_OnDemandSpecification_CapacityReservationOptions_UsageStrategy"=@("Add-EMRInstanceFleet")
-    "InstanceFleet_LaunchSpecifications_SpotSpecification_AllocationStrategy"=@("Add-EMRInstanceFleet")
-    "InstanceFleet_LaunchSpecifications_SpotSpecification_TimeoutAction"=@("Add-EMRInstanceFleet")
+    "InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_CapacityReservationPreference"=@("Add-EMRInstanceFleet")
+    "InstanceFleet_ResizeSpecifications_OnDemandResizeSpecification_CapacityReservationOptions_UsageStrategy"=@("Add-EMRInstanceFleet")
     "InstanceFleetType"=@("Get-EMRInstanceList")
-    "ManagedScalingPolicy_ComputeLimits_UnitType"=@("Start-EMRJobFlow","Write-EMRManagedScalingPolicy")
+    "ManagedScalingPolicy_ScalingStrategy"=@("Start-EMRJobFlow","Write-EMRManagedScalingPolicy")
+    "OnClusterAppUIType"=@("Get-EMROnClusterAppUIPresignedURL")
+    "OnDemandResizeSpecification_AllocationStrategy"=@("Add-EMRInstanceFleet","Edit-EMRInstanceFleet")
+    "OnDemandSpecification_AllocationStrategy"=@("Add-EMRInstanceFleet")
     "OutputNotebookFormat"=@("Start-EMRNotebookExecution")
+    "PersistentAppUIType"=@("Get-EMRPersistentAppUIPresignedURL")
+    "ProfilerType"=@("New-EMRPersistentAppUI")
     "RepoUpgradeOnBoot"=@("Start-EMRJobFlow")
     "ScaleDownBehavior"=@("Start-EMRJobFlow")
+    "SpotResizeSpecification_AllocationStrategy"=@("Add-EMRInstanceFleet","Edit-EMRInstanceFleet")
+    "SpotSpecification_AllocationStrategy"=@("Add-EMRInstanceFleet")
+    "SpotSpecification_TimeoutAction"=@("Add-EMRInstanceFleet")
     "Status"=@("Get-EMRNotebookExecutionList")
     "StepCancellationOption"=@("Stop-EMRStep")
 }
@@ -287,6 +342,7 @@ $EMR_SelectMap = @{
                "Add-EMRJobFlowStep",
                "Add-EMRResourceTag",
                "Stop-EMRStep",
+               "New-EMRPersistentAppUI",
                "New-EMRSecurityConfiguration",
                "New-EMRStudio",
                "New-EMRStudioSessionMapping",
@@ -296,6 +352,7 @@ $EMR_SelectMap = @{
                "Get-EMRCluster",
                "Get-EMRJobFlow",
                "Get-EMRNotebookExecution",
+               "Get-EMRPersistentAppUI",
                "Get-EMRReleaseLabel",
                "Get-EMRSecurityConfiguration",
                "Get-EMRStep",
@@ -304,6 +361,8 @@ $EMR_SelectMap = @{
                "Get-EMRBlockPublicAccessConfiguration",
                "Get-EMRClusterSessionCredential",
                "Get-EMRManagedScalingPolicy",
+               "Get-EMROnClusterAppUIPresignedURL",
+               "Get-EMRPersistentAppUIPresignedURL",
                "Get-EMRStudioSessionMapping",
                "Get-EMRBootstrapActionList",
                "Get-EMRClusterList",
@@ -331,6 +390,7 @@ $EMR_SelectMap = @{
                "Start-EMRJobFlow",
                "Set-EMRKeepJobFlowAliveWhenNoStep",
                "Set-EMRTerminationProtection",
+               "Set-EMRUnhealthyNodeReplacement",
                "Set-EMRVisibleToAllUser",
                "Start-EMRNotebookExecution",
                "Stop-EMRNotebookExecution",

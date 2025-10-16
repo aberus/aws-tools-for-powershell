@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTFleetWise;
 using Amazon.IoTFleetWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IFW
 {
     /// <summary>
     /// Deletes a vehicle and removes it from any campaigns.
-    /// 
-    ///  <note><para>
-    /// If the vehicle is successfully deleted, Amazon Web Services IoT FleetWise sends back
-    /// an HTTP 200 response with an empty body.
-    /// </para></note>
     /// </summary>
     [Cmdlet("Remove", "IFWVehicle", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.IoTFleetWise.Model.DeleteVehicleResponse")]
     [AWSCmdlet("Calls the AWS IoT FleetWise DeleteVehicle API operation.", Operation = new[] {"DeleteVehicle"}, SelectReturnType = typeof(Amazon.IoTFleetWise.Model.DeleteVehicleResponse))]
     [AWSCmdletOutput("Amazon.IoTFleetWise.Model.DeleteVehicleResponse",
-        "This cmdlet returns an Amazon.IoTFleetWise.Model.DeleteVehicleResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTFleetWise.Model.DeleteVehicleResponse object containing multiple properties."
     )]
     public partial class RemoveIFWVehicleCmdlet : AmazonIoTFleetWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter VehicleName
         /// <summary>
@@ -74,16 +72,6 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VehicleName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VehicleName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VehicleName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -94,9 +82,13 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VehicleName), MyInvocation.BoundParameters);
@@ -110,21 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTFleetWise.Model.DeleteVehicleResponse, RemoveIFWVehicleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VehicleName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.VehicleName = this.VehicleName;
             #if MODULAR
             if (this.VehicleName == null && ParameterWasBound(nameof(this.VehicleName)))
@@ -190,13 +172,7 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT FleetWise", "DeleteVehicle");
             try
             {
-                #if DESKTOP
-                return client.DeleteVehicle(request);
-                #elif CORECLR
-                return client.DeleteVehicleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteVehicleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

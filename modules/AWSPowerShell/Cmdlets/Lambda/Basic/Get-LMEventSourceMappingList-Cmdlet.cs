@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LM
 {
     /// <summary>
@@ -36,17 +38,20 @@ namespace Amazon.PowerShell.Cmdlets.LM
     [AWSCmdlet("Calls the AWS Lambda ListEventSourceMappings API operation.", Operation = new[] {"ListEventSourceMappings"}, SelectReturnType = typeof(Amazon.Lambda.Model.ListEventSourceMappingsResponse), LegacyAlias="Get-LMEventSourceMappings")]
     [AWSCmdletOutput("Amazon.Lambda.Model.EventSourceMappingConfiguration or Amazon.Lambda.Model.ListEventSourceMappingsResponse",
         "This cmdlet returns a collection of Amazon.Lambda.Model.EventSourceMappingConfiguration objects.",
-        "The service call response (type Amazon.Lambda.Model.ListEventSourceMappingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lambda.Model.ListEventSourceMappingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetLMEventSourceMappingListCmdlet : AmazonLambdaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EventSourceArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the event source.</para><ul><li><para><b>Amazon Kinesis</b> – The ARN of the data stream or a stream consumer.</para></li><li><para><b>Amazon DynamoDB Streams</b> – The ARN of the stream.</para></li><li><para><b>Amazon Simple Queue Service</b> – The ARN of the queue.</para></li><li><para><b>Amazon Managed Streaming for Apache Kafka</b> – The ARN of the cluster.</para></li><li><para><b>Amazon MQ</b> – The ARN of the broker.</para></li><li><para><b>Amazon DocumentDB</b> – The ARN of the DocumentDB change stream.</para></li></ul>
+        /// <para>The Amazon Resource Name (ARN) of the event source.</para><ul><li><para><b>Amazon Kinesis</b> – The ARN of the data stream or a stream consumer.</para></li><li><para><b>Amazon DynamoDB Streams</b> – The ARN of the stream.</para></li><li><para><b>Amazon Simple Queue Service</b> – The ARN of the queue.</para></li><li><para><b>Amazon Managed Streaming for Apache Kafka</b> – The ARN of the cluster or the
+        /// ARN of the VPC connection (for <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html#msk-multi-vpc">cross-account
+        /// event source mappings</a>).</para></li><li><para><b>Amazon MQ</b> – The ARN of the broker.</para></li><li><para><b>Amazon DocumentDB</b> – The ARN of the DocumentDB change stream.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +61,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter FunctionName
         /// <summary>
         /// <para>
-        /// <para>The name of the Lambda function.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> – <c>MyFunction</c>.</para></li><li><para><b>Function ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction</c>.</para></li><li><para><b>Version or Alias ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction:PROD</c>.</para></li><li><para><b>Partial ARN</b> – <c>123456789012:function:MyFunction</c>.</para></li></ul><para>The length constraint applies only to the full ARN. If you specify only the function
+        /// <para>The name or ARN of the Lambda function.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> – <c>MyFunction</c>.</para></li><li><para><b>Function ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction</c>.</para></li><li><para><b>Version or Alias ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction:PROD</c>.</para></li><li><para><b>Partial ARN</b> – <c>123456789012:function:MyFunction</c>.</para></li></ul><para>The length constraint applies only to the full ARN. If you specify only the function
         /// name, it's limited to 64 characters in length.</para>
         /// </para>
         /// </summary>
@@ -71,7 +76,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.NextMarker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,16 +112,6 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public string Select { get; set; } = "EventSourceMappings";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FunctionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -127,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -137,21 +136,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lambda.Model.ListEventSourceMappingsResponse, GetLMEventSourceMappingListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FunctionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EventSourceArn = this.EventSourceArn;
             context.FunctionName = this.FunctionName;
             context.Marker = this.Marker;
@@ -179,9 +168,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Lambda.Model.ListEventSourceMappingsRequest();
@@ -249,7 +236,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Lambda.Model.ListEventSourceMappingsRequest();
@@ -308,7 +295,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.EventSourceMappings.Count;
+                    int _receivedThisCall = response.EventSourceMappings?.Count ?? 0;
                     
                     _nextToken = response.NextMarker;
                     _retrievedSoFar += _receivedThisCall;
@@ -357,13 +344,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lambda", "ListEventSourceMappings");
             try
             {
-                #if DESKTOP
-                return client.ListEventSourceMappings(request);
-                #elif CORECLR
-                return client.ListEventSourceMappingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListEventSourceMappingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

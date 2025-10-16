@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,46 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
-    /// Lists Amazon GuardDuty findings statistics for the specified detector ID.
+    /// Lists GuardDuty findings statistics for the specified detector ID.
+    /// 
+    ///  
+    /// <para>
+    /// You must provide either <c>findingStatisticTypes</c> or <c>groupBy</c> parameter,
+    /// and not both. You can use the <c>maxResults</c> and <c>orderBy</c> parameters only
+    /// when using <c>groupBy</c>.
+    /// </para><para>
+    /// There might be regional differences because some flags might not be available in all
+    /// the Regions where GuardDuty is currently supported. For more information, see <a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_regions.html">Regions
+    /// and endpoints</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "GDFindingStatistic")]
     [OutputType("Amazon.GuardDuty.Model.FindingStatistics")]
     [AWSCmdlet("Calls the Amazon GuardDuty GetFindingsStatistics API operation.", Operation = new[] {"GetFindingsStatistics"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.GetFindingsStatisticsResponse))]
     [AWSCmdletOutput("Amazon.GuardDuty.Model.FindingStatistics or Amazon.GuardDuty.Model.GetFindingsStatisticsResponse",
         "This cmdlet returns an Amazon.GuardDuty.Model.FindingStatistics object.",
-        "The service call response (type Amazon.GuardDuty.Model.GetFindingsStatisticsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GuardDuty.Model.GetFindingsStatisticsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGDFindingStatisticCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DetectorId
         /// <summary>
         /// <para>
-        /// <para>The ID of the detector that specifies the GuardDuty service whose findings' statistics
-        /// you want to retrieve.</para>
+        /// <para>The ID of the detector whose findings statistics you want to retrieve.</para><para>To find the <c>detectorId</c> in the current Region, see the Settings page in the
+        /// GuardDuty console, or run the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_ListDetectors.html">ListDetectors</a>
+        /// API.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -71,22 +86,56 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public Amazon.GuardDuty.Model.FindingCriteria FindingCriterion { get; set; }
         #endregion
         
+        #region Parameter GroupBy
+        /// <summary>
+        /// <para>
+        /// <para>Displays the findings statistics grouped by one of the listed valid values.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.GuardDuty.GroupByType")]
+        public Amazon.GuardDuty.GroupByType GroupBy { get; set; }
+        #endregion
+        
+        #region Parameter OrderBy
+        /// <summary>
+        /// <para>
+        /// <para>Displays the sorted findings in the requested order. The default value of <c>orderBy</c>
+        /// is <c>DESC</c>.</para><para>You can use this parameter only with the <c>groupBy</c> parameter.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.GuardDuty.OrderBy")]
+        public Amazon.GuardDuty.OrderBy OrderBy { get; set; }
+        #endregion
+        
         #region Parameter FindingStatisticType
         /// <summary>
         /// <para>
-        /// <para>The types of finding statistics to retrieve.</para>
+        /// <para>The types of finding statistics to retrieve.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
+        /// <para>This parameter is deprecated.</para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
+        [System.ObsoleteAttribute("This parameter is deprecated, please use GroupBy instead")]
         [Alias("FindingStatisticTypes")]
         public System.String[] FindingStatisticType { get; set; }
+        #endregion
+        
+        #region Parameter MaxResult
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of results to be returned in the response. The default value is
+        /// 25.</para><para>You can use this parameter only with the <c>groupBy</c> parameter.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MaxResults")]
+        public System.Int32? MaxResult { get; set; }
         #endregion
         
         #region Parameter Select
@@ -100,19 +149,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "FindingStatistics";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DetectorId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -120,21 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GuardDuty.Model.GetFindingsStatisticsResponse, GetGDFindingStatisticCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DetectorId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DetectorId = this.DetectorId;
             #if MODULAR
             if (this.DetectorId == null && ParameterWasBound(nameof(this.DetectorId)))
@@ -143,16 +176,15 @@ namespace Amazon.PowerShell.Cmdlets.GD
             }
             #endif
             context.FindingCriterion = this.FindingCriterion;
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.FindingStatisticType != null)
             {
                 context.FindingStatisticType = new List<System.String>(this.FindingStatisticType);
             }
-            #if MODULAR
-            if (this.FindingStatisticType == null && ParameterWasBound(nameof(this.FindingStatisticType)))
-            {
-                WriteWarning("You are passing $null as a value for parameter FindingStatisticType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.GroupBy = this.GroupBy;
+            context.MaxResult = this.MaxResult;
+            context.OrderBy = this.OrderBy;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -177,9 +209,23 @@ namespace Amazon.PowerShell.Cmdlets.GD
             {
                 request.FindingCriteria = cmdletContext.FindingCriterion;
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.FindingStatisticType != null)
             {
                 request.FindingStatisticTypes = cmdletContext.FindingStatisticType;
+            }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            if (cmdletContext.GroupBy != null)
+            {
+                request.GroupBy = cmdletContext.GroupBy;
+            }
+            if (cmdletContext.MaxResult != null)
+            {
+                request.MaxResults = cmdletContext.MaxResult.Value;
+            }
+            if (cmdletContext.OrderBy != null)
+            {
+                request.OrderBy = cmdletContext.OrderBy;
             }
             
             CmdletOutput output;
@@ -219,13 +265,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "GetFindingsStatistics");
             try
             {
-                #if DESKTOP
-                return client.GetFindingsStatistics(request);
-                #elif CORECLR
-                return client.GetFindingsStatisticsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetFindingsStatisticsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -244,7 +284,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
         {
             public System.String DetectorId { get; set; }
             public Amazon.GuardDuty.Model.FindingCriteria FindingCriterion { get; set; }
+            [System.ObsoleteAttribute]
             public List<System.String> FindingStatisticType { get; set; }
+            public Amazon.GuardDuty.GroupByType GroupBy { get; set; }
+            public System.Int32? MaxResult { get; set; }
+            public Amazon.GuardDuty.OrderBy OrderBy { get; set; }
             public System.Func<Amazon.GuardDuty.Model.GetFindingsStatisticsResponse, GetGDFindingStatisticCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.FindingStatistics;
         }

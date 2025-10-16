@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
@@ -37,9 +39,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// 
     ///  
     /// <para>
-    /// When using FlexMatch with Amazon GameLift managed hosting, you can request a backfill
-    /// match from a client service by calling this operation with a <c>GameSessions</c> ID.
-    /// You also have the option of making backfill requests directly from your game server.
+    /// When using FlexMatch with Amazon GameLift Servers managed hosting, you can request
+    /// a backfill match from a client service by calling this operation with a <c>GameSessions</c>
+    /// ID. You also have the option of making backfill requests directly from your game server.
     /// In response to a request, FlexMatch creates player sessions for the new players, updates
     /// the <c>GameSession</c> resource, and sends updated matchmaking data to the game server.
     /// You can request a backfill match at any point after a game session is started. Each
@@ -62,23 +64,20 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// Backfill existing games with FlexMatch</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/flexmatchguide/match-events.html">
     /// Matchmaking events</a> (reference)
     /// </para><para><a href="https://docs.aws.amazon.com/gamelift/latest/flexmatchguide/gamelift-match.html">
-    /// How Amazon GameLift FlexMatch works</a></para>
+    /// How Amazon GameLift Servers FlexMatch works</a></para>
     /// </summary>
     [Cmdlet("Start", "GMLMatchBackfill", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.GameLift.Model.MatchmakingTicket")]
     [AWSCmdlet("Calls the Amazon GameLift Service StartMatchBackfill API operation.", Operation = new[] {"StartMatchBackfill"}, SelectReturnType = typeof(Amazon.GameLift.Model.StartMatchBackfillResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.MatchmakingTicket or Amazon.GameLift.Model.StartMatchBackfillResponse",
         "This cmdlet returns an Amazon.GameLift.Model.MatchmakingTicket object.",
-        "The service call response (type Amazon.GameLift.Model.StartMatchBackfillResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.StartMatchBackfillResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartGMLMatchBackfillCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigurationName
         /// <summary>
@@ -122,7 +121,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// Match Data</a>. </para><para>The backfill request must specify the team membership for every player. Do not specify
         /// team if you are not using backfill.</para></li><li><para>LatencyInMs -- If the matchmaker uses player latency, include a latency value, in
         /// milliseconds, for the Region that the game session is currently in. Do not include
-        /// latency values for any other Region.</para></li></ul>
+        /// latency values for any other Region.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -141,8 +144,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A unique identifier for a matchmaking ticket. If no ticket ID is specified here, Amazon
-        /// GameLift will generate one in the form of a UUID. Use this identifier to track the
-        /// match backfill ticket status and retrieve match results.</para>
+        /// GameLift Servers will generate one in the form of a UUID. Use this identifier to track
+        /// the match backfill ticket status and retrieve match results.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -160,16 +163,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "MatchmakingTicket";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GameSessionArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GameSessionArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GameSessionArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -180,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GameSessionArn), MyInvocation.BoundParameters);
@@ -196,21 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.StartMatchBackfillResponse, StartGMLMatchBackfillCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GameSessionArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConfigurationName = this.ConfigurationName;
             #if MODULAR
             if (this.ConfigurationName == null && ParameterWasBound(nameof(this.ConfigurationName)))
@@ -300,13 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "StartMatchBackfill");
             try
             {
-                #if DESKTOP
-                return client.StartMatchBackfill(request);
-                #elif CORECLR
-                return client.StartMatchBackfillAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartMatchBackfillAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

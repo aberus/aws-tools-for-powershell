@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisVideo;
 using Amazon.KinesisVideo.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KV
 {
     /// <summary>
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.KV
     [AWSCmdlet("Calls the Amazon Kinesis Video Streams GetDataEndpoint API operation.", Operation = new[] {"GetDataEndpoint"}, SelectReturnType = typeof(Amazon.KinesisVideo.Model.GetDataEndpointResponse))]
     [AWSCmdletOutput("System.String or Amazon.KinesisVideo.Model.GetDataEndpointResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.KinesisVideo.Model.GetDataEndpointResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.KinesisVideo.Model.GetDataEndpointResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetKVDataEndpointCmdlet : AmazonKinesisVideoClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter APIName
         /// <summary>
@@ -102,19 +105,13 @@ namespace Amazon.PowerShell.Cmdlets.KV
         public string Select { get; set; } = "DataEndpoint";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the APIName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^APIName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^APIName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,21 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.KV
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KinesisVideo.Model.GetDataEndpointResponse, GetKVDataEndpointCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.APIName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.APIName = this.APIName;
             #if MODULAR
             if (this.APIName == null && ParameterWasBound(nameof(this.APIName)))
@@ -212,13 +199,7 @@ namespace Amazon.PowerShell.Cmdlets.KV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Video Streams", "GetDataEndpoint");
             try
             {
-                #if DESKTOP
-                return client.GetDataEndpoint(request);
-                #elif CORECLR
-                return client.GetDataEndpointAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDataEndpointAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

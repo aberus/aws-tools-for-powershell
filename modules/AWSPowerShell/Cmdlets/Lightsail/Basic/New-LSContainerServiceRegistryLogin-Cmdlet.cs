@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -46,7 +48,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// </para><note><para>
     /// This action is not required if you install and use the Lightsail Control (lightsailctl)
     /// plugin to push container images to your Lightsail container service. For more information,
-    /// see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-pushing-container-images">Pushing
+    /// see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-pushing-container-images">Pushing
     /// and managing container images on your Amazon Lightsail container services</a> in the
     /// <i>Amazon Lightsail Developer Guide</i>.
     /// </para></note>
@@ -56,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail CreateContainerServiceRegistryLogin API operation.", Operation = new[] {"CreateContainerServiceRegistryLogin"}, SelectReturnType = typeof(Amazon.Lightsail.Model.CreateContainerServiceRegistryLoginResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.ContainerServiceRegistryLogin or Amazon.Lightsail.Model.CreateContainerServiceRegistryLoginResponse",
         "This cmdlet returns an Amazon.Lightsail.Model.ContainerServiceRegistryLogin object.",
-        "The service call response (type Amazon.Lightsail.Model.CreateContainerServiceRegistryLoginResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.CreateContainerServiceRegistryLoginResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewLSContainerServiceRegistryLoginCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -84,9 +87,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -159,13 +166,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "CreateContainerServiceRegistryLogin");
             try
             {
-                #if DESKTOP
-                return client.CreateContainerServiceRegistryLogin(request);
-                #elif CORECLR
-                return client.CreateContainerServiceRegistryLoginAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateContainerServiceRegistryLoginAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

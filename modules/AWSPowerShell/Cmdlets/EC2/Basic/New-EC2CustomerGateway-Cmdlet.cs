@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -54,21 +56,36 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateCustomerGateway API operation.", Operation = new[] {"CreateCustomerGateway"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateCustomerGatewayResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.CustomerGateway or Amazon.EC2.Model.CreateCustomerGatewayResponse",
         "This cmdlet returns an Amazon.EC2.Model.CustomerGateway object.",
-        "The service call response (type Amazon.EC2.Model.CreateCustomerGatewayResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateCustomerGatewayResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2CustomerGatewayCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BgpAsn
         /// <summary>
         /// <para>
-        /// <para>For devices that support BGP, the customer gateway's BGP ASN.</para><para>Default: 65000</para>
+        /// <para>For customer gateway devices that support BGP, specify the device's ASN. You must
+        /// specify either <c>BgpAsn</c> or <c>BgpAsnExtended</c> when creating the customer gateway.
+        /// If the ASN is larger than <c>2,147,483,647</c>, you must use <c>BgpAsnExtended</c>.</para><para>Default: 65000</para><para>Valid values: <c>1</c> to <c>2,147,483,647</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
         public System.Int32? BgpAsn { get; set; }
+        #endregion
+        
+        #region Parameter BgpAsnExtended
+        /// <summary>
+        /// <para>
+        /// <para>For customer gateway devices that support BGP, specify the device's ASN. You must
+        /// specify either <c>BgpAsn</c> or <c>BgpAsnExtended</c> when creating the customer gateway.
+        /// If the ASN is larger than <c>2,147,483,647</c>, you must use <c>BgpAsnExtended</c>.</para><para>Valid values: <c>2,147,483,648</c> to <c>4,294,967,295</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int64? BgpAsnExtended { get; set; }
         #endregion
         
         #region Parameter CertificateArn
@@ -91,11 +108,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String DeviceName { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter IpAddress
         /// <summary>
         /// <para>
-        /// <para> IPv4 address for the customer gateway device's outside interface. The address must
-        /// be static. </para>
+        /// <para>The IP address for the customer gateway device's outside interface. The address must
+        /// be static. If <c>OutsideIpAddressType</c> in your VPN connection options is set to
+        /// <c>PrivateIpv4</c>, you can use an RFC6598 or RFC1918 private IPv4 address. If <c>OutsideIpAddressType</c>
+        /// is set to <c>Ipv6</c>, you can use an IPv6 address. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,7 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the customer gateway.</para>
+        /// <para>The tags to apply to the customer gateway.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,16 +187,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "CustomerGateway";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Type parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Type' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Type' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -172,9 +197,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Type), MyInvocation.BoundParameters);
@@ -188,24 +217,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateCustomerGatewayResponse, NewEC2CustomerGatewayCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Type;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BgpAsn = this.BgpAsn;
+            context.BgpAsnExtended = this.BgpAsnExtended;
             context.CertificateArn = this.CertificateArn;
             context.DeviceName = this.DeviceName;
+            context.DryRun = this.DryRun;
             context.IpAddress = this.IpAddress;
             context.PublicIp = this.PublicIp;
             if (this.TagSpecification != null)
@@ -239,6 +260,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.BgpAsn = cmdletContext.BgpAsn.Value;
             }
+            if (cmdletContext.BgpAsnExtended != null)
+            {
+                request.BgpAsnExtended = cmdletContext.BgpAsnExtended.Value;
+            }
             if (cmdletContext.CertificateArn != null)
             {
                 request.CertificateArn = cmdletContext.CertificateArn;
@@ -246,6 +271,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.DeviceName != null)
             {
                 request.DeviceName = cmdletContext.DeviceName;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.IpAddress != null)
             {
@@ -301,13 +330,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateCustomerGateway");
             try
             {
-                #if DESKTOP
-                return client.CreateCustomerGateway(request);
-                #elif CORECLR
-                return client.CreateCustomerGatewayAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCustomerGatewayAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -325,8 +348,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.Int32? BgpAsn { get; set; }
+            public System.Int64? BgpAsnExtended { get; set; }
             public System.String CertificateArn { get; set; }
             public System.String DeviceName { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String IpAddress { get; set; }
             public System.String PublicIp { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }

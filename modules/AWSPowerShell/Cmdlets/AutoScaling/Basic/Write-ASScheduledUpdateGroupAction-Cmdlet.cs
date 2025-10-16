@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -32,12 +34,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
     /// 
     ///  
     /// <para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/schedule_time.html">Scheduled
+    /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-scheduled-scaling.html">Scheduled
     /// scaling</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.
     /// </para><para>
-    /// You can view the scheduled actions for an Auto Scaling group using the <a>DescribeScheduledActions</a>
+    /// You can view the scheduled actions for an Auto Scaling group using the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribeScheduledActions.html">DescribeScheduledActions</a>
     /// API call. If you are no longer using a scheduled action, you can delete it by calling
-    /// the <a>DeleteScheduledAction</a> API.
+    /// the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DeleteScheduledAction.html">DeleteScheduledAction</a>
+    /// API.
     /// </para><para>
     /// If you try to schedule your action in the past, Amazon EC2 Auto Scaling returns an
     /// error message.
@@ -48,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling PutScheduledUpdateGroupAction API operation.", Operation = new[] {"PutScheduledUpdateGroupAction"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.PutScheduledUpdateGroupActionResponse))]
     [AWSCmdletOutput("None or Amazon.AutoScaling.Model.PutScheduledUpdateGroupActionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.AutoScaling.Model.PutScheduledUpdateGroupActionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.AutoScaling.Model.PutScheduledUpdateGroupActionResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteASScheduledUpdateGroupActionCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoScalingGroupName
         /// <summary>
@@ -85,14 +89,14 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.Int32? DesiredCapacity { get; set; }
         #endregion
         
-        #region Parameter UtcEndTime
+        #region Parameter EndTime
         /// <summary>
         /// <para>
         /// <para>The date and time for the recurring schedule to end, in UTC. For example, <c>"2021-06-01T00:00:00Z"</c>.</para>
         /// </para>
         /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcEndTime { get; set; }
+        [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
+        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter MaxSize
@@ -146,7 +150,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String ScheduledActionName { get; set; }
         #endregion
         
-        #region Parameter UtcStartTime
+        #region Parameter StartTime
         /// <summary>
         /// <para>
         /// <para>The date and time for this action to start, in YYYY-MM-DDThh:mm:ssZ format in UTC/GMT
@@ -154,18 +158,18 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// the action at this time, and then performs the action based on the specified recurrence.</para>
         /// </para>
         /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcStartTime { get; set; }
+        [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
+        public System.DateTime? StartTime { get; set; }
         #endregion
         
-        #region Parameter UtcTime
+        #region Parameter Time
         /// <summary>
         /// <para>
         /// <para>This property is no longer used.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcTime { get; set; }
+        public System.DateTime? Time { get; set; }
         #endregion
         
         #region Parameter TimeZone
@@ -181,59 +185,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String TimeZone { get; set; }
         #endregion
         
-        #region Parameter EndTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use EndTimeUtc instead. Setting either EndTime or EndTimeUtc
-        /// results in both EndTime and EndTimeUtc being assigned, the latest assignment to either
-        /// one of the two property is reflected in the value of both. EndTime is provided for
-        /// backwards compatibility only and assigning a non-Utc DateTime to it results in the
-        /// wrong timestamp being passed to the service.</para><para>The date and time for the recurring schedule to end, in UTC. For example, <c>"2021-06-01T00:00:00Z"</c>.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcEndTime instead.")]
-        public System.DateTime? EndTime { get; set; }
-        #endregion
-        
-        #region Parameter StartTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use StartTimeUtc instead. Setting either StartTime or
-        /// StartTimeUtc results in both StartTime and StartTimeUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. StartTime
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The date and time for this action to start, in YYYY-MM-DDThh:mm:ssZ format in UTC/GMT
-        /// only and in quotes (for example, <c>"2021-06-01T00:00:00Z"</c>).</para><para>If you specify <c>Recurrence</c> and <c>StartTime</c>, Amazon EC2 Auto Scaling performs
-        /// the action at this time, and then performs the action based on the specified recurrence.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcStartTime instead.")]
-        public System.DateTime? StartTime { get; set; }
-        #endregion
-        
-        #region Parameter Time
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use TimeUtc instead. Setting either Time or TimeUtc results
-        /// in both Time and TimeUtc being assigned, the latest assignment to either one of the
-        /// two property is reflected in the value of both. Time is provided for backwards compatibility
-        /// only and assigning a non-Utc DateTime to it results in the wrong timestamp being passed
-        /// to the service.</para><para>This property is no longer used.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcTime instead.")]
-        public System.DateTime? Time { get; set; }
-        #endregion
-        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -242,16 +193,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutoScalingGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -264,9 +205,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutoScalingGroupName), MyInvocation.BoundParameters);
@@ -280,21 +225,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.PutScheduledUpdateGroupActionResponse, WriteASScheduledUpdateGroupActionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutoScalingGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScalingGroupName = this.AutoScalingGroupName;
             #if MODULAR
             if (this.AutoScalingGroupName == null && ParameterWasBound(nameof(this.AutoScalingGroupName)))
@@ -303,7 +238,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             }
             #endif
             context.DesiredCapacity = this.DesiredCapacity;
-            context.UtcEndTime = this.UtcEndTime;
+            context.EndTime = this.EndTime;
             context.MaxSize = this.MaxSize;
             context.MinSize = this.MinSize;
             context.Recurrence = this.Recurrence;
@@ -314,18 +249,9 @@ namespace Amazon.PowerShell.Cmdlets.AS
                 WriteWarning("You are passing $null as a value for parameter ScheduledActionName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
-            context.UtcStartTime = this.UtcStartTime;
-            context.UtcTime = this.UtcTime;
-            context.TimeZone = this.TimeZone;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.EndTime = this.EndTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.StartTime = this.StartTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Time = this.Time;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.TimeZone = this.TimeZone;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -350,9 +276,9 @@ namespace Amazon.PowerShell.Cmdlets.AS
             {
                 request.DesiredCapacity = cmdletContext.DesiredCapacity.Value;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.MaxSize != null)
             {
@@ -370,48 +296,18 @@ namespace Amazon.PowerShell.Cmdlets.AS
             {
                 request.ScheduledActionName = cmdletContext.ScheduledActionName;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
-            if (cmdletContext.UtcTime != null)
+            if (cmdletContext.Time != null)
             {
-                request.TimeUtc = cmdletContext.UtcTime.Value;
+                request.Time = cmdletContext.Time.Value;
             }
             if (cmdletContext.TimeZone != null)
             {
                 request.TimeZone = cmdletContext.TimeZone;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.Time != null)
-            {
-                if (cmdletContext.UtcTime != null)
-                {
-                    throw new System.ArgumentException("Parameters Time and UtcTime are mutually exclusive.", nameof(this.Time));
-                }
-                request.Time = cmdletContext.Time.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             CmdletOutput output;
             
@@ -450,13 +346,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "PutScheduledUpdateGroupAction");
             try
             {
-                #if DESKTOP
-                return client.PutScheduledUpdateGroupAction(request);
-                #elif CORECLR
-                return client.PutScheduledUpdateGroupActionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutScheduledUpdateGroupActionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -475,20 +365,14 @@ namespace Amazon.PowerShell.Cmdlets.AS
         {
             public System.String AutoScalingGroupName { get; set; }
             public System.Int32? DesiredCapacity { get; set; }
-            public System.DateTime? UtcEndTime { get; set; }
+            public System.DateTime? EndTime { get; set; }
             public System.Int32? MaxSize { get; set; }
             public System.Int32? MinSize { get; set; }
             public System.String Recurrence { get; set; }
             public System.String ScheduledActionName { get; set; }
-            public System.DateTime? UtcStartTime { get; set; }
-            public System.DateTime? UtcTime { get; set; }
-            public System.String TimeZone { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? EndTime { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? StartTime { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? Time { get; set; }
+            public System.String TimeZone { get; set; }
             public System.Func<Amazon.AutoScaling.Model.PutScheduledUpdateGroupActionResponse, WriteASScheduledUpdateGroupActionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

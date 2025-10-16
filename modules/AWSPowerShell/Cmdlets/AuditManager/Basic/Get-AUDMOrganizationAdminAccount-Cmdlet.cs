@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AuditManager;
 using Amazon.AuditManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AUDM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
     [OutputType("Amazon.AuditManager.Model.GetOrganizationAdminAccountResponse")]
     [AWSCmdlet("Calls the AWS Audit Manager GetOrganizationAdminAccount API operation.", Operation = new[] {"GetOrganizationAdminAccount"}, SelectReturnType = typeof(Amazon.AuditManager.Model.GetOrganizationAdminAccountResponse))]
     [AWSCmdletOutput("Amazon.AuditManager.Model.GetOrganizationAdminAccountResponse",
-        "This cmdlet returns an Amazon.AuditManager.Model.GetOrganizationAdminAccountResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AuditManager.Model.GetOrganizationAdminAccountResponse object containing multiple properties."
     )]
     public partial class GetAUDMOrganizationAdminAccountCmdlet : AmazonAuditManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Audit Manager", "GetOrganizationAdminAccount");
             try
             {
-                #if DESKTOP
-                return client.GetOrganizationAdminAccount(request);
-                #elif CORECLR
-                return client.GetOrganizationAdminAccountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetOrganizationAdminAccountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

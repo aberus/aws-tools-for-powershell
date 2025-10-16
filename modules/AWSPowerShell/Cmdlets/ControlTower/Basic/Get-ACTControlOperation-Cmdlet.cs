@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ControlTower;
 using Amazon.ControlTower.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACT
 {
     /// <summary>
     /// Returns the status of a particular <c>EnableControl</c> or <c>DisableControl</c> operation.
     /// Displays a message in case of error. Details for an operation are available for 90
-    /// days. For usage examples, see <a href="https://docs.aws.amazon.com/controltower/latest/userguide/control-api-examples-short.html"><i>the Amazon Web Services Control Tower User Guide</i></a>.
+    /// days. For usage examples, see the <a href="https://docs.aws.amazon.com/controltower/latest/controlreference/control-api-examples-short.html"><i>Controls Reference Guide</i></a>.
     /// </summary>
     [Cmdlet("Get", "ACTControlOperation")]
     [OutputType("Amazon.ControlTower.Model.ControlOperation")]
     [AWSCmdlet("Calls the AWS Control Tower GetControlOperation API operation.", Operation = new[] {"GetControlOperation"}, SelectReturnType = typeof(Amazon.ControlTower.Model.GetControlOperationResponse))]
     [AWSCmdletOutput("Amazon.ControlTower.Model.ControlOperation or Amazon.ControlTower.Model.GetControlOperationResponse",
         "This cmdlet returns an Amazon.ControlTower.Model.ControlOperation object.",
-        "The service call response (type Amazon.ControlTower.Model.GetControlOperationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ControlTower.Model.GetControlOperationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetACTControlOperationCmdlet : AmazonControlTowerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OperationIdentifier
         /// <summary>
@@ -73,19 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.ACT
         public string Select { get; set; } = "ControlOperation";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OperationIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OperationIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OperationIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -93,21 +90,11 @@ namespace Amazon.PowerShell.Cmdlets.ACT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ControlTower.Model.GetControlOperationResponse, GetACTControlOperationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OperationIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.OperationIdentifier = this.OperationIdentifier;
             #if MODULAR
             if (this.OperationIdentifier == null && ParameterWasBound(nameof(this.OperationIdentifier)))
@@ -173,13 +160,7 @@ namespace Amazon.PowerShell.Cmdlets.ACT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Control Tower", "GetControlOperation");
             try
             {
-                #if DESKTOP
-                return client.GetControlOperation(request);
-                #elif CORECLR
-                return client.GetControlOperationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetControlOperationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

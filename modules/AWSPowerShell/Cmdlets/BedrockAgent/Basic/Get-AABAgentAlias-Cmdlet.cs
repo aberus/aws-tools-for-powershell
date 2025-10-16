@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.BedrockAgent;
 using Amazon.BedrockAgent.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AAB
 {
     /// <summary>
-    /// Describes an Alias for a Amazon Bedrock Agent
+    /// Gets information about an alias of an agent.
     /// </summary>
     [Cmdlet("Get", "AABAgentAlias")]
     [OutputType("Amazon.BedrockAgent.Model.AgentAlias")]
     [AWSCmdlet("Calls the Agents for Amazon Bedrock GetAgentAlias API operation.", Operation = new[] {"GetAgentAlias"}, SelectReturnType = typeof(Amazon.BedrockAgent.Model.GetAgentAliasResponse))]
     [AWSCmdletOutput("Amazon.BedrockAgent.Model.AgentAlias or Amazon.BedrockAgent.Model.GetAgentAliasResponse",
         "This cmdlet returns an Amazon.BedrockAgent.Model.AgentAlias object.",
-        "The service call response (type Amazon.BedrockAgent.Model.GetAgentAliasResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.BedrockAgent.Model.GetAgentAliasResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAABAgentAliasCmdlet : AmazonBedrockAgentClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AgentAliasId
         /// <summary>
         /// <para>
-        /// <para>Id generated at the server side when an Agent Alias is created</para>
+        /// <para>The unique identifier of the alias for which to get information.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +65,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter AgentId
         /// <summary>
         /// <para>
-        /// <para>Id generated at the server side when an Agent is created</para>
+        /// <para>The unique identifier of the agent to which the alias to get information belongs.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -87,19 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public string Select { get; set; } = "AgentAlias";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AgentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AgentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AgentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,21 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.BedrockAgent.Model.GetAgentAliasResponse, GetAABAgentAliasCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AgentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AgentAliasId = this.AgentAliasId;
             #if MODULAR
             if (this.AgentAliasId == null && ParameterWasBound(nameof(this.AgentAliasId)))
@@ -198,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Agents for Amazon Bedrock", "GetAgentAlias");
             try
             {
-                #if DESKTOP
-                return client.GetAgentAlias(request);
-                #elif CORECLR
-                return client.GetAgentAliasAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAgentAliasAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

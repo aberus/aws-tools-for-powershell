@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// <b>This operation is used with the Amazon GameLift FleetIQ solution and game server
-    /// groups.</b><para>
+    /// <b>This operation is used with the Amazon GameLift Servers FleetIQ solution and game
+    /// server groups.</b><para>
     /// Terminates a game server group and permanently deletes the game server group record.
     /// You have several options for how these resources are impacted when deleting the game
     /// server group. Depending on the type of delete operation selected, this operation might
@@ -48,25 +50,26 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// If the delete request is successful, a series of operations are kicked off. The game
     /// server group status is changed to <c>DELETE_SCHEDULED</c>, which prevents new game
     /// servers from being registered and stops automatic scaling activity. Once all game
-    /// servers in the game server group are deregistered, Amazon GameLift FleetIQ can begin
-    /// deleting resources. If any of the delete operations fail, the game server group is
-    /// placed in <c>ERROR</c> status.
+    /// servers in the game server group are deregistered, Amazon GameLift Servers FleetIQ
+    /// can begin deleting resources. If any of the delete operations fail, the game server
+    /// group is placed in <c>ERROR</c> status.
     /// </para><para>
-    /// Amazon GameLift FleetIQ emits delete events to Amazon CloudWatch.
+    /// Amazon GameLift Servers FleetIQ emits delete events to Amazon CloudWatch.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-intro.html">Amazon
-    /// GameLift FleetIQ Guide</a></para>
+    /// GameLift Servers FleetIQ Guide</a></para>
     /// </summary>
     [Cmdlet("Remove", "GMLGameServerGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.GameLift.Model.GameServerGroup")]
     [AWSCmdlet("Calls the Amazon GameLift Service DeleteGameServerGroup API operation.", Operation = new[] {"DeleteGameServerGroup"}, SelectReturnType = typeof(Amazon.GameLift.Model.DeleteGameServerGroupResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GameServerGroup or Amazon.GameLift.Model.DeleteGameServerGroupResponse",
         "This cmdlet returns an Amazon.GameLift.Model.GameServerGroup object.",
-        "The service call response (type Amazon.GameLift.Model.DeleteGameServerGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.DeleteGameServerGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveGMLGameServerGroupCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeleteOption
         /// <summary>
@@ -111,16 +114,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "GameServerGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GameServerGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GameServerGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GameServerGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -131,9 +124,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GameServerGroupName), MyInvocation.BoundParameters);
@@ -147,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.DeleteGameServerGroupResponse, RemoveGMLGameServerGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GameServerGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeleteOption = this.DeleteOption;
             context.GameServerGroupName = this.GameServerGroupName;
             #if MODULAR
@@ -232,13 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DeleteGameServerGroup");
             try
             {
-                #if DESKTOP
-                return client.DeleteGameServerGroup(request);
-                #elif CORECLR
-                return client.DeleteGameServerGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteGameServerGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

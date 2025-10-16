@@ -101,6 +101,13 @@ $RDS_Completers = {
             break
         }
 
+        # Amazon.RDS.ClusterScalabilityType
+        "New-RDSDBCluster/ClusterScalabilityType"
+        {
+            $v = "limitless","scaleout","standard"
+            break
+        }
+
         # Amazon.RDS.CustomEngineVersionStatus
         "Edit-RDSCustomDBEngineVersion/Status"
         {
@@ -108,10 +115,44 @@ $RDS_Completers = {
             break
         }
 
+        # Amazon.RDS.DatabaseInsightsMode
+        {
+            ($_ -eq "Edit-RDSDBCluster/DatabaseInsightsMode") -Or
+            ($_ -eq "Edit-RDSDBInstance/DatabaseInsightsMode") -Or
+            ($_ -eq "New-RDSDBCluster/DatabaseInsightsMode") -Or
+            ($_ -eq "New-RDSDBInstance/DatabaseInsightsMode") -Or
+            ($_ -eq "New-RDSDBInstanceReadReplica/DatabaseInsightsMode") -Or
+            ($_ -eq "Restore-RDSDBInstanceFromS3/DatabaseInsightsMode")
+        }
+        {
+            $v = "advanced","standard"
+            break
+        }
+
         # Amazon.RDS.DBProxyEndpointTargetRole
         "New-RDSDBProxyEndpoint/TargetRole"
         {
             $v = "READ_ONLY","READ_WRITE"
+            break
+        }
+
+        # Amazon.RDS.DefaultAuthScheme
+        {
+            ($_ -eq "Edit-RDSDBProxy/DefaultAuthScheme") -Or
+            ($_ -eq "New-RDSDBProxy/DefaultAuthScheme")
+        }
+        {
+            $v = "IAM_AUTH","NONE"
+            break
+        }
+
+        # Amazon.RDS.EndpointNetworkType
+        {
+            ($_ -eq "New-RDSDBProxy/EndpointNetworkType") -Or
+            ($_ -eq "New-RDSDBProxyEndpoint/EndpointNetworkType")
+        }
+        {
+            $v = "DUAL","IPV4","IPV6"
             break
         }
 
@@ -126,6 +167,18 @@ $RDS_Completers = {
         "Get-RDSExportTask/SourceType"
         {
             $v = "CLUSTER","SNAPSHOT"
+            break
+        }
+
+        # Amazon.RDS.MasterUserAuthenticationType
+        {
+            ($_ -eq "Edit-RDSDBCluster/MasterUserAuthenticationType") -Or
+            ($_ -eq "Edit-RDSDBInstance/MasterUserAuthenticationType") -Or
+            ($_ -eq "New-RDSDBCluster/MasterUserAuthenticationType") -Or
+            ($_ -eq "New-RDSDBInstance/MasterUserAuthenticationType")
+        }
+        {
+            $v = "iam-db-auth","password"
             break
         }
 
@@ -145,7 +198,14 @@ $RDS_Completers = {
         # Amazon.RDS.SourceType
         "Get-RDSEvent/SourceType"
         {
-            $v = "blue-green-deployment","custom-engine-version","db-cluster","db-cluster-snapshot","db-instance","db-parameter-group","db-proxy","db-security-group","db-snapshot"
+            $v = "blue-green-deployment","custom-engine-version","db-cluster","db-cluster-snapshot","db-instance","db-parameter-group","db-proxy","db-security-group","db-shard-group","db-snapshot","zero-etl"
+            break
+        }
+
+        # Amazon.RDS.TargetConnectionNetworkType
+        "New-RDSDBProxy/TargetConnectionNetworkType"
+        {
+            $v = "IPV4","IPV6"
             break
         }
 
@@ -160,12 +220,18 @@ $RDS_Completers = {
 $RDS_map = @{
     "AuditPolicyState"=@("Edit-RDSActivityStream")
     "AutomationMode"=@("Edit-RDSDBInstance")
+    "ClusterScalabilityType"=@("New-RDSDBCluster")
+    "DatabaseInsightsMode"=@("Edit-RDSDBCluster","Edit-RDSDBInstance","New-RDSDBCluster","New-RDSDBInstance","New-RDSDBInstanceReadReplica","Restore-RDSDBInstanceFromS3")
+    "DefaultAuthScheme"=@("Edit-RDSDBProxy","New-RDSDBProxy")
+    "EndpointNetworkType"=@("New-RDSDBProxy","New-RDSDBProxyEndpoint")
     "EngineFamily"=@("New-RDSDBProxy")
+    "MasterUserAuthenticationType"=@("Edit-RDSDBCluster","Edit-RDSDBInstance","New-RDSDBCluster","New-RDSDBInstance")
     "Mode"=@("Start-RDSActivityStream")
     "RdsCustomClusterConfiguration_ReplicaMode"=@("New-RDSDBCluster","Restore-RDSDBClusterFromSnapshot","Restore-RDSDBClusterToPointInTime")
     "ReplicaMode"=@("Edit-RDSDBInstance","New-RDSDBInstanceReadReplica")
     "SourceType"=@("Get-RDSEvent","Get-RDSExportTask")
     "Status"=@("Edit-RDSCustomDBEngineVersion")
+    "TargetConnectionNetworkType"=@("New-RDSDBProxy")
     "TargetRole"=@("New-RDSDBProxyEndpoint")
 }
 
@@ -289,6 +355,7 @@ $RDS_SelectMap = @{
                "Get-RDSDBInstanceAutomatedBackup",
                "Get-RDSDBInstance",
                "Get-RDSDBLogFile",
+               "Get-RDSDBMajorEngineVersion",
                "Get-RDSDBParameterGroup",
                "Get-RDSDBParameter",
                "Get-RDSDBProxy",
@@ -304,8 +371,8 @@ $RDS_SelectMap = @{
                "Get-RDSDBSubnetGroup",
                "Get-RDSEngineDefaultClusterParameter",
                "Get-RDSEngineDefaultParameter",
-               "Get-RDSEventCategory",
                "Get-RDSEvent",
+               "Get-RDSEventCategory",
                "Get-RDSEventSubscription",
                "Get-RDSExportTask",
                "Get-RDSGlobalCluster",
@@ -345,6 +412,7 @@ $RDS_SelectMap = @{
                "Edit-RDSDBSubnetGroup",
                "Edit-RDSEventSubscription",
                "Edit-RDSGlobalCluster",
+               "Edit-RDSIntegration",
                "Edit-RDSOptionGroup",
                "Edit-RDSTenantDatabase",
                "Convert-RDSReadReplicaToStandalone",

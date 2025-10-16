@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -37,20 +39,27 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     /// SiteWise cold tier. For more information about how to configure storage settings,
     /// see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/APIReference/API_PutStorageConfiguration.html">PutStorageConfiguration</a>.
     /// </para><para>
-    /// Bulk import is designed to store historical data to IoT SiteWise. It does not trigger
-    /// computations or notifications on IoT SiteWise warm or cold tier storage.
-    /// </para></important>
+    /// Bulk import is designed to store historical data to IoT SiteWise.
+    /// </para><ul><li><para>
+    /// Newly ingested data in the hot tier triggers notifications and computations.
+    /// </para></li><li><para>
+    /// After data moves from the hot tier to the warm or cold tier based on retention settings,
+    /// it does not trigger computations or notifications.
+    /// </para></li><li><para>
+    /// Data older than 7 days does not trigger computations or notifications.
+    /// </para></li></ul></important>
     /// </summary>
     [Cmdlet("New", "IOTSWBulkImportJob", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.IoTSiteWise.Model.CreateBulkImportJobResponse")]
     [AWSCmdlet("Calls the AWS IoT SiteWise CreateBulkImportJob API operation.", Operation = new[] {"CreateBulkImportJob"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.CreateBulkImportJobResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.CreateBulkImportJobResponse",
-        "This cmdlet returns an Amazon.IoTSiteWise.Model.CreateBulkImportJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTSiteWise.Model.CreateBulkImportJobResponse object containing multiple properties."
     )]
     public partial class NewIOTSWBulkImportJobCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdaptiveIngestion
         /// <summary>
@@ -85,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         #region Parameter Csv_ColumnName
         /// <summary>
         /// <para>
-        /// <para>The column names specified in the .csv file.</para>
+        /// <para>The column names specified in the .csv file.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,7 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         #region Parameter File
         /// <summary>
         /// <para>
-        /// <para>The files in the specified Amazon S3 bucket that contain your data.</para>
+        /// <para>The files in the specified Amazon S3 bucket that contain your data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -200,16 +217,6 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -220,9 +227,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.JobName), MyInvocation.BoundParameters);
@@ -236,21 +247,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTSiteWise.Model.CreateBulkImportJobResponse, NewIOTSWBulkImportJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdaptiveIngestion = this.AdaptiveIngestion;
             context.DeleteFilesAfterImport = this.DeleteFilesAfterImport;
             context.ErrorReportLocation_Bucket = this.ErrorReportLocation_Bucket;
@@ -458,13 +459,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "CreateBulkImportJob");
             try
             {
-                #if DESKTOP
-                return client.CreateBulkImportJob(request);
-                #elif CORECLR
-                return client.CreateBulkImportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBulkImportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

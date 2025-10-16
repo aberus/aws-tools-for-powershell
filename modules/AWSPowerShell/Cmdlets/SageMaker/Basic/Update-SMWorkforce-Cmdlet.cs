@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -44,8 +46,12 @@ namespace Amazon.PowerShell.Cmdlets.SM
     /// outside the specified range are denied and get a <c>Not Found</c> error message on
     /// the worker portal.
     /// </para><para>
-    /// To restrict access to all the workers in public internet, add the <c>SourceIpConfig</c>
-    /// CIDR value as "10.0.0.0/16".
+    /// To restrict public internet access for all workers, configure the <c>SourceIpConfig</c>
+    /// CIDR value. For example, when using <c>SourceIpConfig</c> with an <c>IpAddressType</c>
+    /// of <c>IPv4</c>, you can restrict access to the IPv4 CIDR block "10.0.0.0/16". When
+    /// using an <c>IpAddressType</c> of <c>dualstack</c>, you can specify both the IPv4 and
+    /// IPv6 CIDR blocks, such as "10.0.0.0/16" for IPv4 only, "2001:db8:1234:1a00::/56" for
+    /// IPv6 only, or "10.0.0.0/16" and "2001:db8:1234:1a00::/56" for dual stack.
     /// </para><important><para>
     /// Amazon SageMaker does not support Source Ip restriction for worker portals in VPC.
     /// </para></important><para>
@@ -68,14 +74,29 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service UpdateWorkforce API operation.", Operation = new[] {"UpdateWorkforce"}, SelectReturnType = typeof(Amazon.SageMaker.Model.UpdateWorkforceResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.Workforce or Amazon.SageMaker.Model.UpdateWorkforceResponse",
         "This cmdlet returns an Amazon.SageMaker.Model.Workforce object.",
-        "The service call response (type Amazon.SageMaker.Model.UpdateWorkforceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.UpdateWorkforceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateSMWorkforceCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter OidcConfig_AuthenticationRequestExtraParam
+        /// <summary>
+        /// <para>
+        /// <para>A string to string map of identifiers specific to the custom identity provider (IdP)
+        /// being used.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OidcConfig_AuthenticationRequestExtraParams")]
+        public System.Collections.Hashtable OidcConfig_AuthenticationRequestExtraParam { get; set; }
+        #endregion
         
         #region Parameter OidcConfig_AuthorizationEndpoint
         /// <summary>
@@ -92,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>A list of one to ten <a href="https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html">Classless
         /// Inter-Domain Routing</a> (CIDR) values.</para><para>Maximum: Ten CIDR values</para><note><para>The following Length Constraints apply to individual CIDR values in the CIDR value
-        /// list.</para></note>
+        /// list.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,6 +143,18 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OidcConfig_ClientSecret { get; set; }
+        #endregion
+        
+        #region Parameter IpAddressType
+        /// <summary>
+        /// <para>
+        /// <para>Use this parameter to specify whether you want <c>IPv4</c> only or <c>dualstack</c>
+        /// (<c>IPv4</c> and <c>IPv6</c>) to support your labeling workforce.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.WorkforceIpAddressType")]
+        public Amazon.SageMaker.WorkforceIpAddressType IpAddressType { get; set; }
         #endregion
         
         #region Parameter OidcConfig_Issuer
@@ -150,11 +187,26 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.String OidcConfig_LogoutEndpoint { get; set; }
         #endregion
         
+        #region Parameter OidcConfig_Scope
+        /// <summary>
+        /// <para>
+        /// <para>An array of string identifiers used to refer to the specific pieces of user data or
+        /// claims that the client application wants to access.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String OidcConfig_Scope { get; set; }
+        #endregion
+        
         #region Parameter WorkforceVpcConfig_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The VPC security group IDs, in the form sg-xxxxxxxx. The security groups must be for
-        /// the same VPC as specified in the subnet.</para>
+        /// <para>The VPC security group IDs, in the form <c>sg-xxxxxxxx</c>. The security groups must
+        /// be for the same VPC as specified in the subnet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -165,7 +217,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter WorkforceVpcConfig_Subnet
         /// <summary>
         /// <para>
-        /// <para>The ID of the subnets in the VPC that you want to connect.</para>
+        /// <para>The ID of the subnets in the VPC that you want to connect.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -233,16 +289,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "Workforce";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkforceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkforceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkforceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -253,9 +299,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.WorkforceName), MyInvocation.BoundParameters);
@@ -269,27 +319,27 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.UpdateWorkforceResponse, UpdateSMWorkforceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
+            }
+            context.IpAddressType = this.IpAddressType;
+            if (this.OidcConfig_AuthenticationRequestExtraParam != null)
+            {
+                context.OidcConfig_AuthenticationRequestExtraParam = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.OidcConfig_AuthenticationRequestExtraParam.Keys)
                 {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
+                    context.OidcConfig_AuthenticationRequestExtraParam.Add((String)hashKey, (System.String)(this.OidcConfig_AuthenticationRequestExtraParam[hashKey]));
                 }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkforceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.OidcConfig_AuthorizationEndpoint = this.OidcConfig_AuthorizationEndpoint;
             context.OidcConfig_ClientId = this.OidcConfig_ClientId;
             context.OidcConfig_ClientSecret = this.OidcConfig_ClientSecret;
             context.OidcConfig_Issuer = this.OidcConfig_Issuer;
             context.OidcConfig_JwksUri = this.OidcConfig_JwksUri;
             context.OidcConfig_LogoutEndpoint = this.OidcConfig_LogoutEndpoint;
+            context.OidcConfig_Scope = this.OidcConfig_Scope;
             context.OidcConfig_TokenEndpoint = this.OidcConfig_TokenEndpoint;
             context.OidcConfig_UserInfoEndpoint = this.OidcConfig_UserInfoEndpoint;
             if (this.SourceIpConfig_Cidr != null)
@@ -328,10 +378,24 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // create request
             var request = new Amazon.SageMaker.Model.UpdateWorkforceRequest();
             
+            if (cmdletContext.IpAddressType != null)
+            {
+                request.IpAddressType = cmdletContext.IpAddressType;
+            }
             
              // populate OidcConfig
             var requestOidcConfigIsNull = true;
             request.OidcConfig = new Amazon.SageMaker.Model.OidcConfig();
+            Dictionary<System.String, System.String> requestOidcConfig_oidcConfig_AuthenticationRequestExtraParam = null;
+            if (cmdletContext.OidcConfig_AuthenticationRequestExtraParam != null)
+            {
+                requestOidcConfig_oidcConfig_AuthenticationRequestExtraParam = cmdletContext.OidcConfig_AuthenticationRequestExtraParam;
+            }
+            if (requestOidcConfig_oidcConfig_AuthenticationRequestExtraParam != null)
+            {
+                request.OidcConfig.AuthenticationRequestExtraParams = requestOidcConfig_oidcConfig_AuthenticationRequestExtraParam;
+                requestOidcConfigIsNull = false;
+            }
             System.String requestOidcConfig_oidcConfig_AuthorizationEndpoint = null;
             if (cmdletContext.OidcConfig_AuthorizationEndpoint != null)
             {
@@ -390,6 +454,16 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (requestOidcConfig_oidcConfig_LogoutEndpoint != null)
             {
                 request.OidcConfig.LogoutEndpoint = requestOidcConfig_oidcConfig_LogoutEndpoint;
+                requestOidcConfigIsNull = false;
+            }
+            System.String requestOidcConfig_oidcConfig_Scope = null;
+            if (cmdletContext.OidcConfig_Scope != null)
+            {
+                requestOidcConfig_oidcConfig_Scope = cmdletContext.OidcConfig_Scope;
+            }
+            if (requestOidcConfig_oidcConfig_Scope != null)
+            {
+                request.OidcConfig.Scope = requestOidcConfig_oidcConfig_Scope;
                 requestOidcConfigIsNull = false;
             }
             System.String requestOidcConfig_oidcConfig_TokenEndpoint = null;
@@ -517,13 +591,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "UpdateWorkforce");
             try
             {
-                #if DESKTOP
-                return client.UpdateWorkforce(request);
-                #elif CORECLR
-                return client.UpdateWorkforceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateWorkforceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -540,12 +608,15 @@ namespace Amazon.PowerShell.Cmdlets.SM
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.SageMaker.WorkforceIpAddressType IpAddressType { get; set; }
+            public Dictionary<System.String, System.String> OidcConfig_AuthenticationRequestExtraParam { get; set; }
             public System.String OidcConfig_AuthorizationEndpoint { get; set; }
             public System.String OidcConfig_ClientId { get; set; }
             public System.String OidcConfig_ClientSecret { get; set; }
             public System.String OidcConfig_Issuer { get; set; }
             public System.String OidcConfig_JwksUri { get; set; }
             public System.String OidcConfig_LogoutEndpoint { get; set; }
+            public System.String OidcConfig_Scope { get; set; }
             public System.String OidcConfig_TokenEndpoint { get; set; }
             public System.String OidcConfig_UserInfoEndpoint { get; set; }
             public List<System.String> SourceIpConfig_Cidr { get; set; }

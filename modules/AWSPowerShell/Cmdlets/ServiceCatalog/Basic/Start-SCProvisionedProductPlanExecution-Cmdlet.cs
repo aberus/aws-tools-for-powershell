@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceCatalog;
 using Amazon.ServiceCatalog.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SC
     [AWSCmdlet("Calls the AWS Service Catalog ExecuteProvisionedProductPlan API operation.", Operation = new[] {"ExecuteProvisionedProductPlan"}, SelectReturnType = typeof(Amazon.ServiceCatalog.Model.ExecuteProvisionedProductPlanResponse))]
     [AWSCmdletOutput("Amazon.ServiceCatalog.Model.RecordDetail or Amazon.ServiceCatalog.Model.ExecuteProvisionedProductPlanResponse",
         "This cmdlet returns an Amazon.ServiceCatalog.Model.RecordDetail object.",
-        "The service call response (type Amazon.ServiceCatalog.Model.ExecuteProvisionedProductPlanResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceCatalog.Model.ExecuteProvisionedProductPlanResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartSCProvisionedProductPlanExecutionCmdlet : AmazonServiceCatalogClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceptLanguage
         /// <summary>
@@ -91,16 +94,6 @@ namespace Amazon.PowerShell.Cmdlets.SC
         public string Select { get; set; } = "RecordDetail";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IdempotencyToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IdempotencyToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IdempotencyToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -111,9 +104,13 @@ namespace Amazon.PowerShell.Cmdlets.SC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PlanId), MyInvocation.BoundParameters);
@@ -127,21 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.SC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceCatalog.Model.ExecuteProvisionedProductPlanResponse, StartSCProvisionedProductPlanExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IdempotencyToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AcceptLanguage = this.AcceptLanguage;
             context.IdempotencyToken = this.IdempotencyToken;
             context.PlanId = this.PlanId;
@@ -217,13 +204,7 @@ namespace Amazon.PowerShell.Cmdlets.SC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Service Catalog", "ExecuteProvisionedProductPlan");
             try
             {
-                #if DESKTOP
-                return client.ExecuteProvisionedProductPlan(request);
-                #elif CORECLR
-                return client.ExecuteProvisionedProductPlanAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExecuteProvisionedProductPlanAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

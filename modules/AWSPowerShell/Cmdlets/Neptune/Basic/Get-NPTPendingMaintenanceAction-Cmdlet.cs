@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Neptune;
 using Amazon.Neptune.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NPT
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.NPT
     [AWSCmdlet("Calls the Amazon Neptune DescribePendingMaintenanceActions API operation.", Operation = new[] {"DescribePendingMaintenanceActions"}, SelectReturnType = typeof(Amazon.Neptune.Model.DescribePendingMaintenanceActionsResponse))]
     [AWSCmdletOutput("Amazon.Neptune.Model.ResourcePendingMaintenanceActions or Amazon.Neptune.Model.DescribePendingMaintenanceActionsResponse",
         "This cmdlet returns a collection of Amazon.Neptune.Model.ResourcePendingMaintenanceActions objects.",
-        "The service call response (type Amazon.Neptune.Model.DescribePendingMaintenanceActionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Neptune.Model.DescribePendingMaintenanceActionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetNPTPendingMaintenanceActionCmdlet : AmazonNeptuneClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -51,7 +54,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         /// Names (ARNs). The results list will only include pending maintenance actions for the
         /// DB clusters identified by these ARNs.</para></li><li><para><c>db-instance-id</c> - Accepts DB instance identifiers and DB instance ARNs. The
         /// results list will only include pending maintenance actions for the DB instances identified
-        /// by these ARNs.</para></li></ul>
+        /// by these ARNs.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +85,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,16 +122,6 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         public string Select { get; set; } = "PendingMaintenanceActions";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -135,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -145,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.NPT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Neptune.Model.DescribePendingMaintenanceActionsResponse, GetNPTPendingMaintenanceActionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.Neptune.Model.Filter>(this.Filter);
@@ -190,9 +181,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Neptune.Model.DescribePendingMaintenanceActionsRequest();
@@ -260,7 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Neptune.Model.DescribePendingMaintenanceActionsRequest();
@@ -319,7 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.PendingMaintenanceActions.Count;
+                    int _receivedThisCall = response.PendingMaintenanceActions?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -368,13 +357,7 @@ namespace Amazon.PowerShell.Cmdlets.NPT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Neptune", "DescribePendingMaintenanceActions");
             try
             {
-                #if DESKTOP
-                return client.DescribePendingMaintenanceActions(request);
-                #elif CORECLR
-                return client.DescribePendingMaintenanceActionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribePendingMaintenanceActionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,51 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
-    /// Imports a claimed phone number from an external service, such as Amazon Pinpoint,
-    /// into an Amazon Connect instance. You can call this API only in the same Amazon Web
-    /// Services Region where the Amazon Connect instance was created.
+    /// Imports a claimed phone number from an external service, such as Amazon Web Services
+    /// End User Messaging, into an Amazon Connect instance. You can call this API only in
+    /// the same Amazon Web Services Region where the Amazon Connect instance was created.
+    /// 
+    ///  <important><para>
+    /// Call the <a href="https://docs.aws.amazon.com/connect/latest/APIReference/API_DescribePhoneNumber.html">DescribePhoneNumber</a>
+    /// API to verify the status of a previous <c>ImportPhoneNumber</c> operation. 
+    /// </para></important><para>
+    /// If you plan to claim or import numbers and then release numbers frequently, contact
+    /// us for a service quota exception. Otherwise, it is possible you will be blocked from
+    /// claiming and releasing any more numbers until up to 180 days past the oldest number
+    /// released has expired. 
+    /// </para><para>
+    ///  By default you can claim or import and then release up to 200% of your maximum number
+    /// of active phone numbers. If you claim or import and then release phone numbers using
+    /// the UI or API during a rolling 180 day cycle that exceeds 200% of your phone number
+    /// service level quota, you will be blocked from claiming or importing any more numbers
+    /// until 180 days past the oldest number released has expired. 
+    /// </para><para>
+    /// For example, if you already have 99 claimed or imported numbers and a service level
+    /// quota of 99 phone numbers, and in any 180 day period you release 99, claim 99, and
+    /// then release 99, you will have exceeded the 200% limit. At that point you are blocked
+    /// from claiming any more numbers until you open an Amazon Web Services Support ticket.
+    /// 
+    /// </para>
     /// </summary>
     [Cmdlet("Import", "CONNPhoneNumber", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Connect.Model.ImportPhoneNumberResponse")]
     [AWSCmdlet("Calls the Amazon Connect Service ImportPhoneNumber API operation.", Operation = new[] {"ImportPhoneNumber"}, SelectReturnType = typeof(Amazon.Connect.Model.ImportPhoneNumberResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.ImportPhoneNumberResponse",
-        "This cmdlet returns an Amazon.Connect.Model.ImportPhoneNumberResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Connect.Model.ImportPhoneNumberResponse object containing multiple properties."
     )]
     public partial class ImportCONNPhoneNumberCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InstanceId
         /// <summary>
@@ -75,8 +100,9 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>The claimed phone number ARN being imported from the external service, such as Amazon
-        /// Pinpoint. If it is from Amazon Pinpoint, it looks like the ARN of the phone number
-        /// to import from Amazon Pinpoint.</para>
+        /// Web Services End User Messaging. If it is from Amazon Web Services End User Messaging,
+        /// it looks like the ARN of the phone number to import from Amazon Web Services End User
+        /// Messaging.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -94,7 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>The tags used to organize, track, or control access for this resource. For example,
-        /// { "Tags": {"key1":"value1", "key2":"value2"} }.</para>
+        /// { "Tags": {"key1":"value1", "key2":"value2"} }.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,16 +156,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -146,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -162,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.ImportPhoneNumberResponse, ImportCONNPhoneNumberCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.InstanceId = this.InstanceId;
             #if MODULAR
@@ -275,13 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "ImportPhoneNumber");
             try
             {
-                #if DESKTOP
-                return client.ImportPhoneNumber(request);
-                #elif CORECLR
-                return client.ImportPhoneNumberAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportPhoneNumberAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

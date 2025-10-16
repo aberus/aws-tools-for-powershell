@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -35,20 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.PutGeofenceResponse")]
     [AWSCmdlet("Calls the Amazon Location Service PutGeofence API operation.", Operation = new[] {"PutGeofence"}, SelectReturnType = typeof(Amazon.LocationService.Model.PutGeofenceResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.PutGeofenceResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.PutGeofenceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.PutGeofenceResponse object containing multiple properties."
     )]
     public partial class SetLOCGeofenceCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Circle_Center
         /// <summary>
         /// <para>
         /// <para>A single point geometry, specifying the center of the circle, using <a href="https://gisgeography.com/wgs84-world-geodetic-system/">WGS
-        /// 84</a> coordinates, in the form <c>[longitude, latitude]</c>.</para>
+        /// 84</a> coordinates, in the form <c>[longitude, latitude]</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,6 +78,25 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public System.String CollectionName { get; set; }
         #endregion
         
+        #region Parameter Geometry_Geobuf
+        /// <summary>
+        /// <para>
+        /// <para>Geobuf is a compact binary encoding for geographic data that provides lossless compression
+        /// of GeoJSON polygons. The Geobuf must be Base64-encoded.</para><para>This parameter can contain a Geobuf-encoded GeoJSON geometry object of type <c>Polygon</c><i>OR</i><c>MultiPolygon</c>. For more information and specific configuration requirements
+        /// for these object types, see <a href="https://docs.aws.amazon.com/location/latest/APIReference/API_WaypointGeofencing_GeofenceGeometry.html#location-Type-WaypointGeofencing_GeofenceGeometry-Polygon">Polygon</a>
+        /// and <a href="https://docs.aws.amazon.com/location/latest/APIReference/API_WaypointGeofencing_GeofenceGeometry.html#location-Type-WaypointGeofencing_GeofenceGeometry-MultiPolygon">MultiPolygon</a>.</para><note><para>The following limitations apply specifically to geometries defined using the <c>Geobuf</c>
+        /// parameter, and supercede the corresponding limitations of the <c>Polygon</c> and <c>MultiPolygon</c>
+        /// parameters:</para><ul><li><para>A <c>Polygon</c> in <c>Geobuf</c> format can have up to 25,000 rings and up to 100,000
+        /// total vertices, including all vertices from all component rings.</para></li><li><para>A <c>MultiPolygon</c> in <c>Geobuf</c> format can contain up to 10,000 <c>Polygons</c>
+        /// and up to 100,000 total vertices, including all vertices from all component <c>Polygons</c>.</para></li></ul></note>
+        /// </para>
+        /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Amazon.PowerShell.Common.MemoryStreamParameterConverter]
+        public byte[] Geometry_Geobuf { get; set; }
+        #endregion
+        
         #region Parameter GeofenceId
         /// <summary>
         /// <para>
@@ -94,7 +118,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <summary>
         /// <para>
         /// <para>Associates one of more properties with the geofence. A property is a key-value pair
-        /// stored with the geofence and added to any geofence event triggered with that geofence.</para><para>Format: <c>"key" : "value"</c></para>
+        /// stored with the geofence and added to any geofence event triggered with that geofence.</para><para>Format: <c>"key" : "value"</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,16 +130,53 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public System.Collections.Hashtable GeofenceProperty { get; set; }
         #endregion
         
+        #region Parameter Geometry_MultiPolygon
+        /// <summary>
+        /// <para>
+        /// <para>A <c>MultiPolygon</c> is a list of up to 250 <c>Polygon</c> elements which represent
+        /// the shape of a geofence. The <c>Polygon</c> components of a <c>MultiPolygon</c> geometry
+        /// can define separate geographical areas that are considered part of the same geofence,
+        /// perimeters of larger exterior areas with smaller interior spaces that are excluded
+        /// from the geofence, or some combination of these use cases to form complex geofence
+        /// boundaries.</para><para>For more information and specific configuration requirements for the <c>Polygon</c>
+        /// components that form a <c>MultiPolygon</c>, see <a href="https://docs.aws.amazon.com/location/latest/APIReference/API_WaypointGeofencing_GeofenceGeometry.html#location-Type-WaypointGeofencing_GeofenceGeometry-Polygon">Polygon</a>.</para><note><para>The following additional requirements and limitations apply to geometries defined
+        /// using the <c>MultiPolygon</c> parameter:</para><ul><li><para>The entire <c>MultiPolygon</c> must consist of no more than 1,000 vertices, including
+        /// all vertices from all component <c>Polygons</c>.</para></li><li><para>Each edge of a component <c>Polygon</c> must intersect no more than 5 edges from other
+        /// <c>Polygons</c>. Parallel edges that are shared but do not cross are not counted toward
+        /// this limit.</para></li><li><para>The total number of intersecting edges of component <c>Polygons</c> must be no more
+        /// than 100,000. Parallel edges that are shared but do not cross are not counted toward
+        /// this limit.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Double[][][][] Geometry_MultiPolygon { get; set; }
+        #endregion
+        
         #region Parameter Geometry_Polygon
         /// <summary>
         /// <para>
-        /// <para>A polygon is a list of linear rings which are each made up of a list of vertices.</para><para>Each vertex is a 2-dimensional point of the form: <c>[longitude, latitude]</c>. This
-        /// is represented as an array of doubles of length 2 (so <c>[double, double]</c>).</para><para>An array of 4 or more vertices, where the first and last vertex are the same (to form
-        /// a closed boundary), is called a linear ring. The linear ring vertices must be listed
-        /// in counter-clockwise order around the ring’s interior. The linear ring is represented
-        /// as an array of vertices, or an array of arrays of doubles (<c>[[double, double], ...]</c>).</para><para>A geofence consists of a single linear ring. To allow for future expansion, the Polygon
-        /// parameter takes an array of linear rings, which is represented as an array of arrays
-        /// of arrays of doubles (<c>[[[double, double], ...], ...]</c>).</para><para>A linear ring for use in geofences can consist of between 4 and 1,000 vertices.</para>
+        /// <para>A <c>Polygon</c> is a list of up to 250 linear rings which represent the shape of
+        /// a geofence. This list <i>must</i> include 1 exterior ring (representing the outer
+        /// perimeter of the geofence), and can optionally include up to 249 interior rings (representing
+        /// polygonal spaces within the perimeter, which are excluded from the geofence area).</para><para>A linear ring is an array of 4 or more vertices, where the first and last vertex are
+        /// the same (to form a closed boundary). Each vertex is a 2-dimensional point represented
+        /// as an array of doubles of length 2: <c>[longitude, latitude]</c>.</para><para>Each linear ring is represented as an array of arrays of doubles (<c>[[longitude,
+        /// latitude], [longitude, latitude], ...]</c>). The vertices for the exterior ring must
+        /// be listed in <i>counter-clockwise</i> sequence. Vertices for all interior rings must
+        /// be listed in <i>clockwise</i> sequence.</para><para>The list of linear rings that describe the entire <c>Polygon</c> is represented as
+        /// an array of arrays of arrays of doubles (<c>[[[longitude, latitude], [longitude, latitude],
+        /// ...], [[longitude, latitude], [longitude, latitude], ...], ...]</c>). The exterior
+        /// ring must be listed first, before any interior rings.</para><note><para>The following additional requirements and limitations apply to geometries defined
+        /// using the <c>Polygon</c> parameter:</para><ul><li><para>The entire <c>Polygon</c> must consist of no more than 1,000 vertices, including all
+        /// vertices from the exterior ring and all interior rings.</para></li><li><para>Rings must not touch or cross each other.</para></li><li><para>All interior rings must be fully contained within the exterior ring.</para></li><li><para>Interior rings must not contain other interior rings.</para></li><li><para>No ring is permitted to intersect itself.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,16 +206,6 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CollectionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CollectionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CollectionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -161,9 +216,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CollectionName), MyInvocation.BoundParameters);
@@ -177,21 +236,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.PutGeofenceResponse, SetLOCGeofenceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CollectionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CollectionName = this.CollectionName;
             #if MODULAR
             if (this.CollectionName == null && ParameterWasBound(nameof(this.CollectionName)))
@@ -214,6 +263,31 @@ namespace Amazon.PowerShell.Cmdlets.LOC
                     context.GeofenceProperty.Add((String)hashKey, (System.String)(this.GeofenceProperty[hashKey]));
                 }
             }
+            if (this.Circle_Center != null)
+            {
+                context.Circle_Center = new List<System.Double>(this.Circle_Center);
+            }
+            context.Circle_Radius = this.Circle_Radius;
+            context.Geometry_Geobuf = this.Geometry_Geobuf;
+            if (this.Geometry_MultiPolygon != null)
+            {
+                context.Geometry_MultiPolygon = new List<List<List<List<System.Double>>>>();
+                foreach (var innerList in this.Geometry_MultiPolygon)
+                {
+                    var innerListCopy = new List<List<List<System.Double>>>();
+                    context.Geometry_MultiPolygon.Add(innerListCopy);
+                    foreach (var secondInnerList in innerList)
+                    {
+                        var secondInnerListCopy = new List<List<System.Double>>();
+                        innerListCopy.Add(secondInnerListCopy);
+                        foreach (var innermostList in secondInnerList)
+                        {
+                            var innermostListCopy = new List<System.Double>(innermostList);
+                            secondInnerListCopy.Add(innermostListCopy);
+                        }
+                    }
+                }
+            }
             if (this.Geometry_Polygon != null)
             {
                 context.Geometry_Polygon = new List<List<List<System.Double>>>();
@@ -228,11 +302,6 @@ namespace Amazon.PowerShell.Cmdlets.LOC
                     }
                 }
             }
-            if (this.Circle_Center != null)
-            {
-                context.Circle_Center = new List<System.Double>(this.Circle_Center);
-            }
-            context.Circle_Radius = this.Circle_Radius;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -245,98 +314,131 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         
         public object Execute(ExecutorContext context)
         {
-            var cmdletContext = context as CmdletContext;
-            // create request
-            var request = new Amazon.LocationService.Model.PutGeofenceRequest();
+            System.IO.MemoryStream _Geometry_GeobufStream = null;
             
-            if (cmdletContext.CollectionName != null)
-            {
-                request.CollectionName = cmdletContext.CollectionName;
-            }
-            if (cmdletContext.GeofenceId != null)
-            {
-                request.GeofenceId = cmdletContext.GeofenceId;
-            }
-            if (cmdletContext.GeofenceProperty != null)
-            {
-                request.GeofenceProperties = cmdletContext.GeofenceProperty;
-            }
-            
-             // populate Geometry
-            var requestGeometryIsNull = true;
-            request.Geometry = new Amazon.LocationService.Model.GeofenceGeometry();
-            List<List<List<System.Double>>> requestGeometry_geometry_Polygon = null;
-            if (cmdletContext.Geometry_Polygon != null)
-            {
-                requestGeometry_geometry_Polygon = cmdletContext.Geometry_Polygon;
-            }
-            if (requestGeometry_geometry_Polygon != null)
-            {
-                request.Geometry.Polygon = requestGeometry_geometry_Polygon;
-                requestGeometryIsNull = false;
-            }
-            Amazon.LocationService.Model.Circle requestGeometry_geometry_Circle = null;
-            
-             // populate Circle
-            var requestGeometry_geometry_CircleIsNull = true;
-            requestGeometry_geometry_Circle = new Amazon.LocationService.Model.Circle();
-            List<System.Double> requestGeometry_geometry_Circle_circle_Center = null;
-            if (cmdletContext.Circle_Center != null)
-            {
-                requestGeometry_geometry_Circle_circle_Center = cmdletContext.Circle_Center;
-            }
-            if (requestGeometry_geometry_Circle_circle_Center != null)
-            {
-                requestGeometry_geometry_Circle.Center = requestGeometry_geometry_Circle_circle_Center;
-                requestGeometry_geometry_CircleIsNull = false;
-            }
-            System.Double? requestGeometry_geometry_Circle_circle_Radius = null;
-            if (cmdletContext.Circle_Radius != null)
-            {
-                requestGeometry_geometry_Circle_circle_Radius = cmdletContext.Circle_Radius.Value;
-            }
-            if (requestGeometry_geometry_Circle_circle_Radius != null)
-            {
-                requestGeometry_geometry_Circle.Radius = requestGeometry_geometry_Circle_circle_Radius.Value;
-                requestGeometry_geometry_CircleIsNull = false;
-            }
-             // determine if requestGeometry_geometry_Circle should be set to null
-            if (requestGeometry_geometry_CircleIsNull)
-            {
-                requestGeometry_geometry_Circle = null;
-            }
-            if (requestGeometry_geometry_Circle != null)
-            {
-                request.Geometry.Circle = requestGeometry_geometry_Circle;
-                requestGeometryIsNull = false;
-            }
-             // determine if request.Geometry should be set to null
-            if (requestGeometryIsNull)
-            {
-                request.Geometry = null;
-            }
-            
-            CmdletOutput output;
-            
-            // issue call
-            var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
             try
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                var cmdletContext = context as CmdletContext;
+                // create request
+                var request = new Amazon.LocationService.Model.PutGeofenceRequest();
+                
+                if (cmdletContext.CollectionName != null)
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
+                    request.CollectionName = cmdletContext.CollectionName;
+                }
+                if (cmdletContext.GeofenceId != null)
+                {
+                    request.GeofenceId = cmdletContext.GeofenceId;
+                }
+                if (cmdletContext.GeofenceProperty != null)
+                {
+                    request.GeofenceProperties = cmdletContext.GeofenceProperty;
+                }
+                
+                 // populate Geometry
+                var requestGeometryIsNull = true;
+                request.Geometry = new Amazon.LocationService.Model.GeofenceGeometry();
+                System.IO.MemoryStream requestGeometry_geometry_Geobuf = null;
+                if (cmdletContext.Geometry_Geobuf != null)
+                {
+                    _Geometry_GeobufStream = new System.IO.MemoryStream(cmdletContext.Geometry_Geobuf);
+                    requestGeometry_geometry_Geobuf = _Geometry_GeobufStream;
+                }
+                if (requestGeometry_geometry_Geobuf != null)
+                {
+                    request.Geometry.Geobuf = requestGeometry_geometry_Geobuf;
+                    requestGeometryIsNull = false;
+                }
+                List<List<List<List<System.Double>>>> requestGeometry_geometry_MultiPolygon = null;
+                if (cmdletContext.Geometry_MultiPolygon != null)
+                {
+                    requestGeometry_geometry_MultiPolygon = cmdletContext.Geometry_MultiPolygon;
+                }
+                if (requestGeometry_geometry_MultiPolygon != null)
+                {
+                    request.Geometry.MultiPolygon = requestGeometry_geometry_MultiPolygon;
+                    requestGeometryIsNull = false;
+                }
+                List<List<List<System.Double>>> requestGeometry_geometry_Polygon = null;
+                if (cmdletContext.Geometry_Polygon != null)
+                {
+                    requestGeometry_geometry_Polygon = cmdletContext.Geometry_Polygon;
+                }
+                if (requestGeometry_geometry_Polygon != null)
+                {
+                    request.Geometry.Polygon = requestGeometry_geometry_Polygon;
+                    requestGeometryIsNull = false;
+                }
+                Amazon.LocationService.Model.Circle requestGeometry_geometry_Circle = null;
+                
+                 // populate Circle
+                var requestGeometry_geometry_CircleIsNull = true;
+                requestGeometry_geometry_Circle = new Amazon.LocationService.Model.Circle();
+                List<System.Double> requestGeometry_geometry_Circle_circle_Center = null;
+                if (cmdletContext.Circle_Center != null)
+                {
+                    requestGeometry_geometry_Circle_circle_Center = cmdletContext.Circle_Center;
+                }
+                if (requestGeometry_geometry_Circle_circle_Center != null)
+                {
+                    requestGeometry_geometry_Circle.Center = requestGeometry_geometry_Circle_circle_Center;
+                    requestGeometry_geometry_CircleIsNull = false;
+                }
+                System.Double? requestGeometry_geometry_Circle_circle_Radius = null;
+                if (cmdletContext.Circle_Radius != null)
+                {
+                    requestGeometry_geometry_Circle_circle_Radius = cmdletContext.Circle_Radius.Value;
+                }
+                if (requestGeometry_geometry_Circle_circle_Radius != null)
+                {
+                    requestGeometry_geometry_Circle.Radius = requestGeometry_geometry_Circle_circle_Radius.Value;
+                    requestGeometry_geometry_CircleIsNull = false;
+                }
+                 // determine if requestGeometry_geometry_Circle should be set to null
+                if (requestGeometry_geometry_CircleIsNull)
+                {
+                    requestGeometry_geometry_Circle = null;
+                }
+                if (requestGeometry_geometry_Circle != null)
+                {
+                    request.Geometry.Circle = requestGeometry_geometry_Circle;
+                    requestGeometryIsNull = false;
+                }
+                 // determine if request.Geometry should be set to null
+                if (requestGeometryIsNull)
+                {
+                    request.Geometry = null;
+                }
+                
+                CmdletOutput output;
+                
+                // issue call
+                var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
+                try
+                {
+                    var response = CallAWSServiceOperation(client, request);
+                    object pipelineOutput = null;
+                    pipelineOutput = cmdletContext.Select(response, this);
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                return output;
             }
-            catch (Exception e)
+            finally
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                if( _Geometry_GeobufStream != null)
+                {
+                    _Geometry_GeobufStream.Dispose();
+                }
             }
-            
-            return output;
         }
         
         public ExecutorContext CreateContext()
@@ -353,13 +455,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "PutGeofence");
             try
             {
-                #if DESKTOP
-                return client.PutGeofence(request);
-                #elif CORECLR
-                return client.PutGeofenceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutGeofenceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -379,9 +475,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             public System.String CollectionName { get; set; }
             public System.String GeofenceId { get; set; }
             public Dictionary<System.String, System.String> GeofenceProperty { get; set; }
-            public List<List<List<System.Double>>> Geometry_Polygon { get; set; }
             public List<System.Double> Circle_Center { get; set; }
             public System.Double? Circle_Radius { get; set; }
+            public byte[] Geometry_Geobuf { get; set; }
+            public List<List<List<List<System.Double>>>> Geometry_MultiPolygon { get; set; }
+            public List<List<List<System.Double>>> Geometry_Polygon { get; set; }
             public System.Func<Amazon.LocationService.Model.PutGeofenceResponse, SetLOCGeofenceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

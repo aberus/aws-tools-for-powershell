@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES2
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     [OutputType("Amazon.SimpleEmailV2.Model.GetDeliverabilityTestReportResponse")]
     [AWSCmdlet("Calls the Amazon Simple Email Service V2 (SES V2) GetDeliverabilityTestReport API operation.", Operation = new[] {"GetDeliverabilityTestReport"}, SelectReturnType = typeof(Amazon.SimpleEmailV2.Model.GetDeliverabilityTestReportResponse))]
     [AWSCmdletOutput("Amazon.SimpleEmailV2.Model.GetDeliverabilityTestReportResponse",
-        "This cmdlet returns an Amazon.SimpleEmailV2.Model.GetDeliverabilityTestReportResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleEmailV2.Model.GetDeliverabilityTestReportResponse object containing multiple properties."
     )]
     public partial class GetSES2DeliverabilityTestReportCmdlet : AmazonSimpleEmailServiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ReportId
         /// <summary>
@@ -69,19 +72,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReportId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReportId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReportId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -89,21 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleEmailV2.Model.GetDeliverabilityTestReportResponse, GetSES2DeliverabilityTestReportCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReportId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ReportId = this.ReportId;
             #if MODULAR
             if (this.ReportId == null && ParameterWasBound(nameof(this.ReportId)))
@@ -169,13 +156,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service V2 (SES V2)", "GetDeliverabilityTestReport");
             try
             {
-                #if DESKTOP
-                return client.GetDeliverabilityTestReport(request);
-                #elif CORECLR
-                return client.GetDeliverabilityTestReportAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDeliverabilityTestReportAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

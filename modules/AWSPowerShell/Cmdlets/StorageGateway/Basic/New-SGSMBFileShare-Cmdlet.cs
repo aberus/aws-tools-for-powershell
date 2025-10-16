@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StorageGateway;
 using Amazon.StorageGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SG
 {
     /// <summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
     [AWSCmdlet("Calls the AWS Storage Gateway CreateSMBFileShare API operation.", Operation = new[] {"CreateSMBFileShare"}, SelectReturnType = typeof(Amazon.StorageGateway.Model.CreateSMBFileShareResponse))]
     [AWSCmdletOutput("System.String or Amazon.StorageGateway.Model.CreateSMBFileShareResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.StorageGateway.Model.CreateSMBFileShareResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.StorageGateway.Model.CreateSMBFileShareResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSGSMBFileShareCmdlet : AmazonStorageGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessBasedEnumeration
         /// <summary>
@@ -74,7 +77,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// privileges on the file share. These users can do all file operations as the super-user.
         /// Acceptable formats include: <c>DOMAIN\User1</c>, <c>user1</c>, <c>@group1</c>, and
         /// <c>@DOMAIN\group1</c>.</para><important><para>Use this option very carefully, because any user in this list can do anything they
-        /// like on the file share, regardless of file permissions.</para></important>
+        /// like on the file share, regardless of file permissions.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,11 +160,28 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public System.String DefaultStorageClass { get; set; }
         #endregion
         
+        #region Parameter EncryptionType
+        /// <summary>
+        /// <para>
+        /// <para>A value that specifies the type of server-side encryption that the file share will
+        /// use for the data that it stores in Amazon S3.</para><note><para>We recommend using <c>EncryptionType</c> instead of <c>KMSEncrypted</c> to set the
+        /// file share encryption method. You do not need to provide values for both parameters.</para><para>If values for both parameters exist in the same request, then the specified encryption
+        /// methods must not conflict. For example, if <c>EncryptionType</c> is <c>SseS3</c>,
+        /// then <c>KMSEncrypted</c> must be <c>false</c>. If <c>EncryptionType</c> is <c>SseKms</c>
+        /// or <c>DsseKms</c>, then <c>KMSEncrypted</c> must be <c>true</c>.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.StorageGateway.EncryptionType")]
+        public Amazon.StorageGateway.EncryptionType EncryptionType { get; set; }
+        #endregion
+        
         #region Parameter FileShareName
         /// <summary>
         /// <para>
         /// <para>The name of the file share. Optional.</para><note><para><c>FileShareName</c> must be set if an S3 prefix name is set in <c>LocationARN</c>,
-        /// or if an access point or access point alias is used.</para></note>
+        /// or if an access point or access point alias is used.</para><para>A valid SMB file share name cannot contain the following characters: <c>[</c>,<c>]</c>,<c>#</c>,<c>;</c>,<c>&lt;</c>,<c>&gt;</c>,<c>:</c>,<c>"</c>,<c>\</c>,<c>/</c>,<c>|</c>,<c>?</c>,<c>*</c>,<c>+</c>,
+        /// or ASCII control characters <c>1-31</c>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -199,30 +223,24 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// <para>A list of users or groups in the Active Directory that are not allowed to access the
         /// file share. A group must be prefixed with the @ character. Acceptable formats include:
         /// <c>DOMAIN\User1</c>, <c>user1</c>, <c>@group1</c>, and <c>@DOMAIN\group1</c>. Can
-        /// only be set if Authentication is set to <c>ActiveDirectory</c>.</para>
+        /// only be set if Authentication is set to <c>ActiveDirectory</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String[] InvalidUserList { get; set; }
         #endregion
         
-        #region Parameter KMSEncrypted
-        /// <summary>
-        /// <para>
-        /// <para>Set to <c>true</c> to use Amazon S3 server-side encryption with your own KMS key,
-        /// or <c>false</c> to use a key managed by Amazon S3. Optional.</para><para>Valid Values: <c>true</c> | <c>false</c></para>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.Boolean? KMSEncrypted { get; set; }
-        #endregion
-        
         #region Parameter KMSKey
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of a symmetric customer master key (CMK) used for Amazon
-        /// S3 server-side encryption. Storage Gateway does not support asymmetric CMKs. This
-        /// value can only be set when <c>KMSEncrypted</c> is <c>true</c>. Optional.</para>
+        /// <para>Optional. The Amazon Resource Name (ARN) of a symmetric customer master key (CMK)
+        /// used for Amazon S3 server-side encryption. Storage Gateway does not support asymmetric
+        /// CMKs. This value must be set if <c>KMSEncrypted</c> is <c>true</c>, or if <c>EncryptionType</c>
+        /// is <c>SseKms</c> or <c>DsseKms</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -235,7 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// <para>A custom ARN for the backend storage used for storing data for file shares. It includes
         /// a resource ARN with an optional prefix concatenation. The prefix must end with a forward
         /// slash (/).</para><note><para>You can specify LocationARN as a bucket ARN, access point ARN or access point alias,
-        /// as shown in the following examples.</para><para>Bucket ARN:</para><para><c>arn:aws:s3:::my-bucket/prefix/</c></para><para>Access point ARN:</para><para><c>arn:aws:s3:region:account-id:accesspoint/access-point-name/prefix/</c></para><para>If you specify an access point, the bucket policy must be configured to delegate access
+        /// as shown in the following examples.</para><para>Bucket ARN:</para><para><c>arn:aws:s3:::amzn-s3-demo-bucket/prefix/</c></para><para>Access point ARN:</para><para><c>arn:aws:s3:region:account-id:accesspoint/access-point-name/prefix/</c></para><para>If you specify an access point, the bucket policy must be configured to delegate access
         /// control to the access point. For information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-policies.html#access-points-delegating-control">Delegating
         /// access control to access points</a> in the <i>Amazon S3 User Guide</i>.</para><para>Access point alias:</para><para><c>test-ap-ab123cdef4gehijklmn5opqrstuvuse1a-s3alias</c></para></note>
         /// </para>
@@ -259,7 +277,9 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// generating an <c>ObjectUploaded</c> notification. Because clients can make many small
         /// writes to files, it's best to set this parameter for as long as possible to avoid
         /// generating multiple notifications for the same file in a small time period.</para><note><para><c>SettlingTimeInSeconds</c> has no effect on the timing of the object uploading
-        /// to Amazon S3, only the timing of the notification.</para></note><para>The following example sets <c>NotificationPolicy</c> on with <c>SettlingTimeInSeconds</c>
+        /// to Amazon S3, only the timing of the notification.</para><para>This setting is not meant to specify an exact time at which the notification will
+        /// be sent. In some cases, the gateway might require more than the specified delay time
+        /// to generate and send notifications.</para></note><para>The following example sets <c>NotificationPolicy</c> on with <c>SettlingTimeInSeconds</c>
         /// set to 60.</para><para><c>{\"Upload\": {\"SettlingTimeInSeconds\": 60}}</c></para><para>The following example sets <c>NotificationPolicy</c> off.</para><para><c>{}</c></para>
         /// </para>
         /// </summary>
@@ -339,9 +359,9 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// <summary>
         /// <para>
         /// <para>Set this value to <c>true</c> to enable access control list (ACL) on the SMB file
-        /// share. Set it to <c>false</c> to map file and directory permissions to the POSIX permissions.</para><para>For more information, see <a href="https://docs.aws.amazon.com/storagegateway/latest/userguide/smb-acl.html">Using
-        /// Microsoft Windows ACLs to control access to an SMB file share</a> in the <i>Storage
-        /// Gateway User Guide</i>.</para><para>Valid Values: <c>true</c> | <c>false</c></para>
+        /// share. Set it to <c>false</c> to map file and directory permissions to the POSIX permissions.</para><para>For more information, see <a href="https://docs.aws.amazon.com/filegateway/latest/files3/smb-acl.html">Using
+        /// Windows ACLs to limit SMB file share access</a> in the <i>Amazon S3 File Gateway User
+        /// Guide</i>.</para><para>Valid Values: <c>true</c> | <c>false</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -355,7 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// key-value pair.</para><note><para>Valid characters for key and value are letters, spaces, and numbers representable
         /// in UTF-8 format, and the following special characters: + - = . _ : / @. The maximum
         /// length of a tag's key is 128 characters, and the maximum length for a tag's value
-        /// is 256.</para></note>
+        /// is 256.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -369,7 +393,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// <para>A list of users or groups in the Active Directory that are allowed to access the file
         /// <a href="" /> share. A group must be prefixed with the @ character. Acceptable formats
         /// include: <c>DOMAIN\User1</c>, <c>user1</c>, <c>@group1</c>, and <c>@DOMAIN\group1</c>.
-        /// Can only be set if Authentication is set to <c>ActiveDirectory</c>.</para>
+        /// Can only be set if Authentication is set to <c>ActiveDirectory</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -407,6 +435,24 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public System.String ClientToken { get; set; }
         #endregion
         
+        #region Parameter KMSEncrypted
+        /// <summary>
+        /// <para>
+        /// <para>Optional. Set to <c>true</c> to use Amazon S3 server-side encryption with your own
+        /// KMS key (SSE-KMS), or <c>false</c> to use a key managed by Amazon S3 (SSE-S3). To
+        /// use dual-layer encryption (DSSE-KMS), set the <c>EncryptionType</c> parameter instead.</para><note><para>We recommend using <c>EncryptionType</c> instead of <c>KMSEncrypted</c> to set the
+        /// file share encryption method. You do not need to provide values for both parameters.</para><para>If values for both parameters exist in the same request, then the specified encryption
+        /// methods must not conflict. For example, if <c>EncryptionType</c> is <c>SseS3</c>,
+        /// then <c>KMSEncrypted</c> must be <c>false</c>. If <c>EncryptionType</c> is <c>SseKms</c>
+        /// or <c>DsseKms</c>, then <c>KMSEncrypted</c> must be <c>true</c>.</para></note><para>Valid Values: <c>true</c> | <c>false</c></para>
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("KMSEncrypted is deprecated, use EncryptionType instead.")]
+        public System.Boolean? KMSEncrypted { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'FileShareARN'.
@@ -416,16 +462,6 @@ namespace Amazon.PowerShell.Cmdlets.SG
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "FileShareARN";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GatewayARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GatewayARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GatewayARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -438,9 +474,13 @@ namespace Amazon.PowerShell.Cmdlets.SG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GatewayARN), MyInvocation.BoundParameters);
@@ -454,21 +494,11 @@ namespace Amazon.PowerShell.Cmdlets.SG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StorageGateway.Model.CreateSMBFileShareResponse, NewSGSMBFileShareCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GatewayARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessBasedEnumeration = this.AccessBasedEnumeration;
             if (this.AdminUserList != null)
             {
@@ -487,6 +517,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             }
             #endif
             context.DefaultStorageClass = this.DefaultStorageClass;
+            context.EncryptionType = this.EncryptionType;
             context.FileShareName = this.FileShareName;
             context.GatewayARN = this.GatewayARN;
             #if MODULAR
@@ -500,7 +531,9 @@ namespace Amazon.PowerShell.Cmdlets.SG
             {
                 context.InvalidUserList = new List<System.String>(this.InvalidUserList);
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KMSEncrypted = this.KMSEncrypted;
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KMSKey = this.KMSKey;
             context.LocationARN = this.LocationARN;
             #if MODULAR
@@ -598,6 +631,10 @@ namespace Amazon.PowerShell.Cmdlets.SG
             {
                 request.DefaultStorageClass = cmdletContext.DefaultStorageClass;
             }
+            if (cmdletContext.EncryptionType != null)
+            {
+                request.EncryptionType = cmdletContext.EncryptionType;
+            }
             if (cmdletContext.FileShareName != null)
             {
                 request.FileShareName = cmdletContext.FileShareName;
@@ -614,10 +651,12 @@ namespace Amazon.PowerShell.Cmdlets.SG
             {
                 request.InvalidUserList = cmdletContext.InvalidUserList;
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.KMSEncrypted != null)
             {
                 request.KMSEncrypted = cmdletContext.KMSEncrypted.Value;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.KMSKey != null)
             {
                 request.KMSKey = cmdletContext.KMSKey;
@@ -704,13 +743,7 @@ namespace Amazon.PowerShell.Cmdlets.SG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Storage Gateway", "CreateSMBFileShare");
             try
             {
-                #if DESKTOP
-                return client.CreateSMBFileShare(request);
-                #elif CORECLR
-                return client.CreateSMBFileShareAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSMBFileShareAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -736,10 +769,12 @@ namespace Amazon.PowerShell.Cmdlets.SG
             public Amazon.StorageGateway.CaseSensitivity CaseSensitivity { get; set; }
             public System.String ClientToken { get; set; }
             public System.String DefaultStorageClass { get; set; }
+            public Amazon.StorageGateway.EncryptionType EncryptionType { get; set; }
             public System.String FileShareName { get; set; }
             public System.String GatewayARN { get; set; }
             public System.Boolean? GuessMIMETypeEnabled { get; set; }
             public List<System.String> InvalidUserList { get; set; }
+            [System.ObsoleteAttribute]
             public System.Boolean? KMSEncrypted { get; set; }
             public System.String KMSKey { get; set; }
             public System.String LocationARN { get; set; }

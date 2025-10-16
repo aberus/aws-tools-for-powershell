@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Synthetics;
 using Amazon.Synthetics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWSYN
 {
     /// <summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
     [AWSCmdlet("Calls the Amazon CloudWatch Synthetics DescribeCanaries API operation.", Operation = new[] {"DescribeCanaries"}, SelectReturnType = typeof(Amazon.Synthetics.Model.DescribeCanariesResponse))]
     [AWSCmdletOutput("Amazon.Synthetics.Model.Canary or Amazon.Synthetics.Model.DescribeCanariesResponse",
         "This cmdlet returns a collection of Amazon.Synthetics.Model.Canary objects.",
-        "The service call response (type Amazon.Synthetics.Model.DescribeCanariesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Synthetics.Model.DescribeCanariesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCWSYNCanaryListCmdlet : AmazonSyntheticsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Name
         /// <summary>
@@ -66,7 +69,11 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// to view any of the canaries, the request fails with a 403 response.</para><para>You are required to use this parameter if you are logged on to a user or role that
         /// has an IAM policy that restricts which canaries that you are allowed to view. For
         /// more information, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Synthetics_Canaries_Restricted.html">
-        /// Limiting a user to viewing specific canaries</a>.</para>
+        /// Limiting a user to viewing specific canaries</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,8 +85,8 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// <summary>
         /// <para>
         /// <para>Specify this parameter to limit how many canaries are returned each time you use the
-        /// <c>DescribeCanaries</c> operation. If you omit this parameter, the default of 100
-        /// is used.</para>
+        /// <c>DescribeCanaries</c> operation. If you omit this parameter, the default of 20 is
+        /// used.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,7 +102,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,9 +130,13 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -232,13 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.CWSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Synthetics", "DescribeCanaries");
             try
             {
-                #if DESKTOP
-                return client.DescribeCanaries(request);
-                #elif CORECLR
-                return client.DescribeCanariesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeCanariesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

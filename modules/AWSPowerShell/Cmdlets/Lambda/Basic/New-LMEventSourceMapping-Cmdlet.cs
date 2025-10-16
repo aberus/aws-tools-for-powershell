@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LM
 {
     /// <summary>
@@ -41,12 +43,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
     /// Amazon SQS</a></para></li><li><para><a href="https://docs.aws.amazon.com/lambda/latest/dg/with-mq.html#services-mq-eventsourcemapping">
     /// Amazon MQ and RabbitMQ</a></para></li><li><para><a href="https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html"> Amazon MSK</a></para></li><li><para><a href="https://docs.aws.amazon.com/lambda/latest/dg/kafka-smaa.html"> Apache Kafka</a></para></li><li><para><a href="https://docs.aws.amazon.com/lambda/latest/dg/with-documentdb.html"> Amazon
     /// DocumentDB</a></para></li></ul><para>
-    /// The following error handling options are available only for stream sources (DynamoDB
-    /// and Kinesis):
+    /// The following error handling options are available only for DynamoDB and Kinesis event
+    /// sources:
     /// </para><ul><li><para><c>BisectBatchOnFunctionError</c> – If the function returns an error, split the batch
     /// in two and retry.
-    /// </para></li><li><para><c>DestinationConfig</c> – Send discarded records to an Amazon SQS queue or Amazon
-    /// SNS topic.
     /// </para></li><li><para><c>MaximumRecordAgeInSeconds</c> – Discard records older than the specified age.
     /// The default value is infinite (-1). When set to infinite (-1), failed records are
     /// retried until the record expires
@@ -54,6 +54,12 @@ namespace Amazon.PowerShell.Cmdlets.LM
     /// The default value is infinite (-1). When set to infinite (-1), failed records are
     /// retried until the record expires.
     /// </para></li><li><para><c>ParallelizationFactor</c> – Process multiple batches from each shard concurrently.
+    /// </para></li></ul><para>
+    /// For stream sources (DynamoDB, Kinesis, Amazon MSK, and self-managed Apache Kafka),
+    /// the following option is also available:
+    /// </para><ul><li><para><c>OnFailure</c> – Send discarded records to an Amazon SQS queue, Amazon SNS topic,
+    /// or Amazon S3 bucket. For more information, see <a href="https://docs.aws.amazon.com/lambda/latest/dg/invocation-async-retain-records.html#invocation-async-destinations">Adding
+    /// a destination</a>.
     /// </para></li></ul><para>
     /// For information about which configuration parameters apply to each event source, see
     /// the following topics.
@@ -70,12 +76,44 @@ namespace Amazon.PowerShell.Cmdlets.LM
     [OutputType("Amazon.Lambda.Model.CreateEventSourceMappingResponse")]
     [AWSCmdlet("Calls the AWS Lambda CreateEventSourceMapping API operation.", Operation = new[] {"CreateEventSourceMapping"}, SelectReturnType = typeof(Amazon.Lambda.Model.CreateEventSourceMappingResponse))]
     [AWSCmdletOutput("Amazon.Lambda.Model.CreateEventSourceMappingResponse",
-        "This cmdlet returns an Amazon.Lambda.Model.CreateEventSourceMappingResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Lambda.Model.CreateEventSourceMappingResponse object containing multiple properties."
     )]
     public partial class NewLMEventSourceMappingCmdlet : AmazonLambdaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs
+        /// <summary>
+        /// <para>
+        /// <para>An array of access configuration objects that tell Lambda how to authenticate with
+        /// your schema registry.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig[] AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs { get; set; }
+        #endregion
+        
+        #region Parameter SchemaRegistryConfig_AccessConfig
+        /// <summary>
+        /// <para>
+        /// <para>An array of access configuration objects that tell Lambda how to authenticate with
+        /// your schema registry.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SelfManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs")]
+        public Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig[] SchemaRegistryConfig_AccessConfig { get; set; }
+        #endregion
         
         #region Parameter BatchSize
         /// <summary>
@@ -130,10 +168,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter SelfManagedKafkaEventSourceConfig_ConsumerGroupId
         /// <summary>
         /// <para>
-        /// <para>The identifier for the Kafka consumer group to join. The consumer group ID must be
+        /// <para> The identifier for the Kafka consumer group to join. The consumer group ID must be
         /// unique among all your Kafka event sources. After creating a Kafka event source mapping
         /// with the consumer group ID specified, you cannot update this value. For more information,
-        /// see <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html#services-msk-consumer-group-id">Customizable
+        /// see <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-kafka-process.html#services-smaa-topic-add">Customizable
         /// consumer group ID</a>.</para>
         /// </para>
         /// </summary>
@@ -154,7 +192,14 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter OnFailure_Destination
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the destination resource.</para>
+        /// <para>The Amazon Resource Name (ARN) of the destination resource.</para><para>To retain records of unsuccessful <a href="https://docs.aws.amazon.com/lambda/latest/dg/invocation-async.html#invocation-async-destinations">asynchronous
+        /// invocations</a>, you can configure an Amazon SNS topic, Amazon SQS queue, Amazon S3
+        /// bucket, Lambda function, or Amazon EventBridge event bus as the destination.</para><para>To retain records of failed invocations from <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-kinesis.html">Kinesis</a>,
+        /// <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-ddb.html">DynamoDB</a>,
+        /// <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-kafka.html#services-smaa-onfailure-destination">self-managed
+        /// Kafka</a> or <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html#services-msk-onfailure-destination">Amazon
+        /// MSK</a>, you can configure an Amazon SNS topic, Amazon SQS queue, or Amazon S3 bucket
+        /// as the destination.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -188,7 +233,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
         /// <summary>
         /// <para>
         /// <para>The list of bootstrap servers for your Kafka brokers in the following format: <c>"KAFKA_BOOTSTRAP_SERVERS":
-        /// ["abc.xyz.com:xxxx","abc2.xyz.com:xxxx"]</c>.</para>
+        /// ["abc.xyz.com:xxxx","abc2.xyz.com:xxxx"]</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,10 +245,41 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public System.Collections.Hashtable SelfManagedEventSource_Endpoint { get; set; }
         #endregion
         
+        #region Parameter AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat
+        /// <summary>
+        /// <para>
+        /// <para>The record format that Lambda delivers to your function after schema validation.</para><ul><li><para>Choose <c>JSON</c> to have Lambda deliver the record to your function as a standard
+        /// JSON object.</para></li><li><para>Choose <c>SOURCE</c> to have Lambda deliver the record to your function in its original
+        /// source format. Lambda removes all schema metadata, such as the schema ID, before sending
+        /// the record to your function.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Lambda.SchemaRegistryEventRecordFormat")]
+        public Amazon.Lambda.SchemaRegistryEventRecordFormat AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat { get; set; }
+        #endregion
+        
+        #region Parameter SchemaRegistryConfig_EventRecordFormat
+        /// <summary>
+        /// <para>
+        /// <para>The record format that Lambda delivers to your function after schema validation.</para><ul><li><para>Choose <c>JSON</c> to have Lambda deliver the record to your function as a standard
+        /// JSON object.</para></li><li><para>Choose <c>SOURCE</c> to have Lambda deliver the record to your function in its original
+        /// source format. Lambda removes all schema metadata, such as the schema ID, before sending
+        /// the record to your function.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SelfManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat")]
+        [AWSConstantClassSource("Amazon.Lambda.SchemaRegistryEventRecordFormat")]
+        public Amazon.Lambda.SchemaRegistryEventRecordFormat SchemaRegistryConfig_EventRecordFormat { get; set; }
+        #endregion
+        
         #region Parameter EventSourceArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the event source.</para><ul><li><para><b>Amazon Kinesis</b> – The ARN of the data stream or a stream consumer.</para></li><li><para><b>Amazon DynamoDB Streams</b> – The ARN of the stream.</para></li><li><para><b>Amazon Simple Queue Service</b> – The ARN of the queue.</para></li><li><para><b>Amazon Managed Streaming for Apache Kafka</b> – The ARN of the cluster.</para></li><li><para><b>Amazon MQ</b> – The ARN of the broker.</para></li><li><para><b>Amazon DocumentDB</b> – The ARN of the DocumentDB change stream.</para></li></ul>
+        /// <para>The Amazon Resource Name (ARN) of the event source.</para><ul><li><para><b>Amazon Kinesis</b> – The ARN of the data stream or a stream consumer.</para></li><li><para><b>Amazon DynamoDB Streams</b> – The ARN of the stream.</para></li><li><para><b>Amazon Simple Queue Service</b> – The ARN of the queue.</para></li><li><para><b>Amazon Managed Streaming for Apache Kafka</b> – The ARN of the cluster or the
+        /// ARN of the VPC connection (for <a href="https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html#msk-multi-vpc">cross-account
+        /// event source mappings</a>).</para></li><li><para><b>Amazon MQ</b> – The ARN of the broker.</para></li><li><para><b>Amazon DocumentDB</b> – The ARN of the DocumentDB change stream.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,7 +289,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter FilterCriteria_Filter
         /// <summary>
         /// <para>
-        /// <para> A list of filters. </para>
+        /// <para> A list of filters. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -234,7 +318,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter FunctionName
         /// <summary>
         /// <para>
-        /// <para>The name of the Lambda function.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> – <c>MyFunction</c>.</para></li><li><para><b>Function ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction</c>.</para></li><li><para><b>Version or Alias ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction:PROD</c>.</para></li><li><para><b>Partial ARN</b> – <c>123456789012:function:MyFunction</c>.</para></li></ul><para>The length constraint applies only to the full ARN. If you specify only the function
+        /// <para>The name or ARN of the Lambda function.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> – <c>MyFunction</c>.</para></li><li><para><b>Function ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction</c>.</para></li><li><para><b>Version or Alias ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:MyFunction:PROD</c>.</para></li><li><para><b>Partial ARN</b> – <c>123456789012:function:MyFunction</c>.</para></li></ul><para>The length constraint applies only to the full ARN. If you specify only the function
         /// name, it's limited to 64 characters in length.</para>
         /// </para>
         /// </summary>
@@ -253,7 +337,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
         /// <summary>
         /// <para>
         /// <para>(Kinesis, DynamoDB Streams, and Amazon SQS) A list of current response type enums
-        /// applied to the event source mapping.</para>
+        /// applied to the event source mapping.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -261,19 +349,32 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public System.String[] FunctionResponseType { get; set; }
         #endregion
         
+        #region Parameter KMSKeyArn
+        /// <summary>
+        /// <para>
+        /// <para> The ARN of the Key Management Service (KMS) customer managed key that Lambda uses
+        /// to encrypt your function's <a href="https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventfiltering.html#filtering-basics">filter
+        /// criteria</a>. By default, Lambda does not encrypt your filter criteria object. Specify
+        /// this property to encrypt data using your own customer managed key. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KMSKeyArn { get; set; }
+        #endregion
+        
         #region Parameter MaximumBatchingWindowInSecond
         /// <summary>
         /// <para>
         /// <para>The maximum amount of time, in seconds, that Lambda spends gathering records before
         /// invoking the function. You can configure <c>MaximumBatchingWindowInSeconds</c> to
-        /// any value from 0 seconds to 300 seconds in increments of seconds.</para><para>For streams and Amazon SQS event sources, the default batching window is 0 seconds.
-        /// For Amazon MSK, Self-managed Apache Kafka, Amazon MQ, and DocumentDB event sources,
-        /// the default batching window is 500 ms. Note that because you can only change <c>MaximumBatchingWindowInSeconds</c>
-        /// in increments of seconds, you cannot revert back to the 500 ms default batching window
-        /// after you have changed it. To restore the default batching window, you must create
-        /// a new event source mapping.</para><para>Related setting: For streams and Amazon SQS event sources, when you set <c>BatchSize</c>
-        /// to a value greater than 10, you must set <c>MaximumBatchingWindowInSeconds</c> to
-        /// at least 1.</para>
+        /// any value from 0 seconds to 300 seconds in increments of seconds.</para><para>For Kinesis, DynamoDB, and Amazon SQS event sources, the default batching window is
+        /// 0 seconds. For Amazon MSK, Self-managed Apache Kafka, Amazon MQ, and DocumentDB event
+        /// sources, the default batching window is 500 ms. Note that because you can only change
+        /// <c>MaximumBatchingWindowInSeconds</c> in increments of seconds, you cannot revert
+        /// back to the 500 ms default batching window after you have changed it. To restore the
+        /// default batching window, you must create a new event source mapping.</para><para>Related setting: For Kinesis, DynamoDB, and Amazon SQS event sources, when you set
+        /// <c>BatchSize</c> to a value greater than 10, you must set <c>MaximumBatchingWindowInSeconds</c>
+        /// to at least 1.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -289,6 +390,17 @@ namespace Amazon.PowerShell.Cmdlets.LM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? ScalingConfig_MaximumConcurrency { get; set; }
+        #endregion
+        
+        #region Parameter ProvisionedPollerConfig_MaximumPoller
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of event pollers this event source can scale up to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ProvisionedPollerConfig_MaximumPollers")]
+        public System.Int32? ProvisionedPollerConfig_MaximumPoller { get; set; }
         #endregion
         
         #region Parameter MaximumRecordAgeInSecond
@@ -316,6 +428,35 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public System.Int32? MaximumRetryAttempt { get; set; }
         #endregion
         
+        #region Parameter MetricsConfig_Metric
+        /// <summary>
+        /// <para>
+        /// <para> The metrics you want your event source mapping to produce. Include <c>EventCount</c>
+        /// to receive event source mapping metrics related to the number of events processed
+        /// by your event source mapping. For more information about these metrics, see <a href="https://docs.aws.amazon.com/lambda/latest/dg/monitoring-metrics-types.html#event-source-mapping-metrics">
+        /// Event source mapping metrics</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MetricsConfig_Metrics")]
+        public System.String[] MetricsConfig_Metric { get; set; }
+        #endregion
+        
+        #region Parameter ProvisionedPollerConfig_MinimumPoller
+        /// <summary>
+        /// <para>
+        /// <para>The minimum number of event pollers this event source can scale down to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ProvisionedPollerConfig_MinimumPollers")]
+        public System.Int32? ProvisionedPollerConfig_MinimumPoller { get; set; }
+        #endregion
+        
         #region Parameter ParallelizationFactor
         /// <summary>
         /// <para>
@@ -330,7 +471,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter Queue
         /// <summary>
         /// <para>
-        /// <para> (MQ) The name of the Amazon MQ broker destination queue to consume. </para>
+        /// <para> (MQ) The name of the Amazon MQ broker destination queue to consume. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -338,11 +483,69 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public System.String[] Queue { get; set; }
         #endregion
         
+        #region Parameter AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI
+        /// <summary>
+        /// <para>
+        /// <para>The URI for your schema registry. The correct URI format depends on the type of schema
+        /// registry you're using.</para><ul><li><para>For Glue schema registries, use the ARN of the registry.</para></li><li><para>For Confluent schema registries, use the URL of the registry.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI { get; set; }
+        #endregion
+        
+        #region Parameter SchemaRegistryConfig_SchemaRegistryURI
+        /// <summary>
+        /// <para>
+        /// <para>The URI for your schema registry. The correct URI format depends on the type of schema
+        /// registry you're using.</para><ul><li><para>For Glue schema registries, use the ARN of the registry.</para></li><li><para>For Confluent schema registries, use the URL of the registry.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SelfManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI")]
+        public System.String SchemaRegistryConfig_SchemaRegistryURI { get; set; }
+        #endregion
+        
+        #region Parameter AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs
+        /// <summary>
+        /// <para>
+        /// <para>An array of schema validation configuration objects, which tell Lambda the message
+        /// attributes you want to validate and filter using your schema registry.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Lambda.Model.KafkaSchemaValidationConfig[] AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs { get; set; }
+        #endregion
+        
+        #region Parameter SchemaRegistryConfig_SchemaValidationConfig
+        /// <summary>
+        /// <para>
+        /// <para>An array of schema validation configuration objects, which tell Lambda the message
+        /// attributes you want to validate and filter using your schema registry.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SelfManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs")]
+        public Amazon.Lambda.Model.KafkaSchemaValidationConfig[] SchemaRegistryConfig_SchemaValidationConfig { get; set; }
+        #endregion
+        
         #region Parameter SourceAccessConfiguration
         /// <summary>
         /// <para>
         /// <para>An array of authentication protocols or VPC components required to secure your event
-        /// source.</para>
+        /// source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -374,10 +577,29 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public System.DateTime? StartingPositionTimestamp { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>A list of tags to apply to the event source mapping.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
         #region Parameter Topic
         /// <summary>
         /// <para>
-        /// <para>The name of the Kafka topic.</para>
+        /// <para>The name of the Kafka topic.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -409,16 +631,6 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FunctionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -429,9 +641,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FunctionName), MyInvocation.BoundParameters);
@@ -445,22 +661,22 @@ namespace Amazon.PowerShell.Cmdlets.LM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lambda.Model.CreateEventSourceMappingResponse, NewLMEventSourceMappingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FunctionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AmazonManagedKafkaEventSourceConfig_ConsumerGroupId = this.AmazonManagedKafkaEventSourceConfig_ConsumerGroupId;
+            if (this.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs != null)
+            {
+                context.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs = new List<Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig>(this.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs);
+            }
+            context.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat = this.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat;
+            context.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI = this.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI;
+            if (this.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs != null)
+            {
+                context.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs = new List<Amazon.Lambda.Model.KafkaSchemaValidationConfig>(this.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs);
+            }
             context.BatchSize = this.BatchSize;
             context.BisectBatchOnFunctionError = this.BisectBatchOnFunctionError;
             context.OnFailure_Destination = this.OnFailure_Destination;
@@ -485,10 +701,17 @@ namespace Amazon.PowerShell.Cmdlets.LM
             {
                 context.FunctionResponseType = new List<System.String>(this.FunctionResponseType);
             }
+            context.KMSKeyArn = this.KMSKeyArn;
             context.MaximumBatchingWindowInSecond = this.MaximumBatchingWindowInSecond;
             context.MaximumRecordAgeInSecond = this.MaximumRecordAgeInSecond;
             context.MaximumRetryAttempt = this.MaximumRetryAttempt;
+            if (this.MetricsConfig_Metric != null)
+            {
+                context.MetricsConfig_Metric = new List<System.String>(this.MetricsConfig_Metric);
+            }
             context.ParallelizationFactor = this.ParallelizationFactor;
+            context.ProvisionedPollerConfig_MaximumPoller = this.ProvisionedPollerConfig_MaximumPoller;
+            context.ProvisionedPollerConfig_MinimumPoller = this.ProvisionedPollerConfig_MinimumPoller;
             if (this.Queue != null)
             {
                 context.Queue = new List<System.String>(this.Queue);
@@ -515,12 +738,30 @@ namespace Amazon.PowerShell.Cmdlets.LM
                 }
             }
             context.SelfManagedKafkaEventSourceConfig_ConsumerGroupId = this.SelfManagedKafkaEventSourceConfig_ConsumerGroupId;
+            if (this.SchemaRegistryConfig_AccessConfig != null)
+            {
+                context.SchemaRegistryConfig_AccessConfig = new List<Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig>(this.SchemaRegistryConfig_AccessConfig);
+            }
+            context.SchemaRegistryConfig_EventRecordFormat = this.SchemaRegistryConfig_EventRecordFormat;
+            context.SchemaRegistryConfig_SchemaRegistryURI = this.SchemaRegistryConfig_SchemaRegistryURI;
+            if (this.SchemaRegistryConfig_SchemaValidationConfig != null)
+            {
+                context.SchemaRegistryConfig_SchemaValidationConfig = new List<Amazon.Lambda.Model.KafkaSchemaValidationConfig>(this.SchemaRegistryConfig_SchemaValidationConfig);
+            }
             if (this.SourceAccessConfiguration != null)
             {
                 context.SourceAccessConfiguration = new List<Amazon.Lambda.Model.SourceAccessConfiguration>(this.SourceAccessConfiguration);
             }
             context.StartingPosition = this.StartingPosition;
             context.StartingPositionTimestamp = this.StartingPositionTimestamp;
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             if (this.Topic != null)
             {
                 context.Topic = new List<System.String>(this.Topic);
@@ -554,6 +795,61 @@ namespace Amazon.PowerShell.Cmdlets.LM
             if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_ConsumerGroupId != null)
             {
                 request.AmazonManagedKafkaEventSourceConfig.ConsumerGroupId = requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_ConsumerGroupId;
+                requestAmazonManagedKafkaEventSourceConfigIsNull = false;
+            }
+            Amazon.Lambda.Model.KafkaSchemaRegistryConfig requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig = null;
+            
+             // populate SchemaRegistryConfig
+            var requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = true;
+            requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig = new Amazon.Lambda.Model.KafkaSchemaRegistryConfig();
+            List<Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig> requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs = null;
+            if (cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs = cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs;
+            }
+            if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig.AccessConfigs = requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs;
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+            Amazon.Lambda.SchemaRegistryEventRecordFormat requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat = null;
+            if (cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat = cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat;
+            }
+            if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig.EventRecordFormat = requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat;
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+            System.String requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI = null;
+            if (cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI = cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI;
+            }
+            if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig.SchemaRegistryURI = requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI;
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+            List<Amazon.Lambda.Model.KafkaSchemaValidationConfig> requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs = null;
+            if (cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs = cmdletContext.AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs;
+            }
+            if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs != null)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig.SchemaValidationConfigs = requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs;
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+             // determine if requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig should be set to null
+            if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull)
+            {
+                requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig = null;
+            }
+            if (requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig != null)
+            {
+                request.AmazonManagedKafkaEventSourceConfig.SchemaRegistryConfig = requestAmazonManagedKafkaEventSourceConfig_amazonManagedKafkaEventSourceConfig_SchemaRegistryConfig;
                 requestAmazonManagedKafkaEventSourceConfigIsNull = false;
             }
              // determine if request.AmazonManagedKafkaEventSourceConfig should be set to null
@@ -702,6 +998,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
             {
                 request.FunctionResponseTypes = cmdletContext.FunctionResponseType;
             }
+            if (cmdletContext.KMSKeyArn != null)
+            {
+                request.KMSKeyArn = cmdletContext.KMSKeyArn;
+            }
             if (cmdletContext.MaximumBatchingWindowInSecond != null)
             {
                 request.MaximumBatchingWindowInSeconds = cmdletContext.MaximumBatchingWindowInSecond.Value;
@@ -714,9 +1014,57 @@ namespace Amazon.PowerShell.Cmdlets.LM
             {
                 request.MaximumRetryAttempts = cmdletContext.MaximumRetryAttempt.Value;
             }
+            
+             // populate MetricsConfig
+            var requestMetricsConfigIsNull = true;
+            request.MetricsConfig = new Amazon.Lambda.Model.EventSourceMappingMetricsConfig();
+            List<System.String> requestMetricsConfig_metricsConfig_Metric = null;
+            if (cmdletContext.MetricsConfig_Metric != null)
+            {
+                requestMetricsConfig_metricsConfig_Metric = cmdletContext.MetricsConfig_Metric;
+            }
+            if (requestMetricsConfig_metricsConfig_Metric != null)
+            {
+                request.MetricsConfig.Metrics = requestMetricsConfig_metricsConfig_Metric;
+                requestMetricsConfigIsNull = false;
+            }
+             // determine if request.MetricsConfig should be set to null
+            if (requestMetricsConfigIsNull)
+            {
+                request.MetricsConfig = null;
+            }
             if (cmdletContext.ParallelizationFactor != null)
             {
                 request.ParallelizationFactor = cmdletContext.ParallelizationFactor.Value;
+            }
+            
+             // populate ProvisionedPollerConfig
+            var requestProvisionedPollerConfigIsNull = true;
+            request.ProvisionedPollerConfig = new Amazon.Lambda.Model.ProvisionedPollerConfig();
+            System.Int32? requestProvisionedPollerConfig_provisionedPollerConfig_MaximumPoller = null;
+            if (cmdletContext.ProvisionedPollerConfig_MaximumPoller != null)
+            {
+                requestProvisionedPollerConfig_provisionedPollerConfig_MaximumPoller = cmdletContext.ProvisionedPollerConfig_MaximumPoller.Value;
+            }
+            if (requestProvisionedPollerConfig_provisionedPollerConfig_MaximumPoller != null)
+            {
+                request.ProvisionedPollerConfig.MaximumPollers = requestProvisionedPollerConfig_provisionedPollerConfig_MaximumPoller.Value;
+                requestProvisionedPollerConfigIsNull = false;
+            }
+            System.Int32? requestProvisionedPollerConfig_provisionedPollerConfig_MinimumPoller = null;
+            if (cmdletContext.ProvisionedPollerConfig_MinimumPoller != null)
+            {
+                requestProvisionedPollerConfig_provisionedPollerConfig_MinimumPoller = cmdletContext.ProvisionedPollerConfig_MinimumPoller.Value;
+            }
+            if (requestProvisionedPollerConfig_provisionedPollerConfig_MinimumPoller != null)
+            {
+                request.ProvisionedPollerConfig.MinimumPollers = requestProvisionedPollerConfig_provisionedPollerConfig_MinimumPoller.Value;
+                requestProvisionedPollerConfigIsNull = false;
+            }
+             // determine if request.ProvisionedPollerConfig should be set to null
+            if (requestProvisionedPollerConfigIsNull)
+            {
+                request.ProvisionedPollerConfig = null;
             }
             if (cmdletContext.Queue != null)
             {
@@ -774,6 +1122,61 @@ namespace Amazon.PowerShell.Cmdlets.LM
                 request.SelfManagedKafkaEventSourceConfig.ConsumerGroupId = requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_ConsumerGroupId;
                 requestSelfManagedKafkaEventSourceConfigIsNull = false;
             }
+            Amazon.Lambda.Model.KafkaSchemaRegistryConfig requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig = null;
+            
+             // populate SchemaRegistryConfig
+            var requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = true;
+            requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig = new Amazon.Lambda.Model.KafkaSchemaRegistryConfig();
+            List<Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig> requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_AccessConfig = null;
+            if (cmdletContext.SchemaRegistryConfig_AccessConfig != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_AccessConfig = cmdletContext.SchemaRegistryConfig_AccessConfig;
+            }
+            if (requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_AccessConfig != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig.AccessConfigs = requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_AccessConfig;
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+            Amazon.Lambda.SchemaRegistryEventRecordFormat requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_EventRecordFormat = null;
+            if (cmdletContext.SchemaRegistryConfig_EventRecordFormat != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_EventRecordFormat = cmdletContext.SchemaRegistryConfig_EventRecordFormat;
+            }
+            if (requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_EventRecordFormat != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig.EventRecordFormat = requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_EventRecordFormat;
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+            System.String requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaRegistryURI = null;
+            if (cmdletContext.SchemaRegistryConfig_SchemaRegistryURI != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaRegistryURI = cmdletContext.SchemaRegistryConfig_SchemaRegistryURI;
+            }
+            if (requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaRegistryURI != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig.SchemaRegistryURI = requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaRegistryURI;
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+            List<Amazon.Lambda.Model.KafkaSchemaValidationConfig> requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaValidationConfig = null;
+            if (cmdletContext.SchemaRegistryConfig_SchemaValidationConfig != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaValidationConfig = cmdletContext.SchemaRegistryConfig_SchemaValidationConfig;
+            }
+            if (requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaValidationConfig != null)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig.SchemaValidationConfigs = requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig_schemaRegistryConfig_SchemaValidationConfig;
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull = false;
+            }
+             // determine if requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig should be set to null
+            if (requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfigIsNull)
+            {
+                requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig = null;
+            }
+            if (requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig != null)
+            {
+                request.SelfManagedKafkaEventSourceConfig.SchemaRegistryConfig = requestSelfManagedKafkaEventSourceConfig_selfManagedKafkaEventSourceConfig_SchemaRegistryConfig;
+                requestSelfManagedKafkaEventSourceConfigIsNull = false;
+            }
              // determine if request.SelfManagedKafkaEventSourceConfig should be set to null
             if (requestSelfManagedKafkaEventSourceConfigIsNull)
             {
@@ -790,6 +1193,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
             if (cmdletContext.StartingPositionTimestamp != null)
             {
                 request.StartingPositionTimestamp = cmdletContext.StartingPositionTimestamp.Value;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             if (cmdletContext.Topic != null)
             {
@@ -837,13 +1244,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lambda", "CreateEventSourceMapping");
             try
             {
-                #if DESKTOP
-                return client.CreateEventSourceMapping(request);
-                #elif CORECLR
-                return client.CreateEventSourceMappingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateEventSourceMappingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -861,6 +1262,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AmazonManagedKafkaEventSourceConfig_ConsumerGroupId { get; set; }
+            public List<Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig> AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_AccessConfigs { get; set; }
+            public Amazon.Lambda.SchemaRegistryEventRecordFormat AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat { get; set; }
+            public System.String AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaRegistryURI { get; set; }
+            public List<Amazon.Lambda.Model.KafkaSchemaValidationConfig> AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_SchemaValidationConfigs { get; set; }
             public System.Int32? BatchSize { get; set; }
             public System.Boolean? BisectBatchOnFunctionError { get; set; }
             public System.String OnFailure_Destination { get; set; }
@@ -873,17 +1278,26 @@ namespace Amazon.PowerShell.Cmdlets.LM
             public List<Amazon.Lambda.Model.Filter> FilterCriteria_Filter { get; set; }
             public System.String FunctionName { get; set; }
             public List<System.String> FunctionResponseType { get; set; }
+            public System.String KMSKeyArn { get; set; }
             public System.Int32? MaximumBatchingWindowInSecond { get; set; }
             public System.Int32? MaximumRecordAgeInSecond { get; set; }
             public System.Int32? MaximumRetryAttempt { get; set; }
+            public List<System.String> MetricsConfig_Metric { get; set; }
             public System.Int32? ParallelizationFactor { get; set; }
+            public System.Int32? ProvisionedPollerConfig_MaximumPoller { get; set; }
+            public System.Int32? ProvisionedPollerConfig_MinimumPoller { get; set; }
             public List<System.String> Queue { get; set; }
             public System.Int32? ScalingConfig_MaximumConcurrency { get; set; }
             public Dictionary<System.String, List<System.String>> SelfManagedEventSource_Endpoint { get; set; }
             public System.String SelfManagedKafkaEventSourceConfig_ConsumerGroupId { get; set; }
+            public List<Amazon.Lambda.Model.KafkaSchemaRegistryAccessConfig> SchemaRegistryConfig_AccessConfig { get; set; }
+            public Amazon.Lambda.SchemaRegistryEventRecordFormat SchemaRegistryConfig_EventRecordFormat { get; set; }
+            public System.String SchemaRegistryConfig_SchemaRegistryURI { get; set; }
+            public List<Amazon.Lambda.Model.KafkaSchemaValidationConfig> SchemaRegistryConfig_SchemaValidationConfig { get; set; }
             public List<Amazon.Lambda.Model.SourceAccessConfiguration> SourceAccessConfiguration { get; set; }
             public Amazon.Lambda.EventSourcePosition StartingPosition { get; set; }
             public System.DateTime? StartingPositionTimestamp { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public List<System.String> Topic { get; set; }
             public System.Int32? TumblingWindowInSecond { get; set; }
             public System.Func<Amazon.Lambda.Model.CreateEventSourceMappingResponse, NewLMEventSourceMappingCmdlet, object> Select { get; set; } =

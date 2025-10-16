@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Proton;
 using Amazon.Proton.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PRO
 {
     /// <summary>
-    /// Get detailed data for a major or minor version of an environment template.
+    /// Get detailed data for a major or minor version of an environment template.<br/><br/>This operation is deprecated.
     /// </summary>
     [Cmdlet("Get", "PROEnvironmentTemplateVersion")]
     [OutputType("Amazon.Proton.Model.EnvironmentTemplateVersion")]
     [AWSCmdlet("Calls the AWS Proton GetEnvironmentTemplateVersion API operation.", Operation = new[] {"GetEnvironmentTemplateVersion"}, SelectReturnType = typeof(Amazon.Proton.Model.GetEnvironmentTemplateVersionResponse))]
     [AWSCmdletOutput("Amazon.Proton.Model.EnvironmentTemplateVersion or Amazon.Proton.Model.GetEnvironmentTemplateVersionResponse",
         "This cmdlet returns an Amazon.Proton.Model.EnvironmentTemplateVersion object.",
-        "The service call response (type Amazon.Proton.Model.GetEnvironmentTemplateVersionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Proton.Model.GetEnvironmentTemplateVersionResponse) can be returned by specifying '-Select *'."
     )]
+    [System.ObsoleteAttribute("AWS Proton is not accepting new customers.")]
     public partial class GetPROEnvironmentTemplateVersionCmdlet : AmazonProtonClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MajorVersion
         /// <summary>
@@ -107,9 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.PRO
         public string Select { get; set; } = "EnvironmentTemplateVersion";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -209,13 +215,7 @@ namespace Amazon.PowerShell.Cmdlets.PRO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Proton", "GetEnvironmentTemplateVersion");
             try
             {
-                #if DESKTOP
-                return client.GetEnvironmentTemplateVersion(request);
-                #elif CORECLR
-                return client.GetEnvironmentTemplateVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetEnvironmentTemplateVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

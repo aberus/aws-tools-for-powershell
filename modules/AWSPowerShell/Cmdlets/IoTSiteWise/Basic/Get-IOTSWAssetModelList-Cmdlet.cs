@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -35,25 +37,45 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [AWSCmdlet("Calls the AWS IoT SiteWise ListAssetModels API operation.", Operation = new[] {"ListAssetModels"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.ListAssetModelsResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.AssetModelSummary or Amazon.IoTSiteWise.Model.ListAssetModelsResponse",
         "This cmdlet returns a collection of Amazon.IoTSiteWise.Model.AssetModelSummary objects.",
-        "The service call response (type Amazon.IoTSiteWise.Model.ListAssetModelsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTSiteWise.Model.ListAssetModelsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTSWAssetModelListCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetModelType
         /// <summary>
         /// <para>
-        /// <para>The type of asset model.</para><ul><li><para><b>ASSET_MODEL</b> – (default) An asset model that you can use to create assets.
-        /// Can't be included as a component in another asset model.</para></li><li><para><b>COMPONENT_MODEL</b> – A reusable component that you can include in the composite
+        /// <para>The type of asset model. If you don't provide an <c>assetModelTypes</c>, all types
+        /// of asset models are returned.</para><ul><li><para><b>ASSET_MODEL</b> – An asset model that you can use to create assets. Can't be included
+        /// as a component in another asset model.</para></li><li><para><b>COMPONENT_MODEL</b> – A reusable component that you can include in the composite
         /// models of other asset models. You can't create assets directly from this type of asset
-        /// model. </para></li></ul>
+        /// model. </para></li><li><para><b>INTERFACE</b> – An interface is a type of model that defines a standard structure
+        /// that can be applied to different asset models.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AssetModelTypes")]
         public System.String[] AssetModelType { get; set; }
+        #endregion
+        
+        #region Parameter AssetModelVersion
+        /// <summary>
+        /// <para>
+        /// <para>The version alias that specifies the latest or active version of the asset model.
+        /// The details are returned in the response. The default value is <c>LATEST</c>. See
+        /// <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/model-active-version.html">
+        /// Asset model versions</a> in the <i>IoT SiteWise User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AssetModelVersion { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -74,7 +96,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,9 +124,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -121,6 +147,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             {
                 context.AssetModelType = new List<System.String>(this.AssetModelType);
             }
+            context.AssetModelVersion = this.AssetModelVersion;
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
             
@@ -144,6 +171,10 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             if (cmdletContext.AssetModelType != null)
             {
                 request.AssetModelTypes = cmdletContext.AssetModelType;
+            }
+            if (cmdletContext.AssetModelVersion != null)
+            {
+                request.AssetModelVersion = cmdletContext.AssetModelVersion;
             }
             if (cmdletContext.MaxResult != null)
             {
@@ -211,13 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "ListAssetModels");
             try
             {
-                #if DESKTOP
-                return client.ListAssetModels(request);
-                #elif CORECLR
-                return client.ListAssetModelsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListAssetModelsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -235,6 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> AssetModelType { get; set; }
+            public System.String AssetModelVersion { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.Func<Amazon.IoTSiteWise.Model.ListAssetModelsResponse, GetIOTSWAssetModelListCmdlet, object> Select { get; set; } =

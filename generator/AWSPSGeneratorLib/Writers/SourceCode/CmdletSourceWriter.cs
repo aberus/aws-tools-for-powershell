@@ -31,7 +31,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
         private readonly ServiceOperation Operation;
         private readonly OperationAnalyzer MethodAnalysis;
 
-        private readonly static char[] Vowels = new char[] { 'a', 'e', 'i', 'o', 'u', 'y', 'A', 'E', 'I', 'O', 'U', 'Y' };
+        private readonly static char[] Vowels = ['a', 'e', 'i', 'o', 'u', 'y', 'A', 'E', 'I', 'O', 'U', 'Y'];
 
         /// <summary>
         /// Initializes the cmdlet source writer.
@@ -53,7 +53,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
         /// Writes the source code file for the cmdlet implementing a service operation.
         /// </summary>
         /// <param name="writer"></param>
-        public void Write(IndentedTextWriter writer, string awsSignerAttributeTypeValue)
+        public void Write(IndentedTextWriter writer)
         {
             var analyzedResult = MethodAnalysis.AnalyzedResult;
             var autoIteration = MethodAnalysis.AutoIterateSettings;
@@ -64,7 +64,15 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             var methodDocumentation = DocumentationUtils.GetMethodDocumentation(methodInfo.DeclaringType, Operation.MethodName, MethodAnalysis.AssemblyDocumentation);
 
             if (autoIteration != null)
-                methodDocumentation += $"<br/><br/>{(Operation.LegacyPagination == ServiceOperation.LegacyPaginationType.DisablePagination ? $"In the AWS.Tools.{ServiceConfig.AssemblyName} module, t" : "T")}his cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.";
+            {
+                methodDocumentation +=
+                    $"<br/><br/>{(Operation.LegacyPagination == ServiceOperation.LegacyPaginationType.DisablePagination ? $"In the AWS.Tools.{ServiceConfig.AssemblyName} module, t" : "T")}his cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.";
+
+                if (autoIteration.SupportLegacyAutoIterationMode)
+                {
+                    methodDocumentation += " This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.";
+                }
+            }
 
             if (GetOperationObsoleteMessage(methodInfo) != null)
                 methodDocumentation += "<br/><br/>This operation is deprecated.";
@@ -76,14 +84,16 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
 
             writer.WriteLine();
 
+            // Adds pragma warning to all files to disable deprecated and obsolete compiler warning similar to .net sdk. 
+            writer.WriteLine("#pragma warning disable CS0618, CS0612");
             writer.WriteLine($"namespace Amazon.PowerShell.Cmdlets.{ServiceConfig.ServiceNounPrefix}");
             writer.OpenRegion();
             {
                 writer.WriteLine(commentedTypeDocumentation);
-                writer.WriteLine($"[Cmdlet(\"{Operation.SelectedVerb}\", \"{Operation.SelectedNoun}\"{(MethodAnalysis.RequiresShouldProcessPromt ? $", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.{MethodAnalysis.ConfirmImpactSetting}" : "")}{(Operation.DefaultParameterSet != null ? $", DefaultParameterSetName=\"{Operation.DefaultParameterSet}\"" : "")})]");
+                writer.WriteLine($"[Cmdlet(\"{Operation.SelectedVerb}\", \"{Operation.SelectedNoun}\"{(MethodAnalysis.RequiresShouldProcessPrompt ? $", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.{MethodAnalysis.ConfirmImpactSetting}" : "")}{(Operation.DefaultParameterSet != null ? $", DefaultParameterSetName=\"{Operation.DefaultParameterSet}\"" : "")})]");
 
                 // Define the output type so that running Get-Command on the cmdlet has a populated OutputType
-                // value (this is independant of help). Use the string format of the attr so we don't risk
+                // value (this is independent of help). Use the string format of the attr so we don't risk
                 // namespace collisions on collection members (eg EMR and PowerShell both have 'Job' classes)
                 if (analyzedResult.ReturnType != null)
                 {
@@ -102,11 +112,11 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                 writer.WriteLine($"public partial class {Operation.SelectedVerb}{Operation.SelectedNoun}Cmdlet : {ServiceConfig.GetServiceCmdletClassName(Operation.RequiresAnonymousAuthentication)}Cmdlet, IExecutor");
                 writer.OpenRegion();
                 {
-                    WriteSensitiveDataFlags(writer);
-
                     writer.WriteLine();
 
                     WriteGeneratedCmdletFlag(writer);
+
+                    writer.WriteLine("private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();");
 
                     // create cmdlet parameters
 
@@ -147,28 +157,30 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                     }
 
                     WriteSelectParam(writer);
-                    WritePassThruSwitchParam(writer);
                     WriteAnonymousCredentialsProperty(writer);
                     WriteForceSwitchParam(writer);
                     WriteNoAutoIterationSwitchParam(writer);
 
                     writer.WriteLine();
 
+                    writer.WriteLine("protected override void StopProcessing()");
+                    writer.OpenRegion();
+                    {
+                        writer.WriteLine("base.StopProcessing();");
+                        writer.WriteLine("_cancellationTokenSource.Cancel();");
+                    }
+                    writer.CloseRegion();
+
                     writer.WriteLine("protected override void ProcessRecord()");
                     writer.OpenRegion();
                     {
                         if (Operation.AnonymousAuthentication == ServiceOperation.AnonymousAuthenticationMode.Optional)
                             writer.WriteLine("this._ExecuteWithAnonymousCredentials = this.UseAnonymousCredentials;");
-                        if (awsSignerAttributeTypeValue == "bearer")
-                        {
-                            writer.WriteLine("this._ExecuteWithAnonymousCredentials = true;");                            
-                        }
-                        writer.WriteLine("this._AWSSignerType = \"{0}\";", awsSignerAttributeTypeValue);
 
                         writer.WriteLine("base.ProcessRecord();");
                         writer.WriteLine();
 
-                        if (MethodAnalysis.RequiresShouldProcessPromt)
+                        if (MethodAnalysis.RequiresShouldProcessPrompt)
                             WriteShouldProcessConfirmationCalls(writer);
 
                         // create context object
@@ -191,20 +203,20 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                         {
                             case ServiceOperation.LegacyPaginationType.DisablePagination:
                                 writer.WriteLine("#if MODULAR");
-                                WriteIExecutorIterPattern1(writer);
+                                WriteIExecutorIterPattern1(writer, false);
                                 writer.WriteLine("#else");
                                 WriteIExecutor(writer);
                                 writer.WriteLine("#endif");
                                 break;
                             case ServiceOperation.LegacyPaginationType.UseEmitLimit:
                                 writer.WriteLine("#if MODULAR");
-                                WriteIExecutorIterPattern1(writer);
+                                WriteIExecutorIterPattern1(writer, false);
                                 writer.WriteLine("#else");
                                 WriteIExecutorIterPattern2(writer);
                                 writer.WriteLine("#endif");
                                 break;
                             case ServiceOperation.LegacyPaginationType.Default:
-                                WriteIExecutorIterPattern1(writer);
+                                WriteIExecutorIterPattern1(writer, Operation.CustomAutoIteration);
                                 break;
                         }
                     }
@@ -236,52 +248,9 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.CloseRegion();
         }
 
-        private void WriteSensitiveDataFlags(IndentedTextWriter writer)
-        {
-            if (ContainsSensitiveData(MethodAnalysis.RequestType))
-            {
-                writer.WriteLine();
-                writer.WriteLine("protected override bool IsSensitiveRequest { get; set; } = true;");
-            }
-            if (ContainsSensitiveData(MethodAnalysis.ResponseType))
-            {
-                writer.WriteLine();
-                writer.WriteLine("protected override bool IsSensitiveResponse { get; set; } = true;");
-            }
-        }
-
         private void WriteGeneratedCmdletFlag(IndentedTextWriter writer)
         {
             writer.WriteLine("protected override bool IsGeneratedCmdlet { get; set; } = true;");
-        }
-
-        /// <summary>
-        /// Checks if the type contains any sensitive data by going recursivly over all the internal properties
-        /// </summary>
-        private bool ContainsSensitiveData(Type type, Dictionary<Type, bool> visitedTypes = null)
-        {
-            if (visitedTypes == null) 
-                visitedTypes = new Dictionary<Type, bool>();
-
-            if (visitedTypes.ContainsKey(type)) 
-                return false;
-
-            visitedTypes.Add(type, true);
-
-            foreach (var childProperty in type.GetProperties())
-            {
-                if (IsSensitive(childProperty) || ContainsSensitiveData(childProperty.PropertyType, visitedTypes)) 
-                    return true;
-            }
-            return false;
-        }
-
-        private bool IsSensitive(PropertyInfo propertyInfo)
-        {
-            dynamic awsPropertyAttribute = propertyInfo.GetCustomAttributes()
-                .Where(attribute => attribute.GetType().FullName == "Amazon.Runtime.Internal.AWSPropertyAttribute").SingleOrDefault();
-
-            return awsPropertyAttribute != null && awsPropertyAttribute.Sensitive;
         }
 
         private void WriteConverters(IndentedTextWriter writer, SimplePropertyInfo property, Param paramCustomization)
@@ -310,34 +279,24 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.WriteLine($"private {MethodAnalysis.ResponseType} CallAWSServiceOperation({ServiceConfig.ServiceClientInterface} client, {MethodAnalysis.RequestType} request)");
             writer.OpenRegion();
 
-                writer.WriteLine($"Utils.Common.WriteVerboseEndpointMessage(this, client.Config, \"{ServiceConfig.ServiceName}\", \"{Operation.MethodName}\");");
+            writer.WriteLine($"Utils.Common.WriteVerboseEndpointMessage(this, client.Config, \"{ServiceConfig.ServiceName}\", \"{Operation.MethodName}\");");
 
-                writer.WriteLine("try");
-                writer.OpenRegion();
-                    writer.WriteLine("#if DESKTOP");
+            writer.WriteLine("try");
+            writer.OpenRegion();
 
-                    writer.WriteLine($"return client.{Operation.MethodName}(request);");
+            writer.WriteLine($"return client.{Operation.MethodName}Async(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();");
 
-                    writer.WriteLine("#elif CORECLR");
-
-                    writer.WriteLine($"return client.{Operation.MethodName}Async(request).GetAwaiter().GetResult();");
-
-                    writer.WriteLine("#else");
-
-                    writer.WriteLine("        #error \"Unknown build edition\"");
-
-                    writer.WriteLine("#endif");
             writer.CloseRegion();
-                writer.WriteLine("catch (AmazonServiceException exc)");
-                writer.OpenRegion();
-                    writer.WriteLine("var webException = exc.InnerException as System.Net.WebException;");
-                    writer.WriteLine("if (webException != null)");
-                    writer.OpenRegion();
-                        writer.WriteLine(
-                            "throw new Exception(Utils.Common.FormatNameResolutionFailureMessage(client.Config, webException.Message), webException);");
-                    writer.CloseRegion();
-                    writer.WriteLine("throw;");
-                writer.CloseRegion();
+            writer.WriteLine("catch (AmazonServiceException exc)");
+            writer.OpenRegion();
+            writer.WriteLine("var webException = exc.InnerException as System.Net.WebException;");
+            writer.WriteLine("if (webException != null)");
+            writer.OpenRegion();
+            writer.WriteLine(
+                "throw new Exception(Utils.Common.FormatNameResolutionFailureMessage(client.Config, webException.Message), webException);");
+            writer.CloseRegion();
+            writer.WriteLine("throw;");
+            writer.CloseRegion();
             writer.CloseRegion();
 
             writer.WriteLine();
@@ -405,12 +364,12 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                 if (Operation.OutputProperty == null)
                 {
                     var type = SecurityElement.Escape(OperationAnalyzer.GetValidTypeName(MethodAnalysis.ResponseType, ServiceConfig));
-                    writer.WriteLine($"\"The service response (type {type}) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack.\"");
+                    writer.WriteLine($"\"The service response (type {type}) be returned by specifying '-Select *'.\"");
                 }
                 else if (Operation.OutputProperty == "*")
                 {
                     var type = SecurityElement.Escape(OperationAnalyzer.GetValidTypeName(analyzedResult.ReturnType, ServiceConfig));
-                    writer.WriteLine($"\"This cmdlet returns {GetIndefiniteArticle(type)} {type} object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack.\"");
+                    writer.WriteLine($"\"This cmdlet returns {GetIndefiniteArticle(type)} {type} object containing multiple properties.\"");
                 }
                 else
                 {
@@ -425,7 +384,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                     }
 
                     var type = SecurityElement.Escape(OperationAnalyzer.GetValidTypeName(MethodAnalysis.ResponseType, ServiceConfig));
-                    writer.Write($"\"The service call response (type {type}) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack.\"");
+                    writer.Write($"\"The service call response (type {type}) can be returned by specifying '-Select *'.\"");
 
                     writer.WriteLine();
                 }
@@ -446,9 +405,32 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
         {
             if (!string.IsNullOrEmpty(Operation.ShouldProcessTarget))
             {
-                var targetParameter = MethodAnalysis.AnalyzedParameters.Where(parameter => parameter.AnalyzedName == Operation.ShouldProcessTarget).Single();
+                var targetParameterNames = Operation.ShouldProcessTarget.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(name => name.Trim())
+                    .ToArray();
 
-                writer.WriteLine($"var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.{targetParameter.CmdletParameterName}), MyInvocation.BoundParameters);");
+                if (targetParameterNames.Length == 1)
+                {
+                    // Single parameter - use existing logic for backward compatibility
+                    var targetParameter = MethodAnalysis.AnalyzedParameters.Where(parameter => parameter.AnalyzedName == targetParameterNames[0]).Single();
+                    writer.WriteLine($"var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.{targetParameter.CmdletParameterName}), MyInvocation.BoundParameters);");
+                }
+                else
+                {
+                    // Multiple parameters - use new array-based method
+                    writer.WriteLine("var targetParameterNames = new string[]");
+                    writer.OpenRegion();
+                    
+                    for (int i = 0; i < targetParameterNames.Length; i++)
+                    {
+                        var targetParameter = MethodAnalysis.AnalyzedParameters.Where(parameter => parameter.AnalyzedName == targetParameterNames[i]).Single();
+                        var comma = i < targetParameterNames.Length - 1 ? "," : "";
+                        writer.WriteLine($"nameof(this.{targetParameter.CmdletParameterName}){comma}");
+                    }
+                    
+                    writer.CloseRegion("};");
+                    writer.WriteLine("var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(targetParameterNames, MyInvocation.BoundParameters);");
+                }
             }
             else
             {
@@ -478,7 +460,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             {
                 paramDoc += Environment.NewLine + "<para>" +
                             Environment.NewLine + $"<br/><b>Note:</b> {(Operation.LegacyPagination == ServiceOperation.LegacyPaginationType.DisablePagination ? "In the AWS.Tools." + ServiceConfig.AssemblyName + " module, t" : "T")}his parameter is only used if you are manually controlling output pagination of the service API call." +
-                            Environment.NewLine + $"<br/>In order to manually control output pagination, use '-{property.CmdletParameterName} $null' for the first call and '-{property.CmdletParameterName} $AWSHistory.LastServiceResponse.{MethodAnalysis.AutoIterateSettings.Next}' for subsequent calls." +
+                            Environment.NewLine + $"<br/>'{property.CmdletParameterName}' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-{property.CmdletParameterName}' to null for the first call then set the '{property.CmdletParameterName}' using the same property output from the previous call for subsequent calls." +
                             Environment.NewLine + "</para>";
             }
             else if (MethodAnalysis.AutoIterateSettings?.EmitLimit == property.Name)
@@ -528,7 +510,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
         /// <param name="writer"></param>
         public void WriteForceSwitchParam(IndentedTextWriter writer)
         {
-            if (!MethodAnalysis.RequiresShouldProcessPromt)
+            if (!MethodAnalysis.RequiresShouldProcessPrompt)
             {
                 return;
             }
@@ -572,6 +554,11 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.WriteLine("/// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple");
             writer.WriteLine($"/// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of {startProperty.CmdletParameterName}");
             writer.WriteLine("/// as the start point.");
+            if (autoIteration.SupportLegacyAutoIterationMode)
+            {
+                writer.WriteLine("/// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.");
+            }
+
             writer.WriteLine("/// </summary>");
             writer.WriteLine("[System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]");
             writer.WriteLine("public SwitchParameter NoAutoIteration { get; set; }");
@@ -606,46 +593,6 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.WriteLine("/// </summary>");
             writer.WriteLine("[System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]");
             writer.WriteLine($"public string Select {{ get; set; }} = \"{Operation.OutputProperty ?? "*"}\";");
-            writer.WriteLine("#endregion");
-        }
-
-        /// <summary>
-        /// For cmdlets that have no output but can have a value piped to them,
-        /// adds a -PassThru switch so that the pipelined object gets echoed to the
-        /// output. This allows pipelines to be constructed that don't abruptly
-        /// terminate because a cmdlet lacks output.
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="passThruParameterName"/>
-        public void WritePassThruSwitchParam(IndentedTextWriter writer)
-        {
-            if (!MethodAnalysis.RequiresPassThruGeneration)
-            {
-                return;
-            }
-
-
-            // wrap the parameter in a region so that if we need to parse the raw source
-            // file we can easily find them
-            writer.WriteLine();
-            writer.WriteLine("#region Parameter PassThru");
-            writer.WriteLine("/// <summary>");
-            if (!string.IsNullOrEmpty(Operation.PassThru?.Documentation))
-            {
-                writer.WriteLine($"/// {Operation.PassThru.Documentation}");
-                writer.WriteLine("/// The -PassThru parameter is deprecated, use -Select instead. This parameter will be removed in future");
-                writer.WriteLine("/// </summary>");
-                writer.WriteLine($"[System.Obsolete(\"The -PassThru parameter is deprecated, use -Select instead. This parameter will be removed in a future version.\")]");
-            }
-            else
-            {
-                writer.WriteLine($"/// Changes the cmdlet behavior to return the value passed to the {MethodAnalysis.AcceptsValueFromPipelineParameter.CmdletParameterName} parameter.");
-                writer.WriteLine($"/// The -PassThru parameter is deprecated, use -Select '^{MethodAnalysis.AcceptsValueFromPipelineParameter.CmdletParameterName}' instead. This parameter will be removed in a future version.");
-                writer.WriteLine("/// </summary>");
-                writer.WriteLine($"[System.Obsolete(\"The -PassThru parameter is deprecated, use -Select '^{MethodAnalysis.AcceptsValueFromPipelineParameter.CmdletParameterName}' instead. This parameter will be removed in a future version.\")]");
-            }
-            writer.WriteLine("[System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]");
-            writer.WriteLine("public SwitchParameter PassThru { get; set; }");
             writer.WriteLine("#endregion");
         }
 
@@ -872,10 +819,6 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.WriteLine("// allow for manipulation of parameters prior to loading into context");
             writer.WriteLine("PreExecutionContextLoad(context);");
             writer.WriteLine();
-            if (MethodAnalysis.RequiresPassThruGeneration)
-            {
-                writer.WriteLine("#pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute");
-            }
             writer.WriteLine("if (ParameterWasBound(nameof(this.Select)))");
             writer.OpenRegion();
             {
@@ -883,27 +826,8 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                 writer.IncreaseIndent();
                 writer.WriteLine("throw new System.ArgumentException(\"Invalid value for -Select parameter.\", nameof(this.Select));");
                 writer.DecreaseIndent();
-                if (MethodAnalysis.RequiresPassThruGeneration)
-                {
-                    writer.WriteLine("if (this.PassThru.IsPresent)");
-                    writer.OpenRegion();
-                    {
-                        writer.WriteLine("throw new System.ArgumentException(\"-PassThru cannot be used when -Select is specified.\", nameof(this.Select));");
-                    }
-                    writer.CloseRegion();
-                }
             }
             writer.CloseRegion();
-            if (MethodAnalysis.RequiresPassThruGeneration)
-            {
-                writer.WriteLine("else if (this.PassThru.IsPresent)");
-                writer.OpenRegion();
-                {
-                    writer.WriteLine($"context.Select = (response, cmdlet) => {Operation.PassThru?.Expression ?? ("this." + MethodAnalysis.AcceptsValueFromPipelineParameter.CmdletParameterName)};");
-                }
-                writer.CloseRegion();
-                writer.WriteLine("#pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute");
-            }
 
             foreach (var property in allProperties)
             {
@@ -1438,7 +1362,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
         /// 'AutoIterate Start="NextToken" Next="NextToken"').
         /// </summary>
         /// <param name="writer"></param>
-        private void WriteIExecutorIterPattern1(IndentedTextWriter writer)
+        private void WriteIExecutorIterPattern1(IndentedTextWriter writer, bool CustomAutoIteration)
         {
             var requestType = MethodAnalysis.RequestType;
             var autoIteration = MethodAnalysis.AutoIterateSettings;
@@ -1449,16 +1373,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.OpenRegion();
             {
                 writer.WriteLine("var cmdletContext = context as CmdletContext;");
-                if (MethodAnalysis.RequiresPassThruGeneration)
-                {
-                    writer.WriteLine("#pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute");
-                    writer.WriteLine($"var useParameterSelect = this.Select.StartsWith(\"^\") || this.PassThru.IsPresent;");
-                    writer.WriteLine("#pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute");
-                }
-                else
-                {
-                    writer.WriteLine("var useParameterSelect = this.Select.StartsWith(\"^\");");
-                }
+                writer.WriteLine("var useParameterSelect = this.Select.StartsWith(\"^\");");
                 writer.WriteLine();
 
                 writer.WriteLine("// create request and set iteration invariants");
@@ -1480,56 +1395,80 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
 
                 writer.WriteLine();
 
-                writer.WriteLine("// Initialize loop variant and commence piping");
-                writer.WriteLine($"var _nextToken = cmdletContext.{starPaginationProperty.CmdletParameterName};");
-                writer.WriteLine($"var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.{starPaginationProperty.CmdletParameterName}));");
-                writer.WriteLine();
-
-                if (Operation.RequiresAnonymousAuthentication)
+                if (!CustomAutoIteration)
                 {
-                    writer.WriteLine("var client = Client ?? CreateClient(_RegionEndpoint);");
+                    writer.WriteLine("// Initialize loop variant and commence piping");
+                    writer.WriteLine($"var _nextToken = cmdletContext.{starPaginationProperty.CmdletParameterName};");
+                    writer.WriteLine(
+                        $"var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.{starPaginationProperty.CmdletParameterName}));");
+
+                    // disable auto-iteration for cmdlets that didn't have auto-iteration in v4 in legacy mode.
+                    if (autoIteration.SupportLegacyAutoIterationMode)
+                    {
+                        writer.WriteLine(
+                            @$"var _shouldAutoIterate = !(SessionState.PSVariable.GetValue(""AWSPowerShell_AutoIteration_Mode"")?.ToString() == ""v4"");");
+                    }
+
+                    writer.WriteLine();
+
+                    if (Operation.RequiresAnonymousAuthentication)
+                    {
+                        writer.WriteLine("var client = Client ?? CreateClient(_RegionEndpoint);");
+                    }
+                    else
+                    {
+                        writer.WriteLine("var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);");
+                    }
+
+                    writer.WriteLine("do");
+                    writer.OpenRegion();
+                    {
+                        writer.WriteLine($"request.{autoIteration.Start} = _nextToken;");
+                        writer.WriteLine();
+
+                        writer.WriteLine("CmdletOutput output;");
+
+                        writer.WriteLine();
+                        writer.WriteLine("try");
+                        writer.OpenRegion();
+                        {
+                            writer.WriteLine();
+
+                            writer.WriteLine("var response = CallAWSServiceOperation(client, request);");
+                            writer.WriteLine();
+
+                            WriteResultOutput(writer, true);
+
+                            writer.WriteLine();
+                            writer.WriteLine($"_nextToken = {responseMemberReferencePath}.{autoIteration.Next};");
+                        }
+                        writer.CloseRegion();
+                        writer.WriteLine("catch (Exception e)");
+                        writer.OpenRegion();
+                        {
+                            writer.WriteLine("output = new CmdletOutput { ErrorResponse = e };");
+                        }
+                        writer.CloseRegion();
+
+                        writer.WriteLine();
+                        writer.WriteLine("ProcessOutput(output);");
+                        writer.WriteLine();
+                    }
+                    if (autoIteration.SupportLegacyAutoIterationMode)
+                    {
+                        writer.CloseRegion(
+                            "} while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));");
+                    }
+                    else
+                    {
+                        writer.CloseRegion(
+                            "} while (!_userControllingPaging && AutoIterationHelpers.HasValue(_nextToken));");
+                    }
                 }
                 else
                 {
-                    writer.WriteLine("var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);");
+                    writer.WriteLine("ProcessCustomAutoIteration(cmdletContext, request, useParameterSelect);");
                 }
-
-                writer.WriteLine("do");
-                writer.OpenRegion();
-                {
-                    writer.WriteLine($"request.{autoIteration.Start} = _nextToken;");
-                    writer.WriteLine();
-
-                    writer.WriteLine("CmdletOutput output;");
-
-                    writer.WriteLine();
-                    writer.WriteLine("try");
-                    writer.OpenRegion();
-                    {
-                        //writer.WriteLine("ServiceCalls.PushServiceRequest(request, this.MyInvocation);");
-                        writer.WriteLine();
-
-                        writer.WriteLine("var response = CallAWSServiceOperation(client, request);");
-                        writer.WriteLine();
-
-                        WriteResultOutput(writer, true);
-
-                        writer.WriteLine();
-                        writer.WriteLine($"_nextToken = {responseMemberReferencePath}.{autoIteration.Next};");
-                    }
-                    writer.CloseRegion();
-                    writer.WriteLine("catch (Exception e)");
-                    writer.OpenRegion();
-                    {
-                        writer.WriteLine("output = new CmdletOutput { ErrorResponse = e };");
-                    }
-                    writer.CloseRegion();
-
-                    writer.WriteLine();
-                    writer.WriteLine("ProcessOutput(output);");
-                    writer.WriteLine();
-                }
-                writer.CloseRegion("} while (!_userControllingPaging && AutoIterationHelpers.HasValue(_nextToken));");
 
                 WritePipeParamToOutput(writer);
 
@@ -1559,7 +1498,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
             writer.OpenRegion();
             {
                 writer.WriteLine("var cmdletContext = context as CmdletContext;");
-                writer.WriteLine($"var useParameterSelect = this.Select.StartsWith(\"^\"){(MethodAnalysis.RequiresPassThruGeneration ? " || this.PassThru.IsPresent" : "")};");
+                writer.WriteLine("var useParameterSelect = this.Select.StartsWith(\"^\");");
                 writer.WriteLine();
 
                 writer.WriteLine("// create request and set iteration invariants");
@@ -1680,9 +1619,7 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                         writer.WriteLine("var response = CallAWSServiceOperation(client, request);");
                         WriteResultOutput(writer, true);
 
-                        // most if not all collections are marshalled as List<T>, so assume we have a Count
-                        // property available (if not, compile will break post-generation and we can investigate)
-                        writer.WriteLine($"int _receivedThisCall = response.{Operation.LegacyPaginationCountParameter ?? (Operation.OutputProperty + ".Count")};");
+                        writer.WriteLine($"int _receivedThisCall = response.{Operation.LegacyPaginationCountParameter ?? (Operation.OutputProperty + "?.Count")} ?? 0;");
 
                         writer.WriteLine();
                         writer.WriteLine($"_nextToken = {responseMemberReferencePath}.{autoIteration.Next};");
@@ -1862,11 +1799,15 @@ namespace AWSPowerShellGenerator.Writers.SourceCode
                     }
                 }
 
-                writer.WriteLine($" // determine if {variableName} should be set to null");
-                writer.WriteLine($"if ({usableVariableName}IsNull)");
-                writer.OpenRegion();
-                writer.WriteLine($"{variableName} = null;");
-                writer.CloseRegion();
+                // If property is Required, then do not emit code that resets it's value to null if none of the child properties are set (currently controlled by NoResetToNullForRequiredParameter build config parameter).
+                if (!Operation.NoResetToNullForRequiredParameter || !property.IsRequired)
+                {
+                    writer.WriteLine($" // determine if {variableName} should be set to null");
+                    writer.WriteLine($"if ({usableVariableName}IsNull)");
+                    writer.OpenRegion();
+                    writer.WriteLine($"{variableName} = null;");
+                    writer.CloseRegion();
+                }
             }
         }
 

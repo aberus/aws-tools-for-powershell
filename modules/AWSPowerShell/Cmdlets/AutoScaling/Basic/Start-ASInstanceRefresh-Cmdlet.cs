@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -40,21 +42,21 @@ namespace Amazon.PowerShell.Cmdlets.AS
     /// begin the process of updating instances in the group. 
     /// </para><para>
     /// If successful, the request's response contains a unique ID that you can use to track
-    /// the progress of the instance refresh. To query its status, call the <a>DescribeInstanceRefreshes</a>
-    /// API. To describe the instance refreshes that have already run, call the <a>DescribeInstanceRefreshes</a>
-    /// API. To cancel an instance refresh that is in progress, use the <a>CancelInstanceRefresh</a>
+    /// the progress of the instance refresh. To query its status, call the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribeInstanceRefreshes.html">DescribeInstanceRefreshes</a>
+    /// API. To describe the instance refreshes that have already run, call the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribeInstanceRefreshes.html">DescribeInstanceRefreshes</a>
+    /// API. To cancel an instance refresh that is in progress, use the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CancelInstanceRefresh.html">CancelInstanceRefresh</a>
     /// API. 
     /// </para><para>
     /// An instance refresh might fail for several reasons, such as EC2 launch failures, misconfigured
     /// health checks, or not ignoring or allowing the termination of instances that are in
     /// <c>Standby</c> state or protected from scale in. You can monitor for failed EC2 launches
-    /// using the scaling activities. To find the scaling activities, call the <a>DescribeScalingActivities</a>
+    /// using the scaling activities. To find the scaling activities, call the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribeScalingActivities.html">DescribeScalingActivities</a>
     /// API.
     /// </para><para>
     /// If you enable auto rollback, your Auto Scaling group will be rolled back automatically
     /// when the instance refresh fails. You can enable this feature before starting an instance
     /// refresh by specifying the <c>AutoRollback</c> property in the instance refresh preferences.
-    /// Otherwise, to roll back an instance refresh before it finishes, use the <a>RollbackInstanceRefresh</a>
+    /// Otherwise, to roll back an instance refresh before it finishes, use the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_RollbackInstanceRefresh.html">RollbackInstanceRefresh</a>
     /// API. 
     /// </para>
     /// </summary>
@@ -63,18 +65,23 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling StartInstanceRefresh API operation.", Operation = new[] {"StartInstanceRefresh"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.StartInstanceRefreshResponse))]
     [AWSCmdletOutput("System.String or Amazon.AutoScaling.Model.StartInstanceRefreshResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.AutoScaling.Model.StartInstanceRefreshResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AutoScaling.Model.StartInstanceRefreshResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartASInstanceRefreshCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlarmSpecification_Alarm
         /// <summary>
         /// <para>
         /// <para>The names of one or more CloudWatch alarms to monitor for the instance refresh. You
-        /// can specify up to 10 alarms.</para>
+        /// can specify up to 10 alarms.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,6 +121,17 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String AutoScalingGroupName { get; set; }
         #endregion
         
+        #region Parameter Preferences_BakeTime
+        /// <summary>
+        /// <para>
+        /// <para> The amount of time, in seconds, to wait at the end of an instance refresh before
+        /// the instance refresh is considered complete. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? Preferences_BakeTime { get; set; }
+        #endregion
+        
         #region Parameter Preferences_CheckpointDelay
         /// <summary>
         /// <para>
@@ -133,8 +151,12 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <para>
         /// <para>(Optional) Threshold values for each checkpoint in ascending order. Each number must
         /// be unique. To replace all instances in the Auto Scaling group, the last number in
-        /// the array must be <c>100</c>.</para><para>For usage examples, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-adding-checkpoints-instance-refresh.html">Adding
-        /// checkpoints to an instance refresh</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.</para>
+        /// the array must be <c>100</c>.</para><para>For usage examples, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-adding-checkpoints-instance-refresh.html">Add
+        /// checkpoints to an instance refresh</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -313,16 +335,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public string Select { get; set; } = "InstanceRefreshId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutoScalingGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -333,9 +345,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutoScalingGroupName), MyInvocation.BoundParameters);
@@ -349,21 +365,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.StartInstanceRefreshResponse, StartASInstanceRefreshCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutoScalingGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScalingGroupName = this.AutoScalingGroupName;
             #if MODULAR
             if (this.AutoScalingGroupName == null && ParameterWasBound(nameof(this.AutoScalingGroupName)))
@@ -380,6 +386,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
                 context.AlarmSpecification_Alarm = new List<System.String>(this.AlarmSpecification_Alarm);
             }
             context.Preferences_AutoRollback = this.Preferences_AutoRollback;
+            context.Preferences_BakeTime = this.Preferences_BakeTime;
             context.Preferences_CheckpointDelay = this.Preferences_CheckpointDelay;
             if (this.Preferences_CheckpointPercentage != null)
             {
@@ -488,6 +495,16 @@ namespace Amazon.PowerShell.Cmdlets.AS
             if (requestPreferences_preferences_AutoRollback != null)
             {
                 request.Preferences.AutoRollback = requestPreferences_preferences_AutoRollback.Value;
+                requestPreferencesIsNull = false;
+            }
+            System.Int32? requestPreferences_preferences_BakeTime = null;
+            if (cmdletContext.Preferences_BakeTime != null)
+            {
+                requestPreferences_preferences_BakeTime = cmdletContext.Preferences_BakeTime.Value;
+            }
+            if (requestPreferences_preferences_BakeTime != null)
+            {
+                request.Preferences.BakeTime = requestPreferences_preferences_BakeTime.Value;
                 requestPreferencesIsNull = false;
             }
             System.Int32? requestPreferences_preferences_CheckpointDelay = null;
@@ -642,13 +659,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "StartInstanceRefresh");
             try
             {
-                #if DESKTOP
-                return client.StartInstanceRefresh(request);
-                #elif CORECLR
-                return client.StartInstanceRefreshAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartInstanceRefreshAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -672,6 +683,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             public Amazon.AutoScaling.Model.MixedInstancesPolicy DesiredConfiguration_MixedInstancesPolicy { get; set; }
             public List<System.String> AlarmSpecification_Alarm { get; set; }
             public System.Boolean? Preferences_AutoRollback { get; set; }
+            public System.Int32? Preferences_BakeTime { get; set; }
             public System.Int32? Preferences_CheckpointDelay { get; set; }
             public List<System.Int32> Preferences_CheckpointPercentage { get; set; }
             public System.Int32? Preferences_InstanceWarmup { get; set; }

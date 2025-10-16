@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CW
 {
     /// <summary>
@@ -40,18 +42,23 @@ namespace Amazon.PowerShell.Cmdlets.CW
     [AWSCmdlet("Calls the Amazon CloudWatch DescribeAnomalyDetectors API operation.", Operation = new[] {"DescribeAnomalyDetectors"}, SelectReturnType = typeof(Amazon.CloudWatch.Model.DescribeAnomalyDetectorsResponse))]
     [AWSCmdletOutput("Amazon.CloudWatch.Model.AnomalyDetector or Amazon.CloudWatch.Model.DescribeAnomalyDetectorsResponse",
         "This cmdlet returns a collection of Amazon.CloudWatch.Model.AnomalyDetector objects.",
-        "The service call response (type Amazon.CloudWatch.Model.DescribeAnomalyDetectorsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatch.Model.DescribeAnomalyDetectorsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCWAnomalyDetectorCmdlet : AmazonCloudWatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnomalyDetectorType
         /// <summary>
         /// <para>
         /// <para>The anomaly detector types to request when using <c>DescribeAnomalyDetectorsInput</c>.
-        /// If empty, defaults to <c>SINGLE_METRIC</c>.</para>
+        /// If empty, defaults to <c>SINGLE_METRIC</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -64,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// <para>
         /// <para>Limits the results to only the anomaly detection models that are associated with the
         /// specified metric dimensions. If there are multiple metrics that have these dimensions
-        /// and have anomaly detection models associated, they're all returned.</para>
+        /// and have anomaly detection models associated, they're all returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,7 +126,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public string Select { get; set; } = "AnomalyDetectors";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MetricName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MetricName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MetricName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -153,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -163,21 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatch.Model.DescribeAnomalyDetectorsResponse, GetCWAnomalyDetectorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MetricName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AnomalyDetectorType != null)
             {
                 context.AnomalyDetectorType = new List<System.String>(this.AnomalyDetectorType);
@@ -203,9 +198,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CloudWatch.Model.DescribeAnomalyDetectorsRequest();
@@ -292,13 +285,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch", "DescribeAnomalyDetectors");
             try
             {
-                #if DESKTOP
-                return client.DescribeAnomalyDetectors(request);
-                #elif CORECLR
-                return client.DescribeAnomalyDetectorsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAnomalyDetectorsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

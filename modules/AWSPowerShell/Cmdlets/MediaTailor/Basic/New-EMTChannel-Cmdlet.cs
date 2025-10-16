@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaTailor;
 using Amazon.MediaTailor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMT
 {
     /// <summary>
@@ -35,12 +37,28 @@ namespace Amazon.PowerShell.Cmdlets.EMT
     [OutputType("Amazon.MediaTailor.Model.CreateChannelResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaTailor CreateChannel API operation.", Operation = new[] {"CreateChannel"}, SelectReturnType = typeof(Amazon.MediaTailor.Model.CreateChannelResponse))]
     [AWSCmdletOutput("Amazon.MediaTailor.Model.CreateChannelResponse",
-        "This cmdlet returns an Amazon.MediaTailor.Model.CreateChannelResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaTailor.Model.CreateChannelResponse object containing multiple properties."
     )]
     public partial class NewEMTChannelCmdlet : AmazonMediaTailorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Audience
+        /// <summary>
+        /// <para>
+        /// <para>The list of audiences defined in channel.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Audiences")]
+        public System.String[] Audience { get; set; }
+        #endregion
         
         #region Parameter ChannelName
         /// <summary>
@@ -75,7 +93,11 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         #region Parameter Output
         /// <summary>
         /// <para>
-        /// <para>The channel's output properties.</para>
+        /// <para>The channel's output properties.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -125,7 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// <para>The tags to assign to the channel. Tags are key-value pairs that you can associate
         /// with Amazon resources to help with organization, access control, and cost tracking.
         /// For more information, see <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/tagging.html">Tagging
-        /// AWS Elemental MediaTailor Resources</a>.</para>
+        /// AWS Elemental MediaTailor Resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -176,9 +202,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ChannelName), MyInvocation.BoundParameters);
@@ -196,6 +226,10 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaTailor.Model.CreateChannelResponse, NewEMTChannelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
+            }
+            if (this.Audience != null)
+            {
+                context.Audience = new List<System.String>(this.Audience);
             }
             context.ChannelName = this.ChannelName;
             #if MODULAR
@@ -249,6 +283,10 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             // create request
             var request = new Amazon.MediaTailor.Model.CreateChannelRequest();
             
+            if (cmdletContext.Audience != null)
+            {
+                request.Audiences = cmdletContext.Audience;
+            }
             if (cmdletContext.ChannelName != null)
             {
                 request.ChannelName = cmdletContext.ChannelName;
@@ -355,13 +393,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaTailor", "CreateChannel");
             try
             {
-                #if DESKTOP
-                return client.CreateChannel(request);
-                #elif CORECLR
-                return client.CreateChannelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateChannelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -378,6 +410,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public List<System.String> Audience { get; set; }
             public System.String ChannelName { get; set; }
             public System.String FillerSlate_SourceLocationName { get; set; }
             public System.String FillerSlate_VodSourceName { get; set; }

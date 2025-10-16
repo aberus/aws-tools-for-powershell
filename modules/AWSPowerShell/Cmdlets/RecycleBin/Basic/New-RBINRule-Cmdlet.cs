@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,43 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RecycleBin;
 using Amazon.RecycleBin.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RBIN
 {
     /// <summary>
-    /// Creates a Recycle Bin retention rule. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/recycle-bin-working-with-rules.html#recycle-bin-create-rule">
-    /// Create Recycle Bin retention rules</a> in the <i>Amazon Elastic Compute Cloud User
-    /// Guide</i>.
+    /// Creates a Recycle Bin retention rule. You can create two types of retention rules:
+    /// 
+    ///  <ul><li><para><b>Tag-level retention rules</b> - These retention rules use resource tags to identify
+    /// the resources to protect. For each retention rule, you specify one or more tag key
+    /// and value pairs. Resources (of the specified type) that have at least one of these
+    /// tag key and value pairs are automatically retained in the Recycle Bin upon deletion.
+    /// Use this type of retention rule to protect specific resources in your account based
+    /// on their tags.
+    /// </para></li><li><para><b>Region-level retention rules</b> - These retention rules, by default, apply to
+    /// all of the resources (of the specified type) in the Region, even if the resources
+    /// are not tagged. However, you can specify exclusion tags to exclude resources that
+    /// have specific tags. Use this type of retention rule to protect all resources of a
+    /// specific type in a Region.
+    /// </para></li></ul><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/recycle-bin.html">
+    /// Create Recycle Bin retention rules</a> in the <i>Amazon EBS User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "RBINRule", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.RecycleBin.Model.CreateRuleResponse")]
     [AWSCmdlet("Calls the Amazon Recycle Bin CreateRule API operation.", Operation = new[] {"CreateRule"}, SelectReturnType = typeof(Amazon.RecycleBin.Model.CreateRuleResponse))]
     [AWSCmdletOutput("Amazon.RecycleBin.Model.CreateRuleResponse",
-        "This cmdlet returns an Amazon.RecycleBin.Model.CreateRuleResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RecycleBin.Model.CreateRuleResponse object containing multiple properties."
     )]
     public partial class NewRBINRuleCmdlet : AmazonRecycleBinClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -53,18 +70,39 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter ExcludeResourceTag
+        /// <summary>
+        /// <para>
+        /// <para>[Region-level retention rules only] Specifies the exclusion tags to use to identify
+        /// resources that are to be excluded, or ignored, by a Region-level retention rule. Resources
+        /// that have any of these tags are not retained by the retention rule upon deletion.</para><para>You can't specify exclusion tags for tag-level retention rules.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ExcludeResourceTags")]
+        public Amazon.RecycleBin.Model.ResourceTag[] ExcludeResourceTag { get; set; }
+        #endregion
+        
         #region Parameter ResourceTag
         /// <summary>
         /// <para>
-        /// <para>Specifies the resource tags to use to identify resources that are to be retained by
-        /// a tag-level retention rule. For tag-level retention rules, only deleted resources,
-        /// of the specified resource type, that have one or more of the specified tag key and
-        /// value pairs are retained. If a resource is deleted, but it does not have any of the
-        /// specified tag key and value pairs, it is immediately deleted without being retained
-        /// by the retention rule.</para><para>You can add the same tag key and value pair to a maximum or five retention rules.</para><para>To create a Region-level retention rule, omit this parameter. A Region-level retention
+        /// <para>[Tag-level retention rules only] Specifies the resource tags to use to identify resources
+        /// that are to be retained by a tag-level retention rule. For tag-level retention rules,
+        /// only deleted resources, of the specified resource type, that have one or more of the
+        /// specified tag key and value pairs are retained. If a resource is deleted, but it does
+        /// not have any of the specified tag key and value pairs, it is immediately deleted without
+        /// being retained by the retention rule.</para><para>You can add the same tag key and value pair to a maximum or five retention rules.</para><para>To create a Region-level retention rule, omit this parameter. A Region-level retention
         /// rule does not have any resource tags specified. It retains all deleted resources of
         /// the specified resource type in the Region in which the rule is created, even if the
-        /// resources are not tagged.</para>
+        /// resources are not tagged.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,7 +167,11 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Information about the tags to assign to the retention rule.</para>
+        /// <para>Information about the tags to assign to the retention rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,16 +214,6 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceType parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceType' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceType' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -192,9 +224,13 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceType), MyInvocation.BoundParameters);
@@ -208,22 +244,16 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RecycleBin.Model.CreateRuleResponse, NewRBINRuleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceType;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
+            if (this.ExcludeResourceTag != null)
+            {
+                context.ExcludeResourceTag = new List<Amazon.RecycleBin.Model.ResourceTag>(this.ExcludeResourceTag);
+            }
             context.UnlockDelay_UnlockDelayUnit = this.UnlockDelay_UnlockDelayUnit;
             context.UnlockDelay_UnlockDelayValue = this.UnlockDelay_UnlockDelayValue;
             if (this.ResourceTag != null)
@@ -274,6 +304,10 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.ExcludeResourceTag != null)
+            {
+                request.ExcludeResourceTags = cmdletContext.ExcludeResourceTag;
             }
             
              // populate LockConfiguration
@@ -398,13 +432,7 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Recycle Bin", "CreateRule");
             try
             {
-                #if DESKTOP
-                return client.CreateRule(request);
-                #elif CORECLR
-                return client.CreateRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -422,6 +450,7 @@ namespace Amazon.PowerShell.Cmdlets.RBIN
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String Description { get; set; }
+            public List<Amazon.RecycleBin.Model.ResourceTag> ExcludeResourceTag { get; set; }
             public Amazon.RecycleBin.UnlockDelayUnit UnlockDelay_UnlockDelayUnit { get; set; }
             public System.Int32? UnlockDelay_UnlockDelayValue { get; set; }
             public List<Amazon.RecycleBin.Model.ResourceTag> ResourceTag { get; set; }

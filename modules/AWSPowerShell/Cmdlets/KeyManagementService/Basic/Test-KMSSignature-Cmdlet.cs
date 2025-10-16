@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -59,7 +61,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><para>
     /// To verify a signature outside of KMS with an SM2 public key (China Regions only),
     /// you must specify the distinguishing ID. By default, KMS uses <c>1234567812345678</c>
-    /// as the distinguishing ID. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/asymmetric-key-specs.html#key-spec-sm-offline-verification">Offline
+    /// as the distinguishing ID. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/offline-operations.html#key-spec-sm-offline-verification">Offline
     /// verification with SM2 key pairs</a>.
     /// </para><para>
     /// The KMS key that you use for this operation must be in a compatible key state. For
@@ -71,7 +73,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><para><b>Required permissions</b>: <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-api-permissions-reference.html">kms:Verify</a>
     /// (key policy)
     /// </para><para><b>Related operations</b>: <a>Sign</a></para><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -79,21 +81,20 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [OutputType("System.Boolean")]
     [AWSCmdlet("Calls the AWS Key Management Service Verify API operation.", Operation = new[] {"Verify"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.VerifyResponse))]
     [AWSCmdletOutput("System.Boolean or Amazon.KeyManagementService.Model.VerifyResponse",
-        "This cmdlet returns a System.Boolean object.",
-        "The service call response (type Amazon.KeyManagementService.Model.VerifyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Boolean objects.",
+        "The service call response (type Amazon.KeyManagementService.Model.VerifyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class TestKMSSignatureCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DryRun
         /// <summary>
         /// <para>
-        /// <para>Checks if your request will succeed. <c>DryRun</c> is an optional parameter. </para><para>To learn more about how to use this parameter, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-dryrun.html">Testing
-        /// your KMS API calls</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// <para>Checks if your request will succeed. <c>DryRun</c> is an optional parameter. </para><para>To learn more about how to use this parameter, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/testing-permissions.html">Testing
+        /// your permissions</a> in the <i>Key Management Service Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,8 +106,12 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <para>
         /// <para>A list of grant tokens.</para><para>Use a grant token when your permission to call this operation comes from a new grant
         /// that has not yet achieved <i>eventual consistency</i>. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/grants.html#grant_token">Grant
-        /// token</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/grant-manage.html#using-grant-token">Using
-        /// a grant token</a> in the <i>Key Management Service Developer Guide</i>.</para>
+        /// token</a> and <a href="https://docs.aws.amazon.com/kms/latest/developerguide/using-grant-token.html">Using
+        /// a grant token</a> in the <i>Key Management Service Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,16 +167,20 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <para>
         /// <para>Tells KMS whether the value of the <c>Message</c> parameter should be hashed as part
         /// of the signing algorithm. Use <c>RAW</c> for unhashed messages; use <c>DIGEST</c>
-        /// for message digests, which are already hashed.</para><para>When the value of <c>MessageType</c> is <c>RAW</c>, KMS uses the standard signing
+        /// for message digests, which are already hashed; use <c>EXTERNAL_MU</c> for 64-byte
+        /// representative μ used in ML-DSA signing as defined in NIST FIPS 204 Section 6.2.</para><para>When the value of <c>MessageType</c> is <c>RAW</c>, KMS uses the standard signing
         /// algorithm, which begins with a hash function. When the value is <c>DIGEST</c>, KMS
-        /// skips the hashing step in the signing algorithm.</para><important><para>Use the <c>DIGEST</c> value only when the value of the <c>Message</c> parameter is
-        /// a message digest. If you use the <c>DIGEST</c> value with an unhashed message, the
-        /// security of the verification operation can be compromised.</para></important><para>When the value of <c>MessageType</c>is <c>DIGEST</c>, the length of the <c>Message</c>
-        /// value must match the length of hashed messages for the specified signing algorithm.</para><para>You can submit a message digest and omit the <c>MessageType</c> or specify <c>RAW</c>
+        /// skips the hashing step in the signing algorithm. When the value is <c>EXTERNAL_MU</c>
+        /// KMS skips the concatenated hashing of the public key hash and the message done in
+        /// the ML-DSA signing algorithm.</para><important><para>Use the <c>DIGEST</c> or <c>EXTERNAL_MU</c> value only when the value of the <c>Message</c>
+        /// parameter is a message digest. If you use the <c>DIGEST</c> value with an unhashed
+        /// message, the security of the signing operation can be compromised.</para></important><para>When the value of <c>MessageType</c> is <c>DIGEST</c>, the length of the <c>Message</c>
+        /// value must match the length of hashed messages for the specified signing algorithm.</para><para>When the value of <c>MessageType</c> is <c>EXTERNAL_MU</c> the length of the <c>Message</c>
+        /// value must be 64 bytes.</para><para>You can submit a message digest and omit the <c>MessageType</c> or specify <c>RAW</c>
         /// so the digest is hashed again while signing. However, if the signed message is hashed
         /// once while signing, but twice while verifying, verification fails, even when the message
-        /// hasn't changed.</para><para>The hashing algorithm in that <c>Verify</c> uses is based on the <c>SigningAlgorithm</c>
-        /// value.</para><ul><li><para>Signing algorithms that end in SHA_256 use the SHA_256 hashing algorithm.</para></li><li><para>Signing algorithms that end in SHA_384 use the SHA_384 hashing algorithm.</para></li><li><para>Signing algorithms that end in SHA_512 use the SHA_512 hashing algorithm.</para></li><li><para>SM2DSA uses the SM3 hashing algorithm. For details, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/asymmetric-key-specs.html#key-spec-sm-offline-verification">Offline
+        /// hasn't changed.</para><para>The hashing algorithm that <c>Verify</c> uses is based on the <c>SigningAlgorithm</c>
+        /// value.</para><ul><li><para>Signing algorithms that end in SHA_256 use the SHA_256 hashing algorithm.</para></li><li><para>Signing algorithms that end in SHA_384 use the SHA_384 hashing algorithm.</para></li><li><para>Signing algorithms that end in SHA_512 use the SHA_512 hashing algorithm.</para></li><li><para>Signing algorithms that end in SHAKE_256 use the SHAKE_256 hashing algorithm.</para></li><li><para>SM2DSA uses the SM3 hashing algorithm. For details, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/offline-operations.html#key-spec-sm-offline-verification">Offline
         /// verification with SM2 key pairs</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -227,19 +236,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "SignatureValid";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Message parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Message' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Message' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -247,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.VerifyResponse, TestKMSSignatureCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Message;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DryRun = this.DryRun;
             if (this.GrantToken != null)
             {
@@ -397,13 +390,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "Verify");
             try
             {
-                #if DESKTOP
-                return client.Verify(request);
-                #elif CORECLR
-                return client.VerifyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.VerifyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

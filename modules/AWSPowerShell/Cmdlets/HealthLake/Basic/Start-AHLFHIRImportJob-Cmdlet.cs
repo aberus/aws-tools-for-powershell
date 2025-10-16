@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.HealthLake;
 using Amazon.HealthLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AHL
 {
     /// <summary>
-    /// Begins a FHIR Import job.
+    /// Start importing bulk FHIR data into an ACTIVE data store. The import job imports FHIR
+    /// data found in the <c>InputDataConfig</c> object and stores processing results in the
+    /// <c>JobOutputDataConfig</c> object.
     /// </summary>
     [Cmdlet("Start", "AHLFHIRImportJob", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.HealthLake.Model.StartFHIRImportJobResponse")]
     [AWSCmdlet("Calls the Amazon HealthLake StartFHIRImportJob API operation.", Operation = new[] {"StartFHIRImportJob"}, SelectReturnType = typeof(Amazon.HealthLake.Model.StartFHIRImportJobResponse))]
     [AWSCmdletOutput("Amazon.HealthLake.Model.StartFHIRImportJobResponse",
-        "This cmdlet returns an Amazon.HealthLake.Model.StartFHIRImportJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.HealthLake.Model.StartFHIRImportJobResponse object containing multiple properties."
     )]
     public partial class StartAHLFHIRImportJobCmdlet : AmazonHealthLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DataAccessRoleArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) that gives AWS HealthLake access permission.</para>
+        /// <para>The Amazon Resource Name (ARN) that grants access permission to AWS HealthLake.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -61,7 +66,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter DatastoreId
         /// <summary>
         /// <para>
-        /// <para>The AWS-generated data store ID.</para>
+        /// <para>The data store identifier.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -78,7 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter JobName
         /// <summary>
         /// <para>
-        /// <para>The name of the FHIR Import job in the StartFHIRImport job request.</para>
+        /// <para>The import job name.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +93,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter S3Configuration_KmsKeyId
         /// <summary>
         /// <para>
-        /// <para> The KMS key ID used to access the S3 bucket. </para>
+        /// <para>The Key Management Service (KMS) key ID used to access the S3 bucket. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,8 +104,8 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter InputDataConfig_S3Uri
         /// <summary>
         /// <para>
-        /// <para>The S3Uri is the user specified S3 location of the FHIR data to be imported into AWS
-        /// HealthLake. </para>
+        /// <para>The <c>S3Uri</c> is the user-specified S3 location of the FHIR data to be imported
+        /// into AWS HealthLake.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,8 +115,8 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter S3Configuration_S3Uri
         /// <summary>
         /// <para>
-        /// <para> The S3Uri is the user specified S3 location of the FHIR data to be imported into
-        /// AWS HealthLake. </para>
+        /// <para>The <c>S3Uri</c> is the user-specified S3 location of the FHIR data to be imported
+        /// into AWS HealthLake.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -119,10 +124,21 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public System.String S3Configuration_S3Uri { get; set; }
         #endregion
         
+        #region Parameter ValidationLevel
+        /// <summary>
+        /// <para>
+        /// <para>The validation level of the import job.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.HealthLake.ValidationLevel")]
+        public Amazon.HealthLake.ValidationLevel ValidationLevel { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>Optional user provided token used for ensuring idempotency.</para>
+        /// <para>The optional user-provided token used for ensuring API idempotency.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -190,6 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             context.JobName = this.JobName;
             context.S3Configuration_KmsKeyId = this.S3Configuration_KmsKeyId;
             context.S3Configuration_S3Uri = this.S3Configuration_S3Uri;
+            context.ValidationLevel = this.ValidationLevel;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -285,6 +306,10 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             {
                 request.JobOutputDataConfig = null;
             }
+            if (cmdletContext.ValidationLevel != null)
+            {
+                request.ValidationLevel = cmdletContext.ValidationLevel;
+            }
             
             CmdletOutput output;
             
@@ -323,13 +348,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon HealthLake", "StartFHIRImportJob");
             try
             {
-                #if DESKTOP
-                return client.StartFHIRImportJob(request);
-                #elif CORECLR
-                return client.StartFHIRImportJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartFHIRImportJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -353,6 +372,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             public System.String JobName { get; set; }
             public System.String S3Configuration_KmsKeyId { get; set; }
             public System.String S3Configuration_S3Uri { get; set; }
+            public Amazon.HealthLake.ValidationLevel ValidationLevel { get; set; }
             public System.Func<Amazon.HealthLake.Model.StartFHIRImportJobResponse, StartAHLFHIRImportJobCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

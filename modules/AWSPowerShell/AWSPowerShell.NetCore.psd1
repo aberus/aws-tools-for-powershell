@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The AWS Tools for PowerShell lets developers and administrators manage their AWS services from the PowerShell scripting environment.
@@ -30,10 +30,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 3
 This product provides support for all AWS services in a single module. As an alternative, a modular variant is also available: separate smaller modules (e.g. AWS.Tools.EC2, AWS.Tools.S3...) allow managing each AWS Service.'
 
     # Minimum version of the PowerShell engine required by this module
-    PowerShellVersion = '3.0'
+    PowerShellVersion = '3.1'
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -49,15 +51,14 @@ This product provides support for all AWS services in a single module. As an alt
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(
-
     )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.AccessAnalyzer.dll',
         'AWSSDK.Account.dll',
         'AWSSDK.ACMPCA.dll',
-        'AWSSDK.AlexaForBusiness.dll',
+        'AWSSDK.AIOps.dll',
         'AWSSDK.Amplify.dll',
         'AWSSDK.AmplifyBackend.dll',
         'AWSSDK.AmplifyUIBuilder.dll',
@@ -73,12 +74,16 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.ApplicationCostProfiler.dll',
         'AWSSDK.ApplicationDiscoveryService.dll',
         'AWSSDK.ApplicationInsights.dll',
+        'AWSSDK.ApplicationSignals.dll',
         'AWSSDK.AppMesh.dll',
         'AWSSDK.AppRegistry.dll',
         'AWSSDK.AppRunner.dll',
         'AWSSDK.AppStream.dll',
         'AWSSDK.AppSync.dll',
+        'AWSSDK.AppTest.dll',
+        'AWSSDK.ARCRegionswitch.dll',
         'AWSSDK.ARCZonalShift.dll',
+        'AWSSDK.Artifact.dll',
         'AWSSDK.Athena.dll',
         'AWSSDK.AuditManager.dll',
         'AWSSDK.AugmentedAIRuntime.dll',
@@ -91,17 +96,26 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.B2bi.dll',
         'AWSSDK.Backup.dll',
         'AWSSDK.BackupGateway.dll',
-        'AWSSDK.BackupStorage.dll',
+        'AWSSDK.BackupSearch.dll',
         'AWSSDK.Batch.dll',
+        'AWSSDK.BCMDashboards.dll',
         'AWSSDK.BCMDataExports.dll',
+        'AWSSDK.BCMPricingCalculator.dll',
+        'AWSSDK.BCMRecommendedActions.dll',
         'AWSSDK.Bedrock.dll',
         'AWSSDK.BedrockAgent.dll',
+        'AWSSDK.BedrockAgentCore.dll',
+        'AWSSDK.BedrockAgentCoreControl.dll',
         'AWSSDK.BedrockAgentRuntime.dll',
+        'AWSSDK.BedrockDataAutomation.dll',
+        'AWSSDK.BedrockDataAutomationRuntime.dll',
         'AWSSDK.BedrockRuntime.dll',
+        'AWSSDK.Billing.dll',
         'AWSSDK.BillingConductor.dll',
         'AWSSDK.Braket.dll',
         'AWSSDK.Budgets.dll',
         'AWSSDK.CertificateManager.dll',
+        'AWSSDK.Chatbot.dll',
         'AWSSDK.Chime.dll',
         'AWSSDK.ChimeSDKIdentity.dll',
         'AWSSDK.ChimeSDKMediaPipelines.dll',
@@ -131,12 +145,12 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.CodeBuild.dll',
         'AWSSDK.CodeCatalyst.dll',
         'AWSSDK.CodeCommit.dll',
+        'AWSSDK.CodeConnections.dll',
         'AWSSDK.CodeDeploy.dll',
         'AWSSDK.CodeGuruProfiler.dll',
         'AWSSDK.CodeGuruReviewer.dll',
         'AWSSDK.CodeGuruSecurity.dll',
         'AWSSDK.CodePipeline.dll',
-        'AWSSDK.CodeStar.dll',
         'AWSSDK.CodeStarconnections.dll',
         'AWSSDK.CodeStarNotifications.dll',
         'AWSSDK.CognitoIdentity.dll',
@@ -148,10 +162,12 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.ConfigService.dll',
         'AWSSDK.Connect.dll',
         'AWSSDK.ConnectCampaignService.dll',
+        'AWSSDK.ConnectCampaignsV2.dll',
         'AWSSDK.ConnectCases.dll',
         'AWSSDK.ConnectContactLens.dll',
         'AWSSDK.ConnectParticipant.dll',
         'AWSSDK.ConnectWisdomService.dll',
+        'AWSSDK.ControlCatalog.dll',
         'AWSSDK.ControlTower.dll',
         'AWSSDK.Core.dll',
         'AWSSDK.CostAndUsageReport.dll',
@@ -164,15 +180,19 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.DataSync.dll',
         'AWSSDK.DataZone.dll',
         'AWSSDK.DAX.dll',
+        'AWSSDK.Deadline.dll',
         'AWSSDK.Detective.dll',
         'AWSSDK.DeviceFarm.dll',
         'AWSSDK.DevOpsGuru.dll',
         'AWSSDK.DirectConnect.dll',
         'AWSSDK.DirectoryService.dll',
+        'AWSSDK.DirectoryServiceData.dll',
         'AWSSDK.DLM.dll',
         'AWSSDK.DocDB.dll',
         'AWSSDK.DocDBElastic.dll',
         'AWSSDK.Drs.dll',
+        'AWSSDK.DSQL.dll',
+        'AWSSDK.DynamoDBStreams.dll',
         'AWSSDK.DynamoDBv2.dll',
         'AWSSDK.EBS.dll',
         'AWSSDK.EC2.dll',
@@ -185,7 +205,6 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.ElastiCache.dll',
         'AWSSDK.ElasticBeanstalk.dll',
         'AWSSDK.ElasticFileSystem.dll',
-        'AWSSDK.ElasticInference.dll',
         'AWSSDK.ElasticLoadBalancing.dll',
         'AWSSDK.ElasticLoadBalancingV2.dll',
         'AWSSDK.ElasticMapReduce.dll',
@@ -195,6 +214,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.EMRServerless.dll',
         'AWSSDK.EntityResolution.dll',
         'AWSSDK.EventBridge.dll',
+        'AWSSDK.Evs.dll',
         'AWSSDK.Finspace.dll',
         'AWSSDK.FinSpaceData.dll',
         'AWSSDK.FIS.dll',
@@ -205,6 +225,10 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.FreeTier.dll',
         'AWSSDK.FSx.dll',
         'AWSSDK.GameLift.dll',
+        'AWSSDK.GameLiftStreams.dll',
+        'AWSSDK.GeoMaps.dll',
+        'AWSSDK.GeoPlaces.dll',
+        'AWSSDK.GeoRoutes.dll',
         'AWSSDK.Glacier.dll',
         'AWSSDK.GlobalAccelerator.dll',
         'AWSSDK.Glue.dll',
@@ -214,7 +238,6 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.GroundStation.dll',
         'AWSSDK.GuardDuty.dll',
         'AWSSDK.HealthLake.dll',
-        'AWSSDK.Honeycode.dll',
         'AWSSDK.IAMRolesAnywhere.dll',
         'AWSSDK.IdentityManagement.dll',
         'AWSSDK.IdentityStore.dll',
@@ -224,6 +247,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.Inspector2.dll',
         'AWSSDK.InspectorScan.dll',
         'AWSSDK.InternetMonitor.dll',
+        'AWSSDK.Invoicing.dll',
         'AWSSDK.IoT.dll',
         'AWSSDK.IoTDeviceAdvisor.dll',
         'AWSSDK.IoTEvents.dll',
@@ -231,7 +255,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.IoTFleetHub.dll',
         'AWSSDK.IoTFleetWise.dll',
         'AWSSDK.IoTJobsDataPlane.dll',
-        'AWSSDK.IoTRoboRunner.dll',
+        'AWSSDK.IoTManagedIntegrations.dll',
         'AWSSDK.IoTSecureTunneling.dll',
         'AWSSDK.IoTSiteWise.dll',
         'AWSSDK.IoTThingsGraph.dll',
@@ -246,6 +270,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.KendraRanking.dll',
         'AWSSDK.KeyManagementService.dll',
         'AWSSDK.Keyspaces.dll',
+        'AWSSDK.KeyspacesStreams.dll',
         'AWSSDK.Kinesis.dll',
         'AWSSDK.KinesisAnalytics.dll',
         'AWSSDK.KinesisAnalyticsV2.dll',
@@ -271,6 +296,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.LookoutMetrics.dll',
         'AWSSDK.MachineLearning.dll',
         'AWSSDK.Macie2.dll',
+        'AWSSDK.MailManager.dll',
         'AWSSDK.MainframeModernization.dll',
         'AWSSDK.ManagedBlockchain.dll',
         'AWSSDK.ManagedBlockchainQuery.dll',
@@ -279,6 +305,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.MarketplaceCatalog.dll',
         'AWSSDK.MarketplaceDeployment.dll',
         'AWSSDK.MarketplaceEntitlementService.dll',
+        'AWSSDK.MarketplaceReporting.dll',
         'AWSSDK.MediaConnect.dll',
         'AWSSDK.MediaConvert.dll',
         'AWSSDK.MediaLive.dll',
@@ -296,7 +323,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.MigrationHubOrchestrator.dll',
         'AWSSDK.MigrationHubRefactorSpaces.dll',
         'AWSSDK.MigrationHubStrategyRecommendations.dll',
-        'AWSSDK.Mobile.dll',
+        'AWSSDK.MPA.dll',
         'AWSSDK.MQ.dll',
         'AWSSDK.MTurk.dll',
         'AWSSDK.MWAA.dll',
@@ -304,22 +331,27 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.Neptunedata.dll',
         'AWSSDK.NeptuneGraph.dll',
         'AWSSDK.NetworkFirewall.dll',
+        'AWSSDK.NetworkFlowMonitor.dll',
         'AWSSDK.NetworkManager.dll',
         'AWSSDK.NetworkMonitor.dll',
-        'AWSSDK.NimbleStudio.dll',
+        'AWSSDK.Notifications.dll',
+        'AWSSDK.NotificationsContacts.dll',
         'AWSSDK.OAM.dll',
+        'AWSSDK.ObservabilityAdmin.dll',
+        'AWSSDK.Odb.dll',
         'AWSSDK.Omics.dll',
         'AWSSDK.OpenSearchServerless.dll',
         'AWSSDK.OpenSearchService.dll',
-        'AWSSDK.OpsWorks.dll',
-        'AWSSDK.OpsWorksCM.dll',
         'AWSSDK.Organizations.dll',
         'AWSSDK.OSIS.dll',
         'AWSSDK.Outposts.dll',
         'AWSSDK.Panorama.dll',
+        'AWSSDK.PartnerCentralSelling.dll',
         'AWSSDK.PaymentCryptography.dll',
         'AWSSDK.PaymentCryptographyData.dll',
         'AWSSDK.PcaConnectorAd.dll',
+        'AWSSDK.PcaConnectorScep.dll',
+        'AWSSDK.PCS.dll',
         'AWSSDK.Personalize.dll',
         'AWSSDK.PersonalizeEvents.dll',
         'AWSSDK.PersonalizeRuntime.dll',
@@ -330,9 +362,9 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.Pipes.dll',
         'AWSSDK.Polly.dll',
         'AWSSDK.Pricing.dll',
-        'AWSSDK.Private5G.dll',
         'AWSSDK.PrometheusService.dll',
         'AWSSDK.Proton.dll',
+        'AWSSDK.QApps.dll',
         'AWSSDK.QBusiness.dll',
         'AWSSDK.QConnect.dll',
         'AWSSDK.QLDB.dll',
@@ -354,6 +386,7 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.RoboMaker.dll',
         'AWSSDK.Route53.dll',
         'AWSSDK.Route53Domains.dll',
+        'AWSSDK.Route53Profiles.dll',
         'AWSSDK.Route53RecoveryCluster.dll',
         'AWSSDK.Route53RecoveryControlConfig.dll',
         'AWSSDK.Route53RecoveryReadiness.dll',
@@ -361,6 +394,8 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.S3.dll',
         'AWSSDK.S3Control.dll',
         'AWSSDK.S3Outposts.dll',
+        'AWSSDK.S3Tables.dll',
+        'AWSSDK.S3Vectors.dll',
         'AWSSDK.SageMaker.dll',
         'AWSSDK.SagemakerEdgeManager.dll',
         'AWSSDK.SageMakerFeatureStoreRuntime.dll',
@@ -372,10 +407,10 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.Schemas.dll',
         'AWSSDK.SecretsManager.dll',
         'AWSSDK.SecurityHub.dll',
+        'AWSSDK.SecurityIR.dll',
         'AWSSDK.SecurityLake.dll',
         'AWSSDK.SecurityToken.dll',
         'AWSSDK.ServerlessApplicationRepository.dll',
-        'AWSSDK.ServerMigrationService.dll',
         'AWSSDK.ServiceCatalog.dll',
         'AWSSDK.ServiceDiscovery.dll',
         'AWSSDK.ServiceQuotas.dll',
@@ -388,9 +423,12 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.SimSpaceWeaver.dll',
         'AWSSDK.Snowball.dll',
         'AWSSDK.SnowDeviceManagement.dll',
+        'AWSSDK.SocialMessaging.dll',
         'AWSSDK.SQS.dll',
         'AWSSDK.SSMContacts.dll',
+        'AWSSDK.SSMGuiConnect.dll',
         'AWSSDK.SSMIncidents.dll',
+        'AWSSDK.SSMQuickSetup.dll',
         'AWSSDK.SsmSap.dll',
         'AWSSDK.SSO.dll',
         'AWSSDK.SSOAdmin.dll',
@@ -400,7 +438,9 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.SupplyChain.dll',
         'AWSSDK.SupportApp.dll',
         'AWSSDK.Synthetics.dll',
+        'AWSSDK.TaxSettings.dll',
         'AWSSDK.Textract.dll',
+        'AWSSDK.TimestreamInfluxDB.dll',
         'AWSSDK.TimestreamQuery.dll',
         'AWSSDK.TimestreamWrite.dll',
         'AWSSDK.Tnb.dll',
@@ -416,10 +456,10 @@ This product provides support for all AWS services in a single module. As an alt
         'AWSSDK.WAFV2.dll',
         'AWSSDK.WellArchitected.dll',
         'AWSSDK.WorkDocs.dll',
-        'AWSSDK.WorkLink.dll',
         'AWSSDK.WorkMail.dll',
         'AWSSDK.WorkMailMessageFlow.dll',
         'AWSSDK.WorkSpaces.dll',
+        'AWSSDK.WorkspacesInstances.dll',
         'AWSSDK.WorkSpacesThinClient.dll',
         'AWSSDK.WorkSpacesWeb.dll',
         'AWSSDK.XRay.dll',
@@ -427,7 +467,11 @@ This product provides support for all AWS services in a single module. As an alt
         'aws-crt-auth.dll',
         'aws-crt-http.dll',
         'aws-crt-checksums.dll',
-        'AWSSDK.Extensions.CrtIntegration.dll'
+        'AWSSDK.Extensions.CrtIntegration.dll',
+        'AWSSDK.Extensions.CborProtocol.dll',
+        'System.Formats.Cbor.dll',
+        'AWSSDK.Extensions.CloudFront.Signers.dll',
+        'AWSSDK.Extensions.EC2.DecryptPassword.dll'
     )
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module
@@ -480,7 +524,7 @@ This product provides support for all AWS services in a single module. As an alt
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

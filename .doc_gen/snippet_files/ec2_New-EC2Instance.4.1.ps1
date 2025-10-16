@@ -1,0 +1,3 @@
+$ami = (Get-SSMLatestEC2Image -Path 'ami-windows-latest' -ImageName 'WINDOWS*2016*English*Core*BASE').Value
+
+New-EC2Instance -ImageId $ami ...

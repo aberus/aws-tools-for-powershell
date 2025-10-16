@@ -118,12 +118,19 @@ $AUDM_Completers = {
         # Amazon.AuditManager.ControlType
         "Get-AUDMControlList/ControlType"
         {
-            $v = "Custom","Standard"
+            $v = "Core","Custom","Standard"
+            break
+        }
+
+        # Amazon.AuditManager.DataSourceType
+        "Get-AUDMKeywordForDataSourceList/Source"
+        {
+            $v = "AWS_API_Call","AWS_Cloudtrail","AWS_Config","AWS_Security_Hub","MANUAL"
             break
         }
 
         # Amazon.AuditManager.DeleteResources
-        "Edit-AUDMSetting/DeregistrationPolicy_DeleteResources"
+        "Edit-AUDMSetting/DeregistrationPolicy_DeleteResource"
         {
             $v = "ALL","DEFAULT"
             break
@@ -168,13 +175,6 @@ $AUDM_Completers = {
             break
         }
 
-        # Amazon.AuditManager.SourceType
-        "Get-AUDMKeywordForDataSourceList/Source"
-        {
-            $v = "AWS_API_Call","AWS_Cloudtrail","AWS_Config","AWS_Security_Hub","MANUAL"
-            break
-        }
-
 
     }
 
@@ -191,7 +191,7 @@ $AUDM_map = @{
     "ControlType"=@("Get-AUDMControlList")
     "DefaultAssessmentReportsDestination_DestinationType"=@("Edit-AUDMSetting")
     "DefaultExportDestination_DestinationType"=@("Edit-AUDMSetting")
-    "DeregistrationPolicy_DeleteResources"=@("Edit-AUDMSetting")
+    "DeregistrationPolicy_DeleteResource"=@("Edit-AUDMSetting")
     "FrameworkType"=@("Get-AUDMAssessmentFrameworkList")
     "RequestType"=@("Get-AUDMAssessmentFrameworkShareRequestList","Remove-AUDMAssessmentFrameworkShare","Update-AUDMAssessmentFrameworkShare")
     "Source"=@("Get-AUDMKeywordForDataSourceList")

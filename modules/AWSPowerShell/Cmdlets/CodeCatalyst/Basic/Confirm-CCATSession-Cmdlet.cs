@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeCatalyst;
 using Amazon.CodeCatalyst.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CCAT
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.CCAT
     [AWSCmdlet("Calls the AWS CodeCatalyst VerifySession API operation.", Operation = new[] {"VerifySession"}, SelectReturnType = typeof(Amazon.CodeCatalyst.Model.VerifySessionResponse))]
     [AWSCmdletOutput("System.String or Amazon.CodeCatalyst.Model.VerifySessionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CodeCatalyst.Model.VerifySessionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeCatalyst.Model.VerifySessionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ConfirmCCATSessionCmdlet : AmazonCodeCatalystClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -64,10 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.CCAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._ExecuteWithAnonymousCredentials = true;
-            this._AWSSignerType = "bearer";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -140,13 +146,7 @@ namespace Amazon.PowerShell.Cmdlets.CCAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeCatalyst", "VerifySession");
             try
             {
-                #if DESKTOP
-                return client.VerifySession(request);
-                #elif CORECLR
-                return client.VerifySessionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.VerifySessionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

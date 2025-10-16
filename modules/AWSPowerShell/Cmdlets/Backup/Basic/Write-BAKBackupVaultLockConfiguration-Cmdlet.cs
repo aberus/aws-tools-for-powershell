@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -37,20 +39,24 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     ///  <note><para>
     /// Backup Vault Lock has been assessed by Cohasset Associates for use in environments
     /// that are subject to SEC 17a-4, CFTC, and FINRA regulations. For more information about
-    /// how Backup Vault Lock relates to these regulations, see the <a href="samples/cohassetreport.zip">Cohasset
-    /// Associates Compliance Assessment.</a></para></note>
+    /// how Backup Vault Lock relates to these regulations, see the <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/samples/cohassetreport.zip">Cohasset
+    /// Associates Compliance Assessment.</a></para></note><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html">Backup
+    /// Vault Lock</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("Write", "BAKBackupVaultLockConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Backup PutBackupVaultLockConfiguration API operation.", Operation = new[] {"PutBackupVaultLockConfiguration"}, SelectReturnType = typeof(Amazon.Backup.Model.PutBackupVaultLockConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.Backup.Model.PutBackupVaultLockConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Backup.Model.PutBackupVaultLockConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Backup.Model.PutBackupVaultLockConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteBAKBackupVaultLockConfigurationCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupVaultName
         /// <summary>
@@ -117,8 +123,9 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <para>The Backup Vault Lock configuration that specifies the minimum retention period that
         /// the vault retains its recovery points. This setting can be useful if, for example,
         /// your organization's policies require you to retain certain data for at least seven
-        /// years (2555 days).</para><para>If this parameter is not specified, Vault Lock will not enforce a minimum retention
-        /// period.</para><para>If this parameter is specified, any backup or copy job to the vault must have a lifecycle
+        /// years (2555 days).</para><para>This parameter is required when a vault lock is created through CloudFormation; otherwise,
+        /// this parameter is optional. If this parameter is not specified, Vault Lock will not
+        /// enforce a minimum retention period.</para><para>If this parameter is specified, any backup or copy job to the vault must have a lifecycle
         /// policy with a retention period equal to or longer than the minimum retention period.
         /// If the job's retention period is shorter than that minimum retention period, then
         /// the vault fails that backup or copy job, and you should either modify your lifecycle
@@ -141,16 +148,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BackupVaultName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -161,9 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BackupVaultName), MyInvocation.BoundParameters);
@@ -177,21 +178,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.PutBackupVaultLockConfigurationResponse, WriteBAKBackupVaultLockConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BackupVaultName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BackupVaultName = this.BackupVaultName;
             #if MODULAR
             if (this.BackupVaultName == null && ParameterWasBound(nameof(this.BackupVaultName)))
@@ -272,13 +263,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "PutBackupVaultLockConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutBackupVaultLockConfiguration(request);
-                #elif CORECLR
-                return client.PutBackupVaultLockConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutBackupVaultLockConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

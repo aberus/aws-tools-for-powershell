@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ForecastService;
 using Amazon.ForecastService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FRC
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.FRC
     [OutputType("Amazon.ForecastService.Model.ListMonitorEvaluationsResponse")]
     [AWSCmdlet("Calls the Amazon Forecast Service ListMonitorEvaluations API operation.", Operation = new[] {"ListMonitorEvaluations"}, SelectReturnType = typeof(Amazon.ForecastService.Model.ListMonitorEvaluationsResponse))]
     [AWSCmdletOutput("Amazon.ForecastService.Model.ListMonitorEvaluationsResponse",
-        "This cmdlet returns an Amazon.ForecastService.Model.ListMonitorEvaluationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ForecastService.Model.ListMonitorEvaluationsResponse object containing multiple properties."
     )]
     public partial class GetFRCMonitorEvaluationListCmdlet : AmazonForecastServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -56,7 +59,11 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         /// condition is either <c>IS</c> or <c>IS_NOT</c>, which specifies whether to include
         /// or exclude the resources that match the statement from the list. The match statement
         /// consists of a key and a value.</para><para><b>Filter properties</b></para><ul><li><para><c>Condition</c> - The condition to apply. Valid values are <c>IS</c> and <c>IS_NOT</c>.</para></li><li><para><c>Key</c> - The name of the parameter to filter on. The only valid value is <c>EvaluationState</c>.</para></li><li><para><c>Value</c> - The value to match. Valid values are only <c>SUCCESS</c> or <c>FAILURE</c>.</para></li></ul><para>For example, to list only successful monitor evaluations, you would specify:</para><para><c>"Filters": [ { "Condition": "IS", "Key": "EvaluationState", "Value": "SUCCESS"
-        /// } ]</c></para>
+        /// } ]</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,7 +108,7 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -119,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MonitorArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MonitorArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MonitorArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -139,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -149,21 +150,11 @@ namespace Amazon.PowerShell.Cmdlets.FRC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ForecastService.Model.ListMonitorEvaluationsResponse, GetFRCMonitorEvaluationListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MonitorArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.ForecastService.Model.Filter>(this.Filter);
@@ -190,9 +181,7 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ForecastService.Model.ListMonitorEvaluationsRequest();
@@ -271,13 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.FRC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Forecast Service", "ListMonitorEvaluations");
             try
             {
-                #if DESKTOP
-                return client.ListMonitorEvaluations(request);
-                #elif CORECLR
-                return client.ListMonitorEvaluationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListMonitorEvaluationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

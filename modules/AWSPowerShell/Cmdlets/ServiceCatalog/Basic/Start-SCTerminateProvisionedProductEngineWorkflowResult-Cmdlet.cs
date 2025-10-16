@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceCatalog;
 using Amazon.ServiceCatalog.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SC
     [AWSCmdlet("Calls the AWS Service Catalog NotifyTerminateProvisionedProductEngineWorkflowResult API operation.", Operation = new[] {"NotifyTerminateProvisionedProductEngineWorkflowResult"}, SelectReturnType = typeof(Amazon.ServiceCatalog.Model.NotifyTerminateProvisionedProductEngineWorkflowResultResponse))]
     [AWSCmdletOutput("None or Amazon.ServiceCatalog.Model.NotifyTerminateProvisionedProductEngineWorkflowResultResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ServiceCatalog.Model.NotifyTerminateProvisionedProductEngineWorkflowResultResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ServiceCatalog.Model.NotifyTerminateProvisionedProductEngineWorkflowResultResponse) be returned by specifying '-Select *'."
     )]
     public partial class StartSCTerminateProvisionedProductEngineWorkflowResultCmdlet : AmazonServiceCatalogClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FailureReason
         /// <summary>
@@ -134,9 +137,13 @@ namespace Amazon.PowerShell.Cmdlets.SC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RecordId), MyInvocation.BoundParameters);
@@ -252,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.SC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Service Catalog", "NotifyTerminateProvisionedProductEngineWorkflowResult");
             try
             {
-                #if DESKTOP
-                return client.NotifyTerminateProvisionedProductEngineWorkflowResult(request);
-                #elif CORECLR
-                return client.NotifyTerminateProvisionedProductEngineWorkflowResultAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.NotifyTerminateProvisionedProductEngineWorkflowResultAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

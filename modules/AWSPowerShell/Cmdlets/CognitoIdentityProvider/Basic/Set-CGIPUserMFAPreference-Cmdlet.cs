@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
@@ -55,20 +57,19 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider SetUserMFAPreference API operation.", Operation = new[] {"SetUserMFAPreference"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.SetUserMFAPreferenceResponse))]
     [AWSCmdletOutput("None or Amazon.CognitoIdentityProvider.Model.SetUserMFAPreferenceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CognitoIdentityProvider.Model.SetUserMFAPreferenceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CognitoIdentityProvider.Model.SetUserMFAPreferenceResponse) be returned by specifying '-Select *'."
     )]
     public partial class SetCGIPUserMFAPreferenceCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessToken
         /// <summary>
         /// <para>
-        /// <para>A valid access token that Amazon Cognito issued to the user whose MFA preference you
-        /// want to set.</para>
+        /// <para>A valid access token that Amazon Cognito issued to the currently signed-in user. Must
+        /// include a scope claim for <c>aws.cognito.signin.user.admin</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,10 +83,33 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public System.String AccessToken { get; set; }
         #endregion
         
+        #region Parameter EmailMfaSettings_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether email message MFA is active for a user. When the value of this parameter
+        /// is <c>Enabled</c>, the user will be prompted for MFA during all sign-in attempts,
+        /// unless device tracking is turned on and the device has been trusted.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? EmailMfaSettings_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter EmailMfaSettings_PreferredMfa
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether email message MFA is the user's preferred method.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? EmailMfaSettings_PreferredMfa { get; set; }
+        #endregion
+        
         #region Parameter SMSMfaSetting
         /// <summary>
         /// <para>
-        /// <para>The SMS text message multi-factor authentication (MFA) settings.</para>
+        /// <para>User preferences for SMS message MFA. Activates or deactivates SMS MFA and sets it
+        /// as the preferred MFA method when multiple methods are available.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +120,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter SoftwareTokenMfaSetting
         /// <summary>
         /// <para>
-        /// <para>The time-based one-time password (TOTP) software token MFA settings.</para>
+        /// <para>User preferences for time-based one-time password (TOTP) MFA. Activates or deactivates
+        /// TOTP MFA and sets it as the preferred MFA method when multiple methods are available.
+        /// Users must register a TOTP authenticator before they set this as their preferred MFA
+        /// method.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -152,6 +183,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
                 WriteWarning("You are passing $null as a value for parameter AccessToken which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.EmailMfaSettings_Enabled = this.EmailMfaSettings_Enabled;
+            context.EmailMfaSettings_PreferredMfa = this.EmailMfaSettings_PreferredMfa;
             context.SMSMfaSetting = this.SMSMfaSetting;
             context.SoftwareTokenMfaSetting = this.SoftwareTokenMfaSetting;
             
@@ -173,6 +206,35 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             if (cmdletContext.AccessToken != null)
             {
                 request.AccessToken = cmdletContext.AccessToken;
+            }
+            
+             // populate EmailMfaSettings
+            var requestEmailMfaSettingsIsNull = true;
+            request.EmailMfaSettings = new Amazon.CognitoIdentityProvider.Model.EmailMfaSettingsType();
+            System.Boolean? requestEmailMfaSettings_emailMfaSettings_Enabled = null;
+            if (cmdletContext.EmailMfaSettings_Enabled != null)
+            {
+                requestEmailMfaSettings_emailMfaSettings_Enabled = cmdletContext.EmailMfaSettings_Enabled.Value;
+            }
+            if (requestEmailMfaSettings_emailMfaSettings_Enabled != null)
+            {
+                request.EmailMfaSettings.Enabled = requestEmailMfaSettings_emailMfaSettings_Enabled.Value;
+                requestEmailMfaSettingsIsNull = false;
+            }
+            System.Boolean? requestEmailMfaSettings_emailMfaSettings_PreferredMfa = null;
+            if (cmdletContext.EmailMfaSettings_PreferredMfa != null)
+            {
+                requestEmailMfaSettings_emailMfaSettings_PreferredMfa = cmdletContext.EmailMfaSettings_PreferredMfa.Value;
+            }
+            if (requestEmailMfaSettings_emailMfaSettings_PreferredMfa != null)
+            {
+                request.EmailMfaSettings.PreferredMfa = requestEmailMfaSettings_emailMfaSettings_PreferredMfa.Value;
+                requestEmailMfaSettingsIsNull = false;
+            }
+             // determine if request.EmailMfaSettings should be set to null
+            if (requestEmailMfaSettingsIsNull)
+            {
+                request.EmailMfaSettings = null;
             }
             if (cmdletContext.SMSMfaSetting != null)
             {
@@ -220,13 +282,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "SetUserMFAPreference");
             try
             {
-                #if DESKTOP
-                return client.SetUserMFAPreference(request);
-                #elif CORECLR
-                return client.SetUserMFAPreferenceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetUserMFAPreferenceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -244,6 +300,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AccessToken { get; set; }
+            public System.Boolean? EmailMfaSettings_Enabled { get; set; }
+            public System.Boolean? EmailMfaSettings_PreferredMfa { get; set; }
             public Amazon.CognitoIdentityProvider.Model.SMSMfaSettingsType SMSMfaSetting { get; set; }
             public Amazon.CognitoIdentityProvider.Model.SoftwareTokenMfaSettingsType SoftwareTokenMfaSetting { get; set; }
             public System.Func<Amazon.CognitoIdentityProvider.Model.SetUserMFAPreferenceResponse, SetCGIPUserMFAPreferenceCmdlet, object> Select { get; set; } =

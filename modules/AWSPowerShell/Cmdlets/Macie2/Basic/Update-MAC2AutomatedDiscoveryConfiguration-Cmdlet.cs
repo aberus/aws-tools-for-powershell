@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,37 +22,56 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Macie2;
 using Amazon.Macie2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MAC2
 {
     /// <summary>
-    /// Enables or disables automated sensitive data discovery for an account.
+    /// Changes the configuration settings and status of automated sensitive data discovery
+    /// for an organization or standalone account.
     /// </summary>
     [Cmdlet("Update", "MAC2AutomatedDiscoveryConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon Macie 2 UpdateAutomatedDiscoveryConfiguration API operation.", Operation = new[] {"UpdateAutomatedDiscoveryConfiguration"}, SelectReturnType = typeof(Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateMAC2AutomatedDiscoveryConfigurationCmdlet : AmazonMacie2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AutoEnableOrganizationMember
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to automatically enable automated sensitive data discovery for accounts
+        /// in the organization. Valid values are: ALL (default), enable it for all existing accounts
+        /// and new member accounts; NEW, enable it only for new member accounts; and, NONE, don't
+        /// enable it for any accounts.</para><para>If you specify NEW or NONE, automated sensitive data discovery continues to be enabled
+        /// for any existing accounts that it's currently enabled for. To enable or disable it
+        /// for individual member accounts, specify NEW or NONE, and then enable or disable it
+        /// for each account by using the BatchUpdateAutomatedDiscoveryAccounts operation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoEnableOrganizationMembers")]
+        [AWSConstantClassSource("Amazon.Macie2.AutoEnableMode")]
+        public Amazon.Macie2.AutoEnableMode AutoEnableOrganizationMember { get; set; }
+        #endregion
         
         #region Parameter Status
         /// <summary>
         /// <para>
-        /// <para>The new status of automated sensitive data discovery for the account. Valid values
-        /// are: ENABLED, start or resume automated sensitive data discovery activities for the
-        /// account; and, DISABLED, stop performing automated sensitive data discovery activities
-        /// for the account.</para><para>When you enable automated sensitive data discovery for the first time, Amazon Macie
-        /// uses default configuration settings to determine which data sources to analyze and
-        /// which managed data identifiers to use. To change these settings, use the UpdateClassificationScope
-        /// and UpdateSensitivityInspectionTemplate operations, respectively. If you change the
-        /// settings and subsequently disable the configuration, Amazon Macie retains your changes.</para>
+        /// <para>The new status of automated sensitive data discovery for the organization or account.
+        /// Valid values are: ENABLED, start or resume all automated sensitive data discovery
+        /// activities; and, DISABLED, stop performing all automated sensitive data discovery
+        /// activities.</para><para>If you specify DISABLED for an administrator account, you also disable automated sensitive
+        /// data discovery for all member accounts in the organization.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -76,16 +95,6 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Status parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Status' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Status' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -96,9 +105,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Status), MyInvocation.BoundParameters);
@@ -112,21 +125,12 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationResponse, UpdateMAC2AutomatedDiscoveryConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Status;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.AutoEnableOrganizationMember = this.AutoEnableOrganizationMember;
             context.Status = this.Status;
             #if MODULAR
             if (this.Status == null && ParameterWasBound(nameof(this.Status)))
@@ -150,6 +154,10 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             // create request
             var request = new Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationRequest();
             
+            if (cmdletContext.AutoEnableOrganizationMember != null)
+            {
+                request.AutoEnableOrganizationMembers = cmdletContext.AutoEnableOrganizationMember;
+            }
             if (cmdletContext.Status != null)
             {
                 request.Status = cmdletContext.Status;
@@ -192,13 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Macie 2", "UpdateAutomatedDiscoveryConfiguration");
             try
             {
-                #if DESKTOP
-                return client.UpdateAutomatedDiscoveryConfiguration(request);
-                #elif CORECLR
-                return client.UpdateAutomatedDiscoveryConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateAutomatedDiscoveryConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -215,6 +217,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.Macie2.AutoEnableMode AutoEnableOrganizationMember { get; set; }
             public Amazon.Macie2.AutomatedDiscoveryStatus Status { get; set; }
             public System.Func<Amazon.Macie2.Model.UpdateAutomatedDiscoveryConfigurationResponse, UpdateMAC2AutomatedDiscoveryConfigurationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

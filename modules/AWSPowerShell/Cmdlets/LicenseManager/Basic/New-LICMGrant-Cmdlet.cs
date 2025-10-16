@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LicenseManager;
 using Amazon.LicenseManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LICM
 {
     /// <summary>
@@ -37,17 +39,22 @@ namespace Amazon.PowerShell.Cmdlets.LICM
     [OutputType("Amazon.LicenseManager.Model.CreateGrantResponse")]
     [AWSCmdlet("Calls the AWS License Manager CreateGrant API operation.", Operation = new[] {"CreateGrant"}, SelectReturnType = typeof(Amazon.LicenseManager.Model.CreateGrantResponse))]
     [AWSCmdletOutput("Amazon.LicenseManager.Model.CreateGrantResponse",
-        "This cmdlet returns an Amazon.LicenseManager.Model.CreateGrantResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LicenseManager.Model.CreateGrantResponse object containing multiple properties."
     )]
     public partial class NewLICMGrantCmdlet : AmazonLicenseManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowedOperation
         /// <summary>
         /// <para>
-        /// <para>Allowed operations for the grant.</para>
+        /// <para>Allowed operations for the grant.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -117,7 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         /// <summary>
         /// <para>
         /// <para>The grant principals. You can specify one of the following as an Amazon Resource Name
-        /// (ARN):</para><ul><li><para>An Amazon Web Services account, which includes only the account specified.</para></li></ul><ul><li><para>An organizational unit (OU), which includes all accounts in the OU.</para></li></ul><ul><li><para>An organization, which will include all accounts across your organization.</para></li></ul>
+        /// (ARN):</para><ul><li><para>An Amazon Web Services account, which includes only the account specified.</para></li></ul><ul><li><para>An organizational unit (OU), which includes all accounts in the OU.</para></li></ul><ul><li><para>An organization, which will include all accounts across your organization.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -130,6 +141,23 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("Principals")]
         public System.String[] Principal { get; set; }
+        #endregion
+        
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>Tags to add to the grant. For more information about tagging support in License Manager,
+        /// see the <a href="https://docs.aws.amazon.com/license-manager/latest/APIReference/API_TagResource.html">TagResource</a>
+        /// operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.LicenseManager.Model.Tag[] Tag { get; set; }
         #endregion
         
         #region Parameter ClientToken
@@ -161,16 +189,6 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LicenseArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LicenseArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LicenseArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -181,9 +199,13 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LicenseArn), MyInvocation.BoundParameters);
@@ -197,21 +219,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LicenseManager.Model.CreateGrantResponse, NewLICMGrantCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LicenseArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AllowedOperation != null)
             {
                 context.AllowedOperation = new List<System.String>(this.AllowedOperation);
@@ -260,6 +272,10 @@ namespace Amazon.PowerShell.Cmdlets.LICM
                 WriteWarning("You are passing $null as a value for parameter Principal which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.LicenseManager.Model.Tag>(this.Tag);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -300,6 +316,10 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             {
                 request.Principals = cmdletContext.Principal;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
             CmdletOutput output;
             
@@ -338,13 +358,7 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS License Manager", "CreateGrant");
             try
             {
-                #if DESKTOP
-                return client.CreateGrant(request);
-                #elif CORECLR
-                return client.CreateGrantAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGrantAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -367,6 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             public System.String HomeRegion { get; set; }
             public System.String LicenseArn { get; set; }
             public List<System.String> Principal { get; set; }
+            public List<Amazon.LicenseManager.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.LicenseManager.Model.CreateGrantResponse, NewLICMGrantCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

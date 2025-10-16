@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataExchange;
 using Amazon.DataExchange.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTEX
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
     [OutputType("Amazon.DataExchange.Model.RevokeRevisionResponse")]
     [AWSCmdlet("Calls the AWS Data Exchange RevokeRevision API operation.", Operation = new[] {"RevokeRevision"}, SelectReturnType = typeof(Amazon.DataExchange.Model.RevokeRevisionResponse))]
     [AWSCmdletOutput("Amazon.DataExchange.Model.RevokeRevisionResponse",
-        "This cmdlet returns an Amazon.DataExchange.Model.RevokeRevisionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataExchange.Model.RevokeRevisionResponse object containing multiple properties."
     )]
     public partial class RevokeDTEXRevisionCmdlet : AmazonDataExchangeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DataSetId
         /// <summary>
@@ -114,9 +117,13 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RevisionId), MyInvocation.BoundParameters);
@@ -222,13 +229,7 @@ namespace Amazon.PowerShell.Cmdlets.DTEX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Data Exchange", "RevokeRevision");
             try
             {
-                #if DESKTOP
-                return client.RevokeRevision(request);
-                #elif CORECLR
-                return client.RevokeRevisionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RevokeRevisionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,19 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// <b>This operation is used with the Amazon GameLift FleetIQ solution and game server
-    /// groups.</b><para>
+    /// <b>This operation is used with the Amazon GameLift Servers FleetIQ solution and game
+    /// server groups.</b><para>
     /// Retrieves status information about the Amazon EC2 instances associated with a Amazon
-    /// GameLift FleetIQ game server group. Use this operation to detect when instances are
-    /// active or not available to host new game servers.
+    /// GameLift Servers FleetIQ game server group. Use this operation to detect when instances
+    /// are active or not available to host new game servers.
     /// </para><para>
     /// To request status for all instances in the game server group, provide a game server
     /// group ID only. To request status for specific instances, provide the game server group
@@ -45,18 +47,19 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// as a best practice, cache the results and refresh your cache no more than once every
     /// 10 seconds.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-intro.html">Amazon
-    /// GameLift FleetIQ Guide</a></para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// GameLift Servers FleetIQ Guide</a></para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "GMLGameServerInstance")]
     [OutputType("Amazon.GameLift.Model.DescribeGameServerInstancesResponse")]
     [AWSCmdlet("Calls the Amazon GameLift Service DescribeGameServerInstances API operation.", Operation = new[] {"DescribeGameServerInstances"}, SelectReturnType = typeof(Amazon.GameLift.Model.DescribeGameServerInstancesResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.DescribeGameServerInstancesResponse",
-        "This cmdlet returns an Amazon.GameLift.Model.DescribeGameServerInstancesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GameLift.Model.DescribeGameServerInstancesResponse object containing multiple properties."
     )]
     public partial class GetGMLGameServerInstanceCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GameServerGroupName
         /// <summary>
@@ -80,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>
         /// <para>The Amazon EC2 instance IDs that you want to retrieve status on. Amazon EC2 instance
         /// IDs use a 17-character format, for example: <c>i-1234567890abcdef0</c>. To retrieve
-        /// all instances in the game server group, leave this parameter empty. </para>
+        /// all instances in the game server group, leave this parameter empty. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,7 +115,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,16 +133,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GameServerGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GameServerGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GameServerGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -146,9 +143,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -156,21 +157,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.DescribeGameServerInstancesResponse, GetGMLGameServerInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GameServerGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.GameServerGroupName = this.GameServerGroupName;
             #if MODULAR
             if (this.GameServerGroupName == null && ParameterWasBound(nameof(this.GameServerGroupName)))
@@ -197,9 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.GameLift.Model.DescribeGameServerInstancesRequest();
@@ -278,13 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DescribeGameServerInstances");
             try
             {
-                #if DESKTOP
-                return client.DescribeGameServerInstances(request);
-                #elif CORECLR
-                return client.DescribeGameServerInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeGameServerInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MigrationHubConfig;
 using Amazon.MigrationHubConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MHC
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.MHC
     [AWSCmdlet("Calls the AWS Migration Hub Config GetHomeRegion API operation.", Operation = new[] {"GetHomeRegion"}, SelectReturnType = typeof(Amazon.MigrationHubConfig.Model.GetHomeRegionResponse))]
     [AWSCmdletOutput("System.String or Amazon.MigrationHubConfig.Model.GetHomeRegionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.MigrationHubConfig.Model.GetHomeRegionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MigrationHubConfig.Model.GetHomeRegionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMHCHomeRegionCmdlet : AmazonMigrationHubConfigClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -57,9 +60,13 @@ namespace Amazon.PowerShell.Cmdlets.MHC
         public string Select { get; set; } = "HomeRegion";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -126,13 +133,7 @@ namespace Amazon.PowerShell.Cmdlets.MHC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Migration Hub Config", "GetHomeRegion");
             try
             {
-                #if DESKTOP
-                return client.GetHomeRegion(request);
-                #elif CORECLR
-                return client.GetHomeRegionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetHomeRegionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

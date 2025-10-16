@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectoryService;
 using Amazon.DirectoryService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DS
 {
     /// <summary>
@@ -36,14 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
     [AWSCmdlet("Calls the AWS Directory Service UpdateRadius API operation.", Operation = new[] {"UpdateRadius"}, SelectReturnType = typeof(Amazon.DirectoryService.Model.UpdateRadiusResponse))]
     [AWSCmdletOutput("None or Amazon.DirectoryService.Model.UpdateRadiusResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DirectoryService.Model.UpdateRadiusResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DirectoryService.Model.UpdateRadiusResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateDSRadiusCmdlet : AmazonDirectoryServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RadiusSettings_AuthenticationProtocol
         /// <summary>
@@ -97,7 +98,8 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter RadiusSettings_RadiusRetry
         /// <summary>
         /// <para>
-        /// <para>The maximum number of times that communication with the RADIUS server is attempted.</para>
+        /// <para>The maximum number of times that communication with the RADIUS server is retried after
+        /// the initial attempt.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,14 +110,31 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter RadiusSettings_RadiusServer
         /// <summary>
         /// <para>
-        /// <para>An array of strings that contains the fully qualified domain name (FQDN) or IP addresses
-        /// of the RADIUS server endpoints, or the FQDN or IP addresses of your RADIUS server
-        /// load balancer.</para>
+        /// <para>The fully qualified domain name (FQDN) or IP addresses of the RADIUS server endpoints,
+        /// or the FQDN or IP addresses of your RADIUS server load balancer.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("RadiusSettings_RadiusServers")]
         public System.String[] RadiusSettings_RadiusServer { get; set; }
+        #endregion
+        
+        #region Parameter RadiusSettings_RadiusServersIpv6
+        /// <summary>
+        /// <para>
+        /// <para>The IPv6 addresses of the RADIUS server endpoints or RADIUS server load balancer.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] RadiusSettings_RadiusServersIpv6 { get; set; }
         #endregion
         
         #region Parameter RadiusSettings_RadiusTimeout
@@ -158,16 +177,6 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DirectoryId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -178,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DirectoryId), MyInvocation.BoundParameters);
@@ -194,21 +207,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectoryService.Model.UpdateRadiusResponse, UpdateDSRadiusCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DirectoryId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DirectoryId = this.DirectoryId;
             #if MODULAR
             if (this.DirectoryId == null && ParameterWasBound(nameof(this.DirectoryId)))
@@ -223,6 +226,10 @@ namespace Amazon.PowerShell.Cmdlets.DS
             if (this.RadiusSettings_RadiusServer != null)
             {
                 context.RadiusSettings_RadiusServer = new List<System.String>(this.RadiusSettings_RadiusServer);
+            }
+            if (this.RadiusSettings_RadiusServersIpv6 != null)
+            {
+                context.RadiusSettings_RadiusServersIpv6 = new List<System.String>(this.RadiusSettings_RadiusServersIpv6);
             }
             context.RadiusSettings_RadiusTimeout = this.RadiusSettings_RadiusTimeout;
             context.RadiusSettings_SharedSecret = this.RadiusSettings_SharedSecret;
@@ -301,6 +308,16 @@ namespace Amazon.PowerShell.Cmdlets.DS
                 request.RadiusSettings.RadiusServers = requestRadiusSettings_radiusSettings_RadiusServer;
                 requestRadiusSettingsIsNull = false;
             }
+            List<System.String> requestRadiusSettings_radiusSettings_RadiusServersIpv6 = null;
+            if (cmdletContext.RadiusSettings_RadiusServersIpv6 != null)
+            {
+                requestRadiusSettings_radiusSettings_RadiusServersIpv6 = cmdletContext.RadiusSettings_RadiusServersIpv6;
+            }
+            if (requestRadiusSettings_radiusSettings_RadiusServersIpv6 != null)
+            {
+                request.RadiusSettings.RadiusServersIpv6 = requestRadiusSettings_radiusSettings_RadiusServersIpv6;
+                requestRadiusSettingsIsNull = false;
+            }
             System.Int32? requestRadiusSettings_radiusSettings_RadiusTimeout = null;
             if (cmdletContext.RadiusSettings_RadiusTimeout != null)
             {
@@ -374,13 +391,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Directory Service", "UpdateRadius");
             try
             {
-                #if DESKTOP
-                return client.UpdateRadius(request);
-                #elif CORECLR
-                return client.UpdateRadiusAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRadiusAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -403,6 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
             public System.Int32? RadiusSettings_RadiusPort { get; set; }
             public System.Int32? RadiusSettings_RadiusRetry { get; set; }
             public List<System.String> RadiusSettings_RadiusServer { get; set; }
+            public List<System.String> RadiusSettings_RadiusServersIpv6 { get; set; }
             public System.Int32? RadiusSettings_RadiusTimeout { get; set; }
             public System.String RadiusSettings_SharedSecret { get; set; }
             public System.Boolean? RadiusSettings_UseSameUsername { get; set; }

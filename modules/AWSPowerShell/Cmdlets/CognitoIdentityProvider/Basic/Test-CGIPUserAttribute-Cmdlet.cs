@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Verifies the specified user attributes in the user pool.
+    /// Submits a verification code for a signed-in user who has added or changed a value
+    /// of an auto-verified attribute. When successful, the user's attribute becomes verified
+    /// and the attribute <c>email_verified</c> or <c>phone_number_verified</c> becomes <c>true</c>.
     /// 
     ///  
     /// <para>
     ///  If your user pool requires verification before Amazon Cognito updates the attribute
-    /// value, VerifyUserAttribute updates the affected attribute to its pending value. For
-    /// more information, see <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_UserAttributeUpdateSettingsType.html">
-    /// UserAttributeUpdateSettingsType</a>. 
+    /// value, this operation updates the affected attribute to its pending value.
     /// </para><para>
     /// Authorize this action with a signed-in user's access token. It must include the scope
     /// <c>aws.cognito.signin.user.admin</c>.
@@ -52,20 +54,19 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider VerifyUserAttribute API operation. This operation uses anonymous authentication and does not require credential parameters to be supplied.", Operation = new[] {"VerifyUserAttribute"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.VerifyUserAttributeResponse))]
     [AWSCmdletOutput("None or Amazon.CognitoIdentityProvider.Model.VerifyUserAttributeResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CognitoIdentityProvider.Model.VerifyUserAttributeResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CognitoIdentityProvider.Model.VerifyUserAttributeResponse) be returned by specifying '-Select *'."
     )]
     public partial class TestCGIPUserAttributeCmdlet : AnonymousAmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessToken
         /// <summary>
         /// <para>
-        /// <para>A valid access token that Amazon Cognito issued to the user whose user attributes
-        /// you want to verify.</para>
+        /// <para>A valid access token that Amazon Cognito issued to the currently signed-in user. Must
+        /// include a scope claim for <c>aws.cognito.signin.user.admin</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,7 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter AttributeName
         /// <summary>
         /// <para>
-        /// <para>The attribute name in the request to verify user attributes.</para>
+        /// <para>The name of the attribute that you want to verify.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,7 +100,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Code
         /// <summary>
         /// <para>
-        /// <para>The verification code in the request to verify user attributes.</para>
+        /// <para>The verification code that your user pool sent to the added or changed attribute,
+        /// for example the user's email address.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -123,19 +125,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AccessToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AccessToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AccessToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -143,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.VerifyUserAttributeResponse, TestCGIPUserAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AccessToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessToken = this.AccessToken;
             #if MODULAR
             if (this.AccessToken == null && ParameterWasBound(nameof(this.AccessToken)))
@@ -245,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "VerifyUserAttribute");
             try
             {
-                #if DESKTOP
-                return client.VerifyUserAttribute(request);
-                #elif CORECLR
-                return client.VerifyUserAttributeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.VerifyUserAttributeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

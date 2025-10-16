@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppConfig;
 using Amazon.AppConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APPC
 {
     /// <summary>
-    /// Deletes an environment. Deleting an environment does not delete a configuration from
-    /// a host.
+    /// Deletes an environment.
+    /// 
+    ///  
+    /// <para>
+    /// To prevent users from unintentionally deleting actively-used environments, enable
+    /// <a href="https://docs.aws.amazon.com/appconfig/latest/userguide/deletion-protection.html">deletion
+    /// protection</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("Remove", "APPCEnvironment", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS AppConfig DeleteEnvironment API operation.", Operation = new[] {"DeleteEnvironment"}, SelectReturnType = typeof(Amazon.AppConfig.Model.DeleteEnvironmentResponse))]
     [AWSCmdletOutput("None or Amazon.AppConfig.Model.DeleteEnvironmentResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.AppConfig.Model.DeleteEnvironmentResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.AppConfig.Model.DeleteEnvironmentResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveAPPCEnvironmentCmdlet : AmazonAppConfigClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -58,6 +67,25 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ApplicationId { get; set; }
+        #endregion
+        
+        #region Parameter DeletionProtectionCheck
+        /// <summary>
+        /// <para>
+        /// <para>A parameter to configure deletion protection. Deletion protection prevents a user
+        /// from deleting an environment if your application called either <a href="https://docs.aws.amazon.com/appconfig/2019-10-09/APIReference/API_appconfigdata_GetLatestConfiguration.html">GetLatestConfiguration</a>
+        /// or in the environment during the specified interval. </para><para>This parameter supports the following values:</para><ul><li><para><c>BYPASS</c>: Instructs AppConfig to bypass the deletion protection check and delete
+        /// a configuration profile even if deletion protection would have otherwise prevented
+        /// it. </para></li><li><para><c>APPLY</c>: Instructs the deletion protection check to run, even if deletion protection
+        /// is disabled at the account level. <c>APPLY</c> also forces the deletion protection
+        /// check to run against resources created in the past hour, which are normally excluded
+        /// from deletion protection checks.</para></li><li><para><c>ACCOUNT_DEFAULT</c>: The default setting, which instructs AppConfig to implement
+        /// the deletion protection value specified in the <c>UpdateAccountSettings</c> API.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AppConfig.DeletionProtectionCheck")]
+        public Amazon.AppConfig.DeletionProtectionCheck DeletionProtectionCheck { get; set; }
         #endregion
         
         #region Parameter EnvironmentId
@@ -87,16 +115,6 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EnvironmentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EnvironmentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EnvironmentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -107,9 +125,13 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.EnvironmentId), MyInvocation.BoundParameters);
@@ -123,21 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppConfig.Model.DeleteEnvironmentResponse, RemoveAPPCEnvironmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EnvironmentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -145,6 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
                 WriteWarning("You are passing $null as a value for parameter ApplicationId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DeletionProtectionCheck = this.DeletionProtectionCheck;
             context.EnvironmentId = this.EnvironmentId;
             #if MODULAR
             if (this.EnvironmentId == null && ParameterWasBound(nameof(this.EnvironmentId)))
@@ -171,6 +184,10 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             if (cmdletContext.ApplicationId != null)
             {
                 request.ApplicationId = cmdletContext.ApplicationId;
+            }
+            if (cmdletContext.DeletionProtectionCheck != null)
+            {
+                request.DeletionProtectionCheck = cmdletContext.DeletionProtectionCheck;
             }
             if (cmdletContext.EnvironmentId != null)
             {
@@ -214,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppConfig", "DeleteEnvironment");
             try
             {
-                #if DESKTOP
-                return client.DeleteEnvironment(request);
-                #elif CORECLR
-                return client.DeleteEnvironmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteEnvironmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -238,6 +249,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ApplicationId { get; set; }
+            public Amazon.AppConfig.DeletionProtectionCheck DeletionProtectionCheck { get; set; }
             public System.String EnvironmentId { get; set; }
             public System.Func<Amazon.AppConfig.Model.DeleteEnvironmentResponse, RemoveAPPCEnvironmentCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

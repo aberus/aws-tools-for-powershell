@@ -80,10 +80,38 @@ $TSQ_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.TimestreamQuery.ComputeMode
+        "Update-TSQAccountSetting/QueryCompute_ComputeMode"
+        {
+            $v = "ON_DEMAND","PROVISIONED"
+            break
+        }
+
+        # Amazon.TimestreamQuery.QueryInsightsMode
+        "Invoke-TSQQuery/QueryInsights_Mode"
+        {
+            $v = "DISABLED","ENABLED_WITH_RATE_CONTROL"
+            break
+        }
+
+        # Amazon.TimestreamQuery.QueryPricingModel
+        "Update-TSQAccountSetting/QueryPricingModel"
+        {
+            $v = "BYTES_SCANNED","COMPUTE_UNITS"
+            break
+        }
+
         # Amazon.TimestreamQuery.S3EncryptionOption
-        "New-TSQScheduledQuery/ErrorReportConfiguration_S3Configuration_EncryptionOption"
+        "New-TSQScheduledQuery/S3Configuration_EncryptionOption"
         {
             $v = "SSE_KMS","SSE_S3"
+            break
+        }
+
+        # Amazon.TimestreamQuery.ScheduledQueryInsightsMode
+        "Start-TSQScheduledQuery/QueryInsights_Mode"
+        {
+            $v = "DISABLED","ENABLED_WITH_RATE_CONTROL"
             break
         }
 
@@ -103,7 +131,10 @@ $TSQ_Completers = {
 }
 
 $TSQ_map = @{
-    "ErrorReportConfiguration_S3Configuration_EncryptionOption"=@("New-TSQScheduledQuery")
+    "QueryCompute_ComputeMode"=@("Update-TSQAccountSetting")
+    "QueryInsights_Mode"=@("Invoke-TSQQuery","Start-TSQScheduledQuery")
+    "QueryPricingModel"=@("Update-TSQAccountSetting")
+    "S3Configuration_EncryptionOption"=@("New-TSQScheduledQuery")
     "State"=@("Update-TSQScheduledQuery")
 }
 
@@ -160,6 +191,7 @@ $TSQ_SelectMap = @{
     "Select"=@("Stop-TSQQuery",
                "New-TSQScheduledQuery",
                "Remove-TSQScheduledQuery",
+               "Get-TSQAccountSetting",
                "Get-TSQEndpointList",
                "Get-TSQScheduledQuery",
                "Start-TSQScheduledQuery",
@@ -169,6 +201,7 @@ $TSQ_SelectMap = @{
                "Invoke-TSQQuery",
                "Add-TSQResourceTag",
                "Remove-TSQResourceTag",
+               "Update-TSQAccountSetting",
                "Update-TSQScheduledQuery")
 }
 

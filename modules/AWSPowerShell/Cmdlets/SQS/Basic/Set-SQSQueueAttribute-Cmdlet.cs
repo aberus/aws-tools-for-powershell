@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,18 +22,20 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SQS
 {
     /// <summary>
-    /// Sets the value of one or more queue attributes. When you change a queue's attributes,
-    /// the change can take up to 60 seconds for most of the attributes to propagate throughout
-    /// the Amazon SQS system. Changes made to the <c>MessageRetentionPeriod</c> attribute
-    /// can take up to 15 minutes and will impact existing messages in the queue potentially
-    /// causing them to be expired and deleted if the <c>MessageRetentionPeriod</c> is reduced
-    /// below the age of existing messages.
+    /// Sets the value of one or more queue attributes, like a policy. When you change a queue's
+    /// attributes, the change can take up to 60 seconds for most of the attributes to propagate
+    /// throughout the Amazon SQS system. Changes made to the <c>MessageRetentionPeriod</c>
+    /// attribute can take up to 15 minutes and will impact existing messages in the queue
+    /// potentially causing them to be expired and deleted if the <c>MessageRetentionPeriod</c>
+    /// is reduced below the age of existing messages.
     /// 
     ///  <note><ul><li><para>
     /// In the future, new attributes might be added. If you write code that calls this action,
@@ -53,12 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
     [AWSCmdlet("Calls the Amazon Simple Queue Service (SQS) SetQueueAttributes API operation.", Operation = new[] {"SetQueueAttributes"}, SelectReturnType = typeof(Amazon.SQS.Model.SetQueueAttributesResponse))]
     [AWSCmdletOutput("None or Amazon.SQS.Model.SetQueueAttributesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SQS.Model.SetQueueAttributesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SQS.Model.SetQueueAttributesResponse) be returned by specifying '-Select *'."
     )]
     public partial class SetSQSQueueAttributeCmdlet : AmazonSQSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
@@ -67,8 +70,8 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// that the <c>SetQueueAttributes</c> action uses:</para><ul><li><para><c>DelaySeconds</c> – The length of time, in seconds, for which the delivery of all
         /// messages in the queue is delayed. Valid values: An integer from 0 to 900 (15 minutes).
         /// Default: 0. </para></li><li><para><c>MaximumMessageSize</c> – The limit of how many bytes a message can contain before
-        /// Amazon SQS rejects it. Valid values: An integer from 1,024 bytes (1 KiB) up to 262,144
-        /// bytes (256 KiB). Default: 262,144 (256 KiB). </para></li><li><para><c>MessageRetentionPeriod</c> – The length of time, in seconds, for which Amazon
+        /// Amazon SQS rejects it. Valid values: An integer from 1,024 bytes (1 KiB) up to 1,048,576
+        /// bytes (1 MiB). Default: 1,048,576 bytes (1 MiB). </para></li><li><para><c>MessageRetentionPeriod</c> – The length of time, in seconds, for which Amazon
         /// SQS retains a message. Valid values: An integer representing seconds, from 60 (1 minute)
         /// to 1,209,600 (14 days). Default: 345,600 (4 days). When you change a queue's attributes,
         /// the change can take up to 60 seconds for most of the attributes to propagate throughout
@@ -132,7 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         /// The <c>perMessageGroupId</c> value is allowed only when the value for <c>DeduplicationScope</c>
         /// is <c>messageGroup</c>.</para></li></ul><para>To enable high throughput for FIFO queues, do the following:</para><ul><li><para>Set <c>DeduplicationScope</c> to <c>messageGroup</c>.</para></li><li><para>Set <c>FifoThroughputLimit</c> to <c>perMessageGroupId</c>.</para></li></ul><para>If you set these attributes to anything other than the values shown for enabling high
         /// throughput, normal throughput is in effect and deduplication occurs as specified.</para><para>For information on throughput quotas, see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html">Quotas
-        /// related to messages</a> in the <i>Amazon SQS Developer Guide</i>.</para>
+        /// related to messages</a> in the <i>Amazon SQS Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -174,16 +181,6 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueueUrl parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueueUrl' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueueUrl' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -194,9 +191,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.QueueUrl), MyInvocation.BoundParameters);
@@ -210,21 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SQS.Model.SetQueueAttributesResponse, SetSQSQueueAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueueUrl;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -308,13 +299,7 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Queue Service (SQS)", "SetQueueAttributes");
             try
             {
-                #if DESKTOP
-                return client.SetQueueAttributes(request);
-                #elif CORECLR
-                return client.SetQueueAttributesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetQueueAttributesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

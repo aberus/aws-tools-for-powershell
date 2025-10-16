@@ -80,10 +80,72 @@ $IVSRT_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.IVSRealTime.IngestConfigurationState
+        "Get-IVSRTIngestConfigurationList/FilterByState"
+        {
+            $v = "ACTIVE","INACTIVE"
+            break
+        }
+
+        # Amazon.IVSRealTime.IngestProtocol
+        "New-IVSRTIngestConfiguration/IngestProtocol"
+        {
+            $v = "RTMP","RTMPS"
+            break
+        }
+
+        # Amazon.IVSRealTime.ParticipantRecordingFilterByRecordingState
+        "Get-IVSRTParticipantList/FilterByRecordingState"
+        {
+            $v = "ACTIVE","FAILED","STARTING","STOPPED","STOPPING"
+            break
+        }
+
         # Amazon.IVSRealTime.ParticipantState
         "Get-IVSRTParticipantList/FilterByState"
         {
             $v = "CONNECTED","DISCONNECTED"
+            break
+        }
+
+        # Amazon.IVSRealTime.PipBehavior
+        "Start-IVSRTComposition/Pip_PipBehavior"
+        {
+            $v = "DYNAMIC","STATIC"
+            break
+        }
+
+        # Amazon.IVSRealTime.PipPosition
+        "Start-IVSRTComposition/Pip_PipPosition"
+        {
+            $v = "BOTTOM_LEFT","BOTTOM_RIGHT","TOP_LEFT","TOP_RIGHT"
+            break
+        }
+
+        # Amazon.IVSRealTime.ThumbnailRecordingMode
+        {
+            ($_ -eq "New-IVSRTStage/ThumbnailConfiguration_RecordingMode") -Or
+            ($_ -eq "Update-IVSRTStage/ThumbnailConfiguration_RecordingMode")
+        }
+        {
+            $v = "DISABLED","INTERVAL"
+            break
+        }
+
+        # Amazon.IVSRealTime.VideoAspectRatio
+        "Start-IVSRTComposition/Grid_VideoAspectRatio"
+        {
+            $v = "AUTO","PORTRAIT","SQUARE","VIDEO"
+            break
+        }
+
+        # Amazon.IVSRealTime.VideoFillMode
+        {
+            ($_ -eq "Start-IVSRTComposition/Grid_VideoFillMode") -Or
+            ($_ -eq "Start-IVSRTComposition/Pip_VideoFillMode")
+        }
+        {
+            $v = "CONTAIN","COVER","FILL"
             break
         }
 
@@ -96,7 +158,15 @@ $IVSRT_Completers = {
 }
 
 $IVSRT_map = @{
-    "FilterByState"=@("Get-IVSRTParticipantList")
+    "FilterByRecordingState"=@("Get-IVSRTParticipantList")
+    "FilterByState"=@("Get-IVSRTIngestConfigurationList","Get-IVSRTParticipantList")
+    "Grid_VideoAspectRatio"=@("Start-IVSRTComposition")
+    "Grid_VideoFillMode"=@("Start-IVSRTComposition")
+    "IngestProtocol"=@("New-IVSRTIngestConfiguration")
+    "Pip_PipBehavior"=@("Start-IVSRTComposition")
+    "Pip_PipPosition"=@("Start-IVSRTComposition")
+    "Pip_VideoFillMode"=@("Start-IVSRTComposition")
+    "ThumbnailConfiguration_RecordingMode"=@("New-IVSRTStage","Update-IVSRTStage")
 }
 
 _awsArgumentCompleterRegistration $IVSRT_Completers $IVSRT_map
@@ -150,31 +220,43 @@ $IVSRT_SelectCompleters = {
 
 $IVSRT_SelectMap = @{
     "Select"=@("New-IVSRTEncoderConfiguration",
+               "New-IVSRTIngestConfiguration",
                "New-IVSRTParticipantToken",
                "New-IVSRTStage",
                "New-IVSRTStorageConfiguration",
                "Remove-IVSRTEncoderConfiguration",
+               "Remove-IVSRTIngestConfiguration",
+               "Remove-IVSRTPublicKey",
                "Remove-IVSRTStage",
                "Remove-IVSRTStorageConfiguration",
                "Disconnect-IVSRTParticipant",
                "Get-IVSRTComposition",
                "Get-IVSRTEncoderConfiguration",
+               "Get-IVSRTIngestConfiguration",
                "Get-IVSRTParticipant",
+               "Get-IVSRTPublicKey",
                "Get-IVSRTStage",
                "Get-IVSRTStageSession",
                "Get-IVSRTStorageConfiguration",
+               "Import-IVSRTPublicKey",
                "Get-IVSRTCompositionList",
                "Get-IVSRTEncoderConfigurationList",
+               "Get-IVSRTIngestConfigurationList",
                "Get-IVSRTParticipantEventList",
+               "Get-IVSRTParticipantReplicaList",
                "Get-IVSRTParticipantList",
+               "Get-IVSRTPublicKeyList",
                "Get-IVSRTStageList",
                "Get-IVSRTStageSessionList",
                "Get-IVSRTStorageConfigurationList",
                "Get-IVSRTResourceTag",
                "Start-IVSRTComposition",
+               "Start-IVSRTParticipantReplication",
                "Stop-IVSRTComposition",
+               "Stop-IVSRTParticipantReplication",
                "Add-IVSRTResourceTag",
                "Remove-IVSRTResourceTag",
+               "Update-IVSRTIngestConfiguration",
                "Update-IVSRTStage")
 }
 

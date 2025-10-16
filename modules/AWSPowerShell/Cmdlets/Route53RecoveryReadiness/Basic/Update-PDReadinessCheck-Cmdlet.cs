@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53RecoveryReadiness;
 using Amazon.Route53RecoveryReadiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PD
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.PD
     [OutputType("Amazon.Route53RecoveryReadiness.Model.UpdateReadinessCheckResponse")]
     [AWSCmdlet("Calls the AWS Route53 Recovery Readiness UpdateReadinessCheck API operation.", Operation = new[] {"UpdateReadinessCheck"}, SelectReturnType = typeof(Amazon.Route53RecoveryReadiness.Model.UpdateReadinessCheckResponse))]
     [AWSCmdletOutput("Amazon.Route53RecoveryReadiness.Model.UpdateReadinessCheckResponse",
-        "This cmdlet returns an Amazon.Route53RecoveryReadiness.Model.UpdateReadinessCheckResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53RecoveryReadiness.Model.UpdateReadinessCheckResponse object containing multiple properties."
     )]
     public partial class UpdatePDReadinessCheckCmdlet : AmazonRoute53RecoveryReadinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ReadinessCheckName
         /// <summary>
@@ -96,9 +99,13 @@ namespace Amazon.PowerShell.Cmdlets.PD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ReadinessCheckName), MyInvocation.BoundParameters);
@@ -193,13 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.PD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Route53 Recovery Readiness", "UpdateReadinessCheck");
             try
             {
-                #if DESKTOP
-                return client.UpdateReadinessCheck(request);
-                #elif CORECLR
-                return client.UpdateReadinessCheckAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateReadinessCheckAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

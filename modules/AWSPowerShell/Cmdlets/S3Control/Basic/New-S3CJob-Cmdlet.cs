@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -37,28 +39,37 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// you specify. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/batch-ops.html">S3
     /// Batch Operations</a> in the <i>Amazon S3 User Guide</i>.
     /// </para><dl><dt>Permissions</dt><dd><para>
-    /// For information about permissions required to use the Batch Operations, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuAndPermissions.html">Granting
+    /// For information about permissions required to use the Batch Operations, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/batch-ops-iam-role-policies.html">Granting
     /// permissions for S3 Batch Operations</a> in the <i>Amazon S3 User Guide</i>.
     /// </para></dd></dl><para>
     /// Related actions include:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DescribeJob.html">DescribeJob</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListJobs.html">ListJobs</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UpdateJobPriority.html">UpdateJobPriority</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UpdateJobStatus.html">UpdateJobStatus</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_JobOperation.html">JobOperation</a></para></li></ul>
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DescribeJob.html">DescribeJob</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListJobs.html">ListJobs</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UpdateJobPriority.html">UpdateJobPriority</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_UpdateJobStatus.html">UpdateJobStatus</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_JobOperation.html">JobOperation</a></para></li></ul><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("New", "S3CJob", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon S3 Control CreateJob API operation.", Operation = new[] {"CreateJob"}, SelectReturnType = typeof(Amazon.S3Control.Model.CreateJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.S3Control.Model.CreateJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.S3Control.Model.CreateJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3Control.Model.CreateJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewS3CJobCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3PutObjectCopy_AccessControlGrant
         /// <summary>
         /// <para>
-        /// <note><para>This functionality is not supported by directory buckets.</para></note>
+        /// <note><para>This functionality is not supported by directory buckets.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,8 +124,12 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <para>Specifies whether Amazon S3 should use an S3 Bucket Key for object encryption with
         /// server-side encryption using Amazon Web Services KMS (SSE-KMS). Setting this header
         /// to <c>true</c> causes Amazon S3 to use an S3 Bucket Key for object encryption with
-        /// SSE-KMS.</para><para>Specifying this header with an <i>object</i> action doesn’t affect <i>bucket-level</i>
-        /// settings for S3 Bucket Key.</para><note><para>This functionality is not supported by directory buckets.</para></note>
+        /// SSE-KMS.</para><para>Specifying this header with an <i>Copy</i> action doesn’t affect <i>bucket-level</i>
+        /// settings for S3 Bucket Key.</para><note><para><b>Directory buckets</b> - S3 Bucket Keys aren't supported, when you copy SSE-KMS
+        /// encrypted objects from general purpose buckets to directory buckets, from directory
+        /// buckets to general purpose buckets, or between directory buckets, through <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-objects-Batch-Ops">the
+        /// Copy operation in Batch Operations</a>. In this case, Amazon S3 makes a call to KMS
+        /// every time a copy request is made for a KMS-encrypted object.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,6 +184,20 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public Amazon.S3Control.S3CannedAccessControlList S3PutObjectCopy_CannedAccessControlList { get; set; }
         #endregion
         
+        #region Parameter S3ComputeObjectChecksum_ChecksumAlgorithm
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the algorithm that you want Amazon S3 to use to create the checksum. For
+        /// more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking
+        /// object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Operation_S3ComputeObjectChecksum_ChecksumAlgorithm")]
+        [AWSConstantClassSource("Amazon.S3Control.ComputeObjectChecksumAlgorithm")]
+        public Amazon.S3Control.ComputeObjectChecksumAlgorithm S3ComputeObjectChecksum_ChecksumAlgorithm { get; set; }
+        #endregion
+        
         #region Parameter S3PutObjectCopy_ChecksumAlgorithm
         /// <summary>
         /// <para>
@@ -181,6 +210,20 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         [Alias("Operation_S3PutObjectCopy_ChecksumAlgorithm")]
         [AWSConstantClassSource("Amazon.S3Control.S3ChecksumAlgorithm")]
         public Amazon.S3Control.S3ChecksumAlgorithm S3PutObjectCopy_ChecksumAlgorithm { get; set; }
+        #endregion
+        
+        #region Parameter S3ComputeObjectChecksum_ChecksumType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the checksum type that you want Amazon S3 to use to calculate the object’s
+        /// checksum value. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html">Checking
+        /// object integrity</a> in the <i>Amazon S3 User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Operation_S3ComputeObjectChecksum_ChecksumType")]
+        [AWSConstantClassSource("Amazon.S3Control.ComputeObjectChecksumType")]
+        public Amazon.S3Control.ComputeObjectChecksumType S3ComputeObjectChecksum_ChecksumType { get; set; }
         #endregion
         
         #region Parameter ClientRequestToken
@@ -380,6 +423,17 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public System.String S3JobManifestGenerator_ExpectedBucketOwner { get; set; }
         #endregion
         
+        #region Parameter Report_ExpectedBucketOwner
+        /// <summary>
+        /// <para>
+        /// <para>Lists the Amazon Web Services account ID that owns the target bucket, where the completion
+        /// report is received.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Report_ExpectedBucketOwner { get; set; }
+        #endregion
+        
         #region Parameter ManifestOutputLocation_ExpectedManifestBucketOwner
         /// <summary>
         /// <para>
@@ -415,7 +469,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>If the specified manifest object is in the <c>S3BatchOperations_CSV_20180820</c> format,
-        /// this element describes which columns contain the required data.</para>
+        /// this element describes which columns contain the required data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -474,7 +532,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter AccessControlList_Grant
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -510,9 +572,9 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <para>Specifies the schema version for the payload that Batch Operations sends when invoking
         /// an Lambda function. Version <c>1.0</c> is the default. Version <c>2.0</c> is required
         /// when you use Batch Operations to invoke Lambda functions that act on directory buckets,
-        /// or if you need to specify <c>UserArguments</c>. For more information, see <a href="https://aws.amazon.com/blogs/storage/using-lambda-with-s3-batch-operations-and-s3-express-one-zone/">Using
-        /// Lambda with Amazon S3 Batch Operations and Amazon S3 Express One Zone</a> in the <i>Amazon
-        /// Web Services Storage Blog</i>.</para><important><para>Ensure that your Lambda function code expects <c>InvocationSchemaVersion</c><b>2.0</b>
+        /// or if you need to specify <c>UserArguments</c>. For more information, see <a href="https://aws.amazon.com/blogs/storage/automate-object-processing-in-amazon-s3-directory-buckets-with-s3-batch-operations-and-aws-lambda/">Automate
+        /// object processing in Amazon S3 directory buckets with S3 Batch Operations and Lambda</a>
+        /// in the <i>Amazon Web Services Storage Blog</i>.</para><important><para>Ensure that your Lambda function code expects <c>InvocationSchemaVersion</c><b>2.0</b>
         /// and uses bucket name rather than bucket ARN. If the <c>InvocationSchemaVersion</c>
         /// does not match what your Lambda function expects, your function might not work as
         /// expected.</para></important><note><para><b>Directory buckets</b> - To initiate Amazon Web Services Lambda function to perform
@@ -560,11 +622,35 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public System.String ManifestOutputLocation_ManifestPrefix { get; set; }
         #endregion
         
+        #region Parameter Filter_MatchAnyObjectEncryption
+        /// <summary>
+        /// <para>
+        /// <para>If provided, the generated object list includes only source bucket objects with the
+        /// indicated server-side encryption type (SSE-S3, SSE-KMS, DSSE-KMS, SSE-C, or NOT-SSE).
+        /// If you select SSE-KMS or DSSE-KMS, you can optionally further filter your results
+        /// by specifying a specific KMS Key ARN. If you select SSE-KMS, you can also optionally
+        /// further filter your results by Bucket Key enabled status.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ManifestGenerator_S3JobManifestGenerator_Filter_MatchAnyObjectEncryption")]
+        public Amazon.S3Control.Model.ObjectEncryptionFilter[] Filter_MatchAnyObjectEncryption { get; set; }
+        #endregion
+        
         #region Parameter KeyNameConstraint_MatchAnyPrefix
         /// <summary>
         /// <para>
         /// <para>If provided, the generated manifest includes objects where the specified string appears
-        /// at the start of the object key string.</para>
+        /// at the start of the object key string. Each KeyNameConstraint filter accepts an array
+        /// of strings with a length of 1 string.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -576,7 +662,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>If provided, the generated manifest includes only source bucket objects that are stored
-        /// with the specified storage class.</para>
+        /// with the specified storage class.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -588,7 +678,12 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>If provided, the generated manifest includes objects where the specified string appears
-        /// anywhere within the object key string.</para>
+        /// anywhere within the object key string. Each KeyNameConstraint filter accepts an array
+        /// of strings with a length of 1 string.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -600,7 +695,12 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>If provided, the generated manifest includes objects where the specified string appears
-        /// at the end of the object key string.</para>
+        /// at the end of the object key string. Each KeyNameConstraint filter accepts an array
+        /// of strings with a length of 1 string.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -652,7 +752,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// to destination objects by default.</para><note><para><b>Directory buckets</b> - Tags aren't supported by directory buckets. If your source
         /// objects have tags and your destination bucket is a directory bucket, specify an empty
         /// tag set in the <c>NewObjectTagging</c> field to prevent copying the source object
-        /// tags to the directory bucket.</para></note>
+        /// tags to the directory bucket.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -714,7 +818,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>If provided, the generated manifest includes only source bucket objects that have
-        /// one of the specified Replication statuses.</para>
+        /// one of the specified Replication statuses.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -886,7 +994,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter S3JobManifestGenerator_SourceBucket
         /// <summary>
         /// <para>
-        /// <para>The source bucket used by the ManifestGenerator.</para><note><para><b>Directory buckets</b> - Directory buckets aren't supported as the source buckets
+        /// <para>The ARN of the source bucket used by the ManifestGenerator.</para><note><para><b>Directory buckets</b> - Directory buckets aren't supported as the source buckets
         /// used by <c>S3JobManifestGenerator</c> to generate the job manifest.</para></note>
         /// </para>
         /// </summary>
@@ -898,8 +1006,12 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter NewObjectMetadata_SSEAlgorithm
         /// <summary>
         /// <para>
-        /// <note><para>For directory buckets, only the server-side encryption with Amazon S3 managed keys
-        /// (SSE-S3) (<c>AES256</c>) is supported.</para></note>
+        /// <para>The server-side encryption algorithm used when storing objects in Amazon S3.</para><para><b>Directory buckets </b> - For directory buckets, there are only two supported options
+        /// for server-side encryption: server-side encryption with Amazon S3 managed keys (SSE-S3)
+        /// (<c>AES256</c>) and server-side encryption with KMS keys (SSE-KMS) (<c>KMS</c>). For
+        /// more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-serv-side-encryption.html">Protecting
+        /// data with server-side encryption</a> in the <i>Amazon S3 User Guide</i>. For <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-objects-Batch-Ops">the
+        /// Copy operation in Batch Operations</a>, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_S3CopyObjectOperation.html">S3CopyObjectOperation</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -911,7 +1023,24 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter S3PutObjectCopy_SSEAwsKmsKeyId
         /// <summary>
         /// <para>
-        /// <note><para>This functionality is not supported by directory buckets.</para></note>
+        /// <para>Specifies the KMS key ID (Key ID, Key ARN, or Key Alias) to use for object encryption.
+        /// If the KMS key doesn't exist in the same account that's issuing the command, you must
+        /// use the full Key ARN not the Key ID.</para><note><para><b>Directory buckets</b> - If you specify <c>SSEAlgorithm</c> with <c>KMS</c>, you
+        /// must specify the <c> SSEAwsKmsKeyId</c> parameter with the ID (Key ID or Key ARN)
+        /// of the KMS symmetric encryption customer managed key to use. Otherwise, you get an
+        /// HTTP <c>400 Bad Request</c> error. The key alias format of the KMS key isn't supported.
+        /// To encrypt new object copies in a directory bucket with SSE-KMS, you must specify
+        /// SSE-KMS as the directory bucket's default encryption configuration with a KMS key
+        /// (specifically, a <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk">customer
+        /// managed key</a>). The <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk">Amazon
+        /// Web Services managed key</a> (<c>aws/s3</c>) isn't supported. Your SSE-KMS configuration
+        /// can only support 1 <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk">customer
+        /// managed key</a> per directory bucket for the lifetime of the bucket. After you specify
+        /// a customer managed key for SSE-KMS as the bucket default encryption, you can't override
+        /// the customer managed key for the bucket's SSE-KMS configuration. Then, when you specify
+        /// server-side encryption settings for new object copies with SSE-KMS, you must make
+        /// sure the encryption key is the same customer managed key that you specified for the
+        /// directory bucket's default encryption configuration. </para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -960,7 +1089,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>A set of tags to associate with the S3 Batch Operations job. This is an optional parameter.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -971,7 +1104,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter S3PutObjectTagging_TagSet
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -997,8 +1134,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <para>
         /// <para>Specifies the destination bucket Amazon Resource Name (ARN) for the batch copy operation.</para><ul><li><para><b>General purpose buckets</b> - For example, to copy objects to a general purpose
         /// bucket named <c>destinationBucket</c>, set the <c>TargetResource</c> property to <c>arn:aws:s3:::destinationBucket</c>.</para></li><li><para><b>Directory buckets</b> - For example, to copy objects to a directory bucket named
-        /// <c>destinationBucket</c> in the Availability Zone; identified by the AZ ID <c>usw2-az2</c>,
-        /// set the <c>TargetResource</c> property to <c>arn:aws:s3express:<i>region</i>:<i>account_id</i>:/bucket/<i>destination_bucket_base_name</i>--<i>usw2-az2</i>--x-s3</c>.</para></li></ul>
+        /// <c>destinationBucket</c> in the Availability Zone identified by the AZ ID <c>usw2-az1</c>,
+        /// set the <c>TargetResource</c> property to <c>arn:aws:s3express:<i>region</i>:<i>account_id</i>:/bucket/<i>destination_bucket_base_name</i>--<i>usw2-az1</i>--x-s3</c>.
+        /// A directory bucket as a destination bucket can be in Availability Zone or Local Zone.
+        /// </para><note><para>Copying objects across different Amazon Web Services Regions isn't supported when
+        /// the source or destination bucket is in Amazon Web Services Local Zones. The source
+        /// and destination buckets must have the same parent Amazon Web Services Region. Otherwise,
+        /// you get an HTTP <c>400 Bad Request</c> error with the error code <c>InvalidRequest</c>.</para></note></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1023,9 +1165,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <para>Key-value pairs that are passed in the payload that Batch Operations sends when invoking
         /// an Lambda function. You must specify <c>InvocationSchemaVersion</c><b>2.0</b> for
         /// <c>LambdaInvoke</c> operations that include <c>UserArguments</c>. For more information,
-        /// see <a href="https://aws.amazon.com/blogs/storage/using-lambda-with-s3-batch-operations-and-s3-express-one-zone/">Using
-        /// Lambda with Amazon S3 Batch Operations and Amazon S3 Express One Zone</a> in the <i>Amazon
-        /// Web Services Storage Blog</i>.</para>
+        /// see <a href="https://aws.amazon.com/blogs/storage/automate-object-processing-in-amazon-s3-directory-buckets-with-s3-batch-operations-and-aws-lambda/">Automate
+        /// object processing in Amazon S3 directory buckets with S3 Batch Operations and Lambda</a>
+        /// in the <i>Amazon Web Services Storage Blog</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1036,7 +1182,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter NewObjectMetadata_UserMetadata
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1055,16 +1205,6 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public string Select { get; set; } = "JobId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -1075,9 +1215,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AccountId), MyInvocation.BoundParameters);
@@ -1091,21 +1235,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3Control.Model.CreateJobResponse, NewS3CJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             #if MODULAR
             if (this.AccountId == null && ParameterWasBound(nameof(this.AccountId)))
@@ -1141,6 +1275,10 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             {
                 context.KeyNameConstraint_MatchAnySuffix = new List<System.String>(this.KeyNameConstraint_MatchAnySuffix);
             }
+            if (this.Filter_MatchAnyObjectEncryption != null)
+            {
+                context.Filter_MatchAnyObjectEncryption = new List<Amazon.S3Control.Model.ObjectEncryptionFilter>(this.Filter_MatchAnyObjectEncryption);
+            }
             if (this.Filter_MatchAnyStorageClass != null)
             {
                 context.Filter_MatchAnyStorageClass = new List<System.String>(this.Filter_MatchAnyStorageClass);
@@ -1168,6 +1306,8 @@ namespace Amazon.PowerShell.Cmdlets.S3C
                     context.LambdaInvoke_UserArgument.Add((String)hashKey, (System.String)(this.LambdaInvoke_UserArgument[hashKey]));
                 }
             }
+            context.S3ComputeObjectChecksum_ChecksumAlgorithm = this.S3ComputeObjectChecksum_ChecksumAlgorithm;
+            context.S3ComputeObjectChecksum_ChecksumType = this.S3ComputeObjectChecksum_ChecksumType;
             context.Operation_S3DeleteObjectTagging = this.Operation_S3DeleteObjectTagging;
             context.S3InitiateRestoreObject_ExpirationInDay = this.S3InitiateRestoreObject_ExpirationInDay;
             context.S3InitiateRestoreObject_GlacierJobTier = this.S3InitiateRestoreObject_GlacierJobTier;
@@ -1243,6 +1383,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
                 WriteWarning("You are passing $null as a value for parameter Report_Enabled which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Report_ExpectedBucketOwner = this.Report_ExpectedBucketOwner;
             context.Report_Format = this.Report_Format;
             context.Report_Prefix = this.Report_Prefix;
             context.Report_ReportScope = this.Report_ReportScope;
@@ -1557,6 +1698,16 @@ namespace Amazon.PowerShell.Cmdlets.S3C
                 requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter.EligibleForReplication = requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter_filter_EligibleForReplication.Value;
                 requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_FilterIsNull = false;
             }
+            List<Amazon.S3Control.Model.ObjectEncryptionFilter> requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter_filter_MatchAnyObjectEncryption = null;
+            if (cmdletContext.Filter_MatchAnyObjectEncryption != null)
+            {
+                requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter_filter_MatchAnyObjectEncryption = cmdletContext.Filter_MatchAnyObjectEncryption;
+            }
+            if (requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter_filter_MatchAnyObjectEncryption != null)
+            {
+                requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter.MatchAnyObjectEncryption = requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter_filter_MatchAnyObjectEncryption;
+                requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_FilterIsNull = false;
+            }
             List<System.String> requestManifestGenerator_manifestGenerator_S3JobManifestGenerator_manifestGenerator_S3JobManifestGenerator_Filter_filter_MatchAnyStorageClass = null;
             if (cmdletContext.Filter_MatchAnyStorageClass != null)
             {
@@ -1854,6 +2005,41 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             if (requestOperation_operation_S3PutObjectTagging != null)
             {
                 request.Operation.S3PutObjectTagging = requestOperation_operation_S3PutObjectTagging;
+                requestOperationIsNull = false;
+            }
+            Amazon.S3Control.Model.S3ComputeObjectChecksumOperation requestOperation_operation_S3ComputeObjectChecksum = null;
+            
+             // populate S3ComputeObjectChecksum
+            var requestOperation_operation_S3ComputeObjectChecksumIsNull = true;
+            requestOperation_operation_S3ComputeObjectChecksum = new Amazon.S3Control.Model.S3ComputeObjectChecksumOperation();
+            Amazon.S3Control.ComputeObjectChecksumAlgorithm requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumAlgorithm = null;
+            if (cmdletContext.S3ComputeObjectChecksum_ChecksumAlgorithm != null)
+            {
+                requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumAlgorithm = cmdletContext.S3ComputeObjectChecksum_ChecksumAlgorithm;
+            }
+            if (requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumAlgorithm != null)
+            {
+                requestOperation_operation_S3ComputeObjectChecksum.ChecksumAlgorithm = requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumAlgorithm;
+                requestOperation_operation_S3ComputeObjectChecksumIsNull = false;
+            }
+            Amazon.S3Control.ComputeObjectChecksumType requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumType = null;
+            if (cmdletContext.S3ComputeObjectChecksum_ChecksumType != null)
+            {
+                requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumType = cmdletContext.S3ComputeObjectChecksum_ChecksumType;
+            }
+            if (requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumType != null)
+            {
+                requestOperation_operation_S3ComputeObjectChecksum.ChecksumType = requestOperation_operation_S3ComputeObjectChecksum_s3ComputeObjectChecksum_ChecksumType;
+                requestOperation_operation_S3ComputeObjectChecksumIsNull = false;
+            }
+             // determine if requestOperation_operation_S3ComputeObjectChecksum should be set to null
+            if (requestOperation_operation_S3ComputeObjectChecksumIsNull)
+            {
+                requestOperation_operation_S3ComputeObjectChecksum = null;
+            }
+            if (requestOperation_operation_S3ComputeObjectChecksum != null)
+            {
+                request.Operation.S3ComputeObjectChecksum = requestOperation_operation_S3ComputeObjectChecksum;
                 requestOperationIsNull = false;
             }
             Amazon.S3Control.Model.S3InitiateRestoreObjectOperation requestOperation_operation_S3InitiateRestoreObject = null;
@@ -2339,6 +2525,16 @@ namespace Amazon.PowerShell.Cmdlets.S3C
                 request.Report.Enabled = requestReport_report_Enabled.Value;
                 requestReportIsNull = false;
             }
+            System.String requestReport_report_ExpectedBucketOwner = null;
+            if (cmdletContext.Report_ExpectedBucketOwner != null)
+            {
+                requestReport_report_ExpectedBucketOwner = cmdletContext.Report_ExpectedBucketOwner;
+            }
+            if (requestReport_report_ExpectedBucketOwner != null)
+            {
+                request.Report.ExpectedBucketOwner = requestReport_report_ExpectedBucketOwner;
+                requestReportIsNull = false;
+            }
             Amazon.S3Control.JobReportFormat requestReport_report_Format = null;
             if (cmdletContext.Report_Format != null)
             {
@@ -2420,13 +2616,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "CreateJob");
             try
             {
-                #if DESKTOP
-                return client.CreateJob(request);
-                #elif CORECLR
-                return client.CreateJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -2460,6 +2650,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             public List<System.String> KeyNameConstraint_MatchAnyPrefix { get; set; }
             public List<System.String> KeyNameConstraint_MatchAnySubstring { get; set; }
             public List<System.String> KeyNameConstraint_MatchAnySuffix { get; set; }
+            public List<Amazon.S3Control.Model.ObjectEncryptionFilter> Filter_MatchAnyObjectEncryption { get; set; }
             public List<System.String> Filter_MatchAnyStorageClass { get; set; }
             public List<System.String> Filter_ObjectReplicationStatus { get; set; }
             public System.Int64? Filter_ObjectSizeGreaterThanByte { get; set; }
@@ -2474,6 +2665,8 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             public System.String LambdaInvoke_FunctionArn { get; set; }
             public System.String LambdaInvoke_InvocationSchemaVersion { get; set; }
             public Dictionary<System.String, System.String> LambdaInvoke_UserArgument { get; set; }
+            public Amazon.S3Control.ComputeObjectChecksumAlgorithm S3ComputeObjectChecksum_ChecksumAlgorithm { get; set; }
+            public Amazon.S3Control.ComputeObjectChecksumType S3ComputeObjectChecksum_ChecksumType { get; set; }
             public Amazon.S3Control.Model.S3DeleteObjectTaggingOperation Operation_S3DeleteObjectTagging { get; set; }
             public System.Int32? S3InitiateRestoreObject_ExpirationInDay { get; set; }
             public Amazon.S3Control.S3GlacierJobTier S3InitiateRestoreObject_GlacierJobTier { get; set; }
@@ -2518,6 +2711,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             public System.Int32? Priority { get; set; }
             public System.String Report_Bucket { get; set; }
             public System.Boolean? Report_Enabled { get; set; }
+            public System.String Report_ExpectedBucketOwner { get; set; }
             public Amazon.S3Control.JobReportFormat Report_Format { get; set; }
             public System.String Report_Prefix { get; set; }
             public Amazon.S3Control.JobReportScope Report_ReportScope { get; set; }

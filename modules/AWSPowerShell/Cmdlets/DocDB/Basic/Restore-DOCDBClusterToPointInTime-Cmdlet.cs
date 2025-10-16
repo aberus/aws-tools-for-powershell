@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DocDB;
 using Amazon.DocDB.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DOC
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.DOC
     [AWSCmdlet("Calls the Amazon DocumentDB (with MongoDB compatibility) RestoreDBClusterToPointInTime API operation.", Operation = new[] {"RestoreDBClusterToPointInTime"}, SelectReturnType = typeof(Amazon.DocDB.Model.RestoreDBClusterToPointInTimeResponse))]
     [AWSCmdletOutput("Amazon.DocDB.Model.DBCluster or Amazon.DocDB.Model.RestoreDBClusterToPointInTimeResponse",
         "This cmdlet returns an Amazon.DocDB.Model.DBCluster object.",
-        "The service call response (type Amazon.DocDB.Model.RestoreDBClusterToPointInTimeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DocDB.Model.RestoreDBClusterToPointInTimeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreDOCDBClusterToPointInTimeCmdlet : AmazonDocDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DBClusterIdentifier
         /// <summary>
@@ -88,7 +91,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         #region Parameter EnableCloudwatchLogsExport
         /// <summary>
         /// <para>
-        /// <para>A list of log types that must be enabled for exporting to Amazon CloudWatch Logs.</para>
+        /// <para>A list of log types that must be enabled for exporting to Amazon CloudWatch Logs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,6 +120,43 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String KmsKeyId { get; set; }
+        #endregion
+        
+        #region Parameter ServerlessV2ScalingConfiguration_MaxCapacity
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of Amazon DocumentDB capacity units (DCUs) for an instance in an
+        /// Amazon DocumentDB Serverless cluster. You can specify DCU values in half-step increments,
+        /// such as 32, 32.5, 33, and so on.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Double? ServerlessV2ScalingConfiguration_MaxCapacity { get; set; }
+        #endregion
+        
+        #region Parameter ServerlessV2ScalingConfiguration_MinCapacity
+        /// <summary>
+        /// <para>
+        /// <para>The minimum number of Amazon DocumentDB capacity units (DCUs) for an instance in an
+        /// Amazon DocumentDB Serverless cluster. You can specify DCU values in half-step increments,
+        /// such as 8, 8.5, 9, and so on.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Double? ServerlessV2ScalingConfiguration_MinCapacity { get; set; }
+        #endregion
+        
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The network type of the cluster.</para><para>The network type is determined by the <c>DBSubnetGroup</c> specified for the cluster.
+        /// A <c>DBSubnetGroup</c> can support only the IPv4 protocol or the IPv4 and the IPv6
+        /// protocols (<c>DUAL</c>).</para><para>For more information, see <a href="https://docs.aws.amazon.com/documentdb/latest/developerguide/vpc-clusters.html">DocumentDB
+        /// clusters in a VPC</a> in the Amazon DocumentDB Developer Guide.</para><para>Valid Values: <c>IPV4</c> | <c>DUAL</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NetworkType { get; set; }
         #endregion
         
         #region Parameter Port
@@ -180,7 +224,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be assigned to the restored cluster.</para>
+        /// <para>The tags to be assigned to the restored cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,7 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of VPC security groups that the new cluster belongs to.</para>
+        /// <para>A list of VPC security groups that the new cluster belongs to.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -221,16 +273,6 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         public string Select { get; set; } = "DBCluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -241,9 +283,13 @@ namespace Amazon.PowerShell.Cmdlets.DOC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBClusterIdentifier), MyInvocation.BoundParameters);
@@ -257,21 +303,11 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DocDB.Model.RestoreDBClusterToPointInTimeResponse, RestoreDOCDBClusterToPointInTimeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DBClusterIdentifier = this.DBClusterIdentifier;
             #if MODULAR
             if (this.DBClusterIdentifier == null && ParameterWasBound(nameof(this.DBClusterIdentifier)))
@@ -286,9 +322,12 @@ namespace Amazon.PowerShell.Cmdlets.DOC
                 context.EnableCloudwatchLogsExport = new List<System.String>(this.EnableCloudwatchLogsExport);
             }
             context.KmsKeyId = this.KmsKeyId;
+            context.NetworkType = this.NetworkType;
             context.Port = this.Port;
             context.RestoreToTime = this.RestoreToTime;
             context.RestoreType = this.RestoreType;
+            context.ServerlessV2ScalingConfiguration_MaxCapacity = this.ServerlessV2ScalingConfiguration_MaxCapacity;
+            context.ServerlessV2ScalingConfiguration_MinCapacity = this.ServerlessV2ScalingConfiguration_MinCapacity;
             context.SourceDBClusterIdentifier = this.SourceDBClusterIdentifier;
             #if MODULAR
             if (this.SourceDBClusterIdentifier == null && ParameterWasBound(nameof(this.SourceDBClusterIdentifier)))
@@ -342,6 +381,10 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             {
                 request.KmsKeyId = cmdletContext.KmsKeyId;
             }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
+            }
             if (cmdletContext.Port != null)
             {
                 request.Port = cmdletContext.Port.Value;
@@ -353,6 +396,35 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             if (cmdletContext.RestoreType != null)
             {
                 request.RestoreType = cmdletContext.RestoreType;
+            }
+            
+             // populate ServerlessV2ScalingConfiguration
+            var requestServerlessV2ScalingConfigurationIsNull = true;
+            request.ServerlessV2ScalingConfiguration = new Amazon.DocDB.Model.ServerlessV2ScalingConfiguration();
+            System.Double? requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity = null;
+            if (cmdletContext.ServerlessV2ScalingConfiguration_MaxCapacity != null)
+            {
+                requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity = cmdletContext.ServerlessV2ScalingConfiguration_MaxCapacity.Value;
+            }
+            if (requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity != null)
+            {
+                request.ServerlessV2ScalingConfiguration.MaxCapacity = requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MaxCapacity.Value;
+                requestServerlessV2ScalingConfigurationIsNull = false;
+            }
+            System.Double? requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity = null;
+            if (cmdletContext.ServerlessV2ScalingConfiguration_MinCapacity != null)
+            {
+                requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity = cmdletContext.ServerlessV2ScalingConfiguration_MinCapacity.Value;
+            }
+            if (requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity != null)
+            {
+                request.ServerlessV2ScalingConfiguration.MinCapacity = requestServerlessV2ScalingConfiguration_serverlessV2ScalingConfiguration_MinCapacity.Value;
+                requestServerlessV2ScalingConfigurationIsNull = false;
+            }
+             // determine if request.ServerlessV2ScalingConfiguration should be set to null
+            if (requestServerlessV2ScalingConfigurationIsNull)
+            {
+                request.ServerlessV2ScalingConfiguration = null;
             }
             if (cmdletContext.SourceDBClusterIdentifier != null)
             {
@@ -412,13 +484,7 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DocumentDB (with MongoDB compatibility)", "RestoreDBClusterToPointInTime");
             try
             {
-                #if DESKTOP
-                return client.RestoreDBClusterToPointInTime(request);
-                #elif CORECLR
-                return client.RestoreDBClusterToPointInTimeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreDBClusterToPointInTimeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -440,9 +506,12 @@ namespace Amazon.PowerShell.Cmdlets.DOC
             public System.Boolean? DeletionProtection { get; set; }
             public List<System.String> EnableCloudwatchLogsExport { get; set; }
             public System.String KmsKeyId { get; set; }
+            public System.String NetworkType { get; set; }
             public System.Int32? Port { get; set; }
             public System.DateTime? RestoreToTime { get; set; }
             public System.String RestoreType { get; set; }
+            public System.Double? ServerlessV2ScalingConfiguration_MaxCapacity { get; set; }
+            public System.Double? ServerlessV2ScalingConfiguration_MinCapacity { get; set; }
             public System.String SourceDBClusterIdentifier { get; set; }
             public System.String StorageType { get; set; }
             public List<Amazon.DocDB.Model.Tag> Tag { get; set; }

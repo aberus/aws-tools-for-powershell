@@ -150,7 +150,7 @@ $APS_Completers = {
             ($_ -eq "Update-APSFleet/Platform")
         }
         {
-            $v = "AMAZON_LINUX2","WINDOWS","WINDOWS_SERVER_2016","WINDOWS_SERVER_2019","WINDOWS_SERVER_2022"
+            $v = "AMAZON_LINUX2","RHEL8","ROCKY_LINUX8","WINDOWS","WINDOWS_SERVER_2016","WINDOWS_SERVER_2019","WINDOWS_SERVER_2022"
             break
         }
 
@@ -171,6 +171,23 @@ $APS_Completers = {
         }
         {
             $v = "APP","DESKTOP"
+            break
+        }
+
+        # Amazon.AppStream.ThemeState
+        "Update-APSThemeForStack/State"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.AppStream.ThemeStyling
+        {
+            ($_ -eq "New-APSThemeForStack/ThemeStyling") -Or
+            ($_ -eq "Update-APSThemeForStack/ThemeStyling")
+        }
+        {
+            $v = "BLUE","LIGHT_BLUE","PINK","RED"
             break
         }
 
@@ -197,8 +214,10 @@ $APS_map = @{
     "MessageAction"=@("New-APSUser")
     "PackagingType"=@("New-APSAppBlock")
     "Platform"=@("New-APSAppBlockBuilder","New-APSFleet","Update-APSAppBlockBuilder","Update-APSFleet")
+    "State"=@("Update-APSThemeForStack")
     "StreamingExperienceSettings_PreferredProtocol"=@("New-APSStack","Update-APSStack")
     "StreamView"=@("New-APSFleet","Update-APSFleet")
+    "ThemeStyling"=@("New-APSThemeForStack","Update-APSThemeForStack")
     "Type"=@("Get-APSImageList")
 }
 
@@ -256,6 +275,7 @@ $APS_SelectMap = @{
                "Register-APSApplicationFleet",
                "Add-APSApplicationToEntitlement",
                "Register-APSFleet",
+               "Add-APSSoftwareToImageBuilder",
                "Register-APSUserStackBatch",
                "Unregister-APSUserStackBatch",
                "Copy-APSImage",
@@ -270,6 +290,7 @@ $APS_SelectMap = @{
                "New-APSImageBuilderStreamingURL",
                "New-APSStack",
                "New-APSStreamingURL",
+               "New-APSThemeForStack",
                "New-APSUpdatedImage",
                "New-APSUsageReportSubscription",
                "New-APSUser",
@@ -283,6 +304,7 @@ $APS_SelectMap = @{
                "Remove-APSImageBuilder",
                "Remove-APSImagePermission",
                "Remove-APSStack",
+               "Remove-APSThemeForStack",
                "Remove-APSUsageReportSubscription",
                "Remove-APSUser",
                "Get-APSAppBlockBuilderAppBlockAssociation",
@@ -290,6 +312,7 @@ $APS_SelectMap = @{
                "Get-APSAppBlock",
                "Get-APSApplicationFleetAssociation",
                "Get-APSApplication",
+               "Get-APSAppLicenseUsage",
                "Get-APSDirectoryConfigList",
                "Get-APSEntitlement",
                "Get-APSFleetList",
@@ -297,7 +320,9 @@ $APS_SelectMap = @{
                "Get-APSImagePermission",
                "Get-APSImageList",
                "Get-APSSessionList",
+               "Get-APSSoftwareAssociation",
                "Get-APSStackList",
+               "Get-APSThemeForStack",
                "Get-APSUsageReportSubscription",
                "Get-APSUser",
                "Get-APSUserStackAssociation",
@@ -306,6 +331,7 @@ $APS_SelectMap = @{
                "Unregister-APSApplicationFleet",
                "Remove-APSApplicationFromEntitlement",
                "Unregister-APSFleet",
+               "Remove-APSSoftwareFromImageBuilder",
                "Enable-APSUser",
                "Revoke-APSSession",
                "Get-APSAssociatedFleetList",
@@ -315,6 +341,7 @@ $APS_SelectMap = @{
                "Start-APSAppBlockBuilder",
                "Start-APSFleet",
                "Start-APSImageBuilder",
+               "Start-APSSoftwareDeploymentToImageBuilder",
                "Stop-APSAppBlockBuilder",
                "Stop-APSFleet",
                "Stop-APSImageBuilder",
@@ -326,7 +353,8 @@ $APS_SelectMap = @{
                "Update-APSEntitlement",
                "Update-APSFleet",
                "Update-APSImagePermission",
-               "Update-APSStack")
+               "Update-APSStack",
+               "Update-APSThemeForStack")
 }
 
 _awsArgumentCompleterRegistration $APS_SelectCompleters $APS_SelectMap

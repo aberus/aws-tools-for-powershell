@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FSx;
 using Amazon.FSx.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FSX
 {
     /// <summary>
@@ -34,35 +36,36 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     ///  
     /// <para>
     /// For FSx for Windows File Server file systems, you can update the following properties:
-    /// </para><ul><li><para><c>AuditLogConfiguration</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>SelfManagedActiveDirectoryConfiguration</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>StorageType</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>DiskIopsConfiguration</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul><para>
+    /// </para><ul><li><para><c>AuditLogConfiguration</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DiskIopsConfiguration</c></para></li><li><para><c>SelfManagedActiveDirectoryConfiguration</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>StorageType</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul><para>
     /// For FSx for Lustre file systems, you can update the following properties:
-    /// </para><ul><li><para><c>AutoImportPolicy</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DataCompressionType</c></para></li><li><para><c>LogConfiguration</c></para></li><li><para><c>LustreRootSquashConfiguration</c></para></li><li><para><c>PerUnitStorageThroughput</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul><para>
+    /// </para><ul><li><para><c>AutoImportPolicy</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DataCompressionType</c></para></li><li><para><c>FileSystemTypeVersion</c></para></li><li><para><c>LogConfiguration</c></para></li><li><para><c>LustreReadCacheConfiguration</c></para></li><li><para><c>LustreRootSquashConfiguration</c></para></li><li><para><c>MetadataConfiguration</c></para></li><li><para><c>PerUnitStorageThroughput</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul><para>
     /// For FSx for ONTAP file systems, you can update the following properties:
-    /// </para><ul><li><para><c>AddRouteTableIds</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DiskIopsConfiguration</c></para></li><li><para><c>FsxAdminPassword</c></para></li><li><para><c>HAPairs</c></para></li><li><para><c>RemoveRouteTableIds</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>ThroughputCapacityPerHAPair</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul><para>
+    /// </para><ul><li><para><c>AddRouteTableIds</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DiskIopsConfiguration</c></para></li><li><para><c>EndpointIpv6AddressRange</c></para></li><li><para><c>FsxAdminPassword</c></para></li><li><para><c>HAPairs</c></para></li><li><para><c>RemoveRouteTableIds</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>ThroughputCapacityPerHAPair</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul><para>
     /// For FSx for OpenZFS file systems, you can update the following properties:
-    /// </para><ul><li><para><c>AddRouteTableIds</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>CopyTagsToBackups</c></para></li><li><para><c>CopyTagsToVolumes</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DiskIopsConfiguration</c></para></li><li><para><c>RemoveRouteTableIds</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul>
+    /// </para><ul><li><para><c>AddRouteTableIds</c></para></li><li><para><c>AutomaticBackupRetentionDays</c></para></li><li><para><c>CopyTagsToBackups</c></para></li><li><para><c>CopyTagsToVolumes</c></para></li><li><para><c>DailyAutomaticBackupStartTime</c></para></li><li><para><c>DiskIopsConfiguration</c></para></li><li><para><c>EndpointIpv6AddressRange</c></para></li><li><para><c>ReadCacheConfiguration</c></para></li><li><para><c>RemoveRouteTableIds</c></para></li><li><para><c>StorageCapacity</c></para></li><li><para><c>ThroughputCapacity</c></para></li><li><para><c>WeeklyMaintenanceStartTime</c></para></li></ul>
     /// </summary>
     [Cmdlet("Update", "FSXFileSystem", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.FSx.Model.FileSystem")]
     [AWSCmdlet("Calls the Amazon FSx UpdateFileSystem API operation.", Operation = new[] {"UpdateFileSystem"}, SelectReturnType = typeof(Amazon.FSx.Model.UpdateFileSystemResponse))]
     [AWSCmdletOutput("Amazon.FSx.Model.FileSystem or Amazon.FSx.Model.UpdateFileSystemResponse",
         "This cmdlet returns an Amazon.FSx.Model.FileSystem object.",
-        "The service call response (type Amazon.FSx.Model.UpdateFileSystemResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FSx.Model.UpdateFileSystemResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateFSXFileSystemCmdlet : AmazonFSxClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OntapConfiguration_AddRouteTableId
         /// <summary>
         /// <para>
         /// <para>(Multi-AZ only) A list of IDs of new virtual private cloud (VPC) route tables to associate
-        /// (add) with your Amazon FSx for NetApp ONTAP file system.</para>
+        /// (add) with your Amazon FSx for NetApp ONTAP file system.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -74,7 +77,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>(Multi-AZ only) A list of IDs of new virtual private cloud (VPC) route tables to associate
-        /// (add) with your Amazon FSx for OpenZFS file system.</para>
+        /// (add) with your Amazon FSx for OpenZFS file system.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,6 +176,34 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public System.String OpenZFSConfiguration_DailyAutomaticBackupStartTime { get; set; }
         #endregion
         
+        #region Parameter OntapConfiguration_EndpointIpv6AddressRange
+        /// <summary>
+        /// <para>
+        /// <para>(Multi-AZ only) Specifies the IPv6 address range in which the endpoints to access
+        /// your file system will be created. By default in the Amazon FSx API and Amazon FSx
+        /// console, Amazon FSx selects an available /118 IP address range for you from one of
+        /// the VPC's CIDR ranges. You can have overlapping endpoint IP addresses for file systems
+        /// deployed in the same VPC/route tables, as long as they don't overlap with any subnet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String OntapConfiguration_EndpointIpv6AddressRange { get; set; }
+        #endregion
+        
+        #region Parameter OpenZFSConfiguration_EndpointIpv6AddressRange
+        /// <summary>
+        /// <para>
+        /// <para>(Multi-AZ only) Specifies the IPv6 address range in which the endpoints to access
+        /// your file system will be created. By default in the Amazon FSx API and Amazon FSx
+        /// console, Amazon FSx selects an available /118 IP address range for you from one of
+        /// the VPC's CIDR ranges. You can have overlapping endpoint IP addresses for file systems
+        /// deployed in the same VPC/route tables, as long as they don't overlap with any subnet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String OpenZFSConfiguration_EndpointIpv6AddressRange { get; set; }
+        #endregion
+        
         #region Parameter FileSystemId
         /// <summary>
         /// <para>
@@ -186,17 +221,47 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public System.String FileSystemId { get; set; }
         #endregion
         
+        #region Parameter FileSystemTypeVersion
+        /// <summary>
+        /// <para>
+        /// <para>The Lustre version you are updating an FSx for Lustre file system to. Valid values
+        /// are <c>2.12</c> and <c>2.15</c>. The value you choose must be newer than the file
+        /// system's current Lustre version.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String FileSystemTypeVersion { get; set; }
+        #endregion
+        
         #region Parameter OntapConfiguration_FsxAdminPassword
         /// <summary>
         /// <para>
         /// <para>Update the password for the <c>fsxadmin</c> user by entering a new password. You use
         /// the <c>fsxadmin</c> user to access the NetApp ONTAP CLI and REST API to manage your
         /// file system resources. For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/managing-resources-ontap-apps.html">Managing
-        /// resources using NetApp Applicaton</a>.</para>
+        /// resources using NetApp Application</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OntapConfiguration_FsxAdminPassword { get; set; }
+        #endregion
+        
+        #region Parameter OntapConfiguration_HAPair
+        /// <summary>
+        /// <para>
+        /// <para>Use to update the number of high-availability (HA) pairs for a second-generation single-AZ
+        /// file system. If you increase the number of HA pairs for your file system, you must
+        /// specify proportional increases for <c>StorageCapacity</c>, <c>Iops</c>, and <c>ThroughputCapacity</c>.
+        /// For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/administering-file-systems.html#HA-pairs">High-availability
+        /// (HA) pairs</a> in the FSx for ONTAP user guide. Block storage protocol support (iSCSI
+        /// and NVMe over TCP) is disabled on file systems with more than 6 HA pairs. For more
+        /// information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/supported-fsx-clients.html#using-block-storage">Using
+        /// block storage protocols</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OntapConfiguration_HAPairs")]
+        public System.Int32? OntapConfiguration_HAPair { get; set; }
         #endregion
         
         #region Parameter OntapConfiguration_DiskIopsConfiguration_Iops
@@ -241,7 +306,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>Specifies whether the file system is using the <c>AUTOMATIC</c> setting of SSD IOPS
-        /// of 3 IOPS per GB of storage capacity, , or if it using a <c>USER_PROVISIONED</c> value.</para>
+        /// of 3 IOPS per GB of storage capacity, or if it using a <c>USER_PROVISIONED</c> value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -253,7 +318,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <summary>
         /// <para>
         /// <para>Specifies whether the file system is using the <c>AUTOMATIC</c> setting of SSD IOPS
-        /// of 3 IOPS per GB of storage capacity, , or if it using a <c>USER_PROVISIONED</c> value.</para>
+        /// of 3 IOPS per GB of storage capacity, or if it using a <c>USER_PROVISIONED</c> value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -261,12 +326,27 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public Amazon.FSx.DiskIopsConfigurationMode OpenZFSConfiguration_DiskIopsConfiguration_Mode { get; set; }
         #endregion
         
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>Changes the network type of an FSx for OpenZFS file system.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.FSx.NetworkType")]
+        public Amazon.FSx.NetworkType NetworkType { get; set; }
+        #endregion
+        
         #region Parameter OntapConfiguration_RemoveRouteTableId
         /// <summary>
         /// <para>
         /// <para>(Multi-AZ only) A list of IDs of existing virtual private cloud (VPC) route tables
         /// to disassociate (remove) from your Amazon FSx for NetApp ONTAP file system. You can
-        /// use the API operation to retrieve the list of VPC route table IDs for a file system.</para>
+        /// use the API operation to retrieve the list of VPC route table IDs for a file system.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -279,7 +359,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>
         /// <para>(Multi-AZ only) A list of IDs of existing virtual private cloud (VPC) route tables
         /// to disassociate (remove) from your Amazon FSx for OpenZFS file system. You can use
-        /// the API operation to retrieve the list of VPC route table IDs for a file system.</para>
+        /// the API operation to retrieve the list of VPC route table IDs for a file system.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -287,13 +371,40 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public System.String[] OpenZFSConfiguration_RemoveRouteTableId { get; set; }
         #endregion
         
+        #region Parameter ReadCacheConfiguration_SizeGiB
+        /// <summary>
+        /// <para>
+        /// <para> Required if <c>SizingMode</c> is set to <c>USER_PROVISIONED</c>. Specifies the size
+        /// of the file system's SSD read cache, in gibibytes (GiB). </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OpenZFSConfiguration_ReadCacheConfiguration_SizeGiB")]
+        public System.Int32? ReadCacheConfiguration_SizeGiB { get; set; }
+        #endregion
+        
+        #region Parameter ReadCacheConfiguration_SizingMode
+        /// <summary>
+        /// <para>
+        /// <para> Specifies how the provisioned SSD read cache is sized, as follows: </para><ul><li><para>Set to <c>NO_CACHE</c> if you do not want to use an SSD read cache with your Intelligent-Tiering
+        /// file system.</para></li><li><para>Set to <c>USER_PROVISIONED</c> to specify the exact size of your SSD read cache.</para></li><li><para>Set to <c>PROPORTIONAL_TO_THROUGHPUT_CAPACITY</c> to have your SSD read cache automatically
+        /// sized based on your throughput capacity.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OpenZFSConfiguration_ReadCacheConfiguration_SizingMode")]
+        [AWSConstantClassSource("Amazon.FSx.OpenZFSReadCacheSizingMode")]
+        public Amazon.FSx.OpenZFSReadCacheSizingMode ReadCacheConfiguration_SizingMode { get; set; }
+        #endregion
+        
         #region Parameter StorageCapacity
         /// <summary>
         /// <para>
         /// <para>Use this parameter to increase the storage capacity of an FSx for Windows File Server,
-        /// FSx for Lustre, FSx for OpenZFS, or FSx for ONTAP file system. Specifies the storage
-        /// capacity target value, in GiB, to increase the storage capacity for the file system
-        /// that you're updating. </para><note><para>You can't make a storage capacity increase request if there is an existing storage
+        /// FSx for Lustre, FSx for OpenZFS, or FSx for ONTAP file system. For second-generation
+        /// FSx for ONTAP file systems, you can also decrease the storage capacity. Specifies
+        /// the storage capacity target value, in GiB, for the file system that you're updating.
+        /// </para><note><para>You can't make a storage capacity increase request if there is an existing storage
         /// capacity increase request in progress.</para></note><para>For Lustre file systems, the storage capacity target value can be the following:</para><ul><li><para>For <c>SCRATCH_2</c>, <c>PERSISTENT_1</c>, and <c>PERSISTENT_2 SSD</c> deployment
         /// types, valid values are in multiples of 2400 GiB. The value must be greater than the
         /// current storage capacity.</para></li><li><para>For <c>PERSISTENT HDD</c> file systems, valid values are multiples of 6000 GiB for
@@ -306,10 +417,12 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// greater than the current storage capacity value. To increase storage capacity, the
         /// file system must have at least 16 MBps of throughput capacity. For more information,
         /// see <a href="https://docs.aws.amazon.com/fsx/latest/WindowsGuide/managing-storage-capacity.html">Managing
-        /// storage capacity</a> in the <i>Amazon FSxfor Windows File Server User Guide</i>.</para><para>For ONTAP file systems, the storage capacity target value must be at least 10 percent
-        /// greater than the current storage capacity value. For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/managing-storage-capacity.html">Managing
-        /// storage capacity and provisioned IOPS</a> in the <i>Amazon FSx for NetApp ONTAP User
-        /// Guide</i>.</para>
+        /// storage capacity</a> in the <i>Amazon FSxfor Windows File Server User Guide</i>.</para><para>For ONTAP file systems, when increasing storage capacity, the storage capacity target
+        /// value must be at least 10 percent greater than the current storage capacity value.
+        /// When decreasing storage capacity on second-generation file systems, the target value
+        /// must be at least 9 percent smaller than the current SSD storage capacity. For more
+        /// information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/storage-capacity-and-IOPS.html">File
+        /// system storage capacity and IOPS</a> in the Amazon FSx for NetApp ONTAP User Guide.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -360,10 +473,10 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>Use to choose the throughput capacity per HA pair, rather than the total throughput
         /// for the file system. </para><para>This field and <c>ThroughputCapacity</c> cannot be defined in the same API call, but
         /// one is required.</para><para>This field and <c>ThroughputCapacity</c> are the same for file systems with one HA
-        /// pair.</para><ul><li><para>For <c>SINGLE_AZ_1</c> and <c>MULTI_AZ_1</c>, valid values are 128, 256, 512, 1024,
-        /// 2048, or 4096 MBps.</para></li><li><para>For <c>SINGLE_AZ_2</c>, valid values are 3072 or 6144 MBps.</para></li></ul><para>Amazon FSx responds with an HTTP status code 400 (Bad Request) for the following conditions:</para><ul><li><para>The value of <c>ThroughputCapacity</c> and <c>ThroughputCapacityPerHAPair</c> are
+        /// pair.</para><ul><li><para>For <c>SINGLE_AZ_1</c> and <c>MULTI_AZ_1</c> file systems, valid values are 128, 256,
+        /// 512, 1024, 2048, or 4096 MBps.</para></li><li><para>For <c>SINGLE_AZ_2</c>, valid values are 1536, 3072, or 6144 MBps.</para></li><li><para>For <c>MULTI_AZ_2</c>, valid values are 384, 768, 1536, 3072, or 6144 MBps.</para></li></ul><para>Amazon FSx responds with an HTTP status code 400 (Bad Request) for the following conditions:</para><ul><li><para>The value of <c>ThroughputCapacity</c> and <c>ThroughputCapacityPerHAPair</c> are
         /// not the same value for file systems with one HA pair.</para></li><li><para>The value of deployment type is <c>SINGLE_AZ_2</c> and <c>ThroughputCapacity</c> /
-        /// <c>ThroughputCapacityPerHAPair</c> is a valid HA pair (a value between 2 and 6).</para></li><li><para>The value of <c>ThroughputCapacityPerHAPair</c> is not a valid value.</para></li></ul>
+        /// <c>ThroughputCapacityPerHAPair</c> is not a valid HA pair (a value between 1 and 12).</para></li><li><para>The value of <c>ThroughputCapacityPerHAPair</c> is not a valid value.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -411,16 +524,6 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public string Select { get; set; } = "FileSystem";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileSystemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -431,9 +534,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FileSystemId), MyInvocation.BoundParameters);
@@ -447,21 +554,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FSx.Model.UpdateFileSystemResponse, UpdateFSXFileSystemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FileSystemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.FileSystemId = this.FileSystemId;
             #if MODULAR
@@ -470,7 +567,9 @@ namespace Amazon.PowerShell.Cmdlets.FSX
                 WriteWarning("You are passing $null as a value for parameter FileSystemId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.FileSystemTypeVersion = this.FileSystemTypeVersion;
             context.LustreConfiguration = this.LustreConfiguration;
+            context.NetworkType = this.NetworkType;
             if (this.OntapConfiguration_AddRouteTableId != null)
             {
                 context.OntapConfiguration_AddRouteTableId = new List<System.String>(this.OntapConfiguration_AddRouteTableId);
@@ -479,7 +578,9 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             context.OntapConfiguration_DailyAutomaticBackupStartTime = this.OntapConfiguration_DailyAutomaticBackupStartTime;
             context.OntapConfiguration_DiskIopsConfiguration_Iops = this.OntapConfiguration_DiskIopsConfiguration_Iops;
             context.OntapConfiguration_DiskIopsConfiguration_Mode = this.OntapConfiguration_DiskIopsConfiguration_Mode;
+            context.OntapConfiguration_EndpointIpv6AddressRange = this.OntapConfiguration_EndpointIpv6AddressRange;
             context.OntapConfiguration_FsxAdminPassword = this.OntapConfiguration_FsxAdminPassword;
+            context.OntapConfiguration_HAPair = this.OntapConfiguration_HAPair;
             if (this.OntapConfiguration_RemoveRouteTableId != null)
             {
                 context.OntapConfiguration_RemoveRouteTableId = new List<System.String>(this.OntapConfiguration_RemoveRouteTableId);
@@ -497,6 +598,9 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             context.OpenZFSConfiguration_DailyAutomaticBackupStartTime = this.OpenZFSConfiguration_DailyAutomaticBackupStartTime;
             context.OpenZFSConfiguration_DiskIopsConfiguration_Iops = this.OpenZFSConfiguration_DiskIopsConfiguration_Iops;
             context.OpenZFSConfiguration_DiskIopsConfiguration_Mode = this.OpenZFSConfiguration_DiskIopsConfiguration_Mode;
+            context.OpenZFSConfiguration_EndpointIpv6AddressRange = this.OpenZFSConfiguration_EndpointIpv6AddressRange;
+            context.ReadCacheConfiguration_SizeGiB = this.ReadCacheConfiguration_SizeGiB;
+            context.ReadCacheConfiguration_SizingMode = this.ReadCacheConfiguration_SizingMode;
             if (this.OpenZFSConfiguration_RemoveRouteTableId != null)
             {
                 context.OpenZFSConfiguration_RemoveRouteTableId = new List<System.String>(this.OpenZFSConfiguration_RemoveRouteTableId);
@@ -530,9 +634,17 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             {
                 request.FileSystemId = cmdletContext.FileSystemId;
             }
+            if (cmdletContext.FileSystemTypeVersion != null)
+            {
+                request.FileSystemTypeVersion = cmdletContext.FileSystemTypeVersion;
+            }
             if (cmdletContext.LustreConfiguration != null)
             {
                 request.LustreConfiguration = cmdletContext.LustreConfiguration;
+            }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
             }
             
              // populate OntapConfiguration
@@ -568,6 +680,16 @@ namespace Amazon.PowerShell.Cmdlets.FSX
                 request.OntapConfiguration.DailyAutomaticBackupStartTime = requestOntapConfiguration_ontapConfiguration_DailyAutomaticBackupStartTime;
                 requestOntapConfigurationIsNull = false;
             }
+            System.String requestOntapConfiguration_ontapConfiguration_EndpointIpv6AddressRange = null;
+            if (cmdletContext.OntapConfiguration_EndpointIpv6AddressRange != null)
+            {
+                requestOntapConfiguration_ontapConfiguration_EndpointIpv6AddressRange = cmdletContext.OntapConfiguration_EndpointIpv6AddressRange;
+            }
+            if (requestOntapConfiguration_ontapConfiguration_EndpointIpv6AddressRange != null)
+            {
+                request.OntapConfiguration.EndpointIpv6AddressRange = requestOntapConfiguration_ontapConfiguration_EndpointIpv6AddressRange;
+                requestOntapConfigurationIsNull = false;
+            }
             System.String requestOntapConfiguration_ontapConfiguration_FsxAdminPassword = null;
             if (cmdletContext.OntapConfiguration_FsxAdminPassword != null)
             {
@@ -576,6 +698,16 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             if (requestOntapConfiguration_ontapConfiguration_FsxAdminPassword != null)
             {
                 request.OntapConfiguration.FsxAdminPassword = requestOntapConfiguration_ontapConfiguration_FsxAdminPassword;
+                requestOntapConfigurationIsNull = false;
+            }
+            System.Int32? requestOntapConfiguration_ontapConfiguration_HAPair = null;
+            if (cmdletContext.OntapConfiguration_HAPair != null)
+            {
+                requestOntapConfiguration_ontapConfiguration_HAPair = cmdletContext.OntapConfiguration_HAPair.Value;
+            }
+            if (requestOntapConfiguration_ontapConfiguration_HAPair != null)
+            {
+                request.OntapConfiguration.HAPairs = requestOntapConfiguration_ontapConfiguration_HAPair.Value;
                 requestOntapConfigurationIsNull = false;
             }
             List<System.String> requestOntapConfiguration_ontapConfiguration_RemoveRouteTableId = null;
@@ -712,6 +844,16 @@ namespace Amazon.PowerShell.Cmdlets.FSX
                 request.OpenZFSConfiguration.DailyAutomaticBackupStartTime = requestOpenZFSConfiguration_openZFSConfiguration_DailyAutomaticBackupStartTime;
                 requestOpenZFSConfigurationIsNull = false;
             }
+            System.String requestOpenZFSConfiguration_openZFSConfiguration_EndpointIpv6AddressRange = null;
+            if (cmdletContext.OpenZFSConfiguration_EndpointIpv6AddressRange != null)
+            {
+                requestOpenZFSConfiguration_openZFSConfiguration_EndpointIpv6AddressRange = cmdletContext.OpenZFSConfiguration_EndpointIpv6AddressRange;
+            }
+            if (requestOpenZFSConfiguration_openZFSConfiguration_EndpointIpv6AddressRange != null)
+            {
+                request.OpenZFSConfiguration.EndpointIpv6AddressRange = requestOpenZFSConfiguration_openZFSConfiguration_EndpointIpv6AddressRange;
+                requestOpenZFSConfigurationIsNull = false;
+            }
             List<System.String> requestOpenZFSConfiguration_openZFSConfiguration_RemoveRouteTableId = null;
             if (cmdletContext.OpenZFSConfiguration_RemoveRouteTableId != null)
             {
@@ -777,6 +919,41 @@ namespace Amazon.PowerShell.Cmdlets.FSX
                 request.OpenZFSConfiguration.DiskIopsConfiguration = requestOpenZFSConfiguration_openZFSConfiguration_DiskIopsConfiguration;
                 requestOpenZFSConfigurationIsNull = false;
             }
+            Amazon.FSx.Model.OpenZFSReadCacheConfiguration requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration = null;
+            
+             // populate ReadCacheConfiguration
+            var requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfigurationIsNull = true;
+            requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration = new Amazon.FSx.Model.OpenZFSReadCacheConfiguration();
+            System.Int32? requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizeGiB = null;
+            if (cmdletContext.ReadCacheConfiguration_SizeGiB != null)
+            {
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizeGiB = cmdletContext.ReadCacheConfiguration_SizeGiB.Value;
+            }
+            if (requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizeGiB != null)
+            {
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration.SizeGiB = requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizeGiB.Value;
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfigurationIsNull = false;
+            }
+            Amazon.FSx.OpenZFSReadCacheSizingMode requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizingMode = null;
+            if (cmdletContext.ReadCacheConfiguration_SizingMode != null)
+            {
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizingMode = cmdletContext.ReadCacheConfiguration_SizingMode;
+            }
+            if (requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizingMode != null)
+            {
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration.SizingMode = requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration_readCacheConfiguration_SizingMode;
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfigurationIsNull = false;
+            }
+             // determine if requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration should be set to null
+            if (requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfigurationIsNull)
+            {
+                requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration = null;
+            }
+            if (requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration != null)
+            {
+                request.OpenZFSConfiguration.ReadCacheConfiguration = requestOpenZFSConfiguration_openZFSConfiguration_ReadCacheConfiguration;
+                requestOpenZFSConfigurationIsNull = false;
+            }
              // determine if request.OpenZFSConfiguration should be set to null
             if (requestOpenZFSConfigurationIsNull)
             {
@@ -832,13 +1009,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon FSx", "UpdateFileSystem");
             try
             {
-                #if DESKTOP
-                return client.UpdateFileSystem(request);
-                #elif CORECLR
-                return client.UpdateFileSystemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFileSystemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -857,13 +1028,17 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         {
             public System.String ClientRequestToken { get; set; }
             public System.String FileSystemId { get; set; }
+            public System.String FileSystemTypeVersion { get; set; }
             public Amazon.FSx.Model.UpdateFileSystemLustreConfiguration LustreConfiguration { get; set; }
+            public Amazon.FSx.NetworkType NetworkType { get; set; }
             public List<System.String> OntapConfiguration_AddRouteTableId { get; set; }
             public System.Int32? OntapConfiguration_AutomaticBackupRetentionDay { get; set; }
             public System.String OntapConfiguration_DailyAutomaticBackupStartTime { get; set; }
             public System.Int64? OntapConfiguration_DiskIopsConfiguration_Iops { get; set; }
             public Amazon.FSx.DiskIopsConfigurationMode OntapConfiguration_DiskIopsConfiguration_Mode { get; set; }
+            public System.String OntapConfiguration_EndpointIpv6AddressRange { get; set; }
             public System.String OntapConfiguration_FsxAdminPassword { get; set; }
+            public System.Int32? OntapConfiguration_HAPair { get; set; }
             public List<System.String> OntapConfiguration_RemoveRouteTableId { get; set; }
             public System.Int32? OntapConfiguration_ThroughputCapacity { get; set; }
             public System.Int32? OntapConfiguration_ThroughputCapacityPerHAPair { get; set; }
@@ -875,6 +1050,9 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             public System.String OpenZFSConfiguration_DailyAutomaticBackupStartTime { get; set; }
             public System.Int64? OpenZFSConfiguration_DiskIopsConfiguration_Iops { get; set; }
             public Amazon.FSx.DiskIopsConfigurationMode OpenZFSConfiguration_DiskIopsConfiguration_Mode { get; set; }
+            public System.String OpenZFSConfiguration_EndpointIpv6AddressRange { get; set; }
+            public System.Int32? ReadCacheConfiguration_SizeGiB { get; set; }
+            public Amazon.FSx.OpenZFSReadCacheSizingMode ReadCacheConfiguration_SizingMode { get; set; }
             public List<System.String> OpenZFSConfiguration_RemoveRouteTableId { get; set; }
             public System.Int32? OpenZFSConfiguration_ThroughputCapacity { get; set; }
             public System.String OpenZFSConfiguration_WeeklyMaintenanceStartTime { get; set; }

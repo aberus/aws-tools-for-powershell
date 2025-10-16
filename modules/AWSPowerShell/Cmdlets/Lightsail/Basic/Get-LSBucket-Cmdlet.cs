@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -34,7 +36,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// 
     ///  
     /// <para>
-    /// For more information about buckets, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/buckets-in-amazon-lightsail">Buckets
+    /// For more information about buckets, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/buckets-in-amazon-lightsail">Buckets
     /// in Amazon Lightsail</a> in the <i>Amazon Lightsail Developer Guide</i>.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail GetBuckets API operation.", Operation = new[] {"GetBuckets"}, SelectReturnType = typeof(Amazon.Lightsail.Model.GetBucketsResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.Bucket or Amazon.Lightsail.Model.GetBucketsResponse",
         "This cmdlet returns a collection of Amazon.Lightsail.Model.Bucket objects.",
-        "The service call response (type Amazon.Lightsail.Model.GetBucketsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.GetBucketsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetLSBucketCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
@@ -74,6 +77,20 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public System.Boolean? IncludeConnectedResource { get; set; }
         #endregion
         
+        #region Parameter IncludeCor
+        /// <summary>
+        /// <para>
+        /// <para>A Boolean value that indicates whether to include Lightsail bucket CORS configuration
+        /// in the response. For more information, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/configure-cors.html">Configuring
+        /// cross-origin resource sharing (CORS)</a>.</para><note><para>This parameter is only supported when getting a single bucket with <c>bucketName</c>
+        /// specified. The default value for this parameter is <c>False</c>.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeCors")]
+        public System.Boolean? IncludeCor { get; set; }
+        #endregion
+        
         #region Parameter PageToken
         /// <summary>
         /// <para>
@@ -83,7 +100,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-PageToken $null' for the first call and '-PageToken $AWSHistory.LastServiceResponse.NextPageToken' for subsequent calls.
+        /// <br/>'PageToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-PageToken' to null for the first call then set the 'PageToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,16 +119,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "Buckets";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -122,9 +129,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -132,23 +143,14 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.GetBucketsResponse, GetLSBucketCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
             context.IncludeConnectedResource = this.IncludeConnectedResource;
+            context.IncludeCor = this.IncludeCor;
             context.PageToken = this.PageToken;
             
             // allow further manipulation of loaded context prior to processing
@@ -163,9 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Lightsail.Model.GetBucketsRequest();
@@ -177,6 +177,10 @@ namespace Amazon.PowerShell.Cmdlets.LS
             if (cmdletContext.IncludeConnectedResource != null)
             {
                 request.IncludeConnectedResources = cmdletContext.IncludeConnectedResource.Value;
+            }
+            if (cmdletContext.IncludeCor != null)
+            {
+                request.IncludeCors = cmdletContext.IncludeCor.Value;
             }
             
             // Initialize loop variant and commence piping
@@ -240,13 +244,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "GetBuckets");
             try
             {
-                #if DESKTOP
-                return client.GetBuckets(request);
-                #elif CORECLR
-                return client.GetBucketsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetBucketsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -265,6 +263,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         {
             public System.String BucketName { get; set; }
             public System.Boolean? IncludeConnectedResource { get; set; }
+            public System.Boolean? IncludeCor { get; set; }
             public System.String PageToken { get; set; }
             public System.Func<Amazon.Lightsail.Model.GetBucketsResponse, GetLSBucketCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Buckets;

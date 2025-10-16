@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMakerGeospatial;
 using Amazon.SageMakerGeospatial.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMGS
 {
     /// <summary>
@@ -34,16 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
     [OutputType("Amazon.SageMakerGeospatial.Model.StartEarthObservationJobResponse")]
     [AWSCmdlet("Calls the SageMaker Geospatial StartEarthObservationJob API operation.", Operation = new[] {"StartEarthObservationJob"}, SelectReturnType = typeof(Amazon.SageMakerGeospatial.Model.StartEarthObservationJobResponse))]
     [AWSCmdletOutput("Amazon.SageMakerGeospatial.Model.StartEarthObservationJobResponse",
-        "This cmdlet returns an Amazon.SageMakerGeospatial.Model.StartEarthObservationJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SageMakerGeospatial.Model.StartEarthObservationJobResponse object containing multiple properties."
     )]
     public partial class StartSMGSEarthObservationJobCmdlet : AmazonSageMakerGeospatialClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CloudRemovalConfig_AlgorithmName
         /// <summary>
@@ -94,7 +93,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter MultiPolygonGeometry_Coordinate
         /// <summary>
         /// <para>
-        /// <para>The coordinates of the multipolygon geometry.</para>
+        /// <para>The coordinates of the multipolygon geometry.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         /// <summary>
         /// <para>
         /// <para>Coordinates representing a Polygon based on the <a href="https://www.rfc-editor.org/rfc/rfc7946#section-3.1.6">GeoJson
-        /// spec</a>.</para>
+        /// spec</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -217,7 +224,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter CustomIndices_Operation
         /// <summary>
         /// <para>
-        /// <para>A list of BandMath indices to compute.</para>
+        /// <para>A list of BandMath indices to compute.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -242,7 +253,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         /// <summary>
         /// <para>
         /// <para>One or many of the supported predefined indices to compute. Allowed values: <c>NDVI</c>,
-        /// <c>EVI2</c>, <c>MSAVI</c>, <c>NDWI</c>, <c>NDMI</c>, <c>NDSI</c>, and <c>WDRVI</c>.</para>
+        /// <c>EVI2</c>, <c>MSAVI</c>, <c>NDWI</c>, <c>NDMI</c>, <c>NDSI</c>, and <c>WDRVI</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -263,7 +278,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter PropertyFilters_Property
         /// <summary>
         /// <para>
-        /// <para>A list of Property Filters.</para>
+        /// <para>A list of Property Filters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -296,7 +315,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter TemporalStatisticsConfig_Statistic
         /// <summary>
         /// <para>
-        /// <para>The list of the statistics method options.</para>
+        /// <para>The list of the statistics method options.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -307,7 +330,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter ZonalStatisticsConfig_Statistic
         /// <summary>
         /// <para>
-        /// <para>List of zonal statistics to compute.</para>
+        /// <para>List of zonal statistics to compute.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -318,7 +345,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Each tag consists of a key and a value.</para>
+        /// <para>Each tag consists of a key and a value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -329,7 +360,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter CloudRemovalConfig_TargetBand
         /// <summary>
         /// <para>
-        /// <para>TargetBands to be returned in the output of CloudRemoval operation.</para>
+        /// <para>TargetBands to be returned in the output of CloudRemoval operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -340,7 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter GeoMosaicConfig_TargetBand
         /// <summary>
         /// <para>
-        /// <para>The target bands for geomosaic.</para>
+        /// <para>The target bands for geomosaic.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -352,7 +391,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         /// <summary>
         /// <para>
         /// <para>Bands used in the operation. If no target bands are specified, it uses all bands available
-        /// in the input.</para>
+        /// in the input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -365,7 +408,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         /// <para>
         /// <para>A list of bands to be stacked in the specified order. When the parameter is not provided,
         /// all the available bands in the data collection are stacked in the alphabetical order
-        /// of their asset names.</para>
+        /// of their asset names.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -376,7 +423,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         #region Parameter TemporalStatisticsConfig_TargetBand
         /// <summary>
         /// <para>
-        /// <para>The list of target band names for the temporal statistic to calculate.</para>
+        /// <para>The list of target band names for the temporal statistic to calculate.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -388,7 +439,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         /// <summary>
         /// <para>
         /// <para>Bands used in the operation. If no target bands are specified, it uses all bands available
-        /// input.</para>
+        /// input.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -486,16 +541,6 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -506,9 +551,13 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -522,21 +571,11 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMakerGeospatial.Model.StartEarthObservationJobResponse, StartSMGSEarthObservationJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ExecutionRoleArn = this.ExecutionRoleArn;
             #if MODULAR
@@ -1354,13 +1393,7 @@ namespace Amazon.PowerShell.Cmdlets.SMGS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "SageMaker Geospatial", "StartEarthObservationJob");
             try
             {
-                #if DESKTOP
-                return client.StartEarthObservationJob(request);
-                #elif CORECLR
-                return client.StartEarthObservationJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartEarthObservationJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

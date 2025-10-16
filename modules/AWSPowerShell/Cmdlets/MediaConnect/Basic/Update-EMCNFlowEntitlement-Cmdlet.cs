@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConnect;
 using Amazon.MediaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMCN
 {
     /// <summary>
-    /// You can change an entitlement's description, subscribers, and encryption. If you change
-    /// the subscribers, the service will remove the outputs that are are used by the subscribers
-    /// that are removed.
+    /// Updates an entitlement. You can change an entitlement's description, subscribers,
+    /// and encryption. If you change the subscribers, the service will remove the outputs
+    /// that are are used by the subscribers that are removed.
     /// </summary>
     [Cmdlet("Update", "EMCNFlowEntitlement", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.MediaConnect.Model.Entitlement")]
     [AWSCmdlet("Calls the AWS Elemental MediaConnect UpdateFlowEntitlement API operation.", Operation = new[] {"UpdateFlowEntitlement"}, SelectReturnType = typeof(Amazon.MediaConnect.Model.UpdateFlowEntitlementResponse))]
     [AWSCmdletOutput("Amazon.MediaConnect.Model.Entitlement or Amazon.MediaConnect.Model.UpdateFlowEntitlementResponse",
         "This cmdlet returns an Amazon.MediaConnect.Model.Entitlement object.",
-        "The service call response (type Amazon.MediaConnect.Model.UpdateFlowEntitlementResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaConnect.Model.UpdateFlowEntitlementResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateEMCNFlowEntitlementCmdlet : AmazonMediaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// A description of the entitlement. This description
-        /// appears only on the AWS Elemental MediaConnect console and will not be seen by the
-        /// subscriber or end user.
+        /// <para> A description of the entitlement. This description appears only on the MediaConnect
+        /// console and will not be seen by the subscriber or end user.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -59,9 +61,8 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Encryption
         /// <summary>
         /// <para>
-        /// The type of encryption that will be used on
-        /// the output associated with this entitlement. Allowable encryption types: static-key,
-        /// speke.
+        /// <para> The type of encryption that will be used on the output associated with this entitlement.
+        /// Allowable encryption types: static-key, speke.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,8 +72,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter EntitlementArn
         /// <summary>
         /// <para>
-        /// The ARN of the entitlement that you want
-        /// to update.
+        /// <para> The Amazon Resource Name (ARN) of the entitlement that you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -89,10 +89,10 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter EntitlementStatus
         /// <summary>
         /// <para>
-        /// An indication of whether you want to
-        /// enable the entitlement to allow access, or disable it to stop streaming content to
-        /// the subscriber’s flow temporarily. If you don’t specify the entitlementStatus field
-        /// in your request, MediaConnect leaves the value unchanged.
+        /// <para> An indication of whether you want to enable the entitlement to allow access, or disable
+        /// it to stop streaming content to the subscriber’s flow temporarily. If you don’t specify
+        /// the <c>entitlementStatus</c> field in your request, MediaConnect leaves the value
+        /// unchanged.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,8 +103,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter FlowArn
         /// <summary>
         /// <para>
-        /// The flow that is associated with the entitlement
-        /// that you want to update.
+        /// <para> The ARN of the flow that is associated with the entitlement that you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -121,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Subscriber
         /// <summary>
         /// <para>
-        /// The AWS account IDs that you want to share
-        /// your content with. The receiving accounts (subscribers) will be allowed to create
-        /// their own flow using your content as the source.
+        /// <para> The Amazon Web Services account IDs that you want to share your content with. The
+        /// receiving accounts (subscribers) will be allowed to create their own flow using your
+        /// content as the source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,16 +145,6 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public string Select { get; set; } = "Entitlement";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EntitlementArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EntitlementArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EntitlementArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -162,9 +155,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.EntitlementArn), MyInvocation.BoundParameters);
@@ -178,21 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConnect.Model.UpdateFlowEntitlementResponse, UpdateEMCNFlowEntitlementCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EntitlementArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.Encryption = this.Encryption;
             context.EntitlementArn = this.EntitlementArn;
@@ -292,13 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConnect", "UpdateFlowEntitlement");
             try
             {
-                #if DESKTOP
-                return client.UpdateFlowEntitlement(request);
-                #elif CORECLR
-                return client.UpdateFlowEntitlementAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFlowEntitlementAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

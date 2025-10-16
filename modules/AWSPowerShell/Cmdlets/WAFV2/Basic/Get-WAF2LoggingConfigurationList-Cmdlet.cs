@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAFV2;
 using Amazon.WAFV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAF2
 {
     /// <summary>
@@ -35,20 +37,36 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
     [AWSCmdlet("Calls the AWS WAF V2 ListLoggingConfigurations API operation.", Operation = new[] {"ListLoggingConfigurations"}, SelectReturnType = typeof(Amazon.WAFV2.Model.ListLoggingConfigurationsResponse))]
     [AWSCmdletOutput("Amazon.WAFV2.Model.LoggingConfiguration or Amazon.WAFV2.Model.ListLoggingConfigurationsResponse",
         "This cmdlet returns a collection of Amazon.WAFV2.Model.LoggingConfiguration objects.",
-        "The service call response (type Amazon.WAFV2.Model.ListLoggingConfigurationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WAFV2.Model.ListLoggingConfigurationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetWAF2LoggingConfigurationListCmdlet : AmazonWAFV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter LogScope
+        /// <summary>
+        /// <para>
+        /// <para>The owner of the logging configuration, which must be set to <c>CUSTOMER</c> for the
+        /// configurations that you manage. </para><para>The log scope <c>SECURITY_LAKE</c> indicates a configuration that is managed through
+        /// Amazon Security Lake. You can use Security Lake to collect log and event data from
+        /// various sources for normalization, analysis, and management. For information, see
+        /// <a href="https://docs.aws.amazon.com/security-lake/latest/userguide/internal-sources.html">Collecting
+        /// data from Amazon Web Services services</a> in the <i>Amazon Security Lake user guide</i>.
+        /// </para><para>Default: <c>CUSTOMER</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WAFV2.LogScope")]
+        public Amazon.WAFV2.LogScope LogScope { get; set; }
+        #endregion
         
         #region Parameter Scope
         /// <summary>
         /// <para>
-        /// <para>Specifies whether this is for an Amazon CloudFront distribution or for a regional
-        /// application. A regional application can be an Application Load Balancer (ALB), an
-        /// Amazon API Gateway REST API, an AppSync GraphQL API, an Amazon Cognito user pool,
-        /// an App Runner service, or an Amazon Web Services Verified Access instance. </para><para>To work with CloudFront, you must also specify the Region US East (N. Virginia) as
+        /// <para>Specifies whether this is for a global resource type, such as a Amazon CloudFront
+        /// distribution. For an Amplify application, use <c>CLOUDFRONT</c>.</para><para>To work with CloudFront, you must also specify the Region US East (N. Virginia) as
         /// follows: </para><ul><li><para>CLI - Specify the Region when you use the CloudFront scope: <c>--scope=CLOUDFRONT
         /// --region=us-east-1</c>. </para></li><li><para>API and SDKs - For all calls, use the Region endpoint us-east-1. </para></li></ul>
         /// </para>
@@ -86,7 +104,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextMarker $null' for the first call and '-NextMarker $AWSHistory.LastServiceResponse.NextMarker' for subsequent calls.
+        /// <br/>'NextMarker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextMarker' to null for the first call then set the 'NextMarker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public string Select { get; set; } = "LoggingConfigurations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Scope parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Scope' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Scope' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -125,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -135,22 +147,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WAFV2.Model.ListLoggingConfigurationsResponse, GetWAF2LoggingConfigurationListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Scope;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Limit = this.Limit;
+            context.LogScope = this.LogScope;
             context.NextMarker = this.NextMarker;
             context.Scope = this.Scope;
             #if MODULAR
@@ -172,9 +175,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.WAFV2.Model.ListLoggingConfigurationsRequest();
@@ -182,6 +183,10 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             if (cmdletContext.Limit != null)
             {
                 request.Limit = cmdletContext.Limit.Value;
+            }
+            if (cmdletContext.LogScope != null)
+            {
+                request.LogScope = cmdletContext.LogScope;
             }
             if (cmdletContext.Scope != null)
             {
@@ -249,13 +254,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF V2", "ListLoggingConfigurations");
             try
             {
-                #if DESKTOP
-                return client.ListLoggingConfigurations(request);
-                #elif CORECLR
-                return client.ListLoggingConfigurationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListLoggingConfigurationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -273,6 +272,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.Int32? Limit { get; set; }
+            public Amazon.WAFV2.LogScope LogScope { get; set; }
             public System.String NextMarker { get; set; }
             public Amazon.WAFV2.Scope Scope { get; set; }
             public System.Func<Amazon.WAFV2.Model.ListLoggingConfigurationsResponse, GetWAF2LoggingConfigurationListCmdlet, object> Select { get; set; } =

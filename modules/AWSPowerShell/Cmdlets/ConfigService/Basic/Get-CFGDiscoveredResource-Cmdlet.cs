@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,39 +22,48 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
-    /// Accepts a resource type and returns a list of resource identifiers for the resources
-    /// of that type. A resource identifier includes the resource type, ID, and (if available)
-    /// the custom resource name. The results consist of resources that Config has discovered,
-    /// including those that Config is not currently recording. You can narrow the results
-    /// to include only resources that have specific resource IDs or a resource name.
+    /// Returns a list of resource resource identifiers for the specified resource types for
+    /// the resources of that type. A <i>resource identifier</i> includes the resource type,
+    /// ID, and (if available) the custom resource name.
     /// 
-    ///  <note><para>
+    ///  
+    /// <para>
+    /// The results consist of resources that Config has <i>discovered</i>, including those
+    /// that Config is not currently recording. You can narrow the results to include only
+    /// resources that have specific resource IDs or a resource name.
+    /// </para><note><para>
     /// You can specify either resource IDs or a resource name, but not both, in the same
     /// request.
-    /// </para></note><para>
-    /// The response is paginated. By default, Config lists 100 resource identifiers on each
-    /// page. You can customize this number with the <c>limit</c> parameter. The response
-    /// includes a <c>nextToken</c> string. To get the next page of results, run the request
-    /// again and specify the string for the <c>nextToken</c> parameter.
-    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// </para></note><important><para><i>CloudFormation stack recording behavior in Config</i></para><para>
+    /// When a CloudFormation stack fails to create (for example, it enters the <c>ROLLBACK_FAILED</c>
+    /// state), Config does not record a configuration item (CI) for that stack. Configuration
+    /// items are only recorded for stacks that reach the following states:
+    /// </para><ul><li><para><c>CREATE_COMPLETE</c></para></li><li><para><c>UPDATE_COMPLETE</c></para></li><li><para><c>UPDATE_ROLLBACK_COMPLETE</c></para></li><li><para><c>UPDATE_ROLLBACK_FAILED</c></para></li><li><para><c>DELETE_FAILED</c></para></li><li><para><c>DELETE_COMPLETE</c></para></li></ul><para>
+    /// Because no CI is created for a failed stack creation, you won't see configuration
+    /// history for that stack in Config, even after the stack is deleted. This helps make
+    /// sure that Config only tracks resources that were successfully provisioned.
+    /// </para></important><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "CFGDiscoveredResource")]
     [OutputType("Amazon.ConfigService.Model.ResourceIdentifier")]
     [AWSCmdlet("Calls the AWS Config ListDiscoveredResources API operation.", Operation = new[] {"ListDiscoveredResources"}, SelectReturnType = typeof(Amazon.ConfigService.Model.ListDiscoveredResourcesResponse))]
     [AWSCmdletOutput("Amazon.ConfigService.Model.ResourceIdentifier or Amazon.ConfigService.Model.ListDiscoveredResourcesResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.ResourceIdentifier objects.",
-        "The service call response (type Amazon.ConfigService.Model.ListDiscoveredResourcesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.ListDiscoveredResourcesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFGDiscoveredResourceCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IncludeDeletedResource
         /// <summary>
@@ -73,7 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// <para>
         /// <para>The IDs of only those resources that you want Config to list in the response. If you
         /// do not specify this parameter, Config lists all resources of the specified type that
-        /// it has discovered. You can list a minimum of 1 resourceID and a maximum of 20 resourceIds.</para>
+        /// it has discovered. You can list a minimum of 1 resourceID and a maximum of 20 resourceIds.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,7 +148,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,16 +166,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "ResourceIdentifiers";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -173,9 +176,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -183,21 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.ListDiscoveredResourcesResponse, GetCFGDiscoveredResourceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.IncludeDeletedResource = this.IncludeDeletedResource;
             context.Limit = this.Limit;
             #if !MODULAR
@@ -236,9 +233,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ConfigService.Model.ListDiscoveredResourcesRequest();
@@ -314,7 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ConfigService.Model.ListDiscoveredResourcesRequest();
@@ -381,7 +376,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ResourceIdentifiers.Count;
+                    int _receivedThisCall = response.ResourceIdentifiers?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -430,13 +425,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "ListDiscoveredResources");
             try
             {
-                #if DESKTOP
-                return client.ListDiscoveredResources(request);
-                #elif CORECLR
-                return client.ListDiscoveredResourcesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListDiscoveredResourcesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

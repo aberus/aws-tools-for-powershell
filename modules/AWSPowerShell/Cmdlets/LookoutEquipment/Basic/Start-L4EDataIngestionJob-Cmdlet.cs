@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LookoutEquipment;
 using Amazon.LookoutEquipment.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.L4E
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.L4E
     [OutputType("Amazon.LookoutEquipment.Model.StartDataIngestionJobResponse")]
     [AWSCmdlet("Calls the Amazon Lookout for Equipment StartDataIngestionJob API operation.", Operation = new[] {"StartDataIngestionJob"}, SelectReturnType = typeof(Amazon.LookoutEquipment.Model.StartDataIngestionJobResponse))]
     [AWSCmdletOutput("Amazon.LookoutEquipment.Model.StartDataIngestionJobResponse",
-        "This cmdlet returns an Amazon.LookoutEquipment.Model.StartDataIngestionJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LookoutEquipment.Model.StartDataIngestionJobResponse object containing multiple properties."
     )]
     public partial class StartL4EDataIngestionJobCmdlet : AmazonLookoutEquipmentClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3InputConfiguration_Bucket
         /// <summary>
@@ -153,9 +156,13 @@ namespace Amazon.PowerShell.Cmdlets.L4E
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatasetName), MyInvocation.BoundParameters);
@@ -318,13 +325,7 @@ namespace Amazon.PowerShell.Cmdlets.L4E
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lookout for Equipment", "StartDataIngestionJob");
             try
             {
-                #if DESKTOP
-                return client.StartDataIngestionJob(request);
-                #elif CORECLR
-                return client.StartDataIngestionJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartDataIngestionJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

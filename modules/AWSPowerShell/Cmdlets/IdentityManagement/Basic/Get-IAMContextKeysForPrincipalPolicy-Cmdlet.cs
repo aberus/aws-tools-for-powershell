@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -36,16 +38,17 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     ///  
     /// <para>
     /// You can optionally include a list of one or more additional policies, specified as
-    /// strings. If you want to include <i>only</i> a list of policies by string, use <a>GetContextKeysForCustomPolicy</a>
+    /// strings. If you want to include <i>only</i> a list of policies by string, use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetContextKeysForCustomPolicy.html">GetContextKeysForCustomPolicy</a>
     /// instead.
     /// </para><para><b>Note:</b> This operation discloses information about the permissions granted to
     /// other users. If you do not want users to see other user's permissions, then consider
-    /// allowing them to use <a>GetContextKeysForCustomPolicy</a> instead.
+    /// allowing them to use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetContextKeysForCustomPolicy.html">GetContextKeysForCustomPolicy</a>
+    /// instead.
     /// </para><para>
     /// Context keys are variables maintained by Amazon Web Services and its services that
     /// provide details about the context of an API query request. Context keys can be evaluated
-    /// by testing against a value in an IAM policy. Use <a>GetContextKeysForPrincipalPolicy</a>
-    /// to understand what key names and values you must supply when you call <a>SimulatePrincipalPolicy</a>.
+    /// by testing against a value in an IAM policy. Use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetContextKeysForPrincipalPolicy.html">GetContextKeysForPrincipalPolicy</a>
+    /// to understand what key names and values you must supply when you call <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_SimulatePrincipalPolicy.html">SimulatePrincipalPolicy</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "IAMContextKeysForPrincipalPolicy")]
@@ -53,12 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management GetContextKeysForPrincipalPolicy API operation.", Operation = new[] {"GetContextKeysForPrincipalPolicy"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.GetContextKeysForPrincipalPolicyResponse))]
     [AWSCmdletOutput("System.String or Amazon.IdentityManagement.Model.GetContextKeysForPrincipalPolicyResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.IdentityManagement.Model.GetContextKeysForPrincipalPolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.GetContextKeysForPrincipalPolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIAMContextKeysForPrincipalPolicyCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PolicyInputList
         /// <summary>
@@ -68,7 +72,11 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         /// parameter is a string of characters consisting of the following:</para><ul><li><para>Any printable ASCII character ranging from the space character (<c>\u0020</c>) through
         /// the end of the ASCII character range</para></li><li><para>The printable characters in the Basic Latin and Latin-1 Supplement character set (through
         /// <c>\u00FF</c>)</para></li><li><para>The special characters tab (<c>\u0009</c>), line feed (<c>\u000A</c>), and carriage
-        /// return (<c>\u000D</c>)</para></li></ul>
+        /// return (<c>\u000D</c>)</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "ContextKeyNames";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -198,13 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "GetContextKeysForPrincipalPolicy");
             try
             {
-                #if DESKTOP
-                return client.GetContextKeysForPrincipalPolicy(request);
-                #elif CORECLR
-                return client.GetContextKeysForPrincipalPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetContextKeysForPrincipalPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

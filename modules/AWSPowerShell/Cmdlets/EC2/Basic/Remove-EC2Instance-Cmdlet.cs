@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Shuts down the specified instances. This operation is idempotent; if you terminate
-    /// an instance more than once, each call succeeds. 
+    /// Shuts down the specified instances. This operation is <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">idempotent</a>;
+    /// if you terminate an instance more than once, each call succeeds.
     /// 
     ///  
     /// <para>
@@ -70,16 +72,24 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// By default, Amazon EC2 deletes all EBS volumes that were attached when the instance
     /// launched. Volumes attached after instance launch continue running.
     /// </para><para>
+    /// By default, the TerminateInstances operation includes a graceful operating system
+    /// (OS) shutdown. To bypass the graceful shutdown, use the <c>skipOsShutdown</c> parameter;
+    /// however, this might risk data integrity.
+    /// </para><para>
     /// You can stop, start, and terminate EBS-backed instances. You can only terminate instance
-    /// store-backed instances. What happens to an instance differs if you stop it or terminate
+    /// store-backed instances. What happens to an instance differs if you stop or terminate
     /// it. For example, when you stop an instance, the root device and any other devices
     /// attached to the instance persist. When you terminate an instance, any attached EBS
     /// volumes with the <c>DeleteOnTermination</c> block device mapping parameter set to
     /// <c>true</c> are automatically deleted. For more information about the differences
-    /// between stopping and terminating instances, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html">Instance
-    /// lifecycle</a> in the <i>Amazon EC2 User Guide</i>.
+    /// between stopping and terminating instances, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html">Amazon
+    /// EC2 instance state changes</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
-    /// For more information about troubleshooting, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstancesShuttingDown.html">Troubleshooting
+    /// When you terminate an instance, we attempt to terminate it forcibly after a short
+    /// while. If your instance appears stuck in the shutting-down state after a period of
+    /// time, there might be an issue with the underlying host computer. For more information
+    /// about terminating and troubleshooting terminating your instances, see <a href="https://docs.aws.amazon.com/">Terminate
+    /// Amazon EC2 instances</a> and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstancesShuttingDown.html">Troubleshooting
     /// terminating your instance</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para>
     /// </summary>
@@ -88,18 +98,48 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) TerminateInstances API operation.", Operation = new[] {"TerminateInstances"}, SelectReturnType = typeof(Amazon.EC2.Model.TerminateInstancesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.InstanceStateChange or Amazon.EC2.Model.TerminateInstancesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.InstanceStateChange objects.",
-        "The service call response (type Amazon.EC2.Model.TerminateInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.TerminateInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveEC2InstanceCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the operation, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter Enforce
+        /// <summary>
+        /// <para>
+        /// <para>Forces the instances to terminate. The instance will first attempt a graceful shutdown,
+        /// which includes flushing file system caches and metadata. If the graceful shutdown
+        /// fails to complete within the timeout period, the instance shuts down forcibly without
+        /// flushing the file system caches and metadata.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Enforce { get; set; }
+        #endregion
         
         #region Parameter InstanceId
         /// <summary>
         /// <para>
         /// <para>The IDs of the instances.</para><para>Constraints: Up to 1000 instance IDs. We recommend breaking up this request into smaller
-        /// batches.</para>
+        /// batches.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -114,6 +154,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object[] InstanceId { get; set; }
         #endregion
         
+        #region Parameter SkipOsShutdown
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to bypass the graceful OS shutdown process when the instance is
+        /// terminated.</para><para>Default: <c>false</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? SkipOsShutdown { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'TerminatingInstances'.
@@ -123,16 +174,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "TerminatingInstances";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -145,9 +186,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -161,26 +206,19 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.TerminateInstancesResponse, RemoveEC2InstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
+            context.Enforce = this.Enforce;
             if (this.InstanceId != null)
             {
                 context.InstanceId = AmazonEC2Helper.InstanceParamToIDs(this.InstanceId);
             }
             
+            context.SkipOsShutdown = this.SkipOsShutdown;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -197,9 +235,21 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.TerminateInstancesRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.Enforce != null)
+            {
+                request.Force = cmdletContext.Enforce.Value;
+            }
             if (cmdletContext.InstanceId != null)
             {
                 request.InstanceIds = cmdletContext.InstanceId;
+            }
+            if (cmdletContext.SkipOsShutdown != null)
+            {
+                request.SkipOsShutdown = cmdletContext.SkipOsShutdown.Value;
             }
             
             CmdletOutput output;
@@ -239,13 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "TerminateInstances");
             try
             {
-                #if DESKTOP
-                return client.TerminateInstances(request);
-                #elif CORECLR
-                return client.TerminateInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TerminateInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -262,7 +306,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
+            public System.Boolean? Enforce { get; set; }
             public List<System.String> InstanceId { get; set; }
+            public System.Boolean? SkipOsShutdown { get; set; }
             public System.Func<Amazon.EC2.Model.TerminateInstancesResponse, RemoveEC2InstanceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.TerminatingInstances;
         }

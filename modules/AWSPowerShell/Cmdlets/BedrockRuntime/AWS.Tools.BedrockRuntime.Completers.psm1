@@ -75,6 +75,108 @@ function _awsArgumentCompleterRegistration()
 # Argument completions for service Amazon Bedrock Runtime
 
 
+$BDRR_Completers = {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+
+    switch ($("$commandName/$parameterName"))
+    {
+        # Amazon.BedrockRuntime.AsyncInvokeStatus
+        "Get-BDRRAsyncInvokeList/StatusEqual"
+        {
+            $v = "Completed","Failed","InProgress"
+            break
+        }
+
+        # Amazon.BedrockRuntime.GuardrailContentSource
+        "Invoke-BDRRGuardrail/Source"
+        {
+            $v = "INPUT","OUTPUT"
+            break
+        }
+
+        # Amazon.BedrockRuntime.GuardrailOutputScope
+        "Invoke-BDRRGuardrail/OutputScope"
+        {
+            $v = "FULL","INTERVENTIONS"
+            break
+        }
+
+        # Amazon.BedrockRuntime.GuardrailStreamProcessingMode
+        "Invoke-BDRRConverseStream/GuardrailConfig_StreamProcessingMode"
+        {
+            $v = "async","sync"
+            break
+        }
+
+        # Amazon.BedrockRuntime.GuardrailTrace
+        {
+            ($_ -eq "Invoke-BDRRConverse/GuardrailConfig_Trace") -Or
+            ($_ -eq "Invoke-BDRRConverseStream/GuardrailConfig_Trace")
+        }
+        {
+            $v = "disabled","enabled","enabled_full"
+            break
+        }
+
+        # Amazon.BedrockRuntime.PerformanceConfigLatency
+        {
+            ($_ -eq "Invoke-BDRRConverse/PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BDRRConverseStream/PerformanceConfig_Latency") -Or
+            ($_ -eq "Invoke-BDRRModel/PerformanceConfigLatency") -Or
+            ($_ -eq "Invoke-BDRRModelWithResponseStream/PerformanceConfigLatency")
+        }
+        {
+            $v = "optimized","standard"
+            break
+        }
+
+        # Amazon.BedrockRuntime.SortAsyncInvocationBy
+        "Get-BDRRAsyncInvokeList/SortBy"
+        {
+            $v = "SubmissionTime"
+            break
+        }
+
+        # Amazon.BedrockRuntime.SortOrder
+        "Get-BDRRAsyncInvokeList/SortOrder"
+        {
+            $v = "Ascending","Descending"
+            break
+        }
+
+        # Amazon.BedrockRuntime.Trace
+        {
+            ($_ -eq "Invoke-BDRRModel/Trace") -Or
+            ($_ -eq "Invoke-BDRRModelWithResponseStream/Trace")
+        }
+        {
+            $v = "DISABLED","ENABLED","ENABLED_FULL"
+            break
+        }
+
+
+    }
+
+    $v |
+        Where-Object { $_ -like "$wordToComplete*" } |
+        ForEach-Object { New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_ }
+}
+
+$BDRR_map = @{
+    "GuardrailConfig_StreamProcessingMode"=@("Invoke-BDRRConverseStream")
+    "GuardrailConfig_Trace"=@("Invoke-BDRRConverse","Invoke-BDRRConverseStream")
+    "OutputScope"=@("Invoke-BDRRGuardrail")
+    "PerformanceConfig_Latency"=@("Invoke-BDRRConverse","Invoke-BDRRConverseStream")
+    "PerformanceConfigLatency"=@("Invoke-BDRRModel","Invoke-BDRRModelWithResponseStream")
+    "SortBy"=@("Get-BDRRAsyncInvokeList")
+    "SortOrder"=@("Get-BDRRAsyncInvokeList")
+    "Source"=@("Invoke-BDRRGuardrail")
+    "StatusEqual"=@("Get-BDRRAsyncInvokeList")
+    "Trace"=@("Invoke-BDRRModel","Invoke-BDRRModelWithResponseStream")
+}
+
+_awsArgumentCompleterRegistration $BDRR_Completers $BDRR_map
+
 $BDRR_SelectCompleters = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
 
@@ -123,8 +225,15 @@ $BDRR_SelectCompleters = {
 }
 
 $BDRR_SelectMap = @{
-    "Select"=@("Invoke-BDRRModel",
-               "Invoke-BDRRModelWithResponseStream")
+    "Select"=@("Invoke-BDRRGuardrail",
+               "Invoke-BDRRConverse",
+               "Invoke-BDRRConverseStream",
+               "Get-BDRRCountToken",
+               "Get-BDRRAsyncInvoke",
+               "Invoke-BDRRModel",
+               "Invoke-BDRRModelWithResponseStream",
+               "Get-BDRRAsyncInvokeList",
+               "Start-BDRRAsyncInvoke")
 }
 
 _awsArgumentCompleterRegistration $BDRR_SelectCompleters $BDRR_SelectMap

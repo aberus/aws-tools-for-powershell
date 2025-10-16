@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SSMContacts;
 using Amazon.SSMContacts.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMC
 {
     /// <summary>
@@ -35,18 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.SMC
     [AWSCmdlet("Calls the AWS Systems Manager Incident Manager Contacts CreateRotation API operation.", Operation = new[] {"CreateRotation"}, SelectReturnType = typeof(Amazon.SSMContacts.Model.CreateRotationResponse))]
     [AWSCmdletOutput("System.String or Amazon.SSMContacts.Model.CreateRotationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SSMContacts.Model.CreateRotationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SSMContacts.Model.CreateRotationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMCRotationCmdlet : AmazonSSMContactsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactId
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of the contacts to add to the rotation.</para><para>The order that you list the contacts in is their shift order in the rotation schedule.
-        /// To change the order of the contact's shifts, use the <a>UpdateRotation</a> operation.</para>
+        /// <para>The Amazon Resource Names (ARNs) of the contacts to add to the rotation.</para><note><para>Only the <c>PERSONAL</c> contact type is supported. The contact types <c>ESCALATION</c>
+        /// and <c>ONCALL_SCHEDULE</c> are not supported for this operation. </para></note><para>The order that you list the contacts in is their shift order in the rotation schedule.
+        /// To change the order of the contact's shifts, use the <a>UpdateRotation</a> operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -64,7 +72,11 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         #region Parameter Recurrence_DailySetting
         /// <summary>
         /// <para>
-        /// <para>Information about on-call rotations that recur daily.</para>
+        /// <para>Information about on-call rotations that recur daily.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -85,7 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         #region Parameter Recurrence_MonthlySetting
         /// <summary>
         /// <para>
-        /// <para>Information about on-call rotations that recur monthly.</para>
+        /// <para>Information about on-call rotations that recur monthly.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,8 +130,8 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         /// <summary>
         /// <para>
         /// <para>The number of contacts, or shift team members designated to be on call concurrently
-        /// during a shift. For example, in an on-call schedule containing ten contacts, a value
-        /// of <c>2</c> designates that two of them are on call at any given time.</para>
+        /// during a shift. For example, in an on-call schedule that contains ten contacts, a
+        /// value of <c>2</c> designates that two of them are on call at any given time.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -148,7 +164,11 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         #region Parameter Recurrence_ShiftCoverage
         /// <summary>
         /// <para>
-        /// <para>Information about the days of the week included in on-call rotation coverage.</para>
+        /// <para>Information about the days of the week that the on-call rotation coverage includes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,7 +192,11 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         /// <para>Optional metadata to assign to the rotation. Tags enable you to categorize a resource
         /// in different ways, such as by purpose, owner, or environment. For more information,
         /// see <a href="https://docs.aws.amazon.com/incident-manager/latest/userguide/tagging.html">Tagging
-        /// Incident Manager resources</a> in the <i>Incident Manager User Guide</i>.</para>
+        /// Incident Manager resources</a> in the <i>Incident Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -187,7 +211,7 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         /// (IANA) format. For example: "America/Los_Angeles", "UTC", or "Asia/Seoul". For more
         /// information, see the <a href="https://www.iana.org/time-zones">Time Zone Database</a>
         /// on the IANA website.</para><note><para>Designators for time zones that don’t support Daylight Savings Time rules, such as
-        /// Pacific Standard Time (PST) and Pacific Daylight Time (PDT), are not supported.</para></note>
+        /// Pacific Standard Time (PST), are not supported.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -204,7 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         #region Parameter Recurrence_WeeklySetting
         /// <summary>
         /// <para>
-        /// <para>Information about on-call rotations that recur weekly.</para>
+        /// <para>Information about on-call rotations that recur weekly.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -233,9 +261,13 @@ namespace Amazon.PowerShell.Cmdlets.SMC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -477,13 +509,7 @@ namespace Amazon.PowerShell.Cmdlets.SMC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager Incident Manager Contacts", "CreateRotation");
             try
             {
-                #if DESKTOP
-                return client.CreateRotation(request);
-                #elif CORECLR
-                return client.CreateRotationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRotationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

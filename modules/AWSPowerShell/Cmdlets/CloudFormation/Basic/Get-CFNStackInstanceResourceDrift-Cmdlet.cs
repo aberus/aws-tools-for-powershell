@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -40,19 +42,20 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation ListStackInstanceResourceDrifts API operation.", Operation = new[] {"ListStackInstanceResourceDrifts"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.ListStackInstanceResourceDriftsResponse))]
     [AWSCmdletOutput("Amazon.CloudFormation.Model.StackInstanceResourceDriftsSummary or Amazon.CloudFormation.Model.ListStackInstanceResourceDriftsResponse",
         "This cmdlet returns a collection of Amazon.CloudFormation.Model.StackInstanceResourceDriftsSummary objects.",
-        "The service call response (type Amazon.CloudFormation.Model.ListStackInstanceResourceDriftsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.ListStackInstanceResourceDriftsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFNStackInstanceResourceDriftCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CallAs
         /// <summary>
         /// <para>
         /// <para>[Service-managed permissions] Specifies whether you are acting as an account administrator
         /// in the organization's management account or as a delegated administrator in a member
-        /// account.</para><para>By default, <c>SELF</c> is specified. Use <c>SELF</c> for stack sets with self-managed
+        /// account.</para><para>By default, <c>SELF</c> is specified. Use <c>SELF</c> for StackSets with self-managed
         /// permissions.</para><ul><li><para>If you are signed in to the management account, specify <c>SELF</c>.</para></li><li><para>If you are signed in to a delegated administrator account, specify <c>DELEGATED_ADMIN</c>.</para><para>Your Amazon Web Services account must be registered as a delegated administrator in
         /// the management account. For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-orgs-delegated-admin.html">Register
         /// a delegated administrator</a> in the <i>CloudFormation User Guide</i>.</para></li></ul>
@@ -121,7 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// <para>The resource drift status of the stack instance. </para><ul><li><para><c>DELETED</c>: The resource differs from its expected template configuration in
         /// that the resource has been deleted.</para></li><li><para><c>MODIFIED</c>: One or more resource properties differ from their expected template
         /// values.</para></li><li><para><c>IN_SYNC</c>: The resource's actual configuration matches its expected template
-        /// configuration.</para></li><li><para><c>NOT_CHECKED</c>: CloudFormation doesn't currently return this value.</para></li></ul>
+        /// configuration.</para></li><li><para><c>NOT_CHECKED</c>: CloudFormation doesn't currently return this value.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,7 +139,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter StackSetName
         /// <summary>
         /// <para>
-        /// <para>The name or unique ID of the stack set that you want to list drifted resources for.</para>
+        /// <para>The name or unique ID of the StackSet that you want to list drifted resources for.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -171,7 +178,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -199,9 +206,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -357,13 +368,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "ListStackInstanceResourceDrifts");
             try
             {
-                #if DESKTOP
-                return client.ListStackInstanceResourceDrifts(request);
-                #elif CORECLR
-                return client.ListStackInstanceResourceDriftsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListStackInstanceResourceDriftsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

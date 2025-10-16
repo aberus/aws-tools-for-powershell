@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,43 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RoboMaker;
 using Amazon.RoboMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ROBO
 {
     /// <summary>
-    /// Returns a list of deployment jobs for a fleet. You can optionally provide filters
-    /// to retrieve specific deployment jobs.
+    /// <important><para>
+    /// End of support notice: On September 10, 2025, Amazon Web Services will discontinue
+    /// support for Amazon Web Services RoboMaker. After September 10, 2025, you will no longer
+    /// be able to access the Amazon Web Services RoboMaker console or Amazon Web Services
+    /// RoboMaker resources. For more information on transitioning to Batch to help run containerized
+    /// simulations, visit <a href="https://aws.amazon.com/blogs/hpc/run-simulations-using-multiple-containers-in-a-single-aws-batch-job/">https://aws.amazon.com/blogs/hpc/run-simulations-using-multiple-containers-in-a-single-aws-batch-job/</a>.
     /// 
-    ///  <important><para>
-    /// This API will no longer be supported as of May 2, 2022. Use it to remove resources
-    /// that were created for Deployment Service.
-    /// </para></important><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.<br/><br/>This operation is deprecated.
+    /// </para></important><important><para>
+    /// This API is no longer supported. For more information, see the May 2, 2022 update
+    /// in the <a href="https://docs.aws.amazon.com/robomaker/latest/dg/chapter-support-policy.html#software-support-policy-may2022">Support
+    /// policy</a> page.
+    /// </para></important><para>
+    ///  Returns a list of deployment jobs for a fleet. You can optionally provide filters
+    /// to retrieve specific deployment jobs. 
+    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.<br/><br/>This operation is deprecated.
     /// </summary>
     [Cmdlet("Get", "ROBODeploymentJobList")]
     [OutputType("Amazon.RoboMaker.Model.DeploymentJob")]
     [AWSCmdlet("Calls the AWS RoboMaker ListDeploymentJobs API operation.", Operation = new[] {"ListDeploymentJobs"}, SelectReturnType = typeof(Amazon.RoboMaker.Model.ListDeploymentJobsResponse))]
     [AWSCmdletOutput("Amazon.RoboMaker.Model.DeploymentJob or Amazon.RoboMaker.Model.ListDeploymentJobsResponse",
         "This cmdlet returns a collection of Amazon.RoboMaker.Model.DeploymentJob objects.",
-        "The service call response (type Amazon.RoboMaker.Model.ListDeploymentJobsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RoboMaker.Model.ListDeploymentJobsResponse) can be returned by specifying '-Select *'."
     )]
     [System.ObsoleteAttribute("Support for the AWS RoboMaker application deployment feature has ended. For additional information, see https://docs.aws.amazon.com/robomaker/latest/dg/fleets.html.")]
     public partial class GetROBODeploymentJobListCmdlet : AmazonRoboMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -55,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         /// <para>Optional filters to limit results.</para><para>The filter names <c>status</c> and <c>fleetName</c> are supported. When filtering,
         /// you must use the complete value of the filtered item. You can use up to three filters,
         /// but they must be for the same named item. For example, if you are looking for items
-        /// with the status <c>InProgress</c> or the status <c>Pending</c>.</para>
+        /// with the status <c>InProgress</c> or the status <c>Pending</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +111,7 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -298,7 +317,7 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.DeploymentJobs.Count;
+                    int _receivedThisCall = response.DeploymentJobs?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -347,13 +366,7 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS RoboMaker", "ListDeploymentJobs");
             try
             {
-                #if DESKTOP
-                return client.ListDeploymentJobs(request);
-                #elif CORECLR
-                return client.ListDeploymentJobsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListDeploymentJobsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

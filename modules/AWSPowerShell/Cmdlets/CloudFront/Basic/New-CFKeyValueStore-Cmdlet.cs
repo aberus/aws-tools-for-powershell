@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
-    /// Specifies the Key Value Store resource to add to your account. In your account, the
-    /// Key Value Store names must be unique. You can also import Key Value Store data in
+    /// Specifies the key value store resource to add to your account. In your account, the
+    /// key value store names must be unique. You can also import key value store data in
     /// JSON format from an S3 bucket by providing a valid <c>ImportSource</c> that you own.
     /// </summary>
     [Cmdlet("New", "CFKeyValueStore", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CloudFront.Model.CreateKeyValueStoreResponse")]
     [AWSCmdlet("Calls the Amazon CloudFront CreateKeyValueStore API operation.", Operation = new[] {"CreateKeyValueStore"}, SelectReturnType = typeof(Amazon.CloudFront.Model.CreateKeyValueStoreResponse))]
     [AWSCmdletOutput("Amazon.CloudFront.Model.CreateKeyValueStoreResponse",
-        "This cmdlet returns an Amazon.CloudFront.Model.CreateKeyValueStoreResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudFront.Model.CreateKeyValueStoreResponse object containing multiple properties."
     )]
     public partial class NewCFKeyValueStoreCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Comment
         /// <summary>
         /// <para>
-        /// <para>The comment of the Key Value Store.</para>
+        /// <para>The comment of the key value store.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +59,8 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The name of the Key Value Store. The maximum length of the name is 32 characters.</para>
+        /// <para>The name of the key value store. The minimum length is 1 character and the maximum
+        /// length is 64 characters.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,7 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter ImportSource_SourceARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the import source for the Key Value Store.</para>
+        /// <para>The Amazon Resource Name (ARN) of the import source for the key value store.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,7 +87,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter ImportSource_SourceType
         /// <summary>
         /// <para>
-        /// <para>The source type of the import source for the Key Value Store.</para>
+        /// <para>The source type of the import source for the key value store.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,16 +106,6 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -122,9 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -138,21 +136,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFront.Model.CreateKeyValueStoreResponse, NewCFKeyValueStoreCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Comment = this.Comment;
             context.ImportSource_SourceARN = this.ImportSource_SourceARN;
             context.ImportSource_SourceType = this.ImportSource_SourceType;
@@ -254,13 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "CreateKeyValueStore");
             try
             {
-                #if DESKTOP
-                return client.CreateKeyValueStore(request);
-                #elif CORECLR
-                return client.CreateKeyValueStoreAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateKeyValueStoreAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

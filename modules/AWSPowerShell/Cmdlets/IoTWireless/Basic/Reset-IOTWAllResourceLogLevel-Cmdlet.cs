@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
-    /// Removes the log-level overrides for all resources; both wireless devices and wireless
-    /// gateways.
+    /// Removes the log-level overrides for all resources; wireless devices, wireless gateways,
+    /// and FUOTA tasks.
     /// </summary>
     [Cmdlet("Reset", "IOTWAllResourceLogLevel", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS IoT Wireless ResetAllResourceLogLevels API operation.", Operation = new[] {"ResetAllResourceLogLevels"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.ResetAllResourceLogLevelsResponse))]
     [AWSCmdletOutput("None or Amazon.IoTWireless.Model.ResetAllResourceLogLevelsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IoTWireless.Model.ResetAllResourceLogLevelsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IoTWireless.Model.ResetAllResourceLogLevelsResponse) be returned by specifying '-Select *'."
     )]
     public partial class ResetIOTWAllResourceLogLevelCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -63,9 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -138,13 +145,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "ResetAllResourceLogLevels");
             try
             {
-                #if DESKTOP
-                return client.ResetAllResourceLogLevels(request);
-                #elif CORECLR
-                return client.ResetAllResourceLogLevelsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ResetAllResourceLogLevelsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IVS;
 using Amazon.IVS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IVS
 {
     /// <summary>
@@ -38,12 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.IVS
     [AWSCmdlet("Calls the Amazon Interactive Video Service ImportPlaybackKeyPair API operation.", Operation = new[] {"ImportPlaybackKeyPair"}, SelectReturnType = typeof(Amazon.IVS.Model.ImportPlaybackKeyPairResponse))]
     [AWSCmdletOutput("Amazon.IVS.Model.PlaybackKeyPair or Amazon.IVS.Model.ImportPlaybackKeyPairResponse",
         "This cmdlet returns an Amazon.IVS.Model.PlaybackKeyPair object.",
-        "The service call response (type Amazon.IVS.Model.ImportPlaybackKeyPairResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IVS.Model.ImportPlaybackKeyPairResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportIVSPlaybackKeyPairCmdlet : AmazonIVSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Name
         /// <summary>
@@ -75,10 +78,15 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Any tags provided with the request are added to the playback key pair tags. See <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging Amazon
-        /// Web Services Resources</a> for more information, including restrictions that apply
-        /// to tags and "Tag naming limits and requirements"; Amazon IVS has no service-specific
-        /// constraints beyond what is documented there.</para>
+        /// <para>Any tags provided with the request are added to the playback key pair tags. See <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/best-practices-and-strats.html">Best
+        /// practices and strategies</a> in <i>Tagging Amazon Web Services Resources and Tag Editor</i>
+        /// for details, including restrictions that apply to tags and "Tag naming limits and
+        /// requirements"; Amazon IVS has no service-specific constraints beyond what is documented
+        /// there.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,16 +105,6 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public string Select { get; set; } = "KeyPair";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PublicKeyMaterial parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PublicKeyMaterial' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PublicKeyMaterial' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -117,9 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -133,21 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IVS.Model.ImportPlaybackKeyPairResponse, ImportIVSPlaybackKeyPairCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PublicKeyMaterial;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Name = this.Name;
             context.PublicKeyMaterial = this.PublicKeyMaterial;
             #if MODULAR
@@ -230,13 +222,7 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Interactive Video Service", "ImportPlaybackKeyPair");
             try
             {
-                #if DESKTOP
-                return client.ImportPlaybackKeyPair(request);
-                #elif CORECLR
-                return client.ImportPlaybackKeyPairAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportPlaybackKeyPairAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -42,22 +44,39 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) AssociateInstanceEventWindow API operation.", Operation = new[] {"AssociateInstanceEventWindow"}, SelectReturnType = typeof(Amazon.EC2.Model.AssociateInstanceEventWindowResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.InstanceEventWindow or Amazon.EC2.Model.AssociateInstanceEventWindowResponse",
         "This cmdlet returns an Amazon.EC2.Model.InstanceEventWindow object.",
-        "The service call response (type Amazon.EC2.Model.AssociateInstanceEventWindowResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.AssociateInstanceEventWindowResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterEC2InstanceEventWindowCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssociationTarget_DedicatedHostId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the Dedicated Hosts to associate with the event window.</para>
+        /// <para>The IDs of the Dedicated Hosts to associate with the event window.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AssociationTarget_DedicatedHostIds")]
         public System.String[] AssociationTarget_DedicatedHostId { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter InstanceEventWindowId
@@ -82,7 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>The IDs of the instances to associate with the event window. If the instance is on
         /// a Dedicated Host, you can't specify the Instance ID parameter; you must use the Dedicated
-        /// Host ID parameter.</para>
+        /// Host ID parameter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +117,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The instance tags to associate with the event window. Any instances associated with
-        /// the tags will be associated with the event window.</para>
+        /// the tags will be associated with the event window.</para><para>Note that while you can't create tag keys beginning with <c>aws:</c>, you can specify
+        /// existing Amazon Web Services managed tag keys (with the <c>aws:</c> prefix) when specifying
+        /// them as targets to associate with the event window.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,16 +142,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "InstanceEventWindow";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceEventWindowId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceEventWindowId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceEventWindowId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -133,9 +152,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceEventWindowId), MyInvocation.BoundParameters);
@@ -149,21 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.AssociateInstanceEventWindowResponse, RegisterEC2InstanceEventWindowCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceEventWindowId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AssociationTarget_DedicatedHostId != null)
             {
                 context.AssociationTarget_DedicatedHostId = new List<System.String>(this.AssociationTarget_DedicatedHostId);
@@ -177,6 +190,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 context.AssociationTarget_InstanceTag = new List<Amazon.EC2.Model.Tag>(this.AssociationTarget_InstanceTag);
             }
+            context.DryRun = this.DryRun;
             context.InstanceEventWindowId = this.InstanceEventWindowId;
             #if MODULAR
             if (this.InstanceEventWindowId == null && ParameterWasBound(nameof(this.InstanceEventWindowId)))
@@ -239,6 +253,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.AssociationTarget = null;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.InstanceEventWindowId != null)
             {
                 request.InstanceEventWindowId = cmdletContext.InstanceEventWindowId;
@@ -281,13 +299,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "AssociateInstanceEventWindow");
             try
             {
-                #if DESKTOP
-                return client.AssociateInstanceEventWindow(request);
-                #elif CORECLR
-                return client.AssociateInstanceEventWindowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateInstanceEventWindowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -307,6 +319,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public List<System.String> AssociationTarget_DedicatedHostId { get; set; }
             public List<System.String> AssociationTarget_InstanceId { get; set; }
             public List<Amazon.EC2.Model.Tag> AssociationTarget_InstanceTag { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String InstanceEventWindowId { get; set; }
             public System.Func<Amazon.EC2.Model.AssociateInstanceEventWindowResponse, RegisterEC2InstanceEventWindowCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.InstanceEventWindow;

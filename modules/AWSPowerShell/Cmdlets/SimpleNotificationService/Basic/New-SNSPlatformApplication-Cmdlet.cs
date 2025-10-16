@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SNS
 {
     /// <summary>
@@ -37,26 +39,32 @@ namespace Amazon.PowerShell.Cmdlets.SNS
     /// <para><c>PlatformPrincipal</c> and <c>PlatformCredential</c> are received from the notification
     /// service.
     /// </para><ul><li><para>
-    /// For <c>ADM</c>, <c>PlatformPrincipal</c> is <c>client id</c> and <c>PlatformCredential</c>
+    /// For ADM, <c>PlatformPrincipal</c> is <c>client id</c> and <c>PlatformCredential</c>
     /// is <c>client secret</c>.
     /// </para></li><li><para>
-    /// For <c>Baidu</c>, <c>PlatformPrincipal</c> is <c>API key</c> and <c>PlatformCredential</c>
-    /// is <c>secret key</c>.
-    /// </para></li><li><para>
-    /// For <c>APNS</c> and <c>APNS_SANDBOX</c> using certificate credentials, <c>PlatformPrincipal</c>
+    /// For APNS and <c>APNS_SANDBOX</c> using certificate credentials, <c>PlatformPrincipal</c>
     /// is <c>SSL certificate</c> and <c>PlatformCredential</c> is <c>private key</c>.
     /// </para></li><li><para>
-    /// For <c>APNS</c> and <c>APNS_SANDBOX</c> using token credentials, <c>PlatformPrincipal</c>
+    /// For APNS and <c>APNS_SANDBOX</c> using token credentials, <c>PlatformPrincipal</c>
     /// is <c>signing key ID</c> and <c>PlatformCredential</c> is <c>signing key</c>.
     /// </para></li><li><para>
-    /// For <c>GCM</c> (Firebase Cloud Messaging), there is no <c>PlatformPrincipal</c> and
-    /// the <c>PlatformCredential</c> is <c>API key</c>.
+    /// For Baidu, <c>PlatformPrincipal</c> is <c>API key</c> and <c>PlatformCredential</c>
+    /// is <c>secret key</c>.
     /// </para></li><li><para>
-    /// For <c>MPNS</c>, <c>PlatformPrincipal</c> is <c>TLS certificate</c> and <c>PlatformCredential</c>
+    /// For GCM (Firebase Cloud Messaging) using key credentials, there is no <c>PlatformPrincipal</c>.
+    /// The <c>PlatformCredential</c> is <c>API key</c>.
+    /// </para></li><li><para>
+    /// For GCM (Firebase Cloud Messaging) using token credentials, there is no <c>PlatformPrincipal</c>.
+    /// The <c>PlatformCredential</c> is a JSON formatted private key file. When using the
+    /// Amazon Web Services CLI or Amazon Web Services SDKs, the file must be in string format
+    /// and special characters must be ignored. To format the file correctly, Amazon SNS recommends
+    /// using the following command: <c>SERVICE_JSON=$(jq @json &lt; service.json)</c>.
+    /// </para></li><li><para>
+    /// For MPNS, <c>PlatformPrincipal</c> is <c>TLS certificate</c> and <c>PlatformCredential</c>
     /// is <c>private key</c>.
     /// </para></li><li><para>
-    /// For <c>WNS</c>, <c>PlatformPrincipal</c> is <c>Package Security Identifier</c> and
-    /// <c>PlatformCredential</c> is <c>secret key</c>.
+    /// For WNS, <c>PlatformPrincipal</c> is <c>Package Security Identifier</c> and <c>PlatformCredential</c>
+    /// is <c>secret key</c>.
     /// </para></li></ul><para>
     /// You can use the returned <c>PlatformApplicationArn</c> as an attribute for the <c>CreatePlatformEndpoint</c>
     /// action.
@@ -67,17 +75,22 @@ namespace Amazon.PowerShell.Cmdlets.SNS
     [AWSCmdlet("Calls the Amazon Simple Notification Service (SNS) CreatePlatformApplication API operation.", Operation = new[] {"CreatePlatformApplication"}, SelectReturnType = typeof(Amazon.SimpleNotificationService.Model.CreatePlatformApplicationResponse))]
     [AWSCmdletOutput("System.String or Amazon.SimpleNotificationService.Model.CreatePlatformApplicationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SimpleNotificationService.Model.CreatePlatformApplicationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleNotificationService.Model.CreatePlatformApplicationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSNSPlatformApplicationCmdlet : AmazonSimpleNotificationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
         /// <para>
-        /// <para>For a list of attributes, see <a href="https://docs.aws.amazon.com/sns/latest/api/API_SetPlatformApplicationAttributes.html">SetPlatformApplicationAttributes</a>.</para>
+        /// <para>For a list of attributes, see <a href="https://docs.aws.amazon.com/sns/latest/api/API_SetPlatformApplicationAttributes.html"><c>SetPlatformApplicationAttributes</c></a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -139,16 +152,6 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public string Select { get; set; } = "PlatformApplicationArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -159,9 +162,13 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -175,21 +182,11 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleNotificationService.Model.CreatePlatformApplicationResponse, NewSNSPlatformApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -284,13 +281,7 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Notification Service (SNS)", "CreatePlatformApplication");
             try
             {
-                #if DESKTOP
-                return client.CreatePlatformApplication(request);
-                #elif CORECLR
-                return client.CreatePlatformApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePlatformApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

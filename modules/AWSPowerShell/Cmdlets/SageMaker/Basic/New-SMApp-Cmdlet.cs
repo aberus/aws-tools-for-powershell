@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
     /// Creates a running app for the specified UserProfile. This operation is automatically
-    /// invoked by Amazon SageMaker upon access to the associated Domain, and when new kernel
-    /// configurations are selected by the user. A user may have multiple Apps active simultaneously.
+    /// invoked by Amazon SageMaker AI upon access to the associated Domain, and when new
+    /// kernel configurations are selected by the user. A user may have multiple Apps active
+    /// simultaneously.
     /// </summary>
     [Cmdlet("New", "SMApp", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateApp API operation.", Operation = new[] {"CreateApp"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateAppResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateAppResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateAppResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateAppResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMAppCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppName
         /// <summary>
@@ -117,10 +121,20 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.String ResourceSpec_LifecycleConfigArn { get; set; }
         #endregion
         
+        #region Parameter RecoveryMode
+        /// <summary>
+        /// <para>
+        /// <para> Indicates whether the application is launched in recovery mode. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? RecoveryMode { get; set; }
+        #endregion
+        
         #region Parameter ResourceSpec_SageMakerImageArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the SageMaker image that the image version belongs to.</para>
+        /// <para>The ARN of the SageMaker AI image that the image version belongs to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,7 +155,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ResourceSpec_SageMakerImageVersionArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the image version created on the instance.</para>
+        /// <para>The ARN of the image version created on the instance. To clear the value set for <c>SageMakerImageVersionArn</c>,
+        /// pass <c>None</c> as the value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Each tag consists of a key and an optional value. Tag keys must be unique per resource.</para>
+        /// <para>Each tag consists of a key and an optional value. Tag keys must be unique per resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,16 +210,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "AppArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AppName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AppName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AppName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -211,9 +220,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AppName), MyInvocation.BoundParameters);
@@ -227,21 +240,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateAppResponse, NewSMAppCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AppName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppName = this.AppName;
             #if MODULAR
             if (this.AppName == null && ParameterWasBound(nameof(this.AppName)))
@@ -263,6 +266,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 WriteWarning("You are passing $null as a value for parameter DomainId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.RecoveryMode = this.RecoveryMode;
             context.ResourceSpec_InstanceType = this.ResourceSpec_InstanceType;
             context.ResourceSpec_LifecycleConfigArn = this.ResourceSpec_LifecycleConfigArn;
             context.ResourceSpec_SageMakerImageArn = this.ResourceSpec_SageMakerImageArn;
@@ -301,6 +305,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (cmdletContext.DomainId != null)
             {
                 request.DomainId = cmdletContext.DomainId;
+            }
+            if (cmdletContext.RecoveryMode != null)
+            {
+                request.RecoveryMode = cmdletContext.RecoveryMode.Value;
             }
             
              // populate ResourceSpec
@@ -411,13 +419,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateApp");
             try
             {
-                #if DESKTOP
-                return client.CreateApp(request);
-                #elif CORECLR
-                return client.CreateAppAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAppAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -437,6 +439,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String AppName { get; set; }
             public Amazon.SageMaker.AppType AppType { get; set; }
             public System.String DomainId { get; set; }
+            public System.Boolean? RecoveryMode { get; set; }
             public Amazon.SageMaker.AppInstanceType ResourceSpec_InstanceType { get; set; }
             public System.String ResourceSpec_LifecycleConfigArn { get; set; }
             public System.String ResourceSpec_SageMakerImageArn { get; set; }

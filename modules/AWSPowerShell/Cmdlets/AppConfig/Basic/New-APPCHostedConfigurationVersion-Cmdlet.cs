@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppConfig;
 using Amazon.AppConfig.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APPC
 {
     /// <summary>
-    /// Creates a new configuration in the AppConfig hosted configuration store.
+    /// Creates a new configuration in the AppConfig hosted configuration store. If you're
+    /// creating a feature flag, we recommend you familiarize yourself with the JSON schema
+    /// for feature flag data. For more information, see <a href="https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-creating-configuration-and-profile-feature-flags.html#appconfig-type-reference-feature-flags">Type
+    /// reference for AWS.AppConfig.FeatureFlags</a> in the <i>AppConfig User Guide</i>.
     /// </summary>
     [Cmdlet("New", "APPCHostedConfigurationVersion", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.AppConfig.Model.CreateHostedConfigurationVersionResponse")]
     [AWSCmdlet("Calls the AWS AppConfig CreateHostedConfigurationVersion API operation.", Operation = new[] {"CreateHostedConfigurationVersion"}, SelectReturnType = typeof(Amazon.AppConfig.Model.CreateHostedConfigurationVersionResponse))]
     [AWSCmdletOutput("Amazon.AppConfig.Model.CreateHostedConfigurationVersionResponse",
-        "This cmdlet returns an Amazon.AppConfig.Model.CreateHostedConfigurationVersionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AppConfig.Model.CreateHostedConfigurationVersionResponse object containing multiple properties."
     )]
     public partial class NewAPPCHostedConfigurationVersionCmdlet : AmazonAppConfigClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -82,7 +84,8 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         #region Parameter Content
         /// <summary>
         /// <para>
-        /// <para>The content of the configuration or the configuration data.</para>
+        /// <para>The configuration data, as bytes.</para><note><para>AppConfig accepts any type of data, including text formats like JSON or TOML, or binary
+        /// formats like protocol buffers or compressed data.</para></note>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -160,16 +163,6 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -180,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.APPC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigurationProfileId), MyInvocation.BoundParameters);
@@ -196,21 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppConfig.Model.CreateHostedConfigurationVersionResponse, NewAPPCHostedConfigurationVersionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -337,13 +324,7 @@ namespace Amazon.PowerShell.Cmdlets.APPC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppConfig", "CreateHostedConfigurationVersion");
             try
             {
-                #if DESKTOP
-                return client.CreateHostedConfigurationVersion(request);
-                #elif CORECLR
-                return client.CreateHostedConfigurationVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateHostedConfigurationVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

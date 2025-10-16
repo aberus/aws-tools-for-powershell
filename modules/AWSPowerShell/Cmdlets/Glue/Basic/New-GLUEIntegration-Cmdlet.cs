@@ -1,0 +1,451 @@
+/*******************************************************************************
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
+ *  this file except in compliance with the License. A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ *  or in the "license" file accompanying this file.
+ *  This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ *  CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ *  specific language governing permissions and limitations under the License.
+ * *****************************************************************************
+ *
+ *  AWS Tools for Windows (TM) PowerShell (TM)
+ *
+ */
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Management.Automation;
+using System.Text;
+using Amazon.PowerShell.Common;
+using Amazon.Runtime;
+using System.Threading;
+using Amazon.Glue;
+using Amazon.Glue.Model;
+
+#pragma warning disable CS0618, CS0612
+namespace Amazon.PowerShell.Cmdlets.GLUE
+{
+    /// <summary>
+    /// Creates a Zero-ETL integration in the caller's account between two resources with
+    /// Amazon Resource Names (ARNs): the <c>SourceArn</c> and <c>TargetArn</c>.
+    /// </summary>
+    [Cmdlet("New", "GLUEIntegration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
+    [OutputType("Amazon.Glue.Model.CreateIntegrationResponse")]
+    [AWSCmdlet("Calls the AWS Glue CreateIntegration API operation.", Operation = new[] {"CreateIntegration"}, SelectReturnType = typeof(Amazon.Glue.Model.CreateIntegrationResponse))]
+    [AWSCmdletOutput("Amazon.Glue.Model.CreateIntegrationResponse",
+        "This cmdlet returns an Amazon.Glue.Model.CreateIntegrationResponse object containing multiple properties."
+    )]
+    public partial class NewGLUEIntegrationCmdlet : AmazonGlueClientCmdlet, IExecutor
+    {
+        
+        protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AdditionalEncryptionContext
+        /// <summary>
+        /// <para>
+        /// <para>An optional set of non-secret key–value pairs that contains additional contextual
+        /// information for encryption. This can only be provided if <c>KMSKeyId</c> is provided.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Collections.Hashtable AdditionalEncryptionContext { get; set; }
+        #endregion
+        
+        #region Parameter IntegrationConfig_ContinuousSync
+        /// <summary>
+        /// <para>
+        /// <para>Enables continuous synchronization for on-demand data extractions from SaaS applications
+        /// to Amazon Web Services data services like Amazon Redshift and Amazon S3.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? IntegrationConfig_ContinuousSync { get; set; }
+        #endregion
+        
+        #region Parameter DataFilter
+        /// <summary>
+        /// <para>
+        /// <para>Selects source tables for the integration using Maxwell filter syntax.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DataFilter { get; set; }
+        #endregion
+        
+        #region Parameter Description
+        /// <summary>
+        /// <para>
+        /// <para>A description of the integration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter IntegrationName
+        /// <summary>
+        /// <para>
+        /// <para>A unique name for an integration in Glue.</para>
+        /// </para>
+        /// </summary>
+        #if !MODULAR
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        #else
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
+        public System.String IntegrationName { get; set; }
+        #endregion
+        
+        #region Parameter KmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of a KMS key used for encrypting the channel.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KmsKeyId { get; set; }
+        #endregion
+        
+        #region Parameter IntegrationConfig_RefreshInterval
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the frequency at which CDC (Change Data Capture) pulls or incremental loads
+        /// should occur. This parameter provides flexibility to align the refresh rate with your
+        /// specific data update patterns, system load considerations, and performance optimization
+        /// goals. Time increment can be set from 15 minutes to 8640 minutes (six days). Currently
+        /// supports creation of <c>RefreshInterval</c> only.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IntegrationConfig_RefreshInterval { get; set; }
+        #endregion
+        
+        #region Parameter SourceArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the source resource for the integration.</para>
+        /// </para>
+        /// </summary>
+        #if !MODULAR
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        #else
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
+        public System.String SourceArn { get; set; }
+        #endregion
+        
+        #region Parameter IntegrationConfig_SourceProperty
+        /// <summary>
+        /// <para>
+        /// <para> A collection of key-value pairs that specify additional properties for the integration
+        /// source. These properties provide configuration options that can be used to customize
+        /// the behavior of the ODB source during data integration operations. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IntegrationConfig_SourceProperties")]
+        public System.Collections.Hashtable IntegrationConfig_SourceProperty { get; set; }
+        #endregion
+        
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>Metadata assigned to the resource consisting of a list of key-value pairs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.Glue.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter TargetArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the target resource for the integration.</para>
+        /// </para>
+        /// </summary>
+        #if !MODULAR
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        #else
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
+        public System.String TargetArn { get; set; }
+        #endregion
+        
+        #region Parameter Select
+        /// <summary>
+        /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
+        /// Specifying -Select '*' will result in the cmdlet returning the whole service response (Amazon.Glue.Model.CreateIntegrationResponse).
+        /// Specifying the name of a property of type Amazon.Glue.Model.CreateIntegrationResponse will result in that property being returned.
+        /// Specifying -Select '^ParameterName' will result in the cmdlet returning the selected cmdlet parameter value.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public string Select { get; set; } = "*";
+        #endregion
+        
+        #region Parameter Force
+        /// <summary>
+        /// This parameter overrides confirmation prompts to force 
+        /// the cmdlet to continue its operation. This parameter should always
+        /// be used with caution.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter Force { get; set; }
+        #endregion
+        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
+        protected override void ProcessRecord()
+        {
+            base.ProcessRecord();
+            
+            var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IntegrationName), MyInvocation.BoundParameters);
+            if (!ConfirmShouldProceed(this.Force.IsPresent, resourceIdentifiersText, "New-GLUEIntegration (CreateIntegration)"))
+            {
+                return;
+            }
+            
+            var context = new CmdletContext();
+            
+            // allow for manipulation of parameters prior to loading into context
+            PreExecutionContextLoad(context);
+            
+            if (ParameterWasBound(nameof(this.Select)))
+            {
+                context.Select = CreateSelectDelegate<Amazon.Glue.Model.CreateIntegrationResponse, NewGLUEIntegrationCmdlet>(Select) ??
+                    throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
+            }
+            if (this.AdditionalEncryptionContext != null)
+            {
+                context.AdditionalEncryptionContext = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.AdditionalEncryptionContext.Keys)
+                {
+                    context.AdditionalEncryptionContext.Add((String)hashKey, (System.String)(this.AdditionalEncryptionContext[hashKey]));
+                }
+            }
+            context.DataFilter = this.DataFilter;
+            context.Description = this.Description;
+            context.IntegrationConfig_ContinuousSync = this.IntegrationConfig_ContinuousSync;
+            context.IntegrationConfig_RefreshInterval = this.IntegrationConfig_RefreshInterval;
+            if (this.IntegrationConfig_SourceProperty != null)
+            {
+                context.IntegrationConfig_SourceProperty = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.IntegrationConfig_SourceProperty.Keys)
+                {
+                    context.IntegrationConfig_SourceProperty.Add((String)hashKey, (System.String)(this.IntegrationConfig_SourceProperty[hashKey]));
+                }
+            }
+            context.IntegrationName = this.IntegrationName;
+            #if MODULAR
+            if (this.IntegrationName == null && ParameterWasBound(nameof(this.IntegrationName)))
+            {
+                WriteWarning("You are passing $null as a value for parameter IntegrationName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
+            context.KmsKeyId = this.KmsKeyId;
+            context.SourceArn = this.SourceArn;
+            #if MODULAR
+            if (this.SourceArn == null && ParameterWasBound(nameof(this.SourceArn)))
+            {
+                WriteWarning("You are passing $null as a value for parameter SourceArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.Glue.Model.Tag>(this.Tag);
+            }
+            context.TargetArn = this.TargetArn;
+            #if MODULAR
+            if (this.TargetArn == null && ParameterWasBound(nameof(this.TargetArn)))
+            {
+                WriteWarning("You are passing $null as a value for parameter TargetArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
+            
+            // allow further manipulation of loaded context prior to processing
+            PostExecutionContextLoad(context);
+            
+            var output = Execute(context) as CmdletOutput;
+            ProcessOutput(output);
+        }
+        
+        #region IExecutor Members
+        
+        public object Execute(ExecutorContext context)
+        {
+            var cmdletContext = context as CmdletContext;
+            // create request
+            var request = new Amazon.Glue.Model.CreateIntegrationRequest();
+            
+            if (cmdletContext.AdditionalEncryptionContext != null)
+            {
+                request.AdditionalEncryptionContext = cmdletContext.AdditionalEncryptionContext;
+            }
+            if (cmdletContext.DataFilter != null)
+            {
+                request.DataFilter = cmdletContext.DataFilter;
+            }
+            if (cmdletContext.Description != null)
+            {
+                request.Description = cmdletContext.Description;
+            }
+            
+             // populate IntegrationConfig
+            var requestIntegrationConfigIsNull = true;
+            request.IntegrationConfig = new Amazon.Glue.Model.IntegrationConfig();
+            System.Boolean? requestIntegrationConfig_integrationConfig_ContinuousSync = null;
+            if (cmdletContext.IntegrationConfig_ContinuousSync != null)
+            {
+                requestIntegrationConfig_integrationConfig_ContinuousSync = cmdletContext.IntegrationConfig_ContinuousSync.Value;
+            }
+            if (requestIntegrationConfig_integrationConfig_ContinuousSync != null)
+            {
+                request.IntegrationConfig.ContinuousSync = requestIntegrationConfig_integrationConfig_ContinuousSync.Value;
+                requestIntegrationConfigIsNull = false;
+            }
+            System.String requestIntegrationConfig_integrationConfig_RefreshInterval = null;
+            if (cmdletContext.IntegrationConfig_RefreshInterval != null)
+            {
+                requestIntegrationConfig_integrationConfig_RefreshInterval = cmdletContext.IntegrationConfig_RefreshInterval;
+            }
+            if (requestIntegrationConfig_integrationConfig_RefreshInterval != null)
+            {
+                request.IntegrationConfig.RefreshInterval = requestIntegrationConfig_integrationConfig_RefreshInterval;
+                requestIntegrationConfigIsNull = false;
+            }
+            Dictionary<System.String, System.String> requestIntegrationConfig_integrationConfig_SourceProperty = null;
+            if (cmdletContext.IntegrationConfig_SourceProperty != null)
+            {
+                requestIntegrationConfig_integrationConfig_SourceProperty = cmdletContext.IntegrationConfig_SourceProperty;
+            }
+            if (requestIntegrationConfig_integrationConfig_SourceProperty != null)
+            {
+                request.IntegrationConfig.SourceProperties = requestIntegrationConfig_integrationConfig_SourceProperty;
+                requestIntegrationConfigIsNull = false;
+            }
+             // determine if request.IntegrationConfig should be set to null
+            if (requestIntegrationConfigIsNull)
+            {
+                request.IntegrationConfig = null;
+            }
+            if (cmdletContext.IntegrationName != null)
+            {
+                request.IntegrationName = cmdletContext.IntegrationName;
+            }
+            if (cmdletContext.KmsKeyId != null)
+            {
+                request.KmsKeyId = cmdletContext.KmsKeyId;
+            }
+            if (cmdletContext.SourceArn != null)
+            {
+                request.SourceArn = cmdletContext.SourceArn;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
+            if (cmdletContext.TargetArn != null)
+            {
+                request.TargetArn = cmdletContext.TargetArn;
+            }
+            
+            CmdletOutput output;
+            
+            // issue call
+            var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
+            try
+            {
+                var response = CallAWSServiceOperation(client, request);
+                object pipelineOutput = null;
+                pipelineOutput = cmdletContext.Select(response, this);
+                output = new CmdletOutput
+                {
+                    PipelineOutput = pipelineOutput,
+                    ServiceResponse = response
+                };
+            }
+            catch (Exception e)
+            {
+                output = new CmdletOutput { ErrorResponse = e };
+            }
+            
+            return output;
+        }
+        
+        public ExecutorContext CreateContext()
+        {
+            return new CmdletContext();
+        }
+        
+        #endregion
+        
+        #region AWS Service Operation Call
+        
+        private Amazon.Glue.Model.CreateIntegrationResponse CallAWSServiceOperation(IAmazonGlue client, Amazon.Glue.Model.CreateIntegrationRequest request)
+        {
+            Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "CreateIntegration");
+            try
+            {
+                return client.CreateIntegrationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
+            }
+            catch (AmazonServiceException exc)
+            {
+                var webException = exc.InnerException as System.Net.WebException;
+                if (webException != null)
+                {
+                    throw new Exception(Utils.Common.FormatNameResolutionFailureMessage(client.Config, webException.Message), webException);
+                }
+                throw;
+            }
+        }
+        
+        #endregion
+        
+        internal partial class CmdletContext : ExecutorContext
+        {
+            public Dictionary<System.String, System.String> AdditionalEncryptionContext { get; set; }
+            public System.String DataFilter { get; set; }
+            public System.String Description { get; set; }
+            public System.Boolean? IntegrationConfig_ContinuousSync { get; set; }
+            public System.String IntegrationConfig_RefreshInterval { get; set; }
+            public Dictionary<System.String, System.String> IntegrationConfig_SourceProperty { get; set; }
+            public System.String IntegrationName { get; set; }
+            public System.String KmsKeyId { get; set; }
+            public System.String SourceArn { get; set; }
+            public List<Amazon.Glue.Model.Tag> Tag { get; set; }
+            public System.String TargetArn { get; set; }
+            public System.Func<Amazon.Glue.Model.CreateIntegrationResponse, NewGLUEIntegrationCmdlet, object> Select { get; set; } =
+                (response, cmdlet) => response;
+        }
+        
+    }
+}

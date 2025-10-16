@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResourceExplorer2;
 using Amazon.ResourceExplorer2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AREX
 {
     /// <summary>
     /// Retrieves the status of your account's Amazon Web Services service access, and validates
     /// the service linked role required to access the multi-account search feature. Only
-    /// the management account or a delegated administrator with service access enabled can
-    /// invoke this API call.
+    /// the management account can invoke this API call.
     /// </summary>
     [Cmdlet("Get", "AREXAccountLevelServiceConfiguration")]
     [OutputType("Amazon.ResourceExplorer2.Model.OrgConfiguration")]
     [AWSCmdlet("Calls the AWS Resource Explorer GetAccountLevelServiceConfiguration API operation.", Operation = new[] {"GetAccountLevelServiceConfiguration"}, SelectReturnType = typeof(Amazon.ResourceExplorer2.Model.GetAccountLevelServiceConfigurationResponse))]
     [AWSCmdletOutput("Amazon.ResourceExplorer2.Model.OrgConfiguration or Amazon.ResourceExplorer2.Model.GetAccountLevelServiceConfigurationResponse",
         "This cmdlet returns an Amazon.ResourceExplorer2.Model.OrgConfiguration object.",
-        "The service call response (type Amazon.ResourceExplorer2.Model.GetAccountLevelServiceConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ResourceExplorer2.Model.GetAccountLevelServiceConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAREXAccountLevelServiceConfigurationCmdlet : AmazonResourceExplorer2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -56,9 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.AREX
         public string Select { get; set; } = "OrgConfiguration";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -125,13 +131,7 @@ namespace Amazon.PowerShell.Cmdlets.AREX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resource Explorer", "GetAccountLevelServiceConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetAccountLevelServiceConfiguration(request);
-                #elif CORECLR
-                return client.GetAccountLevelServiceConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAccountLevelServiceConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -119,7 +119,7 @@ $CB_Completers = {
         # Amazon.CodeBuild.AuthType
         "Import-CBSourceCredential/AuthType"
         {
-            $v = "BASIC_AUTH","OAUTH","PERSONAL_ACCESS_TOKEN"
+            $v = "BASIC_AUTH","CODECONNECTIONS","OAUTH","PERSONAL_ACCESS_TOKEN","SECRETS_MANAGER"
             break
         }
 
@@ -140,10 +140,10 @@ $CB_Completers = {
             ($_ -eq "Update-CBProject/Artifacts_BucketOwnerAccess") -Or
             ($_ -eq "Start-CBBatch/ArtifactsOverride_BucketOwnerAccess") -Or
             ($_ -eq "Start-CBBuild/ArtifactsOverride_BucketOwnerAccess") -Or
-            ($_ -eq "New-CBProject/LogsConfig_S3Logs_BucketOwnerAccess") -Or
-            ($_ -eq "Update-CBProject/LogsConfig_S3Logs_BucketOwnerAccess") -Or
-            ($_ -eq "Start-CBBatch/LogsConfigOverride_S3Logs_BucketOwnerAccess") -Or
-            ($_ -eq "Start-CBBuild/LogsConfigOverride_S3Logs_BucketOwnerAccess")
+            ($_ -eq "New-CBProject/S3Logs_BucketOwnerAccess") -Or
+            ($_ -eq "Start-CBBatch/S3Logs_BucketOwnerAccess") -Or
+            ($_ -eq "Start-CBBuild/S3Logs_BucketOwnerAccess") -Or
+            ($_ -eq "Update-CBProject/S3Logs_BucketOwnerAccess")
         }
         {
             $v = "FULL","NONE","READ_ONLY"
@@ -162,24 +162,33 @@ $CB_Completers = {
             break
         }
 
+        # Amazon.CodeBuild.CommandType
+        "Start-CBCommandExecution/Type"
+        {
+            $v = "SHELL"
+            break
+        }
+
         # Amazon.CodeBuild.ComputeType
         {
             ($_ -eq "New-CBFleet/ComputeType") -Or
             ($_ -eq "Update-CBFleet/ComputeType") -Or
             ($_ -eq "Start-CBBatch/ComputeTypeOverride") -Or
             ($_ -eq "Start-CBBuild/ComputeTypeOverride") -Or
+            ($_ -eq "New-CBProject/DockerServer_ComputeType") -Or
+            ($_ -eq "Update-CBProject/DockerServer_ComputeType") -Or
             ($_ -eq "New-CBProject/Environment_ComputeType") -Or
             ($_ -eq "Update-CBProject/Environment_ComputeType")
         }
         {
-            $v = "BUILD_GENERAL1_2XLARGE","BUILD_GENERAL1_LARGE","BUILD_GENERAL1_MEDIUM","BUILD_GENERAL1_SMALL","BUILD_GENERAL1_XLARGE","BUILD_LAMBDA_10GB","BUILD_LAMBDA_1GB","BUILD_LAMBDA_2GB","BUILD_LAMBDA_4GB","BUILD_LAMBDA_8GB"
+            $v = "ATTRIBUTE_BASED_COMPUTE","BUILD_GENERAL1_2XLARGE","BUILD_GENERAL1_LARGE","BUILD_GENERAL1_MEDIUM","BUILD_GENERAL1_SMALL","BUILD_GENERAL1_XLARGE","BUILD_LAMBDA_10GB","BUILD_LAMBDA_1GB","BUILD_LAMBDA_2GB","BUILD_LAMBDA_4GB","BUILD_LAMBDA_8GB","CUSTOM_INSTANCE_TYPE"
             break
         }
 
         # Amazon.CodeBuild.CredentialProviderType
         {
-            ($_ -eq "New-CBProject/Environment_RegistryCredential_CredentialProvider") -Or
-            ($_ -eq "Update-CBProject/Environment_RegistryCredential_CredentialProvider") -Or
+            ($_ -eq "New-CBProject/RegistryCredential_CredentialProvider") -Or
+            ($_ -eq "Update-CBProject/RegistryCredential_CredentialProvider") -Or
             ($_ -eq "Start-CBBatch/RegistryCredentialOverride_CredentialProvider") -Or
             ($_ -eq "Start-CBBuild/RegistryCredentialOverride_CredentialProvider")
         }
@@ -198,7 +207,27 @@ $CB_Completers = {
             ($_ -eq "Start-CBBuild/EnvironmentTypeOverride")
         }
         {
-            $v = "ARM_CONTAINER","ARM_LAMBDA_CONTAINER","LINUX_CONTAINER","LINUX_GPU_CONTAINER","LINUX_LAMBDA_CONTAINER","WINDOWS_CONTAINER","WINDOWS_SERVER_2019_CONTAINER"
+            $v = "ARM_CONTAINER","ARM_EC2","ARM_LAMBDA_CONTAINER","LINUX_CONTAINER","LINUX_EC2","LINUX_GPU_CONTAINER","LINUX_LAMBDA_CONTAINER","MAC_ARM","WINDOWS_CONTAINER","WINDOWS_EC2","WINDOWS_SERVER_2019_CONTAINER","WINDOWS_SERVER_2022_CONTAINER"
+            break
+        }
+
+        # Amazon.CodeBuild.FleetOverflowBehavior
+        {
+            ($_ -eq "New-CBFleet/OverflowBehavior") -Or
+            ($_ -eq "Update-CBFleet/OverflowBehavior")
+        }
+        {
+            $v = "ON_DEMAND","QUEUE"
+            break
+        }
+
+        # Amazon.CodeBuild.FleetProxyRuleBehavior
+        {
+            ($_ -eq "New-CBFleet/ProxyConfiguration_DefaultBehavior") -Or
+            ($_ -eq "Update-CBFleet/ProxyConfiguration_DefaultBehavior")
+        }
+        {
+            $v = "ALLOW_ALL","DENY_ALL"
             break
         }
 
@@ -233,17 +262,29 @@ $CB_Completers = {
 
         # Amazon.CodeBuild.LogsConfigStatusType
         {
-            ($_ -eq "New-CBProject/LogsConfig_CloudWatchLogs_Status") -Or
-            ($_ -eq "Update-CBProject/LogsConfig_CloudWatchLogs_Status") -Or
-            ($_ -eq "New-CBProject/LogsConfig_S3Logs_Status") -Or
-            ($_ -eq "Update-CBProject/LogsConfig_S3Logs_Status") -Or
-            ($_ -eq "Start-CBBatch/LogsConfigOverride_CloudWatchLogs_Status") -Or
-            ($_ -eq "Start-CBBuild/LogsConfigOverride_CloudWatchLogs_Status") -Or
-            ($_ -eq "Start-CBBatch/LogsConfigOverride_S3Logs_Status") -Or
-            ($_ -eq "Start-CBBuild/LogsConfigOverride_S3Logs_Status")
+            ($_ -eq "New-CBProject/CloudWatchLogs_Status") -Or
+            ($_ -eq "Start-CBBatch/CloudWatchLogs_Status") -Or
+            ($_ -eq "Start-CBBuild/CloudWatchLogs_Status") -Or
+            ($_ -eq "Update-CBProject/CloudWatchLogs_Status") -Or
+            ($_ -eq "New-CBProject/S3Logs_Status") -Or
+            ($_ -eq "Start-CBBatch/S3Logs_Status") -Or
+            ($_ -eq "Start-CBBuild/S3Logs_Status") -Or
+            ($_ -eq "Update-CBProject/S3Logs_Status")
         }
         {
             $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.CodeBuild.MachineType
+        {
+            ($_ -eq "New-CBFleet/ComputeConfiguration_MachineType") -Or
+            ($_ -eq "New-CBProject/ComputeConfiguration_MachineType") -Or
+            ($_ -eq "Update-CBFleet/ComputeConfiguration_MachineType") -Or
+            ($_ -eq "Update-CBProject/ComputeConfiguration_MachineType")
+        }
+        {
+            $v = "GENERAL","NVME"
             break
         }
 
@@ -258,6 +299,16 @@ $CB_Completers = {
         "Update-CBProjectVisibility/ProjectVisibility"
         {
             $v = "PRIVATE","PUBLIC_READ"
+            break
+        }
+
+        # Amazon.CodeBuild.PullRequestBuildCommentApproval
+        {
+            ($_ -eq "New-CBWebhook/PullRequestBuildPolicy_RequiresCommentApproval") -Or
+            ($_ -eq "Update-CBWebhook/PullRequestBuildPolicy_RequiresCommentApproval")
+        }
+        {
+            $v = "ALL_PULL_REQUESTS","DISABLED","FORK_PULL_REQUESTS"
             break
         }
 
@@ -294,8 +345,8 @@ $CB_Completers = {
 
         # Amazon.CodeBuild.ReportPackagingType
         {
-            ($_ -eq "New-CBReportGroup/ExportConfig_S3Destination_Packaging") -Or
-            ($_ -eq "Update-CBReportGroup/ExportConfig_S3Destination_Packaging")
+            ($_ -eq "New-CBReportGroup/S3Destination_Packaging") -Or
+            ($_ -eq "Update-CBReportGroup/S3Destination_Packaging")
         }
         {
             $v = "NONE","ZIP"
@@ -329,7 +380,7 @@ $CB_Completers = {
         # Amazon.CodeBuild.ServerType
         "Import-CBSourceCredential/ServerType"
         {
-            $v = "BITBUCKET","GITHUB","GITHUB_ENTERPRISE"
+            $v = "BITBUCKET","GITHUB","GITHUB_ENTERPRISE","GITLAB","GITLAB_SELF_MANAGED"
             break
         }
 
@@ -350,11 +401,14 @@ $CB_Completers = {
             ($_ -eq "Get-CBBuildIdList/SortOrder") -Or
             ($_ -eq "Get-CBBuildIdListForProject/SortOrder") -Or
             ($_ -eq "Get-CBCodeCoverage/SortOrder") -Or
+            ($_ -eq "Get-CBCommandExecutionListForSandbox/SortOrder") -Or
             ($_ -eq "Get-CBFleetList/SortOrder") -Or
             ($_ -eq "Get-CBProjectList/SortOrder") -Or
             ($_ -eq "Get-CBReportGroupList/SortOrder") -Or
             ($_ -eq "Get-CBReportList/SortOrder") -Or
             ($_ -eq "Get-CBReportsForReportGroupList/SortOrder") -Or
+            ($_ -eq "Get-CBSandboxIdList/SortOrder") -Or
+            ($_ -eq "Get-CBSandboxIdListForProject/SortOrder") -Or
             ($_ -eq "Get-CBSharedProjectList/SortOrder") -Or
             ($_ -eq "Get-CBSharedReportGroupList/SortOrder")
         }
@@ -365,13 +419,13 @@ $CB_Completers = {
 
         # Amazon.CodeBuild.SourceAuthType
         {
-            ($_ -eq "New-CBProject/Source_Auth_Type") -Or
-            ($_ -eq "Update-CBProject/Source_Auth_Type") -Or
+            ($_ -eq "New-CBProject/Auth_Type") -Or
+            ($_ -eq "Update-CBProject/Auth_Type") -Or
             ($_ -eq "Start-CBBatch/SourceAuthOverride_Type") -Or
             ($_ -eq "Start-CBBuild/SourceAuthOverride_Type")
         }
         {
-            $v = "OAUTH"
+            $v = "CODECONNECTIONS","OAUTH","SECRETS_MANAGER"
             break
         }
 
@@ -383,7 +437,7 @@ $CB_Completers = {
             ($_ -eq "Start-CBBuild/SourceTypeOverride")
         }
         {
-            $v = "BITBUCKET","CODECOMMIT","CODEPIPELINE","GITHUB","GITHUB_ENTERPRISE","NO_SOURCE","S3"
+            $v = "BITBUCKET","CODECOMMIT","CODEPIPELINE","GITHUB","GITHUB_ENTERPRISE","GITLAB","GITLAB_SELF_MANAGED","NO_SOURCE","S3"
             break
         }
 
@@ -403,7 +457,14 @@ $CB_Completers = {
             ($_ -eq "Update-CBWebhook/BuildType")
         }
         {
-            $v = "BUILD","BUILD_BATCH"
+            $v = "BUILD","BUILD_BATCH","RUNNER_BUILDKITE_BUILD"
+            break
+        }
+
+        # Amazon.CodeBuild.WebhookScopeType
+        "New-CBWebhook/ScopeConfiguration_Scope"
+        {
+            $v = "GITHUB_GLOBAL","GITHUB_ORGANIZATION","GITLAB_GROUP"
             break
         }
 
@@ -424,43 +485,46 @@ $CB_map = @{
     "ArtifactsOverride_NamespaceType"=@("Start-CBBatch","Start-CBBuild")
     "ArtifactsOverride_Packaging"=@("Start-CBBatch","Start-CBBuild")
     "ArtifactsOverride_Type"=@("Start-CBBatch","Start-CBBuild")
+    "Auth_Type"=@("New-CBProject","Update-CBProject")
     "AuthType"=@("Import-CBSourceCredential")
     "BuildBatchConfig_BatchReportMode"=@("New-CBProject","Update-CBProject")
     "BuildBatchConfigOverride_BatchReportMode"=@("Start-CBBatch")
     "BuildType"=@("New-CBWebhook","Update-CBWebhook")
     "Cache_Type"=@("New-CBProject","Update-CBProject")
     "CacheOverride_Type"=@("Start-CBBatch","Start-CBBuild")
+    "CloudWatchLogs_Status"=@("New-CBProject","Start-CBBatch","Start-CBBuild","Update-CBProject")
+    "ComputeConfiguration_MachineType"=@("New-CBFleet","New-CBProject","Update-CBFleet","Update-CBProject")
     "ComputeType"=@("New-CBFleet","Update-CBFleet")
     "ComputeTypeOverride"=@("Start-CBBatch","Start-CBBuild")
+    "DockerServer_ComputeType"=@("New-CBProject","Update-CBProject")
     "Environment_ComputeType"=@("New-CBProject","Update-CBProject")
     "Environment_ImagePullCredentialsType"=@("New-CBProject","Update-CBProject")
-    "Environment_RegistryCredential_CredentialProvider"=@("New-CBProject","Update-CBProject")
     "Environment_Type"=@("New-CBProject","Update-CBProject")
     "EnvironmentType"=@("New-CBFleet","Update-CBFleet")
     "EnvironmentTypeOverride"=@("Start-CBBatch","Start-CBBuild")
     "ExportConfig_ExportConfigType"=@("New-CBReportGroup","Update-CBReportGroup")
-    "ExportConfig_S3Destination_Packaging"=@("New-CBReportGroup","Update-CBReportGroup")
     "Filter_Status"=@("Get-CBBatchIdList","Get-CBBatchIdListForProject","Get-CBReportList","Get-CBReportsForReportGroupList")
     "ImagePullCredentialsTypeOverride"=@("Start-CBBatch","Start-CBBuild")
-    "LogsConfig_CloudWatchLogs_Status"=@("New-CBProject","Update-CBProject")
-    "LogsConfig_S3Logs_BucketOwnerAccess"=@("New-CBProject","Update-CBProject")
-    "LogsConfig_S3Logs_Status"=@("New-CBProject","Update-CBProject")
-    "LogsConfigOverride_CloudWatchLogs_Status"=@("Start-CBBatch","Start-CBBuild")
-    "LogsConfigOverride_S3Logs_BucketOwnerAccess"=@("Start-CBBatch","Start-CBBuild")
-    "LogsConfigOverride_S3Logs_Status"=@("Start-CBBatch","Start-CBBuild")
+    "OverflowBehavior"=@("New-CBFleet","Update-CBFleet")
     "ProjectVisibility"=@("Update-CBProjectVisibility")
+    "ProxyConfiguration_DefaultBehavior"=@("New-CBFleet","Update-CBFleet")
+    "PullRequestBuildPolicy_RequiresCommentApproval"=@("New-CBWebhook","Update-CBWebhook")
+    "RegistryCredential_CredentialProvider"=@("New-CBProject","Update-CBProject")
     "RegistryCredentialOverride_CredentialProvider"=@("Start-CBBatch","Start-CBBuild")
     "RetryType"=@("Redo-CBBatch")
+    "S3Destination_Packaging"=@("New-CBReportGroup","Update-CBReportGroup")
+    "S3Logs_BucketOwnerAccess"=@("New-CBProject","Start-CBBatch","Start-CBBuild","Update-CBProject")
+    "S3Logs_Status"=@("New-CBProject","Start-CBBatch","Start-CBBuild","Update-CBProject")
     "ScalingConfiguration_ScalingType"=@("New-CBFleet","Update-CBFleet")
+    "ScopeConfiguration_Scope"=@("New-CBWebhook")
     "ServerType"=@("Import-CBSourceCredential")
     "SortBy"=@("Get-CBCodeCoverage","Get-CBFleetList","Get-CBProjectList","Get-CBReportGroupList","Get-CBSharedProjectList","Get-CBSharedReportGroupList")
-    "SortOrder"=@("Get-CBBatchIdList","Get-CBBatchIdListForProject","Get-CBBuildIdList","Get-CBBuildIdListForProject","Get-CBCodeCoverage","Get-CBFleetList","Get-CBProjectList","Get-CBReportGroupList","Get-CBReportList","Get-CBReportsForReportGroupList","Get-CBSharedProjectList","Get-CBSharedReportGroupList")
-    "Source_Auth_Type"=@("New-CBProject","Update-CBProject")
+    "SortOrder"=@("Get-CBBatchIdList","Get-CBBatchIdListForProject","Get-CBBuildIdList","Get-CBBuildIdListForProject","Get-CBCodeCoverage","Get-CBCommandExecutionListForSandbox","Get-CBFleetList","Get-CBProjectList","Get-CBReportGroupList","Get-CBReportList","Get-CBReportsForReportGroupList","Get-CBSandboxIdList","Get-CBSandboxIdListForProject","Get-CBSharedProjectList","Get-CBSharedReportGroupList")
     "Source_Type"=@("New-CBProject","Update-CBProject")
     "SourceAuthOverride_Type"=@("Start-CBBatch","Start-CBBuild")
     "SourceTypeOverride"=@("Start-CBBatch","Start-CBBuild")
     "TrendField"=@("Get-CBReportGroupTrend")
-    "Type"=@("New-CBReportGroup")
+    "Type"=@("New-CBReportGroup","Start-CBCommandExecution")
 }
 
 _awsArgumentCompleterRegistration $CB_Completers $CB_map
@@ -516,10 +580,12 @@ $CB_SelectMap = @{
     "Select"=@("Remove-CBBuildBatch",
                "Get-CBBatch",
                "Get-CBBuildBatch",
+               "Get-CBCommandExecutionBatch",
                "Get-CBCBFleetBatch",
                "Get-CBProjectBatch",
                "Get-CBReportGroupBatch",
                "Get-CBReportBatch",
+               "Get-CBSandboxBatch",
                "New-CBFleet",
                "New-CBProject",
                "New-CBReportGroup",
@@ -542,12 +608,15 @@ $CB_SelectMap = @{
                "Get-CBBatchIdListForProject",
                "Get-CBBuildIdList",
                "Get-CBBuildIdListForProject",
+               "Get-CBCommandExecutionListForSandbox",
                "Get-CBCuratedEnvironmentImageList",
                "Get-CBFleetList",
                "Get-CBProjectList",
                "Get-CBReportGroupList",
                "Get-CBReportList",
                "Get-CBReportsForReportGroupList",
+               "Get-CBSandboxIdList",
+               "Get-CBSandboxIdListForProject",
                "Get-CBSharedProjectList",
                "Get-CBSharedReportGroupList",
                "Get-CBSourceCredentialList",
@@ -556,8 +625,12 @@ $CB_SelectMap = @{
                "Redo-CBBatch",
                "Start-CBBuild",
                "Start-CBBatch",
+               "Start-CBCommandExecution",
+               "Start-CBSandbox",
+               "Start-CBSandboxConnection",
                "Stop-CBBuild",
                "Stop-CBBatch",
+               "Stop-CBSandbox",
                "Update-CBFleet",
                "Update-CBProject",
                "Update-CBProjectVisibility",

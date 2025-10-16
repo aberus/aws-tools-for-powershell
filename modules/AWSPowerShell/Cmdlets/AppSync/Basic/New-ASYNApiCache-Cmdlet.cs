@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppSync;
 using Amazon.AppSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ASYN
 {
     /// <summary>
@@ -35,17 +37,21 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
     [AWSCmdlet("Calls the AWS AppSync CreateApiCache API operation.", Operation = new[] {"CreateApiCache"}, SelectReturnType = typeof(Amazon.AppSync.Model.CreateApiCacheResponse))]
     [AWSCmdletOutput("Amazon.AppSync.Model.ApiCache or Amazon.AppSync.Model.CreateApiCacheResponse",
         "This cmdlet returns an Amazon.AppSync.Model.ApiCache object.",
-        "The service call response (type Amazon.AppSync.Model.CreateApiCacheResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppSync.Model.CreateApiCacheResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewASYNApiCacheCmdlet : AmazonAppSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApiCachingBehavior
         /// <summary>
         /// <para>
-        /// <para>Caching behavior.</para><ul><li><para><b>FULL_REQUEST_CACHING</b>: All requests are fully cached.</para></li><li><para><b>PER_RESOLVER_CACHING</b>: Individual resolvers that you specify are cached.</para></li></ul>
+        /// <para>Caching behavior.</para><ul><li><para><b>FULL_REQUEST_CACHING</b>: All requests from the same user are cached. Individual
+        /// resolvers are automatically cached. All API calls will try to return responses from
+        /// the cache.</para></li><li><para><b>PER_RESOLVER_CACHING</b>: Individual resolvers that you specify are cached.</para></li><li><para><b>OPERATION_LEVEL_CACHING</b>: Full requests are cached together and returned without
+        /// executing resolvers.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -76,25 +82,19 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public System.String ApiId { get; set; }
         #endregion
         
-        #region Parameter AtRestEncryptionEnabled
+        #region Parameter HealthMetricsConfig
         /// <summary>
         /// <para>
-        /// <para>At-rest encryption flag for cache. You cannot update this setting after creation.</para>
+        /// <para>Controls how cache health metrics will be emitted to CloudWatch. Cache health metrics
+        /// include:</para><ul><li><para>NetworkBandwidthOutAllowanceExceeded: The network packets dropped because the throughput
+        /// exceeded the aggregated bandwidth limit. This is useful for diagnosing bottlenecks
+        /// in a cache configuration.</para></li><li><para>EngineCPUUtilization: The CPU utilization (percentage) allocated to the Redis process.
+        /// This is useful for diagnosing bottlenecks in a cache configuration.</para></li></ul><para>Metrics will be recorded by API ID. You can set the value to <c>ENABLED</c> or <c>DISABLED</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.Boolean? AtRestEncryptionEnabled { get; set; }
-        #endregion
-        
-        #region Parameter TransitEncryptionEnabled
-        /// <summary>
-        /// <para>
-        /// <para>Transit encryption flag when connecting to cache. You cannot update this setting after
-        /// creation.</para>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.Boolean? TransitEncryptionEnabled { get; set; }
+        [AWSConstantClassSource("Amazon.AppSync.CacheHealthMetricsConfig")]
+        public Amazon.AppSync.CacheHealthMetricsConfig HealthMetricsConfig { get; set; }
         #endregion
         
         #region Parameter Ttl
@@ -131,6 +131,31 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public Amazon.AppSync.ApiCacheType Type { get; set; }
         #endregion
         
+        #region Parameter AtRestEncryptionEnabled
+        /// <summary>
+        /// <para>
+        /// <para>At-rest encryption flag for cache. You cannot update this setting after creation.</para>
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("atRestEncryptionEnabled attribute is deprecated. Encryption at rest is always enabled.")]
+        public System.Boolean? AtRestEncryptionEnabled { get; set; }
+        #endregion
+        
+        #region Parameter TransitEncryptionEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Transit encryption flag when connecting to cache. You cannot update this setting after
+        /// creation.</para>
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("transitEncryptionEnabled attribute is deprecated. Encryption in transit is always enabled.")]
+        public System.Boolean? TransitEncryptionEnabled { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'ApiCache'.
@@ -140,16 +165,6 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "ApiCache";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApiId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApiId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApiId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -162,9 +177,13 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApiId), MyInvocation.BoundParameters);
@@ -178,21 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppSync.Model.CreateApiCacheResponse, NewASYNApiCacheCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApiId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApiCachingBehavior = this.ApiCachingBehavior;
             #if MODULAR
             if (this.ApiCachingBehavior == null && ParameterWasBound(nameof(this.ApiCachingBehavior)))
@@ -207,8 +216,13 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
                 WriteWarning("You are passing $null as a value for parameter ApiId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AtRestEncryptionEnabled = this.AtRestEncryptionEnabled;
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.HealthMetricsConfig = this.HealthMetricsConfig;
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.TransitEncryptionEnabled = this.TransitEncryptionEnabled;
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Ttl = this.Ttl;
             #if MODULAR
             if (this.Ttl == null && ParameterWasBound(nameof(this.Ttl)))
@@ -247,14 +261,22 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             {
                 request.ApiId = cmdletContext.ApiId;
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.AtRestEncryptionEnabled != null)
             {
                 request.AtRestEncryptionEnabled = cmdletContext.AtRestEncryptionEnabled.Value;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            if (cmdletContext.HealthMetricsConfig != null)
+            {
+                request.HealthMetricsConfig = cmdletContext.HealthMetricsConfig;
+            }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.TransitEncryptionEnabled != null)
             {
                 request.TransitEncryptionEnabled = cmdletContext.TransitEncryptionEnabled.Value;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.Ttl != null)
             {
                 request.Ttl = cmdletContext.Ttl.Value;
@@ -301,13 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppSync", "CreateApiCache");
             try
             {
-                #if DESKTOP
-                return client.CreateApiCache(request);
-                #elif CORECLR
-                return client.CreateApiCacheAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateApiCacheAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -326,7 +342,10 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         {
             public Amazon.AppSync.ApiCachingBehavior ApiCachingBehavior { get; set; }
             public System.String ApiId { get; set; }
+            [System.ObsoleteAttribute]
             public System.Boolean? AtRestEncryptionEnabled { get; set; }
+            public Amazon.AppSync.CacheHealthMetricsConfig HealthMetricsConfig { get; set; }
+            [System.ObsoleteAttribute]
             public System.Boolean? TransitEncryptionEnabled { get; set; }
             public System.Int64? Ttl { get; set; }
             public Amazon.AppSync.ApiCacheType Type { get; set; }

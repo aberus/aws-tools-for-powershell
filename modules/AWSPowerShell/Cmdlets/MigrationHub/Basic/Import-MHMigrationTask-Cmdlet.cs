@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MigrationHub;
 using Amazon.MigrationHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MH
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.MH
     [AWSCmdlet("Calls the AWS Migration Hub ImportMigrationTask API operation.", Operation = new[] {"ImportMigrationTask"}, SelectReturnType = typeof(Amazon.MigrationHub.Model.ImportMigrationTaskResponse))]
     [AWSCmdletOutput("None or Amazon.MigrationHub.Model.ImportMigrationTaskResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.MigrationHub.Model.ImportMigrationTaskResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.MigrationHub.Model.ImportMigrationTaskResponse) be returned by specifying '-Select *'."
     )]
     public partial class ImportMHMigrationTaskCmdlet : AmazonMigrationHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DryRun
         /// <summary>
@@ -105,16 +108,6 @@ namespace Amazon.PowerShell.Cmdlets.MH
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MigrationTaskName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MigrationTaskName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MigrationTaskName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -125,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.MH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MigrationTaskName), MyInvocation.BoundParameters);
@@ -141,21 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.MH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MigrationHub.Model.ImportMigrationTaskResponse, ImportMHMigrationTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MigrationTaskName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DryRun = this.DryRun;
             context.MigrationTaskName = this.MigrationTaskName;
             #if MODULAR
@@ -237,13 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.MH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Migration Hub", "ImportMigrationTask");
             try
             {
-                #if DESKTOP
-                return client.ImportMigrationTask(request);
-                #elif CORECLR
-                return client.ImportMigrationTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportMigrationTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

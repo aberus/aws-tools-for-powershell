@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,42 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Athena;
 using Amazon.Athena.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ATH
 {
     /// <summary>
     /// Creates (registers) a data catalog with the specified name and properties. Catalogs
     /// created are visible to all users of the same Amazon Web Services account.
+    /// 
+    ///  
+    /// <para>
+    /// For a <c>FEDERATED</c> catalog, this API operation creates the following resources.
+    /// </para><ul><li><para>
+    /// CFN Stack Name with a maximum length of 128 characters and prefix <c>athenafederatedcatalog-CATALOG_NAME_SANITIZED</c>
+    /// with length 23 characters.
+    /// </para></li><li><para>
+    /// Lambda Function Name with a maximum length of 64 characters and prefix <c>athenafederatedcatalog_CATALOG_NAME_SANITIZED</c>
+    /// with length 23 characters.
+    /// </para></li><li><para>
+    /// Glue Connection Name with a maximum length of 255 characters and a prefix <c>athenafederatedcatalog_CATALOG_NAME_SANITIZED</c>
+    /// with length 23 characters. 
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("New", "ATHDataCatalog", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
-    [OutputType("None")]
+    [OutputType("Amazon.Athena.Model.CreateDataCatalogResponse")]
     [AWSCmdlet("Calls the Amazon Athena CreateDataCatalog API operation.", Operation = new[] {"CreateDataCatalog"}, SelectReturnType = typeof(Amazon.Athena.Model.CreateDataCatalogResponse))]
-    [AWSCmdletOutput("None or Amazon.Athena.Model.CreateDataCatalogResponse",
-        "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Athena.Model.CreateDataCatalogResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+    [AWSCmdletOutput("Amazon.Athena.Model.CreateDataCatalogResponse",
+        "This cmdlet returns an Amazon.Athena.Model.CreateDataCatalogResponse object containing multiple properties."
     )]
     public partial class NewATHDataCatalogCmdlet : AmazonAthenaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -59,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         /// <para>The name of the data catalog to create. The catalog name must be unique for the Amazon
         /// Web Services account and can use a maximum of 127 alphanumeric, underscore, at sign,
         /// or hyphen characters. The remainder of the length constraint of 256 is reserved for
-        /// use by Athena.</para>
+        /// use by Athena.</para><para>For <c>FEDERATED</c> type the catalog name has following considerations and limits:</para><ul><li><para>The catalog name allows special characters such as <c>_ , @ , \ , - </c>. These characters
+        /// are replaced with a hyphen (-) when creating the CFN Stack Name and with an underscore
+        /// (_) when creating the Lambda Function and Glue Connection Name.</para></li><li><para>The catalog name has a theoretical limit of 128 characters. However, since we use
+        /// it to create other resources that allow less characters and we prepend a prefix to
+        /// it, the actual catalog name limit for <c>FEDERATED</c> catalog is 64 - 23 = 41 characters.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -84,7 +104,15 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         /// actual data, use the following syntax. Both parameters are required.</para><para><c>metadata-function=<i>lambda_arn</i>, record-function=<i>lambda_arn</i></c></para></li><li><para> If you have a composite Lambda function that processes both metadata and data, use
         /// the following syntax to specify your Lambda function.</para><para><c>function=<i>lambda_arn</i></c></para></li></ul></li><li><para>The <c>GLUE</c> type takes a catalog ID parameter and is required. The <c><i>catalog_id</i></c> is the account ID of the Amazon Web Services account to which the Glue Data Catalog
         /// belongs.</para><para><c>catalog-id=<i>catalog_id</i></c></para><ul><li><para>The <c>GLUE</c> data catalog type also applies to the default <c>AwsDataCatalog</c>
-        /// that already exists in your account, of which you can have only one and cannot modify.</para></li></ul></li></ul>
+        /// that already exists in your account, of which you can have only one and cannot modify.</para></li></ul></li><li><para>The <c>FEDERATED</c> data catalog type uses one of the following parameters, but not
+        /// both. Use <c>connection-arn</c> for an existing Glue connection. Use <c>connection-type</c>
+        /// and <c>connection-properties</c> to specify the configuration setting for a new connection.</para><ul><li><para><c>connection-arn:<i>&lt;glue_connection_arn_to_reuse&gt;</i></c></para></li><li><para><c>lambda-role-arn</c> (optional): The execution role to use for the Lambda function.
+        /// If not provided, one is created.</para></li><li><para><c>connection-type:MYSQL|REDSHIFT|...., connection-properties:"<i>&lt;json_string&gt;</i>"</c></para><para>For <i><c>&lt;json_string&gt;</c></i>, use escaped JSON text, as in the following
+        /// example.</para><para><c>"{\"spill_bucket\":\"my_spill\",\"spill_prefix\":\"athena-spill\",\"host\":\"abc12345.snowflakecomputing.com\",\"port\":\"1234\",\"warehouse\":\"DEV_WH\",\"database\":\"TEST\",\"schema\":\"PUBLIC\",\"SecretArn\":\"arn:aws:secretsmanager:ap-south-1:111122223333:secret:snowflake-XHb67j\"}"</c></para></li></ul></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,7 +123,15 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of comma separated tags to add to the data catalog that is created.</para>
+        /// <para>A list of comma separated tags to add to the data catalog that is created. All the
+        /// resources that are created by the <c>CreateDataCatalog</c> API operation with <c>FEDERATED</c>
+        /// type will have the tag <c>federated_athena_datacatalog="true"</c>. This includes the
+        /// CFN Stack, Glue Connection, Athena DataCatalog, and all the resources created as part
+        /// of the CFN Stack (Lambda Function, IAM policies/roles).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,8 +142,10 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         #region Parameter Type
         /// <summary>
         /// <para>
-        /// <para>The type of data catalog to create: <c>LAMBDA</c> for a federated catalog, <c>HIVE</c>
-        /// for an external hive metastore, or <c>GLUE</c> for an Glue Data Catalog.</para>
+        /// <para>The type of data catalog to create: <c>LAMBDA</c> for a federated catalog, <c>GLUE</c>
+        /// for an Glue Data Catalog, and <c>HIVE</c> for an external Apache Hive metastore. <c>FEDERATED</c>
+        /// is a federated catalog for which Athena creates the connection and the Lambda function
+        /// for you based on the parameters that you pass.</para><para>For <c>FEDERATED</c> type, we do not support IAM identity center.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -123,22 +161,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         
         #region Parameter Select
         /// <summary>
-        /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
+        /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
         /// Specifying -Select '*' will result in the cmdlet returning the whole service response (Amazon.Athena.Model.CreateDataCatalogResponse).
+        /// Specifying the name of a property of type Amazon.Athena.Model.CreateDataCatalogResponse will result in that property being returned.
         /// Specifying -Select '^ParameterName' will result in the cmdlet returning the selected cmdlet parameter value.
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -151,9 +180,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -167,21 +200,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Athena.Model.CreateDataCatalogResponse, NewATHDataCatalogCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.Name = this.Name;
             #if MODULAR
@@ -283,13 +306,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Athena", "CreateDataCatalog");
             try
             {
-                #if DESKTOP
-                return client.CreateDataCatalog(request);
-                #elif CORECLR
-                return client.CreateDataCatalogAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDataCatalogAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -312,7 +329,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             public List<Amazon.Athena.Model.Tag> Tag { get; set; }
             public Amazon.Athena.DataCatalogType Type { get; set; }
             public System.Func<Amazon.Athena.Model.CreateDataCatalogResponse, NewATHDataCatalogCmdlet, object> Select { get; set; } =
-                (response, cmdlet) => null;
+                (response, cmdlet) => response;
         }
         
     }

@@ -1,0 +1,19 @@
+---
+iam_AddUserToGroup:
+  title: Use Add-IAMUserToGroup
+  title_abbrev: Add-IAMUserToGroup
+  synopsis: use Add-IAMUserToGroup
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Add-IAMUserToGroup
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: This command adds the user named <code>Bob</code> to the group named <code>Admins</code>.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/iam_Add-IAMUserToGroup.1.1.ps1
+  services:
+    iam:
+      AddUserToGroup:

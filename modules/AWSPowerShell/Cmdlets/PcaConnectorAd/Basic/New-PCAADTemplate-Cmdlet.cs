@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PcaConnectorAd;
 using Amazon.PcaConnectorAd.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PCAAD
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
     [AWSCmdlet("Calls the Pca Connector Ad CreateTemplate API operation.", Operation = new[] {"CreateTemplate"}, SelectReturnType = typeof(Amazon.PcaConnectorAd.Model.CreateTemplateResponse))]
     [AWSCmdletOutput("System.String or Amazon.PcaConnectorAd.Model.CreateTemplateResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.PcaConnectorAd.Model.CreateTemplateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PcaConnectorAd.Model.CreateTemplateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPCAADTemplateCmdlet : AmazonPcaConnectorAdClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Definition_TemplateV3_PrivateKeyAttributes_Algorithm
         /// <summary>
@@ -209,7 +212,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV2_PrivateKeyAttributes_CryptoProviders
         /// <summary>
         /// <para>
-        /// <para>Defines the cryptographic providers used to generate the private key.</para>
+        /// <para>Defines the cryptographic providers used to generate the private key.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -219,7 +226,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV3_PrivateKeyAttributes_CryptoProviders
         /// <summary>
         /// <para>
-        /// <para>Defines the cryptographic providers used to generate the private key.</para>
+        /// <para>Defines the cryptographic providers used to generate the private key.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,7 +240,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV4_PrivateKeyAttributes_CryptoProviders
         /// <summary>
         /// <para>
-        /// <para>Defines the cryptographic providers used to generate the private key.</para>
+        /// <para>Defines the cryptographic providers used to generate the private key.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -829,7 +844,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV2_Extensions_ApplicationPolicies_Policies
         /// <summary>
         /// <para>
-        /// <para>Application policies describe what the certificate can be used for.</para>
+        /// <para>Application policies describe what the certificate can be used for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -839,7 +858,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV3_Extensions_ApplicationPolicies_Policies
         /// <summary>
         /// <para>
-        /// <para>Application policies describe what the certificate can be used for.</para>
+        /// <para>Application policies describe what the certificate can be used for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -849,7 +872,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV4_Extensions_ApplicationPolicies_Policies
         /// <summary>
         /// <para>
-        /// <para>Application policies describe what the certificate can be used for.</para>
+        /// <para>Application policies describe what the certificate can be used for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1295,7 +1322,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV2_SupersededTemplates
         /// <summary>
         /// <para>
-        /// <para>List of templates in Active Directory that are superseded by this template.</para>
+        /// <para>List of templates in Active Directory that are superseded by this template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1305,7 +1336,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV3_SupersededTemplates
         /// <summary>
         /// <para>
-        /// <para>List of templates in Active Directory that are superseded by this template.</para>
+        /// <para>List of templates in Active Directory that are superseded by this template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1315,7 +1350,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Definition_TemplateV4_SupersededTemplates
         /// <summary>
         /// <para>
-        /// <para>List of templates in Active Directory that are superseded by this template.</para>
+        /// <para>List of templates in Active Directory that are superseded by this template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1325,7 +1364,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata assigned to a template consisting of a key-value pair.</para>
+        /// <para>Metadata assigned to a template consisting of a key-value pair.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1399,16 +1442,6 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         public string Select { get; set; } = "TemplateArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectorArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectorArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectorArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -1419,9 +1452,13 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectorArn), MyInvocation.BoundParameters);
@@ -1435,21 +1472,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PcaConnectorAd.Model.CreateTemplateResponse, NewPCAADTemplateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectorArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ConnectorArn = this.ConnectorArn;
             #if MODULAR
@@ -3588,13 +3615,7 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Pca Connector Ad", "CreateTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreateTemplate(request);
-                #elif CORECLR
-                return client.CreateTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

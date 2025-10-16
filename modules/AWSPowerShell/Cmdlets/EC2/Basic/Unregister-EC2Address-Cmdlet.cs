@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -35,19 +37,28 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// <para>
     /// This is an idempotent operation. If you perform the operation more than once, Amazon
     /// EC2 doesn't return an error.
-    /// </para>
+    /// </para><para>
+    /// An address cannot be disassociated if the all of the following conditions are met:
+    /// </para><ul><li><para>
+    /// Network interface has a <c>publicDualStackDnsName</c> publicDnsName
+    /// </para></li><li><para>
+    /// Public IPv4 address is the primary public IPv4 address
+    /// </para></li><li><para>
+    /// Network interface only has one remaining public IPv4 address
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Unregister", "EC2Address", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DisassociateAddress API operation.", Operation = new[] {"DisassociateAddress"}, SelectReturnType = typeof(Amazon.EC2.Model.DisassociateAddressResponse))]
     [AWSCmdletOutput("None or Amazon.EC2.Model.DisassociateAddressResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.EC2.Model.DisassociateAddressResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.EC2.Model.DisassociateAddressResponse) be returned by specifying '-Select *'."
     )]
     public partial class UnregisterEC2AddressCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssociationId
         /// <summary>
@@ -57,6 +68,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
         public System.String AssociationId { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter PublicIp
@@ -79,16 +102,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PublicIp parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PublicIp' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PublicIp' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -99,9 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AssociationId), MyInvocation.BoundParameters);
@@ -115,22 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DisassociateAddressResponse, UnregisterEC2AddressCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PublicIp;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssociationId = this.AssociationId;
+            context.DryRun = this.DryRun;
             context.PublicIp = this.PublicIp;
             
             // allow further manipulation of loaded context prior to processing
@@ -151,6 +159,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.AssociationId != null)
             {
                 request.AssociationId = cmdletContext.AssociationId;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.PublicIp != null)
             {
@@ -194,13 +206,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DisassociateAddress");
             try
             {
-                #if DESKTOP
-                return client.DisassociateAddress(request);
-                #elif CORECLR
-                return client.DisassociateAddressAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisassociateAddressAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -218,6 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AssociationId { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String PublicIp { get; set; }
             public System.Func<Amazon.EC2.Model.DisassociateAddressResponse, UnregisterEC2AddressCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

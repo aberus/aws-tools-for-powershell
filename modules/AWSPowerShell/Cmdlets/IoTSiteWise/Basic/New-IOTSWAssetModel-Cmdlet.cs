@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -36,24 +38,28 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     /// 
     ///  
     /// <para>
-    /// You can create two types of asset models, <c>ASSET_MODEL</c> or <c>COMPONENT_MODEL</c>.
+    /// You can create three types of asset models, <c>ASSET_MODEL</c>, <c>COMPONENT_MODEL</c>,
+    /// or an <c>INTERFACE</c>.
     /// </para><ul><li><para><b>ASSET_MODEL</b> – (default) An asset model that you can use to create assets.
     /// Can't be included as a component in another asset model.
     /// </para></li><li><para><b>COMPONENT_MODEL</b> – A reusable component that you can include in the composite
     /// models of other asset models. You can't create assets directly from this type of asset
     /// model. 
+    /// </para></li><li><para><b>INTERFACE</b> – An interface is a type of model that defines a standard structure
+    /// that can be applied to different asset models.
     /// </para></li></ul>
     /// </summary>
     [Cmdlet("New", "IOTSWAssetModel", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.IoTSiteWise.Model.CreateAssetModelResponse")]
     [AWSCmdlet("Calls the AWS IoT SiteWise CreateAssetModel API operation.", Operation = new[] {"CreateAssetModel"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.CreateAssetModelResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.CreateAssetModelResponse",
-        "This cmdlet returns an Amazon.IoTSiteWise.Model.CreateAssetModelResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTSiteWise.Model.CreateAssetModelResponse object containing multiple properties."
     )]
     public partial class NewIOTSWAssetModelCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetModelCompositeModel
         /// <summary>
@@ -63,7 +69,12 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         /// model parts of your industrial equipment. Each composite model has a type that defines
         /// the properties that the composite model supports. Use composite models to define alarms
         /// on this asset model.</para><note><para>When creating custom composite models, you need to use <a href="https://docs.aws.amazon.com/iot-sitewise/latest/APIReference/API_CreateAssetModelCompositeModel.html">CreateAssetModelCompositeModel</a>.
-        /// For more information, see &lt;LINK&gt;.</para></note>
+        /// For more information, see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/create-custom-composite-models.html">Creating
+        /// custom composite models (Components)</a> in the <i>IoT SiteWise User Guide</i>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,7 +111,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         /// whose assets can be children of any other assets created from this asset model. For
         /// more information, see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/asset-hierarchies.html">Asset
         /// hierarchies</a> in the <i>IoT SiteWise User Guide</i>.</para><para>You can specify up to 10 hierarchies per asset model. For more information, see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/quotas.html">Quotas</a>
-        /// in the <i>IoT SiteWise User Guide</i>.</para>
+        /// in the <i>IoT SiteWise User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +139,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         #region Parameter AssetModelName
         /// <summary>
         /// <para>
-        /// <para>A unique, friendly name for the asset model.</para>
+        /// <para>A unique name for the asset model.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -143,7 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         /// <para>
         /// <para>The property definitions of the asset model. For more information, see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/asset-properties.html">Asset
         /// properties</a> in the <i>IoT SiteWise User Guide</i>.</para><para>You can specify up to 200 properties per asset model. For more information, see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/quotas.html">Quotas</a>
-        /// in the <i>IoT SiteWise User Guide</i>.</para>
+        /// in the <i>IoT SiteWise User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         /// <para>
         /// <para>A list of key-value pairs that contain metadata for the asset model. For more information,
         /// see <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/tag-resources.html">Tagging
-        /// your IoT SiteWise resources</a> in the <i>IoT SiteWise User Guide</i>.</para>
+        /// your IoT SiteWise resources</a> in the <i>IoT SiteWise User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,9 +233,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AssetModelName), MyInvocation.BoundParameters);
@@ -357,13 +384,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "CreateAssetModel");
             try
             {
-                #if DESKTOP
-                return client.CreateAssetModel(request);
-                #elif CORECLR
-                return client.CreateAssetModelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAssetModelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

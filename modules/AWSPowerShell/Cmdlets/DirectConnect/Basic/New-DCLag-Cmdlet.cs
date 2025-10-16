@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectConnect;
 using Amazon.DirectConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DC
 {
     /// <summary>
@@ -35,12 +37,12 @@ namespace Amazon.PowerShell.Cmdlets.DC
     /// 
     ///  
     /// <para>
-    /// All connections in a LAG must use the same bandwidth (either 1Gbps or 10Gbps) and
-    /// must terminate at the same Direct Connect endpoint.
+    /// All connections in a LAG must use the same bandwidth (either 1Gbps, 10Gbps, 100Gbps,
+    /// or 400Gbps) and must terminate at the same Direct Connect endpoint.
     /// </para><para>
-    /// You can have up to 10 dedicated connections per LAG. Regardless of this limit, if
-    /// you request more connections for the LAG than Direct Connect can allocate on a single
-    /// endpoint, no LAG is created.
+    /// You can have up to 10 dedicated connections per location. Regardless of this limit,
+    /// if you request more connections for the LAG than Direct Connect can allocate on a
+    /// single endpoint, no LAG is created..
     /// </para><para>
     /// You can specify an existing physical dedicated connection or interconnect to include
     /// in the LAG (which counts towards the total number of connections). Doing so interrupts
@@ -59,17 +61,22 @@ namespace Amazon.PowerShell.Cmdlets.DC
     [OutputType("Amazon.DirectConnect.Model.CreateLagResponse")]
     [AWSCmdlet("Calls the AWS Direct Connect CreateLag API operation.", Operation = new[] {"CreateLag"}, SelectReturnType = typeof(Amazon.DirectConnect.Model.CreateLagResponse))]
     [AWSCmdletOutput("Amazon.DirectConnect.Model.CreateLagResponse",
-        "This cmdlet returns an Amazon.DirectConnect.Model.CreateLagResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DirectConnect.Model.CreateLagResponse object containing multiple properties."
     )]
     public partial class NewDCLagCmdlet : AmazonDirectConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChildConnectionTag
         /// <summary>
         /// <para>
-        /// <para>The tags to associate with the automtically created LAGs.</para>
+        /// <para>The tags to associate with the automtically created LAGs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
         /// <summary>
         /// <para>
         /// <para>The bandwidth of the individual physical dedicated connections bundled by the LAG.
-        /// The possible values are 1Gbps and 10Gbps. </para>
+        /// The possible values are 1Gbps,10Gbps, 100Gbps, and 400Gbps. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -143,8 +150,8 @@ namespace Amazon.PowerShell.Cmdlets.DC
         /// <summary>
         /// <para>
         /// <para>The number of physical dedicated connections initially provisioned and bundled by
-        /// the LAG. You can have a maximum of four connections when the port speed is 1G or 10G,
-        /// or two when the port speed is 100G. </para>
+        /// the LAG. You can have a maximum of four connections when the port speed is 1Gbps or
+        /// 10Gbps, or two when the port speed is 100Gbps or 400Gbps.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -183,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to associate with the LAG.</para>
+        /// <para>The tags to associate with the LAG.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,16 +213,6 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -222,9 +223,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectionId), MyInvocation.BoundParameters);
@@ -238,21 +243,11 @@ namespace Amazon.PowerShell.Cmdlets.DC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectConnect.Model.CreateLagResponse, NewDCLagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ChildConnectionTag != null)
             {
                 context.ChildConnectionTag = new List<Amazon.DirectConnect.Model.Tag>(this.ChildConnectionTag);
@@ -382,13 +377,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Direct Connect", "CreateLag");
             try
             {
-                #if DESKTOP
-                return client.CreateLag(request);
-                #elif CORECLR
-                return client.CreateLagAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLagAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

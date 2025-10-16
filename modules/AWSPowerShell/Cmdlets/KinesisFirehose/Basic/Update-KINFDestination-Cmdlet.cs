@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,42 +22,43 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Updates the specified destination of the specified delivery stream.
+    /// Updates the specified destination of the specified Firehose stream.
     /// 
     ///  
     /// <para>
     /// Use this operation to change the destination type (for example, to replace the Amazon
     /// S3 destination with Amazon Redshift) or change the parameters associated with a destination
     /// (for example, to change the bucket name of the Amazon S3 destination). The update
-    /// might not occur immediately. The target delivery stream remains active while the configurations
-    /// are updated, so data writes to the delivery stream can continue during this process.
+    /// might not occur immediately. The target Firehose stream remains active while the configurations
+    /// are updated, so data writes to the Firehose stream can continue during this process.
     /// The updated configurations are usually effective within a few minutes.
     /// </para><para>
     /// Switching between Amazon OpenSearch Service and other services is not supported. For
     /// an Amazon OpenSearch Service destination, you can only update to another Amazon OpenSearch
     /// Service destination.
     /// </para><para>
-    /// If the destination type is the same, Kinesis Data Firehose merges the configuration
-    /// parameters specified with the destination configuration that already exists on the
-    /// delivery stream. If any of the parameters are not specified in the call, the existing
-    /// values are retained. For example, in the Amazon S3 destination, if <a>EncryptionConfiguration</a>
-    /// is not specified, then the existing <c>EncryptionConfiguration</c> is maintained on
-    /// the destination.
+    /// If the destination type is the same, Firehose merges the configuration parameters
+    /// specified with the destination configuration that already exists on the delivery stream.
+    /// If any of the parameters are not specified in the call, the existing values are retained.
+    /// For example, in the Amazon S3 destination, if <a>EncryptionConfiguration</a> is not
+    /// specified, then the existing <c>EncryptionConfiguration</c> is maintained on the destination.
     /// </para><para>
     /// If the destination type is not the same, for example, changing the destination from
-    /// Amazon S3 to Amazon Redshift, Kinesis Data Firehose does not merge any parameters.
-    /// In this case, all parameters must be specified.
+    /// Amazon S3 to Amazon Redshift, Firehose does not merge any parameters. In this case,
+    /// all parameters must be specified.
     /// </para><para>
-    /// Kinesis Data Firehose uses <c>CurrentDeliveryStreamVersionId</c> to avoid race conditions
-    /// and conflicting merges. This is a required field, and the service updates the configuration
-    /// only if the existing configuration has a version ID that matches. After the update
-    /// is applied successfully, the version ID is updated, and can be retrieved using <a>DescribeDeliveryStream</a>.
+    /// Firehose uses <c>CurrentDeliveryStreamVersionId</c> to avoid race conditions and conflicting
+    /// merges. This is a required field, and the service updates the configuration only if
+    /// the existing configuration has a version ID that matches. After the update is applied
+    /// successfully, the version ID is updated, and can be retrieved using <a>DescribeDeliveryStream</a>.
     /// Use the new version ID to set <c>CurrentDeliveryStreamVersionId</c> in the next call.
     /// </para>
     /// </summary>
@@ -66,14 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
     [AWSCmdlet("Calls the Amazon Kinesis Firehose UpdateDestination API operation.", Operation = new[] {"UpdateDestination"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.UpdateDestinationResponse))]
     [AWSCmdletOutput("None or Amazon.KinesisFirehose.Model.UpdateDestinationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.KinesisFirehose.Model.UpdateDestinationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.KinesisFirehose.Model.UpdateDestinationResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateKINFDestinationCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HttpEndpointDestinationUpdate_EndpointConfiguration_AccessKey
         /// <summary>
@@ -95,6 +95,34 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SnowflakeDestinationUpdate_AccountUrl { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationUpdate_AppendOnly
+        /// <summary>
+        /// <para>
+        /// <para> Describes whether all incoming data for this delivery stream will be append only
+        /// (inserts only and not for updates and deletes) for Iceberg delivery. This feature
+        /// is only applicable for Apache Iceberg Tables. </para><para>The default value is false. If you set this value to true, Firehose automatically
+        /// increases the throughput limit of a stream based on the throttling levels of the stream.
+        /// If you set this parameter to true for a stream with updates and deletes, you will
+        /// see out of order delivery. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? IcebergDestinationUpdate_AppendOnly { get; set; }
+        #endregion
+        
+        #region Parameter CatalogConfiguration_CatalogARN
+        /// <summary>
+        /// <para>
+        /// <para> Specifies the Glue catalog ARN identifier of the destination Apache Iceberg Tables.
+        /// You must specify the ARN in the format <c>arn:aws:glue:region:account-id:catalog</c>.
+        /// </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IcebergDestinationUpdate_CatalogConfiguration_CatalogARN")]
+        public System.String CatalogConfiguration_CatalogARN { get; set; }
         #endregion
         
         #region Parameter AmazonopensearchserviceDestinationUpdate_ClusterEndpoint
@@ -133,7 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter HttpEndpointDestinationUpdate_RequestConfiguration_CommonAttributes
         /// <summary>
         /// <para>
-        /// <para>Describes the metadata sent to the HTTP endpoint destination.</para>
+        /// <para>Describes the metadata sent to the HTTP endpoint destination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,8 +185,8 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter HttpEndpointDestinationUpdate_RequestConfiguration_ContentEncoding
         /// <summary>
         /// <para>
-        /// <para>Kinesis Data Firehose uses the content encoding to compress the body of a request
-        /// before sending the request to the destination. For more information, see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding">Content-Encoding</a>
+        /// <para>Firehose uses the content encoding to compress the body of a request before sending
+        /// the request to the destination. For more information, see <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding">Content-Encoding</a>
         /// in MDN Web Docs, the official Mozilla documentation.</para>
         /// </para>
         /// </summary>
@@ -210,16 +242,16 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter AmazonopensearchserviceDestinationUpdate_DocumentIdOptions_DefaultDocumentIdFormat
         /// <summary>
         /// <para>
-        /// <para>When the <c>FIREHOSE_DEFAULT</c> option is chosen, Kinesis Data Firehose generates
-        /// a unique document ID for each record based on a unique internal identifier. The generated
-        /// document ID is stable across multiple delivery attempts, which helps prevent the same
-        /// record from being indexed multiple times with different document IDs.</para><para>When the <c>NO_DOCUMENT_ID</c> option is chosen, Kinesis Data Firehose does not include
-        /// any document IDs in the requests it sends to the Amazon OpenSearch Service. This causes
-        /// the Amazon OpenSearch Service domain to generate document IDs. In case of multiple
-        /// delivery attempts, this may cause the same record to be indexed more than once with
-        /// different document IDs. This option enables write-heavy operations, such as the ingestion
-        /// of logs and observability data, to consume less resources in the Amazon OpenSearch
-        /// Service domain, resulting in improved performance.</para>
+        /// <para>When the <c>FIREHOSE_DEFAULT</c> option is chosen, Firehose generates a unique document
+        /// ID for each record based on a unique internal identifier. The generated document ID
+        /// is stable across multiple delivery attempts, which helps prevent the same record from
+        /// being indexed multiple times with different document IDs.</para><para>When the <c>NO_DOCUMENT_ID</c> option is chosen, Firehose does not include any document
+        /// IDs in the requests it sends to the Amazon OpenSearch Service. This causes the Amazon
+        /// OpenSearch Service domain to generate document IDs. In case of multiple delivery attempts,
+        /// this may cause the same record to be indexed more than once with different document
+        /// IDs. This option enables write-heavy operations, such as the ingestion of logs and
+        /// observability data, to consume less resources in the Amazon OpenSearch Service domain,
+        /// resulting in improved performance.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -230,16 +262,16 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter DocumentIdOptions_DefaultDocumentIdFormat
         /// <summary>
         /// <para>
-        /// <para>When the <c>FIREHOSE_DEFAULT</c> option is chosen, Kinesis Data Firehose generates
-        /// a unique document ID for each record based on a unique internal identifier. The generated
-        /// document ID is stable across multiple delivery attempts, which helps prevent the same
-        /// record from being indexed multiple times with different document IDs.</para><para>When the <c>NO_DOCUMENT_ID</c> option is chosen, Kinesis Data Firehose does not include
-        /// any document IDs in the requests it sends to the Amazon OpenSearch Service. This causes
-        /// the Amazon OpenSearch Service domain to generate document IDs. In case of multiple
-        /// delivery attempts, this may cause the same record to be indexed more than once with
-        /// different document IDs. This option enables write-heavy operations, such as the ingestion
-        /// of logs and observability data, to consume less resources in the Amazon OpenSearch
-        /// Service domain, resulting in improved performance.</para>
+        /// <para>When the <c>FIREHOSE_DEFAULT</c> option is chosen, Firehose generates a unique document
+        /// ID for each record based on a unique internal identifier. The generated document ID
+        /// is stable across multiple delivery attempts, which helps prevent the same record from
+        /// being indexed multiple times with different document IDs.</para><para>When the <c>NO_DOCUMENT_ID</c> option is chosen, Firehose does not include any document
+        /// IDs in the requests it sends to the Amazon OpenSearch Service. This causes the Amazon
+        /// OpenSearch Service domain to generate document IDs. In case of multiple delivery attempts,
+        /// this may cause the same record to be indexed more than once with different document
+        /// IDs. This option enables write-heavy operations, such as the ingestion of logs and
+        /// observability data, to consume less resources in the Amazon OpenSearch Service domain,
+        /// resulting in improved performance.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -251,7 +283,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter DeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The name of the delivery stream.</para>
+        /// <para>The name of the Firehose stream.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -282,6 +314,22 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public System.String DestinationId { get; set; }
         #endregion
         
+        #region Parameter IcebergDestinationUpdate_DestinationTableConfigurationList
+        /// <summary>
+        /// <para>
+        /// <para> Provides a list of <c>DestinationTableConfigurations</c> which Firehose uses to deliver
+        /// data to Apache Iceberg Tables. Firehose will write data with insert if table specific
+        /// configuration is not provided here.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.KinesisFirehose.Model.DestinationTableConfiguration[] IcebergDestinationUpdate_DestinationTableConfigurationList { get; set; }
+        #endregion
+        
         #region Parameter AmazonopensearchserviceDestinationUpdate_DomainARN
         /// <summary>
         /// <para>
@@ -297,9 +345,9 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter ElasticsearchDestinationUpdate_DomainARN
         /// <summary>
         /// <para>
-        /// <para>The ARN of the Amazon ES domain. The IAM role must have permissions for <c>DescribeDomain</c>,
-        /// <c>DescribeDomains</c>, and <c>DescribeDomainConfig</c> after assuming the IAM role
-        /// specified in <c>RoleARN</c>. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
+        /// <para>The ARN of the Amazon OpenSearch Service domain. The IAM role must have permissions
+        /// for <c>DescribeDomain</c>, <c>DescribeDomains</c>, and <c>DescribeDomainConfig</c> after
+        /// assuming the IAM role specified in <c>RoleARN</c>. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
         /// Resource Names (ARNs) and Amazon Web Services Service Namespaces</a>.</para><para>Specify either <c>ClusterEndpoint</c> or <c>DomainARN</c>.</para>
         /// </para>
         /// </summary>
@@ -311,10 +359,10 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <summary>
         /// <para>
         /// <para>After an initial failure to deliver to the Serverless offering for Amazon OpenSearch
-        /// Service, the total amount of time during which Kinesis Data Firehose retries delivery
-        /// (including the first attempt). After this time has elapsed, the failed documents are
-        /// written to Amazon S3. Default value is 300 seconds (5 minutes). A value of 0 (zero)
-        /// results in no retries.</para>
+        /// Service, the total amount of time during which Firehose retries delivery (including
+        /// the first attempt). After this time has elapsed, the failed documents are written
+        /// to Amazon S3. Default value is 300 seconds (5 minutes). A value of 0 (zero) results
+        /// in no retries.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -325,9 +373,9 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <summary>
         /// <para>
         /// <para>After an initial failure to deliver to Amazon OpenSearch Service, the total amount
-        /// of time during which Kinesis Data Firehose retries delivery (including the first attempt).
-        /// After this time has elapsed, the failed documents are written to Amazon S3. Default
-        /// value is 300 seconds (5 minutes). A value of 0 (zero) results in no retries. </para>
+        /// of time during which Firehose retries delivery (including the first attempt). After
+        /// this time has elapsed, the failed documents are written to Amazon S3. Default value
+        /// is 300 seconds (5 minutes). A value of 0 (zero) results in no retries. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -337,8 +385,8 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter RetryOptions_DurationInSecond
         /// <summary>
         /// <para>
-        /// <para>After an initial failure to deliver to Amazon ES, the total amount of time during
-        /// which Kinesis Data Firehose retries delivery (including the first attempt). After
+        /// <para>After an initial failure to deliver to Amazon OpenSearch Service, the total amount
+        /// of time during which Firehose retries delivery (including the first attempt). After
         /// this time has elapsed, the failed documents are written to Amazon S3. Default value
         /// is 300 seconds (5 minutes). A value of 0 (zero) results in no retries.</para>
         /// </para>
@@ -351,21 +399,31 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter HttpEndpointDestinationUpdate_RetryOptions_DurationInSeconds
         /// <summary>
         /// <para>
-        /// <para>The total amount of time that Kinesis Data Firehose spends on retries. This duration
-        /// starts after the initial attempt to send data to the custom destination via HTTPS
-        /// endpoint fails. It doesn't include the periods during which Kinesis Data Firehose
-        /// waits for acknowledgment from the specified destination after each attempt. </para>
+        /// <para>The total amount of time that Firehose spends on retries. This duration starts after
+        /// the initial attempt to send data to the custom destination via HTTPS endpoint fails.
+        /// It doesn't include the periods during which Firehose waits for acknowledgment from
+        /// the specified destination after each attempt. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? HttpEndpointDestinationUpdate_RetryOptions_DurationInSeconds { get; set; }
         #endregion
         
+        #region Parameter IcebergDestinationConfiguration_RetryOptions_DurationInSeconds
+        /// <summary>
+        /// <para>
+        /// <para>The period of time during which Firehose retries to deliver data to the specified
+        /// destination.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? IcebergDestinationConfiguration_RetryOptions_DurationInSeconds { get; set; }
+        #endregion
+        
         #region Parameter SnowflakeDestinationConfiguration_RetryOptions_DurationInSeconds
         /// <summary>
         /// <para>
-        /// <para>the time period where Kinesis Data Firehose will retry sending data to the chosen
-        /// HTTP endpoint.</para>
+        /// <para>the time period where Firehose will retry sending data to the chosen HTTP endpoint.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -455,6 +513,62 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public System.Boolean? HttpEndpointDestinationUpdate_ProcessingConfiguration_Enabled { get; set; }
         #endregion
         
+        #region Parameter HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether you want to use the secrets manager feature. When set as <c>True</c>
+        /// the secrets manager configuration overwrites the existing secrets in the destination
+        /// configuration. When it's set to <c>False</c> Firehose falls back to the credentials
+        /// in the destination configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Enables or disables CloudWatch logging.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IcebergDestinationUpdate_CloudWatchLoggingOptions_Enabled")]
+        public System.Boolean? IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationConfiguration_ProcessingConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Enables or disables data processing.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? IcebergDestinationConfiguration_ProcessingConfiguration_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter SchemaEvolutionConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para> Specify whether you want to enable schema evolution. </para><para>Amazon Data Firehose is in preview release and is subject to change.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IcebergDestinationUpdate_SchemaEvolutionConfiguration_Enabled")]
+        public System.Boolean? SchemaEvolutionConfiguration_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter TableCreationConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para> Specify whether you want to enable automatic table creation. </para><para>Amazon Data Firehose is in preview release and is subject to change.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IcebergDestinationUpdate_TableCreationConfiguration_Enabled")]
+        public System.Boolean? TableCreationConfiguration_Enabled { get; set; }
+        #endregion
+        
         #region Parameter SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_Enabled
         /// <summary>
         /// <para>
@@ -475,6 +589,19 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SnowflakeDestinationUpdate_ProcessingConfiguration_Enabled")]
         public System.Boolean? SnowflakeDestinationConfiguration_ProcessingConfiguration_Enabled { get; set; }
+        #endregion
+        
+        #region Parameter SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether you want to use the secrets manager feature. When set as <c>True</c>
+        /// the secrets manager configuration overwrites the existing secrets in the destination
+        /// configuration. When it's set to <c>False</c> Firehose falls back to the credentials
+        /// in the destination configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled { get; set; }
         #endregion
         
         #region Parameter SnowflakeRoleConfiguration_Enabled
@@ -545,7 +672,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>The Elasticsearch index rotation period. Index rotation appends a timestamp to <c>IndexName</c>
         /// to facilitate the expiration of old data. For more information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/basic-deliver.html#es-index-rotation">Index
-        /// Rotation for the Amazon ES Destination</a>. Default value is <c>OneDay</c>.</para>
+        /// Rotation for the Amazon OpenSearch Service Destination</a>. Default value is <c>OneDay</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -596,6 +723,30 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? HttpEndpointDestinationUpdate_BufferingHints_IntervalInSeconds { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds
+        /// <summary>
+        /// <para>
+        /// <para>Buffer incoming data for the specified period of time, in seconds, before delivering
+        /// it to the destination. The default value is 300. This parameter is optional but if
+        /// you specify a value for it, you must also specify a value for <c>SizeInMBs</c>, and
+        /// vice versa.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds { get; set; }
+        #endregion
+        
+        #region Parameter SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds
+        /// <summary>
+        /// <para>
+        /// <para> Buffer incoming data for the specified period of time, in seconds, before delivering
+        /// it to the destination. The default value is 0. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds { get; set; }
         #endregion
         
         #region Parameter SnowflakeDestinationUpdate_KeyPassphrase
@@ -655,6 +806,17 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public System.String HttpEndpointDestinationUpdate_CloudWatchLoggingOptions_LogGroupName { get; set; }
         #endregion
         
+        #region Parameter IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName
+        /// <summary>
+        /// <para>
+        /// <para>The CloudWatch group name for logging. This value is required if CloudWatch logging
+        /// is enabled.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName { get; set; }
+        #endregion
+        
         #region Parameter SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName
         /// <summary>
         /// <para>
@@ -712,6 +874,17 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public System.String HttpEndpointDestinationUpdate_CloudWatchLoggingOptions_LogStreamName { get; set; }
         #endregion
         
+        #region Parameter IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName
+        /// <summary>
+        /// <para>
+        /// <para>The CloudWatch log stream name for logging. This value is required if CloudWatch logging
+        /// is enabled.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName { get; set; }
+        #endregion
+        
         #region Parameter SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName
         /// <summary>
         /// <para>
@@ -759,7 +932,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter AmazonOpenSearchServerlessDestinationUpdate_ProcessingConfiguration_Processors
         /// <summary>
         /// <para>
-        /// <para>The data processors.</para>
+        /// <para>The data processors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -769,7 +946,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter AmazonopensearchserviceDestinationUpdate_ProcessingConfiguration_Processors
         /// <summary>
         /// <para>
-        /// <para>The data processors.</para>
+        /// <para>The data processors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -779,7 +960,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter ProcessingConfiguration_Processor
         /// <summary>
         /// <para>
-        /// <para>The data processors.</para>
+        /// <para>The data processors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -790,17 +975,39 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter HttpEndpointDestinationUpdate_ProcessingConfiguration_Processors
         /// <summary>
         /// <para>
-        /// <para>The data processors.</para>
+        /// <para>The data processors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.KinesisFirehose.Model.Processor[] HttpEndpointDestinationUpdate_ProcessingConfiguration_Processors { get; set; }
         #endregion
         
+        #region Parameter IcebergDestinationConfiguration_ProcessingConfiguration_Processors
+        /// <summary>
+        /// <para>
+        /// <para>The data processors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.KinesisFirehose.Model.Processor[] IcebergDestinationConfiguration_ProcessingConfiguration_Processors { get; set; }
+        #endregion
+        
         #region Parameter SnowflakeDestinationConfiguration_ProcessingConfiguration_Processors
         /// <summary>
         /// <para>
-        /// <para>The data processors.</para>
+        /// <para>The data processors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -821,9 +1028,9 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter AmazonOpenSearchServerlessDestinationUpdate_RoleARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the IAM role to be assumed by Kinesis Data Firehose
-        /// for calling the Serverless offering for Amazon OpenSearch Service Configuration API
-        /// and for indexing documents.</para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role to be assumed by Firehose for calling
+        /// the Serverless offering for Amazon OpenSearch Service Configuration API and for indexing
+        /// documents.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -833,9 +1040,8 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter AmazonopensearchserviceDestinationUpdate_RoleARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the IAM role to be assumed by Kinesis Data Firehose
-        /// for calling the Amazon OpenSearch Service Configuration API and for indexing documents.
-        /// </para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role to be assumed by Firehose for calling
+        /// the Amazon OpenSearch Service Configuration API and for indexing documents. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -845,10 +1051,10 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter ElasticsearchDestinationUpdate_RoleARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the IAM role to be assumed by Kinesis Data Firehose
-        /// for calling the Amazon ES Configuration API and for indexing documents. For more information,
-        /// see <a href="https://docs.aws.amazon.com/firehose/latest/dev/controlling-access.html#using-iam-s3">Grant
-        /// Kinesis Data Firehose Access to an Amazon S3 Destination</a> and <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
+        /// <para>The Amazon Resource Name (ARN) of the IAM role to be assumed by Firehose for calling
+        /// the Amazon OpenSearch Service Configuration API and for indexing documents. For more
+        /// information, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/controlling-access.html#using-iam-s3">Grant
+        /// Firehose Access to an Amazon S3 Destination</a> and <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
         /// Resource Names (ARNs) and Amazon Web Services Service Namespaces</a>.</para>
         /// </para>
         /// </summary>
@@ -859,12 +1065,35 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter HttpEndpointDestinationUpdate_RoleARN
         /// <summary>
         /// <para>
-        /// <para>Kinesis Data Firehose uses this IAM role for all the permissions that the delivery
-        /// stream needs.</para>
+        /// <para>Firehose uses this IAM role for all the permissions that the delivery stream needs.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String HttpEndpointDestinationUpdate_RoleARN { get; set; }
+        #endregion
+        
+        #region Parameter HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN
+        /// <summary>
+        /// <para>
+        /// <para> Specifies the role that Firehose assumes when calling the Secrets Manager API operation.
+        /// When you provide the role, it overrides any destination specific role defined in the
+        /// destination configuration. If you do not provide the then we use the destination specific
+        /// role. This parameter is required for Splunk. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationUpdate_RoleARN
+        /// <summary>
+        /// <para>
+        /// <para> The Amazon Resource Name (ARN) of the IAM role to be assumed by Firehose for calling
+        /// Apache Iceberg Tables. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IcebergDestinationUpdate_RoleARN { get; set; }
         #endregion
         
         #region Parameter SnowflakeDestinationUpdate_RoleARN
@@ -877,13 +1106,26 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public System.String SnowflakeDestinationUpdate_RoleARN { get; set; }
         #endregion
         
+        #region Parameter SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN
+        /// <summary>
+        /// <para>
+        /// <para> Specifies the role that Firehose assumes when calling the Secrets Manager API operation.
+        /// When you provide the role, it overrides any destination specific role defined in the
+        /// destination configuration. If you do not provide the then we use the destination specific
+        /// role. This parameter is required for Splunk. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN { get; set; }
+        #endregion
+        
         #region Parameter HttpEndpointDestinationUpdate_S3BackupMode
         /// <summary>
         /// <para>
         /// <para>Describes the S3 bucket backup options for the data that Kinesis Firehose delivers
         /// to the HTTP endpoint destination. You can back up all documents (<c>AllData</c>) or
-        /// only the documents that Kinesis Data Firehose could not deliver to the specified HTTP
-        /// endpoint destination (<c>FailedDataOnly</c>).</para>
+        /// only the documents that Firehose could not deliver to the specified HTTP endpoint
+        /// destination (<c>FailedDataOnly</c>).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -891,15 +1133,38 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public Amazon.KinesisFirehose.HttpEndpointS3BackupMode HttpEndpointDestinationUpdate_S3BackupMode { get; set; }
         #endregion
         
+        #region Parameter IcebergDestinationUpdate_S3BackupMode
+        /// <summary>
+        /// <para>
+        /// <para> Describes how Firehose will backup records. Currently,Firehose only supports <c>FailedDataOnly</c>.
+        /// </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.KinesisFirehose.IcebergS3BackupMode")]
+        public Amazon.KinesisFirehose.IcebergS3BackupMode IcebergDestinationUpdate_S3BackupMode { get; set; }
+        #endregion
+        
         #region Parameter SnowflakeDestinationUpdate_S3BackupMode
         /// <summary>
         /// <para>
-        /// <para>Choose an S3 backup mode</para>
+        /// <para>Choose an S3 backup mode. Once you set the mode as <c>AllData</c>, you can not change
+        /// it to <c>FailedDataOnly</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.KinesisFirehose.SnowflakeS3BackupMode")]
         public Amazon.KinesisFirehose.SnowflakeS3BackupMode SnowflakeDestinationUpdate_S3BackupMode { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationUpdate_S3Configuration
+        /// <summary>
+        /// <para>
+        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.KinesisFirehose.Model.S3DestinationConfiguration IcebergDestinationUpdate_S3Configuration { get; set; }
         #endregion
         
         #region Parameter AmazonOpenSearchServerlessDestinationUpdate_S3Update
@@ -963,12 +1228,38 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public System.String SnowflakeDestinationUpdate_Schema { get; set; }
         #endregion
         
+        #region Parameter HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the secret that stores your credentials. It must be in the same region
+        /// as the Firehose stream and the role. The secret ARN can reside in a different account
+        /// than the Firehose stream and role as Firehose supports cross-account secret access.
+        /// This parameter is required when <b>Enabled</b> is set to <c>True</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN { get; set; }
+        #endregion
+        
+        #region Parameter SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the secret that stores your credentials. It must be in the same region
+        /// as the Firehose stream and the role. The secret ARN can reside in a different account
+        /// than the Firehose stream and role as Firehose supports cross-account secret access.
+        /// This parameter is required when <b>Enabled</b> is set to <c>True</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN { get; set; }
+        #endregion
+        
         #region Parameter AmazonOpenSearchServerlessDestinationUpdate_BufferingHints_SizeInMBs
         /// <summary>
         /// <para>
         /// <para>Buffer incoming data to the specified size, in MBs, before delivering it to the destination.
         /// The default value is 5. </para><para>We recommend setting this parameter to a value greater than the amount of data you
-        /// typically ingest into the delivery stream in 10 seconds. For example, if you typically
+        /// typically ingest into the Firehose stream in 10 seconds. For example, if you typically
         /// ingest data at 1 MB/sec, the value should be 10 MB or higher.</para>
         /// </para>
         /// </summary>
@@ -981,7 +1272,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>Buffer incoming data to the specified size, in MBs, before delivering it to the destination.
         /// The default value is 5.</para><para>We recommend setting this parameter to a value greater than the amount of data you
-        /// typically ingest into the delivery stream in 10 seconds. For example, if you typically
+        /// typically ingest into the Firehose stream in 10 seconds. For example, if you typically
         /// ingest data at 1 MB/sec, the value should be 10 MB or higher. </para>
         /// </para>
         /// </summary>
@@ -994,7 +1285,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>Buffer incoming data to the specified size, in MBs, before delivering it to the destination.
         /// The default value is 5.</para><para>We recommend setting this parameter to a value greater than the amount of data you
-        /// typically ingest into the delivery stream in 10 seconds. For example, if you typically
+        /// typically ingest into the Firehose stream in 10 seconds. For example, if you typically
         /// ingest data at 1 MB/sec, the value should be 10 MB or higher.</para>
         /// </para>
         /// </summary>
@@ -1008,12 +1299,37 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>Buffer incoming data to the specified size, in MBs, before delivering it to the destination.
         /// The default value is 5. </para><para>We recommend setting this parameter to a value greater than the amount of data you
-        /// typically ingest into the delivery stream in 10 seconds. For example, if you typically
+        /// typically ingest into the Firehose stream in 10 seconds. For example, if you typically
         /// ingest data at 1 MB/sec, the value should be 10 MB or higher. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? HttpEndpointDestinationUpdate_BufferingHints_SizeInMBs { get; set; }
+        #endregion
+        
+        #region Parameter IcebergDestinationConfiguration_BufferingHints_SizeInMBs
+        /// <summary>
+        /// <para>
+        /// <para>Buffer incoming data to the specified size, in MiBs, before delivering it to the destination.
+        /// The default value is 5. This parameter is optional but if you specify a value for
+        /// it, you must also specify a value for <c>IntervalInSeconds</c>, and vice versa.</para><para>We recommend setting this parameter to a value greater than the amount of data you
+        /// typically ingest into the Firehose stream in 10 seconds. For example, if you typically
+        /// ingest data at 1 MiB/sec, the value should be 10 MiB or higher.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? IcebergDestinationConfiguration_BufferingHints_SizeInMBs { get; set; }
+        #endregion
+        
+        #region Parameter SnowflakeDestinationUpdate_BufferingHints_SizeInMBs
+        /// <summary>
+        /// <para>
+        /// <para>Buffer incoming data to the specified size, in MBs, before delivering it to the destination.
+        /// The default value is 128. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? SnowflakeDestinationUpdate_BufferingHints_SizeInMBs { get; set; }
         #endregion
         
         #region Parameter SnowflakeRoleConfiguration_SnowflakeRole
@@ -1053,10 +1369,10 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>The Amazon OpenSearch Service type name. For Elasticsearch 6.x, there can be only
         /// one type per index. If you try to specify a new type for an existing index that already
-        /// has another type, Kinesis Data Firehose returns an error during runtime. </para><para>If you upgrade Elasticsearch from 6.x to 7.x and don’t update your delivery stream,
-        /// Kinesis Data Firehose still delivers data to Elasticsearch with the old index name
-        /// and type name. If you want to update your delivery stream with a new index name, provide
-        /// an empty string for TypeName. </para>
+        /// has another type, Firehose returns an error during runtime. </para><para>If you upgrade Elasticsearch from 6.x to 7.x and don’t update your Firehose stream,
+        /// Firehose still delivers data to Elasticsearch with the old index name and type name.
+        /// If you want to update your Firehose stream with a new index name, provide an empty
+        /// string for TypeName. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1068,10 +1384,10 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>The Elasticsearch type name. For Elasticsearch 6.x, there can be only one type per
         /// index. If you try to specify a new type for an existing index that already has another
-        /// type, Kinesis Data Firehose returns an error during runtime.</para><para>If you upgrade Elasticsearch from 6.x to 7.x and don’t update your delivery stream,
-        /// Kinesis Data Firehose still delivers data to Elasticsearch with the old index name
-        /// and type name. If you want to update your delivery stream with a new index name, provide
-        /// an empty string for <c>TypeName</c>. </para>
+        /// type, Firehose returns an error during runtime.</para><para>If you upgrade Elasticsearch from 6.x to 7.x and don’t update your Firehose stream,
+        /// Firehose still delivers data to Elasticsearch with the old index name and type name.
+        /// If you want to update your Firehose stream with a new index name, provide an empty
+        /// string for <c>TypeName</c>. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1098,6 +1414,18 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SnowflakeDestinationUpdate_User { get; set; }
+        #endregion
+        
+        #region Parameter CatalogConfiguration_WarehouseLocation
+        /// <summary>
+        /// <para>
+        /// <para>The warehouse location for Apache Iceberg tables. You must configure this when schema
+        /// evolution and table creation is enabled.</para><para>Amazon Data Firehose is in preview release and is subject to change.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IcebergDestinationUpdate_CatalogConfiguration_WarehouseLocation")]
+        public System.String CatalogConfiguration_WarehouseLocation { get; set; }
         #endregion
         
         #region Parameter S3DestinationUpdate
@@ -1132,9 +1460,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeliveryStreamName), MyInvocation.BoundParameters);
@@ -1250,11 +1582,39 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             context.HttpEndpointDestinationUpdate_RoleARN = this.HttpEndpointDestinationUpdate_RoleARN;
             context.HttpEndpointDestinationUpdate_S3BackupMode = this.HttpEndpointDestinationUpdate_S3BackupMode;
             context.HttpEndpointDestinationUpdate_S3Update = this.HttpEndpointDestinationUpdate_S3Update;
+            context.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled = this.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled;
+            context.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN = this.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN;
+            context.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN = this.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN;
+            context.IcebergDestinationUpdate_AppendOnly = this.IcebergDestinationUpdate_AppendOnly;
+            context.IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds = this.IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds;
+            context.IcebergDestinationConfiguration_BufferingHints_SizeInMBs = this.IcebergDestinationConfiguration_BufferingHints_SizeInMBs;
+            context.CatalogConfiguration_CatalogARN = this.CatalogConfiguration_CatalogARN;
+            context.CatalogConfiguration_WarehouseLocation = this.CatalogConfiguration_WarehouseLocation;
+            context.IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled = this.IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled;
+            context.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName = this.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName;
+            context.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName = this.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName;
+            if (this.IcebergDestinationUpdate_DestinationTableConfigurationList != null)
+            {
+                context.IcebergDestinationUpdate_DestinationTableConfigurationList = new List<Amazon.KinesisFirehose.Model.DestinationTableConfiguration>(this.IcebergDestinationUpdate_DestinationTableConfigurationList);
+            }
+            context.IcebergDestinationConfiguration_ProcessingConfiguration_Enabled = this.IcebergDestinationConfiguration_ProcessingConfiguration_Enabled;
+            if (this.IcebergDestinationConfiguration_ProcessingConfiguration_Processors != null)
+            {
+                context.IcebergDestinationConfiguration_ProcessingConfiguration_Processors = new List<Amazon.KinesisFirehose.Model.Processor>(this.IcebergDestinationConfiguration_ProcessingConfiguration_Processors);
+            }
+            context.IcebergDestinationConfiguration_RetryOptions_DurationInSeconds = this.IcebergDestinationConfiguration_RetryOptions_DurationInSeconds;
+            context.IcebergDestinationUpdate_RoleARN = this.IcebergDestinationUpdate_RoleARN;
+            context.IcebergDestinationUpdate_S3BackupMode = this.IcebergDestinationUpdate_S3BackupMode;
+            context.IcebergDestinationUpdate_S3Configuration = this.IcebergDestinationUpdate_S3Configuration;
+            context.SchemaEvolutionConfiguration_Enabled = this.SchemaEvolutionConfiguration_Enabled;
+            context.TableCreationConfiguration_Enabled = this.TableCreationConfiguration_Enabled;
             context.RedshiftDestinationUpdate = this.RedshiftDestinationUpdate;
             #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.S3DestinationUpdate = this.S3DestinationUpdate;
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SnowflakeDestinationUpdate_AccountUrl = this.SnowflakeDestinationUpdate_AccountUrl;
+            context.SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds = this.SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds;
+            context.SnowflakeDestinationUpdate_BufferingHints_SizeInMBs = this.SnowflakeDestinationUpdate_BufferingHints_SizeInMBs;
             context.SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_Enabled = this.SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_Enabled;
             context.SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName = this.SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName;
             context.SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName = this.SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName;
@@ -1274,6 +1634,9 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             context.SnowflakeDestinationUpdate_S3BackupMode = this.SnowflakeDestinationUpdate_S3BackupMode;
             context.SnowflakeDestinationUpdate_S3Update = this.SnowflakeDestinationUpdate_S3Update;
             context.SnowflakeDestinationUpdate_Schema = this.SnowflakeDestinationUpdate_Schema;
+            context.SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled = this.SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled;
+            context.SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN = this.SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN;
+            context.SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN = this.SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN;
             context.SnowflakeRoleConfiguration_Enabled = this.SnowflakeRoleConfiguration_Enabled;
             context.SnowflakeRoleConfiguration_SnowflakeRole = this.SnowflakeRoleConfiguration_SnowflakeRole;
             context.SnowflakeDestinationUpdate_Table = this.SnowflakeDestinationUpdate_Table;
@@ -2242,10 +2605,339 @@ namespace Amazon.PowerShell.Cmdlets.KINF
                 request.HttpEndpointDestinationUpdate.EndpointConfiguration = requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_EndpointConfiguration;
                 requestHttpEndpointDestinationUpdateIsNull = false;
             }
+            Amazon.KinesisFirehose.Model.SecretsManagerConfiguration requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration = null;
+            
+             // populate SecretsManagerConfiguration
+            var requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfigurationIsNull = true;
+            requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration = new Amazon.KinesisFirehose.Model.SecretsManagerConfiguration();
+            System.Boolean? requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled = null;
+            if (cmdletContext.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled != null)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled = cmdletContext.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled.Value;
+            }
+            if (requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled != null)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration.Enabled = requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled.Value;
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfigurationIsNull = false;
+            }
+            System.String requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN = null;
+            if (cmdletContext.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN != null)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN = cmdletContext.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN;
+            }
+            if (requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN != null)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration.RoleARN = requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN;
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfigurationIsNull = false;
+            }
+            System.String requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN = null;
+            if (cmdletContext.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN != null)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN = cmdletContext.HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN;
+            }
+            if (requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN != null)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration.SecretARN = requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration_httpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN;
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfigurationIsNull = false;
+            }
+             // determine if requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration should be set to null
+            if (requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfigurationIsNull)
+            {
+                requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration = null;
+            }
+            if (requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration != null)
+            {
+                request.HttpEndpointDestinationUpdate.SecretsManagerConfiguration = requestHttpEndpointDestinationUpdate_httpEndpointDestinationUpdate_SecretsManagerConfiguration;
+                requestHttpEndpointDestinationUpdateIsNull = false;
+            }
              // determine if request.HttpEndpointDestinationUpdate should be set to null
             if (requestHttpEndpointDestinationUpdateIsNull)
             {
                 request.HttpEndpointDestinationUpdate = null;
+            }
+            
+             // populate IcebergDestinationUpdate
+            var requestIcebergDestinationUpdateIsNull = true;
+            request.IcebergDestinationUpdate = new Amazon.KinesisFirehose.Model.IcebergDestinationUpdate();
+            System.Boolean? requestIcebergDestinationUpdate_icebergDestinationUpdate_AppendOnly = null;
+            if (cmdletContext.IcebergDestinationUpdate_AppendOnly != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_AppendOnly = cmdletContext.IcebergDestinationUpdate_AppendOnly.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_AppendOnly != null)
+            {
+                request.IcebergDestinationUpdate.AppendOnly = requestIcebergDestinationUpdate_icebergDestinationUpdate_AppendOnly.Value;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            List<Amazon.KinesisFirehose.Model.DestinationTableConfiguration> requestIcebergDestinationUpdate_icebergDestinationUpdate_DestinationTableConfigurationList = null;
+            if (cmdletContext.IcebergDestinationUpdate_DestinationTableConfigurationList != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_DestinationTableConfigurationList = cmdletContext.IcebergDestinationUpdate_DestinationTableConfigurationList;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_DestinationTableConfigurationList != null)
+            {
+                request.IcebergDestinationUpdate.DestinationTableConfigurationList = requestIcebergDestinationUpdate_icebergDestinationUpdate_DestinationTableConfigurationList;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            System.String requestIcebergDestinationUpdate_icebergDestinationUpdate_RoleARN = null;
+            if (cmdletContext.IcebergDestinationUpdate_RoleARN != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_RoleARN = cmdletContext.IcebergDestinationUpdate_RoleARN;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_RoleARN != null)
+            {
+                request.IcebergDestinationUpdate.RoleARN = requestIcebergDestinationUpdate_icebergDestinationUpdate_RoleARN;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.IcebergS3BackupMode requestIcebergDestinationUpdate_icebergDestinationUpdate_S3BackupMode = null;
+            if (cmdletContext.IcebergDestinationUpdate_S3BackupMode != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_S3BackupMode = cmdletContext.IcebergDestinationUpdate_S3BackupMode;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_S3BackupMode != null)
+            {
+                request.IcebergDestinationUpdate.S3BackupMode = requestIcebergDestinationUpdate_icebergDestinationUpdate_S3BackupMode;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.S3DestinationConfiguration requestIcebergDestinationUpdate_icebergDestinationUpdate_S3Configuration = null;
+            if (cmdletContext.IcebergDestinationUpdate_S3Configuration != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_S3Configuration = cmdletContext.IcebergDestinationUpdate_S3Configuration;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_S3Configuration != null)
+            {
+                request.IcebergDestinationUpdate.S3Configuration = requestIcebergDestinationUpdate_icebergDestinationUpdate_S3Configuration;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.RetryOptions requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions = null;
+            
+             // populate RetryOptions
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptionsIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions = new Amazon.KinesisFirehose.Model.RetryOptions();
+            System.Int32? requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions_icebergDestinationConfiguration_RetryOptions_DurationInSeconds = null;
+            if (cmdletContext.IcebergDestinationConfiguration_RetryOptions_DurationInSeconds != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions_icebergDestinationConfiguration_RetryOptions_DurationInSeconds = cmdletContext.IcebergDestinationConfiguration_RetryOptions_DurationInSeconds.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions_icebergDestinationConfiguration_RetryOptions_DurationInSeconds != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions.DurationInSeconds = requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions_icebergDestinationConfiguration_RetryOptions_DurationInSeconds.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptionsIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptionsIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions != null)
+            {
+                request.IcebergDestinationUpdate.RetryOptions = requestIcebergDestinationUpdate_icebergDestinationUpdate_RetryOptions;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.SchemaEvolutionConfiguration requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration = null;
+            
+             // populate SchemaEvolutionConfiguration
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfigurationIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration = new Amazon.KinesisFirehose.Model.SchemaEvolutionConfiguration();
+            System.Boolean? requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration_schemaEvolutionConfiguration_Enabled = null;
+            if (cmdletContext.SchemaEvolutionConfiguration_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration_schemaEvolutionConfiguration_Enabled = cmdletContext.SchemaEvolutionConfiguration_Enabled.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration_schemaEvolutionConfiguration_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration.Enabled = requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration_schemaEvolutionConfiguration_Enabled.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfigurationIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfigurationIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration != null)
+            {
+                request.IcebergDestinationUpdate.SchemaEvolutionConfiguration = requestIcebergDestinationUpdate_icebergDestinationUpdate_SchemaEvolutionConfiguration;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.TableCreationConfiguration requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration = null;
+            
+             // populate TableCreationConfiguration
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfigurationIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration = new Amazon.KinesisFirehose.Model.TableCreationConfiguration();
+            System.Boolean? requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration_tableCreationConfiguration_Enabled = null;
+            if (cmdletContext.TableCreationConfiguration_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration_tableCreationConfiguration_Enabled = cmdletContext.TableCreationConfiguration_Enabled.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration_tableCreationConfiguration_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration.Enabled = requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration_tableCreationConfiguration_Enabled.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfigurationIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfigurationIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration != null)
+            {
+                request.IcebergDestinationUpdate.TableCreationConfiguration = requestIcebergDestinationUpdate_icebergDestinationUpdate_TableCreationConfiguration;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.BufferingHints requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints = null;
+            
+             // populate BufferingHints
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHintsIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints = new Amazon.KinesisFirehose.Model.BufferingHints();
+            System.Int32? requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_IntervalInSeconds = null;
+            if (cmdletContext.IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_IntervalInSeconds = cmdletContext.IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_IntervalInSeconds != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints.IntervalInSeconds = requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_IntervalInSeconds.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHintsIsNull = false;
+            }
+            System.Int32? requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_SizeInMBs = null;
+            if (cmdletContext.IcebergDestinationConfiguration_BufferingHints_SizeInMBs != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_SizeInMBs = cmdletContext.IcebergDestinationConfiguration_BufferingHints_SizeInMBs.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_SizeInMBs != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints.SizeInMBs = requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints_icebergDestinationConfiguration_BufferingHints_SizeInMBs.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHintsIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHintsIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints != null)
+            {
+                request.IcebergDestinationUpdate.BufferingHints = requestIcebergDestinationUpdate_icebergDestinationUpdate_BufferingHints;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.CatalogConfiguration requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration = null;
+            
+             // populate CatalogConfiguration
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfigurationIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration = new Amazon.KinesisFirehose.Model.CatalogConfiguration();
+            System.String requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_CatalogARN = null;
+            if (cmdletContext.CatalogConfiguration_CatalogARN != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_CatalogARN = cmdletContext.CatalogConfiguration_CatalogARN;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_CatalogARN != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration.CatalogARN = requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_CatalogARN;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfigurationIsNull = false;
+            }
+            System.String requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_WarehouseLocation = null;
+            if (cmdletContext.CatalogConfiguration_WarehouseLocation != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_WarehouseLocation = cmdletContext.CatalogConfiguration_WarehouseLocation;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_WarehouseLocation != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration.WarehouseLocation = requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration_catalogConfiguration_WarehouseLocation;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfigurationIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfigurationIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration != null)
+            {
+                request.IcebergDestinationUpdate.CatalogConfiguration = requestIcebergDestinationUpdate_icebergDestinationUpdate_CatalogConfiguration;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.ProcessingConfiguration requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration = null;
+            
+             // populate ProcessingConfiguration
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfigurationIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration = new Amazon.KinesisFirehose.Model.ProcessingConfiguration();
+            System.Boolean? requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Enabled = null;
+            if (cmdletContext.IcebergDestinationConfiguration_ProcessingConfiguration_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Enabled = cmdletContext.IcebergDestinationConfiguration_ProcessingConfiguration_Enabled.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration.Enabled = requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Enabled.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfigurationIsNull = false;
+            }
+            List<Amazon.KinesisFirehose.Model.Processor> requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Processors = null;
+            if (cmdletContext.IcebergDestinationConfiguration_ProcessingConfiguration_Processors != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Processors = cmdletContext.IcebergDestinationConfiguration_ProcessingConfiguration_Processors;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Processors != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration.Processors = requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration_icebergDestinationConfiguration_ProcessingConfiguration_Processors;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfigurationIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfigurationIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration != null)
+            {
+                request.IcebergDestinationUpdate.ProcessingConfiguration = requestIcebergDestinationUpdate_icebergDestinationUpdate_ProcessingConfiguration;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+            Amazon.KinesisFirehose.Model.CloudWatchLoggingOptions requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions = null;
+            
+             // populate CloudWatchLoggingOptions
+            var requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptionsIsNull = true;
+            requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions = new Amazon.KinesisFirehose.Model.CloudWatchLoggingOptions();
+            System.Boolean? requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled = null;
+            if (cmdletContext.IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled = cmdletContext.IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled.Value;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions.Enabled = requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled.Value;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptionsIsNull = false;
+            }
+            System.String requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName = null;
+            if (cmdletContext.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName = cmdletContext.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions.LogGroupName = requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptionsIsNull = false;
+            }
+            System.String requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName = null;
+            if (cmdletContext.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName = cmdletContext.IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName != null)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions.LogStreamName = requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions_icebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName;
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptionsIsNull = false;
+            }
+             // determine if requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions should be set to null
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptionsIsNull)
+            {
+                requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions = null;
+            }
+            if (requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions != null)
+            {
+                request.IcebergDestinationUpdate.CloudWatchLoggingOptions = requestIcebergDestinationUpdate_icebergDestinationUpdate_CloudWatchLoggingOptions;
+                requestIcebergDestinationUpdateIsNull = false;
+            }
+             // determine if request.IcebergDestinationUpdate should be set to null
+            if (requestIcebergDestinationUpdateIsNull)
+            {
+                request.IcebergDestinationUpdate = null;
             }
             if (cmdletContext.RedshiftDestinationUpdate != null)
             {
@@ -2416,6 +3108,41 @@ namespace Amazon.PowerShell.Cmdlets.KINF
                 request.SnowflakeDestinationUpdate.RetryOptions = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_RetryOptions;
                 requestSnowflakeDestinationUpdateIsNull = false;
             }
+            Amazon.KinesisFirehose.Model.SnowflakeBufferingHints requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints = null;
+            
+             // populate BufferingHints
+            var requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHintsIsNull = true;
+            requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints = new Amazon.KinesisFirehose.Model.SnowflakeBufferingHints();
+            System.Int32? requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_IntervalInSeconds = null;
+            if (cmdletContext.SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_IntervalInSeconds = cmdletContext.SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds.Value;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_IntervalInSeconds != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints.IntervalInSeconds = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_IntervalInSeconds.Value;
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHintsIsNull = false;
+            }
+            System.Int32? requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_SizeInMBs = null;
+            if (cmdletContext.SnowflakeDestinationUpdate_BufferingHints_SizeInMBs != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_SizeInMBs = cmdletContext.SnowflakeDestinationUpdate_BufferingHints_SizeInMBs.Value;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_SizeInMBs != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints.SizeInMBs = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints_snowflakeDestinationUpdate_BufferingHints_SizeInMBs.Value;
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHintsIsNull = false;
+            }
+             // determine if requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints should be set to null
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHintsIsNull)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints = null;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints != null)
+            {
+                request.SnowflakeDestinationUpdate.BufferingHints = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_BufferingHints;
+                requestSnowflakeDestinationUpdateIsNull = false;
+            }
             Amazon.KinesisFirehose.Model.ProcessingConfiguration requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_ProcessingConfiguration = null;
             
              // populate ProcessingConfiguration
@@ -2531,6 +3258,51 @@ namespace Amazon.PowerShell.Cmdlets.KINF
                 request.SnowflakeDestinationUpdate.CloudWatchLoggingOptions = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_CloudWatchLoggingOptions;
                 requestSnowflakeDestinationUpdateIsNull = false;
             }
+            Amazon.KinesisFirehose.Model.SecretsManagerConfiguration requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration = null;
+            
+             // populate SecretsManagerConfiguration
+            var requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfigurationIsNull = true;
+            requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration = new Amazon.KinesisFirehose.Model.SecretsManagerConfiguration();
+            System.Boolean? requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled = null;
+            if (cmdletContext.SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled = cmdletContext.SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled.Value;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration.Enabled = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled.Value;
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfigurationIsNull = false;
+            }
+            System.String requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN = null;
+            if (cmdletContext.SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN = cmdletContext.SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration.RoleARN = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN;
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfigurationIsNull = false;
+            }
+            System.String requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN = null;
+            if (cmdletContext.SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN = cmdletContext.SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN != null)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration.SecretARN = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration_snowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN;
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfigurationIsNull = false;
+            }
+             // determine if requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration should be set to null
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfigurationIsNull)
+            {
+                requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration = null;
+            }
+            if (requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration != null)
+            {
+                request.SnowflakeDestinationUpdate.SecretsManagerConfiguration = requestSnowflakeDestinationUpdate_snowflakeDestinationUpdate_SecretsManagerConfiguration;
+                requestSnowflakeDestinationUpdateIsNull = false;
+            }
              // determine if request.SnowflakeDestinationUpdate should be set to null
             if (requestSnowflakeDestinationUpdateIsNull)
             {
@@ -2578,13 +3350,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "UpdateDestination");
             try
             {
-                #if DESKTOP
-                return client.UpdateDestination(request);
-                #elif CORECLR
-                return client.UpdateDestinationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDestinationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -2665,10 +3431,32 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             public System.String HttpEndpointDestinationUpdate_RoleARN { get; set; }
             public Amazon.KinesisFirehose.HttpEndpointS3BackupMode HttpEndpointDestinationUpdate_S3BackupMode { get; set; }
             public Amazon.KinesisFirehose.Model.S3DestinationUpdate HttpEndpointDestinationUpdate_S3Update { get; set; }
+            public System.Boolean? HttpEndpointDestinationUpdate_SecretsManagerConfiguration_Enabled { get; set; }
+            public System.String HttpEndpointDestinationUpdate_SecretsManagerConfiguration_RoleARN { get; set; }
+            public System.String HttpEndpointDestinationUpdate_SecretsManagerConfiguration_SecretARN { get; set; }
+            public System.Boolean? IcebergDestinationUpdate_AppendOnly { get; set; }
+            public System.Int32? IcebergDestinationConfiguration_BufferingHints_IntervalInSeconds { get; set; }
+            public System.Int32? IcebergDestinationConfiguration_BufferingHints_SizeInMBs { get; set; }
+            public System.String CatalogConfiguration_CatalogARN { get; set; }
+            public System.String CatalogConfiguration_WarehouseLocation { get; set; }
+            public System.Boolean? IcebergDestinationConfiguration_CloudWatchLoggingOptions_Enabled { get; set; }
+            public System.String IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName { get; set; }
+            public System.String IcebergDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName { get; set; }
+            public List<Amazon.KinesisFirehose.Model.DestinationTableConfiguration> IcebergDestinationUpdate_DestinationTableConfigurationList { get; set; }
+            public System.Boolean? IcebergDestinationConfiguration_ProcessingConfiguration_Enabled { get; set; }
+            public List<Amazon.KinesisFirehose.Model.Processor> IcebergDestinationConfiguration_ProcessingConfiguration_Processors { get; set; }
+            public System.Int32? IcebergDestinationConfiguration_RetryOptions_DurationInSeconds { get; set; }
+            public System.String IcebergDestinationUpdate_RoleARN { get; set; }
+            public Amazon.KinesisFirehose.IcebergS3BackupMode IcebergDestinationUpdate_S3BackupMode { get; set; }
+            public Amazon.KinesisFirehose.Model.S3DestinationConfiguration IcebergDestinationUpdate_S3Configuration { get; set; }
+            public System.Boolean? SchemaEvolutionConfiguration_Enabled { get; set; }
+            public System.Boolean? TableCreationConfiguration_Enabled { get; set; }
             public Amazon.KinesisFirehose.Model.RedshiftDestinationUpdate RedshiftDestinationUpdate { get; set; }
             [System.ObsoleteAttribute]
             public Amazon.KinesisFirehose.Model.S3DestinationUpdate S3DestinationUpdate { get; set; }
             public System.String SnowflakeDestinationUpdate_AccountUrl { get; set; }
+            public System.Int32? SnowflakeDestinationUpdate_BufferingHints_IntervalInSeconds { get; set; }
+            public System.Int32? SnowflakeDestinationUpdate_BufferingHints_SizeInMBs { get; set; }
             public System.Boolean? SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_Enabled { get; set; }
             public System.String SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogGroupName { get; set; }
             public System.String SnowflakeDestinationConfiguration_CloudWatchLoggingOptions_LogStreamName { get; set; }
@@ -2685,6 +3473,9 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             public Amazon.KinesisFirehose.SnowflakeS3BackupMode SnowflakeDestinationUpdate_S3BackupMode { get; set; }
             public Amazon.KinesisFirehose.Model.S3DestinationUpdate SnowflakeDestinationUpdate_S3Update { get; set; }
             public System.String SnowflakeDestinationUpdate_Schema { get; set; }
+            public System.Boolean? SnowflakeDestinationUpdate_SecretsManagerConfiguration_Enabled { get; set; }
+            public System.String SnowflakeDestinationUpdate_SecretsManagerConfiguration_RoleARN { get; set; }
+            public System.String SnowflakeDestinationUpdate_SecretsManagerConfiguration_SecretARN { get; set; }
             public System.Boolean? SnowflakeRoleConfiguration_Enabled { get; set; }
             public System.String SnowflakeRoleConfiguration_SnowflakeRole { get; set; }
             public System.String SnowflakeDestinationUpdate_Table { get; set; }

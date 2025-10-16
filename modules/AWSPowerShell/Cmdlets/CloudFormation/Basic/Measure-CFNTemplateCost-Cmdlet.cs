@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -37,17 +39,22 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation EstimateTemplateCost API operation.", Operation = new[] {"EstimateTemplateCost"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.EstimateTemplateCostResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudFormation.Model.EstimateTemplateCostResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudFormation.Model.EstimateTemplateCostResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.EstimateTemplateCostResponse) can be returned by specifying '-Select *'."
     )]
     public partial class MeasureCFNTemplateCostCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Parameter
         /// <summary>
         /// <para>
-        /// <para>A list of <c>Parameter</c> structures that specify input parameters.</para>
+        /// <para>A list of <c>Parameter</c> structures that specify input parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -58,9 +65,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TemplateBody
         /// <summary>
         /// <para>
-        /// <para>Structure containing the template body with a minimum length of 1 byte and a maximum
-        /// length of 51,200 bytes. (For more information, go to <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html">Template
-        /// Anatomy</a> in the <i>CloudFormation User Guide</i>.)</para><para>Conditional: You must pass <c>TemplateBody</c> or <c>TemplateURL</c>. If both are
+        /// <para>Structure that contains the template body with a minimum length of 1 byte and a maximum
+        /// length of 51,200 bytes.</para><para>Conditional: You must pass <c>TemplateBody</c> or <c>TemplateURL</c>. If both are
         /// passed, only <c>TemplateBody</c> is used.</para>
         /// </para>
         /// </summary>
@@ -71,10 +77,10 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TemplateURL
         /// <summary>
         /// <para>
-        /// <para>Location of file containing the template body. The URL must point to a template that's
-        /// located in an Amazon S3 bucket or a Systems Manager document. For more information,
-        /// go to <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html">Template
-        /// Anatomy</a> in the <i>CloudFormation User Guide</i>.</para><para>Conditional: You must pass <c>TemplateURL</c> or <c>TemplateBody</c>. If both are
+        /// <para>The URL of a file that contains the template body. The URL must point to a template
+        /// that's located in an Amazon S3 bucket or a Systems Manager document. The location
+        /// for an Amazon S3 bucket must start with <c>https://</c>. URLs from S3 static websites
+        /// are not supported.</para><para>Conditional: You must pass <c>TemplateURL</c> or <c>TemplateBody</c>. If both are
         /// passed, only <c>TemplateBody</c> is used.</para>
         /// </para>
         /// </summary>
@@ -93,16 +99,6 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "Url";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TemplateBody parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TemplateBody' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TemplateBody' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -113,9 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TemplateBody), MyInvocation.BoundParameters);
@@ -129,21 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFormation.Model.EstimateTemplateCostResponse, MeasureCFNTemplateCostCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TemplateBody;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Parameter != null)
             {
                 context.Parameter = new List<Amazon.CloudFormation.Model.Parameter>(this.Parameter);
@@ -216,13 +206,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "EstimateTemplateCost");
             try
             {
-                #if DESKTOP
-                return client.EstimateTemplateCost(request);
-                #elif CORECLR
-                return client.EstimateTemplateCostAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.EstimateTemplateCostAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

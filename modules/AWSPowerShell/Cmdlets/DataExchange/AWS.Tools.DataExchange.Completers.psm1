@@ -87,6 +87,13 @@ $DTEX_Completers = {
             break
         }
 
+        # Amazon.DataExchange.GrantDistributionScope
+        "New-DTEXDataGrant/GrantDistributionScope"
+        {
+            $v = "AWS_ORGANIZATION","NONE"
+            break
+        }
+
         # Amazon.DataExchange.NotificationType
         "Send-DTEXDataSetNotification/Type"
         {
@@ -95,7 +102,7 @@ $DTEX_Completers = {
         }
 
         # Amazon.DataExchange.ProtocolType
-        "New-DTEXJob/Details_ImportAssetFromApiGatewayApi_ProtocolType"
+        "New-DTEXJob/ImportAssetFromApiGatewayApi_ProtocolType"
         {
             $v = "REST"
             break
@@ -103,10 +110,10 @@ $DTEX_Completers = {
 
         # Amazon.DataExchange.ServerSideEncryptionTypes
         {
-            ($_ -eq "New-DTEXEventAction/Action_ExportRevisionToS3_Encryption_Type") -Or
-            ($_ -eq "Update-DTEXEventAction/Action_ExportRevisionToS3_Encryption_Type") -Or
-            ($_ -eq "New-DTEXJob/Details_ExportAssetsToS3_Encryption_Type") -Or
-            ($_ -eq "New-DTEXJob/Details_ExportRevisionsToS3_Encryption_Type")
+            ($_ -eq "New-DTEXJob/Details_ExportRevisionsToS3_Encryption_Type") -Or
+            ($_ -eq "New-DTEXEventAction/Encryption_Type") -Or
+            ($_ -eq "New-DTEXJob/Encryption_Type") -Or
+            ($_ -eq "Update-DTEXEventAction/Encryption_Type")
         }
         {
             $v = "AES256","aws:kms"
@@ -129,11 +136,11 @@ $DTEX_Completers = {
 }
 
 $DTEX_map = @{
-    "Action_ExportRevisionToS3_Encryption_Type"=@("New-DTEXEventAction","Update-DTEXEventAction")
     "AssetType"=@("New-DTEXDataSet")
-    "Details_ExportAssetsToS3_Encryption_Type"=@("New-DTEXJob")
     "Details_ExportRevisionsToS3_Encryption_Type"=@("New-DTEXJob")
-    "Details_ImportAssetFromApiGatewayApi_ProtocolType"=@("New-DTEXJob")
+    "Encryption_Type"=@("New-DTEXEventAction","New-DTEXJob","Update-DTEXEventAction")
+    "GrantDistributionScope"=@("New-DTEXDataGrant")
+    "ImportAssetFromApiGatewayApi_ProtocolType"=@("New-DTEXJob")
     "Type"=@("New-DTEXJob","Send-DTEXDataSetNotification")
 }
 
@@ -187,24 +194,31 @@ $DTEX_SelectCompleters = {
 }
 
 $DTEX_SelectMap = @{
-    "Select"=@("Stop-DTEXJob",
+    "Select"=@("Receive-DTEXDataGrant",
+               "Stop-DTEXJob",
+               "New-DTEXDataGrant",
                "New-DTEXDataSet",
                "New-DTEXEventAction",
                "New-DTEXJob",
                "New-DTEXRevision",
                "Remove-DTEXAsset",
+               "Remove-DTEXDataGrant",
                "Remove-DTEXDataSet",
                "Remove-DTEXEventAction",
                "Remove-DTEXRevision",
                "Get-DTEXAsset",
+               "Get-DTEXDataGrant",
                "Get-DTEXDataSet",
                "Get-DTEXEventAction",
                "Get-DTEXJob",
+               "Get-DTEXReceivedDataGrant",
                "Get-DTEXRevision",
+               "Get-DTEXDataGrantList",
                "Get-DTEXDataSetRevisionList",
                "Get-DTEXDataSetList",
                "Get-DTEXEventActionList",
                "Get-DTEXJobList",
+               "Get-DTEXReceivedDataGrantList",
                "Get-DTEXRevisionAssetList",
                "Get-DTEXResourceTag",
                "Revoke-DTEXRevision",

@@ -118,8 +118,8 @@ namespace AWSPowerShellGenerator.Generators
                     Console.WriteLine($"Verifying help file {outputFile} using XmlDocument...");
                     try
                     {
-                        var document = new XmlDocument();
-                        document.Load(outputFile);
+                        using var reader = XmlReader.Create(outputFile);
+                        while (reader.Read()) { }
                     }
                     catch (Exception e)
                     {
@@ -184,7 +184,7 @@ namespace AWSPowerShellGenerator.Generators
                 psHelpWriter.WriteStartElement("copyright");
                 {
                     psHelpWriter.WriteElementString("para",
-                                                    string.Format("&copy; Copyright 2012 - {0} Amazon.com, Inc.or its affiliates.All Rights Reserved.",
+                                                    string.Format("&copy; Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.",
                                                                   DateTime.UtcNow.Year));
                 }
                 psHelpWriter.WriteEndElement();

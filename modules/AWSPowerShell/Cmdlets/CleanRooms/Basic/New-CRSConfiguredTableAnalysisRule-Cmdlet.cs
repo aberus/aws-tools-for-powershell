@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRooms;
 using Amazon.CleanRooms.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRS
 {
     /// <summary>
@@ -36,17 +38,62 @@ namespace Amazon.PowerShell.Cmdlets.CRS
     [AWSCmdlet("Calls the AWS Clean Rooms Service CreateConfiguredTableAnalysisRule API operation.", Operation = new[] {"CreateConfiguredTableAnalysisRule"}, SelectReturnType = typeof(Amazon.CleanRooms.Model.CreateConfiguredTableAnalysisRuleResponse))]
     [AWSCmdletOutput("Amazon.CleanRooms.Model.ConfiguredTableAnalysisRule or Amazon.CleanRooms.Model.CreateConfiguredTableAnalysisRuleResponse",
         "This cmdlet returns an Amazon.CleanRooms.Model.ConfiguredTableAnalysisRule object.",
-        "The service call response (type Amazon.CleanRooms.Model.CreateConfiguredTableAnalysisRuleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRooms.Model.CreateConfiguredTableAnalysisRuleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCRSConfiguredTableAnalysisRuleCmdlet : AmazonCleanRoomsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Aggregation_AdditionalAnalysis
+        /// <summary>
+        /// <para>
+        /// <para> An indicator as to whether additional analyses (such as Clean Rooms ML) can be applied
+        /// to the output of the direct query. </para><para>The <c>additionalAnalyses</c> parameter is currently supported for the list analysis
+        /// rule (<c>AnalysisRuleList</c>) and the custom analysis rule (<c>AnalysisRuleCustom</c>).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AnalysisRulePolicy_V1_Aggregation_AdditionalAnalyses")]
+        [AWSConstantClassSource("Amazon.CleanRooms.AdditionalAnalyses")]
+        public Amazon.CleanRooms.AdditionalAnalyses Aggregation_AdditionalAnalysis { get; set; }
+        #endregion
+        
+        #region Parameter Custom_AdditionalAnalysis
+        /// <summary>
+        /// <para>
+        /// <para> An indicator as to whether additional analyses (such as Clean Rooms ML) can be applied
+        /// to the output of the direct query.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AnalysisRulePolicy_V1_Custom_AdditionalAnalyses")]
+        [AWSConstantClassSource("Amazon.CleanRooms.AdditionalAnalyses")]
+        public Amazon.CleanRooms.AdditionalAnalyses Custom_AdditionalAnalysis { get; set; }
+        #endregion
+        
+        #region Parameter List_AdditionalAnalysis
+        /// <summary>
+        /// <para>
+        /// <para> An indicator as to whether additional analyses (such as Clean Rooms ML) can be applied
+        /// to the output of the direct query.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AnalysisRulePolicy_V1_List_AdditionalAnalyses")]
+        [AWSConstantClassSource("Amazon.CleanRooms.AdditionalAnalyses")]
+        public Amazon.CleanRooms.AdditionalAnalyses List_AdditionalAnalysis { get; set; }
+        #endregion
         
         #region Parameter Aggregation_AggregateColumn
         /// <summary>
         /// <para>
-        /// <para>The columns that query runners are allowed to use in aggregation queries.</para>
+        /// <para>The columns that query runners are allowed to use in aggregation queries.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,7 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         #region Parameter Custom_AllowedAnalysis
         /// <summary>
         /// <para>
-        /// <para>The analysis templates that are allowed by the custom analysis rule.</para>
+        /// <para>The ARN of the analysis templates that are allowed by the custom analysis rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,8 +119,12 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         #region Parameter Custom_AllowedAnalysisProvider
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services accounts that are allowed to query by the custom analysis
-        /// rule. Required when <c>allowedAnalyses</c> is <c>ANY_QUERY</c>.</para>
+        /// <para>The IDs of the Amazon Web Services accounts that are allowed to query by the custom
+        /// analysis rule. Required when <c>allowedAnalyses</c> is <c>ANY_QUERY</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,7 +136,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <summary>
         /// <para>
         /// <para>Which logical operators (if any) are to be used in an INNER JOIN match condition.
-        /// Default is <c>AND</c>.</para>
+        /// Default is <c>AND</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -93,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <summary>
         /// <para>
         /// <para>The logical operators (if any) that are to be used in an INNER JOIN match condition.
-        /// Default is <c>AND</c>.</para>
+        /// Default is <c>AND</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <para>The name of the column (such as user_id) that contains the unique identifier of your
         /// users whose privacy you want to protect. If you want to turn on diﬀerential privacy
         /// for two or more tables in a collaboration, you must conﬁgure the same column as the
-        /// user identiﬁer column in both analysis rules.</para>
+        /// user identiﬁer column in both analysis rules.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,7 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         #region Parameter Aggregation_DimensionColumn
         /// <summary>
         /// <para>
-        /// <para>The columns that query runners are allowed to select, group by, or filter by.</para>
+        /// <para>The columns that query runners are allowed to select, group by, or filter by.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,11 +232,30 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public System.String[] Aggregation_DimensionColumn { get; set; }
         #endregion
         
+        #region Parameter Custom_DisallowedOutputColumn
+        /// <summary>
+        /// <para>
+        /// <para> A list of columns that aren't allowed to be shown in the query output.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AnalysisRulePolicy_V1_Custom_DisallowedOutputColumns")]
+        public System.String[] Custom_DisallowedOutputColumn { get; set; }
+        #endregion
+        
         #region Parameter Aggregation_JoinColumn
         /// <summary>
         /// <para>
         /// <para>Columns in configured table that can be used in join statements and/or as aggregate
-        /// columns. They can never be outputted directly.</para>
+        /// columns. They can never be outputted directly.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -177,7 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <summary>
         /// <para>
         /// <para>Columns that can be used to join a configured table with the table of the member who
-        /// can query and other members' configured tables.</para>
+        /// can query and other members' configured tables.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -201,7 +295,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         #region Parameter List_ListColumn
         /// <summary>
         /// <para>
-        /// <para>Columns that can be listed in the output.</para>
+        /// <para>Columns that can be listed in the output.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -213,7 +311,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <summary>
         /// <para>
         /// <para>Columns that must meet a specific threshold value (after an aggregation function is
-        /// applied to it) for each output row to be returned.</para>
+        /// applied to it) for each output row to be returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -225,7 +327,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// <summary>
         /// <para>
         /// <para>Set of scalar functions that are allowed to be used on dimension columns and the output
-        /// of aggregation of metrics.</para>
+        /// of aggregation of metrics.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -244,16 +350,6 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public string Select { get; set; } = "AnalysisRule";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfiguredTableIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfiguredTableIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfiguredTableIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -264,9 +360,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfiguredTableIdentifier), MyInvocation.BoundParameters);
@@ -280,21 +380,12 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CleanRooms.Model.CreateConfiguredTableAnalysisRuleResponse, NewCRSConfiguredTableAnalysisRuleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfiguredTableIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.Aggregation_AdditionalAnalysis = this.Aggregation_AdditionalAnalysis;
             if (this.Aggregation_AggregateColumn != null)
             {
                 context.Aggregation_AggregateColumn = new List<Amazon.CleanRooms.Model.AggregateColumn>(this.Aggregation_AggregateColumn);
@@ -320,6 +411,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             {
                 context.Aggregation_ScalarFunction = new List<System.String>(this.Aggregation_ScalarFunction);
             }
+            context.Custom_AdditionalAnalysis = this.Custom_AdditionalAnalysis;
             if (this.Custom_AllowedAnalysis != null)
             {
                 context.Custom_AllowedAnalysis = new List<System.String>(this.Custom_AllowedAnalysis);
@@ -332,6 +424,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             {
                 context.DifferentialPrivacy_Column = new List<Amazon.CleanRooms.Model.DifferentialPrivacyColumn>(this.DifferentialPrivacy_Column);
             }
+            if (this.Custom_DisallowedOutputColumn != null)
+            {
+                context.Custom_DisallowedOutputColumn = new List<System.String>(this.Custom_DisallowedOutputColumn);
+            }
+            context.List_AdditionalAnalysis = this.List_AdditionalAnalysis;
             if (this.List_AllowedJoinOperator != null)
             {
                 context.List_AllowedJoinOperator = new List<System.String>(this.List_AllowedJoinOperator);
@@ -383,71 +480,21 @@ namespace Amazon.PowerShell.Cmdlets.CRS
              // populate V1
             var requestAnalysisRulePolicy_analysisRulePolicy_V1IsNull = true;
             requestAnalysisRulePolicy_analysisRulePolicy_V1 = new Amazon.CleanRooms.Model.ConfiguredTableAnalysisRulePolicyV1();
-            Amazon.CleanRooms.Model.AnalysisRuleCustom requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom = null;
-            
-             // populate Custom
-            var requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = true;
-            requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom = new Amazon.CleanRooms.Model.AnalysisRuleCustom();
-            List<System.String> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis = null;
-            if (cmdletContext.Custom_AllowedAnalysis != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis = cmdletContext.Custom_AllowedAnalysis;
-            }
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.AllowedAnalyses = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis;
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
-            }
-            List<System.String> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider = null;
-            if (cmdletContext.Custom_AllowedAnalysisProvider != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider = cmdletContext.Custom_AllowedAnalysisProvider;
-            }
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.AllowedAnalysisProviders = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider;
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
-            }
-            Amazon.CleanRooms.Model.DifferentialPrivacyConfiguration requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy = null;
-            
-             // populate DifferentialPrivacy
-            var requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacyIsNull = true;
-            requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy = new Amazon.CleanRooms.Model.DifferentialPrivacyConfiguration();
-            List<Amazon.CleanRooms.Model.DifferentialPrivacyColumn> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column = null;
-            if (cmdletContext.DifferentialPrivacy_Column != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column = cmdletContext.DifferentialPrivacy_Column;
-            }
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy.Columns = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column;
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacyIsNull = false;
-            }
-             // determine if requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy should be set to null
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacyIsNull)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy = null;
-            }
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.DifferentialPrivacy = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy;
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
-            }
-             // determine if requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom should be set to null
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom = null;
-            }
-            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom != null)
-            {
-                requestAnalysisRulePolicy_analysisRulePolicy_V1.Custom = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom;
-                requestAnalysisRulePolicy_analysisRulePolicy_V1IsNull = false;
-            }
             Amazon.CleanRooms.Model.AnalysisRuleList requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List = null;
             
              // populate List
             var requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_ListIsNull = true;
             requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List = new Amazon.CleanRooms.Model.AnalysisRuleList();
+            Amazon.CleanRooms.AdditionalAnalyses requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List_list_AdditionalAnalysis = null;
+            if (cmdletContext.List_AdditionalAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List_list_AdditionalAnalysis = cmdletContext.List_AdditionalAnalysis;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List_list_AdditionalAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List.AdditionalAnalyses = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List_list_AdditionalAnalysis;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_ListIsNull = false;
+            }
             List<System.String> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List_list_AllowedJoinOperator = null;
             if (cmdletContext.List_AllowedJoinOperator != null)
             {
@@ -488,11 +535,101 @@ namespace Amazon.PowerShell.Cmdlets.CRS
                 requestAnalysisRulePolicy_analysisRulePolicy_V1.List = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_List;
                 requestAnalysisRulePolicy_analysisRulePolicy_V1IsNull = false;
             }
+            Amazon.CleanRooms.Model.AnalysisRuleCustom requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom = null;
+            
+             // populate Custom
+            var requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = true;
+            requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom = new Amazon.CleanRooms.Model.AnalysisRuleCustom();
+            Amazon.CleanRooms.AdditionalAnalyses requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AdditionalAnalysis = null;
+            if (cmdletContext.Custom_AdditionalAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AdditionalAnalysis = cmdletContext.Custom_AdditionalAnalysis;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AdditionalAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.AdditionalAnalyses = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AdditionalAnalysis;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
+            }
+            List<System.String> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis = null;
+            if (cmdletContext.Custom_AllowedAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis = cmdletContext.Custom_AllowedAnalysis;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.AllowedAnalyses = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysis;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
+            }
+            List<System.String> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider = null;
+            if (cmdletContext.Custom_AllowedAnalysisProvider != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider = cmdletContext.Custom_AllowedAnalysisProvider;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.AllowedAnalysisProviders = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_AllowedAnalysisProvider;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
+            }
+            List<System.String> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_DisallowedOutputColumn = null;
+            if (cmdletContext.Custom_DisallowedOutputColumn != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_DisallowedOutputColumn = cmdletContext.Custom_DisallowedOutputColumn;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_DisallowedOutputColumn != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.DisallowedOutputColumns = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_custom_DisallowedOutputColumn;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
+            }
+            Amazon.CleanRooms.Model.DifferentialPrivacyConfiguration requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy = null;
+            
+             // populate DifferentialPrivacy
+            var requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacyIsNull = true;
+            requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy = new Amazon.CleanRooms.Model.DifferentialPrivacyConfiguration();
+            List<Amazon.CleanRooms.Model.DifferentialPrivacyColumn> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column = null;
+            if (cmdletContext.DifferentialPrivacy_Column != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column = cmdletContext.DifferentialPrivacy_Column;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy.Columns = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy_differentialPrivacy_Column;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacyIsNull = false;
+            }
+             // determine if requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy should be set to null
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacyIsNull)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy = null;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom.DifferentialPrivacy = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom_analysisRulePolicy_V1_Custom_DifferentialPrivacy;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull = false;
+            }
+             // determine if requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom should be set to null
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_CustomIsNull)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom = null;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1.Custom = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Custom;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1IsNull = false;
+            }
             Amazon.CleanRooms.Model.AnalysisRuleAggregation requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation = null;
             
              // populate Aggregation
             var requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_AggregationIsNull = true;
             requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation = new Amazon.CleanRooms.Model.AnalysisRuleAggregation();
+            Amazon.CleanRooms.AdditionalAnalyses requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation_aggregation_AdditionalAnalysis = null;
+            if (cmdletContext.Aggregation_AdditionalAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation_aggregation_AdditionalAnalysis = cmdletContext.Aggregation_AdditionalAnalysis;
+            }
+            if (requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation_aggregation_AdditionalAnalysis != null)
+            {
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation.AdditionalAnalyses = requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation_aggregation_AdditionalAnalysis;
+                requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_AggregationIsNull = false;
+            }
             List<Amazon.CleanRooms.Model.AggregateColumn> requestAnalysisRulePolicy_analysisRulePolicy_V1_analysisRulePolicy_V1_Aggregation_aggregation_AggregateColumn = null;
             if (cmdletContext.Aggregation_AggregateColumn != null)
             {
@@ -634,13 +771,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Clean Rooms Service", "CreateConfiguredTableAnalysisRule");
             try
             {
-                #if DESKTOP
-                return client.CreateConfiguredTableAnalysisRule(request);
-                #elif CORECLR
-                return client.CreateConfiguredTableAnalysisRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConfiguredTableAnalysisRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -657,6 +788,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.CleanRooms.AdditionalAnalyses Aggregation_AdditionalAnalysis { get; set; }
             public List<Amazon.CleanRooms.Model.AggregateColumn> Aggregation_AggregateColumn { get; set; }
             public List<System.String> Aggregation_AllowedJoinOperator { get; set; }
             public List<System.String> Aggregation_DimensionColumn { get; set; }
@@ -664,9 +796,12 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             public Amazon.CleanRooms.JoinRequiredOption Aggregation_JoinRequired { get; set; }
             public List<Amazon.CleanRooms.Model.AggregationConstraint> Aggregation_OutputConstraint { get; set; }
             public List<System.String> Aggregation_ScalarFunction { get; set; }
+            public Amazon.CleanRooms.AdditionalAnalyses Custom_AdditionalAnalysis { get; set; }
             public List<System.String> Custom_AllowedAnalysis { get; set; }
             public List<System.String> Custom_AllowedAnalysisProvider { get; set; }
             public List<Amazon.CleanRooms.Model.DifferentialPrivacyColumn> DifferentialPrivacy_Column { get; set; }
+            public List<System.String> Custom_DisallowedOutputColumn { get; set; }
+            public Amazon.CleanRooms.AdditionalAnalyses List_AdditionalAnalysis { get; set; }
             public List<System.String> List_AllowedJoinOperator { get; set; }
             public List<System.String> List_JoinColumn { get; set; }
             public List<System.String> List_ListColumn { get; set; }

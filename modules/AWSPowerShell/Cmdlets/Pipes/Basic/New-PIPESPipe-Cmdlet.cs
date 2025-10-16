@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Pipes;
 using Amazon.Pipes.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PIPES
 {
     /// <summary>
@@ -35,19 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
     [OutputType("Amazon.Pipes.Model.CreatePipeResponse")]
     [AWSCmdlet("Calls the Amazon EventBridge Pipes CreatePipe API operation.", Operation = new[] {"CreatePipe"}, SelectReturnType = typeof(Amazon.Pipes.Model.CreatePipeResponse))]
     [AWSCmdletOutput("Amazon.Pipes.Model.CreatePipeResponse",
-        "This cmdlet returns an Amazon.Pipes.Model.CreatePipeResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Pipes.Model.CreatePipeResponse object containing multiple properties."
     )]
     public partial class NewPIPESPipeCmdlet : AmazonPipesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SelfManagedKafkaParameters_AdditionalBootstrapServer
         /// <summary>
         /// <para>
-        /// <para>An array of server URLs.</para>
+        /// <para>An array of server URLs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -245,7 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>
         /// <para>The capacity provider strategy to use for the task.</para><para>If a <c>capacityProviderStrategy</c> is specified, the <c>launchType</c> parameter
         /// must be omitted. If no <c>capacityProviderStrategy</c> or launchType is specified,
-        /// the <c>defaultCapacityProviderStrategy</c> for the cluster is used. </para>
+        /// the <c>defaultCapacityProviderStrategy</c> for the cluster is used. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -279,7 +288,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The command to send to the container that overrides the default command from the Docker
-        /// image or the task definition.</para>
+        /// image or the task definition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -312,7 +325,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter Overrides_ContainerOverride
         /// <summary>
         /// <para>
-        /// <para>One or more container overrides that are sent to a task.</para>
+        /// <para>One or more container overrides that are sent to a task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -356,8 +373,8 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter FirehoseLogDestination_DeliveryStreamArn
         /// <summary>
         /// <para>
-        /// <para>Specifies the Amazon Resource Name (ARN) of the Kinesis Data Firehose delivery stream
-        /// to which EventBridge delivers the pipe log records.</para>
+        /// <para>Specifies the Amazon Resource Name (ARN) of the Firehose delivery stream to which
+        /// EventBridge delivers the pipe log records.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -373,7 +390,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// jobs so that each child array job completes sequentially, starting at index 0. You
         /// can also specify an <c>N_TO_N</c> type dependency with a job ID for array jobs. In
         /// that case, each index child of this job must wait for the corresponding index child
-        /// of each dependency to complete before it can begin.</para>
+        /// of each dependency to complete before it can begin.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -412,6 +433,22 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TargetParameters_EventBridgeEventBusParameters_DetailType")]
         public System.String EventBridgeEventBusParameters_DetailType { get; set; }
+        #endregion
+        
+        #region Parameter TimestreamParameters_DimensionMapping
+        /// <summary>
+        /// <para>
+        /// <para>Map source data to dimensions in the target Timestream for LiveAnalytics table.</para><para>For more information, see <a href="https://docs.aws.amazon.com/timestream/latest/developerguide/concepts.html">Amazon
+        /// Timestream for LiveAnalytics concepts</a></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_DimensionMappings")]
+        public Amazon.Pipes.Model.DimensionMapping[] TimestreamParameters_DimensionMapping { get; set; }
         #endregion
         
         #region Parameter EcsTaskParameters_EnableECSManagedTag
@@ -469,12 +506,28 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>The environment variables to send to the container. You can add new environment variables,
         /// which are added to the container at launch, or you can override the existing environment
         /// variables from the Docker image or the task definition.</para><note><para>Environment variables cannot start with "<c>Batch</c>". This naming convention is
-        /// reserved for variables that Batch sets.</para></note>
+        /// reserved for variables that Batch sets.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TargetParameters_BatchJobParameters_ContainerOverrides_Environment")]
         public Amazon.Pipes.Model.BatchEnvironmentVariable[] ContainerOverrides_Environment { get; set; }
+        #endregion
+        
+        #region Parameter TimestreamParameters_EpochTimeUnit
+        /// <summary>
+        /// <para>
+        /// <para>The granularity of the time units used. Default is <c>MILLISECONDS</c>.</para><para>Required if <c>TimeFieldType</c> is specified as <c>EPOCH</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_EpochTimeUnit")]
+        [AWSConstantClassSource("Amazon.Pipes.EpochTimeUnit")]
+        public Amazon.Pipes.EpochTimeUnit TimestreamParameters_EpochTimeUnit { get; set; }
         #endregion
         
         #region Parameter Overrides_ExecutionRoleArn
@@ -494,7 +547,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter FilterCriteria_Filter
         /// <summary>
         /// <para>
-        /// <para>The event patterns.</para>
+        /// <para>The event patterns.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -517,7 +574,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The headers that need to be sent as part of request invoking the API Gateway REST
-        /// API or EventBridge ApiDestination.</para>
+        /// API or EventBridge ApiDestination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -529,7 +590,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The headers that need to be sent as part of request invoking the API Gateway REST
-        /// API or EventBridge ApiDestination.</para>
+        /// API or EventBridge ApiDestination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -540,9 +605,13 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter LogConfiguration_IncludeExecutionData
         /// <summary>
         /// <para>
-        /// <para>Specify <c>ON</c> to include the execution data (specifically, the <c>payload</c>
-        /// and <c>awsRequest</c> fields) in the log messages for this pipe.</para><para>This applies to all log destinations for the pipe.</para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-logs.html#eb-pipes-logs-execution-data">Including
-        /// execution data in logs</a> in the <i>Amazon EventBridge User Guide</i>.</para><para>The default is <c>OFF</c>.</para>
+        /// <para>Specify <c>ALL</c> to include the execution data (specifically, the <c>payload</c>,
+        /// <c>awsRequest</c>, and <c>awsResponse</c> fields) in the log messages for this pipe.</para><para>This applies to all log destinations for the pipe.</para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-pipes-logs.html#eb-pipes-logs-execution-data">Including
+        /// execution data in logs</a> in the <i>Amazon EventBridge User Guide</i>.</para><para>By default, execution data is not included.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -552,7 +621,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter Overrides_InferenceAcceleratorOverride
         /// <summary>
         /// <para>
-        /// <para>The Elastic Inference accelerator override for the task.</para>
+        /// <para>The Elastic Inference accelerator override for the task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -654,6 +727,20 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TargetParameters_BatchJobParameters_JobName")]
         public System.String BatchJobParameters_JobName { get; set; }
+        #endregion
+        
+        #region Parameter KmsKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of the KMS customer managed key for EventBridge to use, if you choose
+        /// to use a customer managed key to encrypt pipe data. The identifier can be the key
+        /// Amazon Resource Name (ARN), KeyId, key alias, or key alias ARN.</para><para>If you do not specify a customer managed key identifier, EventBridge uses an Amazon
+        /// Web Services owned key to encrypt pipe data.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/getting-started.html">Managing
+        /// keys</a> in the <i>Key Management Service Developer Guide</i>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KmsKeyIdentifier { get; set; }
         #endregion
         
         #region Parameter EcsTaskParameters_LaunchType
@@ -788,9 +875,9 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter DynamoDBStreamParameters_MaximumRecordAgeInSecond
         /// <summary>
         /// <para>
-        /// <para>(Streams only) Discard records older than the specified age. The default value is
-        /// -1, which sets the maximum age to infinite. When the value is set to infinite, EventBridge
-        /// never discards old records. </para>
+        /// <para>Discard records older than the specified age. The default value is -1, which sets
+        /// the maximum age to infinite. When the value is set to infinite, EventBridge never
+        /// discards old records. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -801,9 +888,9 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter KinesisStreamParameters_MaximumRecordAgeInSecond
         /// <summary>
         /// <para>
-        /// <para>(Streams only) Discard records older than the specified age. The default value is
-        /// -1, which sets the maximum age to infinite. When the value is set to infinite, EventBridge
-        /// never discards old records. </para>
+        /// <para>Discard records older than the specified age. The default value is -1, which sets
+        /// the maximum age to infinite. When the value is set to infinite, EventBridge never
+        /// discards old records. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -814,10 +901,9 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter DynamoDBStreamParameters_MaximumRetryAttempt
         /// <summary>
         /// <para>
-        /// <para>(Streams only) Discard records after the specified number of retries. The default
-        /// value is -1, which sets the maximum number of retries to infinite. When MaximumRetryAttempts
-        /// is infinite, EventBridge retries failed records until the record expires in the event
-        /// source.</para>
+        /// <para>Discard records after the specified number of retries. The default value is -1, which
+        /// sets the maximum number of retries to infinite. When MaximumRetryAttempts is infinite,
+        /// EventBridge retries failed records until the record expires in the event source.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -828,10 +914,9 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter KinesisStreamParameters_MaximumRetryAttempt
         /// <summary>
         /// <para>
-        /// <para>(Streams only) Discard records after the specified number of retries. The default
-        /// value is -1, which sets the maximum number of retries to infinite. When MaximumRetryAttempts
-        /// is infinite, EventBridge retries failed records until the record expires in the event
-        /// source.</para>
+        /// <para>Discard records after the specified number of retries. The default value is -1, which
+        /// sets the maximum number of retries to infinite. When MaximumRetryAttempts is infinite,
+        /// EventBridge retries failed records until the record expires in the event source.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -872,6 +957,22 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         public System.String SqsQueueParameters_MessageGroupId { get; set; }
         #endregion
         
+        #region Parameter TimestreamParameters_MultiMeasureMapping
+        /// <summary>
+        /// <para>
+        /// <para>Maps multiple measures from the source event to the same record in the specified Timestream
+        /// for LiveAnalytics table.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_MultiMeasureMappings")]
+        public Amazon.Pipes.Model.MultiMeasureMapping[] TimestreamParameters_MultiMeasureMapping { get; set; }
+        #endregion
+        
         #region Parameter Name
         /// <summary>
         /// <para>
@@ -892,9 +993,9 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter DynamoDBStreamParameters_OnPartialBatchItemFailure
         /// <summary>
         /// <para>
-        /// <para>(Streams only) Define how to handle item process failures. <c>AUTOMATIC_BISECT</c>
-        /// halves each batch and retry each half until all the records are processed or there
-        /// is one failed message left in the batch.</para>
+        /// <para>Define how to handle item process failures. <c>AUTOMATIC_BISECT</c> halves each batch
+        /// and retry each half until all the records are processed or there is one failed message
+        /// left in the batch.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -906,9 +1007,9 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter KinesisStreamParameters_OnPartialBatchItemFailure
         /// <summary>
         /// <para>
-        /// <para>(Streams only) Define how to handle item process failures. <c>AUTOMATIC_BISECT</c>
-        /// halves each batch and retry each half until all the records are processed or there
-        /// is one failed message left in the batch.</para>
+        /// <para>Define how to handle item process failures. <c>AUTOMATIC_BISECT</c> halves each batch
+        /// and retry each half until all the records are processed or there is one failed message
+        /// left in the batch.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -920,8 +1021,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter S3LogDestination_OutputFormat
         /// <summary>
         /// <para>
-        /// <para>How EventBridge should format the log records.</para><ul><li><para><c>json</c>: JSON </para></li><li><para><c>plain</c>: Plain text</para></li><li><para><c>w3c</c>: <a href="https://www.w3.org/TR/WD-logfile">W3C extended logging file
-        /// format</a></para></li></ul>
+        /// <para>How EventBridge should format the log records.</para><para>EventBridge currently only supports <c>json</c> formatting.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -933,8 +1033,8 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter DynamoDBStreamParameters_ParallelizationFactor
         /// <summary>
         /// <para>
-        /// <para>(Streams only) The number of batches to process concurrently from each shard. The
-        /// default value is 1.</para>
+        /// <para>The number of batches to process concurrently from each shard. The default value is
+        /// 1.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -945,8 +1045,8 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter KinesisStreamParameters_ParallelizationFactor
         /// <summary>
         /// <para>
-        /// <para>(Streams only) The number of batches to process concurrently from each shard. The
-        /// default value is 1.</para>
+        /// <para>The number of batches to process concurrently from each shard. The default value is
+        /// 1.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -960,7 +1060,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>Additional parameters passed to the job that replace parameter substitution placeholders
         /// that are set in the job definition. Parameters are specified as a key and value pair
         /// mapping. Parameters included here override any corresponding parameter defaults from
-        /// the job definition.</para>
+        /// the job definition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -989,7 +1093,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The path parameter values to be used to populate API Gateway REST API or EventBridge
-        /// ApiDestination path wildcards ("*").</para>
+        /// ApiDestination path wildcards ("*").</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1001,7 +1109,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The path parameter values to be used to populate API Gateway REST API or EventBridge
-        /// ApiDestination path wildcards ("*").</para>
+        /// ApiDestination path wildcards ("*").</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1012,7 +1124,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter SageMakerPipelineParameters_PipelineParameterList
         /// <summary>
         /// <para>
-        /// <para>List of Parameter names and values for SageMaker Model Building Pipeline execution.</para>
+        /// <para>List of Parameter names and values for SageMaker Model Building Pipeline execution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1025,7 +1141,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>
         /// <para>An array of placement constraint objects to use for the task. You can specify up to
         /// 10 constraints per task (including constraints in the task definition and those specified
-        /// at runtime).</para>
+        /// at runtime).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1037,7 +1157,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The placement strategy objects to use for the task. You can specify a maximum of five
-        /// strategy rules per task. </para>
+        /// strategy rules per task. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1093,7 +1217,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The query string keys/values that need to be sent as part of request invoking the
-        /// API Gateway REST API or EventBridge ApiDestination.</para>
+        /// API Gateway REST API or EventBridge ApiDestination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1105,7 +1233,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>The query string keys/values that need to be sent as part of request invoking the
-        /// API Gateway REST API or EventBridge ApiDestination.</para>
+        /// API Gateway REST API or EventBridge ApiDestination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1151,7 +1283,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>
         /// <para>The type and amount of resources to assign to a container. This overrides the settings
         /// in the job definition. The supported resources include <c>GPU</c>, <c>MEMORY</c>,
-        /// and <c>VCPU</c>.</para>
+        /// and <c>VCPU</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1163,7 +1299,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>Amazon Web Services resources, identified by Amazon Resource Name (ARN), which the
-        /// event primarily concerns. Any number, including zero, may be present.</para>
+        /// event primarily concerns. Any number, including zero, may be present.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1237,8 +1377,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>Specifies the security groups associated with the stream. These security groups must
-        /// all be in the same VPC. You can specify as many as five security groups. If you do
-        /// not specify a security group, the default security group for the VPC is used.</para>
+        /// all be in the same VPC. You can specify as many as five security groups.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1251,7 +1394,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>
         /// <para>Specifies the security groups associated with the task. These security groups must
         /// all be in the same VPC. You can specify as many as five security groups. If you do
-        /// not specify a security group, the default security group for the VPC is used.</para>
+        /// not specify a security group, the default security group for the VPC is used.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1268,6 +1415,22 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SourceParameters_SelfManagedKafkaParameters_ServerRootCaCertificate")]
         public System.String SelfManagedKafkaParameters_ServerRootCaCertificate { get; set; }
+        #endregion
+        
+        #region Parameter TimestreamParameters_SingleMeasureMapping
+        /// <summary>
+        /// <para>
+        /// <para>Mappings of single source data fields to individual records in the specified Timestream
+        /// for LiveAnalytics table.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_SingleMeasureMappings")]
+        public Amazon.Pipes.Model.SingleMeasureMapping[] TimestreamParameters_SingleMeasureMapping { get; set; }
         #endregion
         
         #region Parameter ArrayProperties_Size
@@ -1324,7 +1487,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter RedshiftDataParameters_Sql
         /// <summary>
         /// <para>
-        /// <para>The SQL statement text to run.</para>
+        /// <para>The SQL statement text to run.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1335,7 +1502,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter DynamoDBStreamParameters_StartingPosition
         /// <summary>
         /// <para>
-        /// <para>(Streams only) The position in a stream from which to start reading.</para>
+        /// <para>The position in a stream from which to start reading.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1347,7 +1514,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter KinesisStreamParameters_StartingPosition
         /// <summary>
         /// <para>
-        /// <para>(Streams only) The position in a stream from which to start reading.</para>
+        /// <para>The position in a stream from which to start reading.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1359,7 +1526,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter ManagedStreamingKafkaParameters_StartingPosition
         /// <summary>
         /// <para>
-        /// <para>(Streams only) The position in a stream from which to start reading.</para>
+        /// <para>The position in a stream from which to start reading.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1371,7 +1538,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter SelfManagedKafkaParameters_StartingPosition
         /// <summary>
         /// <para>
-        /// <para>(Streams only) The position in a stream from which to start reading.</para>
+        /// <para>The position in a stream from which to start reading.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1408,7 +1575,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>Specifies the subnets associated with the stream. These subnets must all be in the
-        /// same VPC. You can specify as many as 16 subnets.</para>
+        /// same VPC. You can specify as many as 16 subnets.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1420,7 +1591,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <summary>
         /// <para>
         /// <para>Specifies the subnets associated with the task. These subnets must all be in the same
-        /// VPC. You can specify as many as 16 subnets.</para>
+        /// VPC. You can specify as many as 16 subnets.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1431,7 +1606,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The list of key-value pairs to associate with the pipe.</para>
+        /// <para>The list of key-value pairs to associate with the pipe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1445,7 +1624,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         /// <para>The metadata that you apply to the task to help you categorize and organize them.
         /// Each tag consists of a key and an optional value, both of which you define. To learn
         /// more, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html#ECS-RunTask-request-tags">RunTask</a>
-        /// in the Amazon ECS API Reference.</para>
+        /// in the Amazon ECS API Reference.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -1519,6 +1702,18 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         public System.String EventBridgeEventBusParameters_Time { get; set; }
         #endregion
         
+        #region Parameter TimestreamParameters_TimeFieldType
+        /// <summary>
+        /// <para>
+        /// <para>The type of time value used.</para><para>The default is <c>EPOCH</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_TimeFieldType")]
+        [AWSConstantClassSource("Amazon.Pipes.TimeFieldType")]
+        public Amazon.Pipes.TimeFieldType TimestreamParameters_TimeFieldType { get; set; }
+        #endregion
+        
         #region Parameter CloudWatchLogsParameters_Timestamp
         /// <summary>
         /// <para>
@@ -1529,6 +1724,28 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TargetParameters_CloudWatchLogsParameters_Timestamp")]
         public System.String CloudWatchLogsParameters_Timestamp { get; set; }
+        #endregion
+        
+        #region Parameter TimestreamParameters_TimestampFormat
+        /// <summary>
+        /// <para>
+        /// <para>How to format the timestamps. For example, <c>yyyy-MM-dd'T'HH:mm:ss'Z'</c>.</para><para>Required if <c>TimeFieldType</c> is specified as <c>TIMESTAMP_FORMAT</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_TimestampFormat")]
+        public System.String TimestreamParameters_TimestampFormat { get; set; }
+        #endregion
+        
+        #region Parameter TimestreamParameters_TimeValue
+        /// <summary>
+        /// <para>
+        /// <para>Dynamic path to the source data field that represents the time value for your data.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_TimeValue")]
+        public System.String TimestreamParameters_TimeValue { get; set; }
         #endregion
         
         #region Parameter ManagedStreamingKafkaParameters_TopicName
@@ -1551,6 +1768,24 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SourceParameters_SelfManagedKafkaParameters_TopicName")]
         public System.String SelfManagedKafkaParameters_TopicName { get; set; }
+        #endregion
+        
+        #region Parameter TimestreamParameters_VersionValue
+        /// <summary>
+        /// <para>
+        /// <para>64 bit version value or source data field that represents the version value for your
+        /// data.</para><para>Write requests with a higher version number will update the existing measure values
+        /// of the record and version. In cases where the measure value is the same, the version
+        /// will still be updated. </para><para>Default value is 1. </para><para>Timestream for LiveAnalytics does not support updating partial measure values in a
+        /// record.</para><para>Write requests for duplicate data with a higher version number will update the existing
+        /// measure value and version. In cases where the measure value is the same, <c>Version</c>
+        /// will still be updated. Default value is <c>1</c>.</para><note><para><c>Version</c> must be <c>1</c> or greater, or you will receive a <c>ValidationException</c>
+        /// error.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetParameters_TimestreamParameters_VersionValue")]
+        public System.String TimestreamParameters_VersionValue { get; set; }
         #endregion
         
         #region Parameter RabbitMQBrokerParameters_VirtualHost
@@ -1586,16 +1821,6 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -1606,9 +1831,13 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -1622,21 +1851,11 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Pipes.Model.CreatePipeResponse, NewPIPESPipeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.DesiredState = this.DesiredState;
             context.Enrichment = this.Enrichment;
@@ -1661,6 +1880,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
                 }
             }
             context.EnrichmentParameters_InputTemplate = this.EnrichmentParameters_InputTemplate;
+            context.KmsKeyIdentifier = this.KmsKeyIdentifier;
             context.CloudwatchLogsLogDestination_LogGroupArn = this.CloudwatchLogsLogDestination_LogGroupArn;
             context.FirehoseLogDestination_DeliveryStreamArn = this.FirehoseLogDestination_DeliveryStreamArn;
             if (this.LogConfiguration_IncludeExecutionData != null)
@@ -1894,6 +2114,23 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
             context.SqsQueueParameters_MessageDeduplicationId = this.SqsQueueParameters_MessageDeduplicationId;
             context.SqsQueueParameters_MessageGroupId = this.SqsQueueParameters_MessageGroupId;
             context.StepFunctionStateMachineParameters_InvocationType = this.StepFunctionStateMachineParameters_InvocationType;
+            if (this.TimestreamParameters_DimensionMapping != null)
+            {
+                context.TimestreamParameters_DimensionMapping = new List<Amazon.Pipes.Model.DimensionMapping>(this.TimestreamParameters_DimensionMapping);
+            }
+            context.TimestreamParameters_EpochTimeUnit = this.TimestreamParameters_EpochTimeUnit;
+            if (this.TimestreamParameters_MultiMeasureMapping != null)
+            {
+                context.TimestreamParameters_MultiMeasureMapping = new List<Amazon.Pipes.Model.MultiMeasureMapping>(this.TimestreamParameters_MultiMeasureMapping);
+            }
+            if (this.TimestreamParameters_SingleMeasureMapping != null)
+            {
+                context.TimestreamParameters_SingleMeasureMapping = new List<Amazon.Pipes.Model.SingleMeasureMapping>(this.TimestreamParameters_SingleMeasureMapping);
+            }
+            context.TimestreamParameters_TimeFieldType = this.TimestreamParameters_TimeFieldType;
+            context.TimestreamParameters_TimestampFormat = this.TimestreamParameters_TimestampFormat;
+            context.TimestreamParameters_TimeValue = this.TimestreamParameters_TimeValue;
+            context.TimestreamParameters_VersionValue = this.TimestreamParameters_VersionValue;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -1985,6 +2222,10 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
             if (requestEnrichmentParametersIsNull)
             {
                 request.EnrichmentParameters = null;
+            }
+            if (cmdletContext.KmsKeyIdentifier != null)
+            {
+                request.KmsKeyIdentifier = cmdletContext.KmsKeyIdentifier;
             }
             
              // populate LogConfiguration
@@ -3393,6 +3634,101 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
                 request.TargetParameters.BatchJobParameters = requestTargetParameters_targetParameters_BatchJobParameters;
                 requestTargetParametersIsNull = false;
             }
+            Amazon.Pipes.Model.PipeTargetTimestreamParameters requestTargetParameters_targetParameters_TimestreamParameters = null;
+            
+             // populate TimestreamParameters
+            var requestTargetParameters_targetParameters_TimestreamParametersIsNull = true;
+            requestTargetParameters_targetParameters_TimestreamParameters = new Amazon.Pipes.Model.PipeTargetTimestreamParameters();
+            List<Amazon.Pipes.Model.DimensionMapping> requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_DimensionMapping = null;
+            if (cmdletContext.TimestreamParameters_DimensionMapping != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_DimensionMapping = cmdletContext.TimestreamParameters_DimensionMapping;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_DimensionMapping != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.DimensionMappings = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_DimensionMapping;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            Amazon.Pipes.EpochTimeUnit requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_EpochTimeUnit = null;
+            if (cmdletContext.TimestreamParameters_EpochTimeUnit != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_EpochTimeUnit = cmdletContext.TimestreamParameters_EpochTimeUnit;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_EpochTimeUnit != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.EpochTimeUnit = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_EpochTimeUnit;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            List<Amazon.Pipes.Model.MultiMeasureMapping> requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_MultiMeasureMapping = null;
+            if (cmdletContext.TimestreamParameters_MultiMeasureMapping != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_MultiMeasureMapping = cmdletContext.TimestreamParameters_MultiMeasureMapping;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_MultiMeasureMapping != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.MultiMeasureMappings = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_MultiMeasureMapping;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            List<Amazon.Pipes.Model.SingleMeasureMapping> requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_SingleMeasureMapping = null;
+            if (cmdletContext.TimestreamParameters_SingleMeasureMapping != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_SingleMeasureMapping = cmdletContext.TimestreamParameters_SingleMeasureMapping;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_SingleMeasureMapping != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.SingleMeasureMappings = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_SingleMeasureMapping;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            Amazon.Pipes.TimeFieldType requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeFieldType = null;
+            if (cmdletContext.TimestreamParameters_TimeFieldType != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeFieldType = cmdletContext.TimestreamParameters_TimeFieldType;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeFieldType != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.TimeFieldType = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeFieldType;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            System.String requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimestampFormat = null;
+            if (cmdletContext.TimestreamParameters_TimestampFormat != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimestampFormat = cmdletContext.TimestreamParameters_TimestampFormat;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimestampFormat != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.TimestampFormat = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimestampFormat;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            System.String requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeValue = null;
+            if (cmdletContext.TimestreamParameters_TimeValue != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeValue = cmdletContext.TimestreamParameters_TimeValue;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeValue != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.TimeValue = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_TimeValue;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+            System.String requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_VersionValue = null;
+            if (cmdletContext.TimestreamParameters_VersionValue != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_VersionValue = cmdletContext.TimestreamParameters_VersionValue;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_VersionValue != null)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters.VersionValue = requestTargetParameters_targetParameters_TimestreamParameters_timestreamParameters_VersionValue;
+                requestTargetParameters_targetParameters_TimestreamParametersIsNull = false;
+            }
+             // determine if requestTargetParameters_targetParameters_TimestreamParameters should be set to null
+            if (requestTargetParameters_targetParameters_TimestreamParametersIsNull)
+            {
+                requestTargetParameters_targetParameters_TimestreamParameters = null;
+            }
+            if (requestTargetParameters_targetParameters_TimestreamParameters != null)
+            {
+                request.TargetParameters.TimestreamParameters = requestTargetParameters_targetParameters_TimestreamParameters;
+                requestTargetParametersIsNull = false;
+            }
             Amazon.Pipes.Model.PipeTargetEcsTaskParameters requestTargetParameters_targetParameters_EcsTaskParameters = null;
             
              // populate EcsTaskParameters
@@ -3741,13 +4077,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge Pipes", "CreatePipe");
             try
             {
-                #if DESKTOP
-                return client.CreatePipe(request);
-                #elif CORECLR
-                return client.CreatePipeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePipeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -3771,6 +4101,7 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
             public List<System.String> EnrichmentParameters_HttpParameters_PathParameterValues { get; set; }
             public Dictionary<System.String, System.String> EnrichmentParameters_HttpParameters_QueryStringParameters { get; set; }
             public System.String EnrichmentParameters_InputTemplate { get; set; }
+            public System.String KmsKeyIdentifier { get; set; }
             public System.String CloudwatchLogsLogDestination_LogGroupArn { get; set; }
             public System.String FirehoseLogDestination_DeliveryStreamArn { get; set; }
             public List<System.String> LogConfiguration_IncludeExecutionData { get; set; }
@@ -3889,6 +4220,14 @@ namespace Amazon.PowerShell.Cmdlets.PIPES
             public System.String SqsQueueParameters_MessageDeduplicationId { get; set; }
             public System.String SqsQueueParameters_MessageGroupId { get; set; }
             public Amazon.Pipes.PipeTargetInvocationType StepFunctionStateMachineParameters_InvocationType { get; set; }
+            public List<Amazon.Pipes.Model.DimensionMapping> TimestreamParameters_DimensionMapping { get; set; }
+            public Amazon.Pipes.EpochTimeUnit TimestreamParameters_EpochTimeUnit { get; set; }
+            public List<Amazon.Pipes.Model.MultiMeasureMapping> TimestreamParameters_MultiMeasureMapping { get; set; }
+            public List<Amazon.Pipes.Model.SingleMeasureMapping> TimestreamParameters_SingleMeasureMapping { get; set; }
+            public Amazon.Pipes.TimeFieldType TimestreamParameters_TimeFieldType { get; set; }
+            public System.String TimestreamParameters_TimestampFormat { get; set; }
+            public System.String TimestreamParameters_TimeValue { get; set; }
+            public System.String TimestreamParameters_VersionValue { get; set; }
             public System.Func<Amazon.Pipes.Model.CreatePipeResponse, NewPIPESPipeCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

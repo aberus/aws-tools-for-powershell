@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
-    /// Add a parameter to the system.
+    /// Create or update a parameter in Parameter Store.
     /// </summary>
     [Cmdlet("Write", "SSMParameter", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.Int64")]
     [AWSCmdlet("Calls the AWS Systems Manager PutParameter API operation.", Operation = new[] {"PutParameter"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.PutParameterResponse))]
     [AWSCmdletOutput("System.Int64 or Amazon.SimpleSystemsManagement.Model.PutParameterResponse",
-        "This cmdlet returns a System.Int64 object.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.PutParameterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Int64 objects.",
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.PutParameterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteSSMParameterCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowedPattern
         /// <summary>
@@ -74,7 +75,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// parameters are created successfully, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-cwe.html">Setting
         /// up notifications or trigger actions based on Parameter Store events</a>. For more
         /// information about AMI format validation , see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-store-ec2-aliases.html">Native
-        /// parameter support for Amazon Machine Image (AMI) IDs</a>. </para></note>
+        /// parameter support for Amazon Machine Image IDs</a>. </para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>The Key Management Service (KMS) ID that you want to use to encrypt a parameter. Use
         /// a custom key for better security. Required for parameters that use the <c>SecureString</c>
         /// data type.</para><para>If you don't specify a key ID, the system uses the default key associated with your
-        /// Amazon Web Services account which is not as secure as using a custom key.</para><ul><li><para>To use a custom KMS key, choose the <c>SecureString</c> data type with the <c>Key
+        /// Amazon Web Services account, which is not as secure as using a custom key.</para><ul><li><para>To use a custom KMS key, choose the <c>SecureString</c> data type with the <c>Key
         /// ID</c> parameter.</para></li></ul>
         /// </para>
         /// </summary>
@@ -108,16 +109,20 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The fully qualified name of the parameter that you want to add to the system. The
-        /// fully qualified name includes the complete hierarchy of the parameter path and name.
-        /// For parameters in a hierarchy, you must include a leading forward slash character
+        /// <para>The fully qualified name of the parameter that you want to create or update.</para><note><para>You can't enter the Amazon Resource Name (ARN) for a parameter, only the parameter
+        /// name itself.</para></note><para>The fully qualified name includes the complete hierarchy of the parameter path and
+        /// name. For parameters in a hierarchy, you must include a leading forward slash character
         /// (/) when you create or reference a parameter. For example: <c>/Dev/DBServer/MySQL/db-string13</c></para><para>Naming Constraints:</para><ul><li><para>Parameter names are case sensitive.</para></li><li><para>A parameter name must be unique within an Amazon Web Services Region</para></li><li><para>A parameter name can't be prefixed with "<c>aws</c>" or "<c>ssm</c>" (case-insensitive).</para></li><li><para>Parameter names can include only the following symbols and letters: <c>a-zA-Z0-9_.-</c></para><para>In addition, the slash character ( / ) is used to delineate hierarchies in parameter
-        /// names. For example: <c>/Dev/Production/East/Project-ABC/MyParameter</c></para></li><li><para>A parameter name can't include spaces.</para></li><li><para>Parameter hierarchies are limited to a maximum depth of fifteen levels.</para></li></ul><para>For additional information about valid values for parameter names, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-su-create.html">Creating
+        /// names. For example: <c>/Dev/Production/East/Project-ABC/MyParameter</c></para></li><li><para>Parameter names can't contain spaces. The service removes any spaces specified for
+        /// the beginning or end of a parameter name. If the specified name for a parameter contains
+        /// spaces between characters, the request fails with a <c>ValidationException</c> error.</para></li><li><para>Parameter hierarchies are limited to a maximum depth of fifteen levels.</para></li></ul><para>For additional information about valid values for parameter names, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-paramstore-su-create.html">Creating
         /// Systems Manager parameters</a> in the <i>Amazon Web Services Systems Manager User
-        /// Guide</i>.</para><note><para>The maximum length constraint of 2048 characters listed below includes 1037 characters
-        /// reserved for internal use by Systems Manager. The maximum length for a parameter name
-        /// that you create is 1011 characters. This includes the characters in the ARN that precede
-        /// the name you specify, such as <c>arn:aws:ssm:us-east-2:111122223333:parameter/</c>.</para></note>
+        /// Guide</i>.</para><note><para>The reported maximum length of 2048 characters for a parameter name includes 1037
+        /// characters that are reserved for internal use by Systems Manager. The maximum length
+        /// for a parameter name that you specify is 1011 characters.</para><para>This count of 1011 characters includes the characters in the ARN that precede the
+        /// name you specify. This ARN length will vary depending on your partition and Region.
+        /// For example, the following 45 characters count toward the 1011 character maximum for
+        /// a parameter created in the US East (Ohio) Region: <c>arn:aws:ssm:us-east-2:111122223333:parameter/</c>.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -145,8 +150,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>One or more policies to apply to a parameter. This operation takes a JSON array. Parameter
-        /// Store, a capability of Amazon Web Services Systems Manager supports the following
-        /// policy types:</para><para>Expiration: This policy deletes the parameter after it expires. When you create the
+        /// Store, a tool in Amazon Web Services Systems Manager supports the following policy
+        /// types:</para><para>Expiration: This policy deletes the parameter after it expires. When you create the
         /// policy, you specify the expiration date. You can update the expiration date and time
         /// by updating the policy. Updating the <i>parameter</i> doesn't affect the expiration
         /// date and time. When the expiration time is reached, Parameter Store deletes the parameter.</para><para>ExpirationNotification: This policy initiates an event in Amazon CloudWatch Events
@@ -172,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// want to tag a Systems Manager parameter to identify the type of resource to which
         /// it applies, the environment, or the type of configuration data referenced by the parameter.
         /// In this case, you could specify the following key-value pairs:</para><ul><li><para><c>Key=Resource,Value=S3bucket</c></para></li><li><para><c>Key=OS,Value=Windows</c></para></li><li><para><c>Key=ParameterType,Value=LicenseKey</c></para></li></ul><note><para>To add tags to an existing Systems Manager parameter, use the <a>AddTagsToResource</a>
-        /// operation.</para></note>
+        /// operation.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -190,9 +199,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </para><para>Advanced parameters have a content size limit of 8 KB and can be configured to use
         /// parameter policies. You can create a maximum of 100,000 advanced parameters for each
         /// Region in an Amazon Web Services account. Advanced parameters incur a charge. For
-        /// more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-store-advanced-parameters.html">Standard
-        /// and advanced parameter tiers</a> in the <i>Amazon Web Services Systems Manager User
-        /// Guide</i>.</para><para>You can change a standard parameter to an advanced parameter any time. But you can't
+        /// more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-store-advanced-parameters.html">Managing
+        /// parameter tiers</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para><para>You can change a standard parameter to an advanced parameter any time. But you can't
         /// revert an advanced parameter to a standard parameter. Reverting an advanced parameter
         /// to a standard parameter would result in data loss because the system would truncate
         /// the size of the parameter from 8 KB to 4 KB. Reverting would also remove any policies
@@ -212,7 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// an advanced parameter are included in the request, Parameter Store create a parameter
         /// in the advanced-parameter tier.</para><para>This approach helps control your parameter-related costs by always creating standard
         /// parameters unless an advanced parameter is necessary. </para></li></ul><para>Options that require an advanced parameter include the following:</para><ul><li><para>The content size of the parameter is more than 4 KB.</para></li><li><para>The parameter uses a parameter policy.</para></li><li><para>More than 10,000 parameters already exist in your Amazon Web Services account in the
-        /// current Amazon Web Services Region.</para></li></ul><para>For more information about configuring the default tier option, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ps-default-tier.html">Specifying
+        /// current Amazon Web Services Region.</para></li></ul><para>For more information about configuring the default tier option, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/parameter-store-advanced-parameters.html#ps-default-tier">Specifying
         /// a default parameter tier</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -224,7 +232,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter Type
         /// <summary>
         /// <para>
-        /// <para>The type of parameter that you want to add to the system.</para><note><para><c>SecureString</c> isn't currently supported for CloudFormation templates.</para></note><para>Items in a <c>StringList</c> must be separated by a comma (,). You can't use other
+        /// <para>The type of parameter that you want to create.</para><note><para><c>SecureString</c> isn't currently supported for CloudFormation templates.</para></note><para>Items in a <c>StringList</c> must be separated by a comma (,). You can't use other
         /// punctuation or special character to escape items in the list. If you have a parameter
         /// value that requires a comma, then use the <c>String</c> data type.</para><important><para>Specifying a parameter type isn't required when updating a parameter. You must specify
         /// a parameter type when creating a parameter.</para></important>
@@ -240,7 +248,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>The parameter value that you want to add to the system. Standard parameters have a
         /// value limit of 4 KB. Advanced parameters have a value limit of 8 KB.</para><note><para>Parameters can't be referenced or nested in the values of other parameters. You can't
-        /// include <c>{{}}</c> or <c>{{ssm:<i>parameter-name</i>}}</c> in a parameter value.</para></note>
+        /// include values wrapped in double brackets <c>{{}}</c> or <c>{{ssm:<i>parameter-name</i>}}</c>
+        /// in a parameter value.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -265,16 +274,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "Version";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -285,9 +284,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -301,21 +304,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.PutParameterResponse, WriteSSMParameterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllowedPattern = this.AllowedPattern;
             context.DataType = this.DataType;
             context.Description = this.Description;
@@ -440,13 +433,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "PutParameter");
             try
             {
-                #if DESKTOP
-                return client.PutParameter(request);
-                #elif CORECLR
-                return client.PutParameterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutParameterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

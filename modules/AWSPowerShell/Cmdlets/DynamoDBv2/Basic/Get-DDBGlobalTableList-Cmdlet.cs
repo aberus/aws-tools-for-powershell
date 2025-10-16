@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,23 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
     /// Lists all global tables that have a replica in the specified Region.
     /// 
     ///  <important><para>
-    /// This operation only applies to <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/globaltables.V1.html">Version
-    /// 2017.11.29 (Legacy)</a> of global tables. We recommend using <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/globaltables.V2.html">Version
-    /// 2019.11.21 (Current)</a> when creating new global tables, as it provides greater flexibility,
-    /// higher efficiency and consumes less write capacity than 2017.11.29 (Legacy). To determine
-    /// which version you are using, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/globaltables.DetermineVersion.html">Determining
-    /// the version</a>. To update existing global tables from version 2017.11.29 (Legacy)
-    /// to version 2019.11.21 (Current), see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_upgrade.html">
-    /// Updating global tables</a>. 
+    /// This documentation is for version 2017.11.29 (Legacy) of global tables, which should
+    /// be avoided for new global tables. Customers should use <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GlobalTables.html">Global
+    /// Tables version 2019.11.21 (Current)</a> when possible, because it provides greater
+    /// flexibility, higher efficiency, and consumes less write capacity than 2017.11.29 (Legacy).
+    /// </para><para>
+    /// To determine which version you're using, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/globaltables.DetermineVersion.html">Determining
+    /// the global table version you are using</a>. To update existing global tables from
+    /// version 2017.11.29 (Legacy) to version 2019.11.21 (Current), see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/V2globaltables_upgrade.html">Upgrading
+    /// global tables</a>.
     /// </para></important><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "DDBGlobalTableList")]
@@ -46,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB ListGlobalTables API operation.", Operation = new[] {"ListGlobalTables"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.ListGlobalTablesResponse))]
     [AWSCmdletOutput("Amazon.DynamoDBv2.Model.GlobalTable or Amazon.DynamoDBv2.Model.ListGlobalTablesResponse",
         "This cmdlet returns a collection of Amazon.DynamoDBv2.Model.GlobalTable objects.",
-        "The service call response (type Amazon.DynamoDBv2.Model.ListGlobalTablesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.ListGlobalTablesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDDBGlobalTableListCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RegionName
         /// <summary>
@@ -70,7 +74,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-ExclusiveStartGlobalTableName $null' for the first call and '-ExclusiveStartGlobalTableName $AWSHistory.LastServiceResponse.LastEvaluatedGlobalTableName' for subsequent calls.
+        /// <br/>'ExclusiveStartGlobalTableName' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-ExclusiveStartGlobalTableName' to null for the first call then set the 'ExclusiveStartGlobalTableName' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -271,7 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.GlobalTables.Count;
+                    int _receivedThisCall = response.GlobalTables?.Count ?? 0;
                     
                     _nextToken = response.LastEvaluatedGlobalTableName;
                     _retrievedSoFar += _receivedThisCall;
@@ -320,13 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "ListGlobalTables");
             try
             {
-                #if DESKTOP
-                return client.ListGlobalTables(request);
-                #elif CORECLR
-                return client.ListGlobalTablesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListGlobalTablesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

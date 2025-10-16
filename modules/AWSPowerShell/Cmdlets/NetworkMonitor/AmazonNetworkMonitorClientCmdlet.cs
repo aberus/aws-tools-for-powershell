@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,6 +22,7 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkMonitor;
 using Amazon.NetworkMonitor.Model;
 
@@ -49,12 +50,23 @@ namespace Amazon.PowerShell.Cmdlets.CWNM
         {
             var config = this.ClientConfig ?? new AmazonNetworkMonitorConfig();
             if (region != null) config.RegionEndpoint = region;
+            if (!string.IsNullOrEmpty(ProfileName))
+            {
+                config.AWSTokenProvider = new ProfileTokenProvider(ProfileName);
+            }
             Amazon.PowerShell.Utils.Common.PopulateConfig(this, config);
             this.CustomizeClientConfig(config);
             var client = new AmazonNetworkMonitorClient(credentials, config);
             client.BeforeRequestEvent += RequestEventHandler;
             client.AfterResponseEvent += ResponseEventHandler;
             return client;
+        }
+        
+        protected override void BeginProcessing()
+        {
+            base.AWSServiceId = AmazonNetworkMonitorConfig.ServiceId.ToString();
+            
+            base.BeginProcessing();
         }
         
         protected override void ProcessRecord()

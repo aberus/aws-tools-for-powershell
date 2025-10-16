@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
@@ -41,6 +43,23 @@ namespace Amazon.PowerShell.Cmdlets.RS
     /// If you restore a cluster into a VPC, you must provide a cluster subnet group where
     /// you want the cluster restored.
     /// </para><para>
+    /// VPC Block Public Access (BPA) enables you to block resources in VPCs and subnets that
+    /// you own in a Region from reaching or being reached from the internet through internet
+    /// gateways and egress-only internet gateways. If a subnet group for a provisioned cluster
+    /// is in an account with VPC BPA turned on, the following capabilities are blocked:
+    /// </para><ul><li><para>
+    /// Creating a public cluster
+    /// </para></li><li><para>
+    /// Restoring a public cluster
+    /// </para></li><li><para>
+    /// Modifying a private cluster to be public
+    /// </para></li><li><para>
+    /// Adding a subnet with VPC BPA turned on to the subnet group when there's at least one
+    /// public cluster within the group
+    /// </para></li></ul><para>
+    /// For more information about VPC BPA, see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/security-vpc-bpa.html">Block
+    /// public access to VPCs and subnets</a> in the <i>Amazon VPC User Guide</i>.
+    /// </para><para>
     ///  For more information about working with snapshots, go to <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-snapshots.html">Amazon
     /// Redshift Snapshots</a> in the <i>Amazon Redshift Cluster Management Guide</i>.
     /// </para>
@@ -50,14 +69,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
     [AWSCmdlet("Calls the Amazon Redshift RestoreFromClusterSnapshot API operation.", Operation = new[] {"RestoreFromClusterSnapshot"}, SelectReturnType = typeof(Amazon.Redshift.Model.RestoreFromClusterSnapshotResponse))]
     [AWSCmdletOutput("Amazon.Redshift.Model.Cluster or Amazon.Redshift.Model.RestoreFromClusterSnapshotResponse",
         "This cmdlet returns an Amazon.Redshift.Model.Cluster object.",
-        "The service call response (type Amazon.Redshift.Model.RestoreFromClusterSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.RestoreFromClusterSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreRSFromClusterSnapshotCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalInfo
         /// <summary>
@@ -158,7 +176,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter ClusterSecurityGroup
         /// <summary>
         /// <para>
-        /// <para>A list of security groups to be associated with this cluster.</para><para>Default: The default cluster security group for Amazon Redshift.</para><para>Cluster security groups only apply to clusters outside of VPCs.</para>
+        /// <para>A list of security groups to be associated with this cluster.</para><para>Default: The default cluster security group for Amazon Redshift.</para><para>Cluster security groups only apply to clusters outside of VPCs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -252,7 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// to access other Amazon Web Services services. You must supply the IAM roles in their
         /// Amazon Resource Name (ARN) format. </para><para>The maximum number of IAM roles that you can associate is subject to a quota. For
         /// more information, go to <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/amazon-redshift-limits.html">Quotas
-        /// and limits</a> in the <i>Amazon Redshift Cluster Management Guide</i>.</para>
+        /// and limits</a> in the <i>Amazon Redshift Cluster Management Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -349,15 +375,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter NodeType
         /// <summary>
         /// <para>
-        /// <para>The node type that the restored cluster will be provisioned with.</para><para>Default: The node type of the cluster from which the snapshot was taken. You can modify
-        /// this if you are using any DS node type. In that case, you can choose to restore into
-        /// another DS node type of the same size. For example, you can restore ds1.8xlarge into
-        /// ds2.8xlarge, or ds1.xlarge into ds2.xlarge. If you have a DC instance type, you must
-        /// restore into that same instance type and size. In other words, you can only restore
-        /// a dc1.large instance type into another dc1.large instance type or dc2.large instance
-        /// type. You can't restore dc1.8xlarge to dc2.8xlarge. First restore to a dc1.8xlarge
-        /// cluster, then resize to a dc2.8large cluster. For more information about node types,
-        /// see <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html#rs-about-clusters-and-nodes">
+        /// <para>The node type that the restored cluster will be provisioned with.</para><para>If you have a DC instance type, you must restore into that same instance type and
+        /// size. In other words, you can only restore a dc2.large node type into another dc2
+        /// type. For more information about node types, see <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html#rs-about-clusters-and-nodes">
         /// About Clusters and Nodes</a> in the <i>Amazon Redshift Cluster Management Guide</i>.
         /// </para>
         /// </para>
@@ -391,7 +411,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter Port
         /// <summary>
         /// <para>
-        /// <para>The port number on which the cluster accepts connections.</para><para>Default: The same port as the original cluster.</para><para>Constraints: Must be between <c>1115</c> and <c>65535</c>.</para>
+        /// <para>The port number on which the cluster accepts connections.</para><para>Default: The same port as the original cluster.</para><para>Valid values: For clusters with DC2 nodes, must be within the range <c>1150</c>-<c>65535</c>.
+        /// For clusters with ra3 nodes, must be within the ranges <c>5431</c>-<c>5455</c> or
+        /// <c>8191</c>-<c>8215</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -413,7 +435,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter PubliclyAccessible
         /// <summary>
         /// <para>
-        /// <para>If <c>true</c>, the cluster can be accessed from a public network. </para>
+        /// <para>If <c>true</c>, the cluster can be accessed from a public network. </para><para>Default: false</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -488,7 +510,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of Virtual Private Cloud (VPC) security groups to be associated with the cluster.</para><para>Default: The default VPC security group is associated with the cluster.</para><para>VPC security groups only apply to clusters in VPCs.</para>
+        /// <para>A list of Virtual Private Cloud (VPC) security groups to be associated with the cluster.</para><para>Default: The default VPC security group is associated with the cluster.</para><para>VPC security groups only apply to clusters in VPCs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -507,16 +533,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -527,9 +543,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SnapshotIdentifier), MyInvocation.BoundParameters);
@@ -543,21 +563,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Redshift.Model.RestoreFromClusterSnapshotResponse, RestoreRSFromClusterSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdditionalInfo = this.AdditionalInfo;
             context.AllowVersionUpgrade = this.AllowVersionUpgrade;
             context.AquaConfigurationStatus = this.AquaConfigurationStatus;
@@ -812,13 +822,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "RestoreFromClusterSnapshot");
             try
             {
-                #if DESKTOP
-                return client.RestoreFromClusterSnapshot(request);
-                #elif CORECLR
-                return client.RestoreFromClusterSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreFromClusterSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

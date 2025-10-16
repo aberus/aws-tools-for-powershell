@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -37,6 +39,9 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     /// Kinesis. It also does not allow for any configurations on features, such as Contact
     /// Lens for Amazon Connect. 
     /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/amazon-connect-instances.html">Create
+    /// an Amazon Connect instance</a> in the <i>Amazon Connect Administrator Guide</i>.
+    /// </para><para>
     /// Amazon Connect enforces a limit on the total number of instances that you can create
     /// or delete in 30 days. If you exceed this limit, you will get an error message indicating
     /// there has been an excessive number of attempts at creating or deleting instances.
@@ -48,14 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     [OutputType("Amazon.Connect.Model.CreateInstanceResponse")]
     [AWSCmdlet("Calls the Amazon Connect Service CreateInstance API operation.", Operation = new[] {"CreateInstance"}, SelectReturnType = typeof(Amazon.Connect.Model.CreateInstanceResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.CreateInstanceResponse",
-        "This cmdlet returns an Amazon.Connect.Model.CreateInstanceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Connect.Model.CreateInstanceResponse object containing multiple properties."
     )]
     public partial class NewCONNInstanceCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DirectoryId
         /// <summary>
@@ -130,7 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>The tags used to organize, track, or control access for this resource. For example,
-        /// <c>{ "tags": {"key1":"value1", "key2":"value2"} }</c>.</para>
+        /// <c>{ "tags": {"key1":"value1", "key2":"value2"} }</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,9 +177,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -304,13 +316,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "CreateInstance");
             try
             {
-                #if DESKTOP
-                return client.CreateInstance(request);
-                #elif CORECLR
-                return client.CreateInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

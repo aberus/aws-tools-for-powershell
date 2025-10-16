@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeArtifact;
 using Amazon.CodeArtifact.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CA
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.CA
     [OutputType("Amazon.CodeArtifact.Model.CopyPackageVersionsResponse")]
     [AWSCmdlet("Calls the AWS CodeArtifact CopyPackageVersions API operation.", Operation = new[] {"CopyPackageVersions"}, SelectReturnType = typeof(Amazon.CodeArtifact.Model.CopyPackageVersionsResponse))]
     [AWSCmdletOutput("Amazon.CodeArtifact.Model.CopyPackageVersionsResponse",
-        "This cmdlet returns an Amazon.CodeArtifact.Model.CopyPackageVersionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CodeArtifact.Model.CopyPackageVersionsResponse object containing multiple properties."
     )]
     public partial class CopyCAPackageVersionCmdlet : AmazonCodeArtifactClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowOverwrite
         /// <summary>
@@ -138,10 +141,9 @@ namespace Amazon.PowerShell.Cmdlets.CA
         #region Parameter Namespace
         /// <summary>
         /// <para>
-        /// <para>The namespace of the package versions to be copied. The package version component
-        /// that specifies its namespace depends on its type. For example:</para><ul><li><para> The namespace of a Maven package version is its <c>groupId</c>. The namespace is
-        /// required when copying Maven package versions. </para></li><li><para> The namespace of an npm package version is its <c>scope</c>. </para></li><li><para> Python and NuGet package versions do not contain a corresponding component, package
-        /// versions of those formats do not have a namespace. </para></li><li><para> The namespace of a generic package is its <c>namespace</c>. </para></li></ul>
+        /// <para>The namespace of the package versions to be copied. The package component that specifies
+        /// its namespace depends on its type. For example:</para><note><para>The namespace is required when copying package versions of the following formats:</para><ul><li><para>Maven</para></li><li><para>Swift</para></li><li><para>generic</para></li></ul></note><ul><li><para> The namespace of a Maven package version is its <c>groupId</c>. </para></li><li><para> The namespace of an npm or Swift package version is its <c>scope</c>. </para></li><li><para>The namespace of a generic package is its <c>namespace</c>.</para></li><li><para> Python, NuGet, Ruby, and Cargo package versions do not contain a corresponding component,
+        /// package versions of those formats do not have a namespace. </para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -188,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.CA
         /// <para> A list of key-value pairs. The keys are package versions and the values are package
         /// version revisions. A <c>CopyPackageVersion</c> operation succeeds if the specified
         /// versions in the source repository match the specified package version revision. </para><note><para> You must specify <c>versions</c> or <c>versionRevisions</c>. You cannot specify both.
-        /// </para></note>
+        /// </para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.CA
         /// <summary>
         /// <para>
         /// <para> The versions of the package to be copied. </para><note><para> You must specify <c>versions</c> or <c>versionRevisions</c>. You cannot specify both.
-        /// </para></note>
+        /// </para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,9 +239,13 @@ namespace Amazon.PowerShell.Cmdlets.CA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Package), MyInvocation.BoundParameters);
@@ -399,13 +413,7 @@ namespace Amazon.PowerShell.Cmdlets.CA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeArtifact", "CopyPackageVersions");
             try
             {
-                #if DESKTOP
-                return client.CopyPackageVersions(request);
-                #elif CORECLR
-                return client.CopyPackageVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CopyPackageVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

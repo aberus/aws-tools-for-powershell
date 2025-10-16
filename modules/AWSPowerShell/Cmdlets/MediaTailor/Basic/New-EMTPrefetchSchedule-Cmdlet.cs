@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaTailor;
 using Amazon.MediaTailor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMT
 {
     /// <summary>
@@ -37,24 +39,72 @@ namespace Amazon.PowerShell.Cmdlets.EMT
     [OutputType("Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaTailor CreatePrefetchSchedule API operation.", Operation = new[] {"CreatePrefetchSchedule"}, SelectReturnType = typeof(Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse))]
     [AWSCmdletOutput("Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse",
-        "This cmdlet returns an Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse object containing multiple properties."
     )]
     public partial class NewEMTPrefetchScheduleCmdlet : AmazonMediaTailorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Consumption_AvailMatchingCriterion
         /// <summary>
         /// <para>
         /// <para>If you only want MediaTailor to insert prefetched ads into avails (ad breaks) that
         /// match specific dynamic variables, such as <c>scte.event_id</c>, set the avail matching
-        /// criteria.</para>
+        /// criteria.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Consumption_AvailMatchingCriteria")]
         public Amazon.MediaTailor.Model.AvailMatchingCriteria[] Consumption_AvailMatchingCriterion { get; set; }
+        #endregion
+        
+        #region Parameter RecurringConsumption_AvailMatchingCriterion
+        /// <summary>
+        /// <para>
+        /// <para>The configuration for the dynamic variables that determine which ad breaks that MediaTailor
+        /// inserts prefetched ads in.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RecurringPrefetchConfiguration_RecurringConsumption_AvailMatchingCriteria")]
+        public Amazon.MediaTailor.Model.AvailMatchingCriteria[] RecurringConsumption_AvailMatchingCriterion { get; set; }
+        #endregion
+        
+        #region Parameter RecurringRetrieval_DelayAfterAvailEndSecond
+        /// <summary>
+        /// <para>
+        /// <para>The number of seconds that MediaTailor waits after an ad avail before prefetching
+        /// ads for the next avail. If not set, the default is 0 (no delay).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RecurringPrefetchConfiguration_RecurringRetrieval_DelayAfterAvailEndSeconds")]
+        public System.Int32? RecurringRetrieval_DelayAfterAvailEndSecond { get; set; }
+        #endregion
+        
+        #region Parameter RecurringRetrieval_DynamicVariable
+        /// <summary>
+        /// <para>
+        /// <para>The dynamic variables to use for substitution during prefetch requests to the ADS.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RecurringPrefetchConfiguration_RecurringRetrieval_DynamicVariables")]
+        public System.Collections.Hashtable RecurringRetrieval_DynamicVariable { get; set; }
         #endregion
         
         #region Parameter Retrieval_DynamicVariable
@@ -64,7 +114,11 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// server (ADS).</para><para>You initially configure <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/variables.html">dynamic
         /// variables</a> for the ADS URL when you set up your playback configuration. When you
         /// specify <c>DynamicVariables</c> for prefetch retrieval, MediaTailor includes the dynamic
-        /// variables in the request to the ADS.</para>
+        /// variables in the request to the ADS.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,14 +135,19 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// call <c>DeletePrefetchSchedule</c>.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.DateTime? Consumption_EndTime { get; set; }
+        #endregion
+        
+        #region Parameter RecurringPrefetchConfiguration_EndTime
+        /// <summary>
+        /// <para>
+        /// <para>The end time for the window that MediaTailor prefetches and inserts ads in a live
+        /// event. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.DateTime? RecurringPrefetchConfiguration_EndTime { get; set; }
         #endregion
         
         #region Parameter Retrieval_EndTime
@@ -98,13 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// for manifest requests that occur at or before this time.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.DateTime? Retrieval_EndTime { get; set; }
         #endregion
         
@@ -125,6 +178,54 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers
+        /// <summary>
+        /// <para>
+        /// <para>The expected peak number of concurrent viewers for your content. MediaTailor uses
+        /// this value along with peak TPS to determine how to distribute prefetch requests across
+        /// the available capacity without exceeding your ADS limits.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers { get; set; }
+        #endregion
+        
+        #region Parameter Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers
+        /// <summary>
+        /// <para>
+        /// <para>The expected peak number of concurrent viewers for your content. MediaTailor uses
+        /// this value along with peak TPS to determine how to distribute prefetch requests across
+        /// the available capacity without exceeding your ADS limits.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers { get; set; }
+        #endregion
+        
+        #region Parameter RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of transactions per second (TPS) that your ad decision server (ADS)
+        /// can handle. MediaTailor uses this value along with concurrent users and headroom multiplier
+        /// to calculate optimal traffic distribution and prevent ADS overload.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps { get; set; }
+        #endregion
+        
+        #region Parameter Retrieval_TrafficShapingTpsConfiguration_PeakTps
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of transactions per second (TPS) that your ad decision server (ADS)
+        /// can handle. MediaTailor uses this value along with concurrent users and headroom multiplier
+        /// to calculate optimal traffic distribution and prevent ADS overload.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? Retrieval_TrafficShapingTpsConfiguration_PeakTps { get; set; }
+        #endregion
+        
         #region Parameter PlaybackConfigurationName
         /// <summary>
         /// <para>
@@ -142,16 +243,76 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public System.String PlaybackConfigurationName { get; set; }
         #endregion
         
+        #region Parameter RecurringTrafficShaping_WindowDurationSeconds
+        /// <summary>
+        /// <para>
+        /// <para>The amount of time, in seconds, that MediaTailor spreads prefetch requests to the
+        /// ADS. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow_RetrievalWindowDurationSeconds","RecurringTrafficShaping_RetrievalWindowDurationSeconds")]
+        public System.Int32? RecurringTrafficShaping_WindowDurationSeconds { get; set; }
+        #endregion
+        
+        #region Parameter TrafficShaping_WindowDurationSeconds
+        /// <summary>
+        /// <para>
+        /// <para>The amount of time, in seconds, that MediaTailor spreads prefetch requests to the
+        /// ADS. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Retrieval_TrafficShapingRetrievalWindow_RetrievalWindowDurationSeconds","TrafficShaping_RetrievalWindowDurationSeconds")]
+        public System.Int32? TrafficShaping_WindowDurationSeconds { get; set; }
+        #endregion
+        
+        #region Parameter RecurringConsumption_RetrievedAdExpirationSecond
+        /// <summary>
+        /// <para>
+        /// <para>The number of seconds that an ad is available for insertion after it was prefetched.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RecurringPrefetchConfiguration_RecurringConsumption_RetrievedAdExpirationSeconds")]
+        public System.Int32? RecurringConsumption_RetrievedAdExpirationSecond { get; set; }
+        #endregion
+        
+        #region Parameter ScheduleType
+        /// <summary>
+        /// <para>
+        /// <para>The frequency that MediaTailor creates prefetch schedules. <c>SINGLE</c> indicates
+        /// that this schedule applies to one ad break. <c>RECURRING</c> indicates that MediaTailor
+        /// automatically creates a schedule for each ad avail in a live event.</para><para>For more information about the prefetch types and when you might use each, see <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/prefetching-ads.html">Prefetching
+        /// ads in Elemental MediaTailor.</a></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaTailor.PrefetchScheduleType")]
+        public Amazon.MediaTailor.PrefetchScheduleType ScheduleType { get; set; }
+        #endregion
+        
         #region Parameter Consumption_StartTime
         /// <summary>
         /// <para>
         /// <para>The time when prefetched ads are considered for use in an ad break. If you don't specify
-        /// <c>StartTime</c>, the prefetched ads are available after MediaTailor retrives them
+        /// <c>StartTime</c>, the prefetched ads are available after MediaTailor retrieves them
         /// from the ad decision server.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.DateTime? Consumption_StartTime { get; set; }
+        #endregion
+        
+        #region Parameter RecurringPrefetchConfiguration_StartTime
+        /// <summary>
+        /// <para>
+        /// <para>The start time for the window that MediaTailor prefetches and inserts ads in a live
+        /// event. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.DateTime? RecurringPrefetchConfiguration_StartTime { get; set; }
         #endregion
         
         #region Parameter Retrieval_StartTime
@@ -180,6 +341,31 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public System.String StreamId { get; set; }
         #endregion
         
+        #region Parameter RecurringRetrieval_TrafficShapingType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the type of traffic shaping used for traffic shaping and limiting the number
+        /// of requests to the ADS at one time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingType")]
+        [AWSConstantClassSource("Amazon.MediaTailor.TrafficShapingType")]
+        public Amazon.MediaTailor.TrafficShapingType RecurringRetrieval_TrafficShapingType { get; set; }
+        #endregion
+        
+        #region Parameter Retrieval_TrafficShapingType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the type of traffic shaping used for prefetch traffic shaping and limiting
+        /// the number of requests to the ADS at one time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaTailor.TrafficShapingType")]
+        public Amazon.MediaTailor.TrafficShapingType Retrieval_TrafficShapingType { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -189,16 +375,6 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -211,9 +387,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -227,32 +407,16 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse, NewEMTPrefetchScheduleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Consumption_AvailMatchingCriterion != null)
             {
                 context.Consumption_AvailMatchingCriterion = new List<Amazon.MediaTailor.Model.AvailMatchingCriteria>(this.Consumption_AvailMatchingCriterion);
             }
             context.Consumption_EndTime = this.Consumption_EndTime;
-            #if MODULAR
-            if (this.Consumption_EndTime == null && ParameterWasBound(nameof(this.Consumption_EndTime)))
-            {
-                WriteWarning("You are passing $null as a value for parameter Consumption_EndTime which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.Consumption_StartTime = this.Consumption_StartTime;
             context.Name = this.Name;
             #if MODULAR
@@ -268,6 +432,26 @@ namespace Amazon.PowerShell.Cmdlets.EMT
                 WriteWarning("You are passing $null as a value for parameter PlaybackConfigurationName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.RecurringPrefetchConfiguration_EndTime = this.RecurringPrefetchConfiguration_EndTime;
+            if (this.RecurringConsumption_AvailMatchingCriterion != null)
+            {
+                context.RecurringConsumption_AvailMatchingCriterion = new List<Amazon.MediaTailor.Model.AvailMatchingCriteria>(this.RecurringConsumption_AvailMatchingCriterion);
+            }
+            context.RecurringConsumption_RetrievedAdExpirationSecond = this.RecurringConsumption_RetrievedAdExpirationSecond;
+            context.RecurringRetrieval_DelayAfterAvailEndSecond = this.RecurringRetrieval_DelayAfterAvailEndSecond;
+            if (this.RecurringRetrieval_DynamicVariable != null)
+            {
+                context.RecurringRetrieval_DynamicVariable = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.RecurringRetrieval_DynamicVariable.Keys)
+                {
+                    context.RecurringRetrieval_DynamicVariable.Add((String)hashKey, (System.String)(this.RecurringRetrieval_DynamicVariable[hashKey]));
+                }
+            }
+            context.RecurringTrafficShaping_WindowDurationSeconds = this.RecurringTrafficShaping_WindowDurationSeconds;
+            context.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers = this.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers;
+            context.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps = this.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps;
+            context.RecurringRetrieval_TrafficShapingType = this.RecurringRetrieval_TrafficShapingType;
+            context.RecurringPrefetchConfiguration_StartTime = this.RecurringPrefetchConfiguration_StartTime;
             if (this.Retrieval_DynamicVariable != null)
             {
                 context.Retrieval_DynamicVariable = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -277,13 +461,12 @@ namespace Amazon.PowerShell.Cmdlets.EMT
                 }
             }
             context.Retrieval_EndTime = this.Retrieval_EndTime;
-            #if MODULAR
-            if (this.Retrieval_EndTime == null && ParameterWasBound(nameof(this.Retrieval_EndTime)))
-            {
-                WriteWarning("You are passing $null as a value for parameter Retrieval_EndTime which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.Retrieval_StartTime = this.Retrieval_StartTime;
+            context.TrafficShaping_WindowDurationSeconds = this.TrafficShaping_WindowDurationSeconds;
+            context.Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers = this.Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers;
+            context.Retrieval_TrafficShapingTpsConfiguration_PeakTps = this.Retrieval_TrafficShapingTpsConfiguration_PeakTps;
+            context.Retrieval_TrafficShapingType = this.Retrieval_TrafficShapingType;
+            context.ScheduleType = this.ScheduleType;
             context.StreamId = this.StreamId;
             
             // allow further manipulation of loaded context prior to processing
@@ -349,6 +532,175 @@ namespace Amazon.PowerShell.Cmdlets.EMT
                 request.PlaybackConfigurationName = cmdletContext.PlaybackConfigurationName;
             }
             
+             // populate RecurringPrefetchConfiguration
+            var requestRecurringPrefetchConfigurationIsNull = true;
+            request.RecurringPrefetchConfiguration = new Amazon.MediaTailor.Model.RecurringPrefetchConfiguration();
+            System.DateTime? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_EndTime = null;
+            if (cmdletContext.RecurringPrefetchConfiguration_EndTime != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_EndTime = cmdletContext.RecurringPrefetchConfiguration_EndTime.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_EndTime != null)
+            {
+                request.RecurringPrefetchConfiguration.EndTime = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_EndTime.Value;
+                requestRecurringPrefetchConfigurationIsNull = false;
+            }
+            System.DateTime? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_StartTime = null;
+            if (cmdletContext.RecurringPrefetchConfiguration_StartTime != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_StartTime = cmdletContext.RecurringPrefetchConfiguration_StartTime.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_StartTime != null)
+            {
+                request.RecurringPrefetchConfiguration.StartTime = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_StartTime.Value;
+                requestRecurringPrefetchConfigurationIsNull = false;
+            }
+            Amazon.MediaTailor.Model.RecurringConsumption requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption = null;
+            
+             // populate RecurringConsumption
+            var requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumptionIsNull = true;
+            requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption = new Amazon.MediaTailor.Model.RecurringConsumption();
+            List<Amazon.MediaTailor.Model.AvailMatchingCriteria> requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_AvailMatchingCriterion = null;
+            if (cmdletContext.RecurringConsumption_AvailMatchingCriterion != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_AvailMatchingCriterion = cmdletContext.RecurringConsumption_AvailMatchingCriterion;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_AvailMatchingCriterion != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption.AvailMatchingCriteria = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_AvailMatchingCriterion;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumptionIsNull = false;
+            }
+            System.Int32? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_RetrievedAdExpirationSecond = null;
+            if (cmdletContext.RecurringConsumption_RetrievedAdExpirationSecond != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_RetrievedAdExpirationSecond = cmdletContext.RecurringConsumption_RetrievedAdExpirationSecond.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_RetrievedAdExpirationSecond != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption.RetrievedAdExpirationSeconds = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption_recurringConsumption_RetrievedAdExpirationSecond.Value;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumptionIsNull = false;
+            }
+             // determine if requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption should be set to null
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumptionIsNull)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption = null;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption != null)
+            {
+                request.RecurringPrefetchConfiguration.RecurringConsumption = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringConsumption;
+                requestRecurringPrefetchConfigurationIsNull = false;
+            }
+            Amazon.MediaTailor.Model.RecurringRetrieval requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval = null;
+            
+             // populate RecurringRetrieval
+            var requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull = true;
+            requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval = new Amazon.MediaTailor.Model.RecurringRetrieval();
+            System.Int32? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DelayAfterAvailEndSecond = null;
+            if (cmdletContext.RecurringRetrieval_DelayAfterAvailEndSecond != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DelayAfterAvailEndSecond = cmdletContext.RecurringRetrieval_DelayAfterAvailEndSecond.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DelayAfterAvailEndSecond != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval.DelayAfterAvailEndSeconds = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DelayAfterAvailEndSecond.Value;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull = false;
+            }
+            Dictionary<System.String, System.String> requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DynamicVariable = null;
+            if (cmdletContext.RecurringRetrieval_DynamicVariable != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DynamicVariable = cmdletContext.RecurringRetrieval_DynamicVariable;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DynamicVariable != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval.DynamicVariables = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_DynamicVariable;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull = false;
+            }
+            Amazon.MediaTailor.TrafficShapingType requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_TrafficShapingType = null;
+            if (cmdletContext.RecurringRetrieval_TrafficShapingType != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_TrafficShapingType = cmdletContext.RecurringRetrieval_TrafficShapingType;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_TrafficShapingType != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval.TrafficShapingType = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringRetrieval_TrafficShapingType;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull = false;
+            }
+            Amazon.MediaTailor.Model.TrafficShapingRetrievalWindow requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow = null;
+            
+             // populate TrafficShapingRetrievalWindow
+            var requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindowIsNull = true;
+            requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow = new Amazon.MediaTailor.Model.TrafficShapingRetrievalWindow();
+            System.Int32? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow_recurringTrafficShaping_WindowDurationSeconds = null;
+            if (cmdletContext.RecurringTrafficShaping_WindowDurationSeconds != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow_recurringTrafficShaping_WindowDurationSeconds = cmdletContext.RecurringTrafficShaping_WindowDurationSeconds.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow_recurringTrafficShaping_WindowDurationSeconds != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow.RetrievalWindowDurationSeconds = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow_recurringTrafficShaping_WindowDurationSeconds.Value;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindowIsNull = false;
+            }
+             // determine if requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow should be set to null
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindowIsNull)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow = null;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval.TrafficShapingRetrievalWindow = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingRetrievalWindow;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull = false;
+            }
+            Amazon.MediaTailor.Model.TrafficShapingTpsConfiguration requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration = null;
+            
+             // populate TrafficShapingTpsConfiguration
+            var requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfigurationIsNull = true;
+            requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration = new Amazon.MediaTailor.Model.TrafficShapingTpsConfiguration();
+            System.Int32? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers = null;
+            if (cmdletContext.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers = cmdletContext.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration.PeakConcurrentUsers = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers.Value;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfigurationIsNull = false;
+            }
+            System.Int32? requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps = null;
+            if (cmdletContext.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps = cmdletContext.RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps.Value;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration.PeakTps = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps.Value;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfigurationIsNull = false;
+            }
+             // determine if requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration should be set to null
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfigurationIsNull)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration = null;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration != null)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval.TrafficShapingTpsConfiguration = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval_recurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration;
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull = false;
+            }
+             // determine if requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval should be set to null
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrievalIsNull)
+            {
+                requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval = null;
+            }
+            if (requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval != null)
+            {
+                request.RecurringPrefetchConfiguration.RecurringRetrieval = requestRecurringPrefetchConfiguration_recurringPrefetchConfiguration_RecurringRetrieval;
+                requestRecurringPrefetchConfigurationIsNull = false;
+            }
+             // determine if request.RecurringPrefetchConfiguration should be set to null
+            if (requestRecurringPrefetchConfigurationIsNull)
+            {
+                request.RecurringPrefetchConfiguration = null;
+            }
+            
              // populate Retrieval
             var requestRetrievalIsNull = true;
             request.Retrieval = new Amazon.MediaTailor.Model.PrefetchRetrieval();
@@ -382,10 +734,84 @@ namespace Amazon.PowerShell.Cmdlets.EMT
                 request.Retrieval.StartTime = requestRetrieval_retrieval_StartTime.Value;
                 requestRetrievalIsNull = false;
             }
+            Amazon.MediaTailor.TrafficShapingType requestRetrieval_retrieval_TrafficShapingType = null;
+            if (cmdletContext.Retrieval_TrafficShapingType != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingType = cmdletContext.Retrieval_TrafficShapingType;
+            }
+            if (requestRetrieval_retrieval_TrafficShapingType != null)
+            {
+                request.Retrieval.TrafficShapingType = requestRetrieval_retrieval_TrafficShapingType;
+                requestRetrievalIsNull = false;
+            }
+            Amazon.MediaTailor.Model.TrafficShapingRetrievalWindow requestRetrieval_retrieval_TrafficShapingRetrievalWindow = null;
+            
+             // populate TrafficShapingRetrievalWindow
+            var requestRetrieval_retrieval_TrafficShapingRetrievalWindowIsNull = true;
+            requestRetrieval_retrieval_TrafficShapingRetrievalWindow = new Amazon.MediaTailor.Model.TrafficShapingRetrievalWindow();
+            System.Int32? requestRetrieval_retrieval_TrafficShapingRetrievalWindow_trafficShaping_WindowDurationSeconds = null;
+            if (cmdletContext.TrafficShaping_WindowDurationSeconds != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingRetrievalWindow_trafficShaping_WindowDurationSeconds = cmdletContext.TrafficShaping_WindowDurationSeconds.Value;
+            }
+            if (requestRetrieval_retrieval_TrafficShapingRetrievalWindow_trafficShaping_WindowDurationSeconds != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingRetrievalWindow.RetrievalWindowDurationSeconds = requestRetrieval_retrieval_TrafficShapingRetrievalWindow_trafficShaping_WindowDurationSeconds.Value;
+                requestRetrieval_retrieval_TrafficShapingRetrievalWindowIsNull = false;
+            }
+             // determine if requestRetrieval_retrieval_TrafficShapingRetrievalWindow should be set to null
+            if (requestRetrieval_retrieval_TrafficShapingRetrievalWindowIsNull)
+            {
+                requestRetrieval_retrieval_TrafficShapingRetrievalWindow = null;
+            }
+            if (requestRetrieval_retrieval_TrafficShapingRetrievalWindow != null)
+            {
+                request.Retrieval.TrafficShapingRetrievalWindow = requestRetrieval_retrieval_TrafficShapingRetrievalWindow;
+                requestRetrievalIsNull = false;
+            }
+            Amazon.MediaTailor.Model.TrafficShapingTpsConfiguration requestRetrieval_retrieval_TrafficShapingTpsConfiguration = null;
+            
+             // populate TrafficShapingTpsConfiguration
+            var requestRetrieval_retrieval_TrafficShapingTpsConfigurationIsNull = true;
+            requestRetrieval_retrieval_TrafficShapingTpsConfiguration = new Amazon.MediaTailor.Model.TrafficShapingTpsConfiguration();
+            System.Int32? requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers = null;
+            if (cmdletContext.Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers = cmdletContext.Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers.Value;
+            }
+            if (requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingTpsConfiguration.PeakConcurrentUsers = requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers.Value;
+                requestRetrieval_retrieval_TrafficShapingTpsConfigurationIsNull = false;
+            }
+            System.Int32? requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakTps = null;
+            if (cmdletContext.Retrieval_TrafficShapingTpsConfiguration_PeakTps != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakTps = cmdletContext.Retrieval_TrafficShapingTpsConfiguration_PeakTps.Value;
+            }
+            if (requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakTps != null)
+            {
+                requestRetrieval_retrieval_TrafficShapingTpsConfiguration.PeakTps = requestRetrieval_retrieval_TrafficShapingTpsConfiguration_retrieval_TrafficShapingTpsConfiguration_PeakTps.Value;
+                requestRetrieval_retrieval_TrafficShapingTpsConfigurationIsNull = false;
+            }
+             // determine if requestRetrieval_retrieval_TrafficShapingTpsConfiguration should be set to null
+            if (requestRetrieval_retrieval_TrafficShapingTpsConfigurationIsNull)
+            {
+                requestRetrieval_retrieval_TrafficShapingTpsConfiguration = null;
+            }
+            if (requestRetrieval_retrieval_TrafficShapingTpsConfiguration != null)
+            {
+                request.Retrieval.TrafficShapingTpsConfiguration = requestRetrieval_retrieval_TrafficShapingTpsConfiguration;
+                requestRetrievalIsNull = false;
+            }
              // determine if request.Retrieval should be set to null
             if (requestRetrievalIsNull)
             {
                 request.Retrieval = null;
+            }
+            if (cmdletContext.ScheduleType != null)
+            {
+                request.ScheduleType = cmdletContext.ScheduleType;
             }
             if (cmdletContext.StreamId != null)
             {
@@ -429,13 +855,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaTailor", "CreatePrefetchSchedule");
             try
             {
-                #if DESKTOP
-                return client.CreatePrefetchSchedule(request);
-                #elif CORECLR
-                return client.CreatePrefetchScheduleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePrefetchScheduleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -457,9 +877,24 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             public System.DateTime? Consumption_StartTime { get; set; }
             public System.String Name { get; set; }
             public System.String PlaybackConfigurationName { get; set; }
+            public System.DateTime? RecurringPrefetchConfiguration_EndTime { get; set; }
+            public List<Amazon.MediaTailor.Model.AvailMatchingCriteria> RecurringConsumption_AvailMatchingCriterion { get; set; }
+            public System.Int32? RecurringConsumption_RetrievedAdExpirationSecond { get; set; }
+            public System.Int32? RecurringRetrieval_DelayAfterAvailEndSecond { get; set; }
+            public Dictionary<System.String, System.String> RecurringRetrieval_DynamicVariable { get; set; }
+            public System.Int32? RecurringTrafficShaping_WindowDurationSeconds { get; set; }
+            public System.Int32? RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers { get; set; }
+            public System.Int32? RecurringPrefetchConfiguration_RecurringRetrieval_TrafficShapingTpsConfiguration_PeakTps { get; set; }
+            public Amazon.MediaTailor.TrafficShapingType RecurringRetrieval_TrafficShapingType { get; set; }
+            public System.DateTime? RecurringPrefetchConfiguration_StartTime { get; set; }
             public Dictionary<System.String, System.String> Retrieval_DynamicVariable { get; set; }
             public System.DateTime? Retrieval_EndTime { get; set; }
             public System.DateTime? Retrieval_StartTime { get; set; }
+            public System.Int32? TrafficShaping_WindowDurationSeconds { get; set; }
+            public System.Int32? Retrieval_TrafficShapingTpsConfiguration_PeakConcurrentUsers { get; set; }
+            public System.Int32? Retrieval_TrafficShapingTpsConfiguration_PeakTps { get; set; }
+            public Amazon.MediaTailor.TrafficShapingType Retrieval_TrafficShapingType { get; set; }
+            public Amazon.MediaTailor.PrefetchScheduleType ScheduleType { get; set; }
             public System.String StreamId { get; set; }
             public System.Func<Amazon.MediaTailor.Model.CreatePrefetchScheduleResponse, NewEMTPrefetchScheduleCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

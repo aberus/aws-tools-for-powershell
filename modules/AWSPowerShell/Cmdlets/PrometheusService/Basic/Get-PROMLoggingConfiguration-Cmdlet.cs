@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PrometheusService;
 using Amazon.PrometheusService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PROM
 {
     /// <summary>
-    /// Describes logging configuration.
+    /// Returns complete information about the current rules and alerting logging configuration
+    /// of the workspace.
+    /// 
+    ///  <note><para>
+    /// These logging configurations are only for rules and alerting logs.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Get", "PROMLoggingConfiguration")]
     [OutputType("Amazon.PrometheusService.Model.LoggingConfigurationMetadata")]
     [AWSCmdlet("Calls the Amazon Prometheus Service DescribeLoggingConfiguration API operation.", Operation = new[] {"DescribeLoggingConfiguration"}, SelectReturnType = typeof(Amazon.PrometheusService.Model.DescribeLoggingConfigurationResponse))]
     [AWSCmdletOutput("Amazon.PrometheusService.Model.LoggingConfigurationMetadata or Amazon.PrometheusService.Model.DescribeLoggingConfigurationResponse",
         "This cmdlet returns an Amazon.PrometheusService.Model.LoggingConfigurationMetadata object.",
-        "The service call response (type Amazon.PrometheusService.Model.DescribeLoggingConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PrometheusService.Model.DescribeLoggingConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetPROMLoggingConfigurationCmdlet : AmazonPrometheusServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WorkspaceId
         /// <summary>
         /// <para>
-        /// <para>The ID of the workspace to vend logs to.</para>
+        /// <para>The ID of the workspace to describe the logging configuration for.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -70,19 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         public string Select { get; set; } = "LoggingConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkspaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkspaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkspaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.PROM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PrometheusService.Model.DescribeLoggingConfigurationResponse, GetPROMLoggingConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkspaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.WorkspaceId = this.WorkspaceId;
             #if MODULAR
             if (this.WorkspaceId == null && ParameterWasBound(nameof(this.WorkspaceId)))
@@ -170,13 +162,7 @@ namespace Amazon.PowerShell.Cmdlets.PROM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Prometheus Service", "DescribeLoggingConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DescribeLoggingConfiguration(request);
-                #elif CORECLR
-                return client.DescribeLoggingConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeLoggingConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

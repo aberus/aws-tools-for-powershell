@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
@@ -38,12 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
     [AWSCmdlet("Calls the Amazon GuardDuty CreateFilter API operation.", Operation = new[] {"CreateFilter"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.CreateFilterResponse))]
     [AWSCmdletOutput("System.String or Amazon.GuardDuty.Model.CreateFilterResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GuardDuty.Model.CreateFilterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GuardDuty.Model.CreateFilterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGDFilterCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
@@ -72,8 +75,10 @@ namespace Amazon.PowerShell.Cmdlets.GD
         #region Parameter DetectorId
         /// <summary>
         /// <para>
-        /// <para>The ID of the detector belonging to the GuardDuty account that you want to create
-        /// a filter for.</para>
+        /// <para>The detector ID associated with the GuardDuty account for which you want to create
+        /// a filter.</para><para>To find the <c>detectorId</c> in the current Region, see the Settings page in the
+        /// GuardDuty console, or run the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_ListDetectors.html">ListDetectors</a>
+        /// API.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -92,9 +97,9 @@ namespace Amazon.PowerShell.Cmdlets.GD
         /// <para>
         /// <para>Represents the criteria to be used in the filter for querying findings.</para><para>You can only use the following attributes to query findings:</para><ul><li><para>accountId</para></li><li><para>id</para></li><li><para>region</para></li><li><para>severity</para><para>To filter on the basis of severity, the API and CLI use the following input list for
         /// the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_FindingCriteria.html">FindingCriteria</a>
-        /// condition:</para><ul><li><para><b>Low</b>: <c>["1", "2", "3"]</c></para></li><li><para><b>Medium</b>: <c>["4", "5", "6"]</c></para></li><li><para><b>High</b>: <c>["7", "8", "9"]</c></para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings.html#guardduty_findings-severity">Severity
-        /// levels for GuardDuty findings</a>.</para></li><li><para>type</para></li><li><para>updatedAt</para><para>Type: ISO 8601 string format: YYYY-MM-DDTHH:MM:SS.SSSZ or YYYY-MM-DDTHH:MM:SSZ depending
-        /// on whether the value contains milliseconds.</para></li><li><para>resource.accessKeyDetails.accessKeyId</para></li><li><para>resource.accessKeyDetails.principalId</para></li><li><para>resource.accessKeyDetails.userName</para></li><li><para>resource.accessKeyDetails.userType</para></li><li><para>resource.instanceDetails.iamInstanceProfile.id</para></li><li><para>resource.instanceDetails.imageId</para></li><li><para>resource.instanceDetails.instanceId</para></li><li><para>resource.instanceDetails.tags.key</para></li><li><para>resource.instanceDetails.tags.value</para></li><li><para>resource.instanceDetails.networkInterfaces.ipv6Addresses</para></li><li><para>resource.instanceDetails.networkInterfaces.privateIpAddresses.privateIpAddress</para></li><li><para>resource.instanceDetails.networkInterfaces.publicDnsName</para></li><li><para>resource.instanceDetails.networkInterfaces.publicIp</para></li><li><para>resource.instanceDetails.networkInterfaces.securityGroups.groupId</para></li><li><para>resource.instanceDetails.networkInterfaces.securityGroups.groupName</para></li><li><para>resource.instanceDetails.networkInterfaces.subnetId</para></li><li><para>resource.instanceDetails.networkInterfaces.vpcId</para></li><li><para>resource.instanceDetails.outpostArn</para></li><li><para>resource.resourceType</para></li><li><para>resource.s3BucketDetails.publicAccess.effectivePermissions</para></li><li><para>resource.s3BucketDetails.name</para></li><li><para>resource.s3BucketDetails.tags.key</para></li><li><para>resource.s3BucketDetails.tags.value</para></li><li><para>resource.s3BucketDetails.type</para></li><li><para>service.action.actionType</para></li><li><para>service.action.awsApiCallAction.api</para></li><li><para>service.action.awsApiCallAction.callerType</para></li><li><para>service.action.awsApiCallAction.errorCode</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.city.cityName</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.country.countryName</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.organization.asnOrg</para></li><li><para>service.action.awsApiCallAction.serviceName</para></li><li><para>service.action.dnsRequestAction.domain</para></li><li><para>service.action.dnsRequestAction.domainWithSuffix</para></li><li><para>service.action.networkConnectionAction.blocked</para></li><li><para>service.action.networkConnectionAction.connectionDirection</para></li><li><para>service.action.networkConnectionAction.localPortDetails.port</para></li><li><para>service.action.networkConnectionAction.protocol</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.city.cityName</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.country.countryName</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.organization.asnOrg</para></li><li><para>service.action.networkConnectionAction.remotePortDetails.port</para></li><li><para>service.action.awsApiCallAction.remoteAccountDetails.affiliated</para></li><li><para>service.action.kubernetesApiCallAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.kubernetesApiCallAction.namespace</para></li><li><para>service.action.kubernetesApiCallAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.kubernetesApiCallAction.requestUri</para></li><li><para>service.action.kubernetesApiCallAction.statusCode</para></li><li><para>service.action.networkConnectionAction.localIpDetails.ipAddressV4</para></li><li><para>service.action.networkConnectionAction.protocol</para></li><li><para>service.action.awsApiCallAction.serviceName</para></li><li><para>service.action.awsApiCallAction.remoteAccountDetails.accountId</para></li><li><para>service.additionalInfo.threatListName</para></li><li><para>service.resourceRole</para></li><li><para>resource.eksClusterDetails.name</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.name</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.namespace</para></li><li><para>resource.kubernetesDetails.kubernetesUserDetails.username</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.containers.image</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.containers.imagePrefix</para></li><li><para>service.ebsVolumeScanDetails.scanId</para></li><li><para>service.ebsVolumeScanDetails.scanDetections.threatDetectedByName.threatNames.name</para></li><li><para>service.ebsVolumeScanDetails.scanDetections.threatDetectedByName.threatNames.severity</para></li><li><para>service.ebsVolumeScanDetails.scanDetections.threatDetectedByName.threatNames.filePaths.hash</para></li><li><para>resource.ecsClusterDetails.name</para></li><li><para>resource.ecsClusterDetails.taskDetails.containers.image</para></li><li><para>resource.ecsClusterDetails.taskDetails.definitionArn</para></li><li><para>resource.containerDetails.image</para></li><li><para>resource.rdsDbInstanceDetails.dbInstanceIdentifier</para></li><li><para>resource.rdsDbInstanceDetails.dbClusterIdentifier</para></li><li><para>resource.rdsDbInstanceDetails.engine</para></li><li><para>resource.rdsDbUserDetails.user</para></li><li><para>resource.rdsDbInstanceDetails.tags.key</para></li><li><para>resource.rdsDbInstanceDetails.tags.value</para></li><li><para>service.runtimeDetails.process.executableSha256</para></li><li><para>service.runtimeDetails.process.name</para></li><li><para>service.runtimeDetails.process.name</para></li><li><para>resource.lambdaDetails.functionName</para></li><li><para>resource.lambdaDetails.functionArn</para></li><li><para>resource.lambdaDetails.tags.key</para></li><li><para>resource.lambdaDetails.tags.value</para></li></ul>
+        /// condition:</para><ul><li><para><b>Low</b>: <c>["1", "2", "3"]</c></para></li><li><para><b>Medium</b>: <c>["4", "5", "6"]</c></para></li><li><para><b>High</b>: <c>["7", "8"]</c></para></li><li><para><b>Critical</b>: <c>["9", "10"]</c></para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings-severity.html">Findings
+        /// severity levels</a> in the <i>Amazon GuardDuty User Guide</i>.</para></li><li><para>type</para></li><li><para>updatedAt</para><para>Type: ISO 8601 string format: YYYY-MM-DDTHH:MM:SS.SSSZ or YYYY-MM-DDTHH:MM:SSZ depending
+        /// on whether the value contains milliseconds.</para></li><li><para>resource.accessKeyDetails.accessKeyId</para></li><li><para>resource.accessKeyDetails.principalId</para></li><li><para>resource.accessKeyDetails.userName</para></li><li><para>resource.accessKeyDetails.userType</para></li><li><para>resource.instanceDetails.iamInstanceProfile.id</para></li><li><para>resource.instanceDetails.imageId</para></li><li><para>resource.instanceDetails.instanceId</para></li><li><para>resource.instanceDetails.tags.key</para></li><li><para>resource.instanceDetails.tags.value</para></li><li><para>resource.instanceDetails.networkInterfaces.ipv6Addresses</para></li><li><para>resource.instanceDetails.networkInterfaces.privateIpAddresses.privateIpAddress</para></li><li><para>resource.instanceDetails.networkInterfaces.publicDnsName</para></li><li><para>resource.instanceDetails.networkInterfaces.publicIp</para></li><li><para>resource.instanceDetails.networkInterfaces.securityGroups.groupId</para></li><li><para>resource.instanceDetails.networkInterfaces.securityGroups.groupName</para></li><li><para>resource.instanceDetails.networkInterfaces.subnetId</para></li><li><para>resource.instanceDetails.networkInterfaces.vpcId</para></li><li><para>resource.instanceDetails.outpostArn</para></li><li><para>resource.resourceType</para></li><li><para>resource.s3BucketDetails.publicAccess.effectivePermissions</para></li><li><para>resource.s3BucketDetails.name</para></li><li><para>resource.s3BucketDetails.tags.key</para></li><li><para>resource.s3BucketDetails.tags.value</para></li><li><para>resource.s3BucketDetails.type</para></li><li><para>service.action.actionType</para></li><li><para>service.action.awsApiCallAction.api</para></li><li><para>service.action.awsApiCallAction.callerType</para></li><li><para>service.action.awsApiCallAction.errorCode</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.city.cityName</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.country.countryName</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.ipAddressV6</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.awsApiCallAction.remoteIpDetails.organization.asnOrg</para></li><li><para>service.action.awsApiCallAction.serviceName</para></li><li><para>service.action.dnsRequestAction.domain</para></li><li><para>service.action.dnsRequestAction.domainWithSuffix</para></li><li><para>service.action.dnsRequestAction.vpcOwnerAccountId</para></li><li><para>service.action.networkConnectionAction.blocked</para></li><li><para>service.action.networkConnectionAction.connectionDirection</para></li><li><para>service.action.networkConnectionAction.localPortDetails.port</para></li><li><para>service.action.networkConnectionAction.protocol</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.city.cityName</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.country.countryName</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.ipAddressV6</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.networkConnectionAction.remoteIpDetails.organization.asnOrg</para></li><li><para>service.action.networkConnectionAction.remotePortDetails.port</para></li><li><para>service.action.awsApiCallAction.remoteAccountDetails.affiliated</para></li><li><para>service.action.kubernetesApiCallAction.remoteIpDetails.ipAddressV4</para></li><li><para>service.action.kubernetesApiCallAction.remoteIpDetails.ipAddressV6</para></li><li><para>service.action.kubernetesApiCallAction.namespace</para></li><li><para>service.action.kubernetesApiCallAction.remoteIpDetails.organization.asn</para></li><li><para>service.action.kubernetesApiCallAction.requestUri</para></li><li><para>service.action.kubernetesApiCallAction.statusCode</para></li><li><para>service.action.networkConnectionAction.localIpDetails.ipAddressV4</para></li><li><para>service.action.networkConnectionAction.localIpDetails.ipAddressV6</para></li><li><para>service.action.networkConnectionAction.protocol</para></li><li><para>service.action.awsApiCallAction.serviceName</para></li><li><para>service.action.awsApiCallAction.remoteAccountDetails.accountId</para></li><li><para>service.additionalInfo.threatListName</para></li><li><para>service.resourceRole</para></li><li><para>resource.eksClusterDetails.name</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.name</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.namespace</para></li><li><para>resource.kubernetesDetails.kubernetesUserDetails.username</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.containers.image</para></li><li><para>resource.kubernetesDetails.kubernetesWorkloadDetails.containers.imagePrefix</para></li><li><para>service.ebsVolumeScanDetails.scanId</para></li><li><para>service.ebsVolumeScanDetails.scanDetections.threatDetectedByName.threatNames.name</para></li><li><para>service.ebsVolumeScanDetails.scanDetections.threatDetectedByName.threatNames.severity</para></li><li><para>service.ebsVolumeScanDetails.scanDetections.threatDetectedByName.threatNames.filePaths.hash</para></li><li><para>resource.ecsClusterDetails.name</para></li><li><para>resource.ecsClusterDetails.taskDetails.containers.image</para></li><li><para>resource.ecsClusterDetails.taskDetails.definitionArn</para></li><li><para>resource.containerDetails.image</para></li><li><para>resource.rdsDbInstanceDetails.dbInstanceIdentifier</para></li><li><para>resource.rdsDbInstanceDetails.dbClusterIdentifier</para></li><li><para>resource.rdsDbInstanceDetails.engine</para></li><li><para>resource.rdsDbUserDetails.user</para></li><li><para>resource.rdsDbInstanceDetails.tags.key</para></li><li><para>resource.rdsDbInstanceDetails.tags.value</para></li><li><para>service.runtimeDetails.process.executableSha256</para></li><li><para>service.runtimeDetails.process.name</para></li><li><para>service.runtimeDetails.process.executablePath</para></li><li><para>resource.lambdaDetails.functionName</para></li><li><para>resource.lambdaDetails.functionArn</para></li><li><para>resource.lambdaDetails.tags.key</para></li><li><para>resource.lambdaDetails.tags.value</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -140,7 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be added to a new filter resource.</para>
+        /// <para>The tags to be added to a new filter resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -169,16 +178,6 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "Name";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DetectorId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -189,9 +188,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DetectorId), MyInvocation.BoundParameters);
@@ -205,21 +208,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GuardDuty.Model.CreateFilterResponse, NewGDFilterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DetectorId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Action = this.Action;
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
@@ -339,13 +332,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "CreateFilter");
             try
             {
-                #if DESKTOP
-                return client.CreateFilter(request);
-                #elif CORECLR
-                return client.CreateFilterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFilterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

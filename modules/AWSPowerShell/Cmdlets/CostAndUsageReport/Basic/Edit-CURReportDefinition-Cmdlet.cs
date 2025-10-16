@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CostAndUsageReport;
 using Amazon.CostAndUsageReport.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CUR
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.CUR
     [AWSCmdlet("Calls the AWS Cost and Usage Report ModifyReportDefinition API operation.", Operation = new[] {"ModifyReportDefinition"}, SelectReturnType = typeof(Amazon.CostAndUsageReport.Model.ModifyReportDefinitionResponse))]
     [AWSCmdletOutput("None or Amazon.CostAndUsageReport.Model.ModifyReportDefinitionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CostAndUsageReport.Model.ModifyReportDefinitionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CostAndUsageReport.Model.ModifyReportDefinitionResponse) be returned by specifying '-Select *'."
     )]
     public partial class EditCURReportDefinitionCmdlet : AmazonCostAndUsageReportClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ReportDefinition_AdditionalArtifact
         /// <summary>
         /// <para>
-        /// <para>A list of manifests that you want Amazon Web Services to create for this report.</para>
+        /// <para>A list of manifests that you want Amazon Web Services to create for this report.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.CUR
         /// <summary>
         /// <para>
         /// <para>A list of strings that indicate additional content that Amazon Web Services includes
-        /// in the report, such as individual resource IDs. </para>
+        /// in the report, such as individual resource IDs. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -279,16 +290,6 @@ namespace Amazon.PowerShell.Cmdlets.CUR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReportName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReportName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReportName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -299,9 +300,13 @@ namespace Amazon.PowerShell.Cmdlets.CUR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ReportName), MyInvocation.BoundParameters);
@@ -315,21 +320,11 @@ namespace Amazon.PowerShell.Cmdlets.CUR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CostAndUsageReport.Model.ModifyReportDefinitionResponse, EditCURReportDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReportName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ReportDefinition_AdditionalArtifact != null)
             {
                 context.ReportDefinition_AdditionalArtifact = new List<System.String>(this.ReportDefinition_AdditionalArtifact);
@@ -627,13 +622,7 @@ namespace Amazon.PowerShell.Cmdlets.CUR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cost and Usage Report", "ModifyReportDefinition");
             try
             {
-                #if DESKTOP
-                return client.ModifyReportDefinition(request);
-                #elif CORECLR
-                return client.ModifyReportDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyReportDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

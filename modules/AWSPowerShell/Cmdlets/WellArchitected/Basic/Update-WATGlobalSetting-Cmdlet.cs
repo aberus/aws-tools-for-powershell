@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WellArchitected;
 using Amazon.WellArchitected.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAT
 {
     /// <summary>
-    /// Updates whether the Amazon Web Services account is opted into organization sharing
+    /// Update whether the Amazon Web Services account is opted into organization sharing
     /// and discovery integration features.
     /// </summary>
     [Cmdlet("Update", "WATGlobalSetting", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
     [AWSCmdlet("Calls the AWS Well-Architected Tool UpdateGlobalSettings API operation.", Operation = new[] {"UpdateGlobalSettings"}, SelectReturnType = typeof(Amazon.WellArchitected.Model.UpdateGlobalSettingsResponse))]
     [AWSCmdletOutput("None or Amazon.WellArchitected.Model.UpdateGlobalSettingsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WellArchitected.Model.UpdateGlobalSettingsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WellArchitected.Model.UpdateGlobalSettingsResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateWATGlobalSettingCmdlet : AmazonWellArchitectedClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DiscoveryIntegrationStatus
         /// <summary>
@@ -52,6 +55,49 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.WellArchitected.DiscoveryIntegrationStatus")]
         public Amazon.WellArchitected.DiscoveryIntegrationStatus DiscoveryIntegrationStatus { get; set; }
+        #endregion
+        
+        #region Parameter JiraConfiguration_IntegrationStatus
+        /// <summary>
+        /// <para>
+        /// <para>Account-level: Configuration status of the Jira integration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WellArchitected.IntegrationStatusInput")]
+        public Amazon.WellArchitected.IntegrationStatusInput JiraConfiguration_IntegrationStatus { get; set; }
+        #endregion
+        
+        #region Parameter JiraConfiguration_IssueManagementStatus
+        /// <summary>
+        /// <para>
+        /// <para>Account-level: Jira issue management status.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WellArchitected.AccountJiraIssueManagementStatus")]
+        public Amazon.WellArchitected.AccountJiraIssueManagementStatus JiraConfiguration_IssueManagementStatus { get; set; }
+        #endregion
+        
+        #region Parameter JiraConfiguration_IssueManagementType
+        /// <summary>
+        /// <para>
+        /// <para>Account-level: Jira issue management type.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WellArchitected.IssueManagementType")]
+        public Amazon.WellArchitected.IssueManagementType JiraConfiguration_IssueManagementType { get; set; }
+        #endregion
+        
+        #region Parameter JiraConfiguration_JiraProjectKey
+        /// <summary>
+        /// <para>
+        /// <para>Account-level: Jira project key to sync workloads to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String JiraConfiguration_JiraProjectKey { get; set; }
         #endregion
         
         #region Parameter OrganizationSharingStatus
@@ -85,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -107,6 +157,10 @@ namespace Amazon.PowerShell.Cmdlets.WAT
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.DiscoveryIntegrationStatus = this.DiscoveryIntegrationStatus;
+            context.JiraConfiguration_IntegrationStatus = this.JiraConfiguration_IntegrationStatus;
+            context.JiraConfiguration_IssueManagementStatus = this.JiraConfiguration_IssueManagementStatus;
+            context.JiraConfiguration_IssueManagementType = this.JiraConfiguration_IssueManagementType;
+            context.JiraConfiguration_JiraProjectKey = this.JiraConfiguration_JiraProjectKey;
             context.OrganizationSharingStatus = this.OrganizationSharingStatus;
             
             // allow further manipulation of loaded context prior to processing
@@ -127,6 +181,55 @@ namespace Amazon.PowerShell.Cmdlets.WAT
             if (cmdletContext.DiscoveryIntegrationStatus != null)
             {
                 request.DiscoveryIntegrationStatus = cmdletContext.DiscoveryIntegrationStatus;
+            }
+            
+             // populate JiraConfiguration
+            var requestJiraConfigurationIsNull = true;
+            request.JiraConfiguration = new Amazon.WellArchitected.Model.AccountJiraConfigurationInput();
+            Amazon.WellArchitected.IntegrationStatusInput requestJiraConfiguration_jiraConfiguration_IntegrationStatus = null;
+            if (cmdletContext.JiraConfiguration_IntegrationStatus != null)
+            {
+                requestJiraConfiguration_jiraConfiguration_IntegrationStatus = cmdletContext.JiraConfiguration_IntegrationStatus;
+            }
+            if (requestJiraConfiguration_jiraConfiguration_IntegrationStatus != null)
+            {
+                request.JiraConfiguration.IntegrationStatus = requestJiraConfiguration_jiraConfiguration_IntegrationStatus;
+                requestJiraConfigurationIsNull = false;
+            }
+            Amazon.WellArchitected.AccountJiraIssueManagementStatus requestJiraConfiguration_jiraConfiguration_IssueManagementStatus = null;
+            if (cmdletContext.JiraConfiguration_IssueManagementStatus != null)
+            {
+                requestJiraConfiguration_jiraConfiguration_IssueManagementStatus = cmdletContext.JiraConfiguration_IssueManagementStatus;
+            }
+            if (requestJiraConfiguration_jiraConfiguration_IssueManagementStatus != null)
+            {
+                request.JiraConfiguration.IssueManagementStatus = requestJiraConfiguration_jiraConfiguration_IssueManagementStatus;
+                requestJiraConfigurationIsNull = false;
+            }
+            Amazon.WellArchitected.IssueManagementType requestJiraConfiguration_jiraConfiguration_IssueManagementType = null;
+            if (cmdletContext.JiraConfiguration_IssueManagementType != null)
+            {
+                requestJiraConfiguration_jiraConfiguration_IssueManagementType = cmdletContext.JiraConfiguration_IssueManagementType;
+            }
+            if (requestJiraConfiguration_jiraConfiguration_IssueManagementType != null)
+            {
+                request.JiraConfiguration.IssueManagementType = requestJiraConfiguration_jiraConfiguration_IssueManagementType;
+                requestJiraConfigurationIsNull = false;
+            }
+            System.String requestJiraConfiguration_jiraConfiguration_JiraProjectKey = null;
+            if (cmdletContext.JiraConfiguration_JiraProjectKey != null)
+            {
+                requestJiraConfiguration_jiraConfiguration_JiraProjectKey = cmdletContext.JiraConfiguration_JiraProjectKey;
+            }
+            if (requestJiraConfiguration_jiraConfiguration_JiraProjectKey != null)
+            {
+                request.JiraConfiguration.JiraProjectKey = requestJiraConfiguration_jiraConfiguration_JiraProjectKey;
+                requestJiraConfigurationIsNull = false;
+            }
+             // determine if request.JiraConfiguration should be set to null
+            if (requestJiraConfigurationIsNull)
+            {
+                request.JiraConfiguration = null;
             }
             if (cmdletContext.OrganizationSharingStatus != null)
             {
@@ -170,13 +273,7 @@ namespace Amazon.PowerShell.Cmdlets.WAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Well-Architected Tool", "UpdateGlobalSettings");
             try
             {
-                #if DESKTOP
-                return client.UpdateGlobalSettings(request);
-                #elif CORECLR
-                return client.UpdateGlobalSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateGlobalSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -194,6 +291,10 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.WellArchitected.DiscoveryIntegrationStatus DiscoveryIntegrationStatus { get; set; }
+            public Amazon.WellArchitected.IntegrationStatusInput JiraConfiguration_IntegrationStatus { get; set; }
+            public Amazon.WellArchitected.AccountJiraIssueManagementStatus JiraConfiguration_IssueManagementStatus { get; set; }
+            public Amazon.WellArchitected.IssueManagementType JiraConfiguration_IssueManagementType { get; set; }
+            public System.String JiraConfiguration_JiraProjectKey { get; set; }
             public Amazon.WellArchitected.OrganizationSharingStatus OrganizationSharingStatus { get; set; }
             public System.Func<Amazon.WellArchitected.Model.UpdateGlobalSettingsResponse, UpdateWATGlobalSettingCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

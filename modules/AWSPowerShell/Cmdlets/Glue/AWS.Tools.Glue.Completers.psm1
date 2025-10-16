@@ -80,17 +80,44 @@ $GLUE_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.Glue.AllowFullTableExternalDataAccessEnum
+        {
+            ($_ -eq "New-GLUECatalog/CatalogInput_AllowFullTableExternalDataAccess") -Or
+            ($_ -eq "Update-GLUECatalog/CatalogInput_AllowFullTableExternalDataAccess")
+        }
+        {
+            $v = "False","True"
+            break
+        }
+
+        # Amazon.Glue.AuthenticationType
+        "Test-GLUEConnection/AuthenticationConfiguration_AuthenticationType"
+        {
+            $v = "BASIC","CUSTOM","IAM","OAUTH2"
+            break
+        }
+
         # Amazon.Glue.CatalogEncryptionMode
-        "Set-GLUEDataCatalogEncryptionSetting/DataCatalogEncryptionSettings_EncryptionAtRest_CatalogEncryptionMode"
+        "Set-GLUEDataCatalogEncryptionSetting/EncryptionAtRest_CatalogEncryptionMode"
         {
             $v = "DISABLED","SSE-KMS","SSE-KMS-WITH-SERVICE-ROLE"
             break
         }
 
         # Amazon.Glue.CloudWatchEncryptionMode
-        "New-GLUESecurityConfiguration/EncryptionConfiguration_CloudWatchEncryption_CloudWatchEncryptionMode"
+        "New-GLUESecurityConfiguration/CloudWatchEncryption_CloudWatchEncryptionMode"
         {
             $v = "DISABLED","SSE-KMS"
+            break
+        }
+
+        # Amazon.Glue.CompactionStrategy
+        {
+            ($_ -eq "New-GLUETableOptimizer/IcebergConfiguration_Strategy") -Or
+            ($_ -eq "Update-GLUETableOptimizer/IcebergConfiguration_Strategy")
+        }
+        {
+            $v = "binpack","sort","z-order"
             break
         }
 
@@ -104,10 +131,24 @@ $GLUE_Completers = {
             break
         }
 
+        # Amazon.Glue.ComputeEnvironment
+        "Get-GLUEConnection/ApplyOverrideForComputeEnvironment"
+        {
+            $v = "ATHENA","PYTHON","SPARK"
+            break
+        }
+
+        # Amazon.Glue.ConnectionType
+        "Test-GLUEConnection/TestConnectionInput_ConnectionType"
+        {
+            $v = "ADOBEANALYTICS","ASANA","AZURECOSMOS","AZURESQL","BIGQUERY","BLACKBAUD","BLACKBAUDRAISEREDGENXT","CIRCLECI","CLOUDERAHIVE","CLOUDERAIMPALA","CLOUDWATCH","CLOUDWATCHMETRICS","CMDB","CUSTOM","DATADOG","DATALAKEGEN2","DB2","DB2AS400","DOCUMENTDB","DOCUSIGNMONITOR","DOMO","DYNAMODB","DYNATRACE","FACEBOOKADS","FACEBOOKPAGEINSIGHTS","FRESHDESK","FRESHSALES","GITLAB","GOOGLEADS","GOOGLEANALYTICS4","GOOGLECLOUDSTORAGE","GOOGLESEARCHCONSOLE","GOOGLESHEETS","HBASE","HUBSPOT","INSTAGRAMADS","INTERCOM","JDBC","JIRACLOUD","KAFKA","KUSTOMER","LINKEDIN","MAILCHIMP","MARKETO","MARKETPLACE","MICROSOFTDYNAMIC365FINANCEANDOPS","MICROSOFTDYNAMICS365CRM","MICROSOFTTEAMS","MIXPANEL","MONDAY","MONGODB","MYSQL","NETSUITEERP","NETWORK","OKTA","OPENSEARCH","ORACLE","PAYPAL","PENDO","PIPEDIVE","PIPEDRIVE","POSTGRESQL","PRODUCTBOARD","QUICKBOOKS","SALESFORCE","SALESFORCECOMMERCECLOUD","SALESFORCEMARKETINGCLOUD","SALESFORCEPARDOT","SAPCONCUR","SAPHANA","SAPODATA","SENDGRID","SERVICENOW","SFTP","SLACK","SMARTSHEET","SNAPCHATADS","SQLSERVER","STRIPE","SYNAPSE","TERADATA","TERADATANOS","TIMESTREAM","TPCDS","TWILIO","VERTICA","VIEW_VALIDATION_ATHENA","VIEW_VALIDATION_REDSHIFT","WOOCOMMERCE","ZENDESK","ZOHOCRM","ZOOM"
+            break
+        }
+
         # Amazon.Glue.CrawlerLineageSettings
         {
-            ($_ -eq "New-GLUECrawler/LineageConfiguration_CrawlerLineageSettings") -Or
-            ($_ -eq "Update-GLUECrawler/LineageConfiguration_CrawlerLineageSettings")
+            ($_ -eq "New-GLUECrawler/LineageConfiguration_CrawlerLineageSetting") -Or
+            ($_ -eq "Update-GLUECrawler/LineageConfiguration_CrawlerLineageSetting")
         }
         {
             $v = "DISABLE","ENABLE"
@@ -144,6 +185,20 @@ $GLUE_Completers = {
             break
         }
 
+        # Amazon.Glue.DataQualityEncryptionMode
+        "New-GLUESecurityConfiguration/DataQualityEncryption_DataQualityEncryptionMode"
+        {
+            $v = "DISABLED","SSE-KMS"
+            break
+        }
+
+        # Amazon.Glue.DQCompositeRuleEvaluationMethod
+        "Start-GLUEDataQualityRulesetEvaluationRun/AdditionalRunOptions_CompositeRuleEvaluationMethod"
+        {
+            $v = "COLUMN","ROW"
+            break
+        }
+
         # Amazon.Glue.EnableHybridValues
         "Set-GLUEResourcePolicy/EnableHybrid"
         {
@@ -168,10 +223,31 @@ $GLUE_Completers = {
             break
         }
 
+        # Amazon.Glue.IcebergStructTypeEnum
+        "New-GLUETable/Schema_Type"
+        {
+            $v = "struct"
+            break
+        }
+
+        # Amazon.Glue.InclusionAnnotationValue
+        "Write-GLUEDataQualityProfileAnnotation/InclusionAnnotation"
+        {
+            $v = "EXCLUDE","INCLUDE"
+            break
+        }
+
         # Amazon.Glue.JobBookmarksEncryptionMode
-        "New-GLUESecurityConfiguration/EncryptionConfiguration_JobBookmarksEncryption_JobBookmarksEncryptionMode"
+        "New-GLUESecurityConfiguration/JobBookmarksEncryption_JobBookmarksEncryptionMode"
         {
             $v = "CSE-KMS","DISABLED"
+            break
+        }
+
+        # Amazon.Glue.JobMode
+        "New-GLUEJob/JobMode"
+        {
+            $v = "NOTEBOOK","SCRIPT","VISUAL"
             break
         }
 
@@ -186,16 +262,23 @@ $GLUE_Completers = {
         }
 
         # Amazon.Glue.MetadataOperation
-        "New-GLUETable/OpenTableFormatInput_IcebergInput_MetadataOperation"
+        "New-GLUETable/IcebergInput_MetadataOperation"
         {
             $v = "CREATE"
             break
         }
 
         # Amazon.Glue.MLUserDataEncryptionModeString
-        "New-GLUEMLTransform/TransformEncryption_MlUserDataEncryption_MlUserDataEncryptionMode"
+        "New-GLUEMLTransform/MlUserDataEncryption_MlUserDataEncryptionMode"
         {
             $v = "DISABLED","SSE-KMS"
+            break
+        }
+
+        # Amazon.Glue.OAuth2GrantType
+        "Test-GLUEConnection/OAuth2Properties_OAuth2GrantType"
+        {
+            $v = "AUTHORIZATION_CODE","CLIENT_CREDENTIALS","JWT_BEARER"
             break
         }
 
@@ -268,7 +351,7 @@ $GLUE_Completers = {
             ($_ -eq "Update-GLUETableOptimizer/Type")
         }
         {
-            $v = "compaction"
+            $v = "compaction","orphan_file_deletion","retention"
             break
         }
 
@@ -332,10 +415,27 @@ $GLUE_Completers = {
             break
         }
 
+        # Amazon.Glue.UnnestSpec
+        {
+            ($_ -eq "New-GLUEIntegrationTableProperty/TargetTableConfig_UnnestSpec") -Or
+            ($_ -eq "Update-GLUEIntegrationTableProperty/TargetTableConfig_UnnestSpec")
+        }
+        {
+            $v = "FULL","NOUNNEST","TOPLEVEL"
+            break
+        }
+
         # Amazon.Glue.ViewDialect
         "Get-GLUEUnfilteredTableMetadata/SupportedDialect_Dialect"
         {
             $v = "ATHENA","REDSHIFT","SPARK"
+            break
+        }
+
+        # Amazon.Glue.ViewUpdateAction
+        "Update-GLUETable/ViewUpdateAction"
+        {
+            $v = "ADD","ADD_OR_REPLACE","DROP","REPLACE"
             break
         }
 
@@ -362,35 +462,48 @@ $GLUE_Completers = {
 }
 
 $GLUE_map = @{
+    "AdditionalRunOptions_CompositeRuleEvaluationMethod"=@("Start-GLUEDataQualityRulesetEvaluationRun")
+    "ApplyOverrideForComputeEnvironment"=@("Get-GLUEConnection")
+    "AuthenticationConfiguration_AuthenticationType"=@("Test-GLUEConnection")
     "AuthStrategy"=@("Update-GLUEJobFromSourceControl","Update-GLUESourceControlFromJob")
+    "CatalogInput_AllowFullTableExternalDataAccess"=@("New-GLUECatalog","Update-GLUECatalog")
+    "CloudWatchEncryption_CloudWatchEncryptionMode"=@("New-GLUESecurityConfiguration")
     "Compatibility"=@("New-GLUESchema","Update-GLUESchema")
     "CsvClassifier_ContainsHeader"=@("New-GLUEClassifier","Update-GLUEClassifier")
     "CsvClassifier_Serde"=@("New-GLUEClassifier","Update-GLUEClassifier")
-    "DataCatalogEncryptionSettings_EncryptionAtRest_CatalogEncryptionMode"=@("Set-GLUEDataCatalogEncryptionSetting")
     "DataFormat"=@("Get-GLUESchemaVersionValidity","New-GLUESchema")
+    "DataQualityEncryption_DataQualityEncryptionMode"=@("New-GLUESecurityConfiguration")
     "EnableHybrid"=@("Set-GLUEResourcePolicy")
-    "EncryptionConfiguration_CloudWatchEncryption_CloudWatchEncryptionMode"=@("New-GLUESecurityConfiguration")
-    "EncryptionConfiguration_JobBookmarksEncryption_JobBookmarksEncryptionMode"=@("New-GLUESecurityConfiguration")
+    "EncryptionAtRest_CatalogEncryptionMode"=@("Set-GLUEDataCatalogEncryptionSetting")
     "ExecutionClass"=@("New-GLUEJob","Start-GLUEJobRun")
     "Filter_Status"=@("Get-GLUEMLTaskRunList","Get-GLUEMLTransformIdentifier","Get-GLUEMLTransformList")
     "Filter_TaskRunType"=@("Get-GLUEMLTaskRunList")
     "Filter_TransformType"=@("Get-GLUEMLTransformIdentifier","Get-GLUEMLTransformList")
+    "IcebergConfiguration_Strategy"=@("New-GLUETableOptimizer","Update-GLUETableOptimizer")
+    "IcebergInput_MetadataOperation"=@("New-GLUETable")
+    "InclusionAnnotation"=@("Write-GLUEDataQualityProfileAnnotation")
+    "JobBookmarksEncryption_JobBookmarksEncryptionMode"=@("New-GLUESecurityConfiguration")
+    "JobMode"=@("New-GLUEJob")
     "Language"=@("Get-GLUEPlan","New-GLUEScript")
-    "LineageConfiguration_CrawlerLineageSettings"=@("New-GLUECrawler","Update-GLUECrawler")
-    "OpenTableFormatInput_IcebergInput_MetadataOperation"=@("New-GLUETable")
+    "LineageConfiguration_CrawlerLineageSetting"=@("New-GLUECrawler","Update-GLUECrawler")
+    "MlUserDataEncryption_MlUserDataEncryptionMode"=@("New-GLUEMLTransform")
+    "OAuth2Properties_OAuth2GrantType"=@("Test-GLUEConnection")
     "Parameters_TransformType"=@("New-GLUEMLTransform","Update-GLUEMLTransform")
     "PolicyExistsCondition"=@("Set-GLUEResourcePolicy")
     "Provider"=@("Update-GLUEJobFromSourceControl","Update-GLUESourceControlFromJob")
     "RecrawlPolicy_RecrawlBehavior"=@("New-GLUECrawler","Update-GLUECrawler")
     "ResourceShareType"=@("Find-GLUETable","Get-GLUEDatabaseList")
+    "Schema_Type"=@("New-GLUETable")
     "SchemaDiffType"=@("Get-GLUESchemaVersionsDiff")
     "Sort_Column"=@("Get-GLUEMLTaskRunList","Get-GLUEMLTransformIdentifier","Get-GLUEMLTransformList")
     "Sort_SortDirection"=@("Get-GLUEMLTaskRunList","Get-GLUEMLTransformIdentifier","Get-GLUEMLTransformList")
     "SourceControlDetails_AuthStrategy"=@("New-GLUEJob")
     "SourceControlDetails_Provider"=@("New-GLUEJob")
     "SupportedDialect_Dialect"=@("Get-GLUEUnfilteredTableMetadata")
-    "TransformEncryption_MlUserDataEncryption_MlUserDataEncryptionMode"=@("New-GLUEMLTransform")
+    "TargetTableConfig_UnnestSpec"=@("New-GLUEIntegrationTableProperty","Update-GLUEIntegrationTableProperty")
+    "TestConnectionInput_ConnectionType"=@("Test-GLUEConnection")
     "Type"=@("Get-GLUETableOptimizer","Get-GLUETableOptimizerRunList","New-GLUETableOptimizer","New-GLUETrigger","Remove-GLUETableOptimizer","Update-GLUETableOptimizer")
+    "ViewUpdateAction"=@("Update-GLUETable")
     "WorkerType"=@("New-GLUEDevEndpoint","New-GLUEJob","New-GLUEMLTransform","New-GLUESession","Start-GLUEJobRun","Update-GLUEMLTransform")
 }
 
@@ -459,6 +572,7 @@ $GLUE_SelectMap = @{
                "Get-GLUETableOptimizerBatch",
                "Get-GLUETriggerBatch",
                "Get-GLUEWorkflowBatch",
+               "Set-GLUEBatchDataQualityStatisticAnnotation",
                "Stop-GLUEJobRunBatch",
                "Update-GLUEPartitionBatch",
                "Stop-GLUEDataQualityRuleRecommendationRun",
@@ -467,13 +581,19 @@ $GLUE_SelectMap = @{
                "Stop-GLUEStatement",
                "Get-GLUESchemaVersionValidity",
                "New-GLUEBlueprint",
+               "New-GLUECatalog",
                "New-GLUEClassifier",
+               "New-GLUEColumnStatisticsTaskSetting",
                "New-GLUEConnection",
                "New-GLUECrawler",
                "New-GLUECustomEntityType",
                "New-GLUEDatabase",
                "New-GLUEDataQualityRuleset",
                "New-GLUEDevEndpoint",
+               "New-GLUEGlueIdentityCenterConfiguration",
+               "New-GLUEIntegration",
+               "New-GLUEIntegrationResourceProperty",
+               "New-GLUEIntegrationTableProperty",
                "New-GLUEJob",
                "New-GLUEMLTransform",
                "New-GLUEPartition",
@@ -486,18 +606,24 @@ $GLUE_SelectMap = @{
                "New-GLUETable",
                "New-GLUETableOptimizer",
                "New-GLUETrigger",
+               "New-GLUEUsageProfile",
                "New-GLUEUserDefinedFunction",
                "New-GLUEWorkflow",
                "Remove-GLUEBlueprint",
+               "Remove-GLUECatalog",
                "Remove-GLUEClassifier",
                "Remove-GLUEColumnStatisticsForPartition",
                "Remove-GLUEColumnStatisticsForTable",
+               "Remove-GLUEColumnStatisticsTaskSetting",
                "Remove-GLUEConnection",
                "Remove-GLUECrawler",
                "Remove-GLUECustomEntityType",
                "Remove-GLUEDatabase",
                "Remove-GLUEDataQualityRuleset",
                "Remove-GLUEDevEndpoint",
+               "Remove-GLUEGlueIdentityCenterConfiguration",
+               "Remove-GLUEIntegration",
+               "Remove-GLUEIntegrationTableProperty",
                "Remove-GLUEJob",
                "Remove-GLUEMLTransform",
                "Remove-GLUEPartition",
@@ -512,18 +638,26 @@ $GLUE_SelectMap = @{
                "Remove-GLUETableOptimizer",
                "Remove-GLUETableVersion",
                "Remove-GLUETrigger",
+               "Remove-GLUEUsageProfile",
                "Remove-GLUEUserDefinedFunction",
                "Remove-GLUEWorkflow",
+               "Get-GLUEConnectionType",
+               "Get-GLUEEntity",
+               "Get-GLUEInboundIntegration",
+               "Get-GLUEIntegration",
                "Get-GLUEBlueprint",
                "Get-GLUEBlueprintRun",
                "Get-GLUEBlueprintRunList",
+               "Get-GLUECatalog",
                "Get-GLUECatalogImportStatus",
+               "Get-GLUECatalogList",
                "Get-GLUEClassifier",
                "Get-GLUEClassifierList",
                "Get-GLUEColumnStatisticsForPartition",
                "Get-GLUEColumnStatisticsForTable",
                "Get-GLUEColumnStatisticsTaskRun",
                "Get-GLUEColumnStatisticsTaskList",
+               "Get-GLUEColumnStatisticsTaskSetting",
                "Get-GLUEConnection",
                "Get-GLUEConnectionList",
                "Get-GLUECrawler",
@@ -534,12 +668,18 @@ $GLUE_SelectMap = @{
                "Get-GLUEDatabaseList",
                "Get-GLUEDataCatalogEncryptionSetting",
                "Get-GLUEDataflowGraph",
+               "Get-GLUEDataQualityModel",
+               "Get-GLUEDataQualityModelResult",
                "Get-GLUEDataQualityResult",
                "Get-GLUEDataQualityRuleRecommendationRun",
                "Get-GLUEDataQualityRuleset",
                "Get-GLUEDataQualityRulesetEvaluationRun",
                "Get-GLUEDevEndpoint",
                "Get-GLUEDevEndpointList",
+               "Get-GLUEEntityRecord",
+               "Get-GLUEGlueIdentityCenterConfiguration",
+               "Get-GLUEIntegrationResourceProperty",
+               "Get-GLUEIntegrationTableProperty",
                "Get-GLUEJob",
                "Get-GLUEJobBookmark",
                "Get-GLUEJobRun",
@@ -576,6 +716,7 @@ $GLUE_SelectMap = @{
                "Get-GLUEUnfilteredPartitionMetadata",
                "Get-GLUEUnfilteredPartitionsMetadata",
                "Get-GLUEUnfilteredTableMetadata",
+               "Get-GLUEUsageProfile",
                "Get-GLUEUserDefinedFunction",
                "Get-GLUEUserDefinedFunctionList",
                "Get-GLUEWorkflow",
@@ -585,6 +726,7 @@ $GLUE_SelectMap = @{
                "Import-GLUECatalog",
                "Get-GLUEBlueprintList",
                "Get-GLUEColumnStatisticsTaskRunList",
+               "Get-GLUEConnectionTypeList",
                "Get-GLUECrawlerNameList",
                "Get-GLUECrawlList",
                "Get-GLUECustomEntityTypeList",
@@ -592,7 +734,10 @@ $GLUE_SelectMap = @{
                "Get-GLUEDataQualityRuleRecommendationRunList",
                "Get-GLUEDataQualityRulesetEvaluationRunList",
                "Get-GLUEDataQualityRulesetList",
+               "Get-GLUEDataQualityStatisticAnnotationList",
+               "Get-GLUEDataQualityStatisticList",
                "Get-GLUEDevEndpointNameList",
+               "Get-GLUEEntityList",
                "Get-GLUEJobNameList",
                "Get-GLUEMLTransformIdentifier",
                "Get-GLUERegistryList",
@@ -602,8 +747,11 @@ $GLUE_SelectMap = @{
                "Get-GLUEStatementList",
                "Get-GLUETableOptimizerRunList",
                "Get-GLUETriggerNameList",
+               "Get-GLUEUsageProfileList",
                "Get-GLUEWorkflowList",
+               "Edit-GLUEIntegration",
                "Set-GLUEDataCatalogEncryptionSetting",
+               "Write-GLUEDataQualityProfileAnnotation",
                "Set-GLUEResourcePolicy",
                "Write-GLUESchemaVersionMetadata",
                "Write-GLUEWorkflowRunProperty",
@@ -616,6 +764,7 @@ $GLUE_SelectMap = @{
                "Find-GLUETable",
                "Start-GLUEBlueprintRun",
                "Start-GLUEColumnStatisticsTaskRun",
+               "Start-GLUEColumnStatisticsTaskRunSchedule",
                "Start-GLUECrawler",
                "Start-GLUECrawlerSchedule",
                "Start-GLUEDataQualityRuleRecommendationRun",
@@ -628,23 +777,30 @@ $GLUE_SelectMap = @{
                "Start-GLUETrigger",
                "Start-GLUEWorkflowRun",
                "Stop-GLUEColumnStatisticsTaskRun",
+               "Stop-GLUEColumnStatisticsTaskRunSchedule",
                "Stop-GLUECrawler",
                "Stop-GLUECrawlerSchedule",
                "Stop-GLUESession",
                "Stop-GLUETrigger",
                "Stop-GLUEWorkflowRun",
                "Add-GLUEResourceTag",
+               "Test-GLUEConnection",
                "Remove-GLUEResourceTag",
                "Update-GLUEBlueprint",
+               "Update-GLUECatalog",
                "Update-GLUEClassifier",
                "Update-GLUEColumnStatisticsForPartition",
                "Update-GLUEColumnStatisticsForTable",
+               "Update-GLUEColumnStatisticsTaskSetting",
                "Update-GLUEConnection",
                "Update-GLUECrawler",
                "Update-GLUECrawlerSchedule",
                "Update-GLUEDatabase",
                "Update-GLUEDataQualityRuleset",
                "Update-GLUEDevEndpoint",
+               "Update-GLUEGlueIdentityCenterConfiguration",
+               "Update-GLUEIntegrationResourceProperty",
+               "Update-GLUEIntegrationTableProperty",
                "Update-GLUEJob",
                "Update-GLUEJobFromSourceControl",
                "Update-GLUEMLTransform",
@@ -655,6 +811,7 @@ $GLUE_SelectMap = @{
                "Update-GLUETable",
                "Update-GLUETableOptimizer",
                "Update-GLUETrigger",
+               "Update-GLUEUsageProfile",
                "Update-GLUEUserDefinedFunction",
                "Update-GLUEWorkflow")
 }

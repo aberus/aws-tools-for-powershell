@@ -100,7 +100,7 @@ $RESH_Completers = {
         # Amazon.ResilienceHub.ComplianceStatus
         "Get-RESHAppAssessmentList/ComplianceStatus"
         {
-            $v = "PolicyBreached","PolicyMet"
+            $v = "MissingPolicy","NotApplicable","PolicyBreached","PolicyMet"
             break
         }
 
@@ -217,7 +217,8 @@ $RESH_SelectCompleters = {
 }
 
 $RESH_SelectMap = @{
-    "Select"=@("Add-RESHDraftAppVersionResourceMapping",
+    "Select"=@("Approve-RESHResourceGroupingRecommendation",
+               "Add-RESHDraftAppVersionResourceMapping",
                "Set-RESHUpdateRecommendationStatus",
                "New-RESHApp",
                "New-RESHAppVersionAppComponent",
@@ -239,10 +240,13 @@ $RESH_SelectMap = @{
                "Get-RESHAppVersionResourcesResolutionStatus",
                "Get-RESHAppVersionTemplate",
                "Get-RESHDraftAppVersionResourcesImportStatus",
+               "Get-RESHMetricsExport",
                "Get-RESHResiliencyPolicy",
+               "Get-RESHResourceGroupingRecommendationTask",
                "Import-RESHResourcesToDraftAppVersion",
                "Get-RESHAlarmRecommendationList",
                "Get-RESHAppAssessmentComplianceDriftList",
+               "Get-RESHAppAssessmentResourceDriftList",
                "Get-RESHAppAssessmentList",
                "Get-RESHAppComponentComplianceList",
                "Get-RESHAppComponentRecommendationList",
@@ -252,8 +256,10 @@ $RESH_SelectMap = @{
                "Get-RESHAppVersionResourceMappingList",
                "Get-RESHAppVersionResourceList",
                "Get-RESHAppVersionList",
+               "Get-RESHMetricList",
                "Get-RESHRecommendationTemplateList",
                "Get-RESHResiliencyPolicyList",
+               "Get-RESHResourceGroupingRecommendationList",
                "Get-RESHSopRecommendationList",
                "Get-RESHSuggestedResiliencyPolicyList",
                "Get-RESHResourceTag",
@@ -261,9 +267,12 @@ $RESH_SelectMap = @{
                "Get-RESHUnsupportedAppVersionResourceList",
                "Publish-RESHAppVersion",
                "Write-RESHDraftAppVersionTemplate",
+               "Deny-RESHResourceGroupingRecommendation",
                "Remove-RESHDraftAppVersionResourceMapping",
                "Resolve-RESHAppVersionResource",
                "Start-RESHAppAssessment",
+               "Start-RESHMetricsExport",
+               "Start-RESHResourceGroupingRecommendationTask",
                "Add-RESHResourceTag",
                "Remove-RESHResourceTag",
                "Update-RESHApp",

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PcaConnectorAd;
 using Amazon.PcaConnectorAd.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PCAAD
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
     [AWSCmdlet("Calls the Pca Connector Ad CreateConnector API operation.", Operation = new[] {"CreateConnector"}, SelectReturnType = typeof(Amazon.PcaConnectorAd.Model.CreateConnectorResponse))]
     [AWSCmdletOutput("System.String or Amazon.PcaConnectorAd.Model.CreateConnectorResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.PcaConnectorAd.Model.CreateConnectorResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PcaConnectorAd.Model.CreateConnectorResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPCAADConnectorCmdlet : AmazonPcaConnectorAdClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateAuthorityArn
         /// <summary>
@@ -77,11 +80,26 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         public System.String DirectoryId { get; set; }
         #endregion
         
+        #region Parameter VpcInformation_IpAddressType
+        /// <summary>
+        /// <para>
+        /// <para>The VPC IP address type.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.PcaConnectorAd.IpAddressType")]
+        public Amazon.PcaConnectorAd.IpAddressType VpcInformation_IpAddressType { get; set; }
+        #endregion
+        
         #region Parameter VpcInformation_SecurityGroupId
         /// <summary>
         /// <para>
         /// <para>The security groups used with the connector. You can use a maximum of 4 security groups
-        /// with a connector.</para>
+        /// with a connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata assigned to a connector consisting of a key-value pair.</para>
+        /// <para>Metadata assigned to a connector consisting of a key-value pair.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,9 +160,13 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -182,6 +208,7 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
                     context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
                 }
             }
+            context.VpcInformation_IpAddressType = this.VpcInformation_IpAddressType;
             if (this.VpcInformation_SecurityGroupId != null)
             {
                 context.VpcInformation_SecurityGroupId = new List<System.String>(this.VpcInformation_SecurityGroupId);
@@ -228,6 +255,16 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
              // populate VpcInformation
             var requestVpcInformationIsNull = true;
             request.VpcInformation = new Amazon.PcaConnectorAd.Model.VpcInformation();
+            Amazon.PcaConnectorAd.IpAddressType requestVpcInformation_vpcInformation_IpAddressType = null;
+            if (cmdletContext.VpcInformation_IpAddressType != null)
+            {
+                requestVpcInformation_vpcInformation_IpAddressType = cmdletContext.VpcInformation_IpAddressType;
+            }
+            if (requestVpcInformation_vpcInformation_IpAddressType != null)
+            {
+                request.VpcInformation.IpAddressType = requestVpcInformation_vpcInformation_IpAddressType;
+                requestVpcInformationIsNull = false;
+            }
             List<System.String> requestVpcInformation_vpcInformation_SecurityGroupId = null;
             if (cmdletContext.VpcInformation_SecurityGroupId != null)
             {
@@ -281,13 +318,7 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Pca Connector Ad", "CreateConnector");
             try
             {
-                #if DESKTOP
-                return client.CreateConnector(request);
-                #elif CORECLR
-                return client.CreateConnectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConnectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -308,6 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
             public System.String ClientToken { get; set; }
             public System.String DirectoryId { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
+            public Amazon.PcaConnectorAd.IpAddressType VpcInformation_IpAddressType { get; set; }
             public List<System.String> VpcInformation_SecurityGroupId { get; set; }
             public System.Func<Amazon.PcaConnectorAd.Model.CreateConnectorResponse, NewPCAADConnectorCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ConnectorArn;

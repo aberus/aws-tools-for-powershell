@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -52,18 +54,19 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager UpdateServiceSetting API operation.", Operation = new[] {"UpdateServiceSetting"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.UpdateServiceSettingResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleSystemsManagement.Model.UpdateServiceSettingResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleSystemsManagement.Model.UpdateServiceSettingResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleSystemsManagement.Model.UpdateServiceSettingResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateSSMServiceSettingCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SettingId
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of the service setting to update. For example, <c>arn:aws:ssm:us-east-1:111122223333:servicesetting/ssm/parameter-store/high-throughput-enabled</c>.
-        /// The setting ID can be one of the following.</para><ul><li><para><c>/ssm/managed-instance/default-ec2-instance-management-role</c></para></li><li><para><c>/ssm/automation/customer-script-log-destination</c></para></li><li><para><c>/ssm/automation/customer-script-log-group-name</c></para></li><li><para><c>/ssm/documents/console/public-sharing-permission</c></para></li><li><para><c>/ssm/managed-instance/activation-tier</c></para></li><li><para><c>/ssm/opsinsights/opscenter</c></para></li><li><para><c>/ssm/parameter-store/default-parameter-tier</c></para></li><li><para><c>/ssm/parameter-store/high-throughput-enabled</c></para></li></ul><note><para>Permissions to update the <c>/ssm/managed-instance/default-ec2-instance-management-role</c>
+        /// The setting ID can be one of the following.</para><ul><li><para><c>/ssm/appmanager/appmanager-enabled</c></para></li><li><para><c>/ssm/automation/customer-script-log-destination</c></para></li><li><para><c>/ssm/automation/customer-script-log-group-name</c></para></li><li><para>/ssm/automation/enable-adaptive-concurrency</para></li><li><para><c>/ssm/documents/console/public-sharing-permission</c></para></li><li><para><c>/ssm/managed-instance/activation-tier</c></para></li><li><para><c>/ssm/managed-instance/default-ec2-instance-management-role</c></para></li><li><para><c>/ssm/opsinsights/opscenter</c></para></li><li><para><c>/ssm/parameter-store/default-parameter-tier</c></para></li><li><para><c>/ssm/parameter-store/high-throughput-enabled</c></para></li></ul><note><para>Permissions to update the <c>/ssm/managed-instance/default-ec2-instance-management-role</c>
         /// setting should only be provided to administrators. Implement least privilege access
         /// when allowing individuals to configure or modify the Default Host Management Configuration.</para></note>
         /// </para>
@@ -83,10 +86,10 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>The new value to specify for the service setting. The following list specifies the
-        /// available values for each setting.</para><ul><li><para>For <c>/ssm/managed-instance/default-ec2-instance-management-role</c>, enter the name
-        /// of an IAM role. </para></li><li><para>For <c>/ssm/automation/customer-script-log-destination</c>, enter <c>CloudWatch</c>.</para></li><li><para>For <c>/ssm/automation/customer-script-log-group-name</c>, enter the name of an Amazon
+        /// available values for each setting.</para><ul><li><para>For <c>/ssm/appmanager/appmanager-enabled</c>, enter <c>True</c> or <c>False</c>.</para></li><li><para>For <c>/ssm/automation/customer-script-log-destination</c>, enter <c>CloudWatch</c>.</para></li><li><para>For <c>/ssm/automation/customer-script-log-group-name</c>, enter the name of an Amazon
         /// CloudWatch Logs log group.</para></li><li><para>For <c>/ssm/documents/console/public-sharing-permission</c>, enter <c>Enable</c> or
-        /// <c>Disable</c>.</para></li><li><para>For <c>/ssm/managed-instance/activation-tier</c>, enter <c>standard</c> or <c>advanced</c>.</para></li><li><para> For <c>/ssm/opsinsights/opscenter</c>, enter <c>Enabled</c> or <c>Disabled</c>. </para></li><li><para>For <c>/ssm/parameter-store/default-parameter-tier</c>, enter <c>Standard</c>, <c>Advanced</c>,
+        /// <c>Disable</c>.</para></li><li><para>For <c>/ssm/managed-instance/activation-tier</c>, enter <c>standard</c> or <c>advanced</c>.</para></li><li><para>For <c>/ssm/managed-instance/default-ec2-instance-management-role</c>, enter the name
+        /// of an IAM role. </para></li><li><para> For <c>/ssm/opsinsights/opscenter</c>, enter <c>Enabled</c> or <c>Disabled</c>. </para></li><li><para>For <c>/ssm/parameter-store/default-parameter-tier</c>, enter <c>Standard</c>, <c>Advanced</c>,
         /// or <c>Intelligent-Tiering</c></para></li><li><para>For <c>/ssm/parameter-store/high-throughput-enabled</c>, enter <c>true</c> or <c>false</c>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -111,16 +114,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SettingId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SettingId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SettingId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -131,9 +124,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SettingId), MyInvocation.BoundParameters);
@@ -147,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.UpdateServiceSettingResponse, UpdateSSMServiceSettingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SettingId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SettingId = this.SettingId;
             #if MODULAR
             if (this.SettingId == null && ParameterWasBound(nameof(this.SettingId)))
@@ -238,13 +225,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "UpdateServiceSetting");
             try
             {
-                #if DESKTOP
-                return client.UpdateServiceSetting(request);
-                #elif CORECLR
-                return client.UpdateServiceSettingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateServiceSettingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

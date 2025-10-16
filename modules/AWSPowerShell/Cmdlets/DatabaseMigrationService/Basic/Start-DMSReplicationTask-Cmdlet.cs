@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
     [AWSCmdlet("Calls the AWS Database Migration Service StartReplicationTask API operation.", Operation = new[] {"StartReplicationTask"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.StartReplicationTaskResponse))]
     [AWSCmdletOutput("Amazon.DatabaseMigrationService.Model.ReplicationTask or Amazon.DatabaseMigrationService.Model.StartReplicationTaskResponse",
         "This cmdlet returns an Amazon.DatabaseMigrationService.Model.ReplicationTask object.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.StartReplicationTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.StartReplicationTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartDMSReplicationTaskCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CdcStartPosition
         /// <summary>
@@ -106,14 +109,17 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         #region Parameter StartReplicationTaskType
         /// <summary>
         /// <para>
-        /// <para>The type of replication task to start.</para><para>When the migration type is <c>full-load</c> or <c>full-load-and-cdc</c>, the only
-        /// valid value for the first run of the task is <c>start-replication</c>. This option
-        /// will start the migration.</para><para>You can also use <a>ReloadTables</a> to reload specific tables that failed during
-        /// migration instead of restarting the task.</para><para>The <c>resume-processing</c> option isn't applicable for a full-load task, because
-        /// you can't resume partially loaded tables during the full load phase.</para><para>For a <c>full-load-and-cdc</c> task, DMS migrates table data, and then applies data
+        /// <para>The type of replication task to start.</para><para><c>start-replication</c> is the only valid action that can be used for the first
+        /// time a task with the migration type of <c>full-load</c>full-load, <c>full-load-and-cdc</c>
+        /// or <c>cdc</c> is run. Any other action used for the first time on a given task, such
+        /// as <c>resume-processing</c> and reload-target will result in data errors.</para><para>You can also use <a>ReloadTables</a> to reload specific tables that failed during
+        /// migration instead of restarting the task.</para><para>For a <c>full-load</c> task, the resume-processing option will reload any tables that
+        /// were partially loaded or not yet loaded during the full load phase.</para><para>For a <c>full-load-and-cdc</c> task, DMS migrates table data, and then applies data
         /// changes that occur on the source. To load all the tables again, and start capturing
         /// source changes, use <c>reload-target</c>. Otherwise use <c>resume-processing</c>,
-        /// to replicate the changes from the last stop position.</para>
+        /// to replicate the changes from the last stop position.</para><para>For a <c>cdc</c> only task, to start from a specific position, you must use start-replication
+        /// and also specify the start position. Check the source endpoint DMS documentation for
+        /// any limitations. For example, not all sources support starting from a time.</para><note><para><c>resume-processing</c> is only available for previously executed tasks.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -138,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public string Select { get; set; } = "ReplicationTask";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReplicationTaskArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReplicationTaskArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReplicationTaskArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -158,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ReplicationTaskArn), MyInvocation.BoundParameters);
@@ -174,21 +174,11 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DatabaseMigrationService.Model.StartReplicationTaskResponse, StartDMSReplicationTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReplicationTaskArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CdcStartPosition = this.CdcStartPosition;
             context.CdcStartTime = this.CdcStartTime;
             context.CdcStopPosition = this.CdcStopPosition;
@@ -280,13 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "StartReplicationTask");
             try
             {
-                #if DESKTOP
-                return client.StartReplicationTask(request);
-                #elif CORECLR
-                return client.StartReplicationTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartReplicationTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

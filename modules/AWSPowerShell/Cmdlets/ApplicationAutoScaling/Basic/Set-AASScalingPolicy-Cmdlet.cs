@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ApplicationAutoScaling;
 using Amazon.ApplicationAutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AAS
 {
     /// <summary>
@@ -55,7 +57,8 @@ namespace Amazon.PowerShell.Cmdlets.AAS
     /// target to scale out again. 
     /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-target-tracking.html">Target
-    /// tracking scaling policies</a> and <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-step-scaling-policies.html">Step
+    /// tracking scaling policies</a>, <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-step-scaling-policies.html">Step
+    /// scaling policies</a>, and <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/aas-create-predictive-scaling-policy.html">Predictive
     /// scaling policies</a> in the <i>Application Auto Scaling User Guide</i>.
     /// </para><note><para>
     /// If a scalable target is deregistered, the scalable target is no longer available to
@@ -67,12 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.AAS
     [OutputType("Amazon.ApplicationAutoScaling.Model.PutScalingPolicyResponse")]
     [AWSCmdlet("Calls the Application Auto Scaling PutScalingPolicy API operation.", Operation = new[] {"PutScalingPolicy"}, SelectReturnType = typeof(Amazon.ApplicationAutoScaling.Model.PutScalingPolicyResponse), LegacyAlias="Write-AASScalingPolicy")]
     [AWSCmdletOutput("Amazon.ApplicationAutoScaling.Model.PutScalingPolicyResponse",
-        "This cmdlet returns an Amazon.ApplicationAutoScaling.Model.PutScalingPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ApplicationAutoScaling.Model.PutScalingPolicyResponse object containing multiple properties."
     )]
     public partial class SetAASScalingPolicyCmdlet : AmazonApplicationAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter StepScalingPolicyConfiguration_AdjustmentType
         /// <summary>
@@ -104,7 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// <summary>
         /// <para>
         /// <para>The dimensions of the metric. </para><para>Conditional: If you published your metric with dimensions, you must specify the same
-        /// dimensions in your scaling policy.</para>
+        /// dimensions in your scaling policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,6 +132,34 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? TargetTrackingScalingPolicyConfiguration_DisableScaleIn { get; set; }
+        #endregion
+        
+        #region Parameter PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior
+        /// <summary>
+        /// <para>
+        /// <para> Defines the behavior that should be applied if the forecast capacity approaches or
+        /// exceeds the maximum capacity. Defaults to <c>HonorMaxCapacity</c> if not specified.
+        /// </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ApplicationAutoScaling.PredictiveScalingMaxCapacityBreachBehavior")]
+        public Amazon.ApplicationAutoScaling.PredictiveScalingMaxCapacityBreachBehavior PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior { get; set; }
+        #endregion
+        
+        #region Parameter PredictiveScalingPolicyConfiguration_MaxCapacityBuffer
+        /// <summary>
+        /// <para>
+        /// <para> The size of the capacity buffer to use when the forecast capacity is close to or
+        /// exceeds the maximum capacity. The value is specified as a percentage relative to the
+        /// forecast capacity. For example, if the buffer is 10, this means a 10 percent buffer,
+        /// such that if the forecast capacity is 50, and the maximum capacity is 40, then the
+        /// effective maximum capacity is 55. </para><para>Required if the <c>MaxCapacityBreachBehavior</c> property is set to <c>IncreaseMaxCapacity</c>,
+        /// and cannot be used otherwise.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? PredictiveScalingPolicyConfiguration_MaxCapacityBuffer { get; set; }
         #endregion
         
         #region Parameter StepScalingPolicyConfiguration_MetricAggregationType
@@ -156,12 +192,34 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// <summary>
         /// <para>
         /// <para>The metrics to include in the target tracking scaling policy, as a metric data query.
-        /// This can include both raw metric and metric math expressions.</para>
+        /// This can include both raw metric and metric math expressions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TargetTrackingScalingPolicyConfiguration_CustomizedMetricSpecification_Metrics")]
         public Amazon.ApplicationAutoScaling.Model.TargetTrackingMetricDataQuery[] CustomizedMetricSpecification_Metric { get; set; }
+        #endregion
+        
+        #region Parameter PredictiveScalingPolicyConfiguration_MetricSpecification
+        /// <summary>
+        /// <para>
+        /// <para> This structure includes the metrics and target utilization to use for predictive
+        /// scaling. </para><para>This is an array, but we currently only support a single metric specification. That
+        /// is, you can specify a target value and a single metric pair, or a target value and
+        /// one scaling metric and one load metric.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("PredictiveScalingPolicyConfiguration_MetricSpecifications")]
+        public Amazon.ApplicationAutoScaling.Model.PredictiveScalingMetricSpecification[] PredictiveScalingPolicyConfiguration_MetricSpecification { get; set; }
         #endregion
         
         #region Parameter StepScalingPolicyConfiguration_MinAdjustmentMagnitude
@@ -177,6 +235,17 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? StepScalingPolicyConfiguration_MinAdjustmentMagnitude { get; set; }
+        #endregion
+        
+        #region Parameter PredictiveScalingPolicyConfiguration_Mode
+        /// <summary>
+        /// <para>
+        /// <para> The predictive scaling mode. Defaults to <c>ForecastOnly</c> if not specified. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ApplicationAutoScaling.PredictiveScalingMode")]
+        public Amazon.ApplicationAutoScaling.PredictiveScalingMode PredictiveScalingPolicyConfiguration_Mode { get; set; }
         #endregion
         
         #region Parameter CustomizedMetricSpecification_Namespace
@@ -213,8 +282,9 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// <para>
         /// <para>The scaling policy type. This parameter is required if you are creating a scaling
         /// policy.</para><para>The following policy types are supported: </para><para><c>TargetTrackingScaling</c>—Not supported for Amazon EMR.</para><para><c>StepScaling</c>—Not supported for DynamoDB, Amazon Comprehend, Lambda, Amazon
-        /// Keyspaces, Amazon MSK, Amazon ElastiCache, or Neptune.</para><para>For more information, see <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-target-tracking.html">Target
-        /// tracking scaling policies</a> and <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-step-scaling-policies.html">Step
+        /// Keyspaces, Amazon MSK, Amazon ElastiCache, or Neptune.</para><para><c>PredictiveScaling</c>—Only supported for Amazon ECS.</para><para>For more information, see <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-target-tracking.html">Target
+        /// tracking scaling policies</a>, <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/application-auto-scaling-step-scaling-policies.html">Step
+        /// scaling policies</a>, and <a href="https://docs.aws.amazon.com/autoscaling/application/userguide/aas-create-predictive-scaling-policy.html">Predictive
         /// scaling policies</a> in the <i>Application Auto Scaling User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -241,7 +311,7 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// <para>
         /// <para>The identifier of the resource associated with the scaling policy. This string consists
         /// of the resource type and unique identifier.</para><ul><li><para>ECS service - The resource type is <c>service</c> and the unique identifier is the
-        /// cluster name and service name. Example: <c>service/default/sample-webapp</c>.</para></li><li><para>Spot Fleet - The resource type is <c>spot-fleet-request</c> and the unique identifier
+        /// cluster name and service name. Example: <c>service/my-cluster/my-service</c>.</para></li><li><para>Spot Fleet - The resource type is <c>spot-fleet-request</c> and the unique identifier
         /// is the Spot Fleet request ID. Example: <c>spot-fleet-request/sfr-73fbd2ce-aa30-494c-8788-1cee4EXAMPLE</c>.</para></li><li><para>EMR cluster - The resource type is <c>instancegroup</c> and the unique identifier
         /// is the cluster ID and instance group ID. Example: <c>instancegroup/j-2EEZNYKUA1NTV/ig-1791Y4E1L8YI0</c>.</para></li><li><para>AppStream 2.0 fleet - The resource type is <c>fleet</c> and the unique identifier
         /// is the fleet name. Example: <c>fleet/sample-fleet</c>.</para></li><li><para>DynamoDB table - The resource type is <c>table</c> and the unique identifier is the
@@ -258,10 +328,12 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// is not <c>$LATEST</c>. Example: <c>function:my-function:prod</c> or <c>function:my-function:1</c>.</para></li><li><para>Amazon Keyspaces table - The resource type is <c>table</c> and the unique identifier
         /// is the table name. Example: <c>keyspace/mykeyspace/table/mytable</c>.</para></li><li><para>Amazon MSK cluster - The resource type and unique identifier are specified using the
         /// cluster ARN. Example: <c>arn:aws:kafka:us-east-1:123456789012:cluster/demo-cluster-1/6357e0b2-0e6a-4b86-a0b4-70df934c2e31-5</c>.</para></li><li><para>Amazon ElastiCache replication group - The resource type is <c>replication-group</c>
-        /// and the unique identifier is the replication group name. Example: <c>replication-group/mycluster</c>.</para></li><li><para>Neptune cluster - The resource type is <c>cluster</c> and the unique identifier is
-        /// the cluster name. Example: <c>cluster:mycluster</c>.</para></li><li><para>SageMaker Serverless endpoint - The resource type is <c>variant</c> and the unique
+        /// and the unique identifier is the replication group name. Example: <c>replication-group/mycluster</c>.</para></li><li><para>Amazon ElastiCache cache cluster - The resource type is <c>cache-cluster</c> and the
+        /// unique identifier is the cache cluster name. Example: <c>cache-cluster/mycluster</c>.</para></li><li><para>Neptune cluster - The resource type is <c>cluster</c> and the unique identifier is
+        /// the cluster name. Example: <c>cluster:mycluster</c>.</para></li><li><para>SageMaker serverless endpoint - The resource type is <c>variant</c> and the unique
         /// identifier is the resource ID. Example: <c>endpoint/my-end-point/variant/KMeansClustering</c>.</para></li><li><para>SageMaker inference component - The resource type is <c>inference-component</c> and
-        /// the unique identifier is the resource ID. Example: <c>inference-component/my-inference-component</c>.</para></li></ul>
+        /// the unique identifier is the resource ID. Example: <c>inference-component/my-inference-component</c>.</para></li><li><para>Pool of WorkSpaces - The resource type is <c>workspacespool</c> and the unique identifier
+        /// is the pool ID. Example: <c>workspacespool/wspool-123456</c>.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -298,9 +370,8 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// <summary>
         /// <para>
         /// <para>The scalable dimension. This string consists of the service namespace, resource type,
-        /// and scaling property.</para><ul><li><para><c>ecs:service:DesiredCount</c> - The desired task count of an ECS service.</para></li><li><para><c>elasticmapreduce:instancegroup:InstanceCount</c> - The instance count of an EMR
-        /// Instance Group.</para></li><li><para><c>ec2:spot-fleet-request:TargetCapacity</c> - The target capacity of a Spot Fleet.</para></li><li><para><c>appstream:fleet:DesiredCapacity</c> - The desired capacity of an AppStream 2.0
-        /// fleet.</para></li><li><para><c>dynamodb:table:ReadCapacityUnits</c> - The provisioned read capacity for a DynamoDB
+        /// and scaling property.</para><ul><li><para><c>ecs:service:DesiredCount</c> - The task count of an ECS service.</para></li><li><para><c>elasticmapreduce:instancegroup:InstanceCount</c> - The instance count of an EMR
+        /// Instance Group.</para></li><li><para><c>ec2:spot-fleet-request:TargetCapacity</c> - The target capacity of a Spot Fleet.</para></li><li><para><c>appstream:fleet:DesiredCapacity</c> - The capacity of an AppStream 2.0 fleet.</para></li><li><para><c>dynamodb:table:ReadCapacityUnits</c> - The provisioned read capacity for a DynamoDB
         /// table.</para></li><li><para><c>dynamodb:table:WriteCapacityUnits</c> - The provisioned write capacity for a DynamoDB
         /// table.</para></li><li><para><c>dynamodb:index:ReadCapacityUnits</c> - The provisioned read capacity for a DynamoDB
         /// global secondary index.</para></li><li><para><c>dynamodb:index:WriteCapacityUnits</c> - The provisioned write capacity for a DynamoDB
@@ -314,12 +385,14 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// Lambda function.</para></li><li><para><c>cassandra:table:ReadCapacityUnits</c> - The provisioned read capacity for an Amazon
         /// Keyspaces table.</para></li><li><para><c>cassandra:table:WriteCapacityUnits</c> - The provisioned write capacity for an
         /// Amazon Keyspaces table.</para></li><li><para><c>kafka:broker-storage:VolumeSize</c> - The provisioned volume size (in GiB) for
-        /// brokers in an Amazon MSK cluster.</para></li><li><para><c>elasticache:replication-group:NodeGroups</c> - The number of node groups for an
+        /// brokers in an Amazon MSK cluster.</para></li><li><para><c>elasticache:cache-cluster:Nodes</c> - The number of nodes for an Amazon ElastiCache
+        /// cache cluster.</para></li><li><para><c>elasticache:replication-group:NodeGroups</c> - The number of node groups for an
         /// Amazon ElastiCache replication group.</para></li><li><para><c>elasticache:replication-group:Replicas</c> - The number of replicas per node group
         /// for an Amazon ElastiCache replication group.</para></li><li><para><c>neptune:cluster:ReadReplicaCount</c> - The count of read replicas in an Amazon
         /// Neptune DB cluster.</para></li><li><para><c>sagemaker:variant:DesiredProvisionedConcurrency</c> - The provisioned concurrency
-        /// for a SageMaker Serverless endpoint.</para></li><li><para><c>sagemaker:inference-component:DesiredCopyCount</c> - The number of copies across
-        /// an endpoint for a SageMaker inference component.</para></li></ul>
+        /// for a SageMaker serverless endpoint.</para></li><li><para><c>sagemaker:inference-component:DesiredCopyCount</c> - The number of copies across
+        /// an endpoint for a SageMaker inference component.</para></li><li><para><c>workspaces:workspacespool:DesiredUserSessions</c> - The number of user sessions
+        /// for the WorkSpaces in the pool.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -357,6 +430,17 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         public System.Int32? TargetTrackingScalingPolicyConfiguration_ScaleOutCooldown { get; set; }
         #endregion
         
+        #region Parameter PredictiveScalingPolicyConfiguration_SchedulingBufferTime
+        /// <summary>
+        /// <para>
+        /// <para> The amount of time, in seconds, that the start time can be advanced. </para><para>The value must be less than the forecast interval duration of 3600 seconds (60 minutes).
+        /// Defaults to 300 seconds if not specified. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? PredictiveScalingPolicyConfiguration_SchedulingBufferTime { get; set; }
+        #endregion
+        
         #region Parameter ServiceNamespace
         /// <summary>
         /// <para>
@@ -391,7 +475,11 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         /// <summary>
         /// <para>
         /// <para>A set of adjustments that enable you to scale based on the size of the alarm breach.</para><para>At least one step adjustment is required if you are adding a new step scaling policy
-        /// configuration.</para>
+        /// configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -440,16 +528,6 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServiceNamespace parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServiceNamespace' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServiceNamespace' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -460,9 +538,13 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PolicyName), MyInvocation.BoundParameters);
@@ -476,21 +558,11 @@ namespace Amazon.PowerShell.Cmdlets.AAS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ApplicationAutoScaling.Model.PutScalingPolicyResponse, SetAASScalingPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServiceNamespace;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.PolicyName = this.PolicyName;
             #if MODULAR
             if (this.PolicyName == null && ParameterWasBound(nameof(this.PolicyName)))
@@ -499,6 +571,14 @@ namespace Amazon.PowerShell.Cmdlets.AAS
             }
             #endif
             context.PolicyType = this.PolicyType;
+            context.PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior = this.PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior;
+            context.PredictiveScalingPolicyConfiguration_MaxCapacityBuffer = this.PredictiveScalingPolicyConfiguration_MaxCapacityBuffer;
+            if (this.PredictiveScalingPolicyConfiguration_MetricSpecification != null)
+            {
+                context.PredictiveScalingPolicyConfiguration_MetricSpecification = new List<Amazon.ApplicationAutoScaling.Model.PredictiveScalingMetricSpecification>(this.PredictiveScalingPolicyConfiguration_MetricSpecification);
+            }
+            context.PredictiveScalingPolicyConfiguration_Mode = this.PredictiveScalingPolicyConfiguration_Mode;
+            context.PredictiveScalingPolicyConfiguration_SchedulingBufferTime = this.PredictiveScalingPolicyConfiguration_SchedulingBufferTime;
             context.ResourceId = this.ResourceId;
             #if MODULAR
             if (this.ResourceId == null && ParameterWasBound(nameof(this.ResourceId)))
@@ -569,6 +649,65 @@ namespace Amazon.PowerShell.Cmdlets.AAS
             if (cmdletContext.PolicyType != null)
             {
                 request.PolicyType = cmdletContext.PolicyType;
+            }
+            
+             // populate PredictiveScalingPolicyConfiguration
+            var requestPredictiveScalingPolicyConfigurationIsNull = true;
+            request.PredictiveScalingPolicyConfiguration = new Amazon.ApplicationAutoScaling.Model.PredictiveScalingPolicyConfiguration();
+            Amazon.ApplicationAutoScaling.PredictiveScalingMaxCapacityBreachBehavior requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior = null;
+            if (cmdletContext.PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior != null)
+            {
+                requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior = cmdletContext.PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior;
+            }
+            if (requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior != null)
+            {
+                request.PredictiveScalingPolicyConfiguration.MaxCapacityBreachBehavior = requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior;
+                requestPredictiveScalingPolicyConfigurationIsNull = false;
+            }
+            System.Int32? requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBuffer = null;
+            if (cmdletContext.PredictiveScalingPolicyConfiguration_MaxCapacityBuffer != null)
+            {
+                requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBuffer = cmdletContext.PredictiveScalingPolicyConfiguration_MaxCapacityBuffer.Value;
+            }
+            if (requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBuffer != null)
+            {
+                request.PredictiveScalingPolicyConfiguration.MaxCapacityBuffer = requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MaxCapacityBuffer.Value;
+                requestPredictiveScalingPolicyConfigurationIsNull = false;
+            }
+            List<Amazon.ApplicationAutoScaling.Model.PredictiveScalingMetricSpecification> requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MetricSpecification = null;
+            if (cmdletContext.PredictiveScalingPolicyConfiguration_MetricSpecification != null)
+            {
+                requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MetricSpecification = cmdletContext.PredictiveScalingPolicyConfiguration_MetricSpecification;
+            }
+            if (requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MetricSpecification != null)
+            {
+                request.PredictiveScalingPolicyConfiguration.MetricSpecifications = requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_MetricSpecification;
+                requestPredictiveScalingPolicyConfigurationIsNull = false;
+            }
+            Amazon.ApplicationAutoScaling.PredictiveScalingMode requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_Mode = null;
+            if (cmdletContext.PredictiveScalingPolicyConfiguration_Mode != null)
+            {
+                requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_Mode = cmdletContext.PredictiveScalingPolicyConfiguration_Mode;
+            }
+            if (requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_Mode != null)
+            {
+                request.PredictiveScalingPolicyConfiguration.Mode = requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_Mode;
+                requestPredictiveScalingPolicyConfigurationIsNull = false;
+            }
+            System.Int32? requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_SchedulingBufferTime = null;
+            if (cmdletContext.PredictiveScalingPolicyConfiguration_SchedulingBufferTime != null)
+            {
+                requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_SchedulingBufferTime = cmdletContext.PredictiveScalingPolicyConfiguration_SchedulingBufferTime.Value;
+            }
+            if (requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_SchedulingBufferTime != null)
+            {
+                request.PredictiveScalingPolicyConfiguration.SchedulingBufferTime = requestPredictiveScalingPolicyConfiguration_predictiveScalingPolicyConfiguration_SchedulingBufferTime.Value;
+                requestPredictiveScalingPolicyConfigurationIsNull = false;
+            }
+             // determine if request.PredictiveScalingPolicyConfiguration should be set to null
+            if (requestPredictiveScalingPolicyConfigurationIsNull)
+            {
+                request.PredictiveScalingPolicyConfiguration = null;
             }
             if (cmdletContext.ResourceId != null)
             {
@@ -838,13 +977,7 @@ namespace Amazon.PowerShell.Cmdlets.AAS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Application Auto Scaling", "PutScalingPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutScalingPolicy(request);
-                #elif CORECLR
-                return client.PutScalingPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutScalingPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -863,6 +996,11 @@ namespace Amazon.PowerShell.Cmdlets.AAS
         {
             public System.String PolicyName { get; set; }
             public Amazon.ApplicationAutoScaling.PolicyType PolicyType { get; set; }
+            public Amazon.ApplicationAutoScaling.PredictiveScalingMaxCapacityBreachBehavior PredictiveScalingPolicyConfiguration_MaxCapacityBreachBehavior { get; set; }
+            public System.Int32? PredictiveScalingPolicyConfiguration_MaxCapacityBuffer { get; set; }
+            public List<Amazon.ApplicationAutoScaling.Model.PredictiveScalingMetricSpecification> PredictiveScalingPolicyConfiguration_MetricSpecification { get; set; }
+            public Amazon.ApplicationAutoScaling.PredictiveScalingMode PredictiveScalingPolicyConfiguration_Mode { get; set; }
+            public System.Int32? PredictiveScalingPolicyConfiguration_SchedulingBufferTime { get; set; }
             public System.String ResourceId { get; set; }
             public Amazon.ApplicationAutoScaling.ScalableDimension ScalableDimension { get; set; }
             public Amazon.ApplicationAutoScaling.ServiceNamespace ServiceNamespace { get; set; }

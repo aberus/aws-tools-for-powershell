@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
-    /// Updates a workflow.
+    /// Updates information about a workflow.
+    /// 
+    ///  
+    /// <para>
+    /// You can update the following workflow information:
+    /// </para><ul><li><para>
+    /// Name
+    /// </para></li><li><para>
+    /// Description
+    /// </para></li><li><para>
+    /// Default storage type
+    /// </para></li><li><para>
+    /// Default storage capacity (with workflow ID)
+    /// </para></li></ul><para>
+    /// This operation returns a response with no body if the operation is successful. You
+    /// can check the workflow updates by calling the <c>GetWorkflow</c> API operation.
+    /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/omics/latest/dev/update-private-workflow.html">Update
+    /// a private workflow</a> in the <i>Amazon Web Services HealthOmics User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("Update", "OMICSWorkflow", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon Omics UpdateWorkflow API operation.", Operation = new[] {"UpdateWorkflow"}, SelectReturnType = typeof(Amazon.Omics.Model.UpdateWorkflowResponse))]
     [AWSCmdletOutput("None or Amazon.Omics.Model.UpdateWorkflowResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Omics.Model.UpdateWorkflowResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Omics.Model.UpdateWorkflowResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateOMICSWorkflowCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -79,6 +101,43 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter ReadmeMarkdown
+        /// <summary>
+        /// <para>
+        /// <para>The markdown content for the workflow's README file. This provides documentation and
+        /// usage information for users of the workflow.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ReadmeMarkdown { get; set; }
+        #endregion
+        
+        #region Parameter StorageCapacity
+        /// <summary>
+        /// <para>
+        /// <para>The default static storage capacity (in gibibytes) for runs that use this workflow
+        /// or workflow version. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? StorageCapacity { get; set; }
+        #endregion
+        
+        #region Parameter StorageType
+        /// <summary>
+        /// <para>
+        /// <para>The default storage type for runs that use this workflow. STATIC storage allocates
+        /// a fixed amount of storage. DYNAMIC storage dynamically scales the storage up or down,
+        /// based on file system utilization. For more information about static and dynamic storage,
+        /// see <a href="https://docs.aws.amazon.com/omics/latest/dev/Using-workflows.html">Running
+        /// workflows</a> in the <i>Amazon Web Services HealthOmics User Guide</i>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Omics.StorageType")]
+        public Amazon.Omics.StorageType StorageType { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -87,16 +146,6 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -109,9 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -125,21 +178,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Omics.Model.UpdateWorkflowResponse, UpdateOMICSWorkflowCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.Id = this.Id;
             #if MODULAR
@@ -149,6 +192,9 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             }
             #endif
             context.Name = this.Name;
+            context.ReadmeMarkdown = this.ReadmeMarkdown;
+            context.StorageCapacity = this.StorageCapacity;
+            context.StorageType = this.StorageType;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -176,6 +222,18 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.ReadmeMarkdown != null)
+            {
+                request.ReadmeMarkdown = cmdletContext.ReadmeMarkdown;
+            }
+            if (cmdletContext.StorageCapacity != null)
+            {
+                request.StorageCapacity = cmdletContext.StorageCapacity.Value;
+            }
+            if (cmdletContext.StorageType != null)
+            {
+                request.StorageType = cmdletContext.StorageType;
             }
             
             CmdletOutput output;
@@ -215,13 +273,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "UpdateWorkflow");
             try
             {
-                #if DESKTOP
-                return client.UpdateWorkflow(request);
-                #elif CORECLR
-                return client.UpdateWorkflowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateWorkflowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -241,6 +293,9 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             public System.String Description { get; set; }
             public System.String Id { get; set; }
             public System.String Name { get; set; }
+            public System.String ReadmeMarkdown { get; set; }
+            public System.Int32? StorageCapacity { get; set; }
+            public Amazon.Omics.StorageType StorageType { get; set; }
             public System.Func<Amazon.Omics.Model.UpdateWorkflowResponse, UpdateOMICSWorkflowCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

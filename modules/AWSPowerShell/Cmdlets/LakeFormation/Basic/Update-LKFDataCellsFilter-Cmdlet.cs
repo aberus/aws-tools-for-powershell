@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LakeFormation;
 using Amazon.LakeFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LKF
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
     [AWSCmdlet("Calls the AWS Lake Formation UpdateDataCellsFilter API operation.", Operation = new[] {"UpdateDataCellsFilter"}, SelectReturnType = typeof(Amazon.LakeFormation.Model.UpdateDataCellsFilterResponse))]
     [AWSCmdletOutput("None or Amazon.LakeFormation.Model.UpdateDataCellsFilterResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.LakeFormation.Model.UpdateDataCellsFilterResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.LakeFormation.Model.UpdateDataCellsFilterResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateLKFDataCellsFilterCmdlet : AmazonLakeFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RowFilter_AllRowsWildcard
         /// <summary>
@@ -58,7 +61,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         /// <para>
         /// <para>A list of column names and/or nested column attributes. When specifying nested attributes,
         /// use a qualified dot (.) delimited format such as "address"."zip". Nested attributes
-        /// within this list may not exceed a depth of 5.</para>
+        /// within this list may not exceed a depth of 5.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,7 +93,11 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         #region Parameter ColumnWildcard_ExcludedColumnName
         /// <summary>
         /// <para>
-        /// <para>Excludes column names. Any column with this name will be excluded.</para>
+        /// <para>Excludes column names. Any column with this name will be excluded.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,9 +197,13 @@ namespace Amazon.PowerShell.Cmdlets.LKF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TableData_TableName), MyInvocation.BoundParameters);
@@ -429,13 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.LKF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lake Formation", "UpdateDataCellsFilter");
             try
             {
-                #if DESKTOP
-                return client.UpdateDataCellsFilter(request);
-                #elif CORECLR
-                return client.UpdateDataCellsFilterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDataCellsFilterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

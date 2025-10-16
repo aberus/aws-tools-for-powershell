@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kendra;
 using Amazon.Kendra.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KNDR
 {
     /// <summary>
@@ -39,19 +41,24 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
     [OutputType("Amazon.Kendra.Model.GetQuerySuggestionsResponse")]
     [AWSCmdlet("Calls the Amazon Kendra GetQuerySuggestions API operation.", Operation = new[] {"GetQuerySuggestions"}, SelectReturnType = typeof(Amazon.Kendra.Model.GetQuerySuggestionsResponse))]
     [AWSCmdletOutput("Amazon.Kendra.Model.GetQuerySuggestionsResponse",
-        "This cmdlet returns an Amazon.Kendra.Model.GetQuerySuggestionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Kendra.Model.GetQuerySuggestionsResponse object containing multiple properties."
     )]
     public partial class GetKNDRQuerySuggestionCmdlet : AmazonKendraClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeSuggestionsConfig_AdditionalResponseAttribute
         /// <summary>
         /// <para>
         /// <para>The list of additional document field/attribute keys or field names to include in
         /// the response. You can use additional fields to provide extra information in the response.
-        /// Additional fields are not used to based suggestions on.</para>
+        /// Additional fields are not used to based suggestions on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>The list of data source groups you want to filter search results based on groups'
-        /// access to documents in that data source.</para>
+        /// access to documents in that data source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -85,7 +96,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>The list of groups you want to filter search results based on the groups' access to
-        /// documents.</para>
+        /// documents.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,7 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>
         /// <para>The list of document field/attribute keys or field names to use for query suggestions.
         /// If the content within any of the fields match what your user starts typing as their
-        /// query, then the field content is returned as a query suggestion.</para>
+        /// query, then the field content is returned as a query suggestion.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +178,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>The suggestions type to base query suggestions on. The suggestion types are query
         /// history or document fields/attributes. You can set one type or the other.</para><para>If you set query history as your suggestions type, Amazon Kendra suggests queries
         /// relevant to your users based on popular queries in the query history.</para><para>If you set document fields/attributes as your suggestions type, Amazon Kendra suggests
-        /// queries relevant to your users based on the contents of document fields.</para>
+        /// queries relevant to your users based on the contents of document fields.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,19 +225,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IndexId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IndexId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IndexId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -222,21 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kendra.Model.GetQuerySuggestionsResponse, GetKNDRQuerySuggestionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IndexId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AttributeSuggestionsConfig_AdditionalResponseAttribute != null)
             {
                 context.AttributeSuggestionsConfig_AdditionalResponseAttribute = new List<System.String>(this.AttributeSuggestionsConfig_AdditionalResponseAttribute);
@@ -439,13 +446,7 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kendra", "GetQuerySuggestions");
             try
             {
-                #if DESKTOP
-                return client.GetQuerySuggestions(request);
-                #elif CORECLR
-                return client.GetQuerySuggestionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetQuerySuggestionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

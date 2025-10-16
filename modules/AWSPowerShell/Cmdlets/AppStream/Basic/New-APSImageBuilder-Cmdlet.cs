@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppStream;
 using Amazon.AppStream.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APS
 {
     /// <summary>
@@ -42,18 +44,23 @@ namespace Amazon.PowerShell.Cmdlets.APS
     [AWSCmdlet("Calls the Amazon AppStream CreateImageBuilder API operation.", Operation = new[] {"CreateImageBuilder"}, SelectReturnType = typeof(Amazon.AppStream.Model.CreateImageBuilderResponse))]
     [AWSCmdletOutput("Amazon.AppStream.Model.ImageBuilder or Amazon.AppStream.Model.CreateImageBuilderResponse",
         "This cmdlet returns an Amazon.AppStream.Model.ImageBuilder object.",
-        "The service call response (type Amazon.AppStream.Model.CreateImageBuilderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppStream.Model.CreateImageBuilderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAPSImageBuilderCmdlet : AmazonAppStreamClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessEndpoint
         /// <summary>
         /// <para>
         /// <para>The list of interface VPC endpoint (interface endpoint) objects. Administrators can
-        /// connect to the image builder only through the specified endpoints.</para>
+        /// connect to the image builder only through the specified endpoints.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,7 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.APS
         /// <summary>
         /// <para>
         /// <para>The instance type to use when launching the image builder. The following instance
-        /// types are available:</para><ul><li><para>stream.standard.small</para></li><li><para>stream.standard.medium</para></li><li><para>stream.standard.large</para></li><li><para>stream.compute.large</para></li><li><para>stream.compute.xlarge</para></li><li><para>stream.compute.2xlarge</para></li><li><para>stream.compute.4xlarge</para></li><li><para>stream.compute.8xlarge</para></li><li><para>stream.memory.large</para></li><li><para>stream.memory.xlarge</para></li><li><para>stream.memory.2xlarge</para></li><li><para>stream.memory.4xlarge</para></li><li><para>stream.memory.8xlarge</para></li><li><para>stream.memory.z1d.large</para></li><li><para>stream.memory.z1d.xlarge</para></li><li><para>stream.memory.z1d.2xlarge</para></li><li><para>stream.memory.z1d.3xlarge</para></li><li><para>stream.memory.z1d.6xlarge</para></li><li><para>stream.memory.z1d.12xlarge</para></li><li><para>stream.graphics-design.large</para></li><li><para>stream.graphics-design.xlarge</para></li><li><para>stream.graphics-design.2xlarge</para></li><li><para>stream.graphics-design.4xlarge</para></li><li><para>stream.graphics-desktop.2xlarge</para></li><li><para>stream.graphics.g4dn.xlarge</para></li><li><para>stream.graphics.g4dn.2xlarge</para></li><li><para>stream.graphics.g4dn.4xlarge</para></li><li><para>stream.graphics.g4dn.8xlarge</para></li><li><para>stream.graphics.g4dn.12xlarge</para></li><li><para>stream.graphics.g4dn.16xlarge</para></li><li><para>stream.graphics-pro.4xlarge</para></li><li><para>stream.graphics-pro.8xlarge</para></li><li><para>stream.graphics-pro.16xlarge</para></li></ul>
+        /// types are available:</para><ul><li><para>stream.standard.small</para></li><li><para>stream.standard.medium</para></li><li><para>stream.standard.large</para></li><li><para>stream.compute.large</para></li><li><para>stream.compute.xlarge</para></li><li><para>stream.compute.2xlarge</para></li><li><para>stream.compute.4xlarge</para></li><li><para>stream.compute.8xlarge</para></li><li><para>stream.memory.large</para></li><li><para>stream.memory.xlarge</para></li><li><para>stream.memory.2xlarge</para></li><li><para>stream.memory.4xlarge</para></li><li><para>stream.memory.8xlarge</para></li><li><para>stream.memory.z1d.large</para></li><li><para>stream.memory.z1d.xlarge</para></li><li><para>stream.memory.z1d.2xlarge</para></li><li><para>stream.memory.z1d.3xlarge</para></li><li><para>stream.memory.z1d.6xlarge</para></li><li><para>stream.memory.z1d.12xlarge</para></li><li><para>stream.graphics-design.large</para></li><li><para>stream.graphics-design.xlarge</para></li><li><para>stream.graphics-design.2xlarge</para></li><li><para>stream.graphics-design.4xlarge</para></li><li><para>stream.graphics-desktop.2xlarge</para></li><li><para>stream.graphics.g4dn.xlarge</para></li><li><para>stream.graphics.g4dn.2xlarge</para></li><li><para>stream.graphics.g4dn.4xlarge</para></li><li><para>stream.graphics.g4dn.8xlarge</para></li><li><para>stream.graphics.g4dn.12xlarge</para></li><li><para>stream.graphics.g4dn.16xlarge</para></li><li><para>stream.graphics-pro.4xlarge</para></li><li><para>stream.graphics-pro.8xlarge</para></li><li><para>stream.graphics-pro.16xlarge</para></li><li><para>stream.graphics.g5.xlarge</para></li><li><para>stream.graphics.g5.2xlarge</para></li><li><para>stream.graphics.g5.4xlarge</para></li><li><para>stream.graphics.g5.8xlarge</para></li><li><para>stream.graphics.g5.16xlarge</para></li><li><para>stream.graphics.g5.12xlarge</para></li><li><para>stream.graphics.g5.24xlarge</para></li><li><para>stream.graphics.g6.xlarge</para></li><li><para>stream.graphics.g6.2xlarge</para></li><li><para>stream.graphics.g6.4xlarge</para></li><li><para>stream.graphics.g6.8xlarge</para></li><li><para>stream.graphics.g6.16xlarge</para></li><li><para>stream.graphics.g6.12xlarge</para></li><li><para>stream.graphics.g6.24xlarge</para></li><li><para>stream.graphics.gr6.4xlarge</para></li><li><para>stream.graphics.gr6.8xlarge</para></li><li><para>stream.graphics.g6f.large</para></li><li><para>stream.graphics.g6f.xlarge</para></li><li><para>stream.graphics.g6f.2xlarge</para></li><li><para>stream.graphics.g6f.4xlarge</para></li><li><para>stream.graphics.gr6f.4xlarge</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -196,7 +203,11 @@ namespace Amazon.PowerShell.Cmdlets.APS
         #region Parameter VpcConfig_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The identifiers of the security groups for the fleet or image builder.</para>
+        /// <para>The identifiers of the security groups for the fleet or image builder.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,12 +215,45 @@ namespace Amazon.PowerShell.Cmdlets.APS
         public System.String[] VpcConfig_SecurityGroupId { get; set; }
         #endregion
         
+        #region Parameter SoftwaresToInstall
+        /// <summary>
+        /// <para>
+        /// <para>The list of license included applications to install on the image builder during creation.</para><para>Possible values include the following:</para><ul><li><para>Microsoft_Office_2021_LTSC_Professional_Plus_32Bit</para></li><li><para>Microsoft_Office_2021_LTSC_Professional_Plus_64Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Professional_Plus_32Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Professional_Plus_64Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Professional_32Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Professional_64Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Professional_32Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Professional_64Bit</para></li><li><para>Microsoft_Project_2021_Professional_32Bit</para></li><li><para>Microsoft_Project_2021_Professional_64Bit</para></li><li><para>Microsoft_Project_2024_Professional_32Bit</para></li><li><para>Microsoft_Project_2024_Professional_64Bit</para></li><li><para>Microsoft_Office_2021_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Office_2021_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Project_2021_Standard_32Bit</para></li><li><para>Microsoft_Project_2021_Standard_64Bit</para></li><li><para>Microsoft_Project_2024_Standard_32Bit</para></li><li><para>Microsoft_Project_2024_Standard_64Bit</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] SoftwaresToInstall { get; set; }
+        #endregion
+        
+        #region Parameter SoftwaresToUninstall
+        /// <summary>
+        /// <para>
+        /// <para>The list of license included applications to uninstall from the image builder during
+        /// creation.</para><para>Possible values include the following:</para><ul><li><para>Microsoft_Office_2021_LTSC_Professional_Plus_32Bit</para></li><li><para>Microsoft_Office_2021_LTSC_Professional_Plus_64Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Professional_Plus_32Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Professional_Plus_64Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Professional_32Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Professional_64Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Professional_32Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Professional_64Bit</para></li><li><para>Microsoft_Project_2021_Professional_32Bit</para></li><li><para>Microsoft_Project_2021_Professional_64Bit</para></li><li><para>Microsoft_Project_2024_Professional_32Bit</para></li><li><para>Microsoft_Project_2024_Professional_64Bit</para></li><li><para>Microsoft_Office_2021_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Office_2021_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Office_2024_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Visio_2021_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Standard_32Bit</para></li><li><para>Microsoft_Visio_2024_LTSC_Standard_64Bit</para></li><li><para>Microsoft_Project_2021_Standard_32Bit</para></li><li><para>Microsoft_Project_2021_Standard_64Bit</para></li><li><para>Microsoft_Project_2024_Standard_32Bit</para></li><li><para>Microsoft_Project_2024_Standard_64Bit</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] SoftwaresToUninstall { get; set; }
+        #endregion
+        
         #region Parameter VpcConfig_SubnetId
         /// <summary>
         /// <para>
         /// <para>The identifiers of the subnets to which a network interface is attached from the fleet
         /// instance or image builder instance. Fleet instances use one or more subnets. Image
-        /// builder instances use one subnet.</para>
+        /// builder instances use one subnet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -224,7 +268,11 @@ namespace Amazon.PowerShell.Cmdlets.APS
         /// is optional. For example, Environment=Test. If you do not specify a value, Environment=.
         /// </para><para>Generally allowed characters are: letters, numbers, and spaces representable in UTF-8,
         /// and the following special characters: </para><para>_ . : / = + \ - @</para><para>If you do not specify a value, the value is set to an empty string.</para><para>For more information about tags, see <a href="https://docs.aws.amazon.com/appstream2/latest/developerguide/tagging-basic.html">Tagging
-        /// Your Resources</a> in the <i>Amazon AppStream 2.0 Administration Guide</i>.</para>
+        /// Your Resources</a> in the <i>Amazon AppStream 2.0 Administration Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -243,16 +291,6 @@ namespace Amazon.PowerShell.Cmdlets.APS
         public string Select { get; set; } = "ImageBuilder";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -263,9 +301,13 @@ namespace Amazon.PowerShell.Cmdlets.APS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageName), MyInvocation.BoundParameters);
@@ -279,21 +321,11 @@ namespace Amazon.PowerShell.Cmdlets.APS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppStream.Model.CreateImageBuilderResponse, NewAPSImageBuilderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AccessEndpoint != null)
             {
                 context.AccessEndpoint = new List<Amazon.AppStream.Model.AccessEndpoint>(this.AccessEndpoint);
@@ -321,6 +353,14 @@ namespace Amazon.PowerShell.Cmdlets.APS
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.SoftwaresToInstall != null)
+            {
+                context.SoftwaresToInstall = new List<System.String>(this.SoftwaresToInstall);
+            }
+            if (this.SoftwaresToUninstall != null)
+            {
+                context.SoftwaresToUninstall = new List<System.String>(this.SoftwaresToUninstall);
+            }
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -422,6 +462,14 @@ namespace Amazon.PowerShell.Cmdlets.APS
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.SoftwaresToInstall != null)
+            {
+                request.SoftwaresToInstall = cmdletContext.SoftwaresToInstall;
+            }
+            if (cmdletContext.SoftwaresToUninstall != null)
+            {
+                request.SoftwaresToUninstall = cmdletContext.SoftwaresToUninstall;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
@@ -493,13 +541,7 @@ namespace Amazon.PowerShell.Cmdlets.APS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon AppStream", "CreateImageBuilder");
             try
             {
-                #if DESKTOP
-                return client.CreateImageBuilder(request);
-                #elif CORECLR
-                return client.CreateImageBuilderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateImageBuilderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -528,6 +570,8 @@ namespace Amazon.PowerShell.Cmdlets.APS
             public System.String ImageName { get; set; }
             public System.String InstanceType { get; set; }
             public System.String Name { get; set; }
+            public List<System.String> SoftwaresToInstall { get; set; }
+            public List<System.String> SoftwaresToUninstall { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public List<System.String> VpcConfig_SecurityGroupId { get; set; }
             public List<System.String> VpcConfig_SubnetId { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,39 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CertificateManager;
 using Amazon.CertificateManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ACM
 {
     /// <summary>
-    /// Exports a private certificate issued by a private certificate authority (CA) for use
-    /// anywhere. The exported file contains the certificate, the certificate chain, and the
-    /// encrypted private 2048-bit RSA key associated with the public key that is embedded
+    /// Exports a private certificate issued by a private certificate authority (CA) or public
+    /// certificate for use anywhere. The exported file contains the certificate, the certificate
+    /// chain, and the encrypted private key associated with the public key that is embedded
     /// in the certificate. For security, you must assign a passphrase for the private key
     /// when exporting it. 
     /// 
     ///  
     /// <para>
     /// For information about exporting and formatting a certificate using the ACM console
-    /// or CLI, see <a href="https://docs.aws.amazon.com/acm/latest/userguide/gs-acm-export-private.html">Export
-    /// a Private Certificate</a>.
+    /// or CLI, see <a href="https://docs.aws.amazon.com/acm/latest/userguide/export-private.html">Export
+    /// a private certificate</a> and <a href="https://docs.aws.amazon.com/acm/latest/userguide/export-public-certificate">Export
+    /// a public certificate</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Export", "ACMCertificate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CertificateManager.Model.ExportCertificateResponse")]
     [AWSCmdlet("Calls the AWS Certificate Manager ExportCertificate API operation.", Operation = new[] {"ExportCertificate"}, SelectReturnType = typeof(Amazon.CertificateManager.Model.ExportCertificateResponse))]
     [AWSCmdletOutput("Amazon.CertificateManager.Model.ExportCertificateResponse",
-        "This cmdlet returns an Amazon.CertificateManager.Model.ExportCertificateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CertificateManager.Model.ExportCertificateResponse object containing multiple properties."
     )]
     public partial class ExportACMCertificateCmdlet : AmazonCertificateManagerClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateArn
         /// <summary>
@@ -104,16 +104,6 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CertificateArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CertificateArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CertificateArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -124,9 +114,13 @@ namespace Amazon.PowerShell.Cmdlets.ACM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CertificateArn), MyInvocation.BoundParameters);
@@ -140,21 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CertificateManager.Model.ExportCertificateResponse, ExportACMCertificateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CertificateArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CertificateArn = this.CertificateArn;
             #if MODULAR
             if (this.CertificateArn == null && ParameterWasBound(nameof(this.CertificateArn)))
@@ -244,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.ACM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager", "ExportCertificate");
             try
             {
-                #if DESKTOP
-                return client.ExportCertificate(request);
-                #elif CORECLR
-                return client.ExportCertificateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExportCertificateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

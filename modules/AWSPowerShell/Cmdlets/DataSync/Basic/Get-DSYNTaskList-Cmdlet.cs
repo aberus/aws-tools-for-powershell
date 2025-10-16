@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
     [AWSCmdlet("Calls the AWS DataSync ListTasks API operation.", Operation = new[] {"ListTasks"}, SelectReturnType = typeof(Amazon.DataSync.Model.ListTasksResponse))]
     [AWSCmdletOutput("Amazon.DataSync.Model.TaskListEntry or Amazon.DataSync.Model.ListTasksResponse",
         "This cmdlet returns a collection of Amazon.DataSync.Model.TaskListEntry objects.",
-        "The service call response (type Amazon.DataSync.Model.ListTasksResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataSync.Model.ListTasksResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDSYNTaskListCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -48,7 +51,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// <para>You can use API filters to narrow down the list of resources returned by <c>ListTasks</c>.
         /// For example, to retrieve all tasks on a specific source location, you can use <c>ListTasks</c>
         /// with filter name <c>LocationId</c> and <c>Operator Equals</c> with the ARN for the
-        /// location.</para>
+        /// location.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -80,7 +87,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,9 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -282,7 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Tasks.Count;
+                    int _receivedThisCall = response.Tasks?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -331,13 +342,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "ListTasks");
             try
             {
-                #if DESKTOP
-                return client.ListTasks(request);
-                #elif CORECLR
-                return client.ListTasksAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTasksAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

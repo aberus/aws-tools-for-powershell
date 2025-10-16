@@ -1,0 +1,25 @@
+---
+cloudformation_DescribeStacks:
+  title: Use Get-CFNStack
+  title_abbrev: Get-CFNStack
+  synopsis: use Get-CFNStack
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Get-CFNStack
+        excerpts:
+        - description: "<emphasis role=\"bold\">Example 1: Returns a collection of Stack instances describing all of the user's stacks.</emphasis>"
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudformation_Get-CFNStack.1.1.ps1
+        - description: '<emphasis role="bold">Example 2: Returns a Stack instance describing the specified stack</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudformation_Get-CFNStack.2.1.ps1
+  services:
+    cloudformation:
+      DescribeStacks:
+

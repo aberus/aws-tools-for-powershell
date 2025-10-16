@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
@@ -42,19 +44,24 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service DescribeMatchmakingRuleSets API operation.", Operation = new[] {"DescribeMatchmakingRuleSets"}, SelectReturnType = typeof(Amazon.GameLift.Model.DescribeMatchmakingRuleSetsResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.MatchmakingRuleSet or Amazon.GameLift.Model.DescribeMatchmakingRuleSetsResponse",
         "This cmdlet returns a collection of Amazon.GameLift.Model.MatchmakingRuleSet objects.",
-        "The service call response (type Amazon.GameLift.Model.DescribeMatchmakingRuleSetsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.DescribeMatchmakingRuleSetsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGMLMatchmakingRuleSetCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Name
         /// <summary>
         /// <para>
         /// <para>A list of one or more matchmaking rule set names to retrieve details for. (Note: The
         /// rule set name is different from the optional "name" field in the rule set body.) You
-        /// can use either the rule set name or ARN value. </para>
+        /// can use either the rule set name or ARN value. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +95,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -279,7 +290,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.RuleSets.Count;
+                    int _receivedThisCall = response.RuleSets?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -328,13 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DescribeMatchmakingRuleSets");
             try
             {
-                #if DESKTOP
-                return client.DescribeMatchmakingRuleSets(request);
-                #elif CORECLR
-                return client.DescribeMatchmakingRuleSetsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeMatchmakingRuleSetsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

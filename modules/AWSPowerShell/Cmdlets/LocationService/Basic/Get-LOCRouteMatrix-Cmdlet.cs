@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
-    /// <a href="https://docs.aws.amazon.com/location/latest/developerguide/calculate-route-matrix.html">
+    /// <a href="https://docs.aws.amazon.com/location/previous/developerguide/calculate-route-matrix.html">
     /// Calculates a route matrix</a> given the following required parameters: <c>DeparturePositions</c>
     /// and <c>DestinationPositions</c>. <c>CalculateRouteMatrix</c> calculates routes and
     /// returns the travel time and travel distance from each departure position to each destination
@@ -48,13 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     /// day to travel with the best traffic conditions when calculating routes.
     /// </para><para>
     /// Additional options include:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/location/latest/developerguide/departure-time.html">
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/location/previous/developerguide/departure-time.html">
     /// Specifying a departure time</a> using either <c>DepartureTime</c> or <c>DepartNow</c>.
     /// This calculates routes based on predictive traffic data at the given time. 
     /// </para><note><para>
     /// You can't specify both <c>DepartureTime</c> and <c>DepartNow</c> in a single request.
     /// Specifying both parameters returns a validation error.
-    /// </para></note></li><li><para><a href="https://docs.aws.amazon.com/location/latest/developerguide/travel-mode.html">Specifying
+    /// </para></note></li><li><para><a href="https://docs.aws.amazon.com/location/previous/developerguide/travel-mode.html">Specifying
     /// a travel mode</a> using TravelMode sets the transportation mode used to calculate
     /// the routes. This also lets you specify additional route preferences in <c>CarModeOptions</c>
     /// if traveling by <c>Car</c>, or <c>TruckModeOptions</c> if traveling by <c>Truck</c>.
@@ -64,14 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.CalculateRouteMatrixResponse")]
     [AWSCmdlet("Calls the Amazon Location Service CalculateRouteMatrix API operation.", Operation = new[] {"CalculateRouteMatrix"}, SelectReturnType = typeof(Amazon.LocationService.Model.CalculateRouteMatrixResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.CalculateRouteMatrixResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.CalculateRouteMatrixResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.CalculateRouteMatrixResponse object containing multiple properties."
     )]
     public partial class GetLOCRouteMatrixCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CarModeOptions_AvoidFerry
         /// <summary>
@@ -154,11 +155,15 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>The list of departure (origin) positions for the route matrix. An array of points,
         /// each of which is itself a 2-value array defined in <a href="https://earth-info.nga.mil/GandG/wgs84/index.html">WGS
         /// 84</a> format: <c>[longitude, latitude]</c>. For example, <c>[-123.115, 49.285]</c>.</para><important><para>Depending on the data provider selected in the route calculator resource there may
-        /// be additional restrictions on the inputs you can choose. See <a href="https://docs.aws.amazon.com/location/latest/developerguide/calculate-route-matrix.html#matrix-routing-position-limits">
+        /// be additional restrictions on the inputs you can choose. See <a href="https://docs.aws.amazon.com/location/previous/developerguide/calculate-route-matrix.html#matrix-routing-position-limits">
         /// Position restrictions</a> in the <i>Amazon Location Service Developer Guide</i>.</para></important><note><para>For route calculators that use Esri as the data provider, if you specify a departure
-        /// that's not located on a road, Amazon Location <a href="https://docs.aws.amazon.com/location/latest/developerguide/snap-to-nearby-road.html">
+        /// that's not located on a road, Amazon Location <a href="https://docs.aws.amazon.com/location/previous/developerguide/snap-to-nearby-road.html">
         /// moves the position to the nearest road</a>. The snapped value is available in the
-        /// result in <c>SnappedDeparturePositions</c>.</para></note><para>Valid Values: <c>[-180 to 180,-90 to 90]</c></para>
+        /// result in <c>SnappedDeparturePositions</c>.</para></note><para>Valid Values: <c>[-180 to 180,-90 to 90]</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -193,11 +198,15 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>The list of destination positions for the route matrix. An array of points, each of
         /// which is itself a 2-value array defined in <a href="https://earth-info.nga.mil/GandG/wgs84/index.html">WGS
         /// 84</a> format: <c>[longitude, latitude]</c>. For example, <c>[-122.339, 47.615]</c></para><important><para>Depending on the data provider selected in the route calculator resource there may
-        /// be additional restrictions on the inputs you can choose. See <a href="https://docs.aws.amazon.com/location/latest/developerguide/calculate-route-matrix.html#matrix-routing-position-limits">
+        /// be additional restrictions on the inputs you can choose. See <a href="https://docs.aws.amazon.com/location/previous/developerguide/calculate-route-matrix.html#matrix-routing-position-limits">
         /// Position restrictions</a> in the <i>Amazon Location Service Developer Guide</i>.</para></important><note><para>For route calculators that use Esri as the data provider, if you specify a destination
-        /// that's not located on a road, Amazon Location <a href="https://docs.aws.amazon.com/location/latest/developerguide/snap-to-nearby-road.html">
+        /// that's not located on a road, Amazon Location <a href="https://docs.aws.amazon.com/location/previous/developerguide/snap-to-nearby-road.html">
         /// moves the position to the nearest road</a>. The snapped value is available in the
-        /// result in <c>SnappedDestinationPositions</c>.</para></note><para>Valid Values: <c>[-180 to 180,-90 to 90]</c></para>
+        /// result in <c>SnappedDestinationPositions</c>.</para></note><para>Valid Values: <c>[-180 to 180,-90 to 90]</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -238,7 +247,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         #region Parameter Key
         /// <summary>
         /// <para>
-        /// <para>The optional <a href="https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html">API
+        /// <para>The optional <a href="https://docs.aws.amazon.com/location/previous/developerguide/using-apikeys.html">API
         /// key</a> to authorize the request.</para>
         /// </para>
         /// </summary>
@@ -275,7 +284,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>Specifies the mode of transport when calculating a route. Used in estimating the speed
         /// of travel and road compatibility.</para><para>The <c>TravelMode</c> you specify also determines how you specify route preferences:
         /// </para><ul><li><para>If traveling by <c>Car</c> use the <c>CarModeOptions</c> parameter.</para></li><li><para>If traveling by <c>Truck</c> use the <c>TruckModeOptions</c> parameter.</para></li></ul><note><para><c>Bicycle</c> or <c>Motorcycle</c> are only valid when using <c>Grab</c> as a data
-        /// provider, and only within Southeast Asia.</para><para><c>Truck</c> is not available for Grab.</para><para>For more information about using Grab as a data provider, see <a href="https://docs.aws.amazon.com/location/latest/developerguide/grab.html">GrabMaps</a>
+        /// provider, and only within Southeast Asia.</para><para><c>Truck</c> is not available for Grab.</para><para>For more information about using Grab as a data provider, see <a href="https://docs.aws.amazon.com/location/previous/developerguide/grab.html">GrabMaps</a>
         /// in the <i>Amazon Location Service Developer Guide</i>.</para></note><para>Default Value: <c>Car</c></para>
         /// </para>
         /// </summary>
@@ -331,19 +340,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CalculatorName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CalculatorName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CalculatorName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -351,21 +354,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.CalculateRouteMatrixResponse, GetLOCRouteMatrixCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CalculatorName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CalculatorName = this.CalculatorName;
             #if MODULAR
             if (this.CalculatorName == null && ParameterWasBound(nameof(this.CalculatorName)))
@@ -650,13 +643,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "CalculateRouteMatrix");
             try
             {
-                #if DESKTOP
-                return client.CalculateRouteMatrix(request);
-                #elif CORECLR
-                return client.CalculateRouteMatrixAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CalculateRouteMatrixAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
@@ -40,7 +42,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     /// Each rule can have up to five (5) targets associated with it at one time.
     /// </para></note><para>
     /// For a list of services you can configure as targets for events, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-targets.html">EventBridge
-    /// targets</a> in the <i>Amazon EventBridge User Guide</i>.
+    /// targets</a> in the <i><i>Amazon EventBridge User Guide</i></i>.
     /// </para><para>
     /// Creating rules with built-in targets is supported only in the Amazon Web Services
     /// Management Console. The built-in targets are:
@@ -60,7 +62,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     /// in <c>PutTargets</c>.
     /// </para></li></ul><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/auth-and-access-control-eventbridge.html">Authentication
-    /// and Access Control</a> in the <i>Amazon EventBridge User Guide</i>.
+    /// and Access Control</a> in the <i><i>Amazon EventBridge User Guide</i></i>.
     /// </para><para>
     /// If another Amazon Web Services account is in the same region and has granted you permission
     /// (using <c>PutPermission</c>), you can send events to that account. Set that account's
@@ -121,14 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     [AWSCmdlet("Calls the Amazon EventBridge PutTargets API operation.", Operation = new[] {"PutTargets"}, SelectReturnType = typeof(Amazon.EventBridge.Model.PutTargetsResponse))]
     [AWSCmdletOutput("Amazon.EventBridge.Model.PutTargetsResultEntry or Amazon.EventBridge.Model.PutTargetsResponse",
         "This cmdlet returns a collection of Amazon.EventBridge.Model.PutTargetsResultEntry objects.",
-        "The service call response (type Amazon.EventBridge.Model.PutTargetsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EventBridge.Model.PutTargetsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteEVBTargetCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EventBusName
         /// <summary>
@@ -161,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter Target
         /// <summary>
         /// <para>
-        /// <para>The targets to update or add to the rule.</para>
+        /// <para>The targets to update or add to the rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -187,16 +192,6 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public string Select { get; set; } = "FailedEntries";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Rule parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Rule' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Rule' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -207,9 +202,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Rule), MyInvocation.BoundParameters);
@@ -223,21 +222,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EventBridge.Model.PutTargetsResponse, WriteEVBTargetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Rule;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EventBusName = this.EventBusName;
             context.Rule = this.Rule;
             #if MODULAR
@@ -322,13 +311,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "PutTargets");
             try
             {
-                #if DESKTOP
-                return client.PutTargets(request);
-                #elif CORECLR
-                return client.PutTargetsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutTargetsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

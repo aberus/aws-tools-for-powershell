@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -35,13 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [OutputType("System.Boolean")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyClientVpnEndpoint API operation.", Operation = new[] {"ModifyClientVpnEndpoint"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyClientVpnEndpointResponse))]
     [AWSCmdletOutput("System.Boolean or Amazon.EC2.Model.ModifyClientVpnEndpointResponse",
-        "This cmdlet returns a System.Boolean object.",
-        "The service call response (type Amazon.EC2.Model.ModifyClientVpnEndpointResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Boolean objects.",
+        "The service call response (type Amazon.EC2.Model.ModifyClientVpnEndpointResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2ClientVpnEndpointCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientLoginBannerOptions_BannerText
         /// <summary>
@@ -97,7 +100,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>The IPv4 address range, in CIDR notation, of the DNS servers to be used. You can specify
         /// up to two DNS servers. Ensure that the DNS servers can be reached by the clients.
-        /// The specified values overwrite the existing values.</para>
+        /// The specified values overwrite the existing values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,6 +120,31 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter DisconnectOnSessionTimeout
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether the client VPN session is disconnected after the maximum timeout
+        /// specified in <c>sessionTimeoutHours</c> is reached. If <c>true</c>, users are prompted
+        /// to reconnect client VPN. If <c>false</c>, client VPN attempts to reconnect automatically.
+        /// The default value is <c>true</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DisconnectOnSessionTimeout { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter ClientConnectOptions_Enabled
@@ -158,6 +190,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.Boolean? DnsServers_Enabled { get; set; }
         #endregion
         
+        #region Parameter ClientRouteEnforcementOptions_Enforced
+        /// <summary>
+        /// <para>
+        /// <para>Enable or disable Client Route Enforcement. The state can either be <c>true</c> (enabled)
+        /// or <c>false</c> (disabled). The default is <c>false</c>.</para><para>Valid values: <c>true | false</c></para><para>Default value: <c>false</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ClientRouteEnforcementOptions_Enforced { get; set; }
+        #endregion
+        
         #region Parameter ClientConnectOptions_LambdaFunctionArn
         /// <summary>
         /// <para>
@@ -171,7 +214,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The IDs of one or more security groups to apply to the target network.</para>
+        /// <para>The IDs of one or more security groups to apply to the target network.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -254,16 +301,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Return";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClientVpnEndpointId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClientVpnEndpointId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClientVpnEndpointId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -274,9 +311,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClientVpnEndpointId), MyInvocation.BoundParameters);
@@ -290,25 +331,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyClientVpnEndpointResponse, EditEC2ClientVpnEndpointCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClientVpnEndpointId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientConnectOptions_Enabled = this.ClientConnectOptions_Enabled;
             context.ClientConnectOptions_LambdaFunctionArn = this.ClientConnectOptions_LambdaFunctionArn;
             context.ClientLoginBannerOptions_BannerText = this.ClientLoginBannerOptions_BannerText;
             context.ClientLoginBannerOptions_Enabled = this.ClientLoginBannerOptions_Enabled;
+            context.ClientRouteEnforcementOptions_Enforced = this.ClientRouteEnforcementOptions_Enforced;
             context.ClientVpnEndpointId = this.ClientVpnEndpointId;
             #if MODULAR
             if (this.ClientVpnEndpointId == null && ParameterWasBound(nameof(this.ClientVpnEndpointId)))
@@ -320,11 +352,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.ConnectionLogOptions_CloudwatchLogStream = this.ConnectionLogOptions_CloudwatchLogStream;
             context.ConnectionLogOptions_Enabled = this.ConnectionLogOptions_Enabled;
             context.Description = this.Description;
+            context.DisconnectOnSessionTimeout = this.DisconnectOnSessionTimeout;
             if (this.DnsServers_CustomDnsServer != null)
             {
                 context.DnsServers_CustomDnsServer = new List<System.String>(this.DnsServers_CustomDnsServer);
             }
             context.DnsServers_Enabled = this.DnsServers_Enabled;
+            context.DryRun = this.DryRun;
             if (this.SecurityGroupId != null)
             {
                 context.SecurityGroupId = new List<System.String>(this.SecurityGroupId);
@@ -409,6 +443,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.ClientLoginBannerOptions = null;
             }
+            
+             // populate ClientRouteEnforcementOptions
+            var requestClientRouteEnforcementOptionsIsNull = true;
+            request.ClientRouteEnforcementOptions = new Amazon.EC2.Model.ClientRouteEnforcementOptions();
+            System.Boolean? requestClientRouteEnforcementOptions_clientRouteEnforcementOptions_Enforced = null;
+            if (cmdletContext.ClientRouteEnforcementOptions_Enforced != null)
+            {
+                requestClientRouteEnforcementOptions_clientRouteEnforcementOptions_Enforced = cmdletContext.ClientRouteEnforcementOptions_Enforced.Value;
+            }
+            if (requestClientRouteEnforcementOptions_clientRouteEnforcementOptions_Enforced != null)
+            {
+                request.ClientRouteEnforcementOptions.Enforced = requestClientRouteEnforcementOptions_clientRouteEnforcementOptions_Enforced.Value;
+                requestClientRouteEnforcementOptionsIsNull = false;
+            }
+             // determine if request.ClientRouteEnforcementOptions should be set to null
+            if (requestClientRouteEnforcementOptionsIsNull)
+            {
+                request.ClientRouteEnforcementOptions = null;
+            }
             if (cmdletContext.ClientVpnEndpointId != null)
             {
                 request.ClientVpnEndpointId = cmdletContext.ClientVpnEndpointId;
@@ -456,6 +509,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DisconnectOnSessionTimeout != null)
+            {
+                request.DisconnectOnSessionTimeout = cmdletContext.DisconnectOnSessionTimeout.Value;
+            }
             
              // populate DnsServers
             var requestDnsServersIsNull = true;
@@ -484,6 +541,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (requestDnsServersIsNull)
             {
                 request.DnsServers = null;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.SecurityGroupId != null)
             {
@@ -551,13 +612,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyClientVpnEndpoint");
             try
             {
-                #if DESKTOP
-                return client.ModifyClientVpnEndpoint(request);
-                #elif CORECLR
-                return client.ModifyClientVpnEndpointAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyClientVpnEndpointAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -578,13 +633,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String ClientConnectOptions_LambdaFunctionArn { get; set; }
             public System.String ClientLoginBannerOptions_BannerText { get; set; }
             public System.Boolean? ClientLoginBannerOptions_Enabled { get; set; }
+            public System.Boolean? ClientRouteEnforcementOptions_Enforced { get; set; }
             public System.String ClientVpnEndpointId { get; set; }
             public System.String ConnectionLogOptions_CloudwatchLogGroup { get; set; }
             public System.String ConnectionLogOptions_CloudwatchLogStream { get; set; }
             public System.Boolean? ConnectionLogOptions_Enabled { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? DisconnectOnSessionTimeout { get; set; }
             public List<System.String> DnsServers_CustomDnsServer { get; set; }
             public System.Boolean? DnsServers_Enabled { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<System.String> SecurityGroupId { get; set; }
             public Amazon.EC2.SelfServicePortal SelfServicePortal { get; set; }
             public System.String ServerCertificateArn { get; set; }

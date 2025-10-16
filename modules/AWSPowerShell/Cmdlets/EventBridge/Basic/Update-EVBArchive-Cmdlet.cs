@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     [OutputType("Amazon.EventBridge.Model.UpdateArchiveResponse")]
     [AWSCmdlet("Calls the Amazon EventBridge UpdateArchive API operation.", Operation = new[] {"UpdateArchive"}, SelectReturnType = typeof(Amazon.EventBridge.Model.UpdateArchiveResponse))]
     [AWSCmdletOutput("Amazon.EventBridge.Model.UpdateArchiveResponse",
-        "This cmdlet returns an Amazon.EventBridge.Model.UpdateArchiveResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EventBridge.Model.UpdateArchiveResponse object containing multiple properties."
     )]
     public partial class UpdateEVBArchiveCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ArchiveName
         /// <summary>
@@ -78,6 +81,23 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public System.String EventPattern { get; set; }
         #endregion
         
+        #region Parameter KmsKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of the KMS customer managed key for EventBridge to use, if you choose
+        /// to use a customer managed key to encrypt this archive. The identifier can be the key
+        /// Amazon Resource Name (ARN), KeyId, key alias, or key alias ARN.</para><para>If you do not specify a customer managed key identifier, EventBridge uses an Amazon
+        /// Web Services owned key to encrypt the archive.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/viewing-keys.html">Identify
+        /// and view keys</a> in the <i>Key Management Service Developer Guide</i>. </para><important><para>If you have specified that EventBridge use a customer managed key for encrypting the
+        /// source event bus, we strongly recommend you also specify a customer managed key for
+        /// any archives for the event bus as well. </para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/encryption-archives.html">Encrypting
+        /// archives</a> in the <i>Amazon EventBridge User Guide</i>.</para></important>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KmsKeyIdentifier { get; set; }
+        #endregion
+        
         #region Parameter RetentionDay
         /// <summary>
         /// <para>
@@ -100,16 +120,6 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ArchiveName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ArchiveName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ArchiveName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -120,9 +130,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ArchiveName), MyInvocation.BoundParameters);
@@ -136,21 +150,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EventBridge.Model.UpdateArchiveResponse, UpdateEVBArchiveCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ArchiveName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ArchiveName = this.ArchiveName;
             #if MODULAR
             if (this.ArchiveName == null && ParameterWasBound(nameof(this.ArchiveName)))
@@ -160,6 +164,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             #endif
             context.Description = this.Description;
             context.EventPattern = this.EventPattern;
+            context.KmsKeyIdentifier = this.KmsKeyIdentifier;
             context.RetentionDay = this.RetentionDay;
             
             // allow further manipulation of loaded context prior to processing
@@ -188,6 +193,10 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             if (cmdletContext.EventPattern != null)
             {
                 request.EventPattern = cmdletContext.EventPattern;
+            }
+            if (cmdletContext.KmsKeyIdentifier != null)
+            {
+                request.KmsKeyIdentifier = cmdletContext.KmsKeyIdentifier;
             }
             if (cmdletContext.RetentionDay != null)
             {
@@ -231,13 +240,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "UpdateArchive");
             try
             {
-                #if DESKTOP
-                return client.UpdateArchive(request);
-                #elif CORECLR
-                return client.UpdateArchiveAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateArchiveAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -257,6 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             public System.String ArchiveName { get; set; }
             public System.String Description { get; set; }
             public System.String EventPattern { get; set; }
+            public System.String KmsKeyIdentifier { get; set; }
             public System.Int32? RetentionDay { get; set; }
             public System.Func<Amazon.EventBridge.Model.UpdateArchiveResponse, UpdateEVBArchiveCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

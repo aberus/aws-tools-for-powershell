@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service ListClusterNodes API operation.", Operation = new[] {"ListClusterNodes"}, SelectReturnType = typeof(Amazon.SageMaker.Model.ListClusterNodesResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.ClusterNodeSummary or Amazon.SageMaker.Model.ListClusterNodesResponse",
         "This cmdlet returns a collection of Amazon.SageMaker.Model.ClusterNodeSummary objects.",
-        "The service call response (type Amazon.SageMaker.Model.ListClusterNodesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.ListClusterNodesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSMClusterNodeListCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterName
         /// <summary>
@@ -86,6 +89,20 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.DateTime? CreationTimeBefore { get; set; }
+        #endregion
+        
+        #region Parameter IncludeNodeLogicalId
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to include nodes that are still being provisioned in the response.
+        /// When set to true, the response includes all nodes regardless of their provisioning
+        /// status. When set to <c>False</c> (default), only nodes with assigned <c>InstanceIds</c>
+        /// are returned.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeNodeLogicalIds")]
+        public System.Boolean? IncludeNodeLogicalId { get; set; }
         #endregion
         
         #region Parameter InstanceGroupNameContain
@@ -141,7 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,16 +176,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "ClusterNodeSummaries";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -179,9 +186,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -189,21 +200,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.ListClusterNodesResponse, GetSMClusterNodeListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterName = this.ClusterName;
             #if MODULAR
             if (this.ClusterName == null && ParameterWasBound(nameof(this.ClusterName)))
@@ -213,6 +214,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             #endif
             context.CreationTimeAfter = this.CreationTimeAfter;
             context.CreationTimeBefore = this.CreationTimeBefore;
+            context.IncludeNodeLogicalId = this.IncludeNodeLogicalId;
             context.InstanceGroupNameContain = this.InstanceGroupNameContain;
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
@@ -231,9 +233,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.SageMaker.Model.ListClusterNodesRequest();
@@ -249,6 +249,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (cmdletContext.CreationTimeBefore != null)
             {
                 request.CreationTimeBefore = cmdletContext.CreationTimeBefore.Value;
+            }
+            if (cmdletContext.IncludeNodeLogicalId != null)
+            {
+                request.IncludeNodeLogicalIds = cmdletContext.IncludeNodeLogicalId.Value;
             }
             if (cmdletContext.InstanceGroupNameContain != null)
             {
@@ -328,13 +332,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "ListClusterNodes");
             try
             {
-                #if DESKTOP
-                return client.ListClusterNodes(request);
-                #elif CORECLR
-                return client.ListClusterNodesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListClusterNodesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -354,6 +352,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String ClusterName { get; set; }
             public System.DateTime? CreationTimeAfter { get; set; }
             public System.DateTime? CreationTimeBefore { get; set; }
+            public System.Boolean? IncludeNodeLogicalId { get; set; }
             public System.String InstanceGroupNameContain { get; set; }
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }

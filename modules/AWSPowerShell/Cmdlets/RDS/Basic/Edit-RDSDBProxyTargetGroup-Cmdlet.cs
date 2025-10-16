@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -35,20 +37,20 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyDBProxyTargetGroup API operation.", Operation = new[] {"ModifyDBProxyTargetGroup"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyDBProxyTargetGroupResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBProxyTargetGroup or Amazon.RDS.Model.ModifyDBProxyTargetGroupResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBProxyTargetGroup object.",
-        "The service call response (type Amazon.RDS.Model.ModifyDBProxyTargetGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyDBProxyTargetGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSDBProxyTargetGroupCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConnectionPoolConfig_ConnectionBorrowTimeout
         /// <summary>
         /// <para>
         /// <para>The number of seconds for a proxy to wait for a connection to become available in
         /// the connection pool. This setting only applies when the proxy has opened its maximum
-        /// number of connections and all connections are busy with client sessions. For an unlimited
-        /// wait time, specify <c>0</c>.</para><para>Default: <c>120</c></para><para>Constraints:</para><ul><li><para>Must be between 0 and 3600.</para></li></ul>
+        /// number of connections and all connections are busy with client sessions.</para><para>Default: <c>120</c></para><para>Constraints:</para><ul><li><para>Must be between 0 and 300.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,11 +77,16 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter ConnectionPoolConfig_InitQuery
         /// <summary>
         /// <para>
-        /// <para>One or more SQL statements for the proxy to run when opening each new database connection.
-        /// Typically used with <c>SET</c> statements to make sure that each connection has identical
-        /// settings such as time zone and character set. For multiple statements, use semicolons
-        /// as the separator. You can also include multiple variables in a single <c>SET</c> statement,
-        /// such as <c>SET x=1, y=2</c>.</para><para>Default: no initialization query</para>
+        /// <para>Add an initialization query, or modify the current one. You can specify one or more
+        /// SQL statements for the proxy to run when opening each new database connection. The
+        /// setting is typically used with <c>SET</c> statements to make sure that each connection
+        /// has identical settings. Make sure the query added here is valid. This is an optional
+        /// field, so you can choose to leave it empty. For including multiple variables in a
+        /// single SET statement, use a comma separator.</para><para>For example: <c>SET variable1=value1, variable2=value2</c></para><para>Default: no initialization query</para><important><para>Since you can access initialization query as part of target group configuration, it
+        /// is not protected by authentication or cryptographic methods. Anyone with access to
+        /// view or manage your proxy target group configuration can view the initialization query.
+        /// You should not add sensitive data, such as passwords or long-lived encryption keys,
+        /// to this option.</para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +131,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>The new name for the modified <c>DBProxyTarget</c>. An identifier must begin with
         /// a letter and must contain only ASCII letters, digits, and hyphens; it can't end with
-        /// a hyphen or contain two consecutive hyphens.</para>
+        /// a hyphen or contain two consecutive hyphens.</para><para>You can't rename the <c>default</c> target group.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,7 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>Each item in the list represents a class of SQL operations that normally cause all
         /// later statements in a session using a proxy to be pinned to the same underlying database
         /// connection. Including an item in the list exempts that class of SQL operations from
-        /// the pinning behavior.</para><para>Default: no session pinning filters</para>
+        /// the pinning behavior.</para><para>Default: no session pinning filters</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -173,16 +184,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBProxyTargetGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TargetGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TargetGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TargetGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -193,9 +194,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TargetGroupName), MyInvocation.BoundParameters);
@@ -209,21 +214,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyDBProxyTargetGroupResponse, EditRDSDBProxyTargetGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TargetGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConnectionPoolConfig_ConnectionBorrowTimeout = this.ConnectionPoolConfig_ConnectionBorrowTimeout;
             context.ConnectionPoolConfig_InitQuery = this.ConnectionPoolConfig_InitQuery;
             context.ConnectionPoolConfig_MaxConnectionsPercent = this.ConnectionPoolConfig_MaxConnectionsPercent;
@@ -372,13 +367,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyDBProxyTargetGroup");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBProxyTargetGroup(request);
-                #elif CORECLR
-                return client.ModifyDBProxyTargetGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBProxyTargetGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

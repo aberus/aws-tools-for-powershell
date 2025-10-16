@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeGuruSecurity;
 using Amazon.CodeGuruSecurity.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGS
 {
     /// <summary>
-    /// Returns top level metrics about an account from a specified date, including number
+    /// Returns a summary of metrics for an account from a specified date, including number
     /// of open findings, the categories with most findings, the scans with most open findings,
     /// and scans with most open critical findings.
     /// </summary>
@@ -37,19 +39,19 @@ namespace Amazon.PowerShell.Cmdlets.CGS
     [AWSCmdlet("Calls the Amazon CodeGuru Security GetMetricsSummary API operation.", Operation = new[] {"GetMetricsSummary"}, SelectReturnType = typeof(Amazon.CodeGuruSecurity.Model.GetMetricsSummaryResponse))]
     [AWSCmdletOutput("Amazon.CodeGuruSecurity.Model.MetricsSummary or Amazon.CodeGuruSecurity.Model.GetMetricsSummaryResponse",
         "This cmdlet returns an Amazon.CodeGuruSecurity.Model.MetricsSummary object.",
-        "The service call response (type Amazon.CodeGuruSecurity.Model.GetMetricsSummaryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeGuruSecurity.Model.GetMetricsSummaryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGSMetricsSummaryCmdlet : AmazonCodeGuruSecurityClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Date
         /// <summary>
         /// <para>
         /// <para>The date you want to retrieve summary metrics from, rounded to the nearest day. The
-        /// date must be within the past two years since metrics data is only stored for two years.
-        /// If a date outside of this range is passed, the response will be empty.</para>
+        /// date must be within the past two years.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,19 +75,13 @@ namespace Amazon.PowerShell.Cmdlets.CGS
         public string Select { get; set; } = "MetricsSummary";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Date parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Date' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Date' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -93,21 +89,11 @@ namespace Amazon.PowerShell.Cmdlets.CGS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodeGuruSecurity.Model.GetMetricsSummaryResponse, GetCGSMetricsSummaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Date;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Date = this.Date;
             #if MODULAR
             if (this.Date == null && ParameterWasBound(nameof(this.Date)))
@@ -173,13 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.CGS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CodeGuru Security", "GetMetricsSummary");
             try
             {
-                #if DESKTOP
-                return client.GetMetricsSummary(request);
-                #elif CORECLR
-                return client.GetMetricsSummaryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetMetricsSummaryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

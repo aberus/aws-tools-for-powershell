@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
-    /// Modifies some configurations of the Network File System (NFS) transfer location that
-    /// you're using with DataSync.
+    /// Modifies the following configuration parameters of the Network File System (NFS) transfer
+    /// location that you're using with DataSync.
     /// 
     ///  
     /// <para>
     /// For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-nfs-location.html">Configuring
-    /// transfers to or from an NFS file server</a>.
+    /// transfers with an NFS file server</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Update", "DSYNLocationNfs", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -42,17 +44,24 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
     [AWSCmdlet("Calls the AWS DataSync UpdateLocationNfs API operation.", Operation = new[] {"UpdateLocationNfs"}, SelectReturnType = typeof(Amazon.DataSync.Model.UpdateLocationNfsResponse))]
     [AWSCmdletOutput("None or Amazon.DataSync.Model.UpdateLocationNfsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DataSync.Model.UpdateLocationNfsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DataSync.Model.UpdateLocationNfsResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateDSYNLocationNfsCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OnPremConfig_AgentArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of the agents connecting to a transfer location.</para>
+        /// <para>The Amazon Resource Names (ARNs) of the DataSync agents that can connect to your NFS
+        /// file server.</para><para>You can specify more than one agent. For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/do-i-need-datasync-agent.html#multiple-agents">Using
+        /// multiple DataSync agents</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,6 +85,17 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String LocationArn { get; set; }
+        #endregion
+        
+        #region Parameter ServerHostname
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the DNS name or IP address (IPv4 or IPv6) of the NFS file server that your
+        /// DataSync agent connects to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ServerHostname { get; set; }
         #endregion
         
         #region Parameter Subdirectory
@@ -116,16 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LocationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LocationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LocationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LocationArn), MyInvocation.BoundParameters);
@@ -152,21 +166,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataSync.Model.UpdateLocationNfsResponse, UpdateDSYNLocationNfsCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LocationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LocationArn = this.LocationArn;
             #if MODULAR
             if (this.LocationArn == null && ParameterWasBound(nameof(this.LocationArn)))
@@ -179,6 +183,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             {
                 context.OnPremConfig_AgentArn = new List<System.String>(this.OnPremConfig_AgentArn);
             }
+            context.ServerHostname = this.ServerHostname;
             context.Subdirectory = this.Subdirectory;
             
             // allow further manipulation of loaded context prior to processing
@@ -238,6 +243,10 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             {
                 request.OnPremConfig = null;
             }
+            if (cmdletContext.ServerHostname != null)
+            {
+                request.ServerHostname = cmdletContext.ServerHostname;
+            }
             if (cmdletContext.Subdirectory != null)
             {
                 request.Subdirectory = cmdletContext.Subdirectory;
@@ -280,13 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "UpdateLocationNfs");
             try
             {
-                #if DESKTOP
-                return client.UpdateLocationNfs(request);
-                #elif CORECLR
-                return client.UpdateLocationNfsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateLocationNfsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -306,6 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             public System.String LocationArn { get; set; }
             public Amazon.DataSync.NfsVersion MountOptions_Version { get; set; }
             public List<System.String> OnPremConfig_AgentArn { get; set; }
+            public System.String ServerHostname { get; set; }
             public System.String Subdirectory { get; set; }
             public System.Func<Amazon.DataSync.Model.UpdateLocationNfsResponse, UpdateDSYNLocationNfsCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

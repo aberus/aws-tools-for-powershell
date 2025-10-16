@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [OutputType("Amazon.IoT.Model.CreateDomainConfigurationResponse")]
     [AWSCmdlet("Calls the AWS IoT CreateDomainConfiguration API operation.", Operation = new[] {"CreateDomainConfiguration"}, SelectReturnType = typeof(Amazon.IoT.Model.CreateDomainConfigurationResponse))]
     [AWSCmdletOutput("Amazon.IoT.Model.CreateDomainConfigurationResponse",
-        "This cmdlet returns an Amazon.IoT.Model.CreateDomainConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoT.Model.CreateDomainConfigurationResponse object containing multiple properties."
     )]
     public partial class NewIOTDomainConfigurationCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuthorizerConfig_AllowAuthorizerOverride
         /// <summary>
@@ -56,6 +59,50 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? AuthorizerConfig_AllowAuthorizerOverride { get; set; }
+        #endregion
+        
+        #region Parameter ApplicationProtocol
+        /// <summary>
+        /// <para>
+        /// <para>An enumerated string that speciﬁes the application-layer protocol.</para><ul><li><para><c>SECURE_MQTT</c> - MQTT over TLS.</para></li></ul><ul><li><para><c>MQTT_WSS</c> - MQTT over WebSocket.</para></li></ul><ul><li><para><c>HTTPS</c> - HTTP over TLS.</para></li></ul><ul><li><para><c>DEFAULT</c> - Use a combination of port and Application Layer Protocol Negotiation
+        /// (ALPN) to specify application_layer protocol. For more information, see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/protocols.html">Device
+        /// communication protocols</a>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IoT.ApplicationProtocol")]
+        public Amazon.IoT.ApplicationProtocol ApplicationProtocol { get; set; }
+        #endregion
+        
+        #region Parameter AuthenticationType
+        /// <summary>
+        /// <para>
+        /// <para>An enumerated string that speciﬁes the authentication type.</para><ul><li><para><c>CUSTOM_AUTH_X509</c> - Use custom authentication and authorization with additional
+        /// details from the X.509 client certificate.</para></li></ul><ul><li><para><c>CUSTOM_AUTH</c> - Use custom authentication and authorization. For more information,
+        /// see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/custom-authentication.html">Custom
+        /// authentication and authorization</a>.</para></li></ul><ul><li><para><c>AWS_X509</c> - Use X.509 client certificates without custom authentication and
+        /// authorization. For more information, see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/x509-client-certs.html">X.509
+        /// client certificates</a>.</para></li></ul><ul><li><para><c>AWS_SIGV4</c> - Use Amazon Web Services Signature Version 4. For more information,
+        /// see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/custom-authentication.html">IAM
+        /// users, groups, and roles</a>.</para></li></ul><ul><li><para><c>DEFAULT</c> - Use a combination of port and Application Layer Protocol Negotiation
+        /// (ALPN) to specify authentication type. For more information, see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/protocols.html">Device
+        /// communication protocols</a>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IoT.AuthenticationType")]
+        public Amazon.IoT.AuthenticationType AuthenticationType { get; set; }
+        #endregion
+        
+        #region Parameter ClientCertificateConfig_ClientCertificateCallbackArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the Lambda function that IoT invokes after mutual TLS authentication during
+        /// the connection.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ClientCertificateConfig_ClientCertificateCallbackArn { get; set; }
         #endregion
         
         #region Parameter AuthorizerConfig_DefaultAuthorizerName
@@ -95,6 +142,52 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public System.String DomainName { get; set; }
         #endregion
         
+        #region Parameter ServerCertificateConfig_EnableOCSPCheck
+        /// <summary>
+        /// <para>
+        /// <para>A Boolean value that indicates whether Online Certificate Status Protocol (OCSP) server
+        /// certificate check is enabled or not.</para><para>For more information, see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/iot-custom-endpoints-cert-config.html">
+        /// Server certificate configuration for OCSP stapling</a> from Amazon Web Services IoT
+        /// Core Developer Guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ServerCertificateConfig_EnableOCSPCheck { get; set; }
+        #endregion
+        
+        #region Parameter ServerCertificateConfig_OcspAuthorizedResponderArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) for an X.509 certificate stored in Amazon Web Services
+        /// Certificate Manager (ACM). If provided, Amazon Web Services IoT Core will use this
+        /// certificate to validate the signature of the received OCSP response. The OCSP responder
+        /// must sign responses using either this authorized responder certificate or the issuing
+        /// certificate, depending on whether the ARN is provided or not. The certificate must
+        /// be in the same Amazon Web Services account and region as the domain configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ServerCertificateConfig_OcspAuthorizedResponderArn { get; set; }
+        #endregion
+        
+        #region Parameter ServerCertificateConfig_OcspLambdaArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) for a Lambda function that acts as a Request for Comments
+        /// (RFC) 6960-compliant Online Certificate Status Protocol (OCSP) responder, supporting
+        /// basic OCSP responses. The Lambda function accepts a base64-encoding of the OCSP request
+        /// in the Distinguished Encoding Rules (DER) format. The Lambda function's response is
+        /// also a base64-encoded OCSP response in the DER format. The response size must not
+        /// exceed 4 kilobytes (KiB). The Lambda function must be in the same Amazon Web Services
+        /// account and region as the domain configuration. For more information, see <a href="https://docs.aws.amazon.com/iot/latest/developerguide/iot-custom-endpoints-cert-config.html#iot-custom-endpoints-cert-config-ocsp-private-endpoint.html">Configuring
+        /// server certificate OCSP for private endpoints in Amazon Web Services IoT Core</a>
+        /// from the Amazon Web Services IoT Core developer guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ServerCertificateConfig_OcspLambdaArn { get; set; }
+        #endregion
+        
         #region Parameter TlsConfig_SecurityPolicy
         /// <summary>
         /// <para>
@@ -111,7 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         /// <para>
         /// <para>The ARNs of the certificates that IoT passes to the device during the TLS handshake.
         /// Currently you can specify only one certificate ARN. This value is not required for
-        /// Amazon Web Services-managed domains.</para>
+        /// Amazon Web Services-managed domains.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata which can be used to manage the domain configuration.</para><note><para>For URI Request parameters use format: ...key1=value1&amp;key2=value2...</para><para>For the CLI command-line parameter use format: &amp;&amp;tags "key1=value1&amp;key2=value2..."</para><para>For the cli-input-json file use format: "tags": "key1=value1&amp;key2=value2..."</para></note>
+        /// <para>Metadata which can be used to manage the domain configuration.</para><note><para>For URI Request parameters use format: ...key1=value1&amp;key2=value2...</para><para>For the CLI command-line parameter use format: &amp;&amp;tags "key1=value1&amp;key2=value2..."</para><para>For the cli-input-json file use format: "tags": "key1=value1&amp;key2=value2..."</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -164,16 +265,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainConfigurationName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainConfigurationName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainConfigurationName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -184,9 +275,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainConfigurationName), MyInvocation.BoundParameters);
@@ -200,23 +295,16 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoT.Model.CreateDomainConfigurationResponse, NewIOTDomainConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainConfigurationName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ApplicationProtocol = this.ApplicationProtocol;
+            context.AuthenticationType = this.AuthenticationType;
             context.AuthorizerConfig_AllowAuthorizerOverride = this.AuthorizerConfig_AllowAuthorizerOverride;
             context.AuthorizerConfig_DefaultAuthorizerName = this.AuthorizerConfig_DefaultAuthorizerName;
+            context.ClientCertificateConfig_ClientCertificateCallbackArn = this.ClientCertificateConfig_ClientCertificateCallbackArn;
             context.DomainConfigurationName = this.DomainConfigurationName;
             #if MODULAR
             if (this.DomainConfigurationName == null && ParameterWasBound(nameof(this.DomainConfigurationName)))
@@ -229,6 +317,9 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 context.ServerCertificateArn = new List<System.String>(this.ServerCertificateArn);
             }
+            context.ServerCertificateConfig_EnableOCSPCheck = this.ServerCertificateConfig_EnableOCSPCheck;
+            context.ServerCertificateConfig_OcspAuthorizedResponderArn = this.ServerCertificateConfig_OcspAuthorizedResponderArn;
+            context.ServerCertificateConfig_OcspLambdaArn = this.ServerCertificateConfig_OcspLambdaArn;
             context.ServiceType = this.ServiceType;
             if (this.Tag != null)
             {
@@ -252,6 +343,14 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // create request
             var request = new Amazon.IoT.Model.CreateDomainConfigurationRequest();
             
+            if (cmdletContext.ApplicationProtocol != null)
+            {
+                request.ApplicationProtocol = cmdletContext.ApplicationProtocol;
+            }
+            if (cmdletContext.AuthenticationType != null)
+            {
+                request.AuthenticationType = cmdletContext.AuthenticationType;
+            }
             
              // populate AuthorizerConfig
             var requestAuthorizerConfigIsNull = true;
@@ -281,6 +380,25 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.AuthorizerConfig = null;
             }
+            
+             // populate ClientCertificateConfig
+            var requestClientCertificateConfigIsNull = true;
+            request.ClientCertificateConfig = new Amazon.IoT.Model.ClientCertificateConfig();
+            System.String requestClientCertificateConfig_clientCertificateConfig_ClientCertificateCallbackArn = null;
+            if (cmdletContext.ClientCertificateConfig_ClientCertificateCallbackArn != null)
+            {
+                requestClientCertificateConfig_clientCertificateConfig_ClientCertificateCallbackArn = cmdletContext.ClientCertificateConfig_ClientCertificateCallbackArn;
+            }
+            if (requestClientCertificateConfig_clientCertificateConfig_ClientCertificateCallbackArn != null)
+            {
+                request.ClientCertificateConfig.ClientCertificateCallbackArn = requestClientCertificateConfig_clientCertificateConfig_ClientCertificateCallbackArn;
+                requestClientCertificateConfigIsNull = false;
+            }
+             // determine if request.ClientCertificateConfig should be set to null
+            if (requestClientCertificateConfigIsNull)
+            {
+                request.ClientCertificateConfig = null;
+            }
             if (cmdletContext.DomainConfigurationName != null)
             {
                 request.DomainConfigurationName = cmdletContext.DomainConfigurationName;
@@ -292,6 +410,45 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             if (cmdletContext.ServerCertificateArn != null)
             {
                 request.ServerCertificateArns = cmdletContext.ServerCertificateArn;
+            }
+            
+             // populate ServerCertificateConfig
+            var requestServerCertificateConfigIsNull = true;
+            request.ServerCertificateConfig = new Amazon.IoT.Model.ServerCertificateConfig();
+            System.Boolean? requestServerCertificateConfig_serverCertificateConfig_EnableOCSPCheck = null;
+            if (cmdletContext.ServerCertificateConfig_EnableOCSPCheck != null)
+            {
+                requestServerCertificateConfig_serverCertificateConfig_EnableOCSPCheck = cmdletContext.ServerCertificateConfig_EnableOCSPCheck.Value;
+            }
+            if (requestServerCertificateConfig_serverCertificateConfig_EnableOCSPCheck != null)
+            {
+                request.ServerCertificateConfig.EnableOCSPCheck = requestServerCertificateConfig_serverCertificateConfig_EnableOCSPCheck.Value;
+                requestServerCertificateConfigIsNull = false;
+            }
+            System.String requestServerCertificateConfig_serverCertificateConfig_OcspAuthorizedResponderArn = null;
+            if (cmdletContext.ServerCertificateConfig_OcspAuthorizedResponderArn != null)
+            {
+                requestServerCertificateConfig_serverCertificateConfig_OcspAuthorizedResponderArn = cmdletContext.ServerCertificateConfig_OcspAuthorizedResponderArn;
+            }
+            if (requestServerCertificateConfig_serverCertificateConfig_OcspAuthorizedResponderArn != null)
+            {
+                request.ServerCertificateConfig.OcspAuthorizedResponderArn = requestServerCertificateConfig_serverCertificateConfig_OcspAuthorizedResponderArn;
+                requestServerCertificateConfigIsNull = false;
+            }
+            System.String requestServerCertificateConfig_serverCertificateConfig_OcspLambdaArn = null;
+            if (cmdletContext.ServerCertificateConfig_OcspLambdaArn != null)
+            {
+                requestServerCertificateConfig_serverCertificateConfig_OcspLambdaArn = cmdletContext.ServerCertificateConfig_OcspLambdaArn;
+            }
+            if (requestServerCertificateConfig_serverCertificateConfig_OcspLambdaArn != null)
+            {
+                request.ServerCertificateConfig.OcspLambdaArn = requestServerCertificateConfig_serverCertificateConfig_OcspLambdaArn;
+                requestServerCertificateConfigIsNull = false;
+            }
+             // determine if request.ServerCertificateConfig should be set to null
+            if (requestServerCertificateConfigIsNull)
+            {
+                request.ServerCertificateConfig = null;
             }
             if (cmdletContext.ServiceType != null)
             {
@@ -362,13 +519,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "CreateDomainConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateDomainConfiguration(request);
-                #elif CORECLR
-                return client.CreateDomainConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDomainConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -385,11 +536,17 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.IoT.ApplicationProtocol ApplicationProtocol { get; set; }
+            public Amazon.IoT.AuthenticationType AuthenticationType { get; set; }
             public System.Boolean? AuthorizerConfig_AllowAuthorizerOverride { get; set; }
             public System.String AuthorizerConfig_DefaultAuthorizerName { get; set; }
+            public System.String ClientCertificateConfig_ClientCertificateCallbackArn { get; set; }
             public System.String DomainConfigurationName { get; set; }
             public System.String DomainName { get; set; }
             public List<System.String> ServerCertificateArn { get; set; }
+            public System.Boolean? ServerCertificateConfig_EnableOCSPCheck { get; set; }
+            public System.String ServerCertificateConfig_OcspAuthorizedResponderArn { get; set; }
+            public System.String ServerCertificateConfig_OcspLambdaArn { get; set; }
             public Amazon.IoT.ServiceType ServiceType { get; set; }
             public List<Amazon.IoT.Model.Tag> Tag { get; set; }
             public System.String TlsConfig_SecurityPolicy { get; set; }

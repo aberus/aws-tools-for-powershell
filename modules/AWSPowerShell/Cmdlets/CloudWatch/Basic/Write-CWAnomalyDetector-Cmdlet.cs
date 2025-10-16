@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CW
 {
     /// <summary>
@@ -33,6 +35,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
     /// 
     ///  
     /// <para>
+    /// If you have enabled unified cross-account observability, and this account is a monitoring
+    /// account, the metric can be in the same account or a source account. You can specify
+    /// the account ID in the object you specify in the <c>SingleMetricAnomalyDetector</c>
+    /// parameter.
+    /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch_Anomaly_Detection.html">CloudWatch
     /// Anomaly Detection</a>.
     /// </para>
@@ -42,17 +49,34 @@ namespace Amazon.PowerShell.Cmdlets.CW
     [AWSCmdlet("Calls the Amazon CloudWatch PutAnomalyDetector API operation.", Operation = new[] {"PutAnomalyDetector"}, SelectReturnType = typeof(Amazon.CloudWatch.Model.PutAnomalyDetectorResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatch.Model.PutAnomalyDetectorResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatch.Model.PutAnomalyDetectorResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatch.Model.PutAnomalyDetectorResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCWAnomalyDetectorCmdlet : AmazonCloudWatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter SingleMetricAnomalyDetector_AccountId
+        /// <summary>
+        /// <para>
+        /// <para>If the CloudWatch metric that provides the time series that the anomaly detector uses
+        /// as input is in another account, specify that account ID here. If you omit this parameter,
+        /// the current account is used.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SingleMetricAnomalyDetector_AccountId { get; set; }
+        #endregion
         
         #region Parameter SingleMetricAnomalyDetector_Dimension
         /// <summary>
         /// <para>
-        /// <para>The metric dimensions to create the anomaly detection model for.</para>
+        /// <para>The metric dimensions to create the anomaly detection model for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -65,7 +89,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// <para>
         /// <para>An array of time ranges to exclude from use when the anomaly detection model is trained.
         /// Use this to make sure that events that could cause unusual values for the metric,
-        /// such as deployments, aren't used when CloudWatch creates the model.</para>
+        /// such as deployments, aren't used when CloudWatch creates the model.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// is the expression that provides the time series that the anomaly detector uses as
         /// input. Designate the expression by setting <c>ReturnData</c> to <c>true</c> for this
         /// object in the array. For all other expressions and metrics, set <c>ReturnData</c>
-        /// to <c>false</c>. The designated expression must return a single time series.</para>
+        /// to <c>false</c>. The designated expression must return a single time series.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,6 +156,20 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public System.String SingleMetricAnomalyDetector_Namespace { get; set; }
         #endregion
         
+        #region Parameter MetricCharacteristics_PeriodicSpike
+        /// <summary>
+        /// <para>
+        /// <para>Set this parameter to <c>true</c> if values for this metric consistently include spikes
+        /// that should not be considered to be anomalies. With this set to <c>true</c>, CloudWatch
+        /// will expect to see spikes that occurred consistently during the model training period,
+        /// and won't flag future similar spikes as anomalies.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MetricCharacteristics_PeriodicSpikes")]
+        public System.Boolean? MetricCharacteristics_PeriodicSpike { get; set; }
+        #endregion
+        
         #region Parameter SingleMetricAnomalyDetector_Stat
         /// <summary>
         /// <para>
@@ -137,7 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         #region Parameter Dimension
         /// <summary>
         /// <para>
-        /// <para>The metric dimensions to create the anomaly detection model for.</para>
+        /// <para>The metric dimensions to create the anomaly detection model for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// <para>This parameter is deprecated.</para>
         /// </summary>
@@ -193,16 +243,6 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MetricName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MetricName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MetricName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -213,9 +253,13 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MetricName), MyInvocation.BoundParameters);
@@ -229,21 +273,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatch.Model.PutAnomalyDetectorResponse, WriteCWAnomalyDetectorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MetricName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Configuration_ExcludedTimeRange != null)
             {
                 context.Configuration_ExcludedTimeRange = new List<Amazon.CloudWatch.Model.Range>(this.Configuration_ExcludedTimeRange);
@@ -255,6 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
                 context.Dimension = new List<Amazon.CloudWatch.Model.Dimension>(this.Dimension);
             }
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.MetricCharacteristics_PeriodicSpike = this.MetricCharacteristics_PeriodicSpike;
             if (this.MetricMathAnomalyDetector_MetricDataQuery != null)
             {
                 context.MetricMathAnomalyDetector_MetricDataQuery = new List<Amazon.CloudWatch.Model.MetricDataQuery>(this.MetricMathAnomalyDetector_MetricDataQuery);
@@ -265,6 +300,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
             #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Namespace = this.Namespace;
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.SingleMetricAnomalyDetector_AccountId = this.SingleMetricAnomalyDetector_AccountId;
             if (this.SingleMetricAnomalyDetector_Dimension != null)
             {
                 context.SingleMetricAnomalyDetector_Dimension = new List<Amazon.CloudWatch.Model.Dimension>(this.SingleMetricAnomalyDetector_Dimension);
@@ -327,6 +363,25 @@ namespace Amazon.PowerShell.Cmdlets.CW
             }
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
+             // populate MetricCharacteristics
+            var requestMetricCharacteristicsIsNull = true;
+            request.MetricCharacteristics = new Amazon.CloudWatch.Model.MetricCharacteristics();
+            System.Boolean? requestMetricCharacteristics_metricCharacteristics_PeriodicSpike = null;
+            if (cmdletContext.MetricCharacteristics_PeriodicSpike != null)
+            {
+                requestMetricCharacteristics_metricCharacteristics_PeriodicSpike = cmdletContext.MetricCharacteristics_PeriodicSpike.Value;
+            }
+            if (requestMetricCharacteristics_metricCharacteristics_PeriodicSpike != null)
+            {
+                request.MetricCharacteristics.PeriodicSpikes = requestMetricCharacteristics_metricCharacteristics_PeriodicSpike.Value;
+                requestMetricCharacteristicsIsNull = false;
+            }
+             // determine if request.MetricCharacteristics should be set to null
+            if (requestMetricCharacteristicsIsNull)
+            {
+                request.MetricCharacteristics = null;
+            }
+            
              // populate MetricMathAnomalyDetector
             var requestMetricMathAnomalyDetectorIsNull = true;
             request.MetricMathAnomalyDetector = new Amazon.CloudWatch.Model.MetricMathAnomalyDetector();
@@ -361,6 +416,16 @@ namespace Amazon.PowerShell.Cmdlets.CW
              // populate SingleMetricAnomalyDetector
             var requestSingleMetricAnomalyDetectorIsNull = true;
             request.SingleMetricAnomalyDetector = new Amazon.CloudWatch.Model.SingleMetricAnomalyDetector();
+            System.String requestSingleMetricAnomalyDetector_singleMetricAnomalyDetector_AccountId = null;
+            if (cmdletContext.SingleMetricAnomalyDetector_AccountId != null)
+            {
+                requestSingleMetricAnomalyDetector_singleMetricAnomalyDetector_AccountId = cmdletContext.SingleMetricAnomalyDetector_AccountId;
+            }
+            if (requestSingleMetricAnomalyDetector_singleMetricAnomalyDetector_AccountId != null)
+            {
+                request.SingleMetricAnomalyDetector.AccountId = requestSingleMetricAnomalyDetector_singleMetricAnomalyDetector_AccountId;
+                requestSingleMetricAnomalyDetectorIsNull = false;
+            }
             List<Amazon.CloudWatch.Model.Dimension> requestSingleMetricAnomalyDetector_singleMetricAnomalyDetector_Dimension = null;
             if (cmdletContext.SingleMetricAnomalyDetector_Dimension != null)
             {
@@ -450,13 +515,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch", "PutAnomalyDetector");
             try
             {
-                #if DESKTOP
-                return client.PutAnomalyDetector(request);
-                #elif CORECLR
-                return client.PutAnomalyDetectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutAnomalyDetectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -477,11 +536,13 @@ namespace Amazon.PowerShell.Cmdlets.CW
             public System.String Configuration_MetricTimezone { get; set; }
             [System.ObsoleteAttribute]
             public List<Amazon.CloudWatch.Model.Dimension> Dimension { get; set; }
+            public System.Boolean? MetricCharacteristics_PeriodicSpike { get; set; }
             public List<Amazon.CloudWatch.Model.MetricDataQuery> MetricMathAnomalyDetector_MetricDataQuery { get; set; }
             [System.ObsoleteAttribute]
             public System.String MetricName { get; set; }
             [System.ObsoleteAttribute]
             public System.String Namespace { get; set; }
+            public System.String SingleMetricAnomalyDetector_AccountId { get; set; }
             public List<Amazon.CloudWatch.Model.Dimension> SingleMetricAnomalyDetector_Dimension { get; set; }
             public System.String SingleMetricAnomalyDetector_MetricName { get; set; }
             public System.String SingleMetricAnomalyDetector_Namespace { get; set; }

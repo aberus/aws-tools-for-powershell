@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ACMPCA;
 using Amazon.ACMPCA.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PCA
 {
     /// <summary>
-    /// Creates an audit report that lists every time that your CA private key is used. The
-    /// report is saved in the Amazon S3 bucket that you specify on input. The <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_IssueCertificate.html">IssueCertificate</a>
+    /// Creates an audit report that lists every time that your CA private key is used to
+    /// issue a certificate. The <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_IssueCertificate.html">IssueCertificate</a>
     /// and <a href="https://docs.aws.amazon.com/privateca/latest/APIReference/API_RevokeCertificate.html">RevokeCertificate</a>
-    /// actions use the private key. 
+    /// actions use the private key.
     /// 
-    ///  <note><para>
-    /// Both Amazon Web Services Private CA and the IAM principal must have permission to
-    /// write to the S3 bucket that you specify. If the IAM principal making the call does
-    /// not have permission to write to the bucket, then an exception is thrown. For more
-    /// information, see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/crl-planning.html#s3-policies">Access
-    /// policies for CRLs in Amazon S3</a>.
-    /// </para></note><para>
+    ///  
+    /// <para>
+    /// To save the audit report to your designated Amazon S3 bucket, you must create a bucket
+    /// policy that grants Amazon Web Services Private CA permission to access and write to
+    /// it. For an example policy, see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/PcaAuditReport.html#s3-access">Prepare
+    /// an Amazon S3 bucket for audit reports</a>.
+    /// </para><para>
     /// Amazon Web Services Private CA assets that are stored in Amazon S3 can be protected
     /// with encryption. For more information, see <a href="https://docs.aws.amazon.com/privateca/latest/userguide/PcaAuditReport.html#audit-report-encryption">Encrypting
     /// Your Audit Reports</a>.
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.PCA
     [OutputType("Amazon.ACMPCA.Model.CreateCertificateAuthorityAuditReportResponse")]
     [AWSCmdlet("Calls the AWS Certificate Manager Private Certificate Authority CreateCertificateAuthorityAuditReport API operation.", Operation = new[] {"CreateCertificateAuthorityAuditReport"}, SelectReturnType = typeof(Amazon.ACMPCA.Model.CreateCertificateAuthorityAuditReportResponse))]
     [AWSCmdletOutput("Amazon.ACMPCA.Model.CreateCertificateAuthorityAuditReportResponse",
-        "This cmdlet returns an Amazon.ACMPCA.Model.CreateCertificateAuthorityAuditReportResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ACMPCA.Model.CreateCertificateAuthorityAuditReportResponse object containing multiple properties."
     )]
     public partial class NewPCACertificateAuthorityAuditReportCmdlet : AmazonACMPCAClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuditReportResponseFormat
         /// <summary>
@@ -120,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CertificateAuthorityArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CertificateAuthorityArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CertificateAuthorityArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -140,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.PCA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CertificateAuthorityArn), MyInvocation.BoundParameters);
@@ -156,21 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.PCA
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ACMPCA.Model.CreateCertificateAuthorityAuditReportResponse, NewPCACertificateAuthorityAuditReportCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CertificateAuthorityArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuditReportResponseFormat = this.AuditReportResponseFormat;
             #if MODULAR
             if (this.AuditReportResponseFormat == null && ParameterWasBound(nameof(this.AuditReportResponseFormat)))
@@ -258,13 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.PCA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Certificate Manager Private Certificate Authority", "CreateCertificateAuthorityAuditReport");
             try
             {
-                #if DESKTOP
-                return client.CreateCertificateAuthorityAuditReport(request);
-                #elif CORECLR
-                return client.CreateCertificateAuthorityAuditReportAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCertificateAuthorityAuditReportAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

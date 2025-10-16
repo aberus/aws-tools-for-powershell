@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,41 +22,49 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityLake;
 using Amazon.SecurityLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SLK
 {
     /// <summary>
-    /// Adds a natively supported Amazon Web Service as an Amazon Security Lake source. Enables
-    /// source types for member accounts in required Amazon Web Services Regions, based on
-    /// the parameters you specify. You can choose any source type in any Region for either
-    /// accounts that are part of a trusted organization or standalone accounts. Once you
-    /// add an Amazon Web Service as a source, Security Lake starts collecting logs and events
-    /// from it.
+    /// Adds a natively supported Amazon Web Services service as an Amazon Security Lake source.
+    /// Enables source types for member accounts in required Amazon Web Services Regions,
+    /// based on the parameters you specify. You can choose any source type in any Region
+    /// for either accounts that are part of a trusted organization or standalone accounts.
+    /// Once you add an Amazon Web Services service as a source, Security Lake starts collecting
+    /// logs and events from it.
     /// 
     ///  
     /// <para>
-    /// You can use this API only to enable natively supported Amazon Web Services as a source.
-    /// Use <c>CreateCustomLogSource</c> to enable data collection from a custom source.
+    /// You can use this API only to enable natively supported Amazon Web Services services
+    /// as a source. Use <c>CreateCustomLogSource</c> to enable data collection from a custom
+    /// source.
     /// </para>
     /// </summary>
     [Cmdlet("New", "SLKAwsLogSource", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SecurityLake.Model.CreateAwsLogSourceResponse")]
     [AWSCmdlet("Calls the Amazon Security Lake CreateAwsLogSource API operation.", Operation = new[] {"CreateAwsLogSource"}, SelectReturnType = typeof(Amazon.SecurityLake.Model.CreateAwsLogSourceResponse))]
     [AWSCmdletOutput("Amazon.SecurityLake.Model.CreateAwsLogSourceResponse",
-        "This cmdlet returns an Amazon.SecurityLake.Model.CreateAwsLogSourceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SecurityLake.Model.CreateAwsLogSourceResponse object containing multiple properties."
     )]
     public partial class NewSLKAwsLogSourceCmdlet : AmazonSecurityLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Source
         /// <summary>
         /// <para>
         /// <para>Specify the natively-supported Amazon Web Services service to add as a source in Security
-        /// Lake.</para>
+        /// Lake.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -92,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.SLK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Source), MyInvocation.BoundParameters);
@@ -181,13 +193,7 @@ namespace Amazon.PowerShell.Cmdlets.SLK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Security Lake", "CreateAwsLogSource");
             try
             {
-                #if DESKTOP
-                return client.CreateAwsLogSource(request);
-                #elif CORECLR
-                return client.CreateAwsLogSourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAwsLogSourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

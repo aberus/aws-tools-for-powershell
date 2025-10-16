@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
     [OutputType("Amazon.QuickSight.Model.RestoreAnalysisResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight RestoreAnalysis API operation.", Operation = new[] {"RestoreAnalysis"}, SelectReturnType = typeof(Amazon.QuickSight.Model.RestoreAnalysisResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.RestoreAnalysisResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.RestoreAnalysisResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.RestoreAnalysisResponse object containing multiple properties."
     )]
     public partial class RestoreQSAnalysisCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnalysisId
         /// <summary>
@@ -75,6 +78,21 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public System.String AwsAccountId { get; set; }
         #endregion
         
+        #region Parameter RestoreToFolder
+        /// <summary>
+        /// <para>
+        /// <para>A boolean value that determines if the analysis will be restored to folders that it
+        /// previously resided in. A <c>True</c> value restores analysis back to all folders that
+        /// it previously resided in. A <c>False</c> value restores the analysis but does not
+        /// restore the analysis back to all previously resided folders. Restoring a restricted
+        /// analysis requires this parameter to be set to <c>True</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RestoreToFolders")]
+        public System.Boolean? RestoreToFolder { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -84,16 +102,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AnalysisId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AnalysisId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AnalysisId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -106,9 +114,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AnalysisId), MyInvocation.BoundParameters);
@@ -122,21 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.RestoreAnalysisResponse, RestoreQSAnalysisCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AnalysisId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnalysisId = this.AnalysisId;
             #if MODULAR
             if (this.AnalysisId == null && ParameterWasBound(nameof(this.AnalysisId)))
@@ -151,6 +153,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
                 WriteWarning("You are passing $null as a value for parameter AwsAccountId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.RestoreToFolder = this.RestoreToFolder;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -174,6 +177,10 @@ namespace Amazon.PowerShell.Cmdlets.QS
             if (cmdletContext.AwsAccountId != null)
             {
                 request.AwsAccountId = cmdletContext.AwsAccountId;
+            }
+            if (cmdletContext.RestoreToFolder != null)
+            {
+                request.RestoreToFolders = cmdletContext.RestoreToFolder.Value;
             }
             
             CmdletOutput output;
@@ -213,13 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "RestoreAnalysis");
             try
             {
-                #if DESKTOP
-                return client.RestoreAnalysis(request);
-                #elif CORECLR
-                return client.RestoreAnalysisAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreAnalysisAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -238,6 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         {
             public System.String AnalysisId { get; set; }
             public System.String AwsAccountId { get; set; }
+            public System.Boolean? RestoreToFolder { get; set; }
             public System.Func<Amazon.QuickSight.Model.RestoreAnalysisResponse, RestoreQSAnalysisCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

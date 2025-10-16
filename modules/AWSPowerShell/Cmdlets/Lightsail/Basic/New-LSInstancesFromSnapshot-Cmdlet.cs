@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -34,7 +36,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// <para>
     /// The <c>create instances from snapshot</c> operation supports tag-based access control
     /// via request tags and resource tags applied to the resource identified by <c>instance
-    /// snapshot name</c>. For more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-controlling-access-using-tags">Amazon
+    /// snapshot name</c>. For more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-controlling-access-using-tags">Amazon
     /// Lightsail Developer Guide</a>.
     /// </para>
     /// </summary>
@@ -43,17 +45,22 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail CreateInstancesFromSnapshot API operation.", Operation = new[] {"CreateInstancesFromSnapshot"}, SelectReturnType = typeof(Amazon.Lightsail.Model.CreateInstancesFromSnapshotResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.Operation or Amazon.Lightsail.Model.CreateInstancesFromSnapshotResponse",
         "This cmdlet returns a collection of Amazon.Lightsail.Model.Operation objects.",
-        "The service call response (type Amazon.Lightsail.Model.CreateInstancesFromSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.CreateInstancesFromSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewLSInstancesFromSnapshotCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddOn
         /// <summary>
         /// <para>
-        /// <para>An array of objects representing the add-ons to enable for the new instance.</para>
+        /// <para>An array of objects representing the add-ons to enable for the new instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -64,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter AttachedDiskMapping
         /// <summary>
         /// <para>
-        /// <para>An object containing information about one or more disk mappings.</para>
+        /// <para>An object containing information about one or more disk mappings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +107,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <summary>
         /// <para>
         /// <para>The bundle of specification information for your virtual private server (or <i>instance</i>),
-        /// including the pricing plan (<c>micro_1_0</c>).</para>
+        /// including the pricing plan (<c>micro_x_x</c>).</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,7 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter InstanceName
         /// <summary>
         /// <para>
-        /// <para>The names for your new instances.</para>
+        /// <para>The names for your new instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -144,8 +159,8 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter IpAddressType
         /// <summary>
         /// <para>
-        /// <para>The IP address type for the instance.</para><para>The possible values are <c>ipv4</c> for IPv4 only, and <c>dualstack</c> for IPv4 and
-        /// IPv6.</para><para>The default value is <c>dualstack</c>.</para>
+        /// <para>The IP address type for the instance.</para><para>The possible values are <c>ipv4</c> for IPv4 only, <c>ipv6</c> for IPv6 only, and
+        /// <c>dualstack</c> for IPv4 and IPv6.</para><para>The default value is <c>dualstack</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// snapshots</c> operation to identify the dates of the available automatic snapshots.</para><para>Constraints:</para><ul><li><para>Must be specified in <c>YYYY-MM-DD</c> format.</para></li><li><para>This parameter cannot be defined together with the <c>use latest restorable auto snapshot</c>
         /// parameter. The <c>restore date</c> and <c>use latest restorable auto snapshot</c>
         /// parameters are mutually exclusive.</para></li><li><para>Define this parameter only when creating a new instance from an automatic snapshot.
-        /// For more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+        /// For more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
         /// Lightsail Developer Guide</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -184,7 +199,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <para>The name of the source instance from which the source automatic snapshot was created.</para><para>Constraints:</para><ul><li><para>This parameter cannot be defined together with the <c>instance snapshot name</c> parameter.
         /// The <c>source instance name</c> and <c>instance snapshot name</c> parameters are mutually
         /// exclusive.</para></li><li><para>Define this parameter only when creating a new instance from an automatic snapshot.
-        /// For more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+        /// For more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
         /// Lightsail Developer Guide</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -195,7 +210,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tag keys and optional values to add to the resource during create.</para><para>Use the <c>TagResource</c> action to tag a resource after it's created.</para>
+        /// <para>The tag keys and optional values to add to the resource during create.</para><para>Use the <c>TagResource</c> action to tag a resource after it's created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,7 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <para>A Boolean value to indicate whether to use the latest available automatic snapshot.</para><para>Constraints:</para><ul><li><para>This parameter cannot be defined together with the <c>restore date</c> parameter.
         /// The <c>use latest restorable auto snapshot</c> and <c>restore date</c> parameters
         /// are mutually exclusive.</para></li><li><para>Define this parameter only when creating a new instance from an automatic snapshot.
-        /// For more information, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-configuring-automatic-snapshots">Amazon
+        /// For more information, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-configuring-automatic-snapshots">Amazon
         /// Lightsail Developer Guide</a>.</para></li></ul>
         /// </para>
         /// </summary>
@@ -223,7 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <para>You can create a launch script that configures a server with additional user data.
         /// For example, <c>apt-get -y update</c>.</para><note><para>Depending on the machine image you choose, the command to get software on your instance
         /// varies. Amazon Linux and CentOS use <c>yum</c>, Debian and Ubuntu use <c>apt-get</c>,
-        /// and FreeBSD uses <c>pkg</c>. For a complete list, see the <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/compare-options-choose-lightsail-instance-image">Amazon
+        /// and FreeBSD uses <c>pkg</c>. For a complete list, see the <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/compare-options-choose-lightsail-instance-image">Amazon
         /// Lightsail Developer Guide</a>.</para></note>
         /// </para>
         /// </summary>
@@ -242,16 +261,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "Operations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -262,9 +271,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceName), MyInvocation.BoundParameters);
@@ -278,21 +291,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.CreateInstancesFromSnapshotResponse, NewLSInstancesFromSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AddOn != null)
             {
                 context.AddOn = new List<Amazon.Lightsail.Model.AddOnRequest>(this.AddOn);
@@ -458,13 +461,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "CreateInstancesFromSnapshot");
             try
             {
-                #if DESKTOP
-                return client.CreateInstancesFromSnapshot(request);
-                #elif CORECLR
-                return client.CreateInstancesFromSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateInstancesFromSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

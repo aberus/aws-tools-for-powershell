@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IVSRealTime;
 using Amazon.IVSRealTime.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IVSRT
 {
     /// <summary>
@@ -41,14 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
     [AWSCmdlet("Calls the Amazon Interactive Video Service RealTime CreateParticipantToken API operation.", Operation = new[] {"CreateParticipantToken"}, SelectReturnType = typeof(Amazon.IVSRealTime.Model.CreateParticipantTokenResponse))]
     [AWSCmdletOutput("Amazon.IVSRealTime.Model.ParticipantToken or Amazon.IVSRealTime.Model.CreateParticipantTokenResponse",
         "This cmdlet returns an Amazon.IVSRealTime.Model.ParticipantToken object.",
-        "The service call response (type Amazon.IVSRealTime.Model.CreateParticipantTokenResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IVSRealTime.Model.CreateParticipantTokenResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewIVSRTParticipantTokenCmdlet : AmazonIVSRealTimeClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
@@ -56,7 +57,11 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         /// <para>Application-provided attributes to encode into the token and attach to a stage. Map
         /// keys and values can contain UTF-8 encoded text. The maximum length of this field is
         /// 1 KB total. <i>This field is exposed to all stage participants and should not be used
-        /// for personally identifying, confidential, or sensitive information.</i></para>
+        /// for personally identifying, confidential, or sensitive information.</i></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +73,11 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         /// <summary>
         /// <para>
         /// <para>Set of capabilities that the user is allowed to perform in the stage. Default: <c>PUBLISH,
-        /// SUBSCRIBE</c>.</para>
+        /// SUBSCRIBE</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,16 +135,6 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public string Select { get; set; } = "ParticipantToken";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StageArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StageArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StageArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -146,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.StageArn), MyInvocation.BoundParameters);
@@ -162,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IVSRealTime.Model.CreateParticipantTokenResponse, NewIVSRTParticipantTokenCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StageArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -272,13 +265,7 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Interactive Video Service RealTime", "CreateParticipantToken");
             try
             {
-                #if DESKTOP
-                return client.CreateParticipantToken(request);
-                #elif CORECLR
-                return client.CreateParticipantTokenAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateParticipantTokenAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

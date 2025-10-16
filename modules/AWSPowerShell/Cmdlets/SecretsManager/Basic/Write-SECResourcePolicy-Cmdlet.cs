@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SEC
 {
     /// <summary>
@@ -48,19 +50,26 @@ namespace Amazon.PowerShell.Cmdlets.SEC
     [OutputType("Amazon.SecretsManager.Model.PutResourcePolicyResponse")]
     [AWSCmdlet("Calls the AWS Secrets Manager PutResourcePolicy API operation.", Operation = new[] {"PutResourcePolicy"}, SelectReturnType = typeof(Amazon.SecretsManager.Model.PutResourcePolicyResponse))]
     [AWSCmdletOutput("Amazon.SecretsManager.Model.PutResourcePolicyResponse",
-        "This cmdlet returns an Amazon.SecretsManager.Model.PutResourcePolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SecretsManager.Model.PutResourcePolicyResponse object containing multiple properties."
     )]
     public partial class WriteSECResourcePolicyCmdlet : AmazonSecretsManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BlockPublicPolicy
         /// <summary>
         /// <para>
         /// <para>Specifies whether to block resource-based policies that allow broad access to the
         /// secret, for example those that use a wildcard for the principal. By default, public
-        /// policies aren't blocked.</para>
+        /// policies aren't blocked.</para><important><para>Resource policy validation and the BlockPublicPolicy parameter help protect your resources
+        /// by preventing public access from being granted through the resource policies that
+        /// are directly attached to your secrets. In addition to using these features, carefully
+        /// inspect the following policies to confirm that they do not grant public access:</para><ul><li><para>Identity-based policies attached to associated Amazon Web Services principals (for
+        /// example, IAM roles)</para></li><li><para>Resource-based policies attached to associated Amazon Web Services resources (for
+        /// example, Key Management Service (KMS) keys)</para></li></ul><para>To review permissions to your secrets, see <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/determine-acccess_examine-iam-policies.html">Determine
+        /// who has permissions to your secrets</a>.</para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,16 +125,6 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourcePolicy parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourcePolicy' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourcePolicy' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SecretId), MyInvocation.BoundParameters);
@@ -152,21 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.SEC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SecretsManager.Model.PutResourcePolicyResponse, WriteSECResourcePolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourcePolicy;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BlockPublicPolicy = this.BlockPublicPolicy;
             context.ResourcePolicy = this.ResourcePolicy;
             #if MODULAR
@@ -248,13 +241,7 @@ namespace Amazon.PowerShell.Cmdlets.SEC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Secrets Manager", "PutResourcePolicy");
             try
             {
-                #if DESKTOP
-                return client.PutResourcePolicy(request);
-                #elif CORECLR
-                return client.PutResourcePolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutResourcePolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

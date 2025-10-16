@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Keyspaces;
 using Amazon.Keyspaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KS
 {
     /// <summary>
@@ -33,20 +35,21 @@ namespace Amazon.PowerShell.Cmdlets.KS
     /// 
     ///  
     /// <para>
-    /// To read table metadata using <c>GetTable</c>, <c>Select</c> action permissions for
-    /// the table and system tables are required to complete the operation.
+    /// To read table metadata using <c>GetTable</c>, the IAM principal needs <c>Select</c>
+    /// action permissions for the table and the system keyspace.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "KSTable")]
     [OutputType("Amazon.Keyspaces.Model.GetTableResponse")]
     [AWSCmdlet("Calls the Amazon Keyspaces GetTable API operation.", Operation = new[] {"GetTable"}, SelectReturnType = typeof(Amazon.Keyspaces.Model.GetTableResponse))]
     [AWSCmdletOutput("Amazon.Keyspaces.Model.GetTableResponse",
-        "This cmdlet returns an Amazon.Keyspaces.Model.GetTableResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Keyspaces.Model.GetTableResponse object containing multiple properties."
     )]
     public partial class GetKSTableCmdlet : AmazonKeyspacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyspaceName
         /// <summary>
@@ -93,9 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -184,13 +191,7 @@ namespace Amazon.PowerShell.Cmdlets.KS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Keyspaces", "GetTable");
             try
             {
-                #if DESKTOP
-                return client.GetTable(request);
-                #elif CORECLR
-                return client.GetTableAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

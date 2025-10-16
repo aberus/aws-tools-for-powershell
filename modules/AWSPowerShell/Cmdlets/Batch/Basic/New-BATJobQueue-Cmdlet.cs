@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Batch;
 using Amazon.Batch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAT
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
     [OutputType("Amazon.Batch.Model.CreateJobQueueResponse")]
     [AWSCmdlet("Calls the AWS Batch CreateJobQueue API operation.", Operation = new[] {"CreateJobQueue"}, SelectReturnType = typeof(Amazon.Batch.Model.CreateJobQueueResponse))]
     [AWSCmdletOutput("Amazon.Batch.Model.CreateJobQueueResponse",
-        "This cmdlet returns an Amazon.Batch.Model.CreateJobQueueResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Batch.Model.CreateJobQueueResponse object containing multiple properties."
     )]
     public partial class NewBATJobQueueCmdlet : AmazonBatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComputeEnvironmentOrder
         /// <summary>
@@ -62,17 +65,14 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <c>SPOT</c>) or Fargate (<c>FARGATE</c> or <c>FARGATE_SPOT</c>); EC2 and Fargate compute
         /// environments can't be mixed.</para><note><para>All compute environments that are associated with a job queue must share the same
         /// architecture. Batch doesn't support mixing compute environment architecture types
-        /// in a single job queue.</para></note>
+        /// in a single job queue.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public Amazon.Batch.Model.ComputeEnvironmentOrder[] ComputeEnvironmentOrder { get; set; }
         #endregion
         
@@ -92,6 +92,37 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String JobQueueName { get; set; }
+        #endregion
+        
+        #region Parameter JobQueueType
+        /// <summary>
+        /// <para>
+        /// <para>The type of job queue. For service jobs that run on SageMaker Training, this value
+        /// is <c>SAGEMAKER_TRAINING</c>. For regular container jobs, this value is <c>EKS</c>,
+        /// <c>ECS</c>, or <c>ECS_FARGATE</c> depending on the compute environment.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Batch.JobQueueType")]
+        public Amazon.Batch.JobQueueType JobQueueType { get; set; }
+        #endregion
+        
+        #region Parameter JobStateTimeLimitAction
+        /// <summary>
+        /// <para>
+        /// <para>The set of actions that Batch performs on jobs that remain at the head of the job
+        /// queue in the specified state longer than specified times. Batch will perform each
+        /// action after <c>maxTimeSeconds</c> has passed. (<b>Note</b>: The minimum value for
+        /// maxTimeSeconds is 600 (10 minutes) and its maximum value is 86,400 (24 hours).)</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("JobStateTimeLimitActions")]
+        public Amazon.Batch.Model.JobStateTimeLimitAction[] JobStateTimeLimitAction { get; set; }
         #endregion
         
         #region Parameter Priority
@@ -119,15 +150,33 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter SchedulingPolicyArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the fair share scheduling policy. If this parameter
-        /// is specified, the job queue uses a fair share scheduling policy. If this parameter
-        /// isn't specified, the job queue uses a first in, first out (FIFO) scheduling policy.
-        /// After a job queue is created, you can replace but can't remove the fair share scheduling
-        /// policy. The format is <c>aws:<i>Partition</i>:batch:<i>Region</i>:<i>Account</i>:scheduling-policy/<i>Name</i></c>. An example is <c>aws:aws:batch:us-west-2:123456789012:scheduling-policy/MySchedulingPolicy</c>.</para>
+        /// <para>The Amazon Resource Name (ARN) of the fair-share scheduling policy. Job queues that
+        /// don't have a fair-share scheduling policy are scheduled in a first-in, first-out (FIFO)
+        /// model. After a job queue has a fair-share scheduling policy, it can be replaced but
+        /// can't be removed.</para><para>The format is <c>aws:<i>Partition</i>:batch:<i>Region</i>:<i>Account</i>:scheduling-policy/<i>Name</i></c>.</para><para>An example is <c>aws:aws:batch:us-west-2:123456789012:scheduling-policy/MySchedulingPolicy</c>.</para><para>A job queue without a fair-share scheduling policy is scheduled as a FIFO job queue
+        /// and can't have a fair-share scheduling policy added. Jobs queues with a fair-share
+        /// scheduling policy can have a maximum of 500 active share identifiers. When the limit
+        /// has been reached, submissions of any jobs that add a new share identifier fail.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SchedulingPolicyArn { get; set; }
+        #endregion
+        
+        #region Parameter ServiceEnvironmentOrder
+        /// <summary>
+        /// <para>
+        /// <para>A list of service environments that this job queue can use to allocate jobs. All serviceEnvironments
+        /// must have the same type. A job queue can't have both a serviceEnvironmentOrder and
+        /// a computeEnvironmentOrder field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Batch.Model.ServiceEnvironmentOrder[] ServiceEnvironmentOrder { get; set; }
         #endregion
         
         #region Parameter State
@@ -149,7 +198,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>The tags that you apply to the job queue to help you categorize and organize your
         /// resources. Each tag consists of a key and an optional value. For more information,
         /// see <a href="https://docs.aws.amazon.com/batch/latest/userguide/using-tags.html">Tagging
-        /// your Batch resources</a> in <i>Batch User Guide</i>.</para>
+        /// your Batch resources</a> in <i>Batch User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -178,9 +231,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.JobQueueName), MyInvocation.BoundParameters);
@@ -203,12 +260,6 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             {
                 context.ComputeEnvironmentOrder = new List<Amazon.Batch.Model.ComputeEnvironmentOrder>(this.ComputeEnvironmentOrder);
             }
-            #if MODULAR
-            if (this.ComputeEnvironmentOrder == null && ParameterWasBound(nameof(this.ComputeEnvironmentOrder)))
-            {
-                WriteWarning("You are passing $null as a value for parameter ComputeEnvironmentOrder which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.JobQueueName = this.JobQueueName;
             #if MODULAR
             if (this.JobQueueName == null && ParameterWasBound(nameof(this.JobQueueName)))
@@ -216,6 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                 WriteWarning("You are passing $null as a value for parameter JobQueueName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.JobQueueType = this.JobQueueType;
+            if (this.JobStateTimeLimitAction != null)
+            {
+                context.JobStateTimeLimitAction = new List<Amazon.Batch.Model.JobStateTimeLimitAction>(this.JobStateTimeLimitAction);
+            }
             context.Priority = this.Priority;
             #if MODULAR
             if (this.Priority == null && ParameterWasBound(nameof(this.Priority)))
@@ -224,6 +280,10 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             }
             #endif
             context.SchedulingPolicyArn = this.SchedulingPolicyArn;
+            if (this.ServiceEnvironmentOrder != null)
+            {
+                context.ServiceEnvironmentOrder = new List<Amazon.Batch.Model.ServiceEnvironmentOrder>(this.ServiceEnvironmentOrder);
+            }
             context.State = this.State;
             if (this.Tag != null)
             {
@@ -257,6 +317,14 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             {
                 request.JobQueueName = cmdletContext.JobQueueName;
             }
+            if (cmdletContext.JobQueueType != null)
+            {
+                request.JobQueueType = cmdletContext.JobQueueType;
+            }
+            if (cmdletContext.JobStateTimeLimitAction != null)
+            {
+                request.JobStateTimeLimitActions = cmdletContext.JobStateTimeLimitAction;
+            }
             if (cmdletContext.Priority != null)
             {
                 request.Priority = cmdletContext.Priority.Value;
@@ -264,6 +332,10 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             if (cmdletContext.SchedulingPolicyArn != null)
             {
                 request.SchedulingPolicyArn = cmdletContext.SchedulingPolicyArn;
+            }
+            if (cmdletContext.ServiceEnvironmentOrder != null)
+            {
+                request.ServiceEnvironmentOrder = cmdletContext.ServiceEnvironmentOrder;
             }
             if (cmdletContext.State != null)
             {
@@ -311,13 +383,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Batch", "CreateJobQueue");
             try
             {
-                #if DESKTOP
-                return client.CreateJobQueue(request);
-                #elif CORECLR
-                return client.CreateJobQueueAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateJobQueueAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -336,8 +402,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         {
             public List<Amazon.Batch.Model.ComputeEnvironmentOrder> ComputeEnvironmentOrder { get; set; }
             public System.String JobQueueName { get; set; }
+            public Amazon.Batch.JobQueueType JobQueueType { get; set; }
+            public List<Amazon.Batch.Model.JobStateTimeLimitAction> JobStateTimeLimitAction { get; set; }
             public System.Int32? Priority { get; set; }
             public System.String SchedulingPolicyArn { get; set; }
+            public List<Amazon.Batch.Model.ServiceEnvironmentOrder> ServiceEnvironmentOrder { get; set; }
             public Amazon.Batch.JQState State { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.Batch.Model.CreateJobQueueResponse, NewBATJobQueueCmdlet, object> Select { get; set; } =

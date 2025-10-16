@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [AWSCmdlet("Calls the AWS IoT AttachThingPrincipal API operation.", Operation = new[] {"AttachThingPrincipal"}, SelectReturnType = typeof(Amazon.IoT.Model.AttachThingPrincipalResponse))]
     [AWSCmdletOutput("None or Amazon.IoT.Model.AttachThingPrincipalResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IoT.Model.AttachThingPrincipalResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IoT.Model.AttachThingPrincipalResponse) be returned by specifying '-Select *'."
     )]
     public partial class AddIOTThingPrincipalCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Principal
         /// <summary>
@@ -84,6 +87,19 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public System.String ThingName { get; set; }
         #endregion
         
+        #region Parameter ThingPrincipalType
+        /// <summary>
+        /// <para>
+        /// <para>The type of the relation you want to specify when you attach a principal to a thing.</para><ul><li><para><c>EXCLUSIVE_THING</c> - Attaches the specified principal to the specified thing,
+        /// exclusively. The thing will be the only thing that’s attached to the principal.</para></li></ul><ul><li><para><c>NON_EXCLUSIVE_THING</c> - Attaches the specified principal to the specified thing.
+        /// Multiple things can be attached to the principal.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IoT.ThingPrincipalType")]
+        public Amazon.IoT.ThingPrincipalType ThingPrincipalType { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -92,16 +108,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ThingName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ThingName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ThingName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -114,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ThingName), MyInvocation.BoundParameters);
@@ -130,21 +140,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoT.Model.AttachThingPrincipalResponse, AddIOTThingPrincipalCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ThingName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Principal = this.Principal;
             #if MODULAR
             if (this.Principal == null && ParameterWasBound(nameof(this.Principal)))
@@ -159,6 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
                 WriteWarning("You are passing $null as a value for parameter ThingName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ThingPrincipalType = this.ThingPrincipalType;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -182,6 +183,10 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             if (cmdletContext.ThingName != null)
             {
                 request.ThingName = cmdletContext.ThingName;
+            }
+            if (cmdletContext.ThingPrincipalType != null)
+            {
+                request.ThingPrincipalType = cmdletContext.ThingPrincipalType;
             }
             
             CmdletOutput output;
@@ -221,13 +226,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "AttachThingPrincipal");
             try
             {
-                #if DESKTOP
-                return client.AttachThingPrincipal(request);
-                #elif CORECLR
-                return client.AttachThingPrincipalAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AttachThingPrincipalAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -246,6 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         {
             public System.String Principal { get; set; }
             public System.String ThingName { get; set; }
+            public Amazon.IoT.ThingPrincipalType ThingPrincipalType { get; set; }
             public System.Func<Amazon.IoT.Model.AttachThingPrincipalResponse, AddIOTThingPrincipalCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

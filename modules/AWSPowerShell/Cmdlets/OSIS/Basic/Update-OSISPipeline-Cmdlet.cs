@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OSIS;
 using Amazon.OSIS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OSIS
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
     [AWSCmdlet("Calls the Amazon OpenSearch Ingestion UpdatePipeline API operation.", Operation = new[] {"UpdatePipeline"}, SelectReturnType = typeof(Amazon.OSIS.Model.UpdatePipelineResponse))]
     [AWSCmdletOutput("Amazon.OSIS.Model.Pipeline or Amazon.OSIS.Model.UpdatePipelineResponse",
         "This cmdlet returns an Amazon.OSIS.Model.Pipeline object.",
-        "The service call response (type Amazon.OSIS.Model.UpdatePipelineResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OSIS.Model.UpdatePipelineResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateOSISPipelineCmdlet : AmazonOSISClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LogPublishingOptions_IsLoggingEnabled
         /// <summary>
@@ -56,8 +59,8 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         #region Parameter EncryptionAtRestOptions_KmsKeyArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the KMS key used to encrypt data-at-rest in OpenSearch Ingestion. By default,
-        /// data is encrypted using an AWS owned key.</para>
+        /// <para>The ARN of the KMS key used to encrypt buffer data. By default, data is encrypted
+        /// using an Amazon Web Services owned key.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +71,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         /// <summary>
         /// <para>
         /// <para>The name of the CloudWatch Logs group to send pipeline logs to. You can specify an
-        /// existing log group or create a new one. For example, <c>/aws/OpenSearchService/IngestionService/my-pipeline</c>.</para>
+        /// existing log group or create a new one. For example, <c>/aws/vendedlogs/OpenSearchService/pipelines</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,6 +140,17 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         public System.String PipelineName { get; set; }
         #endregion
         
+        #region Parameter PipelineRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role that grants the pipeline permission
+        /// to access Amazon Web Services resources.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String PipelineRoleArn { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Pipeline'.
@@ -146,16 +160,6 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Pipeline";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PipelineName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PipelineName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PipelineName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -168,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PipelineName), MyInvocation.BoundParameters);
@@ -184,21 +192,11 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.OSIS.Model.UpdatePipelineResponse, UpdateOSISPipelineCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PipelineName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BufferOptions_PersistentBufferEnabled = this.BufferOptions_PersistentBufferEnabled;
             context.EncryptionAtRestOptions_KmsKeyArn = this.EncryptionAtRestOptions_KmsKeyArn;
             context.CloudWatchLogDestination_LogGroup = this.CloudWatchLogDestination_LogGroup;
@@ -213,6 +211,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
                 WriteWarning("You are passing $null as a value for parameter PipelineName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.PipelineRoleArn = this.PipelineRoleArn;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -327,6 +326,10 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             {
                 request.PipelineName = cmdletContext.PipelineName;
             }
+            if (cmdletContext.PipelineRoleArn != null)
+            {
+                request.PipelineRoleArn = cmdletContext.PipelineRoleArn;
+            }
             
             CmdletOutput output;
             
@@ -365,13 +368,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon OpenSearch Ingestion", "UpdatePipeline");
             try
             {
-                #if DESKTOP
-                return client.UpdatePipeline(request);
-                #elif CORECLR
-                return client.UpdatePipelineAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePipelineAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -396,6 +393,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             public System.Int32? MinUnit { get; set; }
             public System.String PipelineConfigurationBody { get; set; }
             public System.String PipelineName { get; set; }
+            public System.String PipelineRoleArn { get; set; }
             public System.Func<Amazon.OSIS.Model.UpdatePipelineResponse, UpdateOSISPipelineCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Pipeline;
         }

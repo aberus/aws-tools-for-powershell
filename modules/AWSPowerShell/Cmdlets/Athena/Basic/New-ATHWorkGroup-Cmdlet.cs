@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Athena;
 using Amazon.Athena.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ATH
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
     [AWSCmdlet("Calls the Amazon Athena CreateWorkGroup API operation.", Operation = new[] {"CreateWorkGroup"}, SelectReturnType = typeof(Amazon.Athena.Model.CreateWorkGroupResponse))]
     [AWSCmdletOutput("None or Amazon.Athena.Model.CreateWorkGroupResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Athena.Model.CreateWorkGroupResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Athena.Model.CreateWorkGroupResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewATHWorkGroupCmdlet : AmazonAthenaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Configuration_AdditionalConfiguration
         /// <summary>
@@ -112,6 +115,20 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Configuration_EngineVersion_EffectiveEngineVersion")]
         public System.String EngineVersion_EffectiveEngineVersion { get; set; }
+        #endregion
+        
+        #region Parameter ManagedQueryResultsConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>If set to true, allows you to store query results in Athena owned storage. If set
+        /// to false, workgroup member stores query results in location specified under <c>ResultConfiguration$OutputLocation</c>.
+        /// The default is false. A workgroup cannot have the <c>ResultConfiguration$OutputLocation</c>
+        /// parameter when you set this field to true. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Configuration_ManagedQueryResultsConfiguration_Enabled")]
+        public System.Boolean? ManagedQueryResultsConfiguration_Enabled { get; set; }
         #endregion
         
         #region Parameter IdentityCenterConfiguration_EnableIdentityCenter
@@ -233,15 +250,25 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public System.String CustomerContentEncryptionConfiguration_KmsKey { get; set; }
         #endregion
         
-        #region Parameter EncryptionConfiguration_KmsKey
+        #region Parameter Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of an KMS key for encrypting managed query results.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey { get; set; }
+        #endregion
+        
+        #region Parameter Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey
         /// <summary>
         /// <para>
         /// <para>For <c>SSE_KMS</c> and <c>CSE_KMS</c>, this is the KMS key ARN or ID.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey")]
-        public System.String EncryptionConfiguration_KmsKey { get; set; }
+        [Alias("EncryptionConfiguration_KmsKey")]
+        public System.String Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey { get; set; }
         #endregion
         
         #region Parameter Name
@@ -269,10 +296,8 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         /// results location using one of the ways: either for individual queries using either
         /// this setting (client-side), or in the workgroup, using <a>WorkGroupConfiguration</a>.
         /// If none of them is set, Athena issues an error that no output location is provided.
-        /// For more information, see <a href="https://docs.aws.amazon.com/athena/latest/ug/querying.html">Working
-        /// with query results, recent queries, and output files</a>. If workgroup settings override
-        /// client-side settings, then the query uses the settings specified for the workgroup.
-        /// See <a>WorkGroupConfiguration$EnforceWorkGroupConfiguration</a>.</para>
+        /// If workgroup settings override client-side settings, then the query uses the settings
+        /// specified for the workgroup. See <a>WorkGroupConfiguration$EnforceWorkGroupConfiguration</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -308,11 +333,12 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         #region Parameter AclConfiguration_S3AclOption
         /// <summary>
         /// <para>
-        /// <para>The Amazon S3 canned ACL that Athena should specify when storing query results. Currently
-        /// the only supported canned ACL is <c>BUCKET_OWNER_FULL_CONTROL</c>. If a query runs
-        /// in a workgroup and the workgroup overrides client-side settings, then the Amazon S3
-        /// canned ACL specified in the workgroup's settings is used for all queries that run
-        /// in the workgroup. For more information about Amazon S3 canned ACLs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">Canned
+        /// <para>The Amazon S3 canned ACL that Athena should specify when storing query results, including
+        /// data files inserted by Athena as the result of statements like CTAS or INSERT INTO.
+        /// Currently the only supported canned ACL is <c>BUCKET_OWNER_FULL_CONTROL</c>. If a
+        /// query runs in a workgroup and the workgroup overrides client-side settings, then the
+        /// Amazon S3 canned ACL specified in the workgroup's settings is used for all queries
+        /// that run in the workgroup. For more information about Amazon S3 canned ACLs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">Canned
         /// ACL</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -337,7 +363,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of comma separated tags to add to the workgroup that is created.</para>
+        /// <para>A list of comma separated tags to add to the workgroup that is created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -355,16 +385,6 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -375,9 +395,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -391,21 +415,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Athena.Model.CreateWorkGroupResponse, NewATHWorkGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Configuration_AdditionalConfiguration = this.Configuration_AdditionalConfiguration;
             context.Configuration_BytesScannedCutoffPerQuery = this.Configuration_BytesScannedCutoffPerQuery;
             context.CustomerContentEncryptionConfiguration_KmsKey = this.CustomerContentEncryptionConfiguration_KmsKey;
@@ -416,6 +430,8 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             context.Configuration_ExecutionRole = this.Configuration_ExecutionRole;
             context.IdentityCenterConfiguration_EnableIdentityCenter = this.IdentityCenterConfiguration_EnableIdentityCenter;
             context.IdentityCenterConfiguration_IdentityCenterInstanceArn = this.IdentityCenterConfiguration_IdentityCenterInstanceArn;
+            context.ManagedQueryResultsConfiguration_Enabled = this.ManagedQueryResultsConfiguration_Enabled;
+            context.Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey = this.Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey;
             context.Configuration_PublishCloudWatchMetricsEnabled = this.Configuration_PublishCloudWatchMetricsEnabled;
             context.QueryResultsS3AccessGrantsConfiguration_AuthenticationType = this.QueryResultsS3AccessGrantsConfiguration_AuthenticationType;
             context.QueryResultsS3AccessGrantsConfiguration_CreateUserLevelPrefix = this.QueryResultsS3AccessGrantsConfiguration_CreateUserLevelPrefix;
@@ -423,7 +439,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             context.Configuration_RequesterPaysEnabled = this.Configuration_RequesterPaysEnabled;
             context.AclConfiguration_S3AclOption = this.AclConfiguration_S3AclOption;
             context.EncryptionConfiguration_EncryptionOption = this.EncryptionConfiguration_EncryptionOption;
-            context.EncryptionConfiguration_KmsKey = this.EncryptionConfiguration_KmsKey;
+            context.Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey = this.Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey;
             context.ResultConfiguration_ExpectedBucketOwner = this.ResultConfiguration_ExpectedBucketOwner;
             context.ResultConfiguration_OutputLocation = this.ResultConfiguration_OutputLocation;
             context.Description = this.Description;
@@ -623,6 +639,56 @@ namespace Amazon.PowerShell.Cmdlets.ATH
                 request.Configuration.IdentityCenterConfiguration = requestConfiguration_configuration_IdentityCenterConfiguration;
                 requestConfigurationIsNull = false;
             }
+            Amazon.Athena.Model.ManagedQueryResultsConfiguration requestConfiguration_configuration_ManagedQueryResultsConfiguration = null;
+            
+             // populate ManagedQueryResultsConfiguration
+            var requestConfiguration_configuration_ManagedQueryResultsConfigurationIsNull = true;
+            requestConfiguration_configuration_ManagedQueryResultsConfiguration = new Amazon.Athena.Model.ManagedQueryResultsConfiguration();
+            System.Boolean? requestConfiguration_configuration_ManagedQueryResultsConfiguration_managedQueryResultsConfiguration_Enabled = null;
+            if (cmdletContext.ManagedQueryResultsConfiguration_Enabled != null)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration_managedQueryResultsConfiguration_Enabled = cmdletContext.ManagedQueryResultsConfiguration_Enabled.Value;
+            }
+            if (requestConfiguration_configuration_ManagedQueryResultsConfiguration_managedQueryResultsConfiguration_Enabled != null)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration.Enabled = requestConfiguration_configuration_ManagedQueryResultsConfiguration_managedQueryResultsConfiguration_Enabled.Value;
+                requestConfiguration_configuration_ManagedQueryResultsConfigurationIsNull = false;
+            }
+            Amazon.Athena.Model.ManagedQueryResultsEncryptionConfiguration requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration = null;
+            
+             // populate EncryptionConfiguration
+            var requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfigurationIsNull = true;
+            requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration = new Amazon.Athena.Model.ManagedQueryResultsEncryptionConfiguration();
+            System.String requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey = null;
+            if (cmdletContext.Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey != null)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey = cmdletContext.Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey;
+            }
+            if (requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey != null)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration.KmsKey = requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey;
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfigurationIsNull = false;
+            }
+             // determine if requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration should be set to null
+            if (requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfigurationIsNull)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration = null;
+            }
+            if (requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration != null)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration.EncryptionConfiguration = requestConfiguration_configuration_ManagedQueryResultsConfiguration_configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration;
+                requestConfiguration_configuration_ManagedQueryResultsConfigurationIsNull = false;
+            }
+             // determine if requestConfiguration_configuration_ManagedQueryResultsConfiguration should be set to null
+            if (requestConfiguration_configuration_ManagedQueryResultsConfigurationIsNull)
+            {
+                requestConfiguration_configuration_ManagedQueryResultsConfiguration = null;
+            }
+            if (requestConfiguration_configuration_ManagedQueryResultsConfiguration != null)
+            {
+                request.Configuration.ManagedQueryResultsConfiguration = requestConfiguration_configuration_ManagedQueryResultsConfiguration;
+                requestConfigurationIsNull = false;
+            }
             Amazon.Athena.Model.QueryResultsS3AccessGrantsConfiguration requestConfiguration_configuration_QueryResultsS3AccessGrantsConfiguration = null;
             
              // populate QueryResultsS3AccessGrantsConfiguration
@@ -733,14 +799,14 @@ namespace Amazon.PowerShell.Cmdlets.ATH
                 requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration.EncryptionOption = requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_encryptionConfiguration_EncryptionOption;
                 requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfigurationIsNull = false;
             }
-            System.String requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_encryptionConfiguration_KmsKey = null;
-            if (cmdletContext.EncryptionConfiguration_KmsKey != null)
+            System.String requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_KmsKey = null;
+            if (cmdletContext.Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey != null)
             {
-                requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_encryptionConfiguration_KmsKey = cmdletContext.EncryptionConfiguration_KmsKey;
+                requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_KmsKey = cmdletContext.Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey;
             }
-            if (requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_encryptionConfiguration_KmsKey != null)
+            if (requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_KmsKey != null)
             {
-                requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration.KmsKey = requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_encryptionConfiguration_KmsKey;
+                requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration.KmsKey = requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_configuration_ResultConfiguration_EncryptionConfiguration_KmsKey;
                 requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfigurationIsNull = false;
             }
              // determine if requestConfiguration_configuration_ResultConfiguration_configuration_ResultConfiguration_EncryptionConfiguration should be set to null
@@ -818,13 +884,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Athena", "CreateWorkGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateWorkGroup(request);
-                #elif CORECLR
-                return client.CreateWorkGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateWorkGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -851,6 +911,8 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             public System.String Configuration_ExecutionRole { get; set; }
             public System.Boolean? IdentityCenterConfiguration_EnableIdentityCenter { get; set; }
             public System.String IdentityCenterConfiguration_IdentityCenterInstanceArn { get; set; }
+            public System.Boolean? ManagedQueryResultsConfiguration_Enabled { get; set; }
+            public System.String Configuration_ManagedQueryResultsConfiguration_EncryptionConfiguration_KmsKey { get; set; }
             public System.Boolean? Configuration_PublishCloudWatchMetricsEnabled { get; set; }
             public Amazon.Athena.AuthenticationType QueryResultsS3AccessGrantsConfiguration_AuthenticationType { get; set; }
             public System.Boolean? QueryResultsS3AccessGrantsConfiguration_CreateUserLevelPrefix { get; set; }
@@ -858,7 +920,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             public System.Boolean? Configuration_RequesterPaysEnabled { get; set; }
             public Amazon.Athena.S3AclOption AclConfiguration_S3AclOption { get; set; }
             public Amazon.Athena.EncryptionOption EncryptionConfiguration_EncryptionOption { get; set; }
-            public System.String EncryptionConfiguration_KmsKey { get; set; }
+            public System.String Configuration_ResultConfiguration_EncryptionConfiguration_KmsKey { get; set; }
             public System.String ResultConfiguration_ExpectedBucketOwner { get; set; }
             public System.String ResultConfiguration_OutputLocation { get; set; }
             public System.String Description { get; set; }

@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The AWS Tools for PowerShell lets developers and administrators manage their AWS services from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -35,6 +35,8 @@ Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support fo
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -50,10 +52,9 @@ Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support fo
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @(
-
     )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.Core.dll',
         'AWSSDK.SecurityToken.dll',
@@ -61,7 +62,9 @@ Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support fo
         'aws-crt-auth.dll',
         'aws-crt-http.dll',
         'aws-crt-checksums.dll',
-        'AWSSDK.Extensions.CrtIntegration.dll'
+        'AWSSDK.Extensions.CrtIntegration.dll',
+        'AWSSDK.Extensions.CborProtocol.dll',
+        'System.Formats.Cbor.dll'
     )
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module
@@ -90,11 +93,13 @@ Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support fo
 
     # Cmdlets to export from this module
     CmdletsToExport = @(
-        'Clear-AWSHistory', 
-        'Set-AWSHistoryConfiguration', 
         'Initialize-AWSDefaultConfiguration', 
         'Clear-AWSDefaultConfiguration', 
         'Get-AWSPowerShellVersion', 
+        'Set-AWSSensitiveDataConfiguration', 
+        'Get-AWSSensitiveDataConfiguration', 
+        'Set-AWSAutoIterationMode', 
+        'Get-AWSAutoIterationMode', 
         'New-AWSCredential', 
         'Set-AWSCredential', 
         'Clear-AWSCredential', 
@@ -115,7 +120,11 @@ Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support fo
         'Clear-DefaultAWSRegion', 
         'Get-DefaultAWSRegion', 
         'Get-AWSRegion', 
-        'Remove-AWSCredentialProfile')
+        'Remove-AWSCredentialProfile', 
+        'Invoke-AWSSSOLogin', 
+        'Initialize-AWSSSOConfiguration', 
+        'Set-AWSSSOSessionConfiguration', 
+        'Invoke-AWSSSOLogout')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -145,7 +154,7 @@ Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support fo
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

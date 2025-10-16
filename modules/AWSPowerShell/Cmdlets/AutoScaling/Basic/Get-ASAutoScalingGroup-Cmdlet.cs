@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -39,7 +41,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
     /// 
     /// </para><para>
     /// This operation also returns information about instances in Auto Scaling groups. To
-    /// retrieve information about the instances in a warm pool, you must call the <a>DescribeWarmPool</a>
+    /// retrieve information about the instances in a warm pool, you must call the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribeWarmPool.html">DescribeWarmPool</a>
     /// API. 
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
@@ -48,18 +50,23 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling DescribeAutoScalingGroups API operation.", Operation = new[] {"DescribeAutoScalingGroups"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.DescribeAutoScalingGroupsResponse))]
     [AWSCmdletOutput("Amazon.AutoScaling.Model.AutoScalingGroup or Amazon.AutoScaling.Model.DescribeAutoScalingGroupsResponse",
         "This cmdlet returns a collection of Amazon.AutoScaling.Model.AutoScalingGroup objects.",
-        "The service call response (type Amazon.AutoScaling.Model.DescribeAutoScalingGroupsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AutoScaling.Model.DescribeAutoScalingGroupsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetASAutoScalingGroupCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoScalingGroupName
         /// <summary>
         /// <para>
         /// <para>The names of the Auto Scaling groups. By default, you can only specify up to 50 names.
-        /// You can optionally increase this limit using the <c>MaxRecords</c> property.</para><para>If you omit this property, all Auto Scaling groups are described.</para>
+        /// You can optionally increase this limit using the <c>MaxRecords</c> property.</para><para>If you omit this property, all Auto Scaling groups are described.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -70,12 +77,28 @@ namespace Amazon.PowerShell.Cmdlets.AS
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>One or more filters to limit the results based on specific tags. </para>
+        /// <para>One or more filters to limit the results based on specific tags. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Filters")]
         public Amazon.AutoScaling.Model.Filter[] Filter { get; set; }
+        #endregion
+        
+        #region Parameter IncludeInstance
+        /// <summary>
+        /// <para>
+        /// <para> Specifies whether to include information about Amazon EC2 instances in the response.
+        /// When set to <c>true</c> (default), the response includes instance details. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeInstances")]
+        public System.Boolean? IncludeInstance { get; set; }
         #endregion
         
         #region Parameter MaxRecord
@@ -103,7 +126,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public string Select { get; set; } = "AutoScalingGroups";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutoScalingGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -141,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -151,21 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.DescribeAutoScalingGroupsResponse, GetASAutoScalingGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutoScalingGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AutoScalingGroupName != null)
             {
                 context.AutoScalingGroupName = new List<System.String>(this.AutoScalingGroupName);
@@ -174,6 +181,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             {
                 context.Filter = new List<Amazon.AutoScaling.Model.Filter>(this.Filter);
             }
+            context.IncludeInstance = this.IncludeInstance;
             context.MaxRecord = this.MaxRecord;
             #if !MODULAR
             if (ParameterWasBound(nameof(this.MaxRecord)) && this.MaxRecord.HasValue)
@@ -199,9 +207,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.AutoScaling.Model.DescribeAutoScalingGroupsRequest();
@@ -213,6 +219,10 @@ namespace Amazon.PowerShell.Cmdlets.AS
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
+            }
+            if (cmdletContext.IncludeInstance != null)
+            {
+                request.IncludeInstances = cmdletContext.IncludeInstance.Value;
             }
             if (cmdletContext.MaxRecord != null)
             {
@@ -269,7 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.AutoScaling.Model.DescribeAutoScalingGroupsRequest();
@@ -280,6 +290,10 @@ namespace Amazon.PowerShell.Cmdlets.AS
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
+            }
+            if (cmdletContext.IncludeInstance != null)
+            {
+                request.IncludeInstances = cmdletContext.IncludeInstance.Value;
             }
             
             // Initialize loop variants and commence piping
@@ -321,7 +335,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.AutoScalingGroups.Count;
+                    int _receivedThisCall = response.AutoScalingGroups?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -370,13 +384,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "DescribeAutoScalingGroups");
             try
             {
-                #if DESKTOP
-                return client.DescribeAutoScalingGroups(request);
-                #elif CORECLR
-                return client.DescribeAutoScalingGroupsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAutoScalingGroupsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -395,6 +403,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         {
             public List<System.String> AutoScalingGroupName { get; set; }
             public List<Amazon.AutoScaling.Model.Filter> Filter { get; set; }
+            public System.Boolean? IncludeInstance { get; set; }
             public int? MaxRecord { get; set; }
             public System.String NextToken { get; set; }
             public System.Func<Amazon.AutoScaling.Model.DescribeAutoScalingGroupsResponse, GetASAutoScalingGroupCmdlet, object> Select { get; set; } =

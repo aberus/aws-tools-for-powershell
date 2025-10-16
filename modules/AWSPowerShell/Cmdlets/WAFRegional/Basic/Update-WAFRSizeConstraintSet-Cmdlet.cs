@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAFRegional;
 using Amazon.WAFRegional.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAFR
 {
     /// <summary>
@@ -82,12 +84,13 @@ namespace Amazon.PowerShell.Cmdlets.WAFR
     [AWSCmdlet("Calls the AWS WAF Regional UpdateSizeConstraintSet API operation.", Operation = new[] {"UpdateSizeConstraintSet"}, SelectReturnType = typeof(Amazon.WAFRegional.Model.UpdateSizeConstraintSetResponse))]
     [AWSCmdletOutput("System.String or Amazon.WAFRegional.Model.UpdateSizeConstraintSetResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.WAFRegional.Model.UpdateSizeConstraintSetResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WAFRegional.Model.UpdateSizeConstraintSetResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateWAFRSizeConstraintSetCmdlet : AmazonWAFRegionalClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChangeToken
         /// <summary>
@@ -130,7 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.WAFR
         /// <para>An array of <c>SizeConstraintSetUpdate</c> objects that you want to insert into or
         /// delete from a <a>SizeConstraintSet</a>. For more information, see the applicable data
         /// types:</para><ul><li><para><a>SizeConstraintSetUpdate</a>: Contains <c>Action</c> and <c>SizeConstraint</c></para></li><li><para><a>SizeConstraint</a>: Contains <c>FieldToMatch</c>, <c>TextTransformation</c>, <c>ComparisonOperator</c>,
-        /// and <c>Size</c></para></li><li><para><a>FieldToMatch</a>: Contains <c>Data</c> and <c>Type</c></para></li></ul>
+        /// and <c>Size</c></para></li><li><para><a>FieldToMatch</a>: Contains <c>Data</c> and <c>Type</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -156,16 +163,6 @@ namespace Amazon.PowerShell.Cmdlets.WAFR
         public string Select { get; set; } = "ChangeToken";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ChangeToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ChangeToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ChangeToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -176,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.WAFR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SizeConstraintSetId), MyInvocation.BoundParameters);
@@ -192,21 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.WAFR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WAFRegional.Model.UpdateSizeConstraintSetResponse, UpdateWAFRSizeConstraintSetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ChangeToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ChangeToken = this.ChangeToken;
             #if MODULAR
             if (this.ChangeToken == null && ParameterWasBound(nameof(this.ChangeToken)))
@@ -297,13 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.WAFR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF Regional", "UpdateSizeConstraintSet");
             try
             {
-                #if DESKTOP
-                return client.UpdateSizeConstraintSet(request);
-                #elif CORECLR
-                return client.UpdateSizeConstraintSetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSizeConstraintSetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

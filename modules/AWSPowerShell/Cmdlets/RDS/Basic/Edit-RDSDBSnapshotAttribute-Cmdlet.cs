@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -56,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyDBSnapshotAttribute API operation.", Operation = new[] {"ModifyDBSnapshotAttribute"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyDBSnapshotAttributeResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBSnapshotAttributesResult or Amazon.RDS.Model.ModifyDBSnapshotAttributeResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBSnapshotAttributesResult object.",
-        "The service call response (type Amazon.RDS.Model.ModifyDBSnapshotAttributeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyDBSnapshotAttributeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSDBSnapshotAttributeCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeName
         /// <summary>
@@ -106,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// set this list to include one or more Amazon Web Services account IDs, or <c>all</c>
         /// to make the manual DB snapshot restorable by any Amazon Web Services account. Do not
         /// add the <c>all</c> value for any manual DB snapshots that contain private information
-        /// that you don't want available to all Amazon Web Services accounts.</para>
+        /// that you don't want available to all Amazon Web Services accounts.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,7 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// identifiers, or <c>all</c> to remove authorization for any Amazon Web Services account
         /// to copy or restore the DB snapshot. If you specify <c>all</c>, an Amazon Web Services
         /// account whose account ID is explicitly added to the <c>restore</c> attribute can still
-        /// copy or restore the manual DB snapshot.</para>
+        /// copy or restore the manual DB snapshot.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,16 +150,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBSnapshotAttributesResult";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBSnapshotIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBSnapshotIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBSnapshotIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -159,9 +160,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBSnapshotIdentifier), MyInvocation.BoundParameters);
@@ -175,21 +180,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyDBSnapshotAttributeResponse, EditRDSDBSnapshotAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBSnapshotIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AttributeName = this.AttributeName;
             #if MODULAR
             if (this.AttributeName == null && ParameterWasBound(nameof(this.AttributeName)))
@@ -282,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyDBSnapshotAttribute");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBSnapshotAttribute(request);
-                #elif CORECLR
-                return client.ModifyDBSnapshotAttributeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBSnapshotAttributeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

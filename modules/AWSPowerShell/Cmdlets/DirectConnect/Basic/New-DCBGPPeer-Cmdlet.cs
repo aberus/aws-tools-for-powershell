@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectConnect;
 using Amazon.DirectConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DC
 {
     /// <summary>
@@ -59,12 +61,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
     [AWSCmdlet("Calls the AWS Direct Connect CreateBGPPeer API operation.", Operation = new[] {"CreateBGPPeer"}, SelectReturnType = typeof(Amazon.DirectConnect.Model.CreateBGPPeerResponse))]
     [AWSCmdletOutput("Amazon.DirectConnect.Model.VirtualInterface or Amazon.DirectConnect.Model.CreateBGPPeerResponse",
         "This cmdlet returns an Amazon.DirectConnect.Model.VirtualInterface object.",
-        "The service call response (type Amazon.DirectConnect.Model.CreateBGPPeerResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DirectConnect.Model.CreateBGPPeerResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDCBGPPeerCmdlet : AmazonDirectConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NewBGPPeer_AddressFamily
         /// <summary>
@@ -90,11 +93,23 @@ namespace Amazon.PowerShell.Cmdlets.DC
         #region Parameter NewBGPPeer_Asn
         /// <summary>
         /// <para>
-        /// <para>The autonomous system (AS) number for Border Gateway Protocol (BGP) configuration.</para>
+        /// <para>The autonomous system number (ASN). The valid range is from 1 to 2147483646 for Border
+        /// Gateway Protocol (BGP) configuration. If you provide a number greater than the maximum,
+        /// an error is returned. Use <c>asnLong</c> instead.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? NewBGPPeer_Asn { get; set; }
+        #endregion
+        
+        #region Parameter NewBGPPeer_AsnLong
+        /// <summary>
+        /// <para>
+        /// <para>The long ASN for a new BGP peer. The valid range is from 1 to 4294967294.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int64? NewBGPPeer_AsnLong { get; set; }
         #endregion
         
         #region Parameter NewBGPPeer_AuthKey
@@ -139,16 +154,6 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public string Select { get; set; } = "VirtualInterface";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VirtualInterfaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VirtualInterfaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VirtualInterfaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -159,9 +164,13 @@ namespace Amazon.PowerShell.Cmdlets.DC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VirtualInterfaceId), MyInvocation.BoundParameters);
@@ -175,24 +184,15 @@ namespace Amazon.PowerShell.Cmdlets.DC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectConnect.Model.CreateBGPPeerResponse, NewDCBGPPeerCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VirtualInterfaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.NewBGPPeer_AddressFamily = this.NewBGPPeer_AddressFamily;
             context.NewBGPPeer_AmazonAddress = this.NewBGPPeer_AmazonAddress;
             context.NewBGPPeer_Asn = this.NewBGPPeer_Asn;
+            context.NewBGPPeer_AsnLong = this.NewBGPPeer_AsnLong;
             context.NewBGPPeer_AuthKey = this.NewBGPPeer_AuthKey;
             context.NewBGPPeer_CustomerAddress = this.NewBGPPeer_CustomerAddress;
             context.VirtualInterfaceId = this.VirtualInterfaceId;
@@ -244,6 +244,16 @@ namespace Amazon.PowerShell.Cmdlets.DC
             if (requestNewBGPPeer_newBGPPeer_Asn != null)
             {
                 request.NewBGPPeer.Asn = requestNewBGPPeer_newBGPPeer_Asn.Value;
+                requestNewBGPPeerIsNull = false;
+            }
+            System.Int64? requestNewBGPPeer_newBGPPeer_AsnLong = null;
+            if (cmdletContext.NewBGPPeer_AsnLong != null)
+            {
+                requestNewBGPPeer_newBGPPeer_AsnLong = cmdletContext.NewBGPPeer_AsnLong.Value;
+            }
+            if (requestNewBGPPeer_newBGPPeer_AsnLong != null)
+            {
+                request.NewBGPPeer.AsnLong = requestNewBGPPeer_newBGPPeer_AsnLong.Value;
                 requestNewBGPPeerIsNull = false;
             }
             System.String requestNewBGPPeer_newBGPPeer_AuthKey = null;
@@ -313,13 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Direct Connect", "CreateBGPPeer");
             try
             {
-                #if DESKTOP
-                return client.CreateBGPPeer(request);
-                #elif CORECLR
-                return client.CreateBGPPeerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBGPPeerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -339,6 +343,7 @@ namespace Amazon.PowerShell.Cmdlets.DC
             public Amazon.DirectConnect.AddressFamily NewBGPPeer_AddressFamily { get; set; }
             public System.String NewBGPPeer_AmazonAddress { get; set; }
             public System.Int32? NewBGPPeer_Asn { get; set; }
+            public System.Int64? NewBGPPeer_AsnLong { get; set; }
             public System.String NewBGPPeer_AuthKey { get; set; }
             public System.String NewBGPPeer_CustomerAddress { get; set; }
             public System.String VirtualInterfaceId { get; set; }

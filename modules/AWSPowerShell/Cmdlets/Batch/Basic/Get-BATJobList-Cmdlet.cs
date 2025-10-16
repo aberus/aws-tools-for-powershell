@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Batch;
 using Amazon.Batch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAT
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
     [AWSCmdlet("Calls the AWS Batch ListJobs API operation.", Operation = new[] {"ListJobs"}, SelectReturnType = typeof(Amazon.Batch.Model.ListJobsResponse))]
     [AWSCmdletOutput("Amazon.Batch.Model.JobSummary or Amazon.Batch.Model.ListJobsResponse",
         "This cmdlet returns a collection of Amazon.Batch.Model.JobSummary objects.",
-        "The service call response (type Amazon.Batch.Model.ListJobsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Batch.Model.ListJobsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBATJobListCmdlet : AmazonBatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ArrayJobId
         /// <summary>
@@ -92,7 +95,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// to the <c>createdAt</c> value. The value is a string representation of the number
         /// of milliseconds since 00:00:00 UTC (midnight) on January 1, 1970.</para></dd><dt>AFTER_CREATED_AT</dt><dd><para>The value for the filter is the time that's after the job was created. This corresponds
         /// to the <c>createdAt</c> value. The value is a string representation of the number
-        /// of milliseconds since 00:00:00 UTC (midnight) on January 1, 1970.</para></dd></dl>
+        /// of milliseconds since 00:00:00 UTC (midnight) on January 1, 1970.</para></dd></dl><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,13 +144,12 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>The maximum number of results returned by <c>ListJobs</c> in paginated output. When
-        /// this parameter is used, <c>ListJobs</c> only returns <c>maxResults</c> results in
-        /// a single page and a <c>nextToken</c> response element. The remaining results of the
-        /// initial request can be seen by sending another <c>ListJobs</c> request with the returned
-        /// <c>nextToken</c> value. This value can be between 1 and 100. If this parameter isn't
-        /// used, then <c>ListJobs</c> returns up to 100 results and a <c>nextToken</c> value
-        /// if applicable.</para>
+        /// <para>The maximum number of results returned by <c>ListJobs</c> in a paginated output. When
+        /// this parameter is used, <c>ListJobs</c> returns up to <c>maxResults</c> results in
+        /// a single page and a <c>nextToken</c> response element, if applicable. The remaining
+        /// results of the initial request can be seen by sending another <c>ListJobs</c> request
+        /// with the returned <c>nextToken</c> value.</para><para>The following outlines key parameters and limitations:</para><ul><li><para>The minimum value is 1. </para></li><li><para>When <c>--job-status</c> is used, Batch returns up to 1000 values. </para></li><li><para>When <c>--filters</c> is used, Batch returns up to 100 values.</para></li><li><para>If neither parameter is used, then <c>ListJobs</c> returns up to 1000 results (jobs
+        /// that are in the <c>RUNNING</c> status) and a <c>nextToken</c> value, if applicable.</para></li></ul>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
@@ -167,7 +173,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,16 +191,6 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public string Select { get; set; } = "JobSummaryList";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobQueue parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobQueue' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobQueue' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -205,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -215,21 +215,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Batch.Model.ListJobsResponse, GetBATJobListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobQueue;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ArrayJobId = this.ArrayJobId;
             if (this.Filter != null)
             {
@@ -263,9 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Batch.Model.ListJobsRequest();
@@ -345,7 +333,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Batch.Model.ListJobsRequest();
@@ -409,7 +397,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.JobSummaryList.Count;
+                    int _receivedThisCall = response.JobSummaryList?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -458,13 +446,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Batch", "ListJobs");
             try
             {
-                #if DESKTOP
-                return client.ListJobs(request);
-                #elif CORECLR
-                return client.ListJobsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListJobsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

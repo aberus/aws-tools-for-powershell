@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -32,25 +34,63 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     /// 
     ///  
     /// <para>
-    /// For a description of each metric, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html">Real-time
-    /// Metrics Definitions</a> in the <i>Amazon Connect Administrator Guide</i>.
-    /// </para><br/><br/>In the AWS.Tools.Connect module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// For a description of each metric, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html">Metrics
+    /// definitions</a> in the <i>Amazon Connect Administrator Guide</i>.
+    /// </para><note><para>
+    /// When you make a successful API request, you can expect the following metric values
+    /// in the response:
+    /// </para><ol><li><para><b>Metric value is null</b>: The calculation cannot be performed due to divide by
+    /// zero or insufficient data
+    /// </para></li><li><para><b>Metric value is a number (including 0) of defined type</b>: The number provided
+    /// is the calculation result
+    /// </para></li><li><para><b>MetricResult list is empty</b>: The request cannot find any data in the system
+    /// </para></li></ol><para>
+    /// The following guidelines can help you work with the API:
+    /// </para><ul><li><para>
+    /// Each dimension in the metric response must contain a value
+    /// </para></li><li><para>
+    /// Each item in MetricResult must include all requested metrics
+    /// </para></li><li><para>
+    /// If the response is slow due to large result sets, try these approaches:
+    /// </para><ul><li><para>
+    /// Add filters to reduce the amount of data returned
+    /// </para></li></ul></li></ul></note><br/><br/>In the AWS.Tools.Connect module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "CONNCurrentMetricData")]
     [OutputType("Amazon.Connect.Model.GetCurrentMetricDataResponse")]
     [AWSCmdlet("Calls the Amazon Connect Service GetCurrentMetricData API operation.", Operation = new[] {"GetCurrentMetricData"}, SelectReturnType = typeof(Amazon.Connect.Model.GetCurrentMetricDataResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.GetCurrentMetricDataResponse",
-        "This cmdlet returns an Amazon.Connect.Model.GetCurrentMetricDataResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Connect.Model.GetCurrentMetricDataResponse object containing multiple properties."
     )]
     public partial class GetCONNCurrentMetricDataCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Filters_AgentStatus
+        /// <summary>
+        /// <para>
+        /// <para>A list of up to 50 agent status IDs or ARNs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Filters_AgentStatuses")]
+        public System.String[] Filters_AgentStatus { get; set; }
+        #endregion
         
         #region Parameter Filters_Channel
         /// <summary>
         /// <para>
-        /// <para>The channel to use to filter the metrics.</para>
+        /// <para>The channel to use to filter the metrics.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -62,18 +102,22 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>The metrics to retrieve. Specify the name and unit for each metric. The following
-        /// metrics are available. For a description of all the metrics, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html">Real-time
-        /// Metrics Definitions</a> in the <i>Amazon Connect Administrator Guide</i>.</para><dl><dt>AGENTS_AFTER_CONTACT_WORK</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#aftercallwork-real-time">ACW</a></para></dd><dt>AGENTS_AVAILABLE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#available-real-time">Available</a></para></dd><dt>AGENTS_ERROR</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#error-real-time">Error</a></para></dd><dt>AGENTS_NON_PRODUCTIVE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#non-productive-time-real-time">NPT
-        /// (Non-Productive Time)</a></para></dd><dt>AGENTS_ON_CALL</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#on-call-real-time">On
-        /// contact</a></para></dd><dt>AGENTS_ON_CONTACT</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#on-call-real-time">On
-        /// contact</a></para></dd><dt>AGENTS_ONLINE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#online-real-time">Online</a></para></dd><dt>AGENTS_STAFFED</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#staffed-real-time">Staffed</a></para></dd><dt>CONTACTS_IN_QUEUE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#in-queue-real-time">In
-        /// queue</a></para></dd><dt>CONTACTS_SCHEDULED</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#scheduled-real-time">Scheduled</a></para></dd><dt>OLDEST_CONTACT_AGE</dt><dd><para>Unit: SECONDS</para><para>When you use groupings, Unit says SECONDS and the Value is returned in SECONDS. </para><para>When you do not use groupings, Unit says SECONDS but the Value is returned in MILLISECONDS.
+        /// metrics are available. For a description of all the metrics, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html">Metrics
+        /// definitions</a> in the <i>Amazon Connect Administrator Guide</i>.</para><dl><dt>AGENTS_AFTER_CONTACT_WORK</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#aftercallwork-real-time">ACW</a></para></dd><dt>AGENTS_AVAILABLE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#available-real-time">Available</a></para></dd><dt>AGENTS_ERROR</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#error-real-time">Error</a></para></dd><dt>AGENTS_NON_PRODUCTIVE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#non-productive-time-real-time">NPT
+        /// (Non-Productive Time)</a></para></dd><dt>AGENTS_ON_CALL</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#on-call-real-time">On
+        /// contact</a></para></dd><dt>AGENTS_ON_CONTACT</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#on-call-real-time">On
+        /// contact</a></para></dd><dt>AGENTS_ONLINE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#online-real-time">Online</a></para></dd><dt>AGENTS_STAFFED</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#staffed-real-time">Staffed</a></para></dd><dt>CONTACTS_IN_QUEUE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#in-queue-real-time">In
+        /// queue</a></para></dd><dt>CONTACTS_SCHEDULED</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#scheduled-real-time">Scheduled</a></para></dd><dt>OLDEST_CONTACT_AGE</dt><dd><para>Unit: SECONDS</para><para>When you use groupings, Unit says SECONDS and the Value is returned in SECONDS. </para><para>When you do not use groupings, Unit says SECONDS but the Value is returned in MILLISECONDS.
         /// For example, if you get a response like this:</para><para><c>{ "Metric": { "Name": "OLDEST_CONTACT_AGE", "Unit": "SECONDS" }, "Value": 24113.0
         /// </c>}</para><para>The actual OLDEST_CONTACT_AGE is 24 seconds.</para><para>When the filter <c>RoutingStepExpression</c> is used, this metric is still calculated
         /// from enqueue time. For example, if a contact that has been queued under <c>&lt;Expression
         /// 1&gt;</c> for 10 seconds has expired and <c>&lt;Expression 2&gt;</c> becomes active,
         /// then <c>OLDEST_CONTACT_AGE</c> for this queue will be counted starting from 10, not
-        /// 0.</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#oldest-real-time">Oldest</a></para></dd><dt>SLOTS_ACTIVE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#active-real-time">Active</a></para></dd><dt>SLOTS_AVAILABLE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/real-time-metrics-definitions.html#availability-real-time">Availability</a></para></dd></dl>
+        /// 0.</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#oldest-real-time">Oldest</a></para></dd><dt>SLOTS_ACTIVE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#active-real-time">Active</a></para></dd><dt>SLOTS_AVAILABLE</dt><dd><para>Unit: COUNT</para><para>Name in real-time metrics report: <a href="https://docs.aws.amazon.com/connect/latest/adminguide/metrics-definitions.html#availability-real-time">Availability</a></para></dd></dl><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -91,12 +135,22 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Grouping
         /// <summary>
         /// <para>
-        /// <para>The grouping applied to the metrics returned. For example, when grouped by <c>QUEUE</c>,
-        /// the metrics returned apply to each queue rather than aggregated for all queues. </para><ul><li><para>If you group by <c>CHANNEL</c>, you should include a Channels filter. VOICE, CHAT,
-        /// and TASK channels are supported.</para></li><li><para>If you group by <c>ROUTING_PROFILE</c>, you must include either a queue or routing
+        /// <para>Defines the level of aggregation for metrics data by a dimension(s). Its similar to
+        /// sorting items into buckets based on a common characteristic, then counting or calculating
+        /// something for each bucket. For example, when grouped by <c>QUEUE</c>, the metrics
+        /// returned apply to each queue rather than aggregated for all queues. </para><para>The grouping list is an ordered list, with the first item in the list defined as the
+        /// primary grouping. If no grouping is included in the request, the aggregation happens
+        /// at the instance-level.</para><ul><li><para>If you group by <c>CHANNEL</c>, you should include a Channels filter. VOICE, CHAT,
+        /// and TASK channels are supported.</para></li><li><para>If you group by <c>AGENT_STATUS</c>, you must include the <c>QUEUE</c> as the primary
+        /// grouping and use queue filter. When you group by <c>AGENT_STATUS</c>, the only metric
+        /// available is the <c>AGENTS_ONLINE</c> metric.</para></li><li><para>If you group by <c>ROUTING_PROFILE</c>, you must include either a queue or routing
         /// profile filter. In addition, a routing profile filter is required for metrics <c>CONTACTS_SCHEDULED</c>,
-        /// <c>CONTACTS_IN_QUEUE</c>, and <c> OLDEST_CONTACT_AGE</c>.</para></li><li><para>If no <c>Grouping</c> is included in the request, a summary of metrics is returned.</para></li><li><para>When using the <c>RoutingStepExpression</c> filter, group by <c>ROUTING_STEP_EXPRESSION</c>
-        /// is required.</para></li></ul>
+        /// <c>CONTACTS_IN_QUEUE</c>, and <c> OLDEST_CONTACT_AGE</c>.</para></li><li><para>When using the <c>RoutingStepExpression</c> filter, group by <c>ROUTING_STEP_EXPRESSION</c>
+        /// is required.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +181,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <para>
         /// <para>The queues to use to filter the metrics. You should specify at least one queue, and
         /// can specify up to 100 queues per request. The <c>GetCurrentMetricsData</c> API in
-        /// particular requires a queue when you include a <c>Filter</c> in your request. </para>
+        /// particular requires a queue when you include a <c>Filter</c> in your request. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +196,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #region Parameter Filters_RoutingProfile
         /// <summary>
         /// <para>
-        /// <para>A list of up to 100 routing profile IDs or ARNs.</para>
+        /// <para>A list of up to 100 routing profile IDs or ARNs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +212,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>A list of expressions as a filter, in which an expression is an object of a step in
-        /// a routing criteria.</para>
+        /// a routing criteria.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +229,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <para>
         /// <para>The way to sort the resulting response based on metrics. You can enter one sort criteria.
         /// By default resources are sorted based on <c>AGENTS_ONLINE</c>, <c>DESCENDING</c>.
-        /// The metric collection is sorted based on the input metrics.</para><para>Note the following:</para><ul><li><para>Sorting on <c>SLOTS_ACTIVE</c> and <c>SLOTS_AVAILABLE</c> is not supported.</para></li></ul>
+        /// The metric collection is sorted based on the input metrics.</para><para>Note the following:</para><ul><li><para>Sorting on <c>SLOTS_ACTIVE</c> and <c>SLOTS_AVAILABLE</c> is not supported.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,7 +262,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.Connect module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,16 +280,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -232,9 +292,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -242,21 +306,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.GetCurrentMetricDataResponse, GetCONNCurrentMetricDataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.CurrentMetric != null)
             {
                 context.CurrentMetric = new List<Amazon.Connect.Model.CurrentMetric>(this.CurrentMetric);
@@ -267,6 +321,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
                 WriteWarning("You are passing $null as a value for parameter CurrentMetric which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Filters_AgentStatus != null)
+            {
+                context.Filters_AgentStatus = new List<System.String>(this.Filters_AgentStatus);
+            }
             if (this.Filters_Channel != null)
             {
                 context.Filters_Channel = new List<System.String>(this.Filters_Channel);
@@ -314,9 +372,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Connect.Model.GetCurrentMetricDataRequest();
@@ -329,6 +385,16 @@ namespace Amazon.PowerShell.Cmdlets.CONN
              // populate Filters
             var requestFiltersIsNull = true;
             request.Filters = new Amazon.Connect.Model.Filters();
+            List<System.String> requestFilters_filters_AgentStatus = null;
+            if (cmdletContext.Filters_AgentStatus != null)
+            {
+                requestFilters_filters_AgentStatus = cmdletContext.Filters_AgentStatus;
+            }
+            if (requestFilters_filters_AgentStatus != null)
+            {
+                request.Filters.AgentStatuses = requestFilters_filters_AgentStatus;
+                requestFiltersIsNull = false;
+            }
             List<System.String> requestFilters_filters_Channel = null;
             if (cmdletContext.Filters_Channel != null)
             {
@@ -452,6 +518,16 @@ namespace Amazon.PowerShell.Cmdlets.CONN
              // populate Filters
             var requestFiltersIsNull = true;
             request.Filters = new Amazon.Connect.Model.Filters();
+            List<System.String> requestFilters_filters_AgentStatus = null;
+            if (cmdletContext.Filters_AgentStatus != null)
+            {
+                requestFilters_filters_AgentStatus = cmdletContext.Filters_AgentStatus;
+            }
+            if (requestFilters_filters_AgentStatus != null)
+            {
+                request.Filters.AgentStatuses = requestFilters_filters_AgentStatus;
+                requestFiltersIsNull = false;
+            }
             List<System.String> requestFilters_filters_Channel = null;
             if (cmdletContext.Filters_Channel != null)
             {
@@ -556,13 +632,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "GetCurrentMetricData");
             try
             {
-                #if DESKTOP
-                return client.GetCurrentMetricData(request);
-                #elif CORECLR
-                return client.GetCurrentMetricDataAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetCurrentMetricDataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -580,6 +650,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         internal partial class CmdletContext : ExecutorContext
         {
             public List<Amazon.Connect.Model.CurrentMetric> CurrentMetric { get; set; }
+            public List<System.String> Filters_AgentStatus { get; set; }
             public List<System.String> Filters_Channel { get; set; }
             public List<System.String> Filters_Queue { get; set; }
             public List<System.String> Filters_RoutingProfile { get; set; }

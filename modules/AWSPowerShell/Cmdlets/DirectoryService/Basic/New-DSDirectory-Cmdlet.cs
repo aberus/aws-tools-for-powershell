@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectoryService;
 using Amazon.DirectoryService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DS
 {
     /// <summary>
@@ -44,14 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
     [AWSCmdlet("Calls the AWS Directory Service CreateDirectory API operation.", Operation = new[] {"CreateDirectory"}, SelectReturnType = typeof(Amazon.DirectoryService.Model.CreateDirectoryResponse))]
     [AWSCmdletOutput("System.String or Amazon.DirectoryService.Model.CreateDirectoryResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DirectoryService.Model.CreateDirectoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DirectoryService.Model.CreateDirectoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDSDirectoryCmdlet : AmazonDirectoryServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -78,6 +79,17 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The network type for your directory. Simple AD supports IPv4 and Dual-stack only.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DirectoryService.NetworkType")]
+        public Amazon.DirectoryService.NetworkType NetworkType { get; set; }
         #endregion
         
         #region Parameter Password
@@ -134,7 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
         /// <para>
         /// <para>The identifiers of the subnets for the directory servers. The two subnets must be
         /// in different Availability Zones. Directory Service creates a directory server and
-        /// a DNS server in each of these subnets.</para>
+        /// a DNS server in each of these subnets.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,7 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be assigned to the Simple AD directory.</para>
+        /// <para>The tags to be assigned to the Simple AD directory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,16 +194,6 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public string Select { get; set; } = "DirectoryId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -194,9 +204,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -210,21 +224,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectoryService.Model.CreateDirectoryResponse, NewDSDirectoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.Name = this.Name;
             #if MODULAR
@@ -233,6 +237,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.NetworkType = this.NetworkType;
             context.Password = this.Password;
             #if MODULAR
             if (this.Password == null && ParameterWasBound(nameof(this.Password)))
@@ -280,6 +285,10 @@ namespace Amazon.PowerShell.Cmdlets.DS
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
             }
             if (cmdletContext.Password != null)
             {
@@ -364,13 +373,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Directory Service", "CreateDirectory");
             try
             {
-                #if DESKTOP
-                return client.CreateDirectory(request);
-                #elif CORECLR
-                return client.CreateDirectoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDirectoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -389,6 +392,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
         {
             public System.String Description { get; set; }
             public System.String Name { get; set; }
+            public Amazon.DirectoryService.NetworkType NetworkType { get; set; }
             public System.String Password { get; set; }
             public System.String ShortName { get; set; }
             public Amazon.DirectoryService.DirectorySize Size { get; set; }

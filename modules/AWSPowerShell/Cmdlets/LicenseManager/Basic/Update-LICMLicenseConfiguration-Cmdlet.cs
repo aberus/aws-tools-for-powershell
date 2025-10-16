@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LicenseManager;
 using Amazon.LicenseManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LICM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.LICM
     [AWSCmdlet("Calls the AWS License Manager UpdateLicenseConfiguration API operation.", Operation = new[] {"UpdateLicenseConfiguration"}, SelectReturnType = typeof(Amazon.LicenseManager.Model.UpdateLicenseConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.LicenseManager.Model.UpdateLicenseConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.LicenseManager.Model.UpdateLicenseConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.LicenseManager.Model.UpdateLicenseConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateLICMLicenseConfigurationCmdlet : AmazonLicenseManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -114,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         /// <summary>
         /// <para>
         /// <para>New license rule. The only rule that you can add after you create a license configuration
-        /// is licenseAffinityToHost.</para>
+        /// is licenseAffinityToHost.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,7 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         #region Parameter ProductInformationList
         /// <summary>
         /// <para>
-        /// <para>New product information.</para>
+        /// <para>New product information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,16 +163,6 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LicenseConfigurationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LicenseConfigurationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LicenseConfigurationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -172,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.LICM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LicenseConfigurationArn), MyInvocation.BoundParameters);
@@ -188,21 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LicenseManager.Model.UpdateLicenseConfigurationResponse, UpdateLICMLicenseConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LicenseConfigurationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.DisassociateWhenNotFound = this.DisassociateWhenNotFound;
             context.LicenseConfigurationArn = this.LicenseConfigurationArn;
@@ -314,13 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.LICM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS License Manager", "UpdateLicenseConfiguration");
             try
             {
-                #if DESKTOP
-                return client.UpdateLicenseConfiguration(request);
-                #elif CORECLR
-                return client.UpdateLicenseConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateLicenseConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

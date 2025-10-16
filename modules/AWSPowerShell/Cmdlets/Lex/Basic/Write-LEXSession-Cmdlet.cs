@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lex;
 using Amazon.Lex.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LEX
 {
     /// <summary>
@@ -41,16 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.LEX
     [OutputType("Amazon.Lex.Model.PutSessionResponse")]
     [AWSCmdlet("Calls the Amazon Lex PutSession API operation.", Operation = new[] {"PutSession"}, SelectReturnType = typeof(Amazon.Lex.Model.PutSessionResponse))]
     [AWSCmdletOutput("Amazon.Lex.Model.PutSessionResponse",
-        "This cmdlet returns an Amazon.Lex.Model.PutSessionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Lex.Model.PutSessionResponse object containing multiple properties."
     )]
     public partial class WriteLEXSessionCmdlet : AmazonLexClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Accept
         /// <summary>
@@ -72,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.LEX
         /// <para>
         /// <para>A list of contexts active for the request. A context can be activated when a previous
         /// intent is fulfilled, or by including the context in the request,</para><para>If you don't specify a list of contexts, Amazon Lex will use the current list of contexts
-        /// for the session. If you specify an empty list, all contexts for the session are cleared.</para>
+        /// for the session. If you specify an empty list, all contexts for the session are cleared.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,7 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.LEX
         /// the contents of the new summary view replaces the old summary view. For example, if
         /// a <c>GetSession</c> request returns three intents in the summary view and you call
         /// <c>PutSession</c> with one intent in the summary view, the next call to <c>GetSession</c>
-        /// will only return one intent.</para>
+        /// will only return one intent.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.LEX
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing the session-specific context information. It contains
-        /// application information passed between Amazon Lex and a client application.</para>
+        /// application information passed between Amazon Lex and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -194,7 +205,11 @@ namespace Amazon.PowerShell.Cmdlets.LEX
         #region Parameter DialogAction_Slot
         /// <summary>
         /// <para>
-        /// <para>Map of the slots that have been gathered and their values. </para>
+        /// <para>Map of the slots that have been gathered and their values. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -256,16 +271,6 @@ namespace Amazon.PowerShell.Cmdlets.LEX
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BotName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BotName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BotName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -276,9 +281,13 @@ namespace Amazon.PowerShell.Cmdlets.LEX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BotName), MyInvocation.BoundParameters);
@@ -292,21 +301,11 @@ namespace Amazon.PowerShell.Cmdlets.LEX
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lex.Model.PutSessionResponse, WriteLEXSessionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BotName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Accept = this.Accept;
             if (this.ActiveContext != null)
             {
@@ -520,13 +519,7 @@ namespace Amazon.PowerShell.Cmdlets.LEX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex", "PutSession");
             try
             {
-                #if DESKTOP
-                return client.PutSession(request);
-                #elif CORECLR
-                return client.PutSessionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutSessionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

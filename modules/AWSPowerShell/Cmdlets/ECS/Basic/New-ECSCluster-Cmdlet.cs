@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,22 +22,25 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
     /// Creates a new Amazon ECS cluster. By default, your account receives a <c>default</c>
     /// cluster when you launch your first container instance. However, you can create your
-    /// own cluster with a unique name with the <c>CreateCluster</c> action.
+    /// own cluster with a unique name.
     /// 
     ///  <note><para>
-    /// When you call the <a>CreateCluster</a> API operation, Amazon ECS attempts to create
-    /// the Amazon ECS service-linked role for your account. This is so that it can manage
-    /// required resources in other Amazon Web Services services on your behalf. However,
-    /// if the user that makes the call doesn't have permissions to create the service-linked
-    /// role, it isn't created. For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using-service-linked-roles.html">Using
+    /// When you call the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCluster.html">CreateCluster</a>
+    /// API operation, Amazon ECS attempts to create the Amazon ECS service-linked role for
+    /// your account. This is so that it can manage required resources in other Amazon Web
+    /// Services services on your behalf. However, if the user that makes the call doesn't
+    /// have permissions to create the service-linked role, it isn't created. For more information,
+    /// see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using-service-linked-roles.html">Using
     /// service-linked roles for Amazon ECS</a> in the <i>Amazon Elastic Container Service
     /// Developer Guide</i>.
     /// </para></note>
@@ -47,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     [AWSCmdlet("Calls the Amazon EC2 Container Service CreateCluster API operation.", Operation = new[] {"CreateCluster"}, SelectReturnType = typeof(Amazon.ECS.Model.CreateClusterResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.Cluster or Amazon.ECS.Model.CreateClusterResponse",
         "This cmdlet returns an Amazon.ECS.Model.Cluster object.",
-        "The service call response (type Amazon.ECS.Model.CreateClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECS.Model.CreateClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewECSClusterCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CapacityProvider
         /// <summary>
@@ -69,7 +73,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// capacity providers. The Fargate capacity providers are available to all accounts and
         /// only need to be associated with a cluster to be used.</para><para>The <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PutCapacityProvider.html">PutCapacityProvider</a>
         /// API operation is used to update the list of available capacity providers for a cluster
-        /// after the cluster is created.</para>
+        /// after the cluster is created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -120,11 +128,31 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// or <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html">RunTask</a>
         /// APIs with no capacity provider strategy or launch type specified, the default capacity
         /// provider strategy for the cluster is used.</para><para>If a default capacity provider strategy isn't defined for a cluster when it was created,
-        /// it can be defined later with the <a>PutClusterCapacityProviders</a> API operation.</para>
+        /// it can be defined later with the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PutClusterCapacityProviders.html">PutClusterCapacityProviders</a>
+        /// API operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.ECS.Model.CapacityProviderStrategyItem[] DefaultCapacityProviderStrategy { get; set; }
+        #endregion
+        
+        #region Parameter ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>Specify the Key Management Service key ID for Fargate ephemeral storage.</para><para>When you specify a <c>fargateEphemeralStorageKmsKeyId</c>, Amazon Web Services Fargate
+        /// uses the key to encrypt data at rest in ephemeral storage. For more information about
+        /// Fargate ephemeral storage encryption, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/fargate-storage-encryption.html">Customer
+        /// managed keys for Amazon Web Services Fargate ephemeral storage for Amazon ECS</a>
+        /// in the <i>Amazon Elastic Container Service Developer Guide</i>.</para><para>The key must be a single Region key.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Configuration_ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId")]
+        public System.String ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId { get; set; }
         #endregion
         
         #region Parameter ExecuteCommandConfiguration_KmsKeyId
@@ -137,6 +165,22 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Configuration_ExecuteCommandConfiguration_KmsKeyId")]
         public System.String ExecuteCommandConfiguration_KmsKeyId { get; set; }
+        #endregion
+        
+        #region Parameter ManagedStorageConfiguration_KmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>Specify a Key Management Service key ID to encrypt Amazon ECS managed storage.</para><para> When you specify a <c>kmsKeyId</c>, Amazon ECS uses the key to encrypt data volumes
+        /// managed by Amazon ECS that are attached to tasks in the cluster. The following data
+        /// volumes are managed by Amazon ECS: Amazon EBS. For more information about encryption
+        /// of Amazon EBS volumes attached to Amazon ECS tasks, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-kms-encryption.html">Encrypt
+        /// data stored in Amazon EBS volumes for Amazon ECS</a> in the <i>Amazon Elastic Container
+        /// Service Developer Guide</i>.</para><para>The key must be a single Region key.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Configuration_ManagedStorageConfiguration_KmsKeyId")]
+        public System.String ManagedStorageConfiguration_KmsKeyId { get; set; }
         #endregion
         
         #region Parameter ExecuteCommandConfiguration_Logging
@@ -162,8 +206,8 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>The namespace name or full Amazon Resource Name (ARN) of the Cloud Map namespace that's
         /// used when you create a service and don't specify a Service Connect configuration.
         /// The namespace name can include up to 1024 characters. The name is case-sensitive.
-        /// The name can't include hyphens (-), tilde (~), greater than (&gt;), less than (&lt;),
-        /// or slash (/).</para><para>If you enter an existing namespace name or ARN, then that namespace will be used.
+        /// The name can't include greater than (&gt;), less than (&lt;), double quotation marks
+        /// ("), or slash (/).</para><para>If you enter an existing namespace name or ARN, then that namespace will be used.
         /// Any namespace type is supported. The namespace must be in this account and this Amazon
         /// Web Services Region.</para><para>If you enter a new name, a Cloud Map namespace will be created. Amazon ECS creates
         /// a Cloud Map namespace with the "API calls" method of instance discovery only. This
@@ -217,7 +261,12 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>The setting to use when creating a cluster. This parameter is used to turn on CloudWatch
         /// Container Insights for a cluster. If this value is specified, it overrides the <c>containerInsights</c>
-        /// value set with <a>PutAccountSetting</a> or <a>PutAccountSettingDefault</a>.</para>
+        /// value set with <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PutAccountSetting.html">PutAccountSetting</a>
+        /// or <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PutAccountSettingDefault.html">PutAccountSettingDefault</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -236,7 +285,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// + - = . _ : / @.</para></li><li><para>Tag keys and values are case-sensitive.</para></li><li><para>Do not use <c>aws:</c>, <c>AWS:</c>, or any upper or lowercase combination of such
         /// as a prefix for either keys or values as it is reserved for Amazon Web Services use.
         /// You cannot edit or delete tag keys or values with this prefix. Tags with this prefix
-        /// do not count against your tags per resource limit.</para></li></ul>
+        /// do not count against your tags per resource limit.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -255,16 +308,6 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -275,9 +318,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterName), MyInvocation.BoundParameters);
@@ -291,21 +338,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECS.Model.CreateClusterResponse, NewECSClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.CapacityProvider != null)
             {
                 context.CapacityProvider = new List<System.String>(this.CapacityProvider);
@@ -318,6 +355,8 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             context.LogConfiguration_S3EncryptionEnabled = this.LogConfiguration_S3EncryptionEnabled;
             context.LogConfiguration_S3KeyPrefix = this.LogConfiguration_S3KeyPrefix;
             context.ExecuteCommandConfiguration_Logging = this.ExecuteCommandConfiguration_Logging;
+            context.ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId = this.ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId;
+            context.ManagedStorageConfiguration_KmsKeyId = this.ManagedStorageConfiguration_KmsKeyId;
             if (this.DefaultCapacityProviderStrategy != null)
             {
                 context.DefaultCapacityProviderStrategy = new List<Amazon.ECS.Model.CapacityProviderStrategyItem>(this.DefaultCapacityProviderStrategy);
@@ -359,6 +398,41 @@ namespace Amazon.PowerShell.Cmdlets.ECS
              // populate Configuration
             var requestConfigurationIsNull = true;
             request.Configuration = new Amazon.ECS.Model.ClusterConfiguration();
+            Amazon.ECS.Model.ManagedStorageConfiguration requestConfiguration_configuration_ManagedStorageConfiguration = null;
+            
+             // populate ManagedStorageConfiguration
+            var requestConfiguration_configuration_ManagedStorageConfigurationIsNull = true;
+            requestConfiguration_configuration_ManagedStorageConfiguration = new Amazon.ECS.Model.ManagedStorageConfiguration();
+            System.String requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_FargateEphemeralStorageKmsKeyId = null;
+            if (cmdletContext.ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId != null)
+            {
+                requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_FargateEphemeralStorageKmsKeyId = cmdletContext.ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId;
+            }
+            if (requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_FargateEphemeralStorageKmsKeyId != null)
+            {
+                requestConfiguration_configuration_ManagedStorageConfiguration.FargateEphemeralStorageKmsKeyId = requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_FargateEphemeralStorageKmsKeyId;
+                requestConfiguration_configuration_ManagedStorageConfigurationIsNull = false;
+            }
+            System.String requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_KmsKeyId = null;
+            if (cmdletContext.ManagedStorageConfiguration_KmsKeyId != null)
+            {
+                requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_KmsKeyId = cmdletContext.ManagedStorageConfiguration_KmsKeyId;
+            }
+            if (requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_KmsKeyId != null)
+            {
+                requestConfiguration_configuration_ManagedStorageConfiguration.KmsKeyId = requestConfiguration_configuration_ManagedStorageConfiguration_managedStorageConfiguration_KmsKeyId;
+                requestConfiguration_configuration_ManagedStorageConfigurationIsNull = false;
+            }
+             // determine if requestConfiguration_configuration_ManagedStorageConfiguration should be set to null
+            if (requestConfiguration_configuration_ManagedStorageConfigurationIsNull)
+            {
+                requestConfiguration_configuration_ManagedStorageConfiguration = null;
+            }
+            if (requestConfiguration_configuration_ManagedStorageConfiguration != null)
+            {
+                request.Configuration.ManagedStorageConfiguration = requestConfiguration_configuration_ManagedStorageConfiguration;
+                requestConfigurationIsNull = false;
+            }
             Amazon.ECS.Model.ExecuteCommandConfiguration requestConfiguration_configuration_ExecuteCommandConfiguration = null;
             
              // populate ExecuteCommandConfiguration
@@ -533,13 +607,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "CreateCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateCluster(request);
-                #elif CORECLR
-                return client.CreateClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -565,6 +633,8 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             public System.Boolean? LogConfiguration_S3EncryptionEnabled { get; set; }
             public System.String LogConfiguration_S3KeyPrefix { get; set; }
             public Amazon.ECS.ExecuteCommandLogging ExecuteCommandConfiguration_Logging { get; set; }
+            public System.String ManagedStorageConfiguration_FargateEphemeralStorageKmsKeyId { get; set; }
+            public System.String ManagedStorageConfiguration_KmsKeyId { get; set; }
             public List<Amazon.ECS.Model.CapacityProviderStrategyItem> DefaultCapacityProviderStrategy { get; set; }
             public System.String ServiceConnectDefaults_Namespace { get; set; }
             public List<Amazon.ECS.Model.ClusterSetting> Setting { get; set; }

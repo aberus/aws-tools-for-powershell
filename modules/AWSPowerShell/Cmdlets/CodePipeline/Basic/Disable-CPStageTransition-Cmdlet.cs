@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodePipeline;
 using Amazon.CodePipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CP
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
     [AWSCmdlet("Calls the AWS CodePipeline DisableStageTransition API operation.", Operation = new[] {"DisableStageTransition"}, SelectReturnType = typeof(Amazon.CodePipeline.Model.DisableStageTransitionResponse))]
     [AWSCmdletOutput("None or Amazon.CodePipeline.Model.DisableStageTransitionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CodePipeline.Model.DisableStageTransitionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CodePipeline.Model.DisableStageTransitionResponse) be returned by specifying '-Select *'."
     )]
     public partial class DisableCPStageTransitionCmdlet : AmazonCodePipelineClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PipelineName
         /// <summary>
@@ -135,9 +138,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PipelineName), MyInvocation.BoundParameters);
@@ -254,13 +261,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodePipeline", "DisableStageTransition");
             try
             {
-                #if DESKTOP
-                return client.DisableStageTransition(request);
-                #elif CORECLR
-                return client.DisableStageTransitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisableStageTransitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

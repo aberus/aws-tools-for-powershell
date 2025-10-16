@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodePipeline;
 using Amazon.CodePipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CP
 {
     /// <summary>
@@ -35,18 +37,31 @@ namespace Amazon.PowerShell.Cmdlets.CP
     /// and filtering requirements supplied when defining the webhook. RegisterWebhookWithThirdParty
     /// and DeregisterWebhookWithThirdParty APIs can be used to automatically configure supported
     /// third parties to call the generated webhook URL.
+    /// 
+    ///  <important><para>
+    /// When creating CodePipeline webhooks, do not use your own credentials or reuse the
+    /// same secret token across multiple webhooks. For optimal security, generate a unique
+    /// secret token for each webhook you create. The secret token is an arbitrary string
+    /// that you provide, which GitHub uses to compute and sign the webhook payloads sent
+    /// to CodePipeline, for protecting the integrity and authenticity of the webhook payloads.
+    /// Using your own credentials or reusing the same token across multiple webhooks can
+    /// lead to security vulnerabilities.
+    /// </para></important><note><para>
+    /// If a secret token was provided, it will be redacted in the response.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Write", "CPWebhook", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CodePipeline.Model.ListWebhookItem")]
     [AWSCmdlet("Calls the AWS CodePipeline PutWebhook API operation.", Operation = new[] {"PutWebhook"}, SelectReturnType = typeof(Amazon.CodePipeline.Model.PutWebhookResponse))]
     [AWSCmdletOutput("Amazon.CodePipeline.Model.ListWebhookItem or Amazon.CodePipeline.Model.PutWebhookResponse",
         "This cmdlet returns an Amazon.CodePipeline.Model.ListWebhookItem object.",
-        "The service call response (type Amazon.CodePipeline.Model.PutWebhookResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodePipeline.Model.PutWebhookResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCPWebhookCmdlet : AmazonCodePipelineClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuthenticationConfiguration_AllowedIPRange
         /// <summary>
@@ -64,7 +79,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         #region Parameter Webhook_Authentication
         /// <summary>
         /// <para>
-        /// <para>Supported options are GITHUB_HMAC, IP, and UNAUTHENTICATED.</para><ul><li><para>For information about the authentication scheme implemented by GITHUB_HMAC, see <a href="https://developer.github.com/webhooks/securing/">Securing your webhooks</a>
+        /// <para>Supported options are GITHUB_HMAC, IP, and UNAUTHENTICATED.</para><important><para>When creating CodePipeline webhooks, do not use your own credentials or reuse the
+        /// same secret token across multiple webhooks. For optimal security, generate a unique
+        /// secret token for each webhook you create. The secret token is an arbitrary string
+        /// that you provide, which GitHub uses to compute and sign the webhook payloads sent
+        /// to CodePipeline, for protecting the integrity and authenticity of the webhook payloads.
+        /// Using your own credentials or reusing the same token across multiple webhooks can
+        /// lead to security vulnerabilities.</para></important><note><para>If a secret token was provided, it will be redacted in the response.</para></note><ul><li><para>For information about the authentication scheme implemented by GITHUB_HMAC, see <a href="https://developer.github.com/webhooks/securing/">Securing your webhooks</a>
         /// on the GitHub Developer website.</para></li><li><para> IP rejects webhooks trigger requests unless they originate from an IP address in
         /// the IP range whitelisted in the authentication configuration.</para></li><li><para> UNAUTHENTICATED accepts all webhook trigger requests regardless of origin.</para></li></ul>
         /// </para>
@@ -84,7 +105,11 @@ namespace Amazon.PowerShell.Cmdlets.CP
         /// <summary>
         /// <para>
         /// <para>A list of rules applied to the body/payload sent in the POST request to a webhook
-        /// URL. All defined rules must pass for the request to be accepted and the pipeline started.</para>
+        /// URL. All defined rules must pass for the request to be accepted and the pipeline started.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,7 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         /// <summary>
         /// <para>
         /// <para>The property used to configure GitHub authentication. For GITHUB_HMAC, only the <c>SecretToken</c>
-        /// property must be set.</para>
+        /// property must be set.</para><important><para>When creating CodePipeline webhooks, do not use your own credentials or reuse the
+        /// same secret token across multiple webhooks. For optimal security, generate a unique
+        /// secret token for each webhook you create. The secret token is an arbitrary string
+        /// that you provide, which GitHub uses to compute and sign the webhook payloads sent
+        /// to CodePipeline, for protecting the integrity and authenticity of the webhook payloads.
+        /// Using your own credentials or reusing the same token across multiple webhooks can
+        /// lead to security vulnerabilities.</para></important><note><para>If a secret token was provided, it will be redacted in the response.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.CP
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags for the webhook.</para>
+        /// <para>The tags for the webhook.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public string Select { get; set; } = "Webhook";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Webhook_Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Webhook_Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Webhook_Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -205,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.CP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Webhook_Name), MyInvocation.BoundParameters);
@@ -221,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.CP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodePipeline.Model.PutWebhookResponse, WriteCPWebhookCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Webhook_Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.CodePipeline.Model.Tag>(this.Tag);
@@ -432,13 +451,7 @@ namespace Amazon.PowerShell.Cmdlets.CP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodePipeline", "PutWebhook");
             try
             {
-                #if DESKTOP
-                return client.PutWebhook(request);
-                #elif CORECLR
-                return client.PutWebhookAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutWebhookAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

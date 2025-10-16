@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeArtifact;
 using Amazon.CodeArtifact.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CA
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.CA
     [OutputType("Amazon.CodeArtifact.Model.DisposePackageVersionsResponse")]
     [AWSCmdlet("Calls the AWS CodeArtifact DisposePackageVersions API operation.", Operation = new[] {"DisposePackageVersions"}, SelectReturnType = typeof(Amazon.CodeArtifact.Model.DisposePackageVersionsResponse))]
     [AWSCmdletOutput("Amazon.CodeArtifact.Model.DisposePackageVersionsResponse",
-        "This cmdlet returns an Amazon.CodeArtifact.Model.DisposePackageVersionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CodeArtifact.Model.DisposePackageVersionsResponse object containing multiple properties."
     )]
     public partial class UnpublishCAPackageVersionCmdlet : AmazonCodeArtifactClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Domain
         /// <summary>
@@ -112,9 +115,9 @@ namespace Amazon.PowerShell.Cmdlets.CA
         #region Parameter Namespace
         /// <summary>
         /// <para>
-        /// <para>The namespace of the package versions to be disposed. The package version component
-        /// that specifies its namespace depends on its type. For example:</para><ul><li><para> The namespace of a Maven package version is its <c>groupId</c>. </para></li><li><para> The namespace of an npm package version is its <c>scope</c>. </para></li><li><para> Python and NuGet package versions do not contain a corresponding component, package
-        /// versions of those formats do not have a namespace. </para></li><li><para> The namespace of a generic package is its <c>namespace</c>. </para></li></ul>
+        /// <para>The namespace of the package versions to be disposed. The package component that specifies
+        /// its namespace depends on its type. For example:</para><note><para>The namespace is required when disposing package versions of the following formats:</para><ul><li><para>Maven</para></li><li><para>Swift</para></li><li><para>generic</para></li></ul></note><ul><li><para> The namespace of a Maven package version is its <c>groupId</c>. </para></li><li><para> The namespace of an npm or Swift package version is its <c>scope</c>. </para></li><li><para>The namespace of a generic package is its <c>namespace</c>.</para></li><li><para> Python, NuGet, Ruby, and Cargo package versions do not contain a corresponding component,
+        /// package versions of those formats do not have a namespace. </para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.CA
         #region Parameter VersionRevision
         /// <summary>
         /// <para>
-        /// <para> The revisions of the package versions you want to dispose. </para>
+        /// <para> The revisions of the package versions you want to dispose. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.CA
         #region Parameter Version
         /// <summary>
         /// <para>
-        /// <para> The versions of the package you want to dispose. </para>
+        /// <para> The versions of the package you want to dispose. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -206,9 +217,13 @@ namespace Amazon.PowerShell.Cmdlets.CA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Package), MyInvocation.BoundParameters);
@@ -366,13 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.CA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeArtifact", "DisposePackageVersions");
             try
             {
-                #if DESKTOP
-                return client.DisposePackageVersions(request);
-                #elif CORECLR
-                return client.DisposePackageVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisposePackageVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

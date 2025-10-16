@@ -80,9 +80,30 @@ $KS_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.Keyspaces.CdcPropagateTags
+        {
+            ($_ -eq "New-KSTable/CdcSpecification_PropagateTag") -Or
+            ($_ -eq "Update-KSTable/CdcSpecification_PropagateTag")
+        }
+        {
+            $v = "NONE","TABLE"
+            break
+        }
+
+        # Amazon.Keyspaces.CdcStatus
+        {
+            ($_ -eq "New-KSTable/CdcSpecification_Status") -Or
+            ($_ -eq "Update-KSTable/CdcSpecification_Status")
+        }
+        {
+            $v = "DISABLED","DISABLING","ENABLED","ENABLING"
+            break
+        }
+
         # Amazon.Keyspaces.ClientSideTimestampsStatus
         {
             ($_ -eq "New-KSTable/ClientSideTimestamps_Status") -Or
+            ($_ -eq "Update-KSKeyspace/ClientSideTimestamps_Status") -Or
             ($_ -eq "Update-KSTable/ClientSideTimestamps_Status")
         }
         {
@@ -113,7 +134,10 @@ $KS_Completers = {
         }
 
         # Amazon.Keyspaces.Rs
-        "New-KSKeyspace/ReplicationSpecification_ReplicationStrategy"
+        {
+            ($_ -eq "New-KSKeyspace/ReplicationSpecification_ReplicationStrategy") -Or
+            ($_ -eq "Update-KSKeyspace/ReplicationSpecification_ReplicationStrategy")
+        }
         {
             $v = "MULTI_REGION","SINGLE_REGION"
             break
@@ -140,6 +164,16 @@ $KS_Completers = {
             break
         }
 
+        # Amazon.Keyspaces.ViewType
+        {
+            ($_ -eq "New-KSTable/CdcSpecification_ViewType") -Or
+            ($_ -eq "Update-KSTable/CdcSpecification_ViewType")
+        }
+        {
+            $v = "KEYS_ONLY","NEW_AND_OLD_IMAGES","NEW_IMAGE","OLD_IMAGE"
+            break
+        }
+
 
     }
 
@@ -151,12 +185,15 @@ $KS_Completers = {
 $KS_map = @{
     "CapacitySpecification_ThroughputMode"=@("New-KSTable","Update-KSTable")
     "CapacitySpecificationOverride_ThroughputMode"=@("Restore-KSTable")
-    "ClientSideTimestamps_Status"=@("New-KSTable","Update-KSTable")
+    "CdcSpecification_PropagateTag"=@("New-KSTable","Update-KSTable")
+    "CdcSpecification_Status"=@("New-KSTable","Update-KSTable")
+    "CdcSpecification_ViewType"=@("New-KSTable","Update-KSTable")
+    "ClientSideTimestamps_Status"=@("New-KSTable","Update-KSKeyspace","Update-KSTable")
     "EncryptionSpecification_Type"=@("New-KSTable","Update-KSTable")
     "EncryptionSpecificationOverride_Type"=@("Restore-KSTable")
     "PointInTimeRecovery_Status"=@("New-KSTable","Update-KSTable")
     "PointInTimeRecoveryOverride_Status"=@("Restore-KSTable")
-    "ReplicationSpecification_ReplicationStrategy"=@("New-KSKeyspace")
+    "ReplicationSpecification_ReplicationStrategy"=@("New-KSKeyspace","Update-KSKeyspace")
     "Ttl_Status"=@("New-KSTable","Update-KSTable")
 }
 
@@ -212,17 +249,22 @@ $KS_SelectCompleters = {
 $KS_SelectMap = @{
     "Select"=@("New-KSKeyspace",
                "New-KSTable",
+               "New-KSType",
                "Remove-KSKeyspace",
                "Remove-KSTable",
+               "Remove-KSType",
                "Get-KSKeyspace",
                "Get-KSTable",
                "Get-KSTableAutoScalingSetting",
+               "Get-KSType",
                "Get-KSKeyspaceList",
                "Get-KSTableList",
                "Get-KSResourceTag",
+               "Get-KSTypeList",
                "Restore-KSTable",
                "Add-KSResourceTag",
                "Remove-KSResourceTag",
+               "Update-KSKeyspace",
                "Update-KSTable")
 }
 

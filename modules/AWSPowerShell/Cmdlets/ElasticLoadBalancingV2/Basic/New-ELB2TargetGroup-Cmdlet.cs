@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     [AWSCmdlet("Calls the Elastic Load Balancing V2 CreateTargetGroup API operation.", Operation = new[] {"CreateTargetGroup"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.CreateTargetGroupResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.TargetGroup or Amazon.ElasticLoadBalancingV2.Model.CreateTargetGroupResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.TargetGroup objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.CreateTargetGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.CreateTargetGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewELB2TargetGroupCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Matcher_GrpcCode
         /// <summary>
@@ -69,7 +72,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// <para>
         /// <para>Indicates whether health checks are enabled. If the target type is <c>lambda</c>,
         /// health checks are disabled by default but can be enabled. If the target type is <c>instance</c>,
-        /// <c>ip</c>, or <c>alb</c>, health checks are always enabled and cannot be disabled.</para>
+        /// <c>ip</c>, or <c>alb</c>, health checks are always enabled and can't be disabled.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,9 +178,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter IpAddressType
         /// <summary>
         /// <para>
-        /// <para>The type of IP address used for this target group. The possible values are <c>ipv4</c>
-        /// and <c>ipv6</c>. This is an optional parameter. If not specified, the IP address type
-        /// defaults to <c>ipv4</c>.</para>
+        /// <para>The IP address type. The default value is <c>ipv4</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -246,7 +247,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to assign to the target group.</para>
+        /// <para>The tags to assign to the target group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -314,9 +319,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -509,13 +518,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "CreateTargetGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateTargetGroup(request);
-                #elif CORECLR
-                return client.CreateTargetGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTargetGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

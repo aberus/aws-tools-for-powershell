@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
@@ -37,15 +39,19 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// strategy for the cluster. If the specified cluster has existing capacity providers
     /// associated with it, you must specify all existing capacity providers in addition to
     /// any new ones you want to add. Any existing capacity providers that are associated
-    /// with a cluster that are omitted from a <a>PutClusterCapacityProviders</a> API call
-    /// will be disassociated with the cluster. You can only disassociate an existing capacity
-    /// provider from a cluster if it's not being used by any existing tasks.
+    /// with a cluster that are omitted from a <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PutClusterCapacityProviders.html">PutClusterCapacityProviders</a>
+    /// API call will be disassociated with the cluster. You can only disassociate an existing
+    /// capacity provider from a cluster if it's not being used by any existing tasks.
     /// </para><para>
     /// When creating a service or running a task on a cluster, if no capacity provider or
     /// launch type is specified, then the cluster's default capacity provider strategy is
     /// used. We recommend that you define a default capacity provider strategy for your cluster.
     /// However, you must specify an empty array (<c>[]</c>) to bypass defining a default
     /// strategy.
+    /// </para><para>
+    /// Amazon ECS Managed Instances doesn't support this, because when you create a capacity
+    /// provider with Amazon ECS Managed Instances, it becomes available only within the specified
+    /// cluster.
     /// </para>
     /// </summary>
     [Cmdlet("Write", "ECSClusterCapacityProvider", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -53,21 +59,26 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     [AWSCmdlet("Calls the Amazon EC2 Container Service PutClusterCapacityProviders API operation.", Operation = new[] {"PutClusterCapacityProviders"}, SelectReturnType = typeof(Amazon.ECS.Model.PutClusterCapacityProvidersResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.Cluster or Amazon.ECS.Model.PutClusterCapacityProvidersResponse",
         "This cmdlet returns an Amazon.ECS.Model.Cluster object.",
-        "The service call response (type Amazon.ECS.Model.PutClusterCapacityProvidersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECS.Model.PutClusterCapacityProvidersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteECSClusterCapacityProviderCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CapacityProvider
         /// <summary>
         /// <para>
         /// <para>The name of one or more capacity providers to associate with the cluster.</para><para>If specifying a capacity provider that uses an Auto Scaling group, the capacity provider
-        /// must already be created. New capacity providers can be created with the <a>CreateCapacityProvider</a>
+        /// must already be created. New capacity providers can be created with the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCapacityProvider.html">CreateCapacityProvider</a>
         /// API operation.</para><para>To use a Fargate capacity provider, specify either the <c>FARGATE</c> or <c>FARGATE_SPOT</c>
         /// capacity providers. The Fargate capacity providers are available to all accounts and
-        /// only need to be associated with a cluster to be used.</para>
+        /// only need to be associated with a cluster to be used.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -107,13 +118,17 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// launch type is specified then the default capacity provider strategy for the cluster
         /// is used.</para><para>A capacity provider strategy consists of one or more capacity providers along with
         /// the <c>base</c> and <c>weight</c> to assign to them. A capacity provider must be associated
-        /// with the cluster to be used in a capacity provider strategy. The <a>PutClusterCapacityProviders</a>
+        /// with the cluster to be used in a capacity provider strategy. The <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_PutClusterCapacityProviders.html">PutClusterCapacityProviders</a>
         /// API is used to associate a capacity provider with a cluster. Only capacity providers
         /// with an <c>ACTIVE</c> or <c>UPDATING</c> status can be used.</para><para>If specifying a capacity provider that uses an Auto Scaling group, the capacity provider
-        /// must already be created. New capacity providers can be created with the <a>CreateCapacityProvider</a>
+        /// must already be created. New capacity providers can be created with the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateCapacityProvider.html">CreateCapacityProvider</a>
         /// API operation.</para><para>To use a Fargate capacity provider, specify either the <c>FARGATE</c> or <c>FARGATE_SPOT</c>
         /// capacity providers. The Fargate capacity providers are available to all accounts and
-        /// only need to be associated with a cluster to be used.</para>
+        /// only need to be associated with a cluster to be used.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -138,16 +153,6 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Cluster parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -158,9 +163,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Cluster), MyInvocation.BoundParameters);
@@ -174,21 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECS.Model.PutClusterCapacityProvidersResponse, WriteECSClusterCapacityProviderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Cluster;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.CapacityProvider != null)
             {
                 context.CapacityProvider = new List<System.String>(this.CapacityProvider);
@@ -282,13 +281,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "PutClusterCapacityProviders");
             try
             {
-                #if DESKTOP
-                return client.PutClusterCapacityProviders(request);
-                #elif CORECLR
-                return client.PutClusterCapacityProvidersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutClusterCapacityProvidersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

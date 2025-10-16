@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Chime;
 using Amazon.Chime.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHM
 {
     /// <summary>
@@ -35,14 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CHM
     [AWSCmdlet("Calls the Amazon Chime ListPhoneNumberOrders API operation.", Operation = new[] {"ListPhoneNumberOrders"}, SelectReturnType = typeof(Amazon.Chime.Model.ListPhoneNumberOrdersResponse))]
     [AWSCmdletOutput("Amazon.Chime.Model.PhoneNumberOrder or Amazon.Chime.Model.ListPhoneNumberOrdersResponse",
         "This cmdlet returns a collection of Amazon.Chime.Model.PhoneNumberOrder objects.",
-        "The service call response (type Amazon.Chime.Model.ListPhoneNumberOrdersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Chime.Model.ListPhoneNumberOrdersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCHMPhoneNumberOrderListCmdlet : AmazonChimeClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -68,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.CHM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,9 +97,13 @@ namespace Amazon.PowerShell.Cmdlets.CHM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -258,7 +263,7 @@ namespace Amazon.PowerShell.Cmdlets.CHM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.PhoneNumberOrders.Count;
+                    int _receivedThisCall = response.PhoneNumberOrders?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -307,13 +312,7 @@ namespace Amazon.PowerShell.Cmdlets.CHM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime", "ListPhoneNumberOrders");
             try
             {
-                #if DESKTOP
-                return client.ListPhoneNumberOrders(request);
-                #elif CORECLR
-                return client.ListPhoneNumberOrdersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListPhoneNumberOrdersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AVP
 {
     /// <summary>
@@ -39,7 +41,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
     /// store. If the updated static policy doesn't pass validation, the operation fails and
     /// the update isn't stored.
     /// </para></li><li><para>
-    /// When you edit a static policy, You can change only certain elements of a static policy:
+    /// When you edit a static policy, you can change only certain elements of a static policy:
     /// </para><ul><li><para>
     /// The action referenced by the policy. 
     /// </para></li><li><para>
@@ -58,25 +60,21 @@ namespace Amazon.PowerShell.Cmdlets.AVP
     /// To update a template-linked policy, you must update the template instead. 
     /// </para></li></ul></note><note><para>
     /// Verified Permissions is <i><a href="https://wikipedia.org/wiki/Eventual_consistency">eventually
-    /// consistent</a></i>. It can take a few seconds for a new or changed element to be
-    /// propagate through the service and be visible in the results of other Verified Permissions
-    /// operations.
+    /// consistent</a></i>. It can take a few seconds for a new or changed element to propagate
+    /// through the service and be visible in the results of other Verified Permissions operations.
     /// </para></note>
     /// </summary>
     [Cmdlet("Update", "AVPPolicy", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.VerifiedPermissions.Model.UpdatePolicyResponse")]
     [AWSCmdlet("Calls the Amazon Verified Permissions UpdatePolicy API operation.", Operation = new[] {"UpdatePolicy"}, SelectReturnType = typeof(Amazon.VerifiedPermissions.Model.UpdatePolicyResponse))]
     [AWSCmdletOutput("Amazon.VerifiedPermissions.Model.UpdatePolicyResponse",
-        "This cmdlet returns an Amazon.VerifiedPermissions.Model.UpdatePolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VerifiedPermissions.Model.UpdatePolicyResponse object containing multiple properties."
     )]
     public partial class UpdateAVPPolicyCmdlet : AmazonVerifiedPermissionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Static_Description
         /// <summary>
@@ -157,9 +155,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PolicyId), MyInvocation.BoundParameters);
@@ -300,13 +302,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Verified Permissions", "UpdatePolicy");
             try
             {
-                #if DESKTOP
-                return client.UpdatePolicy(request);
-                #elif CORECLR
-                return client.UpdatePolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IVSRealTime;
 using Amazon.IVSRealTime.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IVSRT
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
     [AWSCmdlet("Calls the Amazon Interactive Video Service RealTime UpdateStage API operation.", Operation = new[] {"UpdateStage"}, SelectReturnType = typeof(Amazon.IVSRealTime.Model.UpdateStageResponse))]
     [AWSCmdletOutput("Amazon.IVSRealTime.Model.Stage or Amazon.IVSRealTime.Model.UpdateStageResponse",
         "This cmdlet returns an Amazon.IVSRealTime.Model.Stage object.",
-        "The service call response (type Amazon.IVSRealTime.Model.UpdateStageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IVSRealTime.Model.UpdateStageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateIVSRTStageCmdlet : AmazonIVSRealTimeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Arn
         /// <summary>
@@ -59,6 +62,21 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public System.String Arn { get; set; }
         #endregion
         
+        #region Parameter AutoParticipantRecordingConfiguration_MediaType
+        /// <summary>
+        /// <para>
+        /// <para>Types of media to be recorded. Default: <c>AUDIO_VIDEO</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_MediaTypes")]
+        public System.String[] AutoParticipantRecordingConfiguration_MediaType { get; set; }
+        #endregion
+        
         #region Parameter Name
         /// <summary>
         /// <para>
@@ -67,6 +85,101 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter ThumbnailConfiguration_RecordingMode
+        /// <summary>
+        /// <para>
+        /// <para>Thumbnail recording mode. Default: <c>DISABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_ThumbnailConfiguration_RecordingMode")]
+        [AWSConstantClassSource("Amazon.IVSRealTime.ThumbnailRecordingMode")]
+        public Amazon.IVSRealTime.ThumbnailRecordingMode ThumbnailConfiguration_RecordingMode { get; set; }
+        #endregion
+        
+        #region Parameter AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond
+        /// <summary>
+        /// <para>
+        /// <para>If a stage publisher disconnects and then reconnects within the specified interval,
+        /// the multiple recordings will be considered a single recording and merged together.</para><para>The default value is 0, which disables merging.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_RecordingReconnectWindowSeconds")]
+        public System.Int32? AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond { get; set; }
+        #endregion
+        
+        #region Parameter AutoParticipantRecordingConfiguration_RecordParticipantReplica
+        /// <summary>
+        /// <para>
+        /// <para>Optional field to disable replica participant recording. If this is set to <c>false</c>
+        /// when a participant is a replica, replica participants are not recorded. Default: <c>true</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_RecordParticipantReplicas")]
+        public System.Boolean? AutoParticipantRecordingConfiguration_RecordParticipantReplica { get; set; }
+        #endregion
+        
+        #region Parameter ThumbnailConfiguration_Storage
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the format in which thumbnails are recorded. <c>SEQUENTIAL</c> records all
+        /// generated thumbnails in a serial manner, to the media/thumbnails/high directory. <c>LATEST</c>
+        /// saves the latest thumbnail in media/latest_thumbnail/high/thumb.jpg and overwrites
+        /// it at the interval specified by <c>targetIntervalSeconds</c>. You can enable both
+        /// <c>SEQUENTIAL</c> and <c>LATEST</c>. Default: <c>SEQUENTIAL</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_ThumbnailConfiguration_Storage")]
+        public System.String[] ThumbnailConfiguration_Storage { get; set; }
+        #endregion
+        
+        #region Parameter AutoParticipantRecordingConfiguration_StorageConfigurationArn
+        /// <summary>
+        /// <para>
+        /// <para>ARN of the <a>StorageConfiguration</a> resource to use for individual participant
+        /// recording. Default: <c>""</c> (empty string, no storage configuration is specified).
+        /// Individual participant recording cannot be started unless a storage configuration
+        /// is specified, when a <a>Stage</a> is created or updated. To disable individual participant
+        /// recording, set this to <c>""</c>; other fields in this object will get reset to their
+        /// defaults when sending <c>""</c>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AutoParticipantRecordingConfiguration_StorageConfigurationArn { get; set; }
+        #endregion
+        
+        #region Parameter ThumbnailConfiguration_TargetIntervalSecond
+        /// <summary>
+        /// <para>
+        /// <para>The targeted thumbnail-generation interval in seconds. This is configurable only if
+        /// <c>recordingMode</c> is <c>INTERVAL</c>. Default: 60.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_ThumbnailConfiguration_TargetIntervalSeconds")]
+        public System.Int32? ThumbnailConfiguration_TargetIntervalSecond { get; set; }
+        #endregion
+        
+        #region Parameter HlsConfiguration_TargetSegmentDurationSecond
+        /// <summary>
+        /// <para>
+        /// <para>Defines the target duration for recorded segments generated when recording a stage
+        /// participant. Segments may have durations longer than the specified value when needed
+        /// to ensure each segment begins with a keyframe. Default: 6.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AutoParticipantRecordingConfiguration_HlsConfiguration_TargetSegmentDurationSeconds")]
+        public System.Int32? HlsConfiguration_TargetSegmentDurationSecond { get; set; }
         #endregion
         
         #region Parameter Select
@@ -80,16 +193,6 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public string Select { get; set; } = "Stage";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Arn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Arn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Arn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -100,9 +203,13 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Arn), MyInvocation.BoundParameters);
@@ -116,21 +223,11 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IVSRealTime.Model.UpdateStageResponse, UpdateIVSRTStageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Arn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Arn = this.Arn;
             #if MODULAR
             if (this.Arn == null && ParameterWasBound(nameof(this.Arn)))
@@ -138,6 +235,20 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
                 WriteWarning("You are passing $null as a value for parameter Arn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.HlsConfiguration_TargetSegmentDurationSecond = this.HlsConfiguration_TargetSegmentDurationSecond;
+            if (this.AutoParticipantRecordingConfiguration_MediaType != null)
+            {
+                context.AutoParticipantRecordingConfiguration_MediaType = new List<System.String>(this.AutoParticipantRecordingConfiguration_MediaType);
+            }
+            context.AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond = this.AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond;
+            context.AutoParticipantRecordingConfiguration_RecordParticipantReplica = this.AutoParticipantRecordingConfiguration_RecordParticipantReplica;
+            context.AutoParticipantRecordingConfiguration_StorageConfigurationArn = this.AutoParticipantRecordingConfiguration_StorageConfigurationArn;
+            context.ThumbnailConfiguration_RecordingMode = this.ThumbnailConfiguration_RecordingMode;
+            if (this.ThumbnailConfiguration_Storage != null)
+            {
+                context.ThumbnailConfiguration_Storage = new List<System.String>(this.ThumbnailConfiguration_Storage);
+            }
+            context.ThumbnailConfiguration_TargetIntervalSecond = this.ThumbnailConfiguration_TargetIntervalSecond;
             context.Name = this.Name;
             
             // allow further manipulation of loaded context prior to processing
@@ -158,6 +269,125 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             if (cmdletContext.Arn != null)
             {
                 request.Arn = cmdletContext.Arn;
+            }
+            
+             // populate AutoParticipantRecordingConfiguration
+            var requestAutoParticipantRecordingConfigurationIsNull = true;
+            request.AutoParticipantRecordingConfiguration = new Amazon.IVSRealTime.Model.AutoParticipantRecordingConfiguration();
+            List<System.String> requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_MediaType = null;
+            if (cmdletContext.AutoParticipantRecordingConfiguration_MediaType != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_MediaType = cmdletContext.AutoParticipantRecordingConfiguration_MediaType;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_MediaType != null)
+            {
+                request.AutoParticipantRecordingConfiguration.MediaTypes = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_MediaType;
+                requestAutoParticipantRecordingConfigurationIsNull = false;
+            }
+            System.Int32? requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordingReconnectWindowSecond = null;
+            if (cmdletContext.AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordingReconnectWindowSecond = cmdletContext.AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond.Value;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordingReconnectWindowSecond != null)
+            {
+                request.AutoParticipantRecordingConfiguration.RecordingReconnectWindowSeconds = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordingReconnectWindowSecond.Value;
+                requestAutoParticipantRecordingConfigurationIsNull = false;
+            }
+            System.Boolean? requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordParticipantReplica = null;
+            if (cmdletContext.AutoParticipantRecordingConfiguration_RecordParticipantReplica != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordParticipantReplica = cmdletContext.AutoParticipantRecordingConfiguration_RecordParticipantReplica.Value;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordParticipantReplica != null)
+            {
+                request.AutoParticipantRecordingConfiguration.RecordParticipantReplicas = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_RecordParticipantReplica.Value;
+                requestAutoParticipantRecordingConfigurationIsNull = false;
+            }
+            System.String requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_StorageConfigurationArn = null;
+            if (cmdletContext.AutoParticipantRecordingConfiguration_StorageConfigurationArn != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_StorageConfigurationArn = cmdletContext.AutoParticipantRecordingConfiguration_StorageConfigurationArn;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_StorageConfigurationArn != null)
+            {
+                request.AutoParticipantRecordingConfiguration.StorageConfigurationArn = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_StorageConfigurationArn;
+                requestAutoParticipantRecordingConfigurationIsNull = false;
+            }
+            Amazon.IVSRealTime.Model.ParticipantRecordingHlsConfiguration requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration = null;
+            
+             // populate HlsConfiguration
+            var requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfigurationIsNull = true;
+            requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration = new Amazon.IVSRealTime.Model.ParticipantRecordingHlsConfiguration();
+            System.Int32? requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration_hlsConfiguration_TargetSegmentDurationSecond = null;
+            if (cmdletContext.HlsConfiguration_TargetSegmentDurationSecond != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration_hlsConfiguration_TargetSegmentDurationSecond = cmdletContext.HlsConfiguration_TargetSegmentDurationSecond.Value;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration_hlsConfiguration_TargetSegmentDurationSecond != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration.TargetSegmentDurationSeconds = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration_hlsConfiguration_TargetSegmentDurationSecond.Value;
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfigurationIsNull = false;
+            }
+             // determine if requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration should be set to null
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfigurationIsNull)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration = null;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration != null)
+            {
+                request.AutoParticipantRecordingConfiguration.HlsConfiguration = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_HlsConfiguration;
+                requestAutoParticipantRecordingConfigurationIsNull = false;
+            }
+            Amazon.IVSRealTime.Model.ParticipantThumbnailConfiguration requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration = null;
+            
+             // populate ThumbnailConfiguration
+            var requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfigurationIsNull = true;
+            requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration = new Amazon.IVSRealTime.Model.ParticipantThumbnailConfiguration();
+            Amazon.IVSRealTime.ThumbnailRecordingMode requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_RecordingMode = null;
+            if (cmdletContext.ThumbnailConfiguration_RecordingMode != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_RecordingMode = cmdletContext.ThumbnailConfiguration_RecordingMode;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_RecordingMode != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration.RecordingMode = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_RecordingMode;
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfigurationIsNull = false;
+            }
+            List<System.String> requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_Storage = null;
+            if (cmdletContext.ThumbnailConfiguration_Storage != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_Storage = cmdletContext.ThumbnailConfiguration_Storage;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_Storage != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration.Storage = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_Storage;
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfigurationIsNull = false;
+            }
+            System.Int32? requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_TargetIntervalSecond = null;
+            if (cmdletContext.ThumbnailConfiguration_TargetIntervalSecond != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_TargetIntervalSecond = cmdletContext.ThumbnailConfiguration_TargetIntervalSecond.Value;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_TargetIntervalSecond != null)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration.TargetIntervalSeconds = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration_thumbnailConfiguration_TargetIntervalSecond.Value;
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfigurationIsNull = false;
+            }
+             // determine if requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration should be set to null
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfigurationIsNull)
+            {
+                requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration = null;
+            }
+            if (requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration != null)
+            {
+                request.AutoParticipantRecordingConfiguration.ThumbnailConfiguration = requestAutoParticipantRecordingConfiguration_autoParticipantRecordingConfiguration_ThumbnailConfiguration;
+                requestAutoParticipantRecordingConfigurationIsNull = false;
+            }
+             // determine if request.AutoParticipantRecordingConfiguration should be set to null
+            if (requestAutoParticipantRecordingConfigurationIsNull)
+            {
+                request.AutoParticipantRecordingConfiguration = null;
             }
             if (cmdletContext.Name != null)
             {
@@ -201,13 +431,7 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Interactive Video Service RealTime", "UpdateStage");
             try
             {
-                #if DESKTOP
-                return client.UpdateStage(request);
-                #elif CORECLR
-                return client.UpdateStageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateStageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -225,6 +449,14 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String Arn { get; set; }
+            public System.Int32? HlsConfiguration_TargetSegmentDurationSecond { get; set; }
+            public List<System.String> AutoParticipantRecordingConfiguration_MediaType { get; set; }
+            public System.Int32? AutoParticipantRecordingConfiguration_RecordingReconnectWindowSecond { get; set; }
+            public System.Boolean? AutoParticipantRecordingConfiguration_RecordParticipantReplica { get; set; }
+            public System.String AutoParticipantRecordingConfiguration_StorageConfigurationArn { get; set; }
+            public Amazon.IVSRealTime.ThumbnailRecordingMode ThumbnailConfiguration_RecordingMode { get; set; }
+            public List<System.String> ThumbnailConfiguration_Storage { get; set; }
+            public System.Int32? ThumbnailConfiguration_TargetIntervalSecond { get; set; }
             public System.String Name { get; set; }
             public System.Func<Amazon.IVSRealTime.Model.UpdateStageResponse, UpdateIVSRTStageCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Stage;

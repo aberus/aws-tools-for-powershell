@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -36,9 +38,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// By default, KMS keys are created with key material that KMS generates. This operation
     /// supports <a href="https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys.html">Importing
     /// key material</a>, an advanced feature that lets you generate and import the cryptographic
-    /// key material for a KMS key. For more information about importing key material into
-    /// KMS, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys.html">Importing
-    /// key material</a> in the <i>Key Management Service Developer Guide</i>.
+    /// key material for a KMS key.
     /// </para><para>
     /// Before calling <c>GetParametersForImport</c>, use the <a>CreateKey</a> operation with
     /// an <c>Origin</c> value of <c>EXTERNAL</c> to create a KMS key with no key material.
@@ -46,9 +46,9 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// encryption KMS key, or asymmetric signing KMS key. You can also import key material
     /// into a <a href="https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-overview.html">multi-Region
     /// key</a> of any supported type. However, you can't import key material into a KMS key
-    /// in a <a href="https://docs.aws.amazon.com/kms/latest/developerguide/custom-key-store-overview.html">custom
+    /// in a <a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-store-overview.html">custom
     /// key store</a>. You can also use <c>GetParametersForImport</c> to get a public key
-    /// and import token to <a href="https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys.html#reimport-key-material">reimport
+    /// and import token to <a href="https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys-import-key-material.html#reimport-key-material">reimport
     /// the original key material</a> into a KMS key whose key material expired or was deleted.
     /// </para><para><c>GetParametersForImport</c> returns the items that you need to import your key
     /// material.
@@ -87,7 +87,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// </para><para><b>Required permissions</b>: <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-api-permissions-reference.html">kms:GetParametersForImport</a>
     /// (key policy)
     /// </para><para><b>Related operations:</b></para><ul><li><para><a>ImportKeyMaterial</a></para></li><li><para><a>DeleteImportedKeyMaterial</a></para></li></ul><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -95,14 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [OutputType("Amazon.KeyManagementService.Model.GetParametersForImportResponse")]
     [AWSCmdlet("Calls the AWS Key Management Service GetParametersForImport API operation.", Operation = new[] {"GetParametersForImport"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.GetParametersForImportResponse))]
     [AWSCmdletOutput("Amazon.KeyManagementService.Model.GetParametersForImportResponse",
-        "This cmdlet returns an Amazon.KeyManagementService.Model.GetParametersForImportResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KeyManagementService.Model.GetParametersForImportResponse object containing multiple properties."
     )]
     public partial class GetKMSParametersForImportCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyId
         /// <summary>
@@ -127,7 +126,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <summary>
         /// <para>
         /// <para>The algorithm you will use with the RSA public key (<c>PublicKey</c>) in the response
-        /// to protect your key material during import. For more information, see <a href="kms/latest/developerguide/importing-keys-get-public-key-and-token.html#select-wrapping-algorithm">Select
+        /// to protect your key material during import. For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys-get-public-key-and-token.html#select-wrapping-algorithm">Select
         /// a wrapping algorithm</a> in the <i>Key Management Service Developer Guide</i>.</para><para>For RSA_AES wrapping algorithms, you encrypt your key material with an AES key that
         /// you generate, then encrypt your AES key with the RSA public key from KMS. For RSAES
         /// wrapping algorithms, you encrypt your key material directly with the RSA public key
@@ -182,19 +181,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -202,21 +195,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.GetParametersForImportResponse, GetKMSParametersForImportCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KeyId = this.KeyId;
             #if MODULAR
             if (this.KeyId == null && ParameterWasBound(nameof(this.KeyId)))
@@ -304,13 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "GetParametersForImport");
             try
             {
-                #if DESKTOP
-                return client.GetParametersForImport(request);
-                #elif CORECLR
-                return client.GetParametersForImportAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetParametersForImportAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

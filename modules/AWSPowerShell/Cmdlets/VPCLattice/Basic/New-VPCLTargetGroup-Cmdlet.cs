@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VPCLattice;
 using Amazon.VPCLattice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.VPCL
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
     [OutputType("Amazon.VPCLattice.Model.CreateTargetGroupResponse")]
     [AWSCmdlet("Calls the VPC Lattice CreateTargetGroup API operation.", Operation = new[] {"CreateTargetGroup"}, SelectReturnType = typeof(Amazon.VPCLattice.Model.CreateTargetGroupResponse))]
     [AWSCmdletOutput("Amazon.VPCLattice.Model.CreateTargetGroupResponse",
-        "This cmdlet returns an Amazon.VPCLattice.Model.CreateTargetGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VPCLattice.Model.CreateTargetGroupResponse object containing multiple properties."
     )]
     public partial class NewVPCLTargetGroupCmdlet : AmazonVPCLatticeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HealthCheck_Enabled
         /// <summary>
@@ -110,9 +113,8 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Config_IpAddressType
         /// <summary>
         /// <para>
-        /// <para>The type of IP address used for the target group. The possible values are <c>ipv4</c>
-        /// and <c>ipv6</c>. This is an optional parameter. If not specified, the IP address type
-        /// defaults to <c>ipv4</c>.</para>
+        /// <para>The type of IP address used for the target group. Supported only if the target group
+        /// type is <c>IP</c>. The default is <c>IPV4</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +125,8 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Config_LambdaEventStructureVersion
         /// <summary>
         /// <para>
-        /// <para>Lambda event structure version</para>
+        /// <para>The version of the event structure that your Lambda function receives. Supported only
+        /// if the target group type is <c>LAMBDA</c>. The default is <c>V1</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,8 +182,8 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Config_Port
         /// <summary>
         /// <para>
-        /// <para>The port on which the targets are listening. For HTTP, the default is <c>80</c>. For
-        /// HTTPS, the default is <c>443</c></para>
+        /// <para>The port on which the targets are listening. For HTTP, the default is 80. For HTTPS,
+        /// the default is 443. Not supported if the target group type is <c>LAMBDA</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -203,8 +206,8 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Config_Protocol
         /// <summary>
         /// <para>
-        /// <para>The protocol to use for routing traffic to the targets. Default is the protocol of
-        /// a target group.</para>
+        /// <para>The protocol to use for routing traffic to the targets. The default is the protocol
+        /// of the target group. Not supported if the target group type is <c>LAMBDA</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -228,7 +231,8 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Config_ProtocolVersion
         /// <summary>
         /// <para>
-        /// <para>The protocol version. Default value is <c>HTTP1</c>.</para>
+        /// <para>The protocol version. The default is <c>HTTP1</c>. Not supported if the target group
+        /// type is <c>LAMBDA</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -239,7 +243,11 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags for the target group.</para>
+        /// <para>The tags for the target group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -279,7 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter Config_VpcIdentifier
         /// <summary>
         /// <para>
-        /// <para>The ID of the VPC.</para>
+        /// <para>The ID of the VPC. Not supported if the target group type is <c>LAMBDA</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -320,9 +328,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -649,13 +661,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "VPC Lattice", "CreateTargetGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateTargetGroup(request);
-                #elif CORECLR
-                return client.CreateTargetGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTargetGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

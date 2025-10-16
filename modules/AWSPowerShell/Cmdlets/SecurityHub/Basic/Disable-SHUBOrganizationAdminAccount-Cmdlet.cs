@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityHub;
 using Amazon.SecurityHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SHUB
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
     [AWSCmdlet("Calls the AWS Security Hub DisableOrganizationAdminAccount API operation.", Operation = new[] {"DisableOrganizationAdminAccount"}, SelectReturnType = typeof(Amazon.SecurityHub.Model.DisableOrganizationAdminAccountResponse))]
     [AWSCmdletOutput("None or Amazon.SecurityHub.Model.DisableOrganizationAdminAccountResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SecurityHub.Model.DisableOrganizationAdminAccountResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SecurityHub.Model.DisableOrganizationAdminAccountResponse) be returned by specifying '-Select *'."
     )]
     public partial class DisableSHUBOrganizationAdminAccountCmdlet : AmazonSecurityHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdminAccountId
         /// <summary>
@@ -60,6 +63,18 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public System.String AdminAccountId { get; set; }
         #endregion
         
+        #region Parameter Feature
+        /// <summary>
+        /// <para>
+        /// <para>The feature for which the delegated admin account is disabled. Defaults to Security
+        /// Hub if not specified.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SecurityHub.SecurityHubFeature")]
+        public Amazon.SecurityHub.SecurityHubFeature Feature { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -68,16 +83,6 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AdminAccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AdminAccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AdminAccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -90,9 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AdminAccountId), MyInvocation.BoundParameters);
@@ -106,21 +115,11 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SecurityHub.Model.DisableOrganizationAdminAccountResponse, DisableSHUBOrganizationAdminAccountCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AdminAccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdminAccountId = this.AdminAccountId;
             #if MODULAR
             if (this.AdminAccountId == null && ParameterWasBound(nameof(this.AdminAccountId)))
@@ -128,6 +127,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
                 WriteWarning("You are passing $null as a value for parameter AdminAccountId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Feature = this.Feature;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -147,6 +147,10 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             if (cmdletContext.AdminAccountId != null)
             {
                 request.AdminAccountId = cmdletContext.AdminAccountId;
+            }
+            if (cmdletContext.Feature != null)
+            {
+                request.Feature = cmdletContext.Feature;
             }
             
             CmdletOutput output;
@@ -186,13 +190,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Security Hub", "DisableOrganizationAdminAccount");
             try
             {
-                #if DESKTOP
-                return client.DisableOrganizationAdminAccount(request);
-                #elif CORECLR
-                return client.DisableOrganizationAdminAccountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisableOrganizationAdminAccountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -210,6 +208,7 @@ namespace Amazon.PowerShell.Cmdlets.SHUB
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AdminAccountId { get; set; }
+            public Amazon.SecurityHub.SecurityHubFeature Feature { get; set; }
             public System.Func<Amazon.SecurityHub.Model.DisableOrganizationAdminAccountResponse, DisableSHUBOrganizationAdminAccountCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

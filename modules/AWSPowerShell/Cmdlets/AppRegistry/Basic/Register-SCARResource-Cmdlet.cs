@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppRegistry;
 using Amazon.AppRegistry.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SCAR
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.SCAR
     [OutputType("Amazon.AppRegistry.Model.AssociateResourceResponse")]
     [AWSCmdlet("Calls the AWS Service Catalog App Registry AssociateResource API operation.", Operation = new[] {"AssociateResource"}, SelectReturnType = typeof(Amazon.AppRegistry.Model.AssociateResourceResponse))]
     [AWSCmdletOutput("Amazon.AppRegistry.Model.AssociateResourceResponse",
-        "This cmdlet returns an Amazon.AppRegistry.Model.AssociateResourceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AppRegistry.Model.AssociateResourceResponse object containing multiple properties."
     )]
     public partial class RegisterSCARResourceCmdlet : AmazonAppRegistryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Application
         /// <summary>
@@ -76,7 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.SCAR
         #region Parameter Option
         /// <summary>
         /// <para>
-        /// <para> Determines whether an application tag is applied or skipped. </para>
+        /// <para> Determines whether an application tag is applied or skipped. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.SCAR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Application), MyInvocation.BoundParameters);
@@ -255,13 +266,7 @@ namespace Amazon.PowerShell.Cmdlets.SCAR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Service Catalog App Registry", "AssociateResource");
             try
             {
-                #if DESKTOP
-                return client.AssociateResource(request);
-                #elif CORECLR
-                return client.AssociateResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

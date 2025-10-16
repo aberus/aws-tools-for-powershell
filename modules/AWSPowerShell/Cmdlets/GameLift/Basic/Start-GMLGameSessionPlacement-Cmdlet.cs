@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,54 +22,79 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Places a request for a new game session in a queue. When processing a placement request,
-    /// Amazon GameLift searches for available resources on the queue's destinations, scanning
-    /// each until it finds resources or the placement request times out.
+    /// Makes a request to start a new game session using a game session queue. When processing
+    /// a placement request, Amazon GameLift Servers looks for the best possible available
+    /// resource to host the game session, based on how the queue is configured to prioritize
+    /// factors such as resource cost, latency, and location. After selecting an available
+    /// resource, Amazon GameLift Servers prompts the resource to start a game session. A
+    /// placement request can include a list of players to create a set of player sessions.
+    /// The request can also include information to pass to the new game session, such as
+    /// to specify a game map or other options.
     /// 
     ///  
-    /// <para>
-    /// A game session placement request can also request player sessions. When a new game
-    /// session is successfully created, Amazon GameLift creates a player session for each
-    /// player included in the request.
-    /// </para><para>
-    /// When placing a game session, by default Amazon GameLift tries each fleet in the order
-    /// they are listed in the queue configuration. Ideally, a queue's destinations are listed
-    /// in preference order.
-    /// </para><para>
-    /// Alternatively, when requesting a game session with players, you can also provide latency
-    /// data for each player in relevant Regions. Latency data indicates the performance lag
-    /// a player experiences when connected to a fleet in the Region. Amazon GameLift uses
-    /// latency data to reorder the list of destinations to place the game session in a Region
-    /// with minimal lag. If latency data is provided for multiple players, Amazon GameLift
-    /// calculates each Region's average lag for all players and reorders to get the best
-    /// game play across all players. 
-    /// </para><para>
-    /// To place a new game session request, specify the following:
+    /// <para><b>Request options</b></para><para>
+    /// Use this operation to make the following types of requests. 
     /// </para><ul><li><para>
-    /// The queue name and a set of game session properties and settings
+    /// Request a placement using the queue's default prioritization process (see the default
+    /// prioritization described in <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_PriorityConfiguration.html">PriorityConfiguration</a>).
+    /// Include these required parameters:
+    /// </para><ul><li><para><c>GameSessionQueueName</c></para></li><li><para><c>MaximumPlayerSessionCount</c></para></li><li><para><c>PlacementID</c></para></li></ul></li><li><para>
+    /// Request a placement and prioritize based on latency. Include these parameters:
+    /// </para><ul><li><para>
+    /// Required parameters <c>GameSessionQueueName</c>, <c>MaximumPlayerSessionCount</c>,
+    /// <c>PlacementID</c>.
+    /// </para></li><li><para><c>PlayerLatencies</c>. Include a set of latency values for destinations in the queue.
+    /// When a request includes latency data, Amazon GameLift Servers automatically reorder
+    /// the queue's locations priority list based on lowest available latency values. If a
+    /// request includes latency data for multiple players, Amazon GameLift Servers calculates
+    /// each location's average latency for all players and reorders to find the lowest latency
+    /// across all players. 
     /// </para></li><li><para>
-    /// A unique ID (such as a UUID) for the placement. You use this ID to track the status
-    /// of the placement request
+    /// Don't include <c>PriorityConfigurationOverride</c>.
+    /// </para></li></ul><ul><li><para>
+    /// Prioritize based on a custom list of locations. If you're using a queue that's configured
+    /// to prioritize location first (see <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_PriorityConfiguration.html">PriorityConfiguration</a>
+    /// for game session queues), you can optionally use the <i>PriorityConfigurationOverride</i>
+    /// parameter to substitute a different location priority list for this placement request.
+    /// Amazon GameLift Servers searches each location on the priority override list to find
+    /// an available hosting resource for the new game session. Specify a fallback strategy
+    /// to use in the event that Amazon GameLift Servers fails to place the game session in
+    /// any of the locations on the override list. 
+    /// </para></li></ul></li><li><para>
+    /// Request a placement and prioritized based on a custom list of locations. 
     /// </para></li><li><para>
-    /// (Optional) A set of player data and a unique player ID for each player that you are
-    /// joining to the new game session (player data is optional, but if you include it, you
-    /// must also provide a unique ID for each player)
-    /// </para></li><li><para>
-    /// Latency data for all players (if you want to optimize game play for the players)
-    /// </para></li></ul><para>
-    /// If successful, a new game session placement is created.
+    /// You can request new player sessions for a group of players. Include the <i>DesiredPlayerSessions</i>
+    /// parameter and include at minimum a unique player ID for each. You can also include
+    /// player-specific data to pass to the new game session. 
+    /// </para></li></ul><para><b>Result</b></para><para>
+    /// If successful, this operation generates a new game session placement request and adds
+    /// it to the game session queue for processing. You can track the status of individual
+    /// placement requests by calling <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeGameSessionPlacement.html">DescribeGameSessionPlacement</a>
+    /// or by monitoring queue notifications. When the request status is <c>FULFILLED</c>,
+    /// a new game session has started and the placement request is updated with connection
+    /// information for the game session (IP address and port). If the request included player
+    /// session data, Amazon GameLift Servers creates a player session for each player ID
+    /// in the request.
     /// </para><para>
-    /// To track the status of a placement request, call <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeGameSessionPlacement.html">DescribeGameSessionPlacement</a>
-    /// and check the request's status. If the status is <c>FULFILLED</c>, a new game session
-    /// has been created and a game session ARN and Region are referenced. If the placement
-    /// request times out, you can resubmit the request or retry it with a different queue.
-    /// 
+    /// The request results in a <c>InvalidRequestException</c> in the following situations:
+    /// </para><ul><li><para>
+    /// If the request includes both <i>PlayerLatencies</i> and <i>PriorityConfigurationOverride</i>
+    /// parameters.
+    /// </para></li><li><para>
+    /// If the request includes the <i>PriorityConfigurationOverride</i> parameter and specifies
+    /// a queue that doesn't prioritize locations.
+    /// </para></li></ul><para>
+    /// Amazon GameLift Servers continues to retry each placement request until it reaches
+    /// the queue's timeout setting. If a request times out, you can resubmit the request
+    /// to the same queue or try a different queue. 
     /// </para>
     /// </summary>
     [Cmdlet("Start", "GMLGameSessionPlacement", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -77,21 +102,22 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service StartGameSessionPlacement API operation.", Operation = new[] {"StartGameSessionPlacement"}, SelectReturnType = typeof(Amazon.GameLift.Model.StartGameSessionPlacementResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GameSessionPlacement or Amazon.GameLift.Model.StartGameSessionPlacementResponse",
         "This cmdlet returns an Amazon.GameLift.Model.GameSessionPlacement object.",
-        "The service call response (type Amazon.GameLift.Model.StartGameSessionPlacementResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.StartGameSessionPlacementResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartGMLGameSessionPlacementCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DesiredPlayerSession
         /// <summary>
         /// <para>
-        /// <para>Set of information on each player to create a player session for.</para>
+        /// <para>Set of information on each player to create a player session for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,7 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A set of key-value pairs that can store custom data in a game session. For example:
-        /// <c>{"Key": "difficulty", "Value": "novice"}</c>.</para>
+        /// <c>{"Key": "difficulty", "Value": "novice"}</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,9 +145,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A set of custom game session properties, formatted as a single string value. This
-        /// data is passed to a game server process in the <c>GameSession</c> object with a request
-        /// to start a new game session (see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
-        /// a Game Session</a>).</para>
+        /// data is passed to a game server process with a request to start a new game session.
+        /// For more information, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-sdk-server-api.html#gamelift-sdk-server-startsession">Start
+        /// a game session</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,6 +183,23 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public System.String GameSessionQueueName { get; set; }
         #endregion
         
+        #region Parameter PriorityConfigurationOverride_LocationOrder
+        /// <summary>
+        /// <para>
+        /// <para>A prioritized list of hosting locations. The list can include Amazon Web Services
+        /// Regions (such as <c>us-west-2</c>), local zones, and custom locations (for Anywhere
+        /// fleets). Each location must be listed only once. For details, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-regions.html">Amazon
+        /// GameLift Servers service locations.</a></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] PriorityConfigurationOverride_LocationOrder { get; set; }
+        #endregion
+        
         #region Parameter MaximumPlayerSessionCount
         /// <summary>
         /// <para>
@@ -167,6 +214,21 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Int32? MaximumPlayerSessionCount { get; set; }
+        #endregion
+        
+        #region Parameter PriorityConfigurationOverride_PlacementFallbackStrategy
+        /// <summary>
+        /// <para>
+        /// <para>Instructions for how to proceed if placement fails in every location on the priority
+        /// override list. Valid strategies include: </para><ul><li><para><c>DEFAULT_AFTER_SINGLE_PASS</c> -- After attempting to place a new game session
+        /// in every location on the priority override list, try to place a game session in queue's
+        /// other locations. This is the default behavior.</para></li><li><para><c>NONE</c> -- Limit placements to locations on the priority override list only.
+        /// </para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.GameLift.PlacementFallbackStrategy")]
+        public Amazon.GameLift.PlacementFallbackStrategy PriorityConfigurationOverride_PlacementFallbackStrategy { get; set; }
         #endregion
         
         #region Parameter PlacementId
@@ -193,7 +255,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>A set of values, expressed in milliseconds, that indicates the amount of latency that
         /// a player experiences when connected to Amazon Web Services Regions. This information
         /// is used to try to place the new game session where it can offer the best possible
-        /// gameplay experience for the players. </para>
+        /// gameplay experience for the players. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -212,16 +278,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "GameSessionPlacement";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GameSessionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GameSessionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GameSessionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -232,9 +288,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GameSessionName), MyInvocation.BoundParameters);
@@ -248,21 +308,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.StartGameSessionPlacementResponse, StartGMLGameSessionPlacementCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GameSessionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.DesiredPlayerSession != null)
             {
                 context.DesiredPlayerSession = new List<Amazon.GameLift.Model.DesiredPlayerSession>(this.DesiredPlayerSession);
@@ -298,6 +348,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             {
                 context.PlayerLatency = new List<Amazon.GameLift.Model.PlayerLatency>(this.PlayerLatency);
             }
+            if (this.PriorityConfigurationOverride_LocationOrder != null)
+            {
+                context.PriorityConfigurationOverride_LocationOrder = new List<System.String>(this.PriorityConfigurationOverride_LocationOrder);
+            }
+            context.PriorityConfigurationOverride_PlacementFallbackStrategy = this.PriorityConfigurationOverride_PlacementFallbackStrategy;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -347,6 +402,35 @@ namespace Amazon.PowerShell.Cmdlets.GML
                 request.PlayerLatencies = cmdletContext.PlayerLatency;
             }
             
+             // populate PriorityConfigurationOverride
+            var requestPriorityConfigurationOverrideIsNull = true;
+            request.PriorityConfigurationOverride = new Amazon.GameLift.Model.PriorityConfigurationOverride();
+            List<System.String> requestPriorityConfigurationOverride_priorityConfigurationOverride_LocationOrder = null;
+            if (cmdletContext.PriorityConfigurationOverride_LocationOrder != null)
+            {
+                requestPriorityConfigurationOverride_priorityConfigurationOverride_LocationOrder = cmdletContext.PriorityConfigurationOverride_LocationOrder;
+            }
+            if (requestPriorityConfigurationOverride_priorityConfigurationOverride_LocationOrder != null)
+            {
+                request.PriorityConfigurationOverride.LocationOrder = requestPriorityConfigurationOverride_priorityConfigurationOverride_LocationOrder;
+                requestPriorityConfigurationOverrideIsNull = false;
+            }
+            Amazon.GameLift.PlacementFallbackStrategy requestPriorityConfigurationOverride_priorityConfigurationOverride_PlacementFallbackStrategy = null;
+            if (cmdletContext.PriorityConfigurationOverride_PlacementFallbackStrategy != null)
+            {
+                requestPriorityConfigurationOverride_priorityConfigurationOverride_PlacementFallbackStrategy = cmdletContext.PriorityConfigurationOverride_PlacementFallbackStrategy;
+            }
+            if (requestPriorityConfigurationOverride_priorityConfigurationOverride_PlacementFallbackStrategy != null)
+            {
+                request.PriorityConfigurationOverride.PlacementFallbackStrategy = requestPriorityConfigurationOverride_priorityConfigurationOverride_PlacementFallbackStrategy;
+                requestPriorityConfigurationOverrideIsNull = false;
+            }
+             // determine if request.PriorityConfigurationOverride should be set to null
+            if (requestPriorityConfigurationOverrideIsNull)
+            {
+                request.PriorityConfigurationOverride = null;
+            }
+            
             CmdletOutput output;
             
             // issue call
@@ -384,13 +468,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "StartGameSessionPlacement");
             try
             {
-                #if DESKTOP
-                return client.StartGameSessionPlacement(request);
-                #elif CORECLR
-                return client.StartGameSessionPlacementAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartGameSessionPlacementAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -415,6 +493,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
             public System.Int32? MaximumPlayerSessionCount { get; set; }
             public System.String PlacementId { get; set; }
             public List<Amazon.GameLift.Model.PlayerLatency> PlayerLatency { get; set; }
+            public List<System.String> PriorityConfigurationOverride_LocationOrder { get; set; }
+            public Amazon.GameLift.PlacementFallbackStrategy PriorityConfigurationOverride_PlacementFallbackStrategy { get; set; }
             public System.Func<Amazon.GameLift.Model.StartGameSessionPlacementResponse, StartGMLGameSessionPlacementCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.GameSessionPlacement;
         }

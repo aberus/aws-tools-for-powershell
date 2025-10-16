@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
     /// Import hub content.
-    /// 
-    ///  <note><para>
-    /// Hub APIs are only callable through SageMaker Studio.
-    /// </para></note>
     /// </summary>
     [Cmdlet("Import", "SMHubContent", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SageMaker.Model.ImportHubContentResponse")]
     [AWSCmdlet("Calls the Amazon SageMaker Service ImportHubContent API operation.", Operation = new[] {"ImportHubContent"}, SelectReturnType = typeof(Amazon.SageMaker.Model.ImportHubContentResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.ImportHubContentResponse",
-        "This cmdlet returns an Amazon.SageMaker.Model.ImportHubContentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SageMaker.Model.ImportHubContentResponse object containing multiple properties."
     )]
     public partial class ImportSMHubContentCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DocumentSchemaVersion
         /// <summary>
@@ -131,7 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter HubContentSearchKeyword
         /// <summary>
         /// <para>
-        /// <para>The searchable keywords of the hub content.</para>
+        /// <para>The searchable keywords of the hub content.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,10 +186,25 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.String HubName { get; set; }
         #endregion
         
+        #region Parameter SupportStatus
+        /// <summary>
+        /// <para>
+        /// <para>The status of the hub content resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.HubContentSupportStatus")]
+        public Amazon.SageMaker.HubContentSupportStatus SupportStatus { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Any tags associated with the hub content.</para>
+        /// <para>Any tags associated with the hub content.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,9 +233,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.HubName), MyInvocation.BoundParameters);
@@ -279,6 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 WriteWarning("You are passing $null as a value for parameter HubName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SupportStatus = this.SupportStatus;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.SageMaker.Model.Tag>(this.Tag);
@@ -339,6 +362,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 request.HubName = cmdletContext.HubName;
             }
+            if (cmdletContext.SupportStatus != null)
+            {
+                request.SupportStatus = cmdletContext.SupportStatus;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
@@ -381,13 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "ImportHubContent");
             try
             {
-                #if DESKTOP
-                return client.ImportHubContent(request);
-                #elif CORECLR
-                return client.ImportHubContentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportHubContentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -414,6 +435,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public Amazon.SageMaker.HubContentType HubContentType { get; set; }
             public System.String HubContentVersion { get; set; }
             public System.String HubName { get; set; }
+            public Amazon.SageMaker.HubContentSupportStatus SupportStatus { get; set; }
             public List<Amazon.SageMaker.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.SageMaker.Model.ImportHubContentResponse, ImportSMHubContentCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

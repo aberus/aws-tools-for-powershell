@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -48,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service CreateGlobalCluster API operation.", Operation = new[] {"CreateGlobalCluster"}, SelectReturnType = typeof(Amazon.RDS.Model.CreateGlobalClusterResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.GlobalCluster or Amazon.RDS.Model.CreateGlobalClusterResponse",
         "This cmdlet returns an Amazon.RDS.Model.GlobalCluster object.",
-        "The service call response (type Amazon.RDS.Model.CreateGlobalClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.CreateGlobalClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewRDSGlobalClusterCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DatabaseName
         /// <summary>
@@ -89,6 +92,24 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.String Engine { get; set; }
         #endregion
         
+        #region Parameter EngineLifecycleSupport
+        /// <summary>
+        /// <para>
+        /// <para>The life cycle type for this global database cluster.</para><note><para>By default, this value is set to <c>open-source-rds-extended-support</c>, which enrolls
+        /// your global cluster into Amazon RDS Extended Support. At the end of standard support,
+        /// you can avoid charges for Extended Support by setting the value to <c>open-source-rds-extended-support-disabled</c>.
+        /// In this case, creating the global cluster will fail if the DB major version is past
+        /// its end of standard support date.</para></note><para>This setting only applies to Aurora PostgreSQL-based global databases.</para><para>You can use this setting to enroll your global cluster into Amazon RDS Extended Support.
+        /// With RDS Extended Support, you can run the selected major engine version on your global
+        /// cluster past the end of standard support for that engine version. For more information,
+        /// see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/extended-support.html">Amazon
+        /// RDS Extended Support with Amazon Aurora</a> in the <i>Amazon Aurora User Guide</i>.</para><para>Valid Values: <c>open-source-rds-extended-support | open-source-rds-extended-support-disabled</c></para><para>Default: <c>open-source-rds-extended-support</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String EngineLifecycleSupport { get; set; }
+        #endregion
+        
         #region Parameter EngineVersion
         /// <summary>
         /// <para>
@@ -107,7 +128,14 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// as a lowercase string.</para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        #else
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String GlobalClusterIdentifier { get; set; }
         #endregion
         
@@ -133,6 +161,21 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Boolean? StorageEncrypted { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>Tags to assign to the global cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.RDS.Model.Tag[] Tag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'GlobalCluster'.
@@ -142,16 +185,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "GlobalCluster";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DatabaseName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DatabaseName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DatabaseName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -164,9 +197,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatabaseName), MyInvocation.BoundParameters);
@@ -180,28 +217,29 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.CreateGlobalClusterResponse, NewRDSGlobalClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DatabaseName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DatabaseName = this.DatabaseName;
             context.DeletionProtection = this.DeletionProtection;
             context.Engine = this.Engine;
+            context.EngineLifecycleSupport = this.EngineLifecycleSupport;
             context.EngineVersion = this.EngineVersion;
             context.GlobalClusterIdentifier = this.GlobalClusterIdentifier;
+            #if MODULAR
+            if (this.GlobalClusterIdentifier == null && ParameterWasBound(nameof(this.GlobalClusterIdentifier)))
+            {
+                WriteWarning("You are passing $null as a value for parameter GlobalClusterIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.SourceDBClusterIdentifier = this.SourceDBClusterIdentifier;
             context.StorageEncrypted = this.StorageEncrypted;
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.RDS.Model.Tag>(this.Tag);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -230,6 +268,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.Engine = cmdletContext.Engine;
             }
+            if (cmdletContext.EngineLifecycleSupport != null)
+            {
+                request.EngineLifecycleSupport = cmdletContext.EngineLifecycleSupport;
+            }
             if (cmdletContext.EngineVersion != null)
             {
                 request.EngineVersion = cmdletContext.EngineVersion;
@@ -245,6 +287,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.StorageEncrypted != null)
             {
                 request.StorageEncrypted = cmdletContext.StorageEncrypted.Value;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             
             CmdletOutput output;
@@ -284,13 +330,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "CreateGlobalCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateGlobalCluster(request);
-                #elif CORECLR
-                return client.CreateGlobalClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGlobalClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -310,10 +350,12 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.String DatabaseName { get; set; }
             public System.Boolean? DeletionProtection { get; set; }
             public System.String Engine { get; set; }
+            public System.String EngineLifecycleSupport { get; set; }
             public System.String EngineVersion { get; set; }
             public System.String GlobalClusterIdentifier { get; set; }
             public System.String SourceDBClusterIdentifier { get; set; }
             public System.Boolean? StorageEncrypted { get; set; }
+            public List<Amazon.RDS.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.RDS.Model.CreateGlobalClusterResponse, NewRDSGlobalClusterCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.GlobalCluster;
         }

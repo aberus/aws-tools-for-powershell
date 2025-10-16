@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexModelBuildingService;
 using Amazon.LexModelBuildingService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LMB
 {
     /// <summary>
@@ -52,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.LMB
     [OutputType("Amazon.LexModelBuildingService.Model.PutBotResponse")]
     [AWSCmdlet("Calls the Amazon Lex Model Building Service PutBot API operation.", Operation = new[] {"PutBot"}, SelectReturnType = typeof(Amazon.LexModelBuildingService.Model.PutBotResponse))]
     [AWSCmdletOutput("Amazon.LexModelBuildingService.Model.PutBotResponse",
-        "This cmdlet returns an Amazon.LexModelBuildingService.Model.PutBotResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexModelBuildingService.Model.PutBotResponse object containing multiple properties."
     )]
     public partial class WriteLMBBotCmdlet : AmazonLexModelBuildingServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AbortStatement
         /// <summary>
@@ -203,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <para>
         /// <para>An array of <c>Intent</c> objects. Each intent represents a command that a user can
         /// express. For example, a pizza ordering bot might support an OrderPizza intent. For
-        /// more information, see <a>how-it-works</a>.</para>
+        /// more information, see <a>how-it-works</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -244,7 +251,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <summary>
         /// <para>
         /// <para>An array of objects, each of which provides a message string and its type. You can
-        /// specify the message string in plain text or in Speech Synthesis Markup Language (SSML).</para>
+        /// specify the message string in plain text or in Speech Synthesis Markup Language (SSML).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -319,7 +330,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <para>
         /// <para>A list of tags to add to the bot. You can only add tags when you create a bot, you
         /// can't use the <c>PutBot</c> operation to update the tags on a bot. To update tags,
-        /// use the <c>TagResource</c> operation.</para>
+        /// use the <c>TagResource</c> operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -351,16 +366,6 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -371,9 +376,13 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -387,21 +396,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LexModelBuildingService.Model.PutBotResponse, WriteLMBBotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AbortStatement = this.AbortStatement;
             context.Checksum = this.Checksum;
             context.ChildDirected = this.ChildDirected;
@@ -600,13 +599,7 @@ namespace Amazon.PowerShell.Cmdlets.LMB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Model Building Service", "PutBot");
             try
             {
-                #if DESKTOP
-                return client.PutBot(request);
-                #elif CORECLR
-                return client.PutBotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutBotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

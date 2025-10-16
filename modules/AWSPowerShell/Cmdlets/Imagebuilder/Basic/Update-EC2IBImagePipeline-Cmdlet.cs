@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [AWSCmdlet("Calls the EC2 Image Builder UpdateImagePipeline API operation.", Operation = new[] {"UpdateImagePipeline"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.UpdateImagePipelineResponse))]
     [AWSCmdletOutput("System.String or Amazon.Imagebuilder.Model.UpdateImagePipelineResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Imagebuilder.Model.UpdateImagePipelineResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Imagebuilder.Model.UpdateImagePipelineResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateEC2IBImagePipelineCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContainerRecipeArn
         /// <summary>
@@ -63,8 +66,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter EcrConfiguration_ContainerTag
         /// <summary>
         /// <para>
-        /// <para>Tags for Image Builder to apply to the output container image that &amp;INS; scans.
-        /// Tags can help you identify and manage your scanned images.</para>
+        /// <para>Tags for Image Builder to apply to the output container image that Amazon Inspector
+        /// scans. Tags can help you identify and manage your scanned images.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,6 +121,29 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ExecutionRole { get; set; }
+        #endregion
+        
+        #region Parameter AutoDisablePolicy_FailureCount
+        /// <summary>
+        /// <para>
+        /// <para>The number of consecutive scheduled image pipeline executions that must fail before
+        /// Image Builder automatically disables the pipeline.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Schedule_AutoDisablePolicy_FailureCount")]
+        public System.Int32? AutoDisablePolicy_FailureCount { get; set; }
+        #endregion
+        
+        #region Parameter LoggingConfiguration_ImageLogGroupName
+        /// <summary>
+        /// <para>
+        /// <para>The log group name that Image Builder uses for image creation. If not specified, the
+        /// log group name defaults to <c>/aws/imagebuilder/image-name</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String LoggingConfiguration_ImageLogGroupName { get; set; }
         #endregion
         
         #region Parameter ImagePipelineArn
@@ -188,19 +218,28 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter Schedule_PipelineExecutionStartCondition
         /// <summary>
         /// <para>
-        /// <para>The condition configures when the pipeline should trigger a new image build. When
-        /// the <c>pipelineExecutionStartCondition</c> is set to <c>EXPRESSION_MATCH_AND_DEPENDENCY_UPDATES_AVAILABLE</c>,
-        /// and you use semantic version filters on the base image or components in your image
-        /// recipe, EC2 Image Builder will build a new image only when there are new versions
-        /// of the image or components in your recipe that match the semantic version filter.
-        /// When it is set to <c>EXPRESSION_MATCH_ONLY</c>, it will build a new image every time
-        /// the CRON expression matches the current time. For semantic version syntax, see <a href="https://docs.aws.amazon.com/imagebuilder/latest/APIReference/API_CreateComponent.html">CreateComponent</a>
-        /// in the <i> EC2 Image Builder API Reference</i>.</para>
+        /// <para>The start condition configures when the pipeline should trigger a new image build,
+        /// as follows. If no value is set Image Builder defaults to <c>EXPRESSION_MATCH_AND_DEPENDENCY_UPDATES_AVAILABLE</c>.</para><ul><li><para><c>EXPRESSION_MATCH_AND_DEPENDENCY_UPDATES_AVAILABLE</c> (default) – When you use
+        /// semantic version filters on the base image or components in your image recipe, EC2
+        /// Image Builder builds a new image only when there are new versions of the base image
+        /// or components in your recipe that match the filter.</para><note><para>For semantic version syntax, see <a href="https://docs.aws.amazon.com/imagebuilder/latest/APIReference/API_CreateComponent.html">CreateComponent</a>.</para></note></li><li><para><c>EXPRESSION_MATCH_ONLY</c> – This condition builds a new image every time the CRON
+        /// expression matches the current time.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.Imagebuilder.PipelineExecutionStartCondition")]
         public Amazon.Imagebuilder.PipelineExecutionStartCondition Schedule_PipelineExecutionStartCondition { get; set; }
+        #endregion
+        
+        #region Parameter LoggingConfiguration_PipelineLogGroupName
+        /// <summary>
+        /// <para>
+        /// <para>The log group name that Image Builder uses for the log output during creation of a
+        /// new pipeline. If not specified, the pipeline log group name defaults to <c>/aws/imagebuilder/pipeline/pipeline-name</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String LoggingConfiguration_PipelineLogGroupName { get; set; }
         #endregion
         
         #region Parameter EcrConfiguration_RepositoryName
@@ -243,7 +282,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter ImageTestsConfiguration_TimeoutMinute
         /// <summary>
         /// <para>
-        /// <para>The maximum time in minutes that tests are permitted to run.</para><note><para>The timeoutMinutes attribute is not currently active. This value is ignored.</para></note>
+        /// <para>The maximum time in minutes that tests are permitted to run.</para><note><para>The timeout property is not currently active. This value is ignored.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -266,7 +305,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter Workflow
         /// <summary>
         /// <para>
-        /// <para>Contains the workflows to run for the pipeline.</para>
+        /// <para>Contains the workflows to run for the pipeline.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -297,16 +340,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public string Select { get; set; } = "ImagePipelineArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImagePipelineArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImagePipelineArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImagePipelineArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -317,9 +350,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImagePipelineArn), MyInvocation.BoundParameters);
@@ -333,21 +370,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Imagebuilder.Model.UpdateImagePipelineResponse, UpdateEC2IBImagePipelineCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImagePipelineArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ContainerRecipeArn = this.ContainerRecipeArn;
             context.Description = this.Description;
@@ -377,6 +404,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
                 WriteWarning("You are passing $null as a value for parameter InfrastructureConfigurationArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.LoggingConfiguration_ImageLogGroupName = this.LoggingConfiguration_ImageLogGroupName;
+            context.LoggingConfiguration_PipelineLogGroupName = this.LoggingConfiguration_PipelineLogGroupName;
+            context.AutoDisablePolicy_FailureCount = this.AutoDisablePolicy_FailureCount;
             context.Schedule_PipelineExecutionStartCondition = this.Schedule_PipelineExecutionStartCondition;
             context.Schedule_ScheduleExpression = this.Schedule_ScheduleExpression;
             context.Schedule_Timezone = this.Schedule_Timezone;
@@ -521,6 +551,35 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
                 request.InfrastructureConfigurationArn = cmdletContext.InfrastructureConfigurationArn;
             }
             
+             // populate LoggingConfiguration
+            var requestLoggingConfigurationIsNull = true;
+            request.LoggingConfiguration = new Amazon.Imagebuilder.Model.PipelineLoggingConfiguration();
+            System.String requestLoggingConfiguration_loggingConfiguration_ImageLogGroupName = null;
+            if (cmdletContext.LoggingConfiguration_ImageLogGroupName != null)
+            {
+                requestLoggingConfiguration_loggingConfiguration_ImageLogGroupName = cmdletContext.LoggingConfiguration_ImageLogGroupName;
+            }
+            if (requestLoggingConfiguration_loggingConfiguration_ImageLogGroupName != null)
+            {
+                request.LoggingConfiguration.ImageLogGroupName = requestLoggingConfiguration_loggingConfiguration_ImageLogGroupName;
+                requestLoggingConfigurationIsNull = false;
+            }
+            System.String requestLoggingConfiguration_loggingConfiguration_PipelineLogGroupName = null;
+            if (cmdletContext.LoggingConfiguration_PipelineLogGroupName != null)
+            {
+                requestLoggingConfiguration_loggingConfiguration_PipelineLogGroupName = cmdletContext.LoggingConfiguration_PipelineLogGroupName;
+            }
+            if (requestLoggingConfiguration_loggingConfiguration_PipelineLogGroupName != null)
+            {
+                request.LoggingConfiguration.PipelineLogGroupName = requestLoggingConfiguration_loggingConfiguration_PipelineLogGroupName;
+                requestLoggingConfigurationIsNull = false;
+            }
+             // determine if request.LoggingConfiguration should be set to null
+            if (requestLoggingConfigurationIsNull)
+            {
+                request.LoggingConfiguration = null;
+            }
+            
              // populate Schedule
             var requestScheduleIsNull = true;
             request.Schedule = new Amazon.Imagebuilder.Model.Schedule();
@@ -552,6 +611,31 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             if (requestSchedule_schedule_Timezone != null)
             {
                 request.Schedule.Timezone = requestSchedule_schedule_Timezone;
+                requestScheduleIsNull = false;
+            }
+            Amazon.Imagebuilder.Model.AutoDisablePolicy requestSchedule_schedule_AutoDisablePolicy = null;
+            
+             // populate AutoDisablePolicy
+            var requestSchedule_schedule_AutoDisablePolicyIsNull = true;
+            requestSchedule_schedule_AutoDisablePolicy = new Amazon.Imagebuilder.Model.AutoDisablePolicy();
+            System.Int32? requestSchedule_schedule_AutoDisablePolicy_autoDisablePolicy_FailureCount = null;
+            if (cmdletContext.AutoDisablePolicy_FailureCount != null)
+            {
+                requestSchedule_schedule_AutoDisablePolicy_autoDisablePolicy_FailureCount = cmdletContext.AutoDisablePolicy_FailureCount.Value;
+            }
+            if (requestSchedule_schedule_AutoDisablePolicy_autoDisablePolicy_FailureCount != null)
+            {
+                requestSchedule_schedule_AutoDisablePolicy.FailureCount = requestSchedule_schedule_AutoDisablePolicy_autoDisablePolicy_FailureCount.Value;
+                requestSchedule_schedule_AutoDisablePolicyIsNull = false;
+            }
+             // determine if requestSchedule_schedule_AutoDisablePolicy should be set to null
+            if (requestSchedule_schedule_AutoDisablePolicyIsNull)
+            {
+                requestSchedule_schedule_AutoDisablePolicy = null;
+            }
+            if (requestSchedule_schedule_AutoDisablePolicy != null)
+            {
+                request.Schedule.AutoDisablePolicy = requestSchedule_schedule_AutoDisablePolicy;
                 requestScheduleIsNull = false;
             }
              // determine if request.Schedule should be set to null
@@ -605,13 +689,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "UpdateImagePipeline");
             try
             {
-                #if DESKTOP
-                return client.UpdateImagePipeline(request);
-                #elif CORECLR
-                return client.UpdateImagePipelineAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateImagePipelineAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -642,6 +720,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             public System.Boolean? ImageTestsConfiguration_ImageTestsEnabled { get; set; }
             public System.Int32? ImageTestsConfiguration_TimeoutMinute { get; set; }
             public System.String InfrastructureConfigurationArn { get; set; }
+            public System.String LoggingConfiguration_ImageLogGroupName { get; set; }
+            public System.String LoggingConfiguration_PipelineLogGroupName { get; set; }
+            public System.Int32? AutoDisablePolicy_FailureCount { get; set; }
             public Amazon.Imagebuilder.PipelineExecutionStartCondition Schedule_PipelineExecutionStartCondition { get; set; }
             public System.String Schedule_ScheduleExpression { get; set; }
             public System.String Schedule_Timezone { get; set; }

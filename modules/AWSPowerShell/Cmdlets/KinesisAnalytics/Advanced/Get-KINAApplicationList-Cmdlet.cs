@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -52,7 +52,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA
     [AWSCmdlet("Calls the Amazon Kinesis Analytics ListApplications API operation.", Operation = new[] {"ListApplications"}, SelectReturnType = typeof(Amazon.KinesisAnalytics.Model.ListApplicationsResponse))]
     [AWSCmdletOutput("Amazon.KinesisAnalytics.Model.ApplicationSummary or Amazon.KinesisAnalytics.Model.ListApplicationsResponse",
         "This cmdlet returns a collection of Amazon.KinesisAnalytics.Model.ApplicationSummary objects.",
-        "The service call response (type Amazon.KinesisAnalytics.Model.ListApplicationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.KinesisAnalytics.Model.ListApplicationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetKINAApplicationListCmdlet : AmazonKinesisAnalyticsClientCmdlet, IExecutor
     {
@@ -67,7 +67,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-ExclusiveStartApplicationName $null' for the first call and '-ExclusiveStartApplicationName $AWSHistory.LastServiceResponse.ApplicationSummaries' for subsequent calls.
+        /// <br/>ExclusiveStartApplicationName is only output from the cmdlet when <code>-Select *</code> is specified. In order to manually control output pagination, set '-ExclusiveStartApplicationName' to null for the first call then input the 'ApplicationSummaries' output from the previous call for subsequent calls.        
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -101,16 +101,6 @@ namespace Amazon.PowerShell.Cmdlets.KINA
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "ApplicationSummaries";
         #endregion
-
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ExclusiveStartApplicationName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ExclusiveStartApplicationName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ExclusiveStartApplicationName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
         
         #region Parameter NoAutoIteration
         /// <summary>
@@ -136,15 +126,8 @@ namespace Amazon.PowerShell.Cmdlets.KINA
             {
                 context.Select = CreateSelectDelegate<Amazon.KinesisAnalytics.Model.ListApplicationsResponse, GetKINAApplicationListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ExclusiveStartApplicationName;
-            }
+
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ExclusiveStartApplicationName = this.ExclusiveStartApplicationName;
             context.Limit = this.Limit;
@@ -172,7 +155,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA
         {
             var cmdletContext = context as CmdletContext;
             #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith(".") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith(".");
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // create request and set iteration invariants
@@ -248,7 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith(".") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith(".");
             
             // create request and set iteration invariants
             var request = new Amazon.KinesisAnalytics.Model.ListApplicationsRequest();
@@ -307,7 +290,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA
                             WriteProgressRecord("Retrieving", $"Retrieved {_receivedThisCall} records starting from marker '{request.ExclusiveStartApplicationName}'");
                         }
 
-                        _nextToken = response.HasMoreApplications ? response.ApplicationSummaries[_receivedThisCall - 1].ApplicationName : null;
+                        _nextToken = response.HasMoreApplications.HasValue ? response.ApplicationSummaries[_receivedThisCall - 1].ApplicationName : null;
                         _retrievedSoFar += _receivedThisCall;
                         if (_emitLimit.HasValue)
                         {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [AWSCmdlet("Calls the EC2 Image Builder GetWorkflow API operation.", Operation = new[] {"GetWorkflow"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.GetWorkflowResponse))]
     [AWSCmdletOutput("Amazon.Imagebuilder.Model.Workflow or Amazon.Imagebuilder.Model.GetWorkflowResponse",
         "This cmdlet returns an Amazon.Imagebuilder.Model.Workflow object.",
-        "The service call response (type Amazon.Imagebuilder.Model.GetWorkflowResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Imagebuilder.Model.GetWorkflowResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2IBWorkflowCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WorkflowBuildVersionArn
         /// <summary>
@@ -70,19 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public string Select { get; set; } = "Workflow";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkflowBuildVersionArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkflowBuildVersionArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkflowBuildVersionArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Imagebuilder.Model.GetWorkflowResponse, GetEC2IBWorkflowCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkflowBuildVersionArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.WorkflowBuildVersionArn = this.WorkflowBuildVersionArn;
             #if MODULAR
             if (this.WorkflowBuildVersionArn == null && ParameterWasBound(nameof(this.WorkflowBuildVersionArn)))
@@ -170,13 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "GetWorkflow");
             try
             {
-                #if DESKTOP
-                return client.GetWorkflow(request);
-                #elif CORECLR
-                return client.GetWorkflowAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetWorkflowAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

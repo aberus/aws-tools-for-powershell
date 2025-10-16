@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -33,9 +35,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     ///  
     /// <para>
     /// An EC2 Instance Connect Endpoint allows you to connect to an instance, without requiring
-    /// the instance to have a public IPv4 address. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Connect-using-EC2-Instance-Connect-Endpoint.html">Connect
-    /// to your instances without requiring a public IPv4 address using EC2 Instance Connect
-    /// Endpoint</a> in the <i>Amazon EC2 User Guide</i>.
+    /// the instance to have a public IPv4 or public IPv6 address. For more information, see
+    /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Connect-using-EC2-Instance-Connect-Endpoint.html">Connect
+    /// to your instances using EC2 Instance Connect Endpoint</a> in the <i>Amazon EC2 User
+    /// Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EC2InstanceConnectEndpoint", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -43,19 +46,45 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateInstanceConnectEndpoint API operation.", Operation = new[] {"CreateInstanceConnectEndpoint"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateInstanceConnectEndpointResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Ec2InstanceConnectEndpoint or Amazon.EC2.Model.CreateInstanceConnectEndpointResponse",
         "This cmdlet returns an Amazon.EC2.Model.Ec2InstanceConnectEndpoint object.",
-        "The service call response (type Amazon.EC2.Model.CreateInstanceConnectEndpointResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateInstanceConnectEndpointResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2InstanceConnectEndpointCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter IpAddressType
+        /// <summary>
+        /// <para>
+        /// <para>The IP address type of the endpoint.</para><para>If no value is specified, the default value is determined by the IP address type of
+        /// the subnet:</para><ul><li><para><c>dualstack</c> - If the subnet has both IPv4 and IPv6 CIDRs</para></li><li><para><c>ipv4</c> - If the subnet has only IPv4 CIDRs</para></li><li><para><c>ipv6</c> - If the subnet has only IPv6 CIDRs</para></li></ul><note><para><c>PreserveClientIp</c> is only supported on IPv4 EC2 Instance Connect Endpoints.
+        /// To use <c>PreserveClientIp</c>, the value for <c>IpAddressType</c> must be <c>ipv4</c>.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.EC2.IpAddressType")]
+        public Amazon.EC2.IpAddressType IpAddressType { get; set; }
+        #endregion
         
         #region Parameter PreserveClientIp
         /// <summary>
         /// <para>
-        /// <para>Indicates whether your client's IP address is preserved as the source. The value is
-        /// <c>true</c> or <c>false</c>.</para><ul><li><para>If <c>true</c>, your client's IP address is used when you connect to a resource.</para></li><li><para>If <c>false</c>, the elastic network interface IP address is used when you connect
-        /// to a resource.</para></li></ul><para>Default: <c>true</c></para>
+        /// <para>Indicates whether the client IP address is preserved as the source. The following
+        /// are the possible values.</para><ul><li><para><c>true</c> - Use the client IP address as the source.</para></li><li><para><c>false</c> - Use the network interface IP address as the source.</para></li></ul><note><para><c>PreserveClientIp</c> is only supported on IPv4 EC2 Instance Connect Endpoints.
+        /// To use <c>PreserveClientIp</c>, the value for <c>IpAddressType</c> must be <c>ipv4</c>.</para></note><para>Default: <c>false</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,7 +96,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>One or more security groups to associate with the endpoint. If you don't specify a
         /// security group, the default security group for your VPC will be associated with the
-        /// endpoint.</para>
+        /// endpoint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,7 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the EC2 Instance Connect Endpoint during creation.</para>
+        /// <para>The tags to apply to the EC2 Instance Connect Endpoint during creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,16 +162,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "InstanceConnectEndpoint";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SubnetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SubnetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SubnetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -145,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SubnetId), MyInvocation.BoundParameters);
@@ -161,22 +192,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateInstanceConnectEndpointResponse, NewEC2InstanceConnectEndpointCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SubnetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
+            context.DryRun = this.DryRun;
+            context.IpAddressType = this.IpAddressType;
             context.PreserveClientIp = this.PreserveClientIp;
             if (this.SecurityGroupId != null)
             {
@@ -212,6 +235,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.IpAddressType != null)
+            {
+                request.IpAddressType = cmdletContext.IpAddressType;
             }
             if (cmdletContext.PreserveClientIp != null)
             {
@@ -267,13 +298,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateInstanceConnectEndpoint");
             try
             {
-                #if DESKTOP
-                return client.CreateInstanceConnectEndpoint(request);
-                #elif CORECLR
-                return client.CreateInstanceConnectEndpointAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateInstanceConnectEndpointAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -291,6 +316,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientToken { get; set; }
+            public System.Boolean? DryRun { get; set; }
+            public Amazon.EC2.IpAddressType IpAddressType { get; set; }
             public System.Boolean? PreserveClientIp { get; set; }
             public List<System.String> SecurityGroupId { get; set; }
             public System.String SubnetId { get; set; }

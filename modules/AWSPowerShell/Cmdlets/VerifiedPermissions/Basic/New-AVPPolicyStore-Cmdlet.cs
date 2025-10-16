@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AVP
 {
     /// <summary>
@@ -36,23 +38,33 @@ namespace Amazon.PowerShell.Cmdlets.AVP
     /// namespace per policy store.
     /// </para></note><note><para>
     /// Verified Permissions is <i><a href="https://wikipedia.org/wiki/Eventual_consistency">eventually
-    /// consistent</a></i>. It can take a few seconds for a new or changed element to be
-    /// propagate through the service and be visible in the results of other Verified Permissions
-    /// operations.
+    /// consistent</a></i>. It can take a few seconds for a new or changed element to propagate
+    /// through the service and be visible in the results of other Verified Permissions operations.
     /// </para></note>
     /// </summary>
     [Cmdlet("New", "AVPPolicyStore", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse")]
     [AWSCmdlet("Calls the Amazon Verified Permissions CreatePolicyStore API operation.", Operation = new[] {"CreatePolicyStore"}, SelectReturnType = typeof(Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse))]
     [AWSCmdletOutput("Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse",
-        "This cmdlet returns an Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse object containing multiple properties."
     )]
     public partial class NewAVPPolicyStoreCmdlet : AmazonVerifiedPermissionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DeletionProtection
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether the policy store can be deleted. If enabled, the policy store can't
+        /// be deleted.</para><para>The default state is <c>DISABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.VerifiedPermissions.DeletionProtection")]
+        public Amazon.VerifiedPermissions.DeletionProtection DeletionProtection { get; set; }
+        #endregion
         
         #region Parameter Description
         /// <summary>
@@ -87,6 +99,21 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public Amazon.VerifiedPermissions.ValidationMode ValidationSettings_Mode { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>The list of key-value pairs to associate with the policy store.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
@@ -97,7 +124,9 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         /// that you use a <a href="https://wikipedia.org/wiki/Universally_unique_identifier">UUID
         /// type of value.</a>.</para><para>If you don't provide this value, then Amazon Web Services generates a random one for
         /// you.</para><para>If you retry the operation with the same <c>ClientToken</c>, but with different parameters,
-        /// the retry fails with an <c>IdempotentParameterMismatch</c> error.</para>
+        /// the retry fails with an <c>ConflictException</c> error.</para><para>Verified Permissions recognizes a <c>ClientToken</c> for eight hours. After eight
+        /// hours, the next request with the same parameters performs the operation again regardless
+        /// of the value of <c>ClientToken</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ValidationSettings_Mode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ValidationSettings_Mode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ValidationSettings_Mode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -135,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ValidationSettings_Mode), MyInvocation.BoundParameters);
@@ -151,23 +174,22 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse, NewAVPPolicyStoreCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
+            }
+            context.ClientToken = this.ClientToken;
+            context.DeletionProtection = this.DeletionProtection;
+            context.Description = this.Description;
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
                 {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
                 }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ValidationSettings_Mode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.ClientToken = this.ClientToken;
-            context.Description = this.Description;
             context.ValidationSettings_Mode = this.ValidationSettings_Mode;
             #if MODULAR
             if (this.ValidationSettings_Mode == null && ParameterWasBound(nameof(this.ValidationSettings_Mode)))
@@ -195,9 +217,17 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             {
                 request.ClientToken = cmdletContext.ClientToken;
             }
+            if (cmdletContext.DeletionProtection != null)
+            {
+                request.DeletionProtection = cmdletContext.DeletionProtection;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             
              // populate ValidationSettings
@@ -256,13 +286,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Verified Permissions", "CreatePolicyStore");
             try
             {
-                #if DESKTOP
-                return client.CreatePolicyStore(request);
-                #elif CORECLR
-                return client.CreatePolicyStoreAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePolicyStoreAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -280,7 +304,9 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientToken { get; set; }
+            public Amazon.VerifiedPermissions.DeletionProtection DeletionProtection { get; set; }
             public System.String Description { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public Amazon.VerifiedPermissions.ValidationMode ValidationSettings_Mode { get; set; }
             public System.Func<Amazon.VerifiedPermissions.Model.CreatePolicyStoreResponse, NewAVPPolicyStoreCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

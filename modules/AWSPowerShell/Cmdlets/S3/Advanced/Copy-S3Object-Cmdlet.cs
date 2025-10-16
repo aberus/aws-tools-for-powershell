@@ -32,8 +32,10 @@ using Amazon.Runtime;
 using AWSRegion = Amazon.PowerShell.Common.AWSRegion;
 using System.Text;
 using Amazon.Runtime.CredentialManagement;
+using Amazon.Runtime.Internal;
 using Amazon.Util;
 
+#pragma warning disable CS0618
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
@@ -69,10 +71,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
         private const long OneGigabyte = 1024 * 1024 * 1024;
         private const long FiveGigabytes = 5 * OneGigabyte;
-
-        protected override bool IsSensitiveRequest { get; set; } = true;
-
-        protected override bool IsSensitiveResponse { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         #region Parameter BucketName
         /// <summary>
@@ -145,21 +144,38 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </para>
         ///  
         /// <para>
-        /// When using this action with an access point, you must direct requests to the access
-        /// point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
+        ///  <b>Directory buckets</b> - When you use this operation with a directory bucket, you
+        /// must use virtual-hosted-style requests in the format <c> <i>Bucket_name</i>.s3express-<i>az_id</i>.<i>region</i>.amazonaws.com</c>.
+        /// Path-style requests are not supported. Directory bucket names must be unique in the
+        /// chosen Availability Zone. Bucket names must follow the format <c> <i>bucket_base_name</i>--<i>az-id</i>--x-s3</c>
+        /// (for example, <c> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</c>). For information
+        /// about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        ///  
+        /// <para>
+        ///  <b>Access points</b> - When you use this action with an access point, you must provide
+        /// the alias of the access point in place of the bucket name or specify the access point
+        /// ARN. When using the access point ARN, you must direct requests to the access point
+        /// hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
         /// When using this action with an access point through the Amazon Web Services SDKs,
         /// you provide the access point ARN in place of the bucket name. For more information
         /// about access point ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using
         /// access points</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
-        ///  
+        ///  <note> 
         /// <para>
-        /// When you use this action with Amazon S3 on Outposts, you must direct requests to the
-        /// S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>.
+        /// Access points and Object Lambda access points are not supported by directory buckets.
+        /// </para>
+        ///  </note> 
+        /// <para>
+        ///  <b>S3 on Outposts</b> - When you use this action with Amazon S3 on Outposts, you
+        /// must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes
+        /// the form <c> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</c>.
         /// When you use this action with S3 on Outposts through the Amazon Web Services SDKs,
         /// you provide the Outposts access point ARN in place of the bucket name. For more information
         /// about S3 on Outposts ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html">What
-        /// is S3 on Outposts</a> in the <i>Amazon S3 User Guide</i>.
+        /// is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
         /// </summary>
         [Parameter(Position = 3, ParameterSetName = CopyS3ObjectToS3Object, ValueFromPipelineByPropertyName = true)]
@@ -196,7 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter CannedACLName
         /// <summary>
         /// Specifies the canned ACL (access control list) of permissions to be applied to the S3 bucket.
-        /// Please refer to <a href="http://docs.aws.amazon.com/sdkfornet/v3/apidocs/Index.html?page=S3/TS3_S3CannedACL.html&tocid=Amazon_S3_S3CannedACL">Amazon.S3.Model.S3CannedACL</a> for information on S3 Canned ACLs.
+        /// Please refer to <a href="http://docs.aws.amazon.com/sdkfornet/v4/apidocs/Index.html?page=S3/TS3_S3CannedACL.html&tocid=Amazon_S3_S3CannedACL">Amazon.S3.Model.S3CannedACL</a> for information on S3 Canned ACLs.
         /// </summary>
         [Parameter(ParameterSetName = CopyS3ObjectToS3Object, ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.S3.S3CannedACL")]
@@ -217,6 +233,18 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </summary>
         [Parameter(ParameterSetName = CopyS3ObjectToS3Object, ValueFromPipelineByPropertyName = true)]
         public SwitchParameter PublicReadWrite { get; set; }
+        #endregion
+
+        #region Parameter ExpectedBucketOwner
+        /// <summary>
+        /// <para>
+        /// <para>The account ID of the expected bucket owner. If the account ID that you provide does
+        /// not match the actual owner of the bucket, the request fails with the HTTP status code
+        /// <code>403 Forbidden</code> (access denied).</para>
+        /// </para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = CopyS3ObjectToS3Object)]
+        public System.String ExpectedBucketOwner { get; set; }
         #endregion
 
         #region Parameter StorageClass
@@ -397,8 +425,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>This parameter is deprecated.</para>
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This property is deprecated and may result in the wrong timestamp being passed to" +
-            " the service, use UtcModifiedSinceDate instead.")]
         public System.DateTime ModifiedSinceDate { get; set; }
         #endregion
 
@@ -408,25 +434,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>This parameter is deprecated.</para>
         /// </summary>
         [Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This property is deprecated and may result in the wrong timestamp being passed to" +
-            " the service, use UtcUnmodifiedSinceDate instead.")]
         public System.DateTime UnmodifiedSinceDate { get; set; }
-        #endregion
-
-        #region Parameter UtcModifiedSinceDate
-        /// <summary>
-        /// Copies the object if it has been modified since the specified time; otherwise returns an error.
-        /// </summary>
-        [Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime UtcModifiedSinceDate { get; set; }
-        #endregion
-
-        #region Parameter UtcUnmodifiedSinceDate
-        /// <summary>
-        /// Copies the object if it hasn't been modified since the specified time; otherwise returns a PreconditionFailed.
-        /// </summary>
-        [Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime UtcUnmodifiedSinceDate { get; set; }
         #endregion
 
         #region Parameter CopySourceServerSideEncryptionCustomerMethod
@@ -511,6 +519,32 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public ChecksumMode ChecksumMode { get; set; }
         #endregion
 
+        #region Parameter IfNoneMatch
+        /// <summary>
+        /// <para>Uploads the object only if the object key name does not already exist in the bucket specified. Otherwise, 
+        /// Amazon S3 returns a <code>412 Precondition Failed</code> error.</para> <para>If a conflicting operation occurs 
+        /// during the upload S3 returns a <code>409 ConditionalRequestConflict</code> response. On a 409 failure you should 
+        /// re-initiate the multipart upload with <code>CreateMultipartUpload</code> and re-upload each part.</para> <para>Expects 
+        /// the '*' (asterisk) character.</para> <para>For more information about conditional requests, 
+        /// see <a href="https://tools.ietf.org/html/rfc7232">RFC 7232</a>, or <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html">Conditional requests</a> 
+        /// in the <i>Amazon S3 User Guide</i>.</para>
+        /// </summary>
+        [Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IfNoneMatch { get; set; }
+        #endregion
+
+        #region Parameter RequestPayer
+        /// <summary>
+        /// <para>
+        /// <para>Confirms that the requester knows that they will be charged for the request. 
+        /// Bucket owners need not specify this parameter in their requests.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.S3.RequestPayer")]
+        public Amazon.S3.RequestPayer RequestPayer { get; set; }
+        #endregion
+
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -520,6 +554,23 @@ namespace Amazon.PowerShell.Cmdlets.S3
         [Parameter(ValueFromPipelineByPropertyName = true)]
         public SwitchParameter Force { get; set; }
         #endregion
+
+        #region Parameter EnableLegacyKeyCleaning
+        /// <summary>
+        /// Specifies whether to use legacy key cleaning behavior for S3 key names. When this switch is present,
+        /// the cmdlet will clean key names by removing leading spaces, forward slashes (/), and backslashes (\),
+        /// converting all backslashes to forward slashes, and removing trailing spaces. When not specified,
+        /// the legacy key cleaning is disabled.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter EnableLegacyKeyCleaning { get; set; }
+        #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
 
         protected override void ProcessRecord()
         {
@@ -531,7 +582,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             var context = new CmdletContext
             {
                 SourceBucket = this.BucketName,
-                SourceKey = this.Key,
+                SourceKey = this.EnableLegacyKeyCleaning.IsPresent ? this.Key.TrimStart('/') : this.Key,
                 SourceVersionId = this.VersionId,
                 DestinationBucket = this.DestinationBucket,
                 DestinationKey = this.DestinationKey,
@@ -555,7 +606,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 ChecksumMode = this.ChecksumMode,
 
                 Metadata = this.Metadata,
-                Headers = this.HeaderCollection
+                Headers = this.HeaderCollection,
+
+                IfNoneMatch = this.IfNoneMatch,
+                RequestPayer = this.RequestPayer
             };
 
             // this makes things simpler later
@@ -563,7 +617,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 context.DestinationBucket = context.SourceBucket;
             if (string.IsNullOrEmpty(context.DestinationKey))
                 context.DestinationKey = context.SourceKey;
-
+            context.DestinationKey = this.EnableLegacyKeyCleaning.IsPresent ? context.DestinationKey.TrimStart('/') : context.DestinationKey;
             switch (this.ParameterSetName)
             {
                 case CopySingleObjectToLocalFile:
@@ -579,7 +633,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 case CopyMultipleObjectsToLocalFolder:
                     context.OriginalKeyPrefix = this.KeyPrefix;
                     context.KeyPrefix = ReadS3ObjectCmdlet.rootIndicators.Contains<string>(this.KeyPrefix, StringComparer.OrdinalIgnoreCase)
-                        ? "/" : AmazonS3Helper.CleanKey(this.KeyPrefix);
+                        ? "/" : this.EnableLegacyKeyCleaning.IsPresent ? AmazonS3Helper.CleanKey(this.KeyPrefix) : this.KeyPrefix;
+                    base.UserAgentAddition = this.EnableLegacyKeyCleaning.IsPresent ? AmazonS3Helper.GetCleanKeyUserAgentAdditionString(context.OriginalKeyPrefix, context.KeyPrefix) : base.UserAgentAddition;
 
                     context.LocalFolder = PSHelpers.PSPathToAbsolute(this.SessionState.Path, this.LocalFolder);
                     break;
@@ -589,10 +644,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     break;
             }
 
-            if (ParameterWasBound("UtcModifiedSinceDate"))
-                context.UtcModifiedSinceDate = this.UtcModifiedSinceDate;
-            if (ParameterWasBound("UtcUnmodifiedSinceDate"))
-                context.UtcUnmodifiedSinceDate = this.UtcUnmodifiedSinceDate;
+            if (this.ExpectedBucketOwner != null)
+                context.ExpectedBucketOwner = this.ExpectedBucketOwner;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound("ModifiedSinceDate"))
                 context.ModifiedSinceDate = this.ModifiedSinceDate;
@@ -631,6 +684,9 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 context.ServerSideEncryptionMethod = AmazonS3Helper.Convert(this.ServerSideEncryption);
             }
 
+            if (!string.IsNullOrEmpty(this.IfNoneMatch))
+                context.IfNoneMatch = this.IfNoneMatch;
+
             var output = Execute(context) as CmdletOutput;
             ProcessOutput(output);
         }
@@ -646,9 +702,9 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             if (!string.IsNullOrEmpty(cmdletContext.KeyPrefix))
                 return CopyS3ObjectsToLocalFolder(context);
-            
+
             // S3 requires multi-part operation for objects > 5GB
-            var objectSize = GetSourceObjectData(cmdletContext.SourceBucket, cmdletContext.SourceKey).ContentLength;
+            var objectSize = GetSourceObjectData(cmdletContext).ContentLength;
             return objectSize > FiveGigabytes ? MultipartCopyS3ObjectToS3(context, objectSize) : CopyS3ObjectToS3(context);
         }
 
@@ -658,8 +714,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
         }
 
         #endregion
-        private GetObjectMetadataResponse GetSourceObjectData(string bucketName, string objectKey)
+        private GetObjectMetadataResponse GetSourceObjectData(CmdletContext cmdletContext)
         {
+            string bucketName = cmdletContext.SourceBucket;
+            string objectKey = cmdletContext.SourceKey;
+
             var copySourceRegionArgs = new StandaloneRegionArguments
             {
                 Region = this.SourceRegion,
@@ -668,28 +727,43 @@ namespace Amazon.PowerShell.Cmdlets.S3
             copySourceRegionArgs.TryGetRegion(true, out var region, out var regionSource, SessionState);
             var sourceRegionClient = CreateClient(_CurrentCredentials, region);
 
-
             var request = new GetObjectMetadataRequest
             {
                 BucketName = bucketName,
-                Key = objectKey.TrimStart('/')
+                Key = this.EnableLegacyKeyCleaning.IsPresent ? objectKey.TrimStart('/') : objectKey
             };
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
+            base.UserAgentAddition = AmazonS3Helper.GetCleanKeyUserAgentAdditionString(objectKey, request.Key);
 
             var response = CallAWSServiceOperation(sourceRegionClient, request);
             return response;
 
         }
 
-        private S3Object GetObjectData(IAmazonS3 s3Client, string bucketName, string objectKey)
+        private S3Object GetObjectData(IAmazonS3 s3Client, string bucketName, string objectKey, RequestPayer requestPayer)
         {
-            // The underlying S3 api does not like listing with prefixes starting with / so strip
-            // (eg Copy-S3Object -BucketName test-bucket -Key /data/sample.txt -DestinationKey /data/sample-copy.txt)
-            string key = objectKey.TrimStart('/');
+            string key = objectKey;
+            if (this.EnableLegacyKeyCleaning.IsPresent)
+            {
+                key = objectKey.TrimStart('/');
+                base.UserAgentAddition = AmazonS3Helper.GetCleanKeyUserAgentAdditionString(objectKey, key);
+            }
+
             var request = new ListObjectsRequest
             {
                 BucketName = bucketName,
                 Prefix = key
             };
+            
+            if (requestPayer != null)
+            {
+                request.RequestPayer = requestPayer;
+            }
+
             try
             {
                 var response = CallAWSServiceOperation(s3Client, request);
@@ -704,7 +778,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // But ListObjectsV2 is only supported for prefix that end with the delimiter.
             // To overcome this limitation without introducing a breaking change, we will convert the result of GetObjectMetadata call to S3Object
             // Only few documented properties will be converted and any future additions to S3Object will not be maintained.
-            
+
             var metadataRequest = new GetObjectMetadataRequest
             {
                 BucketName = bucketName,
@@ -747,25 +821,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 request.WebsiteRedirectLocation = cmdletContext.WebsiteRedirectLocation;
             if (cmdletContext.ServerSideEncryptionKeyManagementServiceKeyId != null)
                 request.ServerSideEncryptionKeyManagementServiceKeyId = cmdletContext.ServerSideEncryptionKeyManagementServiceKeyId;
-            if (cmdletContext.UtcModifiedSinceDate.HasValue)
-                request.ModifiedSinceDateUtc = cmdletContext.UtcModifiedSinceDate.Value;
-            if (cmdletContext.UtcUnmodifiedSinceDate.HasValue)
-                request.UnmodifiedSinceDateUtc = cmdletContext.UtcUnmodifiedSinceDate.Value;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ModifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcModifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters ModifiedSinceDate and UtcModifiedSinceDate are mutually exclusive.");
-                }
                 request.ModifiedSinceDate = cmdletContext.ModifiedSinceDate.Value;
             }
             if (cmdletContext.UnmodifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcUnmodifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters UnmodifiedSinceDate and UtcUnmodifiedSinceDate are mutually exclusive.");
-                }
                 request.UnmodifiedSinceDate = cmdletContext.UnmodifiedSinceDate.Value;
             }
 #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -781,7 +843,17 @@ namespace Amazon.PowerShell.Cmdlets.S3
             request.ChecksumAlgorithm = cmdletContext.ChecksumAlgorithm;
 
             if (cmdletContext.TagSet != null)
+            {
+                request.TagSet = new List<Tag>();
                 request.TagSet.AddRange(cmdletContext.TagSet);
+            }
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
+            if (cmdletContext.ExpectedBucketOwner !=  null)
+                request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
 
             AmazonS3Helper.SetMetadataAndHeaders(request, cmdletContext.Metadata, cmdletContext.Headers);
 
@@ -797,7 +869,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     var objectData = GetObjectData(Client,
                                                    request.DestinationBucket,
                                                    string.IsNullOrEmpty(cmdletContext.DestinationKey)
-                                                    ? cmdletContext.SourceKey : cmdletContext.DestinationKey);
+                                                    ? cmdletContext.SourceKey : cmdletContext.DestinationKey,
+                                                   cmdletContext.RequestPayer);
                     output = new CmdletOutput
                     {
                         PipelineOutput = objectData,
@@ -839,7 +912,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             var initiateResponse = CallAWSServiceOperation(Client, initiateRequest);
             var uploadId = initiateResponse.UploadId;
 
-            var copyController = new MultiPartObjectCopyController(Client, uploadId, objectSize, cmdletContext);
+            var copyController = new MultiPartObjectCopyController(Client, uploadId, objectSize, cmdletContext, _cancellationTokenSource.Token);
 
             try
             {
@@ -872,6 +945,16 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     PartETags = copyController.ETags
                 };
 
+                if (!string.IsNullOrEmpty(cmdletContext.IfNoneMatch))
+                    completeRequest.IfNoneMatch = cmdletContext.IfNoneMatch;
+
+                if (cmdletContext.RequestPayer != null)
+                {
+                    completeRequest.RequestPayer = cmdletContext.RequestPayer;
+                }
+                if (cmdletContext.ExpectedBucketOwner != null)
+                    initiateRequest.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner; 
+
                 CallAWSServiceOperation(Client, completeRequest);
                 uploadId = null;
             }
@@ -881,7 +964,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 {
                     WriteProgressCompleteRecord(activity, "Copy object completed");
 
-                    var objectData = GetObjectData(Client, cmdletContext.DestinationBucket, cmdletContext.DestinationKey);
+                    var objectData = GetObjectData(Client, cmdletContext.DestinationBucket, cmdletContext.DestinationKey, cmdletContext.RequestPayer);
                     output = new CmdletOutput
                     {
                         PipelineOutput = objectData
@@ -895,6 +978,12 @@ namespace Amazon.PowerShell.Cmdlets.S3
                         BucketName = cmdletContext.DestinationBucket,
                         Key = cmdletContext.DestinationKey
                     };
+
+                    if (cmdletContext.RequestPayer != null)
+                    {
+                        abortRequest.RequestPayer = cmdletContext.RequestPayer;
+                    }
+
                     CallAWSServiceOperation(Client, abortRequest);
                     WriteProgressCompleteRecord(activity, "Operation failed");
                 }
@@ -932,6 +1021,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
             if (cmdletContext.TagSet != null)
                 request.TagSet.AddRange(cmdletContext.TagSet);
 
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
+
             AmazonS3Helper.SetMetadataAndHeaders(request, cmdletContext.Metadata, cmdletContext.Headers);
         }
 
@@ -952,25 +1046,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             if (!string.IsNullOrEmpty(cmdletContext.SourceVersionId))
                 request.VersionId = cmdletContext.SourceVersionId;
-            if (cmdletContext.UtcModifiedSinceDate.HasValue)
-                request.ModifiedSinceDateUtc = cmdletContext.UtcModifiedSinceDate.Value;
-            if (cmdletContext.UtcUnmodifiedSinceDate.HasValue)
-                request.UnmodifiedSinceDateUtc = cmdletContext.UtcUnmodifiedSinceDate.Value;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ModifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcModifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters ModifiedSinceDate and UtcModifiedSinceDate are mutually exclusive.");
-                }
                 request.ModifiedSinceDate = cmdletContext.ModifiedSinceDate.Value;
             }
             if (cmdletContext.UnmodifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcUnmodifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters UnmodifiedSinceDate and UtcUnmodifiedSinceDate are mutually exclusive.");
-                }
                 request.UnmodifiedSinceDate = cmdletContext.UnmodifiedSinceDate.Value;
             }
 #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -980,6 +1062,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
             request.ServerSideEncryptionCustomerProvidedKeyMD5 = cmdletContext.ServerSideEncryptionCustomerProvidedKeyMD5;
 
             request.ChecksumMode = cmdletContext.ChecksumMode;
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
 
             CmdletOutput output;
             using (var tu = new TransferUtility(Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint)))
@@ -1008,28 +1095,21 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 S3Directory = cmdletContext.KeyPrefix
             };
 
-            if (cmdletContext.UtcModifiedSinceDate.HasValue)
-                request.ModifiedSinceDateUtc = cmdletContext.UtcModifiedSinceDate.Value;
-            if (cmdletContext.UtcUnmodifiedSinceDate.HasValue)
-                request.UnmodifiedSinceDateUtc = cmdletContext.UtcUnmodifiedSinceDate.Value;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ModifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcModifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters ModifiedSinceDate and UtcModifiedSinceDate are mutually exclusive.");
-                }
                 request.ModifiedSinceDate = cmdletContext.ModifiedSinceDate.Value;
             }
             if (cmdletContext.UnmodifiedSinceDate.HasValue)
             {
-                if (cmdletContext.UtcUnmodifiedSinceDate != null)
-                {
-                    throw new ArgumentException("Parameters UnmodifiedSinceDate and UtcUnmodifiedSinceDate are mutually exclusive.");
-                }
                 request.UnmodifiedSinceDate = cmdletContext.UnmodifiedSinceDate.Value;
             }
 #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
 
             CmdletOutput output;
             using (var tu = new TransferUtility(Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint)))
@@ -1061,13 +1141,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             try
             {
-#if DESKTOP
-                return client.CopyObject(request);
-#elif CORECLR
-                return client.CopyObjectAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.CopyObjectAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1081,13 +1155,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             try
             {
-#if DESKTOP
-                return client.ListObjects(request);
-#elif CORECLR
-                return client.ListObjectsAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.ListObjectsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1101,13 +1169,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             try
             {
-#if DESKTOP
-                return client.ListObjectsV2(request);
-#elif CORECLR
-                return client.ListObjectsV2Async(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.ListObjectsV2Async(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1121,13 +1183,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             try
             {
-#if DESKTOP
-                return client.GetObjectMetadata(request);
-#elif CORECLR
-                return client.GetObjectMetadataAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.GetObjectMetadataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1141,13 +1197,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             try
             {
-#if DESKTOP
-                return client.InitiateMultipartUpload(request);
-#elif CORECLR
-                return client.InitiateMultipartUploadAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.InitiateMultipartUploadAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1161,26 +1211,14 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             // not testing for name resolution error here since it would have already
             // failed during the init call
-#if DESKTOP
-            return client.CompleteMultipartUpload(request);
-#elif CORECLR
-            return client.CompleteMultipartUploadAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+            return client.CompleteMultipartUploadAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
         }
 
         private Amazon.S3.Model.AbortMultipartUploadResponse CallAWSServiceOperation(IAmazonS3 client, Amazon.S3.Model.AbortMultipartUploadRequest request)
         {
             // not testing for name resolution error here since it would have already
             // failed during the init call
-#if DESKTOP
-            return client.AbortMultipartUpload(request);
-#elif CORECLR
-            return client.AbortMultipartUploadAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+            return client.AbortMultipartUploadAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
         }
 
         private void TestForNameResolutionException(IAmazonS3 client, Exception exc)
@@ -1210,15 +1248,12 @@ namespace Amazon.PowerShell.Cmdlets.S3
             public String ContentType { get; set; }
             public String ETagToMatch { get; set; }
             public String ETagToNotMatch { get; set; }
-            [System.ObsoleteAttribute]
             public DateTime? ModifiedSinceDate { get; set; }
-            [System.ObsoleteAttribute]
             public DateTime? UnmodifiedSinceDate { get; set; }
-            public DateTime? UtcModifiedSinceDate { get; set; }
-            public DateTime? UtcUnmodifiedSinceDate { get; set; }
             public S3MetadataDirective? MetadataDirective { get; set; }
             public S3CannedACL CannedACL { get; set; }
             public String SourceVersionId { get; set; }
+            public String ExpectedBucketOwner {get; set; }
             public S3StorageClass StorageClass { get; set; }
             public ServerSideEncryptionMethod ServerSideEncryptionMethod { get; set; }
             public string ServerSideEncryptionKeyManagementServiceKeyId { get; set; }
@@ -1240,6 +1275,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             public ChecksumAlgorithm ChecksumAlgorithm { get; set; }
             public ChecksumMode ChecksumMode { get; set; }
+
+            public String IfNoneMatch { get; set; }
+
+            public RequestPayer RequestPayer { get; set; }
         }
 
         internal class MultiPartObjectCopyController
@@ -1257,6 +1296,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             private readonly IAmazonS3 _s3Client;
             private int _nextPartToUpload = -1;
             private Exception _errorException;
+            private readonly CancellationToken _cancellationToken;
 
             /// <summary>
             /// Byte range for each part and the service's etag value
@@ -1340,12 +1380,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 }
             }
 
-            public MultiPartObjectCopyController(IAmazonS3 s3Client, string uploadId, long objectSize, CmdletContext context)
+            public MultiPartObjectCopyController(IAmazonS3 s3Client, string uploadId, long objectSize, CmdletContext context, CancellationToken cancellationToken)
             {
                 _s3Client = s3Client;
                 _uploadId = uploadId;
                 _context = context;
                 _objectSize = objectSize;
+                _cancellationToken = cancellationToken;
 
                 PartitionIntoParts();
             }
@@ -1463,25 +1504,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     request.ETagToMatch = new List<string> { _context.ETagToMatch };
                 if (_context.ETagToNotMatch != null)
                     request.ETagsToNotMatch = new List<string> { _context.ETagToNotMatch };
-                if (_context.UtcModifiedSinceDate.HasValue)
-                    request.ModifiedSinceDate = _context.UtcModifiedSinceDate.Value;
-                if (_context.UtcUnmodifiedSinceDate.HasValue)
-                    request.UnmodifiedSinceDate = _context.UtcUnmodifiedSinceDate.Value;
 #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
                 if (_context.ModifiedSinceDate.HasValue)
                 {
-                    if (_context.UtcModifiedSinceDate != null)
-                    {
-                        throw new ArgumentException("Parameters ModifiedSinceDate and UtcModifiedSinceDate are mutually exclusive.");
-                    }
                     request.ModifiedSinceDate = _context.ModifiedSinceDate.Value;
                 }
                 if (_context.UnmodifiedSinceDate.HasValue)
                 {
-                    if (_context.UtcUnmodifiedSinceDate != null)
-                    {
-                        throw new ArgumentException("Parameters UnmodifiedSinceDate and UtcUnmodifiedSinceDate are mutually exclusive.");
-                    }
                     request.UnmodifiedSinceDate = _context.UnmodifiedSinceDate.Value;
                 }
 #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -1493,6 +1522,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 request.ServerSideEncryptionCustomerMethod = _context.ServerSideEncryptionCustomerMethod;
                 request.ServerSideEncryptionCustomerProvidedKey = _context.ServerSideEncryptionCustomerProvidedKey;
                 request.ServerSideEncryptionCustomerProvidedKeyMD5 = _context.ServerSideEncryptionCustomerProvidedKeyMD5;
+
+                if (_context.RequestPayer != null)
+                {
+                    request.RequestPayer = _context.RequestPayer;
+                }
             }
 
             private void PartitionIntoParts()
@@ -1526,13 +1560,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             {
                 // not testing for name resolution error here, since it would have already failed
                 // in the init call
-#if DESKTOP
-                return client.CopyPart(request);
-#elif CORECLR
-                return client.CopyPartAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.CopyPartAsync(request, _cancellationToken).GetAwaiter().GetResult();
             }
         }
     }

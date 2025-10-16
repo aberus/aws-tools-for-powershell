@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,53 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.BedrockAgent;
 using Amazon.BedrockAgent.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AAB
 {
     /// <summary>
-    /// Creates an Action Group for existing Amazon Bedrock Agent
+    /// Creates an action group for an agent. An action group represents the actions that
+    /// an agent can carry out for the customer by defining the APIs that an agent can call
+    /// and the logic for calling them.
+    /// 
+    ///  
+    /// <para>
+    /// To allow your agent to request the user for additional information when trying to
+    /// complete a task, add an action group with the <c>parentActionGroupSignature</c> field
+    /// set to <c>AMAZON.UserInput</c>. 
+    /// </para><para>
+    /// To allow your agent to generate, run, and troubleshoot code when trying to complete
+    /// a task, add an action group with the <c>parentActionGroupSignature</c> field set to
+    /// <c>AMAZON.CodeInterpreter</c>. 
+    /// </para><para>
+    /// You must leave the <c>description</c>, <c>apiSchema</c>, and <c>actionGroupExecutor</c>
+    /// fields blank for this action group. During orchestration, if your agent determines
+    /// that it needs to invoke an API in an action group, but doesn't have enough information
+    /// to complete the API request, it will invoke this action group instead and return an
+    /// <a href="https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_Observation.html">Observation</a>
+    /// reprompting the user for more information.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "AABAgentActionGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.BedrockAgent.Model.AgentActionGroup")]
     [AWSCmdlet("Calls the Agents for Amazon Bedrock CreateAgentActionGroup API operation.", Operation = new[] {"CreateAgentActionGroup"}, SelectReturnType = typeof(Amazon.BedrockAgent.Model.CreateAgentActionGroupResponse))]
     [AWSCmdletOutput("Amazon.BedrockAgent.Model.AgentActionGroup or Amazon.BedrockAgent.Model.CreateAgentActionGroupResponse",
         "This cmdlet returns an Amazon.BedrockAgent.Model.AgentActionGroup object.",
-        "The service call response (type Amazon.BedrockAgent.Model.CreateAgentActionGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.BedrockAgent.Model.CreateAgentActionGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAABAgentActionGroupCmdlet : AmazonBedrockAgentClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionGroupName
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The name to give the action group.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -66,7 +85,9 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter ActionGroupState
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>Specifies whether the action group is available for the agent to invoke or not when
+        /// sending an <a href="https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent-runtime_InvokeAgent.html">InvokeAgent</a>
+        /// request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -77,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter AgentId
         /// <summary>
         /// <para>
-        /// <para>Id generated at the server side when an Agent is created</para>
+        /// <para>The unique identifier of the agent for which to create the action group.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -94,7 +115,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter AgentVersion
         /// <summary>
         /// <para>
-        /// <para>Draft Version of the Agent.</para>
+        /// <para>The version of the agent for which to create the action group.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,20 +129,48 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public System.String AgentVersion { get; set; }
         #endregion
         
+        #region Parameter ActionGroupExecutor_CustomControl
+        /// <summary>
+        /// <para>
+        /// <para>To return the action group invocation results directly in the <c>InvokeAgent</c> response,
+        /// specify <c>RETURN_CONTROL</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.BedrockAgent.CustomControlMethod")]
+        public Amazon.BedrockAgent.CustomControlMethod ActionGroupExecutor_CustomControl { get; set; }
+        #endregion
+        
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>A description of the action group.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter FunctionSchema_Function
+        /// <summary>
+        /// <para>
+        /// <para>A list of functions that each define an action in the action group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FunctionSchema_Functions")]
+        public Amazon.BedrockAgent.Model.Function[] FunctionSchema_Function { get; set; }
+        #endregion
+        
         #region Parameter ActionGroupExecutor_Lambda
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The Amazon Resource Name (ARN) of the Lambda function containing the business logic
+        /// that is carried out upon invoking the action.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,7 +180,19 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter ParentActionGroupSignature
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>Specify a built-in or computer use action for this action group. If you specify a
+        /// value, you must leave the <c>description</c>, <c>apiSchema</c>, and <c>actionGroupExecutor</c>
+        /// fields empty for this action group. </para><ul><li><para>To allow your agent to request the user for additional information when trying to
+        /// complete a task, set this field to <c>AMAZON.UserInput</c>. </para></li><li><para>To allow your agent to generate, run, and troubleshoot code when trying to complete
+        /// a task, set this field to <c>AMAZON.CodeInterpreter</c>.</para></li><li><para>To allow your agent to use an Anthropic computer use tool, specify one of the following
+        /// values. </para><important><para> Computer use is a new Anthropic Claude model capability (in beta) available with
+        /// Anthropic Claude 3.7 Sonnet and Claude 3.5 Sonnet v2 only. When operating computer
+        /// use functionality, we recommend taking additional security precautions, such as executing
+        /// computer actions in virtual environments with restricted data access and limited internet
+        /// connectivity. For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents-computer-use.html">Configure
+        /// an Amazon Bedrock Agent to complete tasks with computer use tools</a>. </para></important><ul><li><para><c>ANTHROPIC.Computer</c> - Gives the agent permission to use the mouse and keyboard
+        /// and take screenshots.</para></li><li><para><c>ANTHROPIC.TextEditor</c> - Gives the agent permission to view, create and edit
+        /// files.</para></li><li><para><c>ANTHROPIC.Bash</c> - Gives the agent permission to run commands in a bash shell.</para></li></ul></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,10 +200,30 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public Amazon.BedrockAgent.ActionGroupSignature ParentActionGroupSignature { get; set; }
         #endregion
         
+        #region Parameter ParentActionGroupSignatureParam
+        /// <summary>
+        /// <para>
+        /// <para>The configuration settings for a computer use action.</para><important><para> Computer use is a new Anthropic Claude model capability (in beta) available with
+        /// Anthropic Claude 3.7 Sonnet and Claude 3.5 Sonnet v2 only. For more information, see
+        /// <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents-computer-use.html">Configure
+        /// an Amazon Bedrock Agent to complete tasks with computer use tools</a>. </para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ParentActionGroupSignatureParams")]
+        public System.Collections.Hashtable ParentActionGroupSignatureParam { get; set; }
+        #endregion
+        
         #region Parameter ApiSchema_Payload
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The JSON or YAML-formatted payload defining the OpenAPI schema for the action group.
+        /// For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/agents-api-schema.html">Action
+        /// group OpenAPI schemas</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,7 +233,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter S3_S3BucketName
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The name of the S3 bucket.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +244,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter S3_S3ObjectKey
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The S3 object key for the S3 resource.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,7 +255,10 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>A unique, case-sensitive identifier to ensure that the API request completes no more
+        /// than one time. If this token matches a previous request, Amazon Bedrock ignores the
+        /// request, but does not return an error. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
+        /// idempotency</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,16 +276,6 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public string Select { get; set; } = "AgentActionGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AgentId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AgentId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AgentId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -212,9 +286,13 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AgentId), MyInvocation.BoundParameters);
@@ -228,21 +306,12 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.BedrockAgent.Model.CreateAgentActionGroupResponse, NewAABAgentActionGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AgentId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ActionGroupExecutor_CustomControl = this.ActionGroupExecutor_CustomControl;
             context.ActionGroupExecutor_Lambda = this.ActionGroupExecutor_Lambda;
             context.ActionGroupName = this.ActionGroupName;
             #if MODULAR
@@ -271,7 +340,19 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             context.S3_S3ObjectKey = this.S3_S3ObjectKey;
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
+            if (this.FunctionSchema_Function != null)
+            {
+                context.FunctionSchema_Function = new List<Amazon.BedrockAgent.Model.Function>(this.FunctionSchema_Function);
+            }
             context.ParentActionGroupSignature = this.ParentActionGroupSignature;
+            if (this.ParentActionGroupSignatureParam != null)
+            {
+                context.ParentActionGroupSignatureParam = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.ParentActionGroupSignatureParam.Keys)
+                {
+                    context.ParentActionGroupSignatureParam.Add((String)hashKey, (System.String)(this.ParentActionGroupSignatureParam[hashKey]));
+                }
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -292,6 +373,16 @@ namespace Amazon.PowerShell.Cmdlets.AAB
              // populate ActionGroupExecutor
             var requestActionGroupExecutorIsNull = true;
             request.ActionGroupExecutor = new Amazon.BedrockAgent.Model.ActionGroupExecutor();
+            Amazon.BedrockAgent.CustomControlMethod requestActionGroupExecutor_actionGroupExecutor_CustomControl = null;
+            if (cmdletContext.ActionGroupExecutor_CustomControl != null)
+            {
+                requestActionGroupExecutor_actionGroupExecutor_CustomControl = cmdletContext.ActionGroupExecutor_CustomControl;
+            }
+            if (requestActionGroupExecutor_actionGroupExecutor_CustomControl != null)
+            {
+                request.ActionGroupExecutor.CustomControl = requestActionGroupExecutor_actionGroupExecutor_CustomControl;
+                requestActionGroupExecutorIsNull = false;
+            }
             System.String requestActionGroupExecutor_actionGroupExecutor_Lambda = null;
             if (cmdletContext.ActionGroupExecutor_Lambda != null)
             {
@@ -385,9 +476,32 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             {
                 request.Description = cmdletContext.Description;
             }
+            
+             // populate FunctionSchema
+            var requestFunctionSchemaIsNull = true;
+            request.FunctionSchema = new Amazon.BedrockAgent.Model.FunctionSchema();
+            List<Amazon.BedrockAgent.Model.Function> requestFunctionSchema_functionSchema_Function = null;
+            if (cmdletContext.FunctionSchema_Function != null)
+            {
+                requestFunctionSchema_functionSchema_Function = cmdletContext.FunctionSchema_Function;
+            }
+            if (requestFunctionSchema_functionSchema_Function != null)
+            {
+                request.FunctionSchema.Functions = requestFunctionSchema_functionSchema_Function;
+                requestFunctionSchemaIsNull = false;
+            }
+             // determine if request.FunctionSchema should be set to null
+            if (requestFunctionSchemaIsNull)
+            {
+                request.FunctionSchema = null;
+            }
             if (cmdletContext.ParentActionGroupSignature != null)
             {
                 request.ParentActionGroupSignature = cmdletContext.ParentActionGroupSignature;
+            }
+            if (cmdletContext.ParentActionGroupSignatureParam != null)
+            {
+                request.ParentActionGroupSignatureParams = cmdletContext.ParentActionGroupSignatureParam;
             }
             
             CmdletOutput output;
@@ -427,13 +541,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Agents for Amazon Bedrock", "CreateAgentActionGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateAgentActionGroup(request);
-                #elif CORECLR
-                return client.CreateAgentActionGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAgentActionGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -450,6 +558,7 @@ namespace Amazon.PowerShell.Cmdlets.AAB
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.BedrockAgent.CustomControlMethod ActionGroupExecutor_CustomControl { get; set; }
             public System.String ActionGroupExecutor_Lambda { get; set; }
             public System.String ActionGroupName { get; set; }
             public Amazon.BedrockAgent.ActionGroupState ActionGroupState { get; set; }
@@ -460,7 +569,9 @@ namespace Amazon.PowerShell.Cmdlets.AAB
             public System.String S3_S3ObjectKey { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
+            public List<Amazon.BedrockAgent.Model.Function> FunctionSchema_Function { get; set; }
             public Amazon.BedrockAgent.ActionGroupSignature ParentActionGroupSignature { get; set; }
+            public Dictionary<System.String, System.String> ParentActionGroupSignatureParam { get; set; }
             public System.Func<Amazon.BedrockAgent.Model.CreateAgentActionGroupResponse, NewAABAgentActionGroupCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.AgentActionGroup;
         }

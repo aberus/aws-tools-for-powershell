@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaTailor;
 using Amazon.MediaTailor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMT
 {
     /// <summary>
@@ -34,22 +36,41 @@ namespace Amazon.PowerShell.Cmdlets.EMT
     [OutputType("Amazon.MediaTailor.Model.UpdateProgramResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaTailor UpdateProgram API operation.", Operation = new[] {"UpdateProgram"}, SelectReturnType = typeof(Amazon.MediaTailor.Model.UpdateProgramResponse))]
     [AWSCmdletOutput("Amazon.MediaTailor.Model.UpdateProgramResponse",
-        "This cmdlet returns an Amazon.MediaTailor.Model.UpdateProgramResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaTailor.Model.UpdateProgramResponse object containing multiple properties."
     )]
     public partial class UpdateEMTProgramCmdlet : AmazonMediaTailorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdBreak
         /// <summary>
         /// <para>
-        /// <para>The ad break configuration settings.</para>
+        /// <para>The ad break configuration settings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AdBreaks")]
         public Amazon.MediaTailor.Model.AdBreak[] AdBreak { get; set; }
+        #endregion
+        
+        #region Parameter AudienceMedia
+        /// <summary>
+        /// <para>
+        /// <para>The list of AudienceMedia defined in program.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.MediaTailor.Model.AudienceMedia[] AudienceMedia { get; set; }
         #endregion
         
         #region Parameter ChannelName
@@ -120,6 +141,18 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public System.Int64? Transition_ScheduledStartTimeMilli { get; set; }
         #endregion
         
+        #region Parameter ClipRange_StartOffsetMilli
+        /// <summary>
+        /// <para>
+        /// <para>The start offset of the clip range, in milliseconds. This offset truncates the start
+        /// at the number of milliseconds into the duration of the VOD source.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ScheduleConfiguration_ClipRange_StartOffsetMillis")]
+        public System.Int64? ClipRange_StartOffsetMilli { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -141,9 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -166,6 +203,10 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             {
                 context.AdBreak = new List<Amazon.MediaTailor.Model.AdBreak>(this.AdBreak);
             }
+            if (this.AudienceMedia != null)
+            {
+                context.AudienceMedia = new List<Amazon.MediaTailor.Model.AudienceMedia>(this.AudienceMedia);
+            }
             context.ChannelName = this.ChannelName;
             #if MODULAR
             if (this.ChannelName == null && ParameterWasBound(nameof(this.ChannelName)))
@@ -181,6 +222,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             }
             #endif
             context.ClipRange_EndOffsetMilli = this.ClipRange_EndOffsetMilli;
+            context.ClipRange_StartOffsetMilli = this.ClipRange_StartOffsetMilli;
             context.Transition_DurationMilli = this.Transition_DurationMilli;
             context.Transition_ScheduledStartTimeMilli = this.Transition_ScheduledStartTimeMilli;
             
@@ -202,6 +244,10 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             if (cmdletContext.AdBreak != null)
             {
                 request.AdBreaks = cmdletContext.AdBreak;
+            }
+            if (cmdletContext.AudienceMedia != null)
+            {
+                request.AudienceMedia = cmdletContext.AudienceMedia;
             }
             if (cmdletContext.ChannelName != null)
             {
@@ -228,6 +274,16 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             if (requestScheduleConfiguration_scheduleConfiguration_ClipRange_clipRange_EndOffsetMilli != null)
             {
                 requestScheduleConfiguration_scheduleConfiguration_ClipRange.EndOffsetMillis = requestScheduleConfiguration_scheduleConfiguration_ClipRange_clipRange_EndOffsetMilli.Value;
+                requestScheduleConfiguration_scheduleConfiguration_ClipRangeIsNull = false;
+            }
+            System.Int64? requestScheduleConfiguration_scheduleConfiguration_ClipRange_clipRange_StartOffsetMilli = null;
+            if (cmdletContext.ClipRange_StartOffsetMilli != null)
+            {
+                requestScheduleConfiguration_scheduleConfiguration_ClipRange_clipRange_StartOffsetMilli = cmdletContext.ClipRange_StartOffsetMilli.Value;
+            }
+            if (requestScheduleConfiguration_scheduleConfiguration_ClipRange_clipRange_StartOffsetMilli != null)
+            {
+                requestScheduleConfiguration_scheduleConfiguration_ClipRange.StartOffsetMillis = requestScheduleConfiguration_scheduleConfiguration_ClipRange_clipRange_StartOffsetMilli.Value;
                 requestScheduleConfiguration_scheduleConfiguration_ClipRangeIsNull = false;
             }
              // determine if requestScheduleConfiguration_scheduleConfiguration_ClipRange should be set to null
@@ -318,13 +374,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaTailor", "UpdateProgram");
             try
             {
-                #if DESKTOP
-                return client.UpdateProgram(request);
-                #elif CORECLR
-                return client.UpdateProgramAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateProgramAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -342,9 +392,11 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         internal partial class CmdletContext : ExecutorContext
         {
             public List<Amazon.MediaTailor.Model.AdBreak> AdBreak { get; set; }
+            public List<Amazon.MediaTailor.Model.AudienceMedia> AudienceMedia { get; set; }
             public System.String ChannelName { get; set; }
             public System.String ProgramName { get; set; }
             public System.Int64? ClipRange_EndOffsetMilli { get; set; }
+            public System.Int64? ClipRange_StartOffsetMilli { get; set; }
             public System.Int64? Transition_DurationMilli { get; set; }
             public System.Int64? Transition_ScheduledStartTimeMilli { get; set; }
             public System.Func<Amazon.MediaTailor.Model.UpdateProgramResponse, UpdateEMTProgramCmdlet, object> Select { get; set; } =

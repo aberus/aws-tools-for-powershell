@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Bedrock;
 using Amazon.Bedrock.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BDR
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
     [AWSCmdlet("Calls the Amazon Bedrock PutModelInvocationLoggingConfiguration API operation.", Operation = new[] {"PutModelInvocationLoggingConfiguration"}, SelectReturnType = typeof(Amazon.Bedrock.Model.PutModelInvocationLoggingConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.Bedrock.Model.PutModelInvocationLoggingConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Bedrock.Model.PutModelInvocationLoggingConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Bedrock.Model.PutModelInvocationLoggingConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteBDRModelInvocationLoggingConfigurationCmdlet : AmazonBedrockClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LargeDataDeliveryS3Config_BucketName
         /// <summary>
@@ -120,7 +123,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter CloudWatchConfig_RoleArn
         /// <summary>
         /// <para>
-        /// <para>The role ARN.</para>
+        /// <para>The role Amazon Resource Name (ARN).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,6 +139,16 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? LoggingConfig_TextDataDeliveryEnabled { get; set; }
+        #endregion
+        
+        #region Parameter LoggingConfig_VideoDataDeliveryEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Set to include video data in the log delivery.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? LoggingConfig_VideoDataDeliveryEnabled { get; set; }
         #endregion
         
         #region Parameter Select
@@ -158,9 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -188,6 +205,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             context.S3Config_BucketName = this.S3Config_BucketName;
             context.S3Config_KeyPrefix = this.S3Config_KeyPrefix;
             context.LoggingConfig_TextDataDeliveryEnabled = this.LoggingConfig_TextDataDeliveryEnabled;
+            context.LoggingConfig_VideoDataDeliveryEnabled = this.LoggingConfig_VideoDataDeliveryEnabled;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -236,6 +254,16 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             if (requestLoggingConfig_loggingConfig_TextDataDeliveryEnabled != null)
             {
                 request.LoggingConfig.TextDataDeliveryEnabled = requestLoggingConfig_loggingConfig_TextDataDeliveryEnabled.Value;
+                requestLoggingConfigIsNull = false;
+            }
+            System.Boolean? requestLoggingConfig_loggingConfig_VideoDataDeliveryEnabled = null;
+            if (cmdletContext.LoggingConfig_VideoDataDeliveryEnabled != null)
+            {
+                requestLoggingConfig_loggingConfig_VideoDataDeliveryEnabled = cmdletContext.LoggingConfig_VideoDataDeliveryEnabled.Value;
+            }
+            if (requestLoggingConfig_loggingConfig_VideoDataDeliveryEnabled != null)
+            {
+                request.LoggingConfig.VideoDataDeliveryEnabled = requestLoggingConfig_loggingConfig_VideoDataDeliveryEnabled.Value;
                 requestLoggingConfigIsNull = false;
             }
             Amazon.Bedrock.Model.S3Config requestLoggingConfig_loggingConfig_S3Config = null;
@@ -386,13 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Bedrock", "PutModelInvocationLoggingConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutModelInvocationLoggingConfiguration(request);
-                #elif CORECLR
-                return client.PutModelInvocationLoggingConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutModelInvocationLoggingConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -418,6 +440,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             public System.String S3Config_BucketName { get; set; }
             public System.String S3Config_KeyPrefix { get; set; }
             public System.Boolean? LoggingConfig_TextDataDeliveryEnabled { get; set; }
+            public System.Boolean? LoggingConfig_VideoDataDeliveryEnabled { get; set; }
             public System.Func<Amazon.Bedrock.Model.PutModelInvocationLoggingConfigurationResponse, WriteBDRModelInvocationLoggingConfigurationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

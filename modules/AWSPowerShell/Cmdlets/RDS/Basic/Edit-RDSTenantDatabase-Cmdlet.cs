@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -37,16 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyTenantDatabase API operation.", Operation = new[] {"ModifyTenantDatabase"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyTenantDatabaseResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.TenantDatabase or Amazon.RDS.Model.ModifyTenantDatabaseResponse",
         "This cmdlet returns an Amazon.RDS.Model.TenantDatabase object.",
-        "The service call response (type Amazon.RDS.Model.ModifyTenantDatabaseResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyTenantDatabaseResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSTenantDatabaseCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DBInstanceIdentifier
         /// <summary>
@@ -66,6 +65,26 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.String DBInstanceIdentifier { get; set; }
         #endregion
         
+        #region Parameter ManageMasterUserPassword
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to manage the master user password with Amazon Web Services Secrets
+        /// Manager.</para><para>If the tenant database doesn't manage the master user password with Amazon Web Services
+        /// Secrets Manager, you can turn on this management. In this case, you can't specify
+        /// <c>MasterUserPassword</c>.</para><para>If the tenant database already manages the master user password with Amazon Web Services
+        /// Secrets Manager, and you specify that the master user password is not managed with
+        /// Amazon Web Services Secrets Manager, then you must specify <c>MasterUserPassword</c>.
+        /// In this case, Amazon RDS deletes the secret and uses the new password for the master
+        /// user specified by <c>MasterUserPassword</c>.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html">Password
+        /// management with Amazon Web Services Secrets Manager</a> in the <i>Amazon RDS User
+        /// Guide.</i></para><para>Constraints:</para><ul><li><para>Can't manage the master user password with Amazon Web Services Secrets Manager if
+        /// <c>MasterUserPassword</c> is specified.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ManageMasterUserPassword { get; set; }
+        #endregion
+        
         #region Parameter MasterUserPassword
         /// <summary>
         /// <para>
@@ -79,6 +98,25 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.String MasterUserPassword { get; set; }
         #endregion
         
+        #region Parameter MasterUserSecretKmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Web Services KMS key identifier to encrypt a secret that is automatically
+        /// generated and managed in Amazon Web Services Secrets Manager.</para><para>This setting is valid only if both of the following conditions are met:</para><ul><li><para>The tenant database doesn't manage the master user password in Amazon Web Services
+        /// Secrets Manager.</para><para>If the tenant database already manages the master user password in Amazon Web Services
+        /// Secrets Manager, you can't change the KMS key used to encrypt the secret.</para></li><li><para>You're turning on <c>ManageMasterUserPassword</c> to manage the master user password
+        /// in Amazon Web Services Secrets Manager.</para><para>If you're turning on <c>ManageMasterUserPassword</c> and don't specify <c>MasterUserSecretKmsKeyId</c>,
+        /// then the <c>aws/secretsmanager</c> KMS key is used to encrypt the secret. If the secret
+        /// is in a different Amazon Web Services account, then you can't use the <c>aws/secretsmanager</c>
+        /// KMS key to encrypt the secret, and you must use a self-managed KMS key.</para></li></ul><para>The Amazon Web Services KMS key identifier is any of the following:</para><ul><li><para>Key ARN</para></li><li><para>Key ID</para></li><li><para>Alias ARN</para></li><li><para>Alias name for the KMS key</para></li></ul><para>To use a KMS key in a different Amazon Web Services account, specify the key ARN or
+        /// alias ARN.</para><para>A default KMS key exists for your Amazon Web Services account. Your Amazon Web Services
+        /// account has a different default KMS key for each Amazon Web Services Region.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MasterUserSecretKmsKeyId { get; set; }
+        #endregion
+        
         #region Parameter NewTenantDBName
         /// <summary>
         /// <para>
@@ -88,6 +126,21 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NewTenantDBName { get; set; }
+        #endregion
+        
+        #region Parameter RotateMasterUserPassword
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to rotate the secret managed by Amazon Web Services Secrets Manager
+        /// for the master user password.</para><para>This setting is valid only if the master user password is managed by RDS in Amazon
+        /// Web Services Secrets Manager for the DB instance. The secret value contains the updated
+        /// password.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html">Password
+        /// management with Amazon Web Services Secrets Manager</a> in the <i>Amazon RDS User
+        /// Guide.</i></para><para>Constraints:</para><ul><li><para>You must apply the change immediately when rotating the master user password.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? RotateMasterUserPassword { get; set; }
         #endregion
         
         #region Parameter TenantDBName
@@ -119,16 +172,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "TenantDatabase";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBInstanceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -139,9 +182,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBInstanceIdentifier), MyInvocation.BoundParameters);
@@ -155,21 +202,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyTenantDatabaseResponse, EditRDSTenantDatabaseCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBInstanceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DBInstanceIdentifier = this.DBInstanceIdentifier;
             #if MODULAR
             if (this.DBInstanceIdentifier == null && ParameterWasBound(nameof(this.DBInstanceIdentifier)))
@@ -177,8 +214,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 WriteWarning("You are passing $null as a value for parameter DBInstanceIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ManageMasterUserPassword = this.ManageMasterUserPassword;
             context.MasterUserPassword = this.MasterUserPassword;
+            context.MasterUserSecretKmsKeyId = this.MasterUserSecretKmsKeyId;
             context.NewTenantDBName = this.NewTenantDBName;
+            context.RotateMasterUserPassword = this.RotateMasterUserPassword;
             context.TenantDBName = this.TenantDBName;
             #if MODULAR
             if (this.TenantDBName == null && ParameterWasBound(nameof(this.TenantDBName)))
@@ -206,13 +246,25 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.DBInstanceIdentifier = cmdletContext.DBInstanceIdentifier;
             }
+            if (cmdletContext.ManageMasterUserPassword != null)
+            {
+                request.ManageMasterUserPassword = cmdletContext.ManageMasterUserPassword.Value;
+            }
             if (cmdletContext.MasterUserPassword != null)
             {
                 request.MasterUserPassword = cmdletContext.MasterUserPassword;
             }
+            if (cmdletContext.MasterUserSecretKmsKeyId != null)
+            {
+                request.MasterUserSecretKmsKeyId = cmdletContext.MasterUserSecretKmsKeyId;
+            }
             if (cmdletContext.NewTenantDBName != null)
             {
                 request.NewTenantDBName = cmdletContext.NewTenantDBName;
+            }
+            if (cmdletContext.RotateMasterUserPassword != null)
+            {
+                request.RotateMasterUserPassword = cmdletContext.RotateMasterUserPassword.Value;
             }
             if (cmdletContext.TenantDBName != null)
             {
@@ -256,13 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyTenantDatabase");
             try
             {
-                #if DESKTOP
-                return client.ModifyTenantDatabase(request);
-                #elif CORECLR
-                return client.ModifyTenantDatabaseAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyTenantDatabaseAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -280,8 +326,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String DBInstanceIdentifier { get; set; }
+            public System.Boolean? ManageMasterUserPassword { get; set; }
             public System.String MasterUserPassword { get; set; }
+            public System.String MasterUserSecretKmsKeyId { get; set; }
             public System.String NewTenantDBName { get; set; }
+            public System.Boolean? RotateMasterUserPassword { get; set; }
             public System.String TenantDBName { get; set; }
             public System.Func<Amazon.RDS.Model.ModifyTenantDatabaseResponse, EditRDSTenantDatabaseCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.TenantDatabase;

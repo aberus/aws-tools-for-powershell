@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -40,24 +42,25 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [OutputType("Amazon.SimpleSystemsManagement.Model.UpdatePatchBaselineResponse")]
     [AWSCmdlet("Calls the AWS Systems Manager UpdatePatchBaseline API operation.", Operation = new[] {"UpdatePatchBaseline"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.UpdatePatchBaselineResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.UpdatePatchBaselineResponse",
-        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.UpdatePatchBaselineResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.UpdatePatchBaselineResponse object containing multiple properties."
     )]
     public partial class UpdateSSMPatchBaselineCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApprovedPatch
         /// <summary>
         /// <para>
         /// <para>A list of explicitly approved patches for the baseline.</para><para>For information about accepted formats for lists of approved patches and rejected
-        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">About
-        /// package name formats for approved and rejected patch lists</a> in the <i>Amazon Web
-        /// Services Systems Manager User Guide</i>.</para>
+        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">Package
+        /// name formats for approved and rejected patch lists</a> in the <i>Amazon Web Services
+        /// Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,6 +89,23 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? ApprovedPatchesEnableNonSecurity { get; set; }
+        #endregion
+        
+        #region Parameter AvailableSecurityUpdatesComplianceStatus
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the status to be assigned to security patches that are available but not
+        /// approved because they don't meet the installation criteria specified in the patch
+        /// baseline.</para><para>Example scenario: Security patches that you might want installed can be skipped if
+        /// you have specified a long period to wait after a patch is released before installation.
+        /// If an update to the patch is released during your specified waiting period, the waiting
+        /// period for installing the patch starts over. If the waiting period is too long, multiple
+        /// versions of the patch could be released but never installed.</para><para>Supported for Windows Server managed nodes only.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SimpleSystemsManagement.PatchComplianceStatus")]
+        public Amazon.SimpleSystemsManagement.PatchComplianceStatus AvailableSecurityUpdatesComplianceStatus { get; set; }
         #endregion
         
         #region Parameter BaselineId
@@ -128,7 +148,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter GlobalFilters_PatchFilter
         /// <summary>
         /// <para>
-        /// <para>The set of patch filters that make up the group.</para>
+        /// <para>The set of patch filters that make up the group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter ApprovalRules_PatchRule
         /// <summary>
         /// <para>
-        /// <para>The rules that make up the rule group.</para>
+        /// <para>The rules that make up the rule group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,9 +179,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>A list of explicitly rejected patches for the baseline.</para><para>For information about accepted formats for lists of approved patches and rejected
-        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">About
-        /// package name formats for approved and rejected patch lists</a> in the <i>Amazon Web
-        /// Services Systems Manager User Guide</i>.</para>
+        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">Package
+        /// name formats for approved and rejected patch lists</a> in the <i>Amazon Web Services
+        /// Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -165,14 +197,19 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>The action for Patch Manager to take on patches included in the <c>RejectedPackages</c>
-        /// list.</para><ul><li><para><b><c>ALLOW_AS_DEPENDENCY</c></b>: A package in the <c>Rejected</c> patches list
-        /// is installed only if it is a dependency of another package. It is considered compliant
-        /// with the patch baseline, and its status is reported as <c>InstalledOther</c>. This
-        /// is the default action if no option is specified.</para></li><li><para><b><c>BLOCK</c></b>: Packages in the <c>RejectedPatches</c> list, and packages
-        /// that include them as dependencies, aren't installed under any circumstances. If a
-        /// package was installed before it was added to the <c>Rejected</c> patches list, it
-        /// is considered non-compliant with the patch baseline, and its status is reported as
-        /// <c>InstalledRejected</c>.</para></li></ul>
+        /// list.</para><dl><dt>ALLOW_AS_DEPENDENCY</dt><dd><para><b>Linux and macOS</b>: A package in the rejected patches list is installed only
+        /// if it is a dependency of another package. It is considered compliant with the patch
+        /// baseline, and its status is reported as <c>INSTALLED_OTHER</c>. This is the default
+        /// action if no option is specified.</para><para><b>Windows Server</b>: Windows Server doesn't support the concept of package dependencies.
+        /// If a package in the rejected patches list and already installed on the node, its status
+        /// is reported as <c>INSTALLED_OTHER</c>. Any package not already installed on the node
+        /// is skipped. This is the default action if no option is specified.</para></dd><dt>BLOCK</dt><dd><para><b>All OSs</b>: Packages in the rejected patches list, and packages that include
+        /// them as dependencies, aren't installed by Patch Manager under any circumstances. </para><para>State value assignment for patch compliance:</para><ul><li><para>If a package was installed before it was added to the rejected patches list, or is
+        /// installed outside of Patch Manager afterward, it's considered noncompliant with the
+        /// patch baseline and its status is reported as <c>INSTALLED_REJECTED</c>.</para></li><li><para>If an update attempts to install a dependency package that is now rejected by the
+        /// baseline, when previous versions of the package were not rejected, the package being
+        /// updated is reported as <c>MISSING</c> for <c>SCAN</c> operations and as <c>FAILED</c>
+        /// for <c>INSTALL</c> operations.</para></li></ul></dd></dl>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,7 +233,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>Information about the patches to use to update the managed nodes, including target
-        /// operating systems and source repositories. Applies to Linux managed nodes only.</para>
+        /// operating systems and source repositories. Applies to Linux managed nodes only.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,16 +256,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BaselineId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BaselineId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BaselineId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -235,9 +266,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BaselineId), MyInvocation.BoundParameters);
@@ -251,21 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.UpdatePatchBaselineResponse, UpdateSSMPatchBaselineCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BaselineId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ApprovalRules_PatchRule != null)
             {
                 context.ApprovalRules_PatchRule = new List<Amazon.SimpleSystemsManagement.Model.PatchRule>(this.ApprovalRules_PatchRule);
@@ -276,6 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             }
             context.ApprovedPatchesComplianceLevel = this.ApprovedPatchesComplianceLevel;
             context.ApprovedPatchesEnableNonSecurity = this.ApprovedPatchesEnableNonSecurity;
+            context.AvailableSecurityUpdatesComplianceStatus = this.AvailableSecurityUpdatesComplianceStatus;
             context.BaselineId = this.BaselineId;
             #if MODULAR
             if (this.BaselineId == null && ParameterWasBound(nameof(this.BaselineId)))
@@ -345,6 +371,10 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             if (cmdletContext.ApprovedPatchesEnableNonSecurity != null)
             {
                 request.ApprovedPatchesEnableNonSecurity = cmdletContext.ApprovedPatchesEnableNonSecurity.Value;
+            }
+            if (cmdletContext.AvailableSecurityUpdatesComplianceStatus != null)
+            {
+                request.AvailableSecurityUpdatesComplianceStatus = cmdletContext.AvailableSecurityUpdatesComplianceStatus;
             }
             if (cmdletContext.BaselineId != null)
             {
@@ -431,13 +461,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "UpdatePatchBaseline");
             try
             {
-                #if DESKTOP
-                return client.UpdatePatchBaseline(request);
-                #elif CORECLR
-                return client.UpdatePatchBaselineAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePatchBaselineAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -458,6 +482,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             public List<System.String> ApprovedPatch { get; set; }
             public Amazon.SimpleSystemsManagement.PatchComplianceLevel ApprovedPatchesComplianceLevel { get; set; }
             public System.Boolean? ApprovedPatchesEnableNonSecurity { get; set; }
+            public Amazon.SimpleSystemsManagement.PatchComplianceStatus AvailableSecurityUpdatesComplianceStatus { get; set; }
             public System.String BaselineId { get; set; }
             public System.String Description { get; set; }
             public List<Amazon.SimpleSystemsManagement.Model.PatchFilter> GlobalFilters_PatchFilter { get; set; }

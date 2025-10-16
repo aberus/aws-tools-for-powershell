@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,48 +22,57 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
-    /// Specifies the configuration data for a registered CloudFormation extension, in the
-    /// given account and Region.
+    /// Specifies the configuration data for a CloudFormation extension, such as a resource
+    /// or Hook, in the given account and Region.
     /// 
     ///  
     /// <para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-set-configuration.html">Edit
+    /// configuration data for extensions in your account</a> in the <i>CloudFormation User
+    /// Guide</i>.
+    /// </para><para>
     /// To view the current configuration data for an extension, refer to the <c>ConfigurationSchema</c>
     /// element of <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DescribeType.html">DescribeType</a>.
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry-register.html#registry-set-configuration">Configuring
-    /// extensions at the account level</a> in the <i>CloudFormation User Guide</i>.
     /// </para><important><para>
     /// It's strongly recommended that you use dynamic references to restrict sensitive configuration
-    /// definitions, such as third-party credentials. For more details on dynamic references,
-    /// see <a href="https://docs.aws.amazon.com/">Using dynamic references to specify template
-    /// values</a> in the <i>CloudFormation User Guide</i>.
-    /// </para></important>
+    /// definitions, such as third-party credentials. For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/dynamic-references.html">Specify
+    /// values stored in other services using dynamic references</a> in the <i>CloudFormation
+    /// User Guide</i>.
+    /// </para></important><para>
+    /// For more information about setting the configuration data for resource types, see
+    /// <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-model.html#resource-type-howto-configuration">Defining
+    /// the account-level configuration of an extension</a> in the <i>CloudFormation Command
+    /// Line Interface (CLI) User Guide</i>. For more information about setting the configuration
+    /// data for Hooks, see the <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/hooks-userguide/what-is-cloudformation-hooks.html">CloudFormation
+    /// Hooks User Guide</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("Set", "CFNTypeConfiguration")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS CloudFormation SetTypeConfiguration API operation.", Operation = new[] {"SetTypeConfiguration"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.SetTypeConfigurationResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudFormation.Model.SetTypeConfigurationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudFormation.Model.SetTypeConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.SetTypeConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetCFNTypeConfigurationCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Configuration
         /// <summary>
         /// <para>
-        /// <para>The configuration data for the extension, in this account and Region.</para><para>The configuration data must be formatted as JSON, and validate against the schema
-        /// returned in the <c>ConfigurationSchema</c> response element of <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DescribeType.html">DescribeType</a>.
-        /// For more information, see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-model.html#resource-type-howto-configuration">Defining
-        /// account-level configuration data for an extension</a> in the <i>CloudFormation CLI
-        /// User Guide</i>.</para>
+        /// <para>The configuration data for the extension in this account and Region.</para><para>The configuration data must be formatted as JSON and validate against the extension's
+        /// schema returned in the <c>Schema</c> response element of <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_DescribeType.html">DescribeType</a>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,10 +111,10 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TypeArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) for the extension, in this account and Region.</para><para>For public extensions, this will be the ARN assigned when you <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_ActivateType.html">activate
-        /// the type</a> in this account and Region. For private extensions, this will be the
-        /// ARN assigned when you <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_RegisterType.html">register
-        /// the type</a> in this account and Region.</para><para>Do not include the extension versions suffix at the end of the ARN. You can set the
+        /// <para>The Amazon Resource Name (ARN) for the extension in this account and Region.</para><para>For public extensions, this will be the ARN assigned when you call the <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_ActivateType.html">ActivateType</a>
+        /// API operation in this account and Region. For private extensions, this will be the
+        /// ARN assigned when you call the <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_RegisterType.html">RegisterType</a>
+        /// API operation in this account and Region.</para><para>Do not include the extension versions suffix at the end of the ARN. You can set the
         /// configuration for an extension, but not for a specific extension version.</para>
         /// </para>
         /// </summary>
@@ -134,9 +143,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "ConfigurationArn";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -234,13 +247,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "SetTypeConfiguration");
             try
             {
-                #if DESKTOP
-                return client.SetTypeConfiguration(request);
-                #elif CORECLR
-                return client.SetTypeConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetTypeConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

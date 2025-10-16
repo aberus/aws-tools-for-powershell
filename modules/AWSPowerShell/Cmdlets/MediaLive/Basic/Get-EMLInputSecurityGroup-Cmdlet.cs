@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaLive;
 using Amazon.MediaLive.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EML
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
     [OutputType("Amazon.MediaLive.Model.DescribeInputSecurityGroupResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaLive DescribeInputSecurityGroup API operation.", Operation = new[] {"DescribeInputSecurityGroup"}, SelectReturnType = typeof(Amazon.MediaLive.Model.DescribeInputSecurityGroupResponse))]
     [AWSCmdletOutput("Amazon.MediaLive.Model.DescribeInputSecurityGroupResponse",
-        "This cmdlet returns an Amazon.MediaLive.Model.DescribeInputSecurityGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaLive.Model.DescribeInputSecurityGroupResponse object containing multiple properties."
     )]
     public partial class GetEMLInputSecurityGroupCmdlet : AmazonMediaLiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InputSecurityGroupId
         /// <summary>
@@ -70,19 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InputSecurityGroupId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InputSecurityGroupId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InputSecurityGroupId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaLive.Model.DescribeInputSecurityGroupResponse, GetEMLInputSecurityGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InputSecurityGroupId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.InputSecurityGroupId = this.InputSecurityGroupId;
             #if MODULAR
             if (this.InputSecurityGroupId == null && ParameterWasBound(nameof(this.InputSecurityGroupId)))
@@ -170,13 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaLive", "DescribeInputSecurityGroup");
             try
             {
-                #if DESKTOP
-                return client.DescribeInputSecurityGroup(request);
-                #elif CORECLR
-                return client.DescribeInputSecurityGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeInputSecurityGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service UpdateWorkteam API operation.", Operation = new[] {"UpdateWorkteam"}, SelectReturnType = typeof(Amazon.SageMaker.Model.UpdateWorkteamResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.Workteam or Amazon.SageMaker.Model.UpdateWorkteamResponse",
         "This cmdlet returns an Amazon.SageMaker.Model.Workteam object.",
-        "The service call response (type Amazon.SageMaker.Model.UpdateWorkteamResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.UpdateWorkteamResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateSMWorkteamCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -70,7 +73,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// groups in <c>Groups</c>. Be aware that user groups that are already in the work team
         /// must also be listed in <c>Groups</c> when you make this request to remain on the work
         /// team. If you do not include these user groups, they will no longer be associated with
-        /// the work team you update. </para>
+        /// the work team you update. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,6 +93,39 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NotificationConfiguration_NotificationTopicArn { get; set; }
+        #endregion
+        
+        #region Parameter IamPolicyConstraints_SourceIp
+        /// <summary>
+        /// <para>
+        /// <para>When <c>SourceIp</c> is <c>Enabled</c> the worker's IP address when a task is rendered
+        /// in the worker portal is added to the IAM policy as a <c>Condition</c> used to generate
+        /// the Amazon S3 presigned URL. This IP address is checked by Amazon S3 and must match
+        /// in order for the Amazon S3 resource to be rendered in the worker portal.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WorkerAccessConfiguration_S3Presign_IamPolicyConstraints_SourceIp")]
+        [AWSConstantClassSource("Amazon.SageMaker.EnabledOrDisabled")]
+        public Amazon.SageMaker.EnabledOrDisabled IamPolicyConstraints_SourceIp { get; set; }
+        #endregion
+        
+        #region Parameter IamPolicyConstraints_VpcSourceIp
+        /// <summary>
+        /// <para>
+        /// <para>When <c>VpcSourceIp</c> is <c>Enabled</c> the worker's IP address when a task is rendered
+        /// in private worker portal inside the VPC is added to the IAM policy as a <c>Condition</c>
+        /// used to generate the Amazon S3 presigned URL. To render the task successfully Amazon
+        /// S3 checks that the presigned URL is being accessed over an Amazon S3 VPC Endpoint,
+        /// and that the worker's IP address matches the IP address in the IAM policy. To learn
+        /// more about configuring private worker portal, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/samurai-vpc-worker-portal.html">Use
+        /// Amazon VPC mode from a private worker portal</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WorkerAccessConfiguration_S3Presign_IamPolicyConstraints_VpcSourceIp")]
+        [AWSConstantClassSource("Amazon.SageMaker.EnabledOrDisabled")]
+        public Amazon.SageMaker.EnabledOrDisabled IamPolicyConstraints_VpcSourceIp { get; set; }
         #endregion
         
         #region Parameter WorkteamName
@@ -116,16 +156,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "Workteam";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkteamName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkteamName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkteamName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.WorkteamName), MyInvocation.BoundParameters);
@@ -152,27 +186,19 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.UpdateWorkteamResponse, UpdateSMWorkteamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkteamName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             if (this.MemberDefinition != null)
             {
                 context.MemberDefinition = new List<Amazon.SageMaker.Model.MemberDefinition>(this.MemberDefinition);
             }
             context.NotificationConfiguration_NotificationTopicArn = this.NotificationConfiguration_NotificationTopicArn;
+            context.IamPolicyConstraints_SourceIp = this.IamPolicyConstraints_SourceIp;
+            context.IamPolicyConstraints_VpcSourceIp = this.IamPolicyConstraints_VpcSourceIp;
             context.WorkteamName = this.WorkteamName;
             #if MODULAR
             if (this.WorkteamName == null && ParameterWasBound(nameof(this.WorkteamName)))
@@ -223,6 +249,65 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 request.NotificationConfiguration = null;
             }
+            
+             // populate WorkerAccessConfiguration
+            var requestWorkerAccessConfigurationIsNull = true;
+            request.WorkerAccessConfiguration = new Amazon.SageMaker.Model.WorkerAccessConfiguration();
+            Amazon.SageMaker.Model.S3Presign requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign = null;
+            
+             // populate S3Presign
+            var requestWorkerAccessConfiguration_workerAccessConfiguration_S3PresignIsNull = true;
+            requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign = new Amazon.SageMaker.Model.S3Presign();
+            Amazon.SageMaker.Model.IamPolicyConstraints requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints = null;
+            
+             // populate IamPolicyConstraints
+            var requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraintsIsNull = true;
+            requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints = new Amazon.SageMaker.Model.IamPolicyConstraints();
+            Amazon.SageMaker.EnabledOrDisabled requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_SourceIp = null;
+            if (cmdletContext.IamPolicyConstraints_SourceIp != null)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_SourceIp = cmdletContext.IamPolicyConstraints_SourceIp;
+            }
+            if (requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_SourceIp != null)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints.SourceIp = requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_SourceIp;
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraintsIsNull = false;
+            }
+            Amazon.SageMaker.EnabledOrDisabled requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_VpcSourceIp = null;
+            if (cmdletContext.IamPolicyConstraints_VpcSourceIp != null)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_VpcSourceIp = cmdletContext.IamPolicyConstraints_VpcSourceIp;
+            }
+            if (requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_VpcSourceIp != null)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints.VpcSourceIp = requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints_iamPolicyConstraints_VpcSourceIp;
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraintsIsNull = false;
+            }
+             // determine if requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints should be set to null
+            if (requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraintsIsNull)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints = null;
+            }
+            if (requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints != null)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign.IamPolicyConstraints = requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign_workerAccessConfiguration_S3Presign_IamPolicyConstraints;
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3PresignIsNull = false;
+            }
+             // determine if requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign should be set to null
+            if (requestWorkerAccessConfiguration_workerAccessConfiguration_S3PresignIsNull)
+            {
+                requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign = null;
+            }
+            if (requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign != null)
+            {
+                request.WorkerAccessConfiguration.S3Presign = requestWorkerAccessConfiguration_workerAccessConfiguration_S3Presign;
+                requestWorkerAccessConfigurationIsNull = false;
+            }
+             // determine if request.WorkerAccessConfiguration should be set to null
+            if (requestWorkerAccessConfigurationIsNull)
+            {
+                request.WorkerAccessConfiguration = null;
+            }
             if (cmdletContext.WorkteamName != null)
             {
                 request.WorkteamName = cmdletContext.WorkteamName;
@@ -265,13 +350,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "UpdateWorkteam");
             try
             {
-                #if DESKTOP
-                return client.UpdateWorkteam(request);
-                #elif CORECLR
-                return client.UpdateWorkteamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateWorkteamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -291,6 +370,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String Description { get; set; }
             public List<Amazon.SageMaker.Model.MemberDefinition> MemberDefinition { get; set; }
             public System.String NotificationConfiguration_NotificationTopicArn { get; set; }
+            public Amazon.SageMaker.EnabledOrDisabled IamPolicyConstraints_SourceIp { get; set; }
+            public Amazon.SageMaker.EnabledOrDisabled IamPolicyConstraints_VpcSourceIp { get; set; }
             public System.String WorkteamName { get; set; }
             public System.Func<Amazon.SageMaker.Model.UpdateWorkteamResponse, UpdateSMWorkteamCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Workteam;

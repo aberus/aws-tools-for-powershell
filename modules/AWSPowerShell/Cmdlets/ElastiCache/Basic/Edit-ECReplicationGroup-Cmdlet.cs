@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,21 +22,23 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
-    /// Modifies the settings for a replication group. This is limited to Redis 7 and newer.
+    /// Modifies the settings for a replication group. This is limited to Valkey and Redis
+    /// OSS 7 and above.
     /// 
-    ///  <ul><li><para><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/scaling-redis-cluster-mode-enabled.html">Scaling
-    /// for Amazon ElastiCache for Redis (cluster mode enabled)</a> in the ElastiCache User
-    /// Guide
+    ///  <ul><li><para><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/scaling-redis-cluster-mode-enabled.html">Scaling
+    /// for Valkey or Redis OSS (cluster mode enabled)</a> in the ElastiCache User Guide
     /// </para></li><li><para><a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/APIReference/API_ModifyReplicationGroupShardConfiguration.html">ModifyReplicationGroupShardConfiguration</a>
     /// in the ElastiCache API Reference
     /// </para></li></ul><note><para>
-    /// This operation is valid for Redis only.
+    /// This operation is valid for Valkey or Redis OSS only.
     /// </para></note>
     /// </summary>
     [Cmdlet("Edit", "ECReplicationGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
     [AWSCmdlet("Calls the Amazon ElastiCache ModifyReplicationGroup API operation.", Operation = new[] {"ModifyReplicationGroup"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.ModifyReplicationGroupResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.ReplicationGroup or Amazon.ElastiCache.Model.ModifyReplicationGroupResponse",
         "This cmdlet returns an Amazon.ElastiCache.Model.ReplicationGroup object.",
-        "The service call response (type Amazon.ElastiCache.Model.ModifyReplicationGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.ModifyReplicationGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditECReplicationGroupCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplyImmediately
         /// <summary>
@@ -80,8 +83,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>Specifies the strategy to use to update the AUTH token. This parameter must be specified
-        /// with the <c>auth-token</c> parameter. Possible values:</para><ul><li><para>Rotate</para></li><li><para>Set</para></li></ul><para> For more information, see <a href="http://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/auth.html">Authenticating
-        /// Users with Redis AUTH</a></para>
+        /// with the <c>auth-token</c> parameter. Possible values:</para><ul><li><para>ROTATE - default, if no update strategy is provided</para></li><li><para>SET - allowed only after ROTATE</para></li><li><para>DELETE - allowed only when transitioning to RBAC</para></li></ul><para> For more information, see <a href="http://docs.aws.amazon.com/AmazonElastiCache/latest/dg/auth.html">Authenticating
+        /// Users with AUTH</a></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,9 +106,9 @@ namespace Amazon.PowerShell.Cmdlets.EC
         #region Parameter AutoMinorVersionUpgrade
         /// <summary>
         /// <para>
-        /// <para> If you are running Redis engine version 6.0 or later, set this parameter to yes if
-        /// you want to opt-in to the next auto minor version upgrade campaign. This parameter
-        /// is disabled for previous versions.  </para>
+        /// <para> If you are running Valkey or Redis OSS engine version 6.0 or later, set this parameter
+        /// to yes if you want to opt-in to the next auto minor version upgrade campaign. This
+        /// parameter is disabled for previous versions.  </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,7 +142,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <para>
         /// <para>A list of cache security group names to authorize for the clusters in this replication
         /// group. This change is asynchronously applied as soon as possible.</para><para>This parameter can be used only with replication group containing clusters running
-        /// outside of an Amazon Virtual Private Cloud (Amazon VPC).</para><para>Constraints: Must contain no more than 255 alphanumeric characters. Must not be <c>Default</c>.</para>
+        /// outside of an Amazon Virtual Private Cloud (Amazon VPC).</para><para>Constraints: Must contain no more than 255 alphanumeric characters. Must not be <c>Default</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,10 +158,10 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>Enabled or Disabled. To modify cluster mode from Disabled to Enabled, you must first
-        /// set the cluster mode to Compatible. Compatible mode allows your Redis clients to connect
-        /// using both cluster mode enabled and cluster mode disabled. After you migrate all Redis
-        /// clients to use cluster mode enabled, you can then complete cluster mode configuration
-        /// and set the cluster mode to Enabled.</para>
+        /// set the cluster mode to Compatible. Compatible mode allows your Valkey or Redis OSS
+        /// clients to connect using both cluster mode enabled and cluster mode disabled. After
+        /// you migrate all Valkey or Redis OSS clients to use cluster mode enabled, you can then
+        /// complete cluster mode configuration and set the cluster mode to Enabled.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,11 +169,22 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public Amazon.ElastiCache.ClusterMode ClusterMode { get; set; }
         #endregion
         
+        #region Parameter Engine
+        /// <summary>
+        /// <para>
+        /// <para>Modifies the engine listed in a replication group message. The options are redis,
+        /// memcached or valkey.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Engine { get; set; }
+        #endregion
+        
         #region Parameter EngineVersion
         /// <summary>
         /// <para>
         /// <para>The upgraded version of the cache engine to be run on the clusters in the replication
-        /// group.</para><para><b>Important:</b> You can upgrade to a newer engine version (see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/SelectEngine.html#VersionManagement">Selecting
+        /// group.</para><para><b>Important:</b> You can upgrade to a newer engine version (see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/SelectEngine.html#VersionManagement">Selecting
         /// a Cache Engine and Version</a>), but you cannot downgrade to an earlier engine version.
         /// If you want to use an earlier engine version, you must delete the existing replication
         /// group and create it anew with the earlier engine version. </para>
@@ -180,9 +198,9 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The network type you choose when modifying a cluster, either <c>ipv4</c> | <c>ipv6</c>.
-        /// IPv6 is supported for workloads using Redis engine version 6.2 onward or Memcached
-        /// engine version 1.6.6 on all instances built on the <a href="http://aws.amazon.com/ec2/nitro/">Nitro
-        /// system</a>.</para>
+        /// IPv6 is supported for workloads using Valkey 7.2 and above, Redis OSS engine version
+        /// 6.2 to 7.1 and Memcached engine version 1.6.6 and above on all instances built on
+        /// the <a href="http://aws.amazon.com/ec2/nitro/">Nitro system</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -193,7 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         #region Parameter LogDeliveryConfiguration
         /// <summary>
         /// <para>
-        /// <para>Specifies the destination, format and type of the logs.</para>
+        /// <para>Specifies the destination, format and type of the logs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -300,7 +322,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <para>
         /// <para>Specifies the VPC Security Groups associated with the clusters in the replication
         /// group.</para><para>This parameter can be used only with replication group containing clusters running
-        /// in an Amazon Virtual Private Cloud (Amazon VPC).</para>
+        /// in an Amazon Virtual Private Cloud (Amazon VPC).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -325,7 +351,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The cluster ID that is used as the daily snapshot source for the replication group.
-        /// This parameter cannot be set for Redis (cluster mode enabled) replication groups.</para>
+        /// This parameter cannot be set for Valkey or Redis OSS (cluster mode enabled) replication
+        /// groups.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -363,8 +390,8 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// no downtime.</para><para>You must set <c>TransitEncryptionEnabled</c> to <c>true</c>, for your existing cluster,
         /// and set <c>TransitEncryptionMode</c> to <c>preferred</c> in the same request to allow
         /// both encrypted and unencrypted connections at the same time. Once you migrate all
-        /// your Redis clients to use encrypted connections you can set the value to <c>required</c>
-        /// to allow encrypted connections only.</para><para>Setting <c>TransitEncryptionMode</c> to <c>required</c> is a two-step process that
+        /// your Valkey or Redis OSS clients to use encrypted connections you can set the value
+        /// to <c>required</c> to allow encrypted connections only.</para><para>Setting <c>TransitEncryptionMode</c> to <c>required</c> is a two-step process that
         /// requires you to first set the <c>TransitEncryptionMode</c> to <c>preferred</c>, after
         /// that you can set <c>TransitEncryptionMode</c> to <c>required</c>. </para>
         /// </para>
@@ -377,7 +404,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         #region Parameter UserGroupIdsToAdd
         /// <summary>
         /// <para>
-        /// <para>The ID of the user group you are associating with the replication group.</para>
+        /// <para>The ID of the user group you are associating with the replication group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -388,7 +419,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// <summary>
         /// <para>
         /// <para>The ID of the user group to disassociate from the replication group, meaning the users
-        /// in the group no longer can access the replication group.</para>
+        /// in the group no longer can access the replication group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -418,16 +453,6 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "ReplicationGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReplicationGroupId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReplicationGroupId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReplicationGroupId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -438,9 +463,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ReplicationGroupId), MyInvocation.BoundParameters);
@@ -454,21 +483,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.ModifyReplicationGroupResponse, EditECReplicationGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReplicationGroupId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplyImmediately = this.ApplyImmediately;
             context.AuthToken = this.AuthToken;
             context.AuthTokenUpdateStrategy = this.AuthTokenUpdateStrategy;
@@ -481,6 +500,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
                 context.CacheSecurityGroupName = new List<System.String>(this.CacheSecurityGroupName);
             }
             context.ClusterMode = this.ClusterMode;
+            context.Engine = this.Engine;
             context.EngineVersion = this.EngineVersion;
             context.IpDiscovery = this.IpDiscovery;
             if (this.LogDeliveryConfiguration != null)
@@ -572,6 +592,10 @@ namespace Amazon.PowerShell.Cmdlets.EC
             if (cmdletContext.ClusterMode != null)
             {
                 request.ClusterMode = cmdletContext.ClusterMode;
+            }
+            if (cmdletContext.Engine != null)
+            {
+                request.Engine = cmdletContext.Engine;
             }
             if (cmdletContext.EngineVersion != null)
             {
@@ -693,13 +717,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "ModifyReplicationGroup");
             try
             {
-                #if DESKTOP
-                return client.ModifyReplicationGroup(request);
-                #elif CORECLR
-                return client.ModifyReplicationGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyReplicationGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -725,6 +743,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             public System.String CacheParameterGroupName { get; set; }
             public List<System.String> CacheSecurityGroupName { get; set; }
             public Amazon.ElastiCache.ClusterMode ClusterMode { get; set; }
+            public System.String Engine { get; set; }
             public System.String EngineVersion { get; set; }
             public Amazon.ElastiCache.IpDiscovery IpDiscovery { get; set; }
             public List<Amazon.ElastiCache.Model.LogDeliveryConfigurationRequest> LogDeliveryConfiguration { get; set; }

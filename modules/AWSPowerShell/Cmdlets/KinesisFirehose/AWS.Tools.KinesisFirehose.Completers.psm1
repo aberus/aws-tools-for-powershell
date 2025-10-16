@@ -105,7 +105,7 @@ $KINF_Completers = {
         }
 
         # Amazon.KinesisFirehose.Connectivity
-        "New-KINFDeliveryStream/MSKSourceConfiguration_AuthenticationConfiguration_Connectivity"
+        "New-KINFDeliveryStream/AuthenticationConfiguration_Connectivity"
         {
             $v = "PRIVATE","PUBLIC"
             break
@@ -121,12 +121,19 @@ $KINF_Completers = {
             break
         }
 
+        # Amazon.KinesisFirehose.DatabaseType
+        "New-KINFDeliveryStream/DatabaseSourceConfiguration_Type"
+        {
+            $v = "MySQL","PostgreSQL"
+            break
+        }
+
         # Amazon.KinesisFirehose.DefaultDocumentIdFormat
         {
             ($_ -eq "New-KINFDeliveryStream/AmazonopensearchserviceDestinationConfiguration_DocumentIdOptions_DefaultDocumentIdFormat") -Or
             ($_ -eq "Update-KINFDestination/AmazonopensearchserviceDestinationUpdate_DocumentIdOptions_DefaultDocumentIdFormat") -Or
-            ($_ -eq "New-KINFDeliveryStream/ElasticsearchDestinationConfiguration_DocumentIdOptions_DefaultDocumentIdFormat") -Or
-            ($_ -eq "Update-KINFDestination/ElasticsearchDestinationUpdate_DocumentIdOptions_DefaultDocumentIdFormat")
+            ($_ -eq "New-KINFDeliveryStream/DocumentIdOptions_DefaultDocumentIdFormat") -Or
+            ($_ -eq "Update-KINFDestination/DocumentIdOptions_DefaultDocumentIdFormat")
         }
         {
             $v = "FIREHOSE_DEFAULT","NO_DOCUMENT_ID"
@@ -139,7 +146,7 @@ $KINF_Completers = {
             ($_ -eq "New-KINFDeliveryStream/DeliveryStreamType")
         }
         {
-            $v = "DirectPut","KinesisStreamAsSource","MSKAsSource"
+            $v = "DatabaseAsSource","DirectPut","KinesisStreamAsSource","MSKAsSource"
             break
         }
 
@@ -164,6 +171,16 @@ $KINF_Completers = {
         {
             ($_ -eq "New-KINFDeliveryStream/HttpEndpointDestinationConfiguration_S3BackupMode") -Or
             ($_ -eq "Update-KINFDestination/HttpEndpointDestinationUpdate_S3BackupMode")
+        }
+        {
+            $v = "AllData","FailedDataOnly"
+            break
+        }
+
+        # Amazon.KinesisFirehose.IcebergS3BackupMode
+        {
+            ($_ -eq "New-KINFDeliveryStream/IcebergDestinationConfiguration_S3BackupMode") -Or
+            ($_ -eq "Update-KINFDestination/IcebergDestinationUpdate_S3BackupMode")
         }
         {
             $v = "AllData","FailedDataOnly"
@@ -200,6 +217,13 @@ $KINF_Completers = {
             break
         }
 
+        # Amazon.KinesisFirehose.SSLMode
+        "New-KINFDeliveryStream/DatabaseSourceConfiguration_SSLMode"
+        {
+            $v = "Disabled","Enabled"
+            break
+        }
+
 
     }
 
@@ -215,18 +239,21 @@ $KINF_map = @{
     "AmazonopensearchserviceDestinationConfiguration_S3BackupMode"=@("New-KINFDeliveryStream")
     "AmazonopensearchserviceDestinationUpdate_DocumentIdOptions_DefaultDocumentIdFormat"=@("Update-KINFDestination")
     "AmazonopensearchserviceDestinationUpdate_IndexRotationPeriod"=@("Update-KINFDestination")
+    "AuthenticationConfiguration_Connectivity"=@("New-KINFDeliveryStream")
+    "DatabaseSourceConfiguration_SSLMode"=@("New-KINFDeliveryStream")
+    "DatabaseSourceConfiguration_Type"=@("New-KINFDeliveryStream")
     "DeliveryStreamEncryptionConfigurationInput_KeyType"=@("New-KINFDeliveryStream","Start-KINFDeliveryStreamEncryption")
     "DeliveryStreamType"=@("Get-KINFDeliveryStreamList","New-KINFDeliveryStream")
-    "ElasticsearchDestinationConfiguration_DocumentIdOptions_DefaultDocumentIdFormat"=@("New-KINFDeliveryStream")
+    "DocumentIdOptions_DefaultDocumentIdFormat"=@("New-KINFDeliveryStream","Update-KINFDestination")
     "ElasticsearchDestinationConfiguration_IndexRotationPeriod"=@("New-KINFDeliveryStream")
     "ElasticsearchDestinationConfiguration_S3BackupMode"=@("New-KINFDeliveryStream")
-    "ElasticsearchDestinationUpdate_DocumentIdOptions_DefaultDocumentIdFormat"=@("Update-KINFDestination")
     "ElasticsearchDestinationUpdate_IndexRotationPeriod"=@("Update-KINFDestination")
     "HttpEndpointDestinationConfiguration_RequestConfiguration_ContentEncoding"=@("New-KINFDeliveryStream")
     "HttpEndpointDestinationConfiguration_S3BackupMode"=@("New-KINFDeliveryStream")
     "HttpEndpointDestinationUpdate_RequestConfiguration_ContentEncoding"=@("Update-KINFDestination")
     "HttpEndpointDestinationUpdate_S3BackupMode"=@("Update-KINFDestination")
-    "MSKSourceConfiguration_AuthenticationConfiguration_Connectivity"=@("New-KINFDeliveryStream")
+    "IcebergDestinationConfiguration_S3BackupMode"=@("New-KINFDeliveryStream")
+    "IcebergDestinationUpdate_S3BackupMode"=@("Update-KINFDestination")
     "SnowflakeDestinationConfiguration_DataLoadingOption"=@("New-KINFDeliveryStream")
     "SnowflakeDestinationConfiguration_S3BackupMode"=@("New-KINFDeliveryStream")
     "SnowflakeDestinationUpdate_DataLoadingOption"=@("Update-KINFDestination")

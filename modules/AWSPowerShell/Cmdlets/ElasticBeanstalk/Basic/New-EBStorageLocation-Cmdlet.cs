@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticBeanstalk;
 using Amazon.ElasticBeanstalk.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EB
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.EB
     [AWSCmdlet("Calls the AWS Elastic Beanstalk CreateStorageLocation API operation.", Operation = new[] {"CreateStorageLocation"}, SelectReturnType = typeof(Amazon.ElasticBeanstalk.Model.CreateStorageLocationResponse))]
     [AWSCmdletOutput("System.String or Amazon.ElasticBeanstalk.Model.CreateStorageLocationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ElasticBeanstalk.Model.CreateStorageLocationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticBeanstalk.Model.CreateStorageLocationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEBStorageLocationCmdlet : AmazonElasticBeanstalkClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -67,9 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.EB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -142,13 +149,7 @@ namespace Amazon.PowerShell.Cmdlets.EB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elastic Beanstalk", "CreateStorageLocation");
             try
             {
-                #if DESKTOP
-                return client.CreateStorageLocation(request);
-                #elif CORECLR
-                return client.CreateStorageLocationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateStorageLocationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

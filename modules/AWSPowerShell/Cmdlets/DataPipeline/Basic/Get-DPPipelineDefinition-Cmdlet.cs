@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataPipeline;
 using Amazon.DataPipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DP
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.DP
     [OutputType("Amazon.DataPipeline.Model.GetPipelineDefinitionResponse")]
     [AWSCmdlet("Calls the AWS Data Pipeline GetPipelineDefinition API operation.", Operation = new[] {"GetPipelineDefinition"}, SelectReturnType = typeof(Amazon.DataPipeline.Model.GetPipelineDefinitionResponse))]
     [AWSCmdletOutput("Amazon.DataPipeline.Model.GetPipelineDefinitionResponse",
-        "This cmdlet returns an Amazon.DataPipeline.Model.GetPipelineDefinitionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataPipeline.Model.GetPipelineDefinitionResponse object containing multiple properties."
     )]
     public partial class GetDPPipelineDefinitionCmdlet : AmazonDataPipelineClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PipelineId
         /// <summary>
@@ -82,19 +85,13 @@ namespace Amazon.PowerShell.Cmdlets.DP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PipelineId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PipelineId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PipelineId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -102,21 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.DP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataPipeline.Model.GetPipelineDefinitionResponse, GetDPPipelineDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PipelineId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.PipelineId = this.PipelineId;
             #if MODULAR
             if (this.PipelineId == null && ParameterWasBound(nameof(this.PipelineId)))
@@ -187,13 +174,7 @@ namespace Amazon.PowerShell.Cmdlets.DP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Data Pipeline", "GetPipelineDefinition");
             try
             {
-                #if DESKTOP
-                return client.GetPipelineDefinition(request);
-                #elif CORECLR
-                return client.GetPipelineDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPipelineDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

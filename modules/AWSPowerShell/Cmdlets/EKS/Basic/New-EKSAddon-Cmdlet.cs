@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EKS;
 using Amazon.EKS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EKS
 {
     /// <summary>
@@ -42,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     [AWSCmdlet("Calls the Amazon Elastic Container Service for Kubernetes CreateAddon API operation.", Operation = new[] {"CreateAddon"}, SelectReturnType = typeof(Amazon.EKS.Model.CreateAddonResponse))]
     [AWSCmdletOutput("Amazon.EKS.Model.Addon or Amazon.EKS.Model.CreateAddonResponse",
         "This cmdlet returns an Amazon.EKS.Model.Addon object.",
-        "The service call response (type Amazon.EKS.Model.CreateAddonResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EKS.Model.CreateAddonResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEKSAddonCmdlet : AmazonEKSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddonName
         /// <summary>
@@ -117,6 +120,35 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public System.String ConfigurationValue { get; set; }
         #endregion
         
+        #region Parameter NamespaceConfig_Namespace
+        /// <summary>
+        /// <para>
+        /// <para>The name of the Kubernetes namespace to install the addon in. Must be a valid RFC
+        /// 1123 DNS label.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NamespaceConfig_Namespace { get; set; }
+        #endregion
+        
+        #region Parameter PodIdentityAssociation
+        /// <summary>
+        /// <para>
+        /// <para>An array of EKS Pod Identity associations to be created. Each association maps a Kubernetes
+        /// service account to an IAM role.</para><para>For more information, see <a href="https://docs.aws.amazon.com/eks/latest/userguide/add-ons-iam.html">Attach
+        /// an IAM Role to an Amazon EKS add-on using EKS Pod Identity</a> in the <i>Amazon EKS
+        /// User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("PodIdentityAssociations")]
+        public Amazon.EKS.Model.AddonPodIdentityAssociations[] PodIdentityAssociation { get; set; }
+        #endregion
+        
         #region Parameter ResolveConflict
         /// <summary>
         /// <para>
@@ -127,7 +159,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// EKS changes the value to the Amazon EKS default value.</para></li><li><para><b>Preserve</b> – This is similar to the NONE option. If the self-managed version
         /// of the add-on is installed on your cluster Amazon EKS doesn't change the add-on resource
         /// properties. Creation of the add-on might fail if conflicts are detected. This option
-        /// works differently during the update operation. For more information, see <a href="https://docs.aws.amazon.com/eks/latest/APIReference/API_UpdateAddon.html">UpdateAddon</a>.</para></li></ul><para>If you don't currently have the self-managed version of the add-on installed on your
+        /// works differently during the update operation. For more information, see <a href="https://docs.aws.amazon.com/eks/latest/APIReference/API_UpdateAddon.html"><c>UpdateAddon</c></a>.</para></li></ul><para>If you don't currently have the self-managed version of the add-on installed on your
         /// cluster, the Amazon EKS add-on is installed. Amazon EKS sets all values to default
         /// values, regardless of the option that you specify.</para>
         /// </para>
@@ -159,7 +191,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>
         /// <para>Metadata that assists with categorization and organization. Each tag consists of a
         /// key and an optional value. You define both. Tags don't propagate to any other cluster
-        /// or Amazon Web Services resources.</para>
+        /// or Amazon Web Services resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -178,16 +214,6 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public string Select { get; set; } = "Addon";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AddonName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AddonName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AddonName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -198,9 +224,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AddonName), MyInvocation.BoundParameters);
@@ -214,21 +244,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EKS.Model.CreateAddonResponse, NewEKSAddonCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AddonName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AddonName = this.AddonName;
             #if MODULAR
             if (this.AddonName == null && ParameterWasBound(nameof(this.AddonName)))
@@ -246,6 +266,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             }
             #endif
             context.ConfigurationValue = this.ConfigurationValue;
+            context.NamespaceConfig_Namespace = this.NamespaceConfig_Namespace;
+            if (this.PodIdentityAssociation != null)
+            {
+                context.PodIdentityAssociation = new List<Amazon.EKS.Model.AddonPodIdentityAssociations>(this.PodIdentityAssociation);
+            }
             context.ResolveConflict = this.ResolveConflict;
             context.ServiceAccountRoleArn = this.ServiceAccountRoleArn;
             if (this.Tag != null)
@@ -291,6 +316,29 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             if (cmdletContext.ConfigurationValue != null)
             {
                 request.ConfigurationValues = cmdletContext.ConfigurationValue;
+            }
+            
+             // populate NamespaceConfig
+            var requestNamespaceConfigIsNull = true;
+            request.NamespaceConfig = new Amazon.EKS.Model.AddonNamespaceConfigRequest();
+            System.String requestNamespaceConfig_namespaceConfig_Namespace = null;
+            if (cmdletContext.NamespaceConfig_Namespace != null)
+            {
+                requestNamespaceConfig_namespaceConfig_Namespace = cmdletContext.NamespaceConfig_Namespace;
+            }
+            if (requestNamespaceConfig_namespaceConfig_Namespace != null)
+            {
+                request.NamespaceConfig.Namespace = requestNamespaceConfig_namespaceConfig_Namespace;
+                requestNamespaceConfigIsNull = false;
+            }
+             // determine if request.NamespaceConfig should be set to null
+            if (requestNamespaceConfigIsNull)
+            {
+                request.NamespaceConfig = null;
+            }
+            if (cmdletContext.PodIdentityAssociation != null)
+            {
+                request.PodIdentityAssociations = cmdletContext.PodIdentityAssociation;
             }
             if (cmdletContext.ResolveConflict != null)
             {
@@ -342,13 +390,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Container Service for Kubernetes", "CreateAddon");
             try
             {
-                #if DESKTOP
-                return client.CreateAddon(request);
-                #elif CORECLR
-                return client.CreateAddonAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAddonAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -370,6 +412,8 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             public System.String ClientRequestToken { get; set; }
             public System.String ClusterName { get; set; }
             public System.String ConfigurationValue { get; set; }
+            public System.String NamespaceConfig_Namespace { get; set; }
+            public List<Amazon.EKS.Model.AddonPodIdentityAssociations> PodIdentityAssociation { get; set; }
             public Amazon.EKS.ResolveConflicts ResolveConflict { get; set; }
             public System.String ServiceAccountRoleArn { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }

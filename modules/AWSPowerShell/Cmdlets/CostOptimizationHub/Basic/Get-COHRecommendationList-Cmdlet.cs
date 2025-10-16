@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,37 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CostOptimizationHub;
 using Amazon.CostOptimizationHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.COH
 {
     /// <summary>
-    /// Returns a list of recommendations.
+    /// Returns a list of recommendations.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "COHRecommendationList")]
     [OutputType("Amazon.CostOptimizationHub.Model.Recommendation")]
     [AWSCmdlet("Calls the Cost Optimization Hub ListRecommendations API operation.", Operation = new[] {"ListRecommendations"}, SelectReturnType = typeof(Amazon.CostOptimizationHub.Model.ListRecommendationsResponse))]
     [AWSCmdletOutput("Amazon.CostOptimizationHub.Model.Recommendation or Amazon.CostOptimizationHub.Model.ListRecommendationsResponse",
         "This cmdlet returns a collection of Amazon.CostOptimizationHub.Model.Recommendation objects.",
-        "The service call response (type Amazon.CostOptimizationHub.Model.ListRecommendationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CostOptimizationHub.Model.ListRecommendationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCOHRecommendationListCmdlet : AmazonCostOptimizationHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter_AccountId
         /// <summary>
         /// <para>
-        /// <para>The account that the recommendation is for.</para>
+        /// <para>The account to which the recommendation applies.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +63,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_ActionType
         /// <summary>
         /// <para>
-        /// <para>The type of action you can take by adopting the recommendation.</para>
+        /// <para>The type of action you can take by adopting the recommendation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -77,7 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_ImplementationEffort
         /// <summary>
         /// <para>
-        /// <para>The effort required to implement the recommendation.</para>
+        /// <para>The effort required to implement the recommendation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_RecommendationId
         /// <summary>
         /// <para>
-        /// <para>The IDs for the recommendations.</para>
+        /// <para>The IDs for the recommendations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_Region
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services Region of the resource.</para>
+        /// <para>The Amazon Web Services Region of the resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +156,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_ResourceArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the recommendation.</para>
+        /// <para>The Amazon Resource Name (ARN) of the recommendation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,7 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_ResourceId
         /// <summary>
         /// <para>
-        /// <para>The resource ID of the recommendation.</para>
+        /// <para>The resource ID of the recommendation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,7 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_ResourceType
         /// <summary>
         /// <para>
-        /// <para>The resource type of the recommendation.</para>
+        /// <para>The resource type of the recommendation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,7 +221,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
         #region Parameter Filter_Tag
         /// <summary>
         /// <para>
-        /// <para>A list of tags assigned to the recommendation.</para>
+        /// <para>A list of tags assigned to the recommendation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -199,16 +238,25 @@ namespace Amazon.PowerShell.Cmdlets.COH
         /// <para>
         /// <para>The maximum number of recommendations that are returned for the request.</para>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("MaxResults")]
-        public System.Int32? MaxResult { get; set; }
+        [Alias("MaxItems","MaxResults")]
+        public int? MaxResult { get; set; }
         #endregion
         
         #region Parameter NextToken
         /// <summary>
         /// <para>
         /// <para>The token to retrieve the next set of results.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -226,19 +274,24 @@ namespace Amazon.PowerShell.Cmdlets.COH
         public string Select { get; set; } = "Items";
         #endregion
         
-        #region Parameter PassThru
+        #region Parameter NoAutoIteration
         /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IncludeAllRecommendation parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IncludeAllRecommendation' instead. This parameter will be removed in a future version.
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
         /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IncludeAllRecommendation' instead. This parameter will be removed in a future version.")]
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -246,21 +299,11 @@ namespace Amazon.PowerShell.Cmdlets.COH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CostOptimizationHub.Model.ListRecommendationsResponse, GetCOHRecommendationListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IncludeAllRecommendation;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Filter_AccountId != null)
             {
                 context.Filter_AccountId = new List<System.String>(this.Filter_AccountId);
@@ -301,6 +344,15 @@ namespace Amazon.PowerShell.Cmdlets.COH
             }
             context.IncludeAllRecommendation = this.IncludeAllRecommendation;
             context.MaxResult = this.MaxResult;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the MaxResult parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing MaxResult" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             context.NextToken = this.NextToken;
             context.OrderBy_Dimension = this.OrderBy_Dimension;
             context.OrderBy_Order = this.OrderBy_Order;
@@ -317,7 +369,9 @@ namespace Amazon.PowerShell.Cmdlets.COH
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.CostOptimizationHub.Model.ListRecommendationsRequest();
             
             
@@ -445,11 +499,7 @@ namespace Amazon.PowerShell.Cmdlets.COH
             }
             if (cmdletContext.MaxResult != null)
             {
-                request.MaxResults = cmdletContext.MaxResult.Value;
-            }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
+                request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
             }
             
              // populate OrderBy
@@ -481,27 +531,52 @@ namespace Amazon.PowerShell.Cmdlets.COH
                 request.OrderBy = null;
             }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.NextToken;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.NextToken));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.NextToken = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextToken;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -518,13 +593,7 @@ namespace Amazon.PowerShell.Cmdlets.COH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Cost Optimization Hub", "ListRecommendations");
             try
             {
-                #if DESKTOP
-                return client.ListRecommendations(request);
-                #elif CORECLR
-                return client.ListRecommendationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRecommendationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -553,7 +622,7 @@ namespace Amazon.PowerShell.Cmdlets.COH
             public System.Boolean? Filter_RollbackPossible { get; set; }
             public List<Amazon.CostOptimizationHub.Model.Tag> Filter_Tag { get; set; }
             public System.Boolean? IncludeAllRecommendation { get; set; }
-            public System.Int32? MaxResult { get; set; }
+            public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.String OrderBy_Dimension { get; set; }
             public Amazon.CostOptimizationHub.Order OrderBy_Order { get; set; }

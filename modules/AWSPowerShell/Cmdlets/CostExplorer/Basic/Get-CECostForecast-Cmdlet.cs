@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CostExplorer;
 using Amazon.CostExplorer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CE
 {
     /// <summary>
@@ -35,18 +37,33 @@ namespace Amazon.PowerShell.Cmdlets.CE
     [OutputType("Amazon.CostExplorer.Model.GetCostForecastResponse")]
     [AWSCmdlet("Calls the AWS Cost Explorer GetCostForecast API operation.", Operation = new[] {"GetCostForecast"}, SelectReturnType = typeof(Amazon.CostExplorer.Model.GetCostForecastResponse))]
     [AWSCmdletOutput("Amazon.CostExplorer.Model.GetCostForecastResponse",
-        "This cmdlet returns an Amazon.CostExplorer.Model.GetCostForecastResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CostExplorer.Model.GetCostForecastResponse object containing multiple properties."
     )]
     public partial class GetCECostForecastCmdlet : AmazonCostExplorerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter BillingViewArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) that uniquely identifies a specific billing view. The
+        /// ARN is used to specify which particular billing view you want to interact with or
+        /// retrieve information from when making API calls related to Amazon Web Services Billing
+        /// and Cost Management features. The BillingViewArn can be retrieved by calling the ListBillingViews
+        /// API.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String BillingViewArn { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
         /// <para>
         /// <para>The filters that you want to use to filter your forecast. The <c>GetCostForecast</c>
-        /// API supports filtering by the following dimensions:</para><ul><li><para><c>AZ</c></para></li><li><para><c>INSTANCE_TYPE</c></para></li><li><para><c>LINKED_ACCOUNT</c></para></li><li><para><c>LINKED_ACCOUNT_NAME</c></para></li><li><para><c>OPERATION</c></para></li><li><para><c>PURCHASE_TYPE</c></para></li><li><para><c>REGION</c></para></li><li><para><c>SERVICE</c></para></li><li><para><c>USAGE_TYPE</c></para></li><li><para><c>USAGE_TYPE_GROUP</c></para></li><li><para><c>RECORD_TYPE</c></para></li><li><para><c>OPERATING_SYSTEM</c></para></li><li><para><c>TENANCY</c></para></li><li><para><c>SCOPE</c></para></li><li><para><c>PLATFORM</c></para></li><li><para><c>SUBSCRIPTION_ID</c></para></li><li><para><c>LEGAL_ENTITY_NAME</c></para></li><li><para><c>DEPLOYMENT_OPTION</c></para></li><li><para><c>DATABASE_ENGINE</c></para></li><li><para><c>INSTANCE_TYPE_FAMILY</c></para></li><li><para><c>BILLING_ENTITY</c></para></li><li><para><c>RESERVATION_ID</c></para></li><li><para><c>SAVINGS_PLAN_ARN</c></para></li></ul>
+        /// API supports filtering by the following dimensions:</para><ul><li><para><c>AZ</c></para></li><li><para><c>INSTANCE_TYPE</c></para></li><li><para><c>LINKED_ACCOUNT</c></para></li><li><para><c>OPERATION</c></para></li><li><para><c>PURCHASE_TYPE</c></para></li><li><para><c>REGION</c></para></li><li><para><c>SERVICE</c></para></li><li><para><c>USAGE_TYPE</c></para></li><li><para><c>USAGE_TYPE_GROUP</c></para></li><li><para><c>RECORD_TYPE</c></para></li><li><para><c>OPERATING_SYSTEM</c></para></li><li><para><c>TENANCY</c></para></li><li><para><c>SCOPE</c></para></li><li><para><c>PLATFORM</c></para></li><li><para><c>SUBSCRIPTION_ID</c></para></li><li><para><c>LEGAL_ENTITY_NAME</c></para></li><li><para><c>DEPLOYMENT_OPTION</c></para></li><li><para><c>DATABASE_ENGINE</c></para></li><li><para><c>INSTANCE_TYPE_FAMILY</c></para></li><li><para><c>BILLING_ENTITY</c></para></li><li><para><c>RESERVATION_ID</c></para></li><li><para><c>SAVINGS_PLAN_ARN</c></para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,19 +149,13 @@ namespace Amazon.PowerShell.Cmdlets.CE
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TimePeriod parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TimePeriod' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TimePeriod' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -152,21 +163,12 @@ namespace Amazon.PowerShell.Cmdlets.CE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CostExplorer.Model.GetCostForecastResponse, GetCECostForecastCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TimePeriod;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.BillingViewArn = this.BillingViewArn;
             context.Filter = this.Filter;
             context.Granularity = this.Granularity;
             #if MODULAR
@@ -206,6 +208,10 @@ namespace Amazon.PowerShell.Cmdlets.CE
             // create request
             var request = new Amazon.CostExplorer.Model.GetCostForecastRequest();
             
+            if (cmdletContext.BillingViewArn != null)
+            {
+                request.BillingViewArn = cmdletContext.BillingViewArn;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filter = cmdletContext.Filter;
@@ -264,13 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cost Explorer", "GetCostForecast");
             try
             {
-                #if DESKTOP
-                return client.GetCostForecast(request);
-                #elif CORECLR
-                return client.GetCostForecastAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetCostForecastAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -287,6 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.CE
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String BillingViewArn { get; set; }
             public Amazon.CostExplorer.Model.Expression Filter { get; set; }
             public Amazon.CostExplorer.Granularity Granularity { get; set; }
             public Amazon.CostExplorer.Metric Metric { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTTwinMaker;
 using Amazon.IoTTwinMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTTM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTTM
     [AWSCmdlet("Calls the AWS IoT TwinMaker DeleteComponentType API operation.", Operation = new[] {"DeleteComponentType"}, SelectReturnType = typeof(Amazon.IoTTwinMaker.Model.DeleteComponentTypeResponse))]
     [AWSCmdletOutput("Amazon.IoTTwinMaker.State or Amazon.IoTTwinMaker.Model.DeleteComponentTypeResponse",
         "This cmdlet returns an Amazon.IoTTwinMaker.State object.",
-        "The service call response (type Amazon.IoTTwinMaker.Model.DeleteComponentTypeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTTwinMaker.Model.DeleteComponentTypeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveIOTTMComponentTypeCmdlet : AmazonIoTTwinMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComponentTypeId
         /// <summary>
@@ -87,16 +90,6 @@ namespace Amazon.PowerShell.Cmdlets.IOTTM
         public string Select { get; set; } = "State";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ComponentTypeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ComponentTypeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ComponentTypeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -107,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTTM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ComponentTypeId), MyInvocation.BoundParameters);
@@ -123,21 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTTM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTTwinMaker.Model.DeleteComponentTypeResponse, RemoveIOTTMComponentTypeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ComponentTypeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ComponentTypeId = this.ComponentTypeId;
             #if MODULAR
             if (this.ComponentTypeId == null && ParameterWasBound(nameof(this.ComponentTypeId)))
@@ -214,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTTM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT TwinMaker", "DeleteComponentType");
             try
             {
-                #if DESKTOP
-                return client.DeleteComponentType(request);
-                #elif CORECLR
-                return client.DeleteComponentTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteComponentTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

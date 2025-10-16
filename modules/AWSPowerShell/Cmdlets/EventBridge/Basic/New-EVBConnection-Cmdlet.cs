@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
     /// Creates a connection. A connection defines the authorization type and credentials
     /// to use for authorization with an API destination HTTP endpoint.
+    /// 
+    ///  
+    /// <para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-target-connection.html">Connections
+    /// for endpoint targets</a> in the <i>Amazon EventBridge User Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "EVBConnection", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EventBridge.Model.CreateConnectionResponse")]
     [AWSCmdlet("Calls the Amazon EventBridge CreateConnection API operation.", Operation = new[] {"CreateConnection"}, SelectReturnType = typeof(Amazon.EventBridge.Model.CreateConnectionResponse))]
     [AWSCmdletOutput("Amazon.EventBridge.Model.CreateConnectionResponse",
-        "This cmdlet returns an Amazon.EventBridge.Model.CreateConnectionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EventBridge.Model.CreateConnectionResponse object containing multiple properties."
     )]
     public partial class NewEVBConnectionCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApiKeyAuthParameters_ApiKeyName
         /// <summary>
@@ -98,7 +105,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter InvocationHttpParameters_BodyParameter
         /// <summary>
         /// <para>
-        /// <para>Contains additional body string parameters for the connection.</para>
+        /// <para>Any additional body string parameters for the connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,7 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter OAuthHttpParameters_BodyParameter
         /// <summary>
         /// <para>
-        /// <para>Contains additional body string parameters for the connection.</para>
+        /// <para>Any additional body string parameters for the connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,7 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter InvocationHttpParameters_HeaderParameter
         /// <summary>
         /// <para>
-        /// <para>Contains additional header parameters for the connection.</para>
+        /// <para>Any additional header parameters for the connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -164,7 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter OAuthHttpParameters_HeaderParameter
         /// <summary>
         /// <para>
-        /// <para>Contains additional header parameters for the connection.</para>
+        /// <para>Any additional header parameters for the connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,6 +205,20 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         [Alias("AuthParameters_OAuthParameters_HttpMethod")]
         [AWSConstantClassSource("Amazon.EventBridge.ConnectionOAuthHttpMethod")]
         public Amazon.EventBridge.ConnectionOAuthHttpMethod OAuthParameters_HttpMethod { get; set; }
+        #endregion
+        
+        #region Parameter KmsKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of the KMS customer managed key for EventBridge to use, if you choose
+        /// to use a customer managed key to encrypt this connection. The identifier can be the
+        /// key Amazon Resource Name (ARN), KeyId, key alias, or key alias ARN.</para><para>If you do not specify a customer managed key identifier, EventBridge uses an Amazon
+        /// Web Services owned key to encrypt the connection.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/viewing-keys.html">Identify
+        /// and view keys</a> in the <i>Key Management Service Developer Guide</i>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KmsKeyIdentifier { get; set; }
         #endregion
         
         #region Parameter Name
@@ -215,7 +252,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter InvocationHttpParameters_QueryStringParameter
         /// <summary>
         /// <para>
-        /// <para>Contains additional query string parameters for the connection.</para>
+        /// <para>Any additional query string parameters for the connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -226,12 +267,40 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         #region Parameter OAuthHttpParameters_QueryStringParameter
         /// <summary>
         /// <para>
-        /// <para>Contains additional query string parameters for the connection.</para>
+        /// <para>Any additional query string parameters for the connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AuthParameters_OAuthParameters_OAuthHttpParameters_QueryStringParameters")]
         public Amazon.EventBridge.Model.ConnectionQueryStringParameter[] OAuthHttpParameters_QueryStringParameter { get; set; }
+        #endregion
+        
+        #region Parameter AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the Amazon VPC Lattice resource configuration for
+        /// the resource endpoint.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Auth_Resource_Configuration")]
+        public System.String AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn { get; set; }
+        #endregion
+        
+        #region Parameter InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the Amazon VPC Lattice resource configuration for
+        /// the resource endpoint.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Invocation_Resource_Configuration")]
+        public System.String InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn { get; set; }
         #endregion
         
         #region Parameter BasicAuthParameters_Username
@@ -256,16 +325,6 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -276,9 +335,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -292,21 +355,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EventBridge.Model.CreateConnectionResponse, NewEVBConnectionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuthorizationType = this.AuthorizationType;
             #if MODULAR
             if (this.AuthorizationType == null && ParameterWasBound(nameof(this.AuthorizationType)))
@@ -318,6 +371,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             context.ApiKeyAuthParameters_ApiKeyValue = this.ApiKeyAuthParameters_ApiKeyValue;
             context.BasicAuthParameters_Password = this.BasicAuthParameters_Password;
             context.BasicAuthParameters_Username = this.BasicAuthParameters_Username;
+            context.AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn = this.AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn;
             if (this.InvocationHttpParameters_BodyParameter != null)
             {
                 context.InvocationHttpParameters_BodyParameter = new List<Amazon.EventBridge.Model.ConnectionBodyParameter>(this.InvocationHttpParameters_BodyParameter);
@@ -347,6 +401,8 @@ namespace Amazon.PowerShell.Cmdlets.EVB
                 context.OAuthHttpParameters_QueryStringParameter = new List<Amazon.EventBridge.Model.ConnectionQueryStringParameter>(this.OAuthHttpParameters_QueryStringParameter);
             }
             context.Description = this.Description;
+            context.InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn = this.InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn;
+            context.KmsKeyIdentifier = this.KmsKeyIdentifier;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -378,6 +434,46 @@ namespace Amazon.PowerShell.Cmdlets.EVB
              // populate AuthParameters
             var requestAuthParametersIsNull = true;
             request.AuthParameters = new Amazon.EventBridge.Model.CreateConnectionAuthRequestParameters();
+            Amazon.EventBridge.Model.ConnectivityResourceParameters requestAuthParameters_authParameters_ConnectivityParameters = null;
+            
+             // populate ConnectivityParameters
+            var requestAuthParameters_authParameters_ConnectivityParametersIsNull = true;
+            requestAuthParameters_authParameters_ConnectivityParameters = new Amazon.EventBridge.Model.ConnectivityResourceParameters();
+            Amazon.EventBridge.Model.ConnectivityResourceConfigurationArn requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters = null;
+            
+             // populate ResourceParameters
+            var requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParametersIsNull = true;
+            requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters = new Amazon.EventBridge.Model.ConnectivityResourceConfigurationArn();
+            System.String requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters_authParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn = null;
+            if (cmdletContext.AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn != null)
+            {
+                requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters_authParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn = cmdletContext.AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn;
+            }
+            if (requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters_authParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn != null)
+            {
+                requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters.ResourceConfigurationArn = requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters_authParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn;
+                requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParametersIsNull = false;
+            }
+             // determine if requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters should be set to null
+            if (requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParametersIsNull)
+            {
+                requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters = null;
+            }
+            if (requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters != null)
+            {
+                requestAuthParameters_authParameters_ConnectivityParameters.ResourceParameters = requestAuthParameters_authParameters_ConnectivityParameters_authParameters_ConnectivityParameters_ResourceParameters;
+                requestAuthParameters_authParameters_ConnectivityParametersIsNull = false;
+            }
+             // determine if requestAuthParameters_authParameters_ConnectivityParameters should be set to null
+            if (requestAuthParameters_authParameters_ConnectivityParametersIsNull)
+            {
+                requestAuthParameters_authParameters_ConnectivityParameters = null;
+            }
+            if (requestAuthParameters_authParameters_ConnectivityParameters != null)
+            {
+                request.AuthParameters.ConnectivityParameters = requestAuthParameters_authParameters_ConnectivityParameters;
+                requestAuthParametersIsNull = false;
+            }
             Amazon.EventBridge.Model.CreateConnectionApiKeyAuthRequestParameters requestAuthParameters_authParameters_ApiKeyAuthParameters = null;
             
              // populate ApiKeyAuthParameters
@@ -617,6 +713,44 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             {
                 request.Description = cmdletContext.Description;
             }
+            
+             // populate InvocationConnectivityParameters
+            var requestInvocationConnectivityParametersIsNull = true;
+            request.InvocationConnectivityParameters = new Amazon.EventBridge.Model.ConnectivityResourceParameters();
+            Amazon.EventBridge.Model.ConnectivityResourceConfigurationArn requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters = null;
+            
+             // populate ResourceParameters
+            var requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParametersIsNull = true;
+            requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters = new Amazon.EventBridge.Model.ConnectivityResourceConfigurationArn();
+            System.String requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters_invocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn = null;
+            if (cmdletContext.InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn != null)
+            {
+                requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters_invocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn = cmdletContext.InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn;
+            }
+            if (requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters_invocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn != null)
+            {
+                requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters.ResourceConfigurationArn = requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters_invocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn;
+                requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParametersIsNull = false;
+            }
+             // determine if requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters should be set to null
+            if (requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParametersIsNull)
+            {
+                requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters = null;
+            }
+            if (requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters != null)
+            {
+                request.InvocationConnectivityParameters.ResourceParameters = requestInvocationConnectivityParameters_invocationConnectivityParameters_ResourceParameters;
+                requestInvocationConnectivityParametersIsNull = false;
+            }
+             // determine if request.InvocationConnectivityParameters should be set to null
+            if (requestInvocationConnectivityParametersIsNull)
+            {
+                request.InvocationConnectivityParameters = null;
+            }
+            if (cmdletContext.KmsKeyIdentifier != null)
+            {
+                request.KmsKeyIdentifier = cmdletContext.KmsKeyIdentifier;
+            }
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
@@ -659,13 +793,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "CreateConnection");
             try
             {
-                #if DESKTOP
-                return client.CreateConnection(request);
-                #elif CORECLR
-                return client.CreateConnectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConnectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -687,6 +815,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             public System.String ApiKeyAuthParameters_ApiKeyValue { get; set; }
             public System.String BasicAuthParameters_Password { get; set; }
             public System.String BasicAuthParameters_Username { get; set; }
+            public System.String AuthParameters_ConnectivityParameters_ResourceParameters_ResourceConfigurationArn { get; set; }
             public List<Amazon.EventBridge.Model.ConnectionBodyParameter> InvocationHttpParameters_BodyParameter { get; set; }
             public List<Amazon.EventBridge.Model.ConnectionHeaderParameter> InvocationHttpParameters_HeaderParameter { get; set; }
             public List<Amazon.EventBridge.Model.ConnectionQueryStringParameter> InvocationHttpParameters_QueryStringParameter { get; set; }
@@ -698,6 +827,8 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             public List<Amazon.EventBridge.Model.ConnectionHeaderParameter> OAuthHttpParameters_HeaderParameter { get; set; }
             public List<Amazon.EventBridge.Model.ConnectionQueryStringParameter> OAuthHttpParameters_QueryStringParameter { get; set; }
             public System.String Description { get; set; }
+            public System.String InvocationConnectivityParameters_ResourceParameters_ResourceConfigurationArn { get; set; }
+            public System.String KmsKeyIdentifier { get; set; }
             public System.String Name { get; set; }
             public System.Func<Amazon.EventBridge.Model.CreateConnectionResponse, NewEVBConnectionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

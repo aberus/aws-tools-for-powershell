@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
@@ -34,17 +36,18 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
     [OutputType("Amazon.IoTWireless.Model.CreateWirelessDeviceResponse")]
     [AWSCmdlet("Calls the AWS IoT Wireless CreateWirelessDevice API operation.", Operation = new[] {"CreateWirelessDevice"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.CreateWirelessDeviceResponse))]
     [AWSCmdletOutput("Amazon.IoTWireless.Model.CreateWirelessDeviceResponse",
-        "This cmdlet returns an Amazon.IoTWireless.Model.CreateWirelessDeviceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTWireless.Model.CreateWirelessDeviceResponse object containing multiple properties."
     )]
     public partial class NewIOTWWirelessDeviceCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LoRaWAN_OtaaV1_0_x_AppEui
         /// <summary>
         /// <para>
-        /// <para>The AppEUI value.</para>
+        /// <para>The AppEUI value. You specify this value when using LoRaWAN versions v1.0.2 or v1.0.3.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -74,7 +77,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter FPorts_Application
         /// <summary>
         /// <para>
-        /// <para>Optional LoRaWAN application information, which can be used for geolocation.</para>
+        /// <para>Optional LoRaWAN application information, which can be used for geolocation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,10 +112,14 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter ClientRequestToken
         /// <summary>
         /// <para>
-        /// <para>Each resource must have a unique client request token. If you try to create a new
-        /// resource with the same token as a resource that already exists, an exception occurs.
-        /// If you omit this value, AWS SDKs will automatically generate a unique client request.
-        /// </para>
+        /// <para>Each resource must have a unique client request token. The client token is used to
+        /// implement idempotency. It ensures that the request completes no more than one time.
+        /// If you retry a request with the same token and the same parameters, the request will
+        /// complete successfully. However, if you try to create a new resource using the same
+        /// token but different parameters, an HTTP 409 conflict occurs. If you omit this value,
+        /// AWS SDKs will automatically generate a unique client request. For more information
+        /// about idempotency, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency in Amazon EC2 API requests</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -280,7 +291,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter x_JoinEui
         /// <summary>
         /// <para>
-        /// <para>The JoinEUI value.</para>
+        /// <para>The JoinEUI value. You specify this value instead of the AppEUI when using LoRaWAN
+        /// version v1.0.4.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -312,7 +324,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The name of the new resource.</para>
+        /// <para>The name of the new resource.</para><note><para>The following special characters aren't accepted: <c>&lt;&gt;^#~$</c></para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -395,7 +407,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         /// <summary>
         /// <para>
         /// <para>The tags to attach to the new wireless device. Tags are metadata that you can use
-        /// to manage a resource.</para>
+        /// to manage a resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -431,16 +447,6 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Type parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Type' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Type' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -451,9 +457,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DestinationName), MyInvocation.BoundParameters);
@@ -467,21 +477,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTWireless.Model.CreateWirelessDeviceResponse, NewIOTWWirelessDeviceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Type;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.Description = this.Description;
             context.DestinationName = this.DestinationName;
@@ -1035,13 +1035,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "CreateWirelessDevice");
             try
             {
-                #if DESKTOP
-                return client.CreateWirelessDevice(request);
-                #elif CORECLR
-                return client.CreateWirelessDeviceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateWirelessDeviceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

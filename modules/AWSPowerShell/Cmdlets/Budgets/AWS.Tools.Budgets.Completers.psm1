@@ -82,8 +82,8 @@ $BGT_Completers = {
     {
         # Amazon.Budgets.ActionSubType
         {
-            ($_ -eq "New-BGTBudgetAction/Definition_SsmActionDefinition_ActionSubType") -Or
-            ($_ -eq "Update-BGTBudgetAction/Definition_SsmActionDefinition_ActionSubType")
+            ($_ -eq "New-BGTBudgetAction/SsmActionDefinition_ActionSubType") -Or
+            ($_ -eq "Update-BGTBudgetAction/SsmActionDefinition_ActionSubType")
         }
         {
             $v = "STOP_EC2_INSTANCES","STOP_RDS_INSTANCES"
@@ -109,8 +109,8 @@ $BGT_Completers = {
 
         # Amazon.Budgets.AutoAdjustType
         {
-            ($_ -eq "New-BGTBudget/Budget_AutoAdjustData_AutoAdjustType") -Or
-            ($_ -eq "Update-BGTBudget/NewBudget_AutoAdjustData_AutoAdjustType")
+            ($_ -eq "New-BGTBudget/AutoAdjustData_AutoAdjustType") -Or
+            ($_ -eq "Update-BGTBudget/AutoAdjustData_AutoAdjustType")
         }
         {
             $v = "FORECAST","HISTORICAL"
@@ -147,6 +147,26 @@ $BGT_Completers = {
         "Invoke-BGTBudgetAction/ExecutionType"
         {
             $v = "APPROVE_BUDGET_ACTION","RESET_BUDGET_ACTION","RETRY_BUDGET_ACTION","REVERSE_BUDGET_ACTION"
+            break
+        }
+
+        # Amazon.Budgets.HealthStatusReason
+        {
+            ($_ -eq "New-BGTBudget/HealthStatus_StatusReason") -Or
+            ($_ -eq "Update-BGTBudget/HealthStatus_StatusReason")
+        }
+        {
+            $v = "BILLING_VIEW_NO_ACCESS","BILLING_VIEW_UNHEALTHY","FILTER_INVALID","MULTI_YEAR_HISTORICAL_DATA_DISABLED"
+            break
+        }
+
+        # Amazon.Budgets.HealthStatusValue
+        {
+            ($_ -eq "New-BGTBudget/HealthStatus_Status") -Or
+            ($_ -eq "Update-BGTBudget/HealthStatus_Status")
+        }
+        {
+            $v = "HEALTHY","UNHEALTHY"
             break
         }
 
@@ -220,7 +240,7 @@ $BGT_Completers = {
             ($_ -eq "Update-BGTBudget/NewBudget_TimeUnit")
         }
         {
-            $v = "ANNUALLY","DAILY","MONTHLY","QUARTERLY"
+            $v = "ANNUALLY","CUSTOM","DAILY","MONTHLY","QUARTERLY"
             break
         }
 
@@ -236,12 +256,12 @@ $BGT_map = @{
     "ActionThreshold_ActionThresholdType"=@("New-BGTBudgetAction","Update-BGTBudgetAction")
     "ActionType"=@("New-BGTBudgetAction")
     "ApprovalModel"=@("New-BGTBudgetAction","Update-BGTBudgetAction")
-    "Budget_AutoAdjustData_AutoAdjustType"=@("New-BGTBudget")
+    "AutoAdjustData_AutoAdjustType"=@("New-BGTBudget","Update-BGTBudget")
     "Budget_BudgetType"=@("New-BGTBudget")
     "Budget_TimeUnit"=@("New-BGTBudget")
-    "Definition_SsmActionDefinition_ActionSubType"=@("New-BGTBudgetAction","Update-BGTBudgetAction")
     "ExecutionType"=@("Invoke-BGTBudgetAction")
-    "NewBudget_AutoAdjustData_AutoAdjustType"=@("Update-BGTBudget")
+    "HealthStatus_Status"=@("New-BGTBudget","Update-BGTBudget")
+    "HealthStatus_StatusReason"=@("New-BGTBudget","Update-BGTBudget")
     "NewBudget_BudgetType"=@("Update-BGTBudget")
     "NewBudget_TimeUnit"=@("Update-BGTBudget")
     "NewNotification_ComparisonOperator"=@("Update-BGTNotification")
@@ -259,6 +279,7 @@ $BGT_map = @{
     "OldNotification_NotificationType"=@("Update-BGTNotification")
     "OldNotification_ThresholdType"=@("Update-BGTNotification")
     "OldSubscriber_SubscriptionType"=@("Update-BGTSubscriber")
+    "SsmActionDefinition_ActionSubType"=@("New-BGTBudgetAction","Update-BGTBudgetAction")
     "Subscriber_SubscriptionType"=@("New-BGTSubscriber","Remove-BGTSubscriber")
 }
 
@@ -331,6 +352,9 @@ $BGT_SelectMap = @{
                "Get-BGTNotificationsForBudget",
                "Get-BGTSubscribersForNotification",
                "Invoke-BGTBudgetAction",
+               "Get-BGTResourceTag",
+               "Add-BGTResourceTag",
+               "Remove-BGTResourceTag",
                "Update-BGTBudget",
                "Update-BGTBudgetAction",
                "Update-BGTNotification",

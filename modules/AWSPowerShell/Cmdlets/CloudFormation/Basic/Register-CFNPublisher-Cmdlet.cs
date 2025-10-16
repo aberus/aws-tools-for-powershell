@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -35,9 +37,9 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     ///  
     /// <para>
     /// For information about requirements for registering as a public extension publisher,
-    /// see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html#publish-extension-prereqs">Registering
-    /// your account to publish CloudFormation extensions</a> in the <i>CloudFormation CLI
-    /// User Guide</i>.
+    /// see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html#publish-extension-prereqs">Prerequisite:
+    /// Registering your account to publish CloudFormation extensions</a> in the <i>CloudFormation
+    /// Command Line Interface (CLI) User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Register", "CFNPublisher", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation RegisterPublisher API operation.", Operation = new[] {"RegisterPublisher"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.RegisterPublisherResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudFormation.Model.RegisterPublisherResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudFormation.Model.RegisterPublisherResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.RegisterPublisherResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterCFNPublisherCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceptTermsAndCondition
         /// <summary>
@@ -70,9 +73,9 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// <summary>
         /// <para>
         /// <para>If you are using a Bitbucket or GitHub account for identity verification, the Amazon
-        /// Resource Name (ARN) for your connection to that account.</para><para>For more information, see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html#publish-extension-prereqs">Registering
-        /// your account to publish CloudFormation extensions</a> in the <i>CloudFormation CLI
-        /// User Guide</i>.</para>
+        /// Resource Name (ARN) for your connection to that account.</para><para>For more information, see <a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html#publish-extension-prereqs">Prerequisite:
+        /// Registering your account to publish CloudFormation extensions</a> in the <i>CloudFormation
+        /// Command Line Interface (CLI) User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectionArn), MyInvocation.BoundParameters);
@@ -185,13 +192,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "RegisterPublisher");
             try
             {
-                #if DESKTOP
-                return client.RegisterPublisher(request);
-                #elif CORECLR
-                return client.RegisterPublisherAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterPublisherAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

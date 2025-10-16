@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FMS;
 using Amazon.FMS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FMS
 {
     /// <summary>
@@ -41,18 +43,23 @@ namespace Amazon.PowerShell.Cmdlets.FMS
     /// within scope of the policy. 
     /// </para><para>
     /// Firewall Manager provides the following types of policies: 
-    /// </para><ul><li><para><b>Shield Advanced policy</b> - This policy applies Shield Advanced protection to
+    /// </para><ul><li><para><b>WAF policy</b> - This policy applies WAF web ACL protections to specified accounts
+    /// and resources. 
+    /// </para></li><li><para><b>Shield Advanced policy</b> - This policy applies Shield Advanced protection to
     /// specified accounts and resources. 
     /// </para></li><li><para><b>Security Groups policy</b> - This type of policy gives you control over security
     /// groups that are in use throughout your organization in Organizations and lets you
     /// enforce a baseline set of rules across your organization. 
+    /// </para></li><li><para><b>Network ACL policy</b> - This type of policy gives you control over the network
+    /// ACLs that are in use throughout your organization in Organizations and lets you enforce
+    /// a baseline set of first and last network ACL rules across your organization. 
     /// </para></li><li><para><b>Network Firewall policy</b> - This policy applies Network Firewall protection
     /// to your organization's VPCs. 
     /// </para></li><li><para><b>DNS Firewall policy</b> - This policy applies Amazon Route 53 Resolver DNS Firewall
     /// protections to your organization's VPCs. 
     /// </para></li><li><para><b>Third-party firewall policy</b> - This policy applies third-party firewall protections.
     /// Third-party firewalls are available by subscription through the Amazon Web Services
-    /// Marketplace console at <a href="https://aws.amazon.com/marketplace">Amazon Web Services
+    /// Marketplace console at <a href="http://aws.amazon.com/marketplace">Amazon Web Services
     /// Marketplace</a>.
     /// </para><ul><li><para><b>Palo Alto Networks Cloud NGFW policy</b> - This policy applies Palo Alto Networks
     /// Cloud Next Generation Firewall (NGFW) protections and Palo Alto Networks Cloud NGFW
@@ -67,12 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.FMS
     [OutputType("Amazon.FMS.Model.PutPolicyResponse")]
     [AWSCmdlet("Calls the Firewall Management Service PutPolicy API operation.", Operation = new[] {"PutPolicy"}, SelectReturnType = typeof(Amazon.FMS.Model.PutPolicyResponse))]
     [AWSCmdletOutput("Amazon.FMS.Model.PutPolicyResponse",
-        "This cmdlet returns an Amazon.FMS.Model.PutPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.FMS.Model.PutPolicyResponse object containing multiple properties."
     )]
     public partial class SetFMSPolicyCmdlet : AmazonFMSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Policy
         /// <summary>
@@ -93,7 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         #region Parameter TagList
         /// <summary>
         /// <para>
-        /// <para>The tags to add to the Amazon Web Services resource.</para>
+        /// <para>The tags to add to the Amazon Web Services resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Policy parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Policy' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Policy' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -131,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.FMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Policy), MyInvocation.BoundParameters);
@@ -147,21 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.FMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FMS.Model.PutPolicyResponse, SetFMSPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Policy;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Policy = this.Policy;
             #if MODULAR
             if (this.Policy == null && ParameterWasBound(nameof(this.Policy)))
@@ -235,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.FMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Firewall Management Service", "PutPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutPolicy(request);
-                #elif CORECLR
-                return client.PutPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

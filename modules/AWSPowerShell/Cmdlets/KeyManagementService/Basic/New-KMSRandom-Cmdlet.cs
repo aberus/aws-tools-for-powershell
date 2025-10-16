@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -40,23 +42,24 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// parameter.
     /// </para><para><c>GenerateRandom</c> also supports <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/nitro-enclave.html">Amazon
     /// Web Services Nitro Enclaves</a>, which provide an isolated compute environment in
-    /// Amazon EC2. To call <c>GenerateRandom</c> for a Nitro enclave, use the <a href="https://docs.aws.amazon.com/enclaves/latest/user/developing-applications.html#sdk">Amazon
+    /// Amazon EC2. To call <c>GenerateRandom</c> for a Nitro enclave or NitroTPM, use the
+    /// <a href="https://docs.aws.amazon.com/enclaves/latest/user/developing-applications.html#sdk">Amazon
     /// Web Services Nitro Enclaves SDK</a> or any Amazon Web Services SDK. Use the <c>Recipient</c>
-    /// parameter to provide the attestation document for the enclave. Instead of plaintext
-    /// bytes, the response includes the plaintext bytes encrypted under the public key from
-    /// the attestation document (<c>CiphertextForRecipient</c>).For information about the
-    /// interaction between KMS and Amazon Web Services Nitro Enclaves, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/services-nitro-enclaves.html">How
-    /// Amazon Web Services Nitro Enclaves uses KMS</a> in the <i>Key Management Service Developer
-    /// Guide</i>.
+    /// parameter to provide the attestation document for the attested environment. Instead
+    /// of plaintext bytes, the response includes the plaintext bytes encrypted under the
+    /// public key from the attestation document (<c>CiphertextForRecipient</c>). For information
+    /// about the interaction between KMS and Amazon Web Services Nitro Enclaves or Amazon
+    /// Web Services NitroTPM, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/cryptographic-attestation.html">Cryptographic
+    /// attestation support in KMS</a> in the <i>Key Management Service Developer Guide</i>.
     /// </para><para>
-    /// For more information about entropy and random number generation, see <a href="https://docs.aws.amazon.com/kms/latest/cryptographic-details/">Key
-    /// Management Service Cryptographic Details</a>.
+    /// For more information about entropy and random number generation, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-cryptography.html#entropy-and-random-numbers">Entropy
+    /// and random number generation</a> in the <i>Key Management Service Developer Guide</i>.
     /// </para><para><b>Cross-account use</b>: Not applicable. <c>GenerateRandom</c> does not use any
     /// account-specific resources, such as KMS keys.
     /// </para><para><b>Required permissions</b>: <a href="https://docs.aws.amazon.com/kms/latest/developerguide/kms-api-permissions-reference.html">kms:GenerateRandom</a>
     /// (IAM policy)
     /// </para><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -65,20 +68,19 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [AWSCmdlet("Calls the AWS Key Management Service GenerateRandom API operation.", Operation = new[] {"GenerateRandom"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.GenerateRandomResponse))]
     [AWSCmdletOutput("System.IO.MemoryStream or Amazon.KeyManagementService.Model.GenerateRandomResponse",
         "This cmdlet returns a System.IO.MemoryStream object.",
-        "The service call response (type Amazon.KeyManagementService.Model.GenerateRandomResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.KeyManagementService.Model.GenerateRandomResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewKMSRandomCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Recipient_AttestationDocument
         /// <summary>
         /// <para>
-        /// <para>The attestation document for an Amazon Web Services Nitro Enclave. This document includes
-        /// the enclave's public key.</para>
+        /// <para>The attestation document for an Amazon Web Services Nitro Enclave or a NitroTPM. This
+        /// document includes the enclave's public key.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -104,8 +106,8 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         /// <summary>
         /// <para>
         /// <para>The encryption algorithm that KMS should use with the public key for an Amazon Web
-        /// Services Nitro Enclave to encrypt plaintext values for the response. The only valid
-        /// value is <c>RSAES_OAEP_SHA_256</c>.</para>
+        /// Services Nitro Enclave or NitroTPM to encrypt plaintext values for the response. The
+        /// only valid value is <c>RSAES_OAEP_SHA_256</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,16 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "Plaintext";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NumberOfBytes parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NumberOfBytes' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NumberOfBytes' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -154,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -170,21 +166,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.GenerateRandomResponse, NewKMSRandomCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NumberOfBytes;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CustomKeyStoreId = this.CustomKeyStoreId;
             context.NumberOfBytes = this.NumberOfBytes;
             context.Recipient_AttestationDocument = this.Recipient_AttestationDocument;
@@ -293,13 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "GenerateRandom");
             try
             {
-                #if DESKTOP
-                return client.GenerateRandom(request);
-                #elif CORECLR
-                return client.GenerateRandomAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GenerateRandomAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

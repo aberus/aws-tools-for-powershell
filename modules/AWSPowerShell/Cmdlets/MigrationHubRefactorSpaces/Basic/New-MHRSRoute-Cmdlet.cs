@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MigrationHubRefactorSpaces;
 using Amazon.MigrationHubRefactorSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MHRS
 {
     /// <summary>
@@ -99,16 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.MHRS
     [OutputType("Amazon.MigrationHubRefactorSpaces.Model.CreateRouteResponse")]
     [AWSCmdlet("Calls the AWS Migration Hub Refactor Spaces CreateRoute API operation.", Operation = new[] {"CreateRoute"}, SelectReturnType = typeof(Amazon.MigrationHubRefactorSpaces.Model.CreateRouteResponse))]
     [AWSCmdletOutput("Amazon.MigrationHubRefactorSpaces.Model.CreateRouteResponse",
-        "This cmdlet returns an Amazon.MigrationHubRefactorSpaces.Model.CreateRouteResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MigrationHubRefactorSpaces.Model.CreateRouteResponse object containing multiple properties."
     )]
     public partial class NewMHRSRouteCmdlet : AmazonMigrationHubRefactorSpacesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DefaultRoute_ActivationState
         /// <summary>
@@ -196,7 +195,11 @@ namespace Amazon.PowerShell.Cmdlets.MHRS
         /// <para>
         /// <para>A list of HTTP methods to match. An empty list matches all values. If a method is
         /// present, only HTTP requests using that method are forwarded to this route’s service.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -259,7 +262,11 @@ namespace Amazon.PowerShell.Cmdlets.MHRS
         /// <summary>
         /// <para>
         /// <para>The tags to assign to the route. A tag is a label that you assign to an Amazon Web
-        /// Services resource. Each tag consists of a key-value pair.. </para>
+        /// Services resource. Each tag consists of a key-value pair.. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -299,9 +306,13 @@ namespace Amazon.PowerShell.Cmdlets.MHRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -522,13 +533,7 @@ namespace Amazon.PowerShell.Cmdlets.MHRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Migration Hub Refactor Spaces", "CreateRoute");
             try
             {
-                #if DESKTOP
-                return client.CreateRoute(request);
-                #elif CORECLR
-                return client.CreateRouteAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRouteAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

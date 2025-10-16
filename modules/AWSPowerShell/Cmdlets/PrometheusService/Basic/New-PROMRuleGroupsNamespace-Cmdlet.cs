@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PrometheusService;
 using Amazon.PrometheusService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PROM
 {
     /// <summary>
-    /// Create a rule group namespace.
+    /// The <c>CreateRuleGroupsNamespace</c> operation creates a rule groups namespace within
+    /// a workspace. A rule groups namespace is associated with exactly one rules file. A
+    /// workspace can have multiple rule groups namespaces.
+    /// 
+    ///  
+    /// <para>
+    /// Use this operation only to create new rule groups namespaces. To update an existing
+    /// rule groups namespace, use <c>PutRuleGroupsNamespace</c>.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "PROMRuleGroupsNamespace", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PrometheusService.Model.CreateRuleGroupsNamespaceResponse")]
     [AWSCmdlet("Calls the Amazon Prometheus Service CreateRuleGroupsNamespace API operation.", Operation = new[] {"CreateRuleGroupsNamespace"}, SelectReturnType = typeof(Amazon.PrometheusService.Model.CreateRuleGroupsNamespaceResponse))]
     [AWSCmdletOutput("Amazon.PrometheusService.Model.CreateRuleGroupsNamespaceResponse",
-        "This cmdlet returns an Amazon.PrometheusService.Model.CreateRuleGroupsNamespaceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PrometheusService.Model.CreateRuleGroupsNamespaceResponse object containing multiple properties."
     )]
     public partial class NewPROMRuleGroupsNamespaceCmdlet : AmazonPrometheusServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Data
         /// <summary>
         /// <para>
-        /// <para>The namespace data that define the rule groups.</para>
+        /// <para>The rules file to use in the new namespace.</para><para>Contains the base64-encoded version of the YAML rules file.</para><para>For details about the rule groups namespace structure, see <a href="https://docs.aws.amazon.com/prometheus/latest/APIReference/yaml-RuleGroupsNamespaceData.html">RuleGroupsNamespaceData</a>.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -62,7 +73,7 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The rule groups namespace name.</para>
+        /// <para>The name for the new rule groups namespace.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -79,7 +90,11 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Optional, user-provided tags for this rule groups namespace.</para>
+        /// <para>The list of tag keys and values to associate with the rule groups namespace.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -90,7 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         #region Parameter WorkspaceId
         /// <summary>
         /// <para>
-        /// <para>The ID of the workspace in which to create the rule group namespace.</para>
+        /// <para>The ID of the workspace to add the rule groups namespace.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -107,8 +122,8 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>Optional, unique, case-sensitive, user-provided identifier to ensure the idempotency
-        /// of the request.</para>
+        /// <para>A unique identifier that you can provide to ensure the idempotency of the request.
+        /// Case-sensitive.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,16 +141,6 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -146,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.PROM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -162,21 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.PROM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PrometheusService.Model.CreateRuleGroupsNamespaceResponse, NewPROMRuleGroupsNamespaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Data = this.Data;
             #if MODULAR
@@ -294,13 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.PROM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Prometheus Service", "CreateRuleGroupsNamespace");
             try
             {
-                #if DESKTOP
-                return client.CreateRuleGroupsNamespace(request);
-                #elif CORECLR
-                return client.CreateRuleGroupsNamespaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRuleGroupsNamespaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

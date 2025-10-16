@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,46 +22,131 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VerifiedPermissions;
 using Amazon.VerifiedPermissions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AVP
 {
     /// <summary>
-    /// Updates the specified identity source to use a new identity provider (IdP) source,
-    /// or to change the mapping of identities from the IdP to a different principal entity
-    /// type.
+    /// Updates the specified identity source to use a new identity provider (IdP), or to
+    /// change the mapping of identities from the IdP to a different principal entity type.
     /// 
     ///  <note><para>
     /// Verified Permissions is <i><a href="https://wikipedia.org/wiki/Eventual_consistency">eventually
-    /// consistent</a></i>. It can take a few seconds for a new or changed element to be
-    /// propagate through the service and be visible in the results of other Verified Permissions
-    /// operations.
+    /// consistent</a></i>. It can take a few seconds for a new or changed element to propagate
+    /// through the service and be visible in the results of other Verified Permissions operations.
     /// </para></note>
     /// </summary>
     [Cmdlet("Update", "AVPIdentitySource", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.VerifiedPermissions.Model.UpdateIdentitySourceResponse")]
     [AWSCmdlet("Calls the Amazon Verified Permissions UpdateIdentitySource API operation.", Operation = new[] {"UpdateIdentitySource"}, SelectReturnType = typeof(Amazon.VerifiedPermissions.Model.UpdateIdentitySourceResponse))]
     [AWSCmdletOutput("Amazon.VerifiedPermissions.Model.UpdateIdentitySourceResponse",
-        "This cmdlet returns an Amazon.VerifiedPermissions.Model.UpdateIdentitySourceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VerifiedPermissions.Model.UpdateIdentitySourceResponse object containing multiple properties."
     )]
     public partial class UpdateAVPIdentitySourceCmdlet : AmazonVerifiedPermissionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AccessTokenOnly_Audience
+        /// <summary>
+        /// <para>
+        /// <para>The access token <c>aud</c> claim values that you want to accept in your policy store.
+        /// For example, <c>https://myapp.example.com, https://myapp2.example.com</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_Audiences")]
+        public System.String[] AccessTokenOnly_Audience { get; set; }
+        #endregion
         
         #region Parameter CognitoUserPoolConfiguration_ClientId
         /// <summary>
         /// <para>
         /// <para>The client ID of an app client that is configured for the specified Amazon Cognito
-        /// user pool.</para>
+        /// user pool.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("UpdateConfiguration_CognitoUserPoolConfiguration_ClientIds")]
         public System.String[] CognitoUserPoolConfiguration_ClientId { get; set; }
+        #endregion
+        
+        #region Parameter IdentityTokenOnly_ClientId
+        /// <summary>
+        /// <para>
+        /// <para>The ID token audience, or client ID, claim values that you want to accept in your
+        /// policy store from an OIDC identity provider. For example, <c>1example23456789, 2example10111213</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_ClientIds")]
+        public System.String[] IdentityTokenOnly_ClientId { get; set; }
+        #endregion
+        
+        #region Parameter OpenIdConnectConfiguration_EntityIdPrefix
+        /// <summary>
+        /// <para>
+        /// <para>A descriptive string that you want to prefix to user entities from your OIDC identity
+        /// provider. For example, if you set an <c>entityIdPrefix</c> of <c>MyOIDCProvider</c>,
+        /// you can reference principals in your policies in the format <c>MyCorp::User::MyOIDCProvider|Carlos</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_EntityIdPrefix")]
+        public System.String OpenIdConnectConfiguration_EntityIdPrefix { get; set; }
+        #endregion
+        
+        #region Parameter OpenIdConnectConfiguration_GroupClaim
+        /// <summary>
+        /// <para>
+        /// <para>The token claim that you want Verified Permissions to interpret as group membership.
+        /// For example, <c>groups</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_GroupClaim")]
+        public System.String OpenIdConnectConfiguration_GroupClaim { get; set; }
+        #endregion
+        
+        #region Parameter GroupConfiguration_GroupEntityType
+        /// <summary>
+        /// <para>
+        /// <para>The name of the schema entity type that's mapped to the user pool group. Defaults
+        /// to <c>AWS::CognitoGroup</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration_GroupEntityType")]
+        public System.String GroupConfiguration_GroupEntityType { get; set; }
+        #endregion
+        
+        #region Parameter OpenIdConnectConfiguration_GroupEntityType
+        /// <summary>
+        /// <para>
+        /// <para>The policy store entity type that you want to map your users' group claim to. For
+        /// example, <c>MyCorp::UserGroup</c>. A group entity type is an entity that can have
+        /// a user entity type as a member.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_GroupEntityType")]
+        public System.String OpenIdConnectConfiguration_GroupEntityType { get; set; }
         #endregion
         
         #region Parameter IdentitySourceId
@@ -79,6 +164,18 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String IdentitySourceId { get; set; }
+        #endregion
+        
+        #region Parameter OpenIdConnectConfiguration_Issuer
+        /// <summary>
+        /// <para>
+        /// <para>The issuer URL of an OIDC identity provider. This URL must have an OIDC discovery
+        /// endpoint at the path <c>.well-known/openid-configuration</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_Issuer")]
+        public System.String OpenIdConnectConfiguration_Issuer { get; set; }
         #endregion
         
         #region Parameter PolicyStoreId
@@ -108,6 +205,28 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String PrincipalEntityType { get; set; }
+        #endregion
+        
+        #region Parameter AccessTokenOnly_PrincipalIdClaim
+        /// <summary>
+        /// <para>
+        /// <para>The claim that determines the principal in OIDC access tokens. For example, <c>sub</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_PrincipalIdClaim")]
+        public System.String AccessTokenOnly_PrincipalIdClaim { get; set; }
+        #endregion
+        
+        #region Parameter IdentityTokenOnly_PrincipalIdClaim
+        /// <summary>
+        /// <para>
+        /// <para>The claim that determines the principal in OIDC access tokens. For example, <c>sub</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_PrincipalIdClaim")]
+        public System.String IdentityTokenOnly_PrincipalIdClaim { get; set; }
         #endregion
         
         #region Parameter CognitoUserPoolConfiguration_UserPoolArn
@@ -144,9 +263,13 @@ namespace Amazon.PowerShell.Cmdlets.AVP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IdentitySourceId), MyInvocation.BoundParameters);
@@ -184,7 +307,22 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             {
                 context.CognitoUserPoolConfiguration_ClientId = new List<System.String>(this.CognitoUserPoolConfiguration_ClientId);
             }
+            context.GroupConfiguration_GroupEntityType = this.GroupConfiguration_GroupEntityType;
             context.CognitoUserPoolConfiguration_UserPoolArn = this.CognitoUserPoolConfiguration_UserPoolArn;
+            context.OpenIdConnectConfiguration_EntityIdPrefix = this.OpenIdConnectConfiguration_EntityIdPrefix;
+            context.OpenIdConnectConfiguration_GroupClaim = this.OpenIdConnectConfiguration_GroupClaim;
+            context.OpenIdConnectConfiguration_GroupEntityType = this.OpenIdConnectConfiguration_GroupEntityType;
+            context.OpenIdConnectConfiguration_Issuer = this.OpenIdConnectConfiguration_Issuer;
+            if (this.AccessTokenOnly_Audience != null)
+            {
+                context.AccessTokenOnly_Audience = new List<System.String>(this.AccessTokenOnly_Audience);
+            }
+            context.AccessTokenOnly_PrincipalIdClaim = this.AccessTokenOnly_PrincipalIdClaim;
+            if (this.IdentityTokenOnly_ClientId != null)
+            {
+                context.IdentityTokenOnly_ClientId = new List<System.String>(this.IdentityTokenOnly_ClientId);
+            }
+            context.IdentityTokenOnly_PrincipalIdClaim = this.IdentityTokenOnly_PrincipalIdClaim;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -242,6 +380,31 @@ namespace Amazon.PowerShell.Cmdlets.AVP
                 requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration.UserPoolArn = requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_cognitoUserPoolConfiguration_UserPoolArn;
                 requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfigurationIsNull = false;
             }
+            Amazon.VerifiedPermissions.Model.UpdateCognitoGroupConfiguration requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration = null;
+            
+             // populate GroupConfiguration
+            var requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfigurationIsNull = true;
+            requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration = new Amazon.VerifiedPermissions.Model.UpdateCognitoGroupConfiguration();
+            System.String requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration_groupConfiguration_GroupEntityType = null;
+            if (cmdletContext.GroupConfiguration_GroupEntityType != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration_groupConfiguration_GroupEntityType = cmdletContext.GroupConfiguration_GroupEntityType;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration_groupConfiguration_GroupEntityType != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration.GroupEntityType = requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration_groupConfiguration_GroupEntityType;
+                requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfigurationIsNull = false;
+            }
+             // determine if requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration should be set to null
+            if (requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfigurationIsNull)
+            {
+                requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration = null;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration.GroupConfiguration = requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration_updateConfiguration_CognitoUserPoolConfiguration_GroupConfiguration;
+                requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfigurationIsNull = false;
+            }
              // determine if requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration should be set to null
             if (requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfigurationIsNull)
             {
@@ -250,6 +413,161 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             if (requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration != null)
             {
                 request.UpdateConfiguration.CognitoUserPoolConfiguration = requestUpdateConfiguration_updateConfiguration_CognitoUserPoolConfiguration;
+                requestUpdateConfigurationIsNull = false;
+            }
+            Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectConfiguration requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration = null;
+            
+             // populate OpenIdConnectConfiguration
+            var requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfigurationIsNull = true;
+            requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration = new Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectConfiguration();
+            System.String requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_EntityIdPrefix = null;
+            if (cmdletContext.OpenIdConnectConfiguration_EntityIdPrefix != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_EntityIdPrefix = cmdletContext.OpenIdConnectConfiguration_EntityIdPrefix;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_EntityIdPrefix != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration.EntityIdPrefix = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_EntityIdPrefix;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfigurationIsNull = false;
+            }
+            System.String requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_Issuer = null;
+            if (cmdletContext.OpenIdConnectConfiguration_Issuer != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_Issuer = cmdletContext.OpenIdConnectConfiguration_Issuer;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_Issuer != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration.Issuer = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_openIdConnectConfiguration_Issuer;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfigurationIsNull = false;
+            }
+            Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectGroupConfiguration requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration = null;
+            
+             // populate GroupConfiguration
+            var requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfigurationIsNull = true;
+            requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration = new Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectGroupConfiguration();
+            System.String requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupClaim = null;
+            if (cmdletContext.OpenIdConnectConfiguration_GroupClaim != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupClaim = cmdletContext.OpenIdConnectConfiguration_GroupClaim;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupClaim != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration.GroupClaim = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupClaim;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfigurationIsNull = false;
+            }
+            System.String requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupEntityType = null;
+            if (cmdletContext.OpenIdConnectConfiguration_GroupEntityType != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupEntityType = cmdletContext.OpenIdConnectConfiguration_GroupEntityType;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupEntityType != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration.GroupEntityType = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration_openIdConnectConfiguration_GroupEntityType;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfigurationIsNull = false;
+            }
+             // determine if requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration should be set to null
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfigurationIsNull)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration = null;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration.GroupConfiguration = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_GroupConfiguration;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfigurationIsNull = false;
+            }
+            Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectTokenSelection requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection = null;
+            
+             // populate TokenSelection
+            var requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelectionIsNull = true;
+            requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection = new Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectTokenSelection();
+            Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectAccessTokenConfiguration requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly = null;
+            
+             // populate AccessTokenOnly
+            var requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnlyIsNull = true;
+            requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly = new Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectAccessTokenConfiguration();
+            List<System.String> requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_Audience = null;
+            if (cmdletContext.AccessTokenOnly_Audience != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_Audience = cmdletContext.AccessTokenOnly_Audience;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_Audience != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly.Audiences = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_Audience;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnlyIsNull = false;
+            }
+            System.String requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_PrincipalIdClaim = null;
+            if (cmdletContext.AccessTokenOnly_PrincipalIdClaim != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_PrincipalIdClaim = cmdletContext.AccessTokenOnly_PrincipalIdClaim;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_PrincipalIdClaim != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly.PrincipalIdClaim = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly_accessTokenOnly_PrincipalIdClaim;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnlyIsNull = false;
+            }
+             // determine if requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly should be set to null
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnlyIsNull)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly = null;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection.AccessTokenOnly = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_AccessTokenOnly;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelectionIsNull = false;
+            }
+            Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectIdentityTokenConfiguration requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly = null;
+            
+             // populate IdentityTokenOnly
+            var requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnlyIsNull = true;
+            requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly = new Amazon.VerifiedPermissions.Model.UpdateOpenIdConnectIdentityTokenConfiguration();
+            List<System.String> requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_ClientId = null;
+            if (cmdletContext.IdentityTokenOnly_ClientId != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_ClientId = cmdletContext.IdentityTokenOnly_ClientId;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_ClientId != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly.ClientIds = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_ClientId;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnlyIsNull = false;
+            }
+            System.String requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_PrincipalIdClaim = null;
+            if (cmdletContext.IdentityTokenOnly_PrincipalIdClaim != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_PrincipalIdClaim = cmdletContext.IdentityTokenOnly_PrincipalIdClaim;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_PrincipalIdClaim != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly.PrincipalIdClaim = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly_identityTokenOnly_PrincipalIdClaim;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnlyIsNull = false;
+            }
+             // determine if requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly should be set to null
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnlyIsNull)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly = null;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection.IdentityTokenOnly = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_updateConfiguration_OpenIdConnectConfiguration_TokenSelection_IdentityTokenOnly;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelectionIsNull = false;
+            }
+             // determine if requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection should be set to null
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelectionIsNull)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection = null;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection != null)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration.TokenSelection = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration_updateConfiguration_OpenIdConnectConfiguration_TokenSelection;
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfigurationIsNull = false;
+            }
+             // determine if requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration should be set to null
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfigurationIsNull)
+            {
+                requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration = null;
+            }
+            if (requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration != null)
+            {
+                request.UpdateConfiguration.OpenIdConnectConfiguration = requestUpdateConfiguration_updateConfiguration_OpenIdConnectConfiguration;
                 requestUpdateConfigurationIsNull = false;
             }
              // determine if request.UpdateConfiguration should be set to null
@@ -295,13 +613,7 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Verified Permissions", "UpdateIdentitySource");
             try
             {
-                #if DESKTOP
-                return client.UpdateIdentitySource(request);
-                #elif CORECLR
-                return client.UpdateIdentitySourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateIdentitySourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -322,7 +634,16 @@ namespace Amazon.PowerShell.Cmdlets.AVP
             public System.String PolicyStoreId { get; set; }
             public System.String PrincipalEntityType { get; set; }
             public List<System.String> CognitoUserPoolConfiguration_ClientId { get; set; }
+            public System.String GroupConfiguration_GroupEntityType { get; set; }
             public System.String CognitoUserPoolConfiguration_UserPoolArn { get; set; }
+            public System.String OpenIdConnectConfiguration_EntityIdPrefix { get; set; }
+            public System.String OpenIdConnectConfiguration_GroupClaim { get; set; }
+            public System.String OpenIdConnectConfiguration_GroupEntityType { get; set; }
+            public System.String OpenIdConnectConfiguration_Issuer { get; set; }
+            public List<System.String> AccessTokenOnly_Audience { get; set; }
+            public System.String AccessTokenOnly_PrincipalIdClaim { get; set; }
+            public List<System.String> IdentityTokenOnly_ClientId { get; set; }
+            public System.String IdentityTokenOnly_PrincipalIdClaim { get; set; }
             public System.Func<Amazon.VerifiedPermissions.Model.UpdateIdentitySourceResponse, UpdateAVPIdentitySourceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

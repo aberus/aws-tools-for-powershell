@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The SimpleEmailV2 module of AWS Tools for PowerShell lets developers and administrators manage Amazon Simple Email Service V2 (SES V2) from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.SimpleEmailV2.dll'
     )
@@ -119,10 +120,18 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SES2ImportJob', 
         'Get-SES2ImportJobList', 
         'Get-SES2MessageInsight', 
+        'Get-SES2MultiRegionEndpoint', 
+        'Get-SES2MultiRegionEndpointList', 
         'Get-SES2RecommendationList', 
+        'Get-SES2ReputationEntity', 
+        'Get-SES2ReputationEntityList', 
         'Get-SES2ResourceTag', 
+        'Get-SES2ResourceTenantList', 
         'Get-SES2SuppressedDestination', 
         'Get-SES2SuppressedDestinationList', 
+        'Get-SES2Tenant', 
+        'Get-SES2TenantList', 
+        'Get-SES2TenantResourceList', 
         'New-SES2ConfigurationSet', 
         'New-SES2ConfigurationSetEventDestination', 
         'New-SES2Contact', 
@@ -135,6 +144,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-SES2EmailTemplate', 
         'New-SES2ExportJob', 
         'New-SES2ImportJob', 
+        'New-SES2MultiRegionEndpoint', 
+        'New-SES2Tenant', 
+        'New-SES2TenantResourceAssociation', 
         'Remove-SES2ConfigurationSet', 
         'Remove-SES2ConfigurationSetEventDestination', 
         'Remove-SES2Contact', 
@@ -144,8 +156,11 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-SES2EmailIdentity', 
         'Remove-SES2EmailIdentityPolicy', 
         'Remove-SES2EmailTemplate', 
+        'Remove-SES2MultiRegionEndpoint', 
         'Remove-SES2ResourceTag', 
         'Remove-SES2SuppressedDestination', 
+        'Remove-SES2Tenant', 
+        'Remove-SES2TenantResourceAssociation', 
         'Send-SES2BulkEmail', 
         'Send-SES2CustomVerificationEmail', 
         'Send-SES2Email', 
@@ -157,11 +172,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-SES2CustomVerificationEmailTemplate', 
         'Update-SES2EmailIdentityPolicy', 
         'Update-SES2EmailTemplate', 
+        'Update-SES2ReputationEntityCustomerManagedStatus', 
+        'Update-SES2ReputationEntityPolicy', 
         'Write-SES2AccountDedicatedIpWarmupAttribute', 
         'Write-SES2AccountDetail', 
         'Write-SES2AccountSendingAttribute', 
         'Write-SES2AccountSuppressionAttribute', 
         'Write-SES2AccountVdmAttribute', 
+        'Write-SES2ConfigurationSetArchivingOption', 
         'Write-SES2ConfigurationSetDeliveryOption', 
         'Write-SES2ConfigurationSetReputationOption', 
         'Write-SES2ConfigurationSetSendingOption', 
@@ -201,7 +219,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

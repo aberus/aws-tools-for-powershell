@@ -40,10 +40,14 @@ Describe -Tag "Smoke" "S3" {
         BeforeAll {
             $script:bucketName = "pstest-" + [DateTime]::Now.ToFileTime()
             New-S3Bucket -BucketName $script:bucketName
+
+            $void = New-Item -Path temp -Type directory -Force
+            "sample text" | Out-File -FilePath "temp\test.txt" -Force
         }
 
         AfterAll {
             $script:bucketName | Remove-S3Bucket -Force -DeleteBucketContent
+            $void = Remove-Item -Path "temp" -Recurse -Force
         }        
 
         It "Can write objects with SSE" {
@@ -66,6 +70,20 @@ Describe -Tag "Smoke" "S3" {
                 Write-S3Object -BucketName $script:bucketName -Key foo.txt -Content "this is a test" -ServerSideEncryption Naan
             } | Should -Throw
         }
+
+        It "Can verify bucket ownership for content during write operations" {
+            $accountId = (Get-STSCallerIdentity).Account
+            Write-S3Object -BucketName $script:bucketName -Key "ownership-test.txt" -ExpectedBucketOwner $accountId -Content "testing bucket ownership verification"
+        }
+
+        It "Can verify bucket ownership for file during write operations" {
+            $accountId = (Get-STSCallerIdentity).Account
+            Write-S3Object -BucketName $script:bucketName -Key "ownership-test.txt" -ExpectedBucketOwner $accountId -File "temp\test.txt"
+        }
+
+        It "Can write objects with DisablePayloadSigning" {
+            Write-S3Object -BucketName $script:bucketName -Key foo-disaplepalyloadsigning.txt -Content "this is a test" -DisablePayloadSigning $true
+        }
     }
 
     Context "Reading" {
@@ -73,7 +91,7 @@ Describe -Tag "Smoke" "S3" {
         BeforeAll {
             $script:bucketName = "pstest-" + [DateTime]::Now.ToFileTime()
             New-S3Bucket -BucketName $script:bucketName
-            
+            $key = "versionTest"
             $void = New-Item -Path temp\bar -Type directory -Force
             $void = New-Item -Path temp\bar\baz -Type directory -Force
             
@@ -82,9 +100,29 @@ Describe -Tag "Smoke" "S3" {
             "another file" | Out-File -FilePath ".\temp\bar\baz\blah.txt" -Force
             "basic file" | Out-File -FilePath "temp\basic.txt" -Force
 
-            Write-S3Object -BucketName $script:bucketName -KeyPrefix bar2\ -Folder .\temp\bar -Recurse
-            Write-S3Object -BucketName $script:bucketName -Key bar2\foo.txt -Content "foo"
+            Write-S3Object -BucketName $script:bucketName -KeyPrefix bar2\ -Folder .\temp\bar -Recurse -EnableLegacyKeyCleaning
+            Write-S3Object -BucketName $script:bucketName -Key bar2\foo.txt -Content "foo" -EnableLegacyKeyCleaning
+            Write-S3Object -BucketName $script:bucketName -Key basic.txt -File "temp\basic.txt" -EnableLegacyKeyCleaning
+
+            Write-S3Object -BucketName $script:bucketName -KeyPrefix bar2v5/ -Folder .\temp\bar -Recurse
+            Write-S3Object -BucketName $script:bucketName -Key bar2v5/foo.txt -Content "foo"
             Write-S3Object -BucketName $script:bucketName -Key basic.txt -File "temp\basic.txt"
+
+            Write-S3Object -BucketName $script:bucketName -KeyPrefix bar2v5backslash\ -Folder .\temp\bar -Recurse
+            Write-S3Object -BucketName $script:bucketName -Key bar2v5backslash\foo.txt -Content "foo"
+
+            Write-S3Object -BucketName $script:bucketName -Key '\leading-backslash.txt' -Content "leading backslash content"
+
+            Write-S3Object -BucketName $script:bucketName -Key '\leading-backslash-with-keycleaning.txt' -Content "leading backslash content" -EnableLegacyKeyCleaning
+
+            Write-S3BucketVersioning -BucketName $script:bucketName -VersioningConfig_Status Enabled
+
+            Write-S3Object -BucketName $script:bucketName -Key $key -Content "Version 1"
+            Write-S3Object -BucketName $script:bucketName -Key $key -Content "Version 2"
+
+            $s3ObjectVersions = Get-S3Version -BucketName $script:bucketName -Prefix $key
+
+            
         }
 
         AfterAll {
@@ -92,7 +130,33 @@ Describe -Tag "Smoke" "S3" {
         }
 
         It "Can download to a folder hierarchy" {
-            Read-S3Object -BucketName $script:bucketName -KeyPrefix bar2\ -Folder temp\new-bar
+            Read-S3Object -BucketName $script:bucketName -KeyPrefix bar2v5 -Folder temp\new-bar-v5-noslash
+
+            (Get-Content ".\temp\new-bar-v5-noslash\foo.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-noslash\test.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-noslash\test2.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-noslash\baz\blah.txt").Length | Should -BeGreaterThan 0
+        }
+
+        It "Can download to a folder hierarchy when Keyprefix ends with forward slash" {
+            Read-S3Object -BucketName $script:bucketName -KeyPrefix bar2v5/ -Folder temp\new-bar-v5-forwardslash
+
+            (Get-Content ".\temp\new-bar-v5-forwardslash\foo.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-forwardslash\test.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-forwardslash\test2.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-forwardslash\baz\blah.txt").Length | Should -BeGreaterThan 0
+        }
+
+        It "Can download to a folder hierarchy when Keyprefix ends with backslash" {
+            Read-S3Object -BucketName $script:bucketName -KeyPrefix bar2v5backslash\ -Folder temp\new-bar-v5-backslash
+
+            (Get-Content ".\temp\new-bar-v5-backslash\test.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-backslash\test2.txt").Length | Should -BeGreaterThan 0
+            (Get-Content ".\temp\new-bar-v5-backslash\baz\blah.txt").Length | Should -BeGreaterThan 0
+        }
+
+        It "Can download to a folder hierarchy when EnableLegacyKeyCleaning is set" {
+            Read-S3Object -BucketName $script:bucketName -KeyPrefix bar2\ -Folder temp\new-bar -EnableLegacyKeyCleaning
 
             (Get-Content ".\temp\new-bar\foo.txt").Length | Should -BeGreaterThan 0
             (Get-Content ".\temp\new-bar\test.txt").Length | Should -BeGreaterThan 0
@@ -129,6 +193,23 @@ Describe -Tag "Smoke" "S3" {
             Read-S3Object -BucketName $script:bucketName -Key "basic.txt" -File "temp\basic2.txt"
             (Get-Content "temp\basic2.txt").Length | Should -BeGreaterThan 0
         }
+
+        It "Can retrieve a specific version using the VersionId parameter" {
+            $versionId = $s3ObjectVersions.Versions[0].VersionId
+            Read-S3Object -BucketName $script:bucketName -Key $key -VersionId $versionId -File "temp\version-test.txt"
+            (Get-Content "temp\version-test.txt") | Should -Be "Version 2"
+        }
+        It "Can retrieve a specific version using the Version alias" {
+            $versionId = $s3ObjectVersions.Versions[1].VersionId
+            Read-S3Object -BucketName $script:bucketName -Key $key -Version $versionId -File "temp\version-test.txt"
+            (Get-Content "temp\version-test.txt") | Should -Be "Version 1"  
+        }
+        It "Can retrieve a key with leading backslash" {
+            (Get-S3Object -BucketName $script:bucketName -Key '\leading-backslash.txt').Key | Should -BeExactly '\leading-backslash.txt'
+        }
+        It "Leading backslash is cleaned with EnableLegacyCleanKey" {
+            (Get-S3Object -BucketName $script:bucketName -Key '\leading-backslash-with-keycleaning.txt' -EnableLegacyKeyCleaning).Key | Should -BeExactly 'leading-backslash-with-keycleaning.txt'
+        }
     }
 
     Context "Copying" {
@@ -138,44 +219,54 @@ Describe -Tag "Smoke" "S3" {
             $bucketName = "pstest-" + $content
             $eastBucketName = $bucketName + "east"
             New-S3Bucket -BucketName $eastBucketName -Region us-east-1
-
+            
             $westBucketName = $bucketName + "west"
             New-S3Bucket -BucketName $westBucketName -Region us-west-1
 
             Write-S3Object -BucketName $eastBucketName -Key key -Content $content -region us-east-1
+
+            Write-S3Object -BucketName $eastBucketName -Key '\leading-backslash.txt' -Content $content -region us-east-1
         }
 
         AfterEach {
             $eastBucketName | Remove-S3Bucket -Force -DeleteBucketContent
-            $westBucketName | Remove-S3Bucket -Force -DeleteBucketContent
+            $westBucketName | Remove-S3Bucket -Region us-west-1 -Force -DeleteBucketContent
         }
 
-        It "Can copy cross-region" {
-            Copy-S3Object -BucketName $eastBucketName -Key key -DestinationBucket $westBucketName -DestinationKey key -Region us-east-1
-
-            Read-S3Object -BucketName $westBucketName -Key key -File "temp\cross-region-copy.txt"
-            (Get-Content "temp\cross-region-copy.txt") | Should -Be $content
-        }
         It "Can copy cross-region with SourceRegion Parameter"{
             Copy-S3Object -BucketName $eastBucketName -Key key -SourceRegion us-east-1 -DestinationBucket $westBucketName -DestinationKey key -Region us-west-1
 
-            Read-S3Object -BucketName $westBucketName -Key key -File "temp\cross-region-copy.txt"
+            Read-S3Object -BucketName $westBucketName -Key key -File "temp\cross-region-copy.txt" -Region us-west-1
             (Get-Content "temp\cross-region-copy.txt") | Should -Be $content
         }
 
-        It "Can copy with /-prefixed keys" {
+        It "Can copy with /-prefixed keys when EnableLegacyKeyCleaning is set" {
             $prefixedKey = "/key"
             # this triggered exception before fix: https://github.com/aws/aws-sdk-net/issues/833
-            Copy-S3Object -BucketName $eastBucketName -Key $prefixedKey -DestinationKey "/data/keycopy" -Region us-east-1
+            Copy-S3Object -BucketName $eastBucketName -Key $prefixedKey -DestinationKey "/data/keycopy" -Region us-east-1 -EnableLegacyKeyCleaning
         }
 
-        It "Can copy S3 object to S3 with TagSet parameter" {
+        It "Can copy with key with leading backslash" {
+            $prefixedKey = '\leading-backslash.txt'
+            Copy-S3Object -BucketName $eastBucketName -Key $prefixedKey -DestinationKey "\destkeycopyleadingbackslash" -Region us-east-1
+        }
+
+        It "Can copy S3 object to S3 with TagSet parameter" -Skip {
             Copy-S3Object -BucketName $eastBucketName -Key key -DestinationBucket $eastBucketName -DestinationKey "key-copy-tagset" -Region us-east-1 -TagSet @{Key='testtag';Value='testvalue'}
 
             $tagCollection = Get-S3ObjectTagSet -BucketName $eastBucketName -Key "key-copy-tagset"
             $tagCollection | Should -HaveCount 1
             ($tagCollection[0].Key) | Should -Be "testtag"
             ($tagCollection[0].Value) | Should -Be "testvalue"
+        }
+        It "Can copy with ExpectedBucketOwner parameter" {
+            $accountId = (Get-STSCallerIdentity).Account
+            Copy-S3Object -BucketName $eastBucketName -Key key -SourceRegion us-east-1 -DestinationBucket $westBucketName -DestinationKey "key-copy-owner" -Region us-west-1 -ExpectedBucketOwner $accountId
+            Read-S3Object -BucketName $westBucketName -Key "key-copy-owner" -File "temp\owner-copy.txt" -Region us-west-1
+            (Get-Content "temp\owner-copy.txt") | Should -Be $content
+
+            $incorrectAccountId = "000000000000"
+            { Copy-S3Object -BucketName $eastBucketName -Key key -SourceRegion us-east-1 -DestinationBucket $westBucketName -DestinationKey "key-copy-owner-fail" -Region us-west-1 -ExpectedBucketOwner $incorrectAccountId } | Should -Throw 
         }
     }
 

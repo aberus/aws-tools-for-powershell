@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -51,18 +53,23 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateInferenceExperiment API operation.", Operation = new[] {"CreateInferenceExperiment"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateInferenceExperimentResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateInferenceExperimentResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateInferenceExperimentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateInferenceExperimentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMInferenceExperimentCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContentType_CsvContentType
         /// <summary>
         /// <para>
-        /// <para>The list of all content type headers that Amazon SageMaker will treat as CSV and capture
-        /// accordingly.</para>
+        /// <para>The list of all content type headers that Amazon SageMaker AI will treat as CSV and
+        /// capture accordingly.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,8 +128,12 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ContentType_JsonContentType
         /// <summary>
         /// <para>
-        /// <para>The list of all content type headers that SageMaker will treat as JSON and capture
-        /// accordingly.</para>
+        /// <para>The list of all content type headers that SageMaker AI will treat as JSON and capture
+        /// accordingly.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +181,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para> An array of <c>ModelVariantConfig</c> objects. There is one for each variant in the
         /// inference experiment. Each <c>ModelVariantConfig</c> object in the array describes
-        /// the infrastructure configuration for the corresponding variant. </para>
+        /// the infrastructure configuration for the corresponding variant. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -224,7 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ShadowModeConfig_ShadowModelVariant
         /// <summary>
         /// <para>
-        /// <para>List of shadow variant configurations.</para>
+        /// <para>List of shadow variant configurations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -272,7 +291,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para> Array of key-value pairs. You can use tags to categorize your Amazon Web Services
         /// resources in different ways, for example, by purpose, owner, or environment. For more
         /// information, see <a href="https://docs.aws.amazon.com/ARG/latest/userguide/tagging.html">Tagging
-        /// your Amazon Web Services Resources</a>. </para>
+        /// your Amazon Web Services Resources</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -321,9 +344,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -623,13 +650,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateInferenceExperiment");
             try
             {
-                #if DESKTOP
-                return client.CreateInferenceExperiment(request);
-                #elif CORECLR
-                return client.CreateInferenceExperimentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateInferenceExperimentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

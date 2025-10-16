@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
-    /// Returns summary information about extension that have been registered with CloudFormation.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Returns summary information about all extensions, including your private resource
+    /// types, modules, and Hooks as well as all public extensions from Amazon Web Services
+    /// and third-party publishers.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "CFNTypeList")]
     [OutputType("Amazon.CloudFormation.Model.TypeSummary")]
     [AWSCmdlet("Calls the AWS CloudFormation ListTypes API operation.", Operation = new[] {"ListTypes"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.ListTypesResponse))]
     [AWSCmdletOutput("Amazon.CloudFormation.Model.TypeSummary or Amazon.CloudFormation.Model.ListTypesResponse",
         "This cmdlet returns a collection of Amazon.CloudFormation.Model.TypeSummary objects.",
-        "The service call response (type Amazon.CloudFormation.Model.ListTypesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.ListTypesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFNTypeListCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filters_Category
         /// <summary>
@@ -121,8 +126,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// <para>
         /// <para>The scope at which the extensions are visible and usable in CloudFormation operations.</para><para>Valid values include:</para><ul><li><para><c>PRIVATE</c>: Extensions that are visible and usable within this account and Region.
         /// This includes:</para><ul><li><para>Private extensions you have registered in this account and Region.</para></li><li><para>Public extensions that you have activated in this account and Region.</para></li></ul></li><li><para><c>PUBLIC</c>: Extensions that are publicly visible and available to be activated
-        /// within any Amazon Web Services account. This includes extensions from Amazon Web Services,
-        /// in addition to third-party publishers.</para></li></ul><para>The default is <c>PRIVATE</c>.</para>
+        /// within any Amazon Web Services account. This includes extensions from Amazon Web Services
+        /// and third-party publishers.</para></li></ul><para>The default is <c>PRIVATE</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,7 +160,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,9 +188,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -346,13 +355,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "ListTypes");
             try
             {
-                #if DESKTOP
-                return client.ListTypes(request);
-                #elif CORECLR
-                return client.ListTypesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTypesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

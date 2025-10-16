@@ -1,0 +1,1 @@
+(Get-S3Version -BucketName "amzn-s3-demo-bucket").Versions | Where {$_.IsDeleteMarker -eq "True"} | Remove-S3Object -Force

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Macie2;
 using Amazon.Macie2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MAC2
 {
     /// <summary>
     /// Retrieves the configuration settings and status of automated sensitive data discovery
-    /// for an account.
+    /// for an organization or standalone account.
     /// </summary>
     [Cmdlet("Get", "MAC2AutomatedDiscoveryConfiguration")]
     [OutputType("Amazon.Macie2.Model.GetAutomatedDiscoveryConfigurationResponse")]
     [AWSCmdlet("Calls the Amazon Macie 2 GetAutomatedDiscoveryConfiguration API operation.", Operation = new[] {"GetAutomatedDiscoveryConfiguration"}, SelectReturnType = typeof(Amazon.Macie2.Model.GetAutomatedDiscoveryConfigurationResponse))]
     [AWSCmdletOutput("Amazon.Macie2.Model.GetAutomatedDiscoveryConfigurationResponse",
-        "This cmdlet returns an Amazon.Macie2.Model.GetAutomatedDiscoveryConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Macie2.Model.GetAutomatedDiscoveryConfigurationResponse object containing multiple properties."
     )]
     public partial class GetMAC2AutomatedDiscoveryConfigurationCmdlet : AmazonMacie2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Macie 2", "GetAutomatedDiscoveryConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetAutomatedDiscoveryConfiguration(request);
-                #elif CORECLR
-                return client.GetAutomatedDiscoveryConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAutomatedDiscoveryConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

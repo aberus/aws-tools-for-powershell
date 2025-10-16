@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,66 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QConnect;
 using Amazon.QConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QC
 {
     /// <summary>
     /// Creates a session. A session is a contextual container used for generating recommendations.
-    /// Amazon Connect creates a new Amazon Q session for each contact on which Amazon Q is
-    /// enabled.
+    /// Amazon Connect creates a new Amazon Q in Connect session for each contact on which
+    /// Amazon Q in Connect is enabled.
     /// </summary>
     [Cmdlet("New", "QCSession", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QConnect.Model.SessionData")]
     [AWSCmdlet("Calls the Amazon Q Connect CreateSession API operation.", Operation = new[] {"CreateSession"}, SelectReturnType = typeof(Amazon.QConnect.Model.CreateSessionResponse))]
     [AWSCmdletOutput("Amazon.QConnect.Model.SessionData or Amazon.QConnect.Model.CreateSessionResponse",
         "This cmdlet returns an Amazon.QConnect.Model.SessionData object.",
-        "The service call response (type Amazon.QConnect.Model.CreateSessionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.QConnect.Model.CreateSessionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewQCSessionCmdlet : AmazonQConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AiAgentConfiguration
+        /// <summary>
+        /// <para>
+        /// <para>The configuration of the AI Agents (mapped by AI Agent Type to AI Agent version) that
+        /// should be used by Amazon Q in Connect for this Session.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Collections.Hashtable AiAgentConfiguration { get; set; }
+        #endregion
+        
+        #region Parameter TagFilter_AndCondition
+        /// <summary>
+        /// <para>
+        /// <para>A list of conditions which would be applied together with an <c>AND</c> condition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TagFilter_AndConditions")]
+        public Amazon.QConnect.Model.TagCondition[] TagFilter_AndCondition { get; set; }
+        #endregion
         
         #region Parameter AssistantId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Amazon Q assistant. Can be either the ID or the ARN. URLs cannot
-        /// contain the ARN.</para>
+        /// <para>The identifier of the Amazon Q in Connect assistant. Can be either the ID or the ARN.
+        /// URLs cannot contain the ARN.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,6 +95,17 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public System.String AssistantId { get; set; }
         #endregion
         
+        #region Parameter ContactArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the email contact in Amazon Connect. Used to retrieve
+        /// email content and establish session context for AI-powered email assistance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ContactArn { get; set; }
+        #endregion
+        
         #region Parameter Description
         /// <summary>
         /// <para>
@@ -70,6 +114,17 @@ namespace Amazon.PowerShell.Cmdlets.QC
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter TagCondition_Key
+        /// <summary>
+        /// <para>
+        /// <para>The tag key in the tag condition.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TagFilter_TagCondition_Key")]
+        public System.String TagCondition_Key { get; set; }
         #endregion
         
         #region Parameter Name
@@ -89,10 +144,29 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter TagFilter_OrCondition
+        /// <summary>
+        /// <para>
+        /// <para>A list of conditions which would be applied together with an <c>OR</c> condition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TagFilter_OrConditions")]
+        public Amazon.QConnect.Model.OrCondition[] TagFilter_OrCondition { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags used to organize, track, or control access for this resource.</para>
+        /// <para>The tags used to organize, track, or control access for this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,12 +174,23 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public System.Collections.Hashtable Tag { get; set; }
         #endregion
         
+        #region Parameter TagCondition_Value
+        /// <summary>
+        /// <para>
+        /// <para>The tag value in the tag condition.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TagFilter_TagCondition_Value")]
+        public System.String TagCondition_Value { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
         /// <para>A unique, case-sensitive identifier that you provide to ensure the idempotency of
         /// the request. If not provided, the Amazon Web Services SDK populates this field. For
-        /// more information about idempotency, see <a href="https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/">Making
+        /// more information about idempotency, see <a href="http://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/">Making
         /// retries safe with idempotent APIs</a>.</para>
         /// </para>
         /// </summary>
@@ -124,16 +209,6 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public string Select { get; set; } = "Session";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AssistantId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AssistantId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AssistantId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -144,9 +219,13 @@ namespace Amazon.PowerShell.Cmdlets.QC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -160,21 +239,19 @@ namespace Amazon.PowerShell.Cmdlets.QC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QConnect.Model.CreateSessionResponse, NewQCSessionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
+            }
+            if (this.AiAgentConfiguration != null)
+            {
+                context.AiAgentConfiguration = new Dictionary<System.String, Amazon.QConnect.Model.AIAgentConfigurationData>(StringComparer.Ordinal);
+                foreach (var hashKey in this.AiAgentConfiguration.Keys)
                 {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
+                    context.AiAgentConfiguration.Add((String)hashKey, (Amazon.QConnect.Model.AIAgentConfigurationData)(this.AiAgentConfiguration[hashKey]));
                 }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AssistantId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssistantId = this.AssistantId;
             #if MODULAR
             if (this.AssistantId == null && ParameterWasBound(nameof(this.AssistantId)))
@@ -183,6 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.QC
             }
             #endif
             context.ClientToken = this.ClientToken;
+            context.ContactArn = this.ContactArn;
             context.Description = this.Description;
             context.Name = this.Name;
             #if MODULAR
@@ -191,6 +269,16 @@ namespace Amazon.PowerShell.Cmdlets.QC
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.TagFilter_AndCondition != null)
+            {
+                context.TagFilter_AndCondition = new List<Amazon.QConnect.Model.TagCondition>(this.TagFilter_AndCondition);
+            }
+            if (this.TagFilter_OrCondition != null)
+            {
+                context.TagFilter_OrCondition = new List<Amazon.QConnect.Model.OrCondition>(this.TagFilter_OrCondition);
+            }
+            context.TagCondition_Key = this.TagCondition_Key;
+            context.TagCondition_Value = this.TagCondition_Value;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -215,6 +303,10 @@ namespace Amazon.PowerShell.Cmdlets.QC
             // create request
             var request = new Amazon.QConnect.Model.CreateSessionRequest();
             
+            if (cmdletContext.AiAgentConfiguration != null)
+            {
+                request.AiAgentConfiguration = cmdletContext.AiAgentConfiguration;
+            }
             if (cmdletContext.AssistantId != null)
             {
                 request.AssistantId = cmdletContext.AssistantId;
@@ -223,6 +315,10 @@ namespace Amazon.PowerShell.Cmdlets.QC
             {
                 request.ClientToken = cmdletContext.ClientToken;
             }
+            if (cmdletContext.ContactArn != null)
+            {
+                request.ContactArn = cmdletContext.ContactArn;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
@@ -230,6 +326,70 @@ namespace Amazon.PowerShell.Cmdlets.QC
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            
+             // populate TagFilter
+            var requestTagFilterIsNull = true;
+            request.TagFilter = new Amazon.QConnect.Model.TagFilter();
+            List<Amazon.QConnect.Model.TagCondition> requestTagFilter_tagFilter_AndCondition = null;
+            if (cmdletContext.TagFilter_AndCondition != null)
+            {
+                requestTagFilter_tagFilter_AndCondition = cmdletContext.TagFilter_AndCondition;
+            }
+            if (requestTagFilter_tagFilter_AndCondition != null)
+            {
+                request.TagFilter.AndConditions = requestTagFilter_tagFilter_AndCondition;
+                requestTagFilterIsNull = false;
+            }
+            List<Amazon.QConnect.Model.OrCondition> requestTagFilter_tagFilter_OrCondition = null;
+            if (cmdletContext.TagFilter_OrCondition != null)
+            {
+                requestTagFilter_tagFilter_OrCondition = cmdletContext.TagFilter_OrCondition;
+            }
+            if (requestTagFilter_tagFilter_OrCondition != null)
+            {
+                request.TagFilter.OrConditions = requestTagFilter_tagFilter_OrCondition;
+                requestTagFilterIsNull = false;
+            }
+            Amazon.QConnect.Model.TagCondition requestTagFilter_tagFilter_TagCondition = null;
+            
+             // populate TagCondition
+            var requestTagFilter_tagFilter_TagConditionIsNull = true;
+            requestTagFilter_tagFilter_TagCondition = new Amazon.QConnect.Model.TagCondition();
+            System.String requestTagFilter_tagFilter_TagCondition_tagCondition_Key = null;
+            if (cmdletContext.TagCondition_Key != null)
+            {
+                requestTagFilter_tagFilter_TagCondition_tagCondition_Key = cmdletContext.TagCondition_Key;
+            }
+            if (requestTagFilter_tagFilter_TagCondition_tagCondition_Key != null)
+            {
+                requestTagFilter_tagFilter_TagCondition.Key = requestTagFilter_tagFilter_TagCondition_tagCondition_Key;
+                requestTagFilter_tagFilter_TagConditionIsNull = false;
+            }
+            System.String requestTagFilter_tagFilter_TagCondition_tagCondition_Value = null;
+            if (cmdletContext.TagCondition_Value != null)
+            {
+                requestTagFilter_tagFilter_TagCondition_tagCondition_Value = cmdletContext.TagCondition_Value;
+            }
+            if (requestTagFilter_tagFilter_TagCondition_tagCondition_Value != null)
+            {
+                requestTagFilter_tagFilter_TagCondition.Value = requestTagFilter_tagFilter_TagCondition_tagCondition_Value;
+                requestTagFilter_tagFilter_TagConditionIsNull = false;
+            }
+             // determine if requestTagFilter_tagFilter_TagCondition should be set to null
+            if (requestTagFilter_tagFilter_TagConditionIsNull)
+            {
+                requestTagFilter_tagFilter_TagCondition = null;
+            }
+            if (requestTagFilter_tagFilter_TagCondition != null)
+            {
+                request.TagFilter.TagCondition = requestTagFilter_tagFilter_TagCondition;
+                requestTagFilterIsNull = false;
+            }
+             // determine if request.TagFilter should be set to null
+            if (requestTagFilterIsNull)
+            {
+                request.TagFilter = null;
             }
             if (cmdletContext.Tag != null)
             {
@@ -273,13 +433,7 @@ namespace Amazon.PowerShell.Cmdlets.QC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Q Connect", "CreateSession");
             try
             {
-                #if DESKTOP
-                return client.CreateSession(request);
-                #elif CORECLR
-                return client.CreateSessionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSessionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -296,10 +450,16 @@ namespace Amazon.PowerShell.Cmdlets.QC
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Dictionary<System.String, Amazon.QConnect.Model.AIAgentConfigurationData> AiAgentConfiguration { get; set; }
             public System.String AssistantId { get; set; }
             public System.String ClientToken { get; set; }
+            public System.String ContactArn { get; set; }
             public System.String Description { get; set; }
             public System.String Name { get; set; }
+            public List<Amazon.QConnect.Model.TagCondition> TagFilter_AndCondition { get; set; }
+            public List<Amazon.QConnect.Model.OrCondition> TagFilter_OrCondition { get; set; }
+            public System.String TagCondition_Key { get; set; }
+            public System.String TagCondition_Value { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.QConnect.Model.CreateSessionResponse, NewQCSessionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Session;

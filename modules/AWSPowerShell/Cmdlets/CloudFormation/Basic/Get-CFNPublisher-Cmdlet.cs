@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -37,19 +39,20 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// </para><para>
     /// For more information about registering as a publisher, see:
     /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_RegisterPublisher.html">RegisterPublisher</a></para></li><li><para><a href="https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/publish-extension.html">Publishing
-    /// extensions to make them available for public use</a> in the <i>CloudFormation CLI
-    /// User Guide</i></para></li></ul>
+    /// extensions to make them available for public use</a> in the <i>CloudFormation Command
+    /// Line Interface (CLI) User Guide</i></para></li></ul>
     /// </summary>
     [Cmdlet("Get", "CFNPublisher")]
     [OutputType("Amazon.CloudFormation.Model.DescribePublisherResponse")]
     [AWSCmdlet("Calls the AWS CloudFormation DescribePublisher API operation.", Operation = new[] {"DescribePublisher"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.DescribePublisherResponse))]
     [AWSCmdletOutput("Amazon.CloudFormation.Model.DescribePublisherResponse",
-        "This cmdlet returns an Amazon.CloudFormation.Model.DescribePublisherResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudFormation.Model.DescribePublisherResponse object containing multiple properties."
     )]
     public partial class GetCFNPublisherCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PublisherId
         /// <summary>
@@ -73,9 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -147,13 +154,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "DescribePublisher");
             try
             {
-                #if DESKTOP
-                return client.DescribePublisher(request);
-                #elif CORECLR
-                return client.DescribePublisherAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribePublisherAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

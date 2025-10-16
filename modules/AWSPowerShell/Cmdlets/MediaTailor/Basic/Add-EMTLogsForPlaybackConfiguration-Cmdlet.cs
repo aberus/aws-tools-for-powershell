@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,85 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaTailor;
 using Amazon.MediaTailor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMT
 {
     /// <summary>
-    /// Amazon CloudWatch log settings for a playback configuration.
+    /// Defines where AWS Elemental MediaTailor sends logs for the playback configuration.
     /// </summary>
     [Cmdlet("Add", "EMTLogsForPlaybackConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaTailor ConfigureLogsForPlaybackConfiguration API operation.", Operation = new[] {"ConfigureLogsForPlaybackConfiguration"}, SelectReturnType = typeof(Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse))]
     [AWSCmdletOutput("Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse",
-        "This cmdlet returns an Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse object containing multiple properties."
     )]
     public partial class AddEMTLogsForPlaybackConfigurationCmdlet : AmazonMediaTailorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter EnabledLoggingStrategy
+        /// <summary>
+        /// <para>
+        /// <para>The method used for collecting logs from AWS Elemental MediaTailor. To configure MediaTailor
+        /// to send logs directly to Amazon CloudWatch Logs, choose <c>LEGACY_CLOUDWATCH</c>.
+        /// To configure MediaTailor to send logs to CloudWatch, which then vends the logs to
+        /// your destination of choice, choose <c>VENDED_LOGS</c>. Supported destinations are
+        /// CloudWatch Logs log group, Amazon S3 bucket, and Amazon Data Firehose stream.</para><para>To use vended logs, you must configure the delivery destination in Amazon CloudWatch,
+        /// as described in <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AWS-logs-and-resource-policy.html#AWS-vended-logs-permissions-V2">Enable
+        /// logging from AWS services, Logging that requires additional permissions [V2]</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EnabledLoggingStrategies")]
+        public System.String[] EnabledLoggingStrategy { get; set; }
+        #endregion
+        
+        #region Parameter AdsInteractionLog_ExcludeEventType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates that MediaTailor won't emit the selected events in the logs for playback
+        /// sessions that are initialized with this configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdsInteractionLog_ExcludeEventTypes")]
+        public System.String[] AdsInteractionLog_ExcludeEventType { get; set; }
+        #endregion
+        
+        #region Parameter ManifestServiceInteractionLog_ExcludeEventType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates that MediaTailor won't emit the selected events in the logs for playback
+        /// sessions that are initialized with this configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ManifestServiceInteractionLog_ExcludeEventTypes")]
+        public System.String[] ManifestServiceInteractionLog_ExcludeEventType { get; set; }
+        #endregion
         
         #region Parameter PercentEnabled
         /// <summary>
         /// <para>
-        /// <para>The percentage of session logs that MediaTailor sends to your Cloudwatch Logs account.
+        /// <para>The percentage of session logs that MediaTailor sends to your CloudWatch Logs account.
         /// For example, if your playback configuration has 1000 sessions and percentEnabled is
         /// set to <c>60</c>, MediaTailor sends logs for 600 of the sessions to CloudWatch Logs.
         /// MediaTailor decides at random which of the playback configuration sessions to send
@@ -79,6 +135,22 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public System.String PlaybackConfigurationName { get; set; }
         #endregion
         
+        #region Parameter AdsInteractionLog_PublishOptInEventType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates that MediaTailor emits <c>RAW_ADS_RESPONSE</c> logs for playback sessions
+        /// that are initialized with this configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AdsInteractionLog_PublishOptInEventTypes")]
+        public System.String[] AdsInteractionLog_PublishOptInEventType { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -100,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PlaybackConfigurationName), MyInvocation.BoundParameters);
@@ -120,6 +196,22 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse, AddEMTLogsForPlaybackConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
+            }
+            if (this.AdsInteractionLog_ExcludeEventType != null)
+            {
+                context.AdsInteractionLog_ExcludeEventType = new List<System.String>(this.AdsInteractionLog_ExcludeEventType);
+            }
+            if (this.AdsInteractionLog_PublishOptInEventType != null)
+            {
+                context.AdsInteractionLog_PublishOptInEventType = new List<System.String>(this.AdsInteractionLog_PublishOptInEventType);
+            }
+            if (this.EnabledLoggingStrategy != null)
+            {
+                context.EnabledLoggingStrategy = new List<System.String>(this.EnabledLoggingStrategy);
+            }
+            if (this.ManifestServiceInteractionLog_ExcludeEventType != null)
+            {
+                context.ManifestServiceInteractionLog_ExcludeEventType = new List<System.String>(this.ManifestServiceInteractionLog_ExcludeEventType);
             }
             context.PercentEnabled = this.PercentEnabled;
             #if MODULAR
@@ -151,6 +243,58 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             // create request
             var request = new Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationRequest();
             
+            
+             // populate AdsInteractionLog
+            var requestAdsInteractionLogIsNull = true;
+            request.AdsInteractionLog = new Amazon.MediaTailor.Model.AdsInteractionLog();
+            List<System.String> requestAdsInteractionLog_adsInteractionLog_ExcludeEventType = null;
+            if (cmdletContext.AdsInteractionLog_ExcludeEventType != null)
+            {
+                requestAdsInteractionLog_adsInteractionLog_ExcludeEventType = cmdletContext.AdsInteractionLog_ExcludeEventType;
+            }
+            if (requestAdsInteractionLog_adsInteractionLog_ExcludeEventType != null)
+            {
+                request.AdsInteractionLog.ExcludeEventTypes = requestAdsInteractionLog_adsInteractionLog_ExcludeEventType;
+                requestAdsInteractionLogIsNull = false;
+            }
+            List<System.String> requestAdsInteractionLog_adsInteractionLog_PublishOptInEventType = null;
+            if (cmdletContext.AdsInteractionLog_PublishOptInEventType != null)
+            {
+                requestAdsInteractionLog_adsInteractionLog_PublishOptInEventType = cmdletContext.AdsInteractionLog_PublishOptInEventType;
+            }
+            if (requestAdsInteractionLog_adsInteractionLog_PublishOptInEventType != null)
+            {
+                request.AdsInteractionLog.PublishOptInEventTypes = requestAdsInteractionLog_adsInteractionLog_PublishOptInEventType;
+                requestAdsInteractionLogIsNull = false;
+            }
+             // determine if request.AdsInteractionLog should be set to null
+            if (requestAdsInteractionLogIsNull)
+            {
+                request.AdsInteractionLog = null;
+            }
+            if (cmdletContext.EnabledLoggingStrategy != null)
+            {
+                request.EnabledLoggingStrategies = cmdletContext.EnabledLoggingStrategy;
+            }
+            
+             // populate ManifestServiceInteractionLog
+            var requestManifestServiceInteractionLogIsNull = true;
+            request.ManifestServiceInteractionLog = new Amazon.MediaTailor.Model.ManifestServiceInteractionLog();
+            List<System.String> requestManifestServiceInteractionLog_manifestServiceInteractionLog_ExcludeEventType = null;
+            if (cmdletContext.ManifestServiceInteractionLog_ExcludeEventType != null)
+            {
+                requestManifestServiceInteractionLog_manifestServiceInteractionLog_ExcludeEventType = cmdletContext.ManifestServiceInteractionLog_ExcludeEventType;
+            }
+            if (requestManifestServiceInteractionLog_manifestServiceInteractionLog_ExcludeEventType != null)
+            {
+                request.ManifestServiceInteractionLog.ExcludeEventTypes = requestManifestServiceInteractionLog_manifestServiceInteractionLog_ExcludeEventType;
+                requestManifestServiceInteractionLogIsNull = false;
+            }
+             // determine if request.ManifestServiceInteractionLog should be set to null
+            if (requestManifestServiceInteractionLogIsNull)
+            {
+                request.ManifestServiceInteractionLog = null;
+            }
             if (cmdletContext.PercentEnabled != null)
             {
                 request.PercentEnabled = cmdletContext.PercentEnabled.Value;
@@ -197,13 +341,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaTailor", "ConfigureLogsForPlaybackConfiguration");
             try
             {
-                #if DESKTOP
-                return client.ConfigureLogsForPlaybackConfiguration(request);
-                #elif CORECLR
-                return client.ConfigureLogsForPlaybackConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ConfigureLogsForPlaybackConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -220,6 +358,10 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public List<System.String> AdsInteractionLog_ExcludeEventType { get; set; }
+            public List<System.String> AdsInteractionLog_PublishOptInEventType { get; set; }
+            public List<System.String> EnabledLoggingStrategy { get; set; }
+            public List<System.String> ManifestServiceInteractionLog_ExcludeEventType { get; set; }
             public System.Int32? PercentEnabled { get; set; }
             public System.String PlaybackConfigurationName { get; set; }
             public System.Func<Amazon.MediaTailor.Model.ConfigureLogsForPlaybackConfigurationResponse, AddEMTLogsForPlaybackConfigurationCmdlet, object> Select { get; set; } =

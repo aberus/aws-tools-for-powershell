@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Updates an Amazon QuickSight user.
+    /// Updates an Amazon Quick Sight user.
     /// </summary>
     [Cmdlet("Update", "QSUser", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QuickSight.Model.User")]
     [AWSCmdlet("Calls the Amazon QuickSight UpdateUser API operation.", Operation = new[] {"UpdateUser"}, SelectReturnType = typeof(Amazon.QuickSight.Model.UpdateUserResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.User or Amazon.QuickSight.Model.UpdateUserResponse",
         "This cmdlet returns an Amazon.QuickSight.Model.User object.",
-        "The service call response (type Amazon.QuickSight.Model.UpdateUserResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.QuickSight.Model.UpdateUserResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateQSUserCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
         /// <para>The ID for the Amazon Web Services account that the user is in. Currently, you use
-        /// the ID for the Amazon Web Services account that contains your Amazon QuickSight account.</para>
+        /// the ID for the Amazon Web Services account that contains your Amazon Quick Sight account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -64,7 +67,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The URL of the custom OpenID Connect (OIDC) provider that provides identity to let
-        /// a user federate into Amazon QuickSight with an associated Identity and Access Management(IAM)
+        /// a user federate into Quick Sight with an associated Identity and Access Management(IAM)
         /// role. This parameter should only be used when <c>ExternalLoginFederationProviderType</c>
         /// parameter is set to <c>CUSTOM_OIDC</c>.</para>
         /// </para>
@@ -79,11 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>(Enterprise edition only) The name of the custom permissions profile that you want
         /// to assign to this user. Customized permissions allows you to control a user's access
         /// by restricting access the following operations:</para><ul><li><para>Create and update data sources</para></li><li><para>Create and update datasets</para></li><li><para>Create and update email reports</para></li><li><para>Subscribe to email reports</para></li></ul><para>A set of custom permissions includes any combination of these restrictions. Currently,
-        /// you need to create the profile names for custom permission sets by using the Amazon
-        /// QuickSight console. Then, you use the <c>RegisterUser</c> API operation to assign
-        /// the named set of permissions to a Amazon QuickSight user. </para><para>Amazon QuickSight custom permissions are applied through IAM policies. Therefore,
-        /// they override the permissions typically granted by assigning Amazon QuickSight users
-        /// to one of the default security cohorts in Amazon QuickSight (admin, author, reader).</para><para>This feature is available only to Amazon QuickSight Enterprise edition subscriptions.</para>
+        /// you need to create the profile names for custom permission sets by using the Quick
+        /// Sight console. Then, you use the <c>RegisterUser</c> API operation to assign the named
+        /// set of permissions to a Quick Sight user. </para><para>Quick Sight custom permissions are applied through IAM policies. Therefore, they override
+        /// the permissions typically granted by assigning Quick Sight users to one of the default
+        /// security cohorts in Quick Sight (admin, author, reader).</para><para>This feature is available only to Quick Sight Enterprise edition subscriptions.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,8 +114,8 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <summary>
         /// <para>
         /// <para>The type of supported external login provider that provides identity to let a user
-        /// federate into Amazon QuickSight with an associated Identity and Access Management(IAM)
-        /// role. The type of supported external login provider can be one of the following.</para><ul><li><para><c>COGNITO</c>: Amazon Cognito. The provider URL is cognito-identity.amazonaws.com.
+        /// federate into Quick Sight with an associated Identity and Access Management(IAM) role.
+        /// The type of supported external login provider can be one of the following.</para><ul><li><para><c>COGNITO</c>: Amazon Cognito. The provider URL is cognito-identity.amazonaws.com.
         /// When choosing the <c>COGNITO</c> provider type, don’t use the "CustomFederationProviderUrl"
         /// parameter which is only needed when the external provider is custom.</para></li><li><para><c>CUSTOM_OIDC</c>: Custom OpenID Connect (OIDC) provider. When choosing <c>CUSTOM_OIDC</c>
         /// type, use the <c>CustomFederationProviderUrl</c> parameter to provide the custom OIDC
@@ -154,9 +157,14 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Role
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight role of the user. The role can be one of the following default
-        /// security cohorts:</para><ul><li><para><c>READER</c>: A user who has read-only access to dashboards.</para></li><li><para><c>AUTHOR</c>: A user who can create data sources, datasets, analyses, and dashboards.</para></li><li><para><c>ADMIN</c>: A user who is an author, who can also manage Amazon QuickSight settings.</para></li></ul><para>The name of the Amazon QuickSight role is invisible to the user except for the console
-        /// screens dealing with permissions.</para>
+        /// <para>The Amazon Quick Sight role of the user. The role can be one of the following default
+        /// security cohorts:</para><ul><li><para><c>READER</c>: A user who has read-only access to dashboards.</para></li><li><para><c>AUTHOR</c>: A user who can create data sources, datasets, analyses, and dashboards.</para></li><li><para><c>ADMIN</c>: A user who is an author, who can also manage Amazon Quick Sight settings.</para></li><li><para><c>READER_PRO</c>: Reader Pro adds Generative BI capabilities to the Reader role.
+        /// Reader Pros have access to Amazon Q in Quick Sight, can build stories with Amazon
+        /// Q, and can generate executive summaries from dashboards.</para></li><li><para><c>AUTHOR_PRO</c>: Author Pro adds Generative BI capabilities to the Author role.
+        /// Author Pros can author dashboards with natural language with Amazon Q, build stories
+        /// with Amazon Q, create Topics for Q&amp;A, and generate executive summaries from dashboards.</para></li><li><para><c>ADMIN_PRO</c>: Admin Pros are Author Pros who can also manage Amazon Quick Sight
+        /// administrative settings. Admin Pro users are billed at Author Pro pricing.</para></li></ul><para>The name of the Quick Sight role is invisible to the user except for the console screens
+        /// dealing with permissions.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -187,7 +195,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter UserName
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight user name that you want to update.</para>
+        /// <para>The Amazon Quick Sight user name that you want to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -212,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "User";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -232,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserName), MyInvocation.BoundParameters);
@@ -248,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.UpdateUserResponse, UpdateQSUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -397,13 +389,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "UpdateUser");
             try
             {
-                #if DESKTOP
-                return client.UpdateUser(request);
-                #elif CORECLR
-                return client.UpdateUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

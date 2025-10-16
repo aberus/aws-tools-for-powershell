@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeBuild;
 using Amazon.CodeBuild.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CB
 {
     /// <summary>
@@ -62,12 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
     [OutputType("Amazon.CodeBuild.Model.UpdateProjectVisibilityResponse")]
     [AWSCmdlet("Calls the AWS CodeBuild UpdateProjectVisibility API operation.", Operation = new[] {"UpdateProjectVisibility"}, SelectReturnType = typeof(Amazon.CodeBuild.Model.UpdateProjectVisibilityResponse))]
     [AWSCmdletOutput("Amazon.CodeBuild.Model.UpdateProjectVisibilityResponse",
-        "This cmdlet returns an Amazon.CodeBuild.Model.UpdateProjectVisibilityResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CodeBuild.Model.UpdateProjectVisibilityResponse object containing multiple properties."
     )]
     public partial class UpdateCBProjectVisibilityCmdlet : AmazonCodeBuildClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ProjectArn
         /// <summary>
@@ -135,9 +138,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProjectArn), MyInvocation.BoundParameters);
@@ -237,13 +244,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeBuild", "UpdateProjectVisibility");
             try
             {
-                #if DESKTOP
-                return client.UpdateProjectVisibility(request);
-                #elif CORECLR
-                return client.UpdateProjectVisibilityAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateProjectVisibilityAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

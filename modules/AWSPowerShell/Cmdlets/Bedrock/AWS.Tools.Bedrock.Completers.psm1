@@ -80,6 +80,40 @@ $BDR_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.Bedrock.ApplicationType
+        {
+            ($_ -eq "New-BDREvaluationJob/ApplicationType") -Or
+            ($_ -eq "Get-BDREvaluationJobList/ApplicationTypeEqual")
+        }
+        {
+            $v = "ModelEvaluation","RagEvaluation"
+            break
+        }
+
+        # Amazon.Bedrock.AutomatedReasoningCheckResult
+        {
+            ($_ -eq "New-BDRAutomatedReasoningPolicyTestCase/ExpectedAggregatedFindingsResult") -Or
+            ($_ -eq "Update-BDRAutomatedReasoningPolicyTestCase/ExpectedAggregatedFindingsResult")
+        }
+        {
+            $v = "IMPOSSIBLE","INVALID","NO_TRANSLATION","SATISFIABLE","TOO_COMPLEX","TRANSLATION_AMBIGUOUS","VALID"
+            break
+        }
+
+        # Amazon.Bedrock.AutomatedReasoningPolicyBuildResultAssetType
+        "Get-BDRAutomatedReasoningPolicyBuildWorkflowResultAsset/AssetType"
+        {
+            $v = "BUILD_LOG","POLICY_DEFINITION","QUALITY_REPORT"
+            break
+        }
+
+        # Amazon.Bedrock.AutomatedReasoningPolicyBuildWorkflowType
+        "Start-BDRAutomatedReasoningPolicyBuildWorkflow/BuildWorkflowType"
+        {
+            $v = "IMPORT_POLICY","INGEST_CONTENT","REFINE_POLICY"
+            break
+        }
+
         # Amazon.Bedrock.CommitmentDuration
         "New-BDRProvisionedModelThroughput/CommitmentDuration"
         {
@@ -90,14 +124,55 @@ $BDR_Completers = {
         # Amazon.Bedrock.CustomizationType
         "New-BDRModelCustomizationJob/CustomizationType"
         {
-            $v = "CONTINUED_PRE_TRAINING","FINE_TUNING"
+            $v = "CONTINUED_PRE_TRAINING","DISTILLATION","FINE_TUNING","IMPORTED"
+            break
+        }
+
+        # Amazon.Bedrock.CustomModelDeploymentStatus
+        "Get-BDRCustomModelDeploymentList/StatusEqual"
+        {
+            $v = "Active","Creating","Failed"
+            break
+        }
+
+        # Amazon.Bedrock.EvaluationJobStatus
+        "Get-BDREvaluationJobList/StatusEqual"
+        {
+            $v = "Completed","Deleting","Failed","InProgress","Stopped","Stopping"
             break
         }
 
         # Amazon.Bedrock.FineTuningJobStatus
-        "Get-BDRModelCustomizationJobList/StatusEquals"
+        "Get-BDRModelCustomizationJobList/StatusEqual"
         {
             $v = "Completed","Failed","InProgress","Stopped","Stopping"
+            break
+        }
+
+        # Amazon.Bedrock.GuardrailContentFiltersTierName
+        {
+            ($_ -eq "New-BDRGuardrail/ContentPolicyConfig_TierConfig_TierName") -Or
+            ($_ -eq "Update-BDRGuardrail/ContentPolicyConfig_TierConfig_TierName")
+        }
+        {
+            $v = "CLASSIC","STANDARD"
+            break
+        }
+
+        # Amazon.Bedrock.GuardrailTopicsTierName
+        {
+            ($_ -eq "New-BDRGuardrail/TopicPolicyConfig_TierConfig_TierName") -Or
+            ($_ -eq "Update-BDRGuardrail/TopicPolicyConfig_TierConfig_TierName")
+        }
+        {
+            $v = "CLASSIC","STANDARD"
+            break
+        }
+
+        # Amazon.Bedrock.InferenceProfileType
+        "Get-BDRInferenceProfileList/TypeEqual"
+        {
+            $v = "APPLICATION","SYSTEM_DEFINED"
             break
         }
 
@@ -108,10 +183,31 @@ $BDR_Completers = {
             break
         }
 
+        # Amazon.Bedrock.ModelCopyJobStatus
+        "Get-BDRModelCopyJobList/StatusEqual"
+        {
+            $v = "Completed","Failed","InProgress"
+            break
+        }
+
         # Amazon.Bedrock.ModelCustomization
         "Get-BDRFoundationModelList/ByCustomizationType"
         {
-            $v = "CONTINUED_PRE_TRAINING","FINE_TUNING"
+            $v = "CONTINUED_PRE_TRAINING","DISTILLATION","FINE_TUNING"
+            break
+        }
+
+        # Amazon.Bedrock.ModelImportJobStatus
+        "Get-BDRModelImportJobList/StatusEqual"
+        {
+            $v = "Completed","Failed","InProgress"
+            break
+        }
+
+        # Amazon.Bedrock.ModelInvocationJobStatus
+        "Get-BDRModelInvocationJobList/StatusEqual"
+        {
+            $v = "Completed","Expired","Failed","InProgress","PartiallyCompleted","Scheduled","Stopped","Stopping","Submitted","Validating"
             break
         }
 
@@ -122,10 +218,38 @@ $BDR_Completers = {
             break
         }
 
+        # Amazon.Bedrock.ModelStatus
+        "Get-BDRCustomModelList/ModelStatus"
+        {
+            $v = "Active","Creating","Failed"
+            break
+        }
+
+        # Amazon.Bedrock.OfferType
+        "Get-BDRFoundationModelAgreementOfferList/OfferType"
+        {
+            $v = "ALL","PUBLIC"
+            break
+        }
+
+        # Amazon.Bedrock.PromptRouterType
+        "Get-BDRPromptRouterList/Type"
+        {
+            $v = "custom","default"
+            break
+        }
+
         # Amazon.Bedrock.ProvisionedModelStatus
-        "Get-BDRProvisionedModelThroughputList/StatusEquals"
+        "Get-BDRProvisionedModelThroughputList/StatusEqual"
         {
             $v = "Creating","Failed","InService","Updating"
+            break
+        }
+
+        # Amazon.Bedrock.S3InputFormat
+        "New-BDRModelInvocationJob/S3InputDataConfig_S3InputFormat"
+        {
+            $v = "JSONL"
             break
         }
 
@@ -137,14 +261,24 @@ $BDR_Completers = {
         }
 
         # Amazon.Bedrock.SortJobsBy
-        "Get-BDRModelCustomizationJobList/SortBy"
+        {
+            ($_ -eq "Get-BDREvaluationJobList/SortBy") -Or
+            ($_ -eq "Get-BDRModelCopyJobList/SortBy") -Or
+            ($_ -eq "Get-BDRModelCustomizationJobList/SortBy") -Or
+            ($_ -eq "Get-BDRModelImportJobList/SortBy") -Or
+            ($_ -eq "Get-BDRModelInvocationJobList/SortBy")
+        }
         {
             $v = "CreationTime"
             break
         }
 
         # Amazon.Bedrock.SortModelsBy
-        "Get-BDRCustomModelList/SortBy"
+        {
+            ($_ -eq "Get-BDRCustomModelDeploymentList/SortBy") -Or
+            ($_ -eq "Get-BDRCustomModelList/SortBy") -Or
+            ($_ -eq "Get-BDRImportedModelList/SortBy")
+        }
         {
             $v = "CreationTime"
             break
@@ -152,8 +286,14 @@ $BDR_Completers = {
 
         # Amazon.Bedrock.SortOrder
         {
+            ($_ -eq "Get-BDRCustomModelDeploymentList/SortOrder") -Or
             ($_ -eq "Get-BDRCustomModelList/SortOrder") -Or
+            ($_ -eq "Get-BDREvaluationJobList/SortOrder") -Or
+            ($_ -eq "Get-BDRImportedModelList/SortOrder") -Or
+            ($_ -eq "Get-BDRModelCopyJobList/SortOrder") -Or
             ($_ -eq "Get-BDRModelCustomizationJobList/SortOrder") -Or
+            ($_ -eq "Get-BDRModelImportJobList/SortOrder") -Or
+            ($_ -eq "Get-BDRModelInvocationJobList/SortOrder") -Or
             ($_ -eq "Get-BDRProvisionedModelThroughputList/SortOrder")
         }
         {
@@ -170,14 +310,26 @@ $BDR_Completers = {
 }
 
 $BDR_map = @{
+    "ApplicationType"=@("New-BDREvaluationJob")
+    "ApplicationTypeEqual"=@("Get-BDREvaluationJobList")
+    "AssetType"=@("Get-BDRAutomatedReasoningPolicyBuildWorkflowResultAsset")
+    "BuildWorkflowType"=@("Start-BDRAutomatedReasoningPolicyBuildWorkflow")
     "ByCustomizationType"=@("Get-BDRFoundationModelList")
     "ByInferenceType"=@("Get-BDRFoundationModelList")
     "ByOutputModality"=@("Get-BDRFoundationModelList")
     "CommitmentDuration"=@("New-BDRProvisionedModelThroughput")
+    "ContentPolicyConfig_TierConfig_TierName"=@("New-BDRGuardrail","Update-BDRGuardrail")
     "CustomizationType"=@("New-BDRModelCustomizationJob")
-    "SortBy"=@("Get-BDRCustomModelList","Get-BDRModelCustomizationJobList","Get-BDRProvisionedModelThroughputList")
-    "SortOrder"=@("Get-BDRCustomModelList","Get-BDRModelCustomizationJobList","Get-BDRProvisionedModelThroughputList")
-    "StatusEquals"=@("Get-BDRModelCustomizationJobList","Get-BDRProvisionedModelThroughputList")
+    "ExpectedAggregatedFindingsResult"=@("New-BDRAutomatedReasoningPolicyTestCase","Update-BDRAutomatedReasoningPolicyTestCase")
+    "ModelStatus"=@("Get-BDRCustomModelList")
+    "OfferType"=@("Get-BDRFoundationModelAgreementOfferList")
+    "S3InputDataConfig_S3InputFormat"=@("New-BDRModelInvocationJob")
+    "SortBy"=@("Get-BDRCustomModelDeploymentList","Get-BDRCustomModelList","Get-BDREvaluationJobList","Get-BDRImportedModelList","Get-BDRModelCopyJobList","Get-BDRModelCustomizationJobList","Get-BDRModelImportJobList","Get-BDRModelInvocationJobList","Get-BDRProvisionedModelThroughputList")
+    "SortOrder"=@("Get-BDRCustomModelDeploymentList","Get-BDRCustomModelList","Get-BDREvaluationJobList","Get-BDRImportedModelList","Get-BDRModelCopyJobList","Get-BDRModelCustomizationJobList","Get-BDRModelImportJobList","Get-BDRModelInvocationJobList","Get-BDRProvisionedModelThroughputList")
+    "StatusEqual"=@("Get-BDRCustomModelDeploymentList","Get-BDREvaluationJobList","Get-BDRModelCopyJobList","Get-BDRModelCustomizationJobList","Get-BDRModelImportJobList","Get-BDRModelInvocationJobList","Get-BDRProvisionedModelThroughputList")
+    "TopicPolicyConfig_TierConfig_TierName"=@("New-BDRGuardrail","Update-BDRGuardrail")
+    "Type"=@("Get-BDRPromptRouterList")
+    "TypeEqual"=@("Get-BDRInferenceProfileList")
 }
 
 _awsArgumentCompleterRegistration $BDR_Completers $BDR_map
@@ -230,25 +382,99 @@ $BDR_SelectCompleters = {
 }
 
 $BDR_SelectMap = @{
-    "Select"=@("New-BDRModelCustomizationJob",
+    "Select"=@("Set-BDRBatchDeleteEvaluationJob",
+               "Stop-BDRAutomatedReasoningPolicyBuildWorkflow",
+               "New-BDRAutomatedReasoningPolicy",
+               "New-BDRAutomatedReasoningPolicyTestCase",
+               "New-BDRAutomatedReasoningPolicyVersion",
+               "New-BDRCustomModel",
+               "New-BDRCustomModelDeployment",
+               "New-BDREvaluationJob",
+               "New-BDRFoundationModelAgreement",
+               "New-BDRGuardrail",
+               "New-BDRGuardrailVersion",
+               "New-BDRInferenceProfile",
+               "New-BDRMarketplaceModelEndpoint",
+               "New-BDRModelCopyJob",
+               "New-BDRModelCustomizationJob",
+               "New-BDRModelImportJob",
+               "New-BDRModelInvocationJob",
+               "New-BDRPromptRouter",
                "New-BDRProvisionedModelThroughput",
+               "Remove-BDRAutomatedReasoningPolicy",
+               "Remove-BDRAutomatedReasoningPolicyBuildWorkflow",
+               "Remove-BDRAutomatedReasoningPolicyTestCase",
                "Remove-BDRCustomModel",
+               "Remove-BDRCustomModelDeployment",
+               "Remove-BDRFoundationModelAgreement",
+               "Remove-BDRGuardrail",
+               "Remove-BDRImportedModel",
+               "Remove-BDRInferenceProfile",
+               "Remove-BDRMarketplaceModelEndpoint",
                "Remove-BDRModelInvocationLoggingConfiguration",
+               "Remove-BDRPromptRouter",
                "Remove-BDRProvisionedModelThroughput",
+               "Unregister-BDRMarketplaceModelEndpoint",
+               "Export-BDRAutomatedReasoningPolicyVersion",
+               "Get-BDRAutomatedReasoningPolicy",
+               "Get-BDRAutomatedReasoningPolicyAnnotation",
+               "Get-BDRAutomatedReasoningPolicyBuildWorkflow",
+               "Get-BDRAutomatedReasoningPolicyBuildWorkflowResultAsset",
+               "Get-BDRAutomatedReasoningPolicyNextScenario",
+               "Get-BDRAutomatedReasoningPolicyTestCase",
+               "Get-BDRAutomatedReasoningPolicyTestResult",
                "Get-BDRCustomModel",
+               "Get-BDRCustomModelDeployment",
+               "Get-BDREvaluationJob",
                "Get-BDRFoundationModel",
+               "Get-BDRFoundationModelAvailability",
+               "Get-BDRGuardrail",
+               "Get-BDRImportedModel",
+               "Get-BDRInferenceProfile",
+               "Get-BDRMarketplaceModelEndpoint",
+               "Get-BDRModelCopyJob",
                "Get-BDRModelCustomizationJob",
+               "Get-BDRModelImportJob",
+               "Get-BDRModelInvocationJob",
                "Get-BDRModelInvocationLoggingConfiguration",
+               "Get-BDRPromptRouter",
                "Get-BDRProvisionedModelThroughput",
+               "Get-BDRUseCaseForModelAccess",
+               "Get-BDRAutomatedReasoningPolicyList",
+               "Get-BDRAutomatedReasoningPolicyBuildWorkflowList",
+               "Get-BDRAutomatedReasoningPolicyTestCaseList",
+               "Get-BDRAutomatedReasoningPolicyTestResultList",
+               "Get-BDRCustomModelDeploymentList",
                "Get-BDRCustomModelList",
+               "Get-BDREvaluationJobList",
+               "Get-BDRFoundationModelAgreementOfferList",
                "Get-BDRFoundationModelList",
+               "Get-BDRGuardrailList",
+               "Get-BDRImportedModelList",
+               "Get-BDRInferenceProfileList",
+               "Get-BDRMarketplaceModelEndpointList",
+               "Get-BDRModelCopyJobList",
                "Get-BDRModelCustomizationJobList",
+               "Get-BDRModelImportJobList",
+               "Get-BDRModelInvocationJobList",
+               "Get-BDRPromptRouterList",
                "Get-BDRProvisionedModelThroughputList",
                "Get-BDRResourceTag",
                "Write-BDRModelInvocationLoggingConfiguration",
+               "Write-BDRUseCaseForModelAccess",
+               "Register-BDRMarketplaceModelEndpoint",
+               "Start-BDRAutomatedReasoningPolicyBuildWorkflow",
+               "Start-BDRAutomatedReasoningPolicyTestWorkflow",
+               "Stop-BDREvaluationJob",
                "Stop-BDRModelCustomizationJob",
+               "Stop-BDRModelInvocationJob",
                "Add-BDRResourceTag",
                "Remove-BDRResourceTag",
+               "Update-BDRAutomatedReasoningPolicy",
+               "Update-BDRAutomatedReasoningPolicyAnnotation",
+               "Update-BDRAutomatedReasoningPolicyTestCase",
+               "Update-BDRGuardrail",
+               "Update-BDRMarketplaceModelEndpoint",
                "Update-BDRProvisionedModelThroughput")
 }
 

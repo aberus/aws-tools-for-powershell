@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConnect;
 using Amazon.MediaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMCN
 {
     /// <summary>
@@ -34,17 +36,18 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
     [OutputType("Amazon.MediaConnect.Model.UpdateFlowMediaStreamResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaConnect UpdateFlowMediaStream API operation.", Operation = new[] {"UpdateFlowMediaStream"}, SelectReturnType = typeof(Amazon.MediaConnect.Model.UpdateFlowMediaStreamResponse))]
     [AWSCmdletOutput("Amazon.MediaConnect.Model.UpdateFlowMediaStreamResponse",
-        "This cmdlet returns an Amazon.MediaConnect.Model.UpdateFlowMediaStreamResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaConnect.Model.UpdateFlowMediaStreamResponse object containing multiple properties."
     )]
     public partial class UpdateEMCNFlowMediaStreamCmdlet : AmazonMediaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Fmtp_ChannelOrder
         /// <summary>
         /// <para>
-        /// The format of the audio channel.
+        /// <para> The format of the audio channel.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -55,9 +58,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter ClockRate
         /// <summary>
         /// <para>
-        /// The sample rate (in Hz) for the stream. If the
-        /// media stream type is video or ancillary data, set this value to 90000. If the media
-        /// stream type is audio, set this value to either 48000 or 96000.
+        /// <para>The sample rate for the stream. This value in measured in kHz. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,8 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Fmtp_Colorimetry
         /// <summary>
         /// <para>
-        /// The format that is used for the representation
-        /// of color.
+        /// <para> The format that is used for the representation of color.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -80,7 +80,8 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// Description
+        /// <para>A description that can help you quickly identify what your media stream is used for.
+        /// </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -90,10 +91,9 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Fmtp_ExactFramerate
         /// <summary>
         /// <para>
-        /// The frame rate for the video stream, in
-        /// frames/second. For example: 60000/1001. If you specify a whole number, MediaConnect
-        /// uses a ratio of N/1. For example, if you specify 60, MediaConnect uses 60/1 as the
-        /// exactFramerate.
+        /// <para> The frame rate for the video stream, in frames/second. For example: 60000/1001. If
+        /// you specify a whole number, MediaConnect uses a ratio of N/1. For example, if you
+        /// specify 60, MediaConnect uses 60/1 as the <c>exactFramerate</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,7 +104,8 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter FlowArn
         /// <summary>
         /// <para>
-        /// The Amazon Resource Name (ARN) of the flow.
+        /// <para> The Amazon Resource Name (ARN) of the flow that is associated with the media stream
+        /// that you updated.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -121,8 +122,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Attributes_Lang
         /// <summary>
         /// <para>
-        /// The audio language, in a format that is recognized
-        /// by the receiver.
+        /// <para>The audio language, in a format that is recognized by the receiver. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,8 +132,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter MediaStreamName
         /// <summary>
         /// <para>
-        /// The name of the media stream that you
-        /// want to update.
+        /// <para> The media stream that you updated.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -150,7 +149,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter MediaStreamType
         /// <summary>
         /// <para>
-        /// The type of media stream.
+        /// <para>The type of media stream. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,7 +160,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Fmtp_Par
         /// <summary>
         /// <para>
-        /// The pixel aspect ratio (PAR) of the video.
+        /// <para> The pixel aspect ratio (PAR) of the video.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,7 +171,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Fmtp_Range
         /// <summary>
         /// <para>
-        /// The encoding range of the video.
+        /// <para> The encoding range of the video.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,8 +183,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Fmtp_ScanMode
         /// <summary>
         /// <para>
-        /// The type of compression that was used to smooth
-        /// the video’s appearance.
+        /// <para> The type of compression that was used to smooth the video’s appearance.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -197,8 +195,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Fmtp_Tc
         /// <summary>
         /// <para>
-        /// The transfer characteristic system (TCS) that is used
-        /// in the video.
+        /// <para> The transfer characteristic system (TCS) that is used in the video.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,7 +207,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter VideoFormat
         /// <summary>
         /// <para>
-        /// The resolution of the video.
+        /// <para>The resolution of the video. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -228,16 +225,6 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FlowArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FlowArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FlowArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -248,9 +235,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FlowArn), MyInvocation.BoundParameters);
@@ -264,21 +255,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConnect.Model.UpdateFlowMediaStreamResponse, UpdateEMCNFlowMediaStreamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FlowArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Fmtp_ChannelOrder = this.Fmtp_ChannelOrder;
             context.Fmtp_Colorimetry = this.Fmtp_Colorimetry;
             context.Fmtp_ExactFramerate = this.Fmtp_ExactFramerate;
@@ -487,13 +468,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConnect", "UpdateFlowMediaStream");
             try
             {
-                #if DESKTOP
-                return client.UpdateFlowMediaStream(request);
-                #elif CORECLR
-                return client.UpdateFlowMediaStreamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFlowMediaStreamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -51,6 +53,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// bucket. To separate log data for each export task, specify a prefix to be used as
     /// the Amazon S3 key prefix for all exported objects.
     /// </para><note><para>
+    /// We recommend that you don't regularly export to Amazon S3 as a way to continuously
+    /// archive your logs. For that use case, we instead recommend that you use subscriptions.
+    /// For more information about subscriptions, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Subscriptions.html">Real-time
+    /// processing of log data with subscriptions</a>.
+    /// </para></note><note><para>
     /// Time-based sorting on chunks of log data inside an exported file is not guaranteed.
     /// You can sort the exported log field data by using Linux utilities.
     /// </para></note>
@@ -60,12 +67,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs CreateExportTask API operation.", Operation = new[] {"CreateExportTask"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.CreateExportTaskResponse))]
     [AWSCmdletOutput("System.String or Amazon.CloudWatchLogs.Model.CreateExportTaskResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.CreateExportTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.CreateExportTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCWLExportTaskCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Destination
         /// <summary>
@@ -89,7 +97,9 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <summary>
         /// <para>
         /// <para>The prefix used as the start of the key for every object exported. If you don't specify
-        /// a value, the default is <c>exportedlogs</c>.</para>
+        /// a value, the default is <c>exportedlogs</c>.</para><para>The length of this parameter must comply with the S3 object key name length limits.
+        /// The object key name is a sequence of Unicode characters with UTF-8 encoding, and can
+        /// be up to 1,024 bytes.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,16 +191,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "TaskId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -201,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LogGroupName), MyInvocation.BoundParameters);
@@ -217,21 +221,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.CreateExportTaskResponse, NewCWLExportTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LogGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Destination = this.Destination;
             #if MODULAR
             if (this.Destination == null && ParameterWasBound(nameof(this.Destination)))
@@ -345,13 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "CreateExportTask");
             try
             {
-                #if DESKTOP
-                return client.CreateExportTask(request);
-                #elif CORECLR
-                return client.CreateExportTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateExportTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

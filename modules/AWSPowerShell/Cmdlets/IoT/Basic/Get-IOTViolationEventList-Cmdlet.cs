@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [AWSCmdlet("Calls the AWS IoT ListViolationEvents API operation.", Operation = new[] {"ListViolationEvents"}, SelectReturnType = typeof(Amazon.IoT.Model.ListViolationEventsResponse))]
     [AWSCmdletOutput("Amazon.IoT.Model.ViolationEvent or Amazon.IoT.Model.ListViolationEventsResponse",
         "This cmdlet returns a collection of Amazon.IoT.Model.ViolationEvent objects.",
-        "The service call response (type Amazon.IoT.Model.ListViolationEventsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoT.Model.ListViolationEventsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTViolationEventListCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BehaviorCriteriaType
         /// <summary>
@@ -61,7 +64,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public Amazon.IoT.BehaviorCriteriaType BehaviorCriteriaType { get; set; }
         #endregion
         
-        #region Parameter UtcEndTime
+        #region Parameter EndTime
         /// <summary>
         /// <para>
         /// <para>The end time for the alerts to be listed.</para>
@@ -74,7 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         [System.Management.Automation.AllowNull]
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
-        public System.DateTime? UtcEndTime { get; set; }
+        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter ListSuppressedAlert
@@ -98,7 +101,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public System.String SecurityProfileName { get; set; }
         #endregion
         
-        #region Parameter UtcStartTime
+        #region Parameter StartTime
         /// <summary>
         /// <para>
         /// <para>The start time for the alerts to be listed.</para>
@@ -111,7 +114,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         [System.Management.Automation.AllowNull]
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
-        public System.DateTime? UtcStartTime { get; set; }
+        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter ThingName
@@ -133,23 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.IoT.VerificationState")]
         public Amazon.IoT.VerificationState VerificationState { get; set; }
-        #endregion
-        
-        #region Parameter EndTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use EndTimeUtc instead. Setting either EndTime or EndTimeUtc
-        /// results in both EndTime and EndTimeUtc being assigned, the latest assignment to either
-        /// one of the two property is reflected in the value of both. EndTime is provided for
-        /// backwards compatibility only and assigning a non-Utc DateTime to it results in the
-        /// wrong timestamp being passed to the service.</para><para>The end time for the alerts to be listed.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcEndTime instead.")]
-        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -175,28 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NextToken { get; set; }
-        #endregion
-        
-        #region Parameter StartTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use StartTimeUtc instead. Setting either StartTime or
-        /// StartTimeUtc results in both StartTime and StartTimeUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. StartTime
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The start time for the alerts to be listed.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcStartTime instead.")]
-        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter Select
@@ -220,9 +189,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -236,11 +209,11 @@ namespace Amazon.PowerShell.Cmdlets.IOT
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.BehaviorCriteriaType = this.BehaviorCriteriaType;
-            context.UtcEndTime = this.UtcEndTime;
+            context.EndTime = this.EndTime;
             #if MODULAR
-            if (this.UtcEndTime == null && ParameterWasBound(nameof(this.UtcEndTime)))
+            if (this.EndTime == null && ParameterWasBound(nameof(this.EndTime)))
             {
-                WriteWarning("You are passing $null as a value for parameter UtcEndTime which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+                WriteWarning("You are passing $null as a value for parameter EndTime which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
             context.ListSuppressedAlert = this.ListSuppressedAlert;
@@ -256,21 +229,15 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             #endif
             context.NextToken = this.NextToken;
             context.SecurityProfileName = this.SecurityProfileName;
-            context.UtcStartTime = this.UtcStartTime;
+            context.StartTime = this.StartTime;
             #if MODULAR
-            if (this.UtcStartTime == null && ParameterWasBound(nameof(this.UtcStartTime)))
+            if (this.StartTime == null && ParameterWasBound(nameof(this.StartTime)))
             {
-                WriteWarning("You are passing $null as a value for parameter UtcStartTime which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+                WriteWarning("You are passing $null as a value for parameter StartTime which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
             context.ThingName = this.ThingName;
             context.VerificationState = this.VerificationState;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.EndTime = this.EndTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.StartTime = this.StartTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -294,9 +261,9 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.BehaviorCriteriaType = cmdletContext.BehaviorCriteriaType;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.ListSuppressedAlert != null)
             {
@@ -310,9 +277,9 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.SecurityProfileName = cmdletContext.SecurityProfileName;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
             if (cmdletContext.ThingName != null)
             {
@@ -322,26 +289,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.VerificationState = cmdletContext.VerificationState;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variant and commence piping
             var _nextToken = cmdletContext.NextToken;
@@ -401,9 +348,9 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.BehaviorCriteriaType = cmdletContext.BehaviorCriteriaType;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.ListSuppressedAlert != null)
             {
@@ -413,9 +360,9 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.SecurityProfileName = cmdletContext.SecurityProfileName;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
             if (cmdletContext.ThingName != null)
             {
@@ -425,26 +372,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             {
                 request.VerificationState = cmdletContext.VerificationState;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variants and commence piping
             System.String _nextToken = null;
@@ -492,7 +419,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ViolationEvents.Count;
+                    int _receivedThisCall = response.ViolationEvents?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -541,13 +468,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "ListViolationEvents");
             try
             {
-                #if DESKTOP
-                return client.ListViolationEvents(request);
-                #elif CORECLR
-                return client.ListViolationEventsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListViolationEventsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -565,18 +486,14 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.IoT.BehaviorCriteriaType BehaviorCriteriaType { get; set; }
-            public System.DateTime? UtcEndTime { get; set; }
+            public System.DateTime? EndTime { get; set; }
             public System.Boolean? ListSuppressedAlert { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.String SecurityProfileName { get; set; }
-            public System.DateTime? UtcStartTime { get; set; }
+            public System.DateTime? StartTime { get; set; }
             public System.String ThingName { get; set; }
             public Amazon.IoT.VerificationState VerificationState { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? EndTime { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? StartTime { get; set; }
             public System.Func<Amazon.IoT.Model.ListViolationEventsResponse, GetIOTViolationEventListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ViolationEvents;
         }

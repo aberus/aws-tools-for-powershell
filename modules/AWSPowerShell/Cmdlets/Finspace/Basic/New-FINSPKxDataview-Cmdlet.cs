@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Finspace;
 using Amazon.Finspace.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FINSP
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
     [OutputType("Amazon.Finspace.Model.CreateKxDataviewResponse")]
     [AWSCmdlet("Calls the FinSpace User Environment Management Service CreateKxDataview API operation.", Operation = new[] {"CreateKxDataview"}, SelectReturnType = typeof(Amazon.Finspace.Model.CreateKxDataviewResponse))]
     [AWSCmdletOutput("Amazon.Finspace.Model.CreateKxDataviewResponse",
-        "This cmdlet returns an Amazon.Finspace.Model.CreateKxDataviewResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Finspace.Model.CreateKxDataviewResponse object containing multiple properties."
     )]
     public partial class NewFINSPKxDataviewCmdlet : AmazonFinspaceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoUpdate
         /// <summary>
@@ -68,8 +71,8 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
         #region Parameter AzMode
         /// <summary>
         /// <para>
-        /// <para>The number of availability zones you want to assign per cluster. This can be one of
-        /// the following </para><ul><li><para><c>SINGLE</c> – Assigns one availability zone per cluster.</para></li><li><para><c>MULTI</c> – Assigns all the availability zones per cluster.</para></li></ul>
+        /// <para>The number of availability zones you want to assign per volume. Currently, FinSpace
+        /// only supports <c>SINGLE</c> for volumes. This places dataview in a single AZ.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -155,13 +158,32 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
         public System.String EnvironmentId { get; set; }
         #endregion
         
+        #region Parameter ReadWrite
+        /// <summary>
+        /// <para>
+        /// <para> The option to specify whether you want to make the dataview writable to perform database
+        /// maintenance. The following are some considerations related to writable dataviews.  </para><ul><li><para>You cannot create partial writable dataviews. When you create writeable dataviews
+        /// you must provide the entire database path.</para></li><li><para>You cannot perform updates on a writeable dataview. Hence, <c>autoUpdate</c> must
+        /// be set as <b>False</b> if <c>readWrite</c> is <b>True</b> for a dataview.</para></li><li><para>You must also use a unique volume for creating a writeable dataview. So, if you choose
+        /// a volume that is already in use by another dataview, the dataview creation fails.</para></li><li><para>Once you create a dataview as writeable, you cannot change it to read-only. So, you
+        /// cannot update the <c>readWrite</c> parameter later.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ReadWrite { get; set; }
+        #endregion
+        
         #region Parameter SegmentConfiguration
         /// <summary>
         /// <para>
         /// <para> The configuration that contains the database path of the data that you want to place
         /// on each selected volume. Each segment must have a unique database path for each volume.
         /// If you do not explicitly specify any database path for a volume, they are accessible
-        /// from the cluster through the default S3/object store segment. </para>
+        /// from the cluster through the default S3/object store segment. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -173,7 +195,11 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
         /// <summary>
         /// <para>
         /// <para> A list of key-value pairs to label the dataview. You can add up to 50 tags to a dataview.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -202,16 +228,6 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DataviewName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DataviewName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DataviewName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -222,9 +238,13 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DataviewName), MyInvocation.BoundParameters);
@@ -238,21 +258,11 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Finspace.Model.CreateKxDataviewResponse, NewFINSPKxDataviewCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DataviewName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoUpdate = this.AutoUpdate;
             context.AvailabilityZoneId = this.AvailabilityZoneId;
             context.AzMode = this.AzMode;
@@ -286,6 +296,7 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
                 WriteWarning("You are passing $null as a value for parameter EnvironmentId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ReadWrite = this.ReadWrite;
             if (this.SegmentConfiguration != null)
             {
                 context.SegmentConfiguration = new List<Amazon.Finspace.Model.KxDataviewSegmentConfiguration>(this.SegmentConfiguration);
@@ -350,6 +361,10 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
             {
                 request.EnvironmentId = cmdletContext.EnvironmentId;
             }
+            if (cmdletContext.ReadWrite != null)
+            {
+                request.ReadWrite = cmdletContext.ReadWrite.Value;
+            }
             if (cmdletContext.SegmentConfiguration != null)
             {
                 request.SegmentConfigurations = cmdletContext.SegmentConfiguration;
@@ -396,13 +411,7 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "FinSpace User Environment Management Service", "CreateKxDataview");
             try
             {
-                #if DESKTOP
-                return client.CreateKxDataview(request);
-                #elif CORECLR
-                return client.CreateKxDataviewAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateKxDataviewAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -428,6 +437,7 @@ namespace Amazon.PowerShell.Cmdlets.FINSP
             public System.String DataviewName { get; set; }
             public System.String Description { get; set; }
             public System.String EnvironmentId { get; set; }
+            public System.Boolean? ReadWrite { get; set; }
             public List<Amazon.Finspace.Model.KxDataviewSegmentConfiguration> SegmentConfiguration { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.Finspace.Model.CreateKxDataviewResponse, NewFINSPKxDataviewCmdlet, object> Select { get; set; } =

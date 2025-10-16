@@ -96,7 +96,7 @@ $ASYN_Completers = {
             ($_ -eq "Update-ASYNApiCache/ApiCachingBehavior")
         }
         {
-            $v = "FULL_REQUEST_CACHING","PER_RESOLVER_CACHING"
+            $v = "FULL_REQUEST_CACHING","OPERATION_LEVEL_CACHING","PER_RESOLVER_CACHING"
             break
         }
 
@@ -107,6 +107,16 @@ $ASYN_Completers = {
         }
         {
             $v = "AMAZON_COGNITO_USER_POOLS","API_KEY","AWS_IAM","AWS_LAMBDA","OPENID_CONNECT"
+            break
+        }
+
+        # Amazon.AppSync.CacheHealthMetricsConfig
+        {
+            ($_ -eq "New-ASYNApiCache/HealthMetricsConfig") -Or
+            ($_ -eq "Update-ASYNApiCache/HealthMetricsConfig")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -134,13 +144,43 @@ $ASYN_Completers = {
             break
         }
 
+        # Amazon.AppSync.DataSourceLevelMetricsBehavior
+        {
+            ($_ -eq "New-ASYNGraphqlApi/EnhancedMetricsConfig_DataSourceLevelMetricsBehavior") -Or
+            ($_ -eq "Update-ASYNGraphqlApi/EnhancedMetricsConfig_DataSourceLevelMetricsBehavior")
+        }
+        {
+            $v = "FULL_REQUEST_DATA_SOURCE_METRICS","PER_DATA_SOURCE_METRICS"
+            break
+        }
+
+        # Amazon.AppSync.DataSourceLevelMetricsConfig
+        {
+            ($_ -eq "New-ASYNDataSource/MetricsConfig") -Or
+            ($_ -eq "Update-ASYNDataSource/MetricsConfig")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
         # Amazon.AppSync.DataSourceType
         {
             ($_ -eq "New-ASYNDataSource/Type") -Or
             ($_ -eq "Update-ASYNDataSource/Type")
         }
         {
-            $v = "AMAZON_DYNAMODB","AMAZON_ELASTICSEARCH","AMAZON_EVENTBRIDGE","AMAZON_OPENSEARCH_SERVICE","AWS_LAMBDA","HTTP","NONE","RELATIONAL_DATABASE"
+            $v = "AMAZON_BEDROCK_RUNTIME","AMAZON_DYNAMODB","AMAZON_ELASTICSEARCH","AMAZON_EVENTBRIDGE","AMAZON_OPENSEARCH_SERVICE","AWS_LAMBDA","HTTP","NONE","RELATIONAL_DATABASE"
+            break
+        }
+
+        # Amazon.AppSync.EventLogLevel
+        {
+            ($_ -eq "New-ASYNApi/LogConfig_LogLevel") -Or
+            ($_ -eq "Update-ASYNApi/LogConfig_LogLevel")
+        }
+        {
+            $v = "ALL","DEBUG","ERROR","INFO","NONE"
             break
         }
 
@@ -150,7 +190,7 @@ $ASYN_Completers = {
             ($_ -eq "Update-ASYNGraphqlApi/LogConfig_FieldLogLevel")
         }
         {
-            $v = "ALL","ERROR","NONE"
+            $v = "ALL","DEBUG","ERROR","INFO","NONE"
             break
         }
 
@@ -181,6 +221,30 @@ $ASYN_Completers = {
             break
         }
 
+        # Amazon.AppSync.HandlerBehavior
+        {
+            ($_ -eq "New-ASYNChannelNamespace/OnPublish_Behavior") -Or
+            ($_ -eq "Update-ASYNChannelNamespace/OnPublish_Behavior") -Or
+            ($_ -eq "New-ASYNChannelNamespace/OnSubscribe_Behavior") -Or
+            ($_ -eq "Update-ASYNChannelNamespace/OnSubscribe_Behavior")
+        }
+        {
+            $v = "CODE","DIRECT"
+            break
+        }
+
+        # Amazon.AppSync.InvokeType
+        {
+            ($_ -eq "New-ASYNChannelNamespace/OnPublish_LambdaConfig_InvokeType") -Or
+            ($_ -eq "Update-ASYNChannelNamespace/OnPublish_LambdaConfig_InvokeType") -Or
+            ($_ -eq "New-ASYNChannelNamespace/OnSubscribe_LambdaConfig_InvokeType") -Or
+            ($_ -eq "Update-ASYNChannelNamespace/OnSubscribe_LambdaConfig_InvokeType")
+        }
+        {
+            $v = "EVENT","REQUEST_RESPONSE"
+            break
+        }
+
         # Amazon.AppSync.MergeType
         {
             ($_ -eq "Start-ASYNMergedGraphqlApi/SourceApiAssociationConfig_MergeType") -Or
@@ -189,6 +253,16 @@ $ASYN_Completers = {
         }
         {
             $v = "AUTO_MERGE","MANUAL_MERGE"
+            break
+        }
+
+        # Amazon.AppSync.OperationLevelMetricsConfig
+        {
+            ($_ -eq "New-ASYNGraphqlApi/EnhancedMetricsConfig_OperationLevelMetricsConfig") -Or
+            ($_ -eq "Update-ASYNGraphqlApi/EnhancedMetricsConfig_OperationLevelMetricsConfig")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -223,6 +297,26 @@ $ASYN_Completers = {
         }
         {
             $v = "PIPELINE","UNIT"
+            break
+        }
+
+        # Amazon.AppSync.ResolverLevelMetricsBehavior
+        {
+            ($_ -eq "New-ASYNGraphqlApi/EnhancedMetricsConfig_ResolverLevelMetricsBehavior") -Or
+            ($_ -eq "Update-ASYNGraphqlApi/EnhancedMetricsConfig_ResolverLevelMetricsBehavior")
+        }
+        {
+            $v = "FULL_REQUEST_RESOLVER_METRICS","PER_RESOLVER_METRICS"
+            break
+        }
+
+        # Amazon.AppSync.ResolverLevelMetricsConfig
+        {
+            ($_ -eq "New-ASYNResolver/MetricsConfig") -Or
+            ($_ -eq "Update-ASYNResolver/MetricsConfig")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -264,10 +358,20 @@ $ASYN_map = @{
     "ApiCachingBehavior"=@("New-ASYNApiCache","Update-ASYNApiCache")
     "ApiType"=@("Get-ASYNGraphqlApiList","New-ASYNGraphqlApi")
     "AuthenticationType"=@("New-ASYNGraphqlApi","Update-ASYNGraphqlApi")
+    "EnhancedMetricsConfig_DataSourceLevelMetricsBehavior"=@("New-ASYNGraphqlApi","Update-ASYNGraphqlApi")
+    "EnhancedMetricsConfig_OperationLevelMetricsConfig"=@("New-ASYNGraphqlApi","Update-ASYNGraphqlApi")
+    "EnhancedMetricsConfig_ResolverLevelMetricsBehavior"=@("New-ASYNGraphqlApi","Update-ASYNGraphqlApi")
     "Format"=@("Get-ASYNIntrospectionSchema","Get-ASYNType","Get-ASYNTypeList","Get-ASYNTypesByAssociationList","New-ASYNType","Update-ASYNType")
+    "HealthMetricsConfig"=@("New-ASYNApiCache","Update-ASYNApiCache")
     "IntrospectionConfig"=@("New-ASYNGraphqlApi","Update-ASYNGraphqlApi")
     "Kind"=@("New-ASYNResolver","Update-ASYNResolver")
     "LogConfig_FieldLogLevel"=@("New-ASYNGraphqlApi","Update-ASYNGraphqlApi")
+    "LogConfig_LogLevel"=@("New-ASYNApi","Update-ASYNApi")
+    "MetricsConfig"=@("New-ASYNDataSource","New-ASYNResolver","Update-ASYNDataSource","Update-ASYNResolver")
+    "OnPublish_Behavior"=@("New-ASYNChannelNamespace","Update-ASYNChannelNamespace")
+    "OnPublish_LambdaConfig_InvokeType"=@("New-ASYNChannelNamespace","Update-ASYNChannelNamespace")
+    "OnSubscribe_Behavior"=@("New-ASYNChannelNamespace","Update-ASYNChannelNamespace")
+    "OnSubscribe_LambdaConfig_InvokeType"=@("New-ASYNChannelNamespace","Update-ASYNChannelNamespace")
     "Owner"=@("Get-ASYNGraphqlApiList")
     "RelationalDatabaseConfig_RelationalDatabaseSourceType"=@("New-ASYNDataSource","Update-ASYNDataSource")
     "Runtime_Name"=@("New-ASYNFunction","New-ASYNResolver","Test-ASYNCode","Update-ASYNFunction","Update-ASYNResolver")
@@ -331,16 +435,20 @@ $ASYN_SelectMap = @{
     "Select"=@("Start-ASYNApiAssociation",
                "Start-ASYNMergedGraphqlApi",
                "Start-ASYNSourceGraphqlApi",
+               "New-ASYNApi",
                "New-ASYNApiCache",
                "New-ASYNApiKey",
+               "New-ASYNChannelNamespace",
                "New-ASYNDataSource",
                "New-ASYNDomainName",
                "New-ASYNFunction",
                "New-ASYNGraphqlApi",
                "New-ASYNResolver",
                "New-ASYNType",
+               "Remove-ASYNApi",
                "Remove-ASYNApiCache",
                "Remove-ASYNApiKey",
+               "Remove-ASYNChannelNamespace",
                "Remove-ASYNDataSource",
                "Remove-ASYNDomainName",
                "Remove-ASYNFunction",
@@ -353,8 +461,10 @@ $ASYN_SelectMap = @{
                "Test-ASYNCode",
                "Test-ASYNMappingTemplate",
                "Clear-ASYNApiCache",
+               "Get-ASYNApi",
                "Get-ASYNApiAssociation",
                "Get-ASYNApiCache",
+               "Get-ASYNChannelNamespace",
                "Get-ASYNDataSource",
                "Get-ASYNDataSourceIntrospection",
                "Get-ASYNDomainName",
@@ -367,6 +477,8 @@ $ASYN_SelectMap = @{
                "Get-ASYNSourceApiAssociation",
                "Get-ASYNType",
                "Get-ASYNApiKeyList",
+               "Get-ASYNApiList",
+               "Get-ASYNChannelNamespaceList",
                "Get-ASYNDataSourceList",
                "Get-ASYNDomainNameList",
                "Get-ASYNFunctionList",
@@ -383,8 +495,10 @@ $ASYN_SelectMap = @{
                "Start-ASYNSchemaMerge",
                "Add-ASYNResourceTag",
                "Remove-ASYNResourceTag",
+               "Update-ASYNApi",
                "Update-ASYNApiCache",
                "Update-ASYNApiKey",
+               "Update-ASYNChannelNamespace",
                "Update-ASYNDataSource",
                "Update-ASYNDomainName",
                "Update-ASYNFunction",

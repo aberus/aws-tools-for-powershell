@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,59 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Transfer;
 using Amazon.Transfer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TFR
 {
     /// <summary>
     /// Imports the signing and encryption certificates that you need to create local (AS2)
     /// profiles and partner profiles.
+    /// 
+    ///  
+    /// <para>
+    /// You can import both the certificate and its chain in the <c>Certificate</c> parameter.
+    /// </para><para>
+    /// After importing a certificate, Transfer Family automatically creates a Amazon CloudWatch
+    /// metric called <c>DaysUntilExpiry</c> that tracks the number of days until the certificate
+    /// expires. The metric is based on the <c>InactiveDate</c> parameter and is published
+    /// daily in the <c>AWS/Transfer</c> namespace.
+    /// </para><important><para>
+    /// It can take up to a full day after importing a certificate for Transfer Family to
+    /// emit the <c>DaysUntilExpiry</c> metric to your account.
+    /// </para></important><note><para>
+    /// If you use the <c>Certificate</c> parameter to upload both the certificate and its
+    /// chain, don't use the <c>CertificateChain</c> parameter.
+    /// </para></note><para><b>CloudWatch monitoring</b></para><para>
+    /// The <c>DaysUntilExpiry</c> metric includes the following specifications:
+    /// </para><ul><li><para><b>Units:</b> Count (days)
+    /// </para></li><li><para><b>Dimensions:</b><c>CertificateId</c> (always present), <c>Description</c> (if
+    /// provided during certificate import)
+    /// </para></li><li><para><b>Statistics:</b> Minimum, Maximum, Average
+    /// </para></li><li><para><b>Frequency:</b> Published daily
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Import", "TFRCertificate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Transfer for SFTP ImportCertificate API operation.", Operation = new[] {"ImportCertificate"}, SelectReturnType = typeof(Amazon.Transfer.Model.ImportCertificateResponse))]
     [AWSCmdletOutput("System.String or Amazon.Transfer.Model.ImportCertificateResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Transfer.Model.ImportCertificateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Transfer.Model.ImportCertificateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportTFRCertificateCmdlet : AmazonTransferClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActiveDate
         /// <summary>
         /// <para>
-        /// <para>An optional date that specifies when the certificate becomes active.</para>
+        /// <para>An optional date that specifies when the certificate becomes active. If you do not
+        /// specify a value, <c>ActiveDate</c> takes the same value as <c>NotBeforeDate</c>, which
+        /// is specified by the CA. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -60,7 +86,9 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         /// <para>
         /// <ul><li><para>For the CLI, provide a file path for a certificate in URI format. For example, <c>--certificate
         /// file://encryption-cert.pem</c>. Alternatively, you can provide the raw content.</para></li><li><para>For the SDK, specify the raw content of a certificate file. For example, <c>--certificate
-        /// "`cat encryption-cert.pem`"</c>.</para></li></ul>
+        /// "`cat encryption-cert.pem`"</c>.</para></li></ul><note><para>You can provide both the certificate and its chain in this parameter, without needing
+        /// to use the <c>CertificateChain</c> parameter. If you use this parameter for both the
+        /// certificate and its chain, do not use the <c>CertificateChain</c> parameter.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -98,7 +126,9 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter InactiveDate
         /// <summary>
         /// <para>
-        /// <para>An optional date that specifies when the certificate becomes inactive.</para>
+        /// <para>An optional date that specifies when the certificate becomes inactive. If you do not
+        /// specify a value, <c>InactiveDate</c> takes the same value as <c>NotAfterDate</c>,
+        /// which is specified by the CA.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,7 +138,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter PrivateKey
         /// <summary>
         /// <para>
-        /// <ul><li><para>For the CLI, provide a file path for a private key in URI format.For example, <c>--private-key
+        /// <ul><li><para>For the CLI, provide a file path for a private key in URI format. For example, <c>--private-key
         /// file://encryption-key.pem</c>. Alternatively, you can provide the raw content of the
         /// private key file.</para></li><li><para>For the SDK, specify the raw content of a private key file. For example, <c>--private-key
         /// "`cat encryption-key.pem`"</c></para></li></ul>
@@ -121,7 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Key-value pairs that can be used to group and search for certificates.</para>
+        /// <para>Key-value pairs that can be used to group and search for certificates.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -132,7 +166,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         #region Parameter Usage
         /// <summary>
         /// <para>
-        /// <para>Specifies whether this certificate is used for signing or encryption.</para>
+        /// <para>Specifies how this certificate is used. It can be used in the following ways:</para><ul><li><para><c>SIGNING</c>: For signing AS2 messages</para></li><li><para><c>ENCRYPTION</c>: For encrypting AS2 messages</para></li><li><para><c>TLS</c>: For securing AS2 communications sent over HTTPS</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -157,16 +191,6 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public string Select { get; set; } = "CertificateId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Certificate parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Certificate' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Certificate' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -177,9 +201,13 @@ namespace Amazon.PowerShell.Cmdlets.TFR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Certificate), MyInvocation.BoundParameters);
@@ -193,21 +221,11 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Transfer.Model.ImportCertificateResponse, ImportTFRCertificateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Certificate;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ActiveDate = this.ActiveDate;
             context.Certificate = this.Certificate;
             #if MODULAR
@@ -317,13 +335,7 @@ namespace Amazon.PowerShell.Cmdlets.TFR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Transfer for SFTP", "ImportCertificate");
             try
             {
-                #if DESKTOP
-                return client.ImportCertificate(request);
-                #elif CORECLR
-                return client.ImportCertificateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportCertificateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

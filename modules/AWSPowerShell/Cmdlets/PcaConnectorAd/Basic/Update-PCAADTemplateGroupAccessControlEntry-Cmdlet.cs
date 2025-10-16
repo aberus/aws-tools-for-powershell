@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PcaConnectorAd;
 using Amazon.PcaConnectorAd.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PCAAD
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
     [AWSCmdlet("Calls the Pca Connector Ad UpdateTemplateGroupAccessControlEntry API operation.", Operation = new[] {"UpdateTemplateGroupAccessControlEntry"}, SelectReturnType = typeof(Amazon.PcaConnectorAd.Model.UpdateTemplateGroupAccessControlEntryResponse))]
     [AWSCmdletOutput("None or Amazon.PcaConnectorAd.Model.UpdateTemplateGroupAccessControlEntryResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.PcaConnectorAd.Model.UpdateTemplateGroupAccessControlEntryResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.PcaConnectorAd.Model.UpdateTemplateGroupAccessControlEntryResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdatePCAADTemplateGroupAccessControlEntryCmdlet : AmazonPcaConnectorAdClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessRights_AutoEnroll
         /// <summary>
@@ -132,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GroupSecurityIdentifier), MyInvocation.BoundParameters);
@@ -265,13 +272,7 @@ namespace Amazon.PowerShell.Cmdlets.PCAAD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Pca Connector Ad", "UpdateTemplateGroupAccessControlEntry");
             try
             {
-                #if DESKTOP
-                return client.UpdateTemplateGroupAccessControlEntry(request);
-                #elif CORECLR
-                return client.UpdateTemplateGroupAccessControlEntryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateTemplateGroupAccessControlEntryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

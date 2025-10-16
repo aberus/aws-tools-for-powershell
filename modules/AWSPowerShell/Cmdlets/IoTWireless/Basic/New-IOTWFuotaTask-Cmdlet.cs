@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
     [OutputType("Amazon.IoTWireless.Model.CreateFuotaTaskResponse")]
     [AWSCmdlet("Calls the AWS IoT Wireless CreateFuotaTask API operation.", Operation = new[] {"CreateFuotaTask"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.CreateFuotaTaskResponse))]
     [AWSCmdletOutput("Amazon.IoTWireless.Model.CreateFuotaTaskResponse",
-        "This cmdlet returns an Amazon.IoTWireless.Model.CreateFuotaTaskResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTWireless.Model.CreateFuotaTaskResponse object containing multiple properties."
     )]
     public partial class NewIOTWFuotaTaskCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -59,6 +62,16 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter Descriptor
+        /// <summary>
+        /// <para>
+        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Descriptor { get; set; }
         #endregion
         
         #region Parameter FirmwareUpdateImage
@@ -150,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,9 +196,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -202,6 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             }
             context.ClientRequestToken = this.ClientRequestToken;
             context.Description = this.Description;
+            context.Descriptor = this.Descriptor;
             context.FirmwareUpdateImage = this.FirmwareUpdateImage;
             #if MODULAR
             if (this.FirmwareUpdateImage == null && ParameterWasBound(nameof(this.FirmwareUpdateImage)))
@@ -248,6 +270,10 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.Descriptor != null)
+            {
+                request.Descriptor = cmdletContext.Descriptor;
             }
             if (cmdletContext.FirmwareUpdateImage != null)
             {
@@ -334,13 +360,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "CreateFuotaTask");
             try
             {
-                #if DESKTOP
-                return client.CreateFuotaTask(request);
-                #elif CORECLR
-                return client.CreateFuotaTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFuotaTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -359,6 +379,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         {
             public System.String ClientRequestToken { get; set; }
             public System.String Description { get; set; }
+            public System.String Descriptor { get; set; }
             public System.String FirmwareUpdateImage { get; set; }
             public System.String FirmwareUpdateRole { get; set; }
             public System.Int32? FragmentIntervalMS { get; set; }

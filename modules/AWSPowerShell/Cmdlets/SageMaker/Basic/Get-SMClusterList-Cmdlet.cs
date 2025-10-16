@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service ListClusters API operation.", Operation = new[] {"ListClusters"}, SelectReturnType = typeof(Amazon.SageMaker.Model.ListClustersResponse))]
     [AWSCmdletOutput("Amazon.SageMaker.Model.ClusterSummary or Amazon.SageMaker.Model.ListClustersResponse",
         "This cmdlet returns a collection of Amazon.SageMaker.Model.ClusterSummary objects.",
-        "The service call response (type Amazon.SageMaker.Model.ListClustersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.ListClustersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSMClusterListCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CreationTimeAfter
         /// <summary>
@@ -103,10 +106,26 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public Amazon.SageMaker.SortOrder SortOrder { get; set; }
         #endregion
         
+        #region Parameter TrainingPlanArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN); of the training plan to filter clusters by. For more
+        /// information about reserving GPU capacity for your SageMaker HyperPod clusters using
+        /// Amazon SageMaker Training Plan, see <c><a href="https://docs.aws.amazon.com/sagemaker/latest/APIReference/API_CreateTrainingPlan.html">CreateTrainingPlan</a></c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TrainingPlanArn { get; set; }
+        #endregion
+        
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>Set the maximum number of SageMaker HyperPod clusters to list.</para>
+        /// <para>Specifies the maximum number of clusters to evaluate for the operation (not necessarily
+        /// the number of matching items). After SageMaker processes the number of clusters up
+        /// to <c>MaxResults</c>, it stops the operation and returns the matching clusters up
+        /// to that point. If all the matching clusters are desired, SageMaker will go through
+        /// all the clusters until <c>NextToken</c> is empty.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,7 +140,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,9 +168,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -171,6 +194,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             context.NextToken = this.NextToken;
             context.SortBy = this.SortBy;
             context.SortOrder = this.SortOrder;
+            context.TrainingPlanArn = this.TrainingPlanArn;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -212,6 +236,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (cmdletContext.SortOrder != null)
             {
                 request.SortOrder = cmdletContext.SortOrder;
+            }
+            if (cmdletContext.TrainingPlanArn != null)
+            {
+                request.TrainingPlanArn = cmdletContext.TrainingPlanArn;
             }
             
             // Initialize loop variant and commence piping
@@ -275,13 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "ListClusters");
             try
             {
-                #if DESKTOP
-                return client.ListClusters(request);
-                #elif CORECLR
-                return client.ListClustersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListClustersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -305,6 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String NextToken { get; set; }
             public Amazon.SageMaker.ClusterSortBy SortBy { get; set; }
             public Amazon.SageMaker.SortOrder SortOrder { get; set; }
+            public System.String TrainingPlanArn { get; set; }
             public System.Func<Amazon.SageMaker.Model.ListClustersResponse, GetSMClusterListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ClusterSummaries;
         }

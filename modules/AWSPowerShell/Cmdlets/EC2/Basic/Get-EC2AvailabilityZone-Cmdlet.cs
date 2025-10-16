@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
     /// Describes the Availability Zones, Local Zones, and Wavelength Zones that are available
-    /// to you. If there is an event impacting a zone, you can use this request to view the
-    /// state and any provided messages for that zone.
+    /// to you.
     /// 
     ///  
     /// <para>
     /// For more information about Availability Zones, Local Zones, and Wavelength Zones,
     /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html">Regions
-    /// and zones</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
-    /// </para>
+    /// and zones</a> in the <i>Amazon EC2 User Guide</i>.
+    /// </para><note><para>
+    /// The order of the elements in the response, including those within nested structures,
+    /// might vary. Applications should not assume the elements appear in a particular order.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Get", "EC2AvailabilityZone")]
     [OutputType("Amazon.EC2.Model.AvailabilityZone")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeAvailabilityZones API operation.", Operation = new[] {"DescribeAvailabilityZones"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeAvailabilityZonesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.AvailabilityZone or Amazon.EC2.Model.DescribeAvailabilityZonesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.AvailabilityZone objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeAvailabilityZonesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeAvailabilityZonesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2AvailabilityZoneCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllAvailabilityZone
         /// <summary>
@@ -64,22 +69,40 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.Boolean? AllAvailabilityZone { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>The filters.</para><ul><li><para><c>group-name</c> - For Availability Zones, use the Region name. For Local Zones,
-        /// use the name of the group associated with the Local Zone (for example, <c>us-west-2-lax-1</c>)
-        /// For Wavelength Zones, use the name of the group associated with the Wavelength Zone
-        /// (for example, <c>us-east-1-wl1-bos-wlz-1</c>).</para></li><li><para><c>message</c> - The Zone message.</para></li><li><para><c>opt-in-status</c> - The opt-in status (<c>opted-in</c> | <c>not-opted-in</c> |
+        /// <para>The filters.</para><ul><li><para><c>group-long-name</c> - The long name of the zone group for the Availability Zone
+        /// (for example, <c>US West (Oregon) 1</c>), the Local Zone (for example, for Zone group
+        /// <c>us-west-2-lax-1</c>, it is <c>US West (Los Angeles)</c>, or the Wavelength Zone
+        /// (for example, for Zone group <c>us-east-1-wl1</c>, it is <c>US East (Verizon)</c>.</para></li><li><para><c>group-name</c> - The name of the zone group for the Availability Zone (for example,
+        /// <c>us-east-1-zg-1</c>), the Local Zone (for example, <c>us-west-2-lax-1</c>), or the
+        /// Wavelength Zone (for example, <c>us-east-1-wl1</c>).</para></li><li><para><c>message</c> - The Zone message.</para></li><li><para><c>opt-in-status</c> - The opt-in status (<c>opted-in</c> | <c>not-opted-in</c> |
         /// <c>opt-in-not-required</c>).</para></li><li><para><c>parent-zone-id</c> - The ID of the zone that handles some of the Local Zone and
         /// Wavelength Zone control plane operations, such as API calls.</para></li><li><para><c>parent-zone-name</c> - The ID of the zone that handles some of the Local Zone
         /// and Wavelength Zone control plane operations, such as API calls.</para></li><li><para><c>region-name</c> - The name of the Region for the Zone (for example, <c>us-east-1</c>).</para></li><li><para><c>state</c> - The state of the Availability Zone, the Local Zone, or the Wavelength
-        /// Zone (<c>available</c>).</para></li><li><para><c>zone-id</c> - The ID of the Availability Zone (for example, <c>use1-az1</c>),
+        /// Zone (<c>available</c> | <c>unavailable</c> | <c>constrained</c>).</para></li><li><para><c>zone-id</c> - The ID of the Availability Zone (for example, <c>use1-az1</c>),
         /// the Local Zone (for example, <c>usw2-lax1-az1</c>), or the Wavelength Zone (for example,
         /// <c>us-east-1-wl1-bos-wlz-1</c>).</para></li><li><para><c>zone-name</c> - The name of the Availability Zone (for example, <c>us-east-1a</c>),
         /// the Local Zone (for example, <c>us-west-2-lax-1a</c>), or the Wavelength Zone (for
         /// example, <c>us-east-1-wl1-bos-wlz-1</c>).</para></li><li><para><c>zone-type</c> - The type of zone (<c>availability-zone</c> | <c>local-zone</c>
-        /// | <c>wavelength-zone</c>).</para></li></ul>
+        /// | <c>wavelength-zone</c>).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -90,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ZoneId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the Availability Zones, Local Zones, and Wavelength Zones.</para>
+        /// <para>The IDs of the Availability Zones, Local Zones, and Wavelength Zones.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,7 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ZoneName
         /// <summary>
         /// <para>
-        /// <para>The names of the Availability Zones, Local Zones, and Wavelength Zones.</para>
+        /// <para>The names of the Availability Zones, Local Zones, and Wavelength Zones.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -120,19 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "AvailabilityZones";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ZoneName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ZoneName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ZoneName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -140,22 +165,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeAvailabilityZonesResponse, GetEC2AvailabilityZoneCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ZoneName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllAvailabilityZone = this.AllAvailabilityZone;
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -187,6 +203,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.AllAvailabilityZone != null)
             {
                 request.AllAvailabilityZones = cmdletContext.AllAvailabilityZone.Value;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Filter != null)
             {
@@ -238,13 +258,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeAvailabilityZones");
             try
             {
-                #if DESKTOP
-                return client.DescribeAvailabilityZones(request);
-                #elif CORECLR
-                return client.DescribeAvailabilityZonesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAvailabilityZonesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -262,6 +276,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.Boolean? AllAvailabilityZone { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public List<System.String> ZoneId { get; set; }
             public List<System.String> ZoneName { get; set; }

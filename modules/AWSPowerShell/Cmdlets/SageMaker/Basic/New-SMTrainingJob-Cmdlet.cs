@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -46,10 +48,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
     /// by SageMaker, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html">Algorithms</a>.
     /// 
     /// </para><important><para>
-    /// Do not include any security-sensitive information including account access IDs, secrets
-    /// or tokens in any hyperparameter field. If the use of security-sensitive credentials
-    /// are detected, SageMaker will reject your training job request and return an exception
-    /// error.
+    /// Do not include any security-sensitive information including account access IDs, secrets,
+    /// or tokens in any hyperparameter fields. As part of the shared responsibility model,
+    /// you are responsible for any potential exposure, unauthorized access, or compromise
+    /// of your sensitive data if caused by security-sensitive information included in the
+    /// request hyperparameter variable or plain text fields.
     /// </para></important></li><li><para><c>InputDataConfig</c> - Describes the input required by the training job and the
     /// Amazon S3, EFS, or FSx location where it is stored.
     /// </para></li><li><para><c>OutputDataConfig</c> - Identifies the Amazon S3 bucket where you want SageMaker
@@ -68,7 +71,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     /// to set a time limit for training. Use <c>MaxWaitTimeInSeconds</c> to specify how long
     /// a managed spot training job has to complete. 
     /// </para></li><li><para><c>Environment</c> - The environment variables to set in the Docker container.
-    /// </para></li><li><para><c>RetryStrategy</c> - The number of times to retry the job when the job fails due
+    /// </para><important><para>
+    /// Do not include any security-sensitive information including account access IDs, secrets,
+    /// or tokens in any environment fields. As part of the shared responsibility model, you
+    /// are responsible for any potential exposure, unauthorized access, or compromise of
+    /// your sensitive data if caused by security-sensitive information included in the request
+    /// environment variable or plain text fields.
+    /// </para></important></li><li><para><c>RetryStrategy</c> - The number of times to retry the job when the job fails due
     /// to an <c>InternalServerError</c>.
     /// </para></li></ul><para>
     ///  For more information about SageMaker, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works.html">How
@@ -80,12 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateTrainingJob API operation.", Operation = new[] {"CreateTrainingJob"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateTrainingJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateTrainingJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateTrainingJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateTrainingJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMTrainingJobCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlgorithmSpecification
         /// <summary>
@@ -113,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>Configuration information for Amazon SageMaker Debugger tensor collections. To learn
         /// more about how to configure the <c>CollectionConfiguration</c> parameter, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/debugger-createtrainingjob-api.html">Use
         /// the SageMaker and Debugger Configuration API Operations to Create, Update, and Debug
-        /// Your Training Job</a>. </para>
+        /// Your Training Job</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,7 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>Configuration information for Amazon SageMaker Debugger rules for debugging output
-        /// tensors.</para>
+        /// tensors.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,10 +227,29 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.Boolean? RemoteDebugConfig_EnableRemoteDebug { get; set; }
         #endregion
         
+        #region Parameter SessionChainingConfig_EnableSessionTagChaining
+        /// <summary>
+        /// <para>
+        /// <para>Set to <c>True</c> to allow SageMaker to extract session tags from a training job
+        /// creation role and reuse these tags when assuming the training job execution role.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? SessionChainingConfig_EnableSessionTagChaining { get; set; }
+        #endregion
+        
         #region Parameter Environment
         /// <summary>
         /// <para>
-        /// <para>The environment variables to set in the Docker container.</para>
+        /// <para>The environment variables to set in the Docker container.</para><important><para>Do not include any security-sensitive information including account access IDs, secrets,
+        /// or tokens in any environment fields. As part of the shared responsibility model, you
+        /// are responsible for any potential exposure, unauthorized access, or compromise of
+        /// your sensitive data if caused by security-sensitive information included in the request
+        /// environment variable or plain text fields.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,7 +269,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter DebugHookConfig_HookParameter
         /// <summary>
         /// <para>
-        /// <para>Configuration information for the Amazon SageMaker Debugger hook parameters.</para>
+        /// <para>Configuration information for the Amazon SageMaker Debugger hook parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -248,10 +289,15 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// algorithm provided by SageMaker, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html">Algorithms</a>.
         /// </para><para>You can specify a maximum of 100 hyperparameters. Each hyperparameter is a key-value
         /// pair. Each key and value is limited to 256 characters, as specified by the <c>Length
-        /// Constraint</c>. </para><important><para>Do not include any security-sensitive information including account access IDs, secrets
-        /// or tokens in any hyperparameter field. If the use of security-sensitive credentials
-        /// are detected, SageMaker will reject your training job request and return an exception
-        /// error.</para></important>
+        /// Constraint</c>. </para><important><para>Do not include any security-sensitive information including account access IDs, secrets,
+        /// or tokens in any hyperparameter fields. As part of the shared responsibility model,
+        /// you are responsible for any potential exposure, unauthorized access, or compromise
+        /// of your sensitive data if caused by any security-sensitive information included in
+        /// the request hyperparameter variable or plain text fields.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -270,7 +316,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// type, compression method, and whether the data is wrapped in RecordIO format. </para><para>Depending on the input mode that the algorithm supports, SageMaker either copies input
         /// data files from an S3 bucket to a local directory in the Docker container, or makes
         /// it available as input streams. For example, if you specify an EFS location, input
-        /// data files are available as input streams. They do not need to be downloaded.</para><para>Your input must be in the same Amazon Web Services region as your training job.</para>
+        /// data files are available as input streams. They do not need to be downloaded.</para><para>Your input must be in the same Amazon Web Services region as your training job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -324,7 +374,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The maximum length of time, in seconds, that a training or compilation job can be
-        /// pending before it is stopped.</para>
+        /// pending before it is stopped.</para><note><para>When working with training jobs that use capacity from <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/reserve-capacity-with-training-plans.html">training
+        /// plans</a>, not all <c>Pending</c> job states count against the <c>MaxPendingTimeInSeconds</c>
+        /// limit. The following scenarios do not increment the <c>MaxPendingTimeInSeconds</c>
+        /// counter:</para><ul><li><para>The plan is in a <c>Scheduled</c> state: Jobs queued (in <c>Pending</c> status) before
+        /// a plan's start date (waiting for scheduled start time)</para></li><li><para>Between capacity reservations: Jobs temporarily back to <c>Pending</c> status between
+        /// two capacity reservation periods</para></li></ul><para><c>MaxPendingTimeInSeconds</c> only increments when jobs are actively waiting for
+        /// capacity in an <c>Active</c> plan.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -387,7 +443,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>Configuration information for Amazon SageMaker Debugger rules for profiling system
-        /// and framework metrics.</para>
+        /// and framework metrics.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -417,7 +477,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// for the <c>ProfilingParameters</c> parameter. To learn more about how to configure
         /// the <c>ProfilingParameters</c> parameter, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/debugger-createtrainingjob-api.html">Use
         /// the SageMaker and Debugger Configuration API Operations to Create, Update, and Debug
-        /// Your Training Job</a>. </para>
+        /// Your Training Job</a>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -525,7 +589,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs, in the form <c>sg-xxxxxxxx</c>. Specify the security groups
-        /// for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -538,7 +606,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The ID of the subnets in the VPC to which you want to connect your training job or
         /// model. For information about the availability of specific instance types, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/instance-types-az.html">Supported
-        /// Instance Types and Availability Zones</a>.</para>
+        /// Instance Types and Availability Zones</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -552,7 +624,15 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>An array of key-value pairs. You can use tags to categorize your Amazon Web Services
         /// resources in different ways, for example, by purpose, owner, or environment. For more
         /// information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services Resources</a>.</para>
+        /// Amazon Web Services Resources</a>.</para><important><para>Do not include any security-sensitive information including account access IDs, secrets,
+        /// or tokens in any tags. As part of the shared responsibility model, you are responsible
+        /// for any potential exposure, unauthorized access, or compromise of your sensitive data
+        /// if caused by any security-sensitive information included in the request tag variable
+        /// or plain text fields.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -611,16 +691,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "TrainingJobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TrainingJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TrainingJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TrainingJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -631,9 +701,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TrainingJobName), MyInvocation.BoundParameters);
@@ -647,21 +721,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateTrainingJobResponse, NewSMTrainingJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TrainingJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AlgorithmSpecification = this.AlgorithmSpecification;
             #if MODULAR
             if (this.AlgorithmSpecification == null && ParameterWasBound(nameof(this.AlgorithmSpecification)))
@@ -755,6 +819,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 WriteWarning("You are passing $null as a value for parameter RoleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SessionChainingConfig_EnableSessionTagChaining = this.SessionChainingConfig_EnableSessionTagChaining;
             context.StoppingCondition_MaxPendingTimeInSecond = this.StoppingCondition_MaxPendingTimeInSecond;
             context.StoppingCondition_MaxRuntimeInSecond = this.StoppingCondition_MaxRuntimeInSecond;
             context.StoppingCondition_MaxWaitTimeInSecond = this.StoppingCondition_MaxWaitTimeInSecond;
@@ -1077,6 +1142,25 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 request.RoleArn = cmdletContext.RoleArn;
             }
             
+             // populate SessionChainingConfig
+            var requestSessionChainingConfigIsNull = true;
+            request.SessionChainingConfig = new Amazon.SageMaker.Model.SessionChainingConfig();
+            System.Boolean? requestSessionChainingConfig_sessionChainingConfig_EnableSessionTagChaining = null;
+            if (cmdletContext.SessionChainingConfig_EnableSessionTagChaining != null)
+            {
+                requestSessionChainingConfig_sessionChainingConfig_EnableSessionTagChaining = cmdletContext.SessionChainingConfig_EnableSessionTagChaining.Value;
+            }
+            if (requestSessionChainingConfig_sessionChainingConfig_EnableSessionTagChaining != null)
+            {
+                request.SessionChainingConfig.EnableSessionTagChaining = requestSessionChainingConfig_sessionChainingConfig_EnableSessionTagChaining.Value;
+                requestSessionChainingConfigIsNull = false;
+            }
+             // determine if request.SessionChainingConfig should be set to null
+            if (requestSessionChainingConfigIsNull)
+            {
+                request.SessionChainingConfig = null;
+            }
+            
              // populate StoppingCondition
             var requestStoppingConditionIsNull = true;
             request.StoppingCondition = new Amazon.SageMaker.Model.StoppingCondition();
@@ -1219,13 +1303,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateTrainingJob");
             try
             {
-                #if DESKTOP
-                return client.CreateTrainingJob(request);
-                #elif CORECLR
-                return client.CreateTrainingJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTrainingJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1271,6 +1349,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public Amazon.SageMaker.Model.ResourceConfig ResourceConfig { get; set; }
             public System.Int32? RetryStrategy_MaximumRetryAttempt { get; set; }
             public System.String RoleArn { get; set; }
+            public System.Boolean? SessionChainingConfig_EnableSessionTagChaining { get; set; }
             public System.Int32? StoppingCondition_MaxPendingTimeInSecond { get; set; }
             public System.Int32? StoppingCondition_MaxRuntimeInSecond { get; set; }
             public System.Int32? StoppingCondition_MaxWaitTimeInSecond { get; set; }

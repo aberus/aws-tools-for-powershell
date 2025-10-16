@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
-    /// Describes the scaling process types for use with the <a>ResumeProcesses</a> and <a>SuspendProcesses</a>
+    /// Describes the scaling process types for use with the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_ResumeProcesses.html">ResumeProcesses</a>
+    /// and <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_SuspendProcesses.html">SuspendProcesses</a>
     /// APIs.
     /// </summary>
     [Cmdlet("Get", "ASScalingProcessType")]
@@ -36,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling DescribeScalingProcessTypes API operation.", Operation = new[] {"DescribeScalingProcessTypes"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.DescribeScalingProcessTypesResponse))]
     [AWSCmdletOutput("Amazon.AutoScaling.Model.ProcessType or Amazon.AutoScaling.Model.DescribeScalingProcessTypesResponse",
         "This cmdlet returns a collection of Amazon.AutoScaling.Model.ProcessType objects.",
-        "The service call response (type Amazon.AutoScaling.Model.DescribeScalingProcessTypesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AutoScaling.Model.DescribeScalingProcessTypesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetASScalingProcessTypeCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -54,9 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public string Select { get; set; } = "Processes";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,13 +131,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "DescribeScalingProcessTypes");
             try
             {
-                #if DESKTOP
-                return client.DescribeScalingProcessTypes(request);
-                #elif CORECLR
-                return client.DescribeScalingProcessTypesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeScalingProcessTypesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

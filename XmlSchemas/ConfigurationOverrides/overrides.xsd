@@ -98,7 +98,7 @@
               </xsd:element>
               <xsd:element minOccurs="0" name="VerbMappings">
                 <xsd:annotation>
-                  <xsd:documentation>ADVANCED CONFIGURATION. Default configuration to be used for this service to map operation verbs to PowerShell verbs (see https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands). This only applies when the AWS Tools for PowerShell code generator first proposes a cmdlet configuration. For global (non service-specific) configurations, edit https://github.com/aws/aws-tools-for-powershell/blob/master/generator/AWSPSGeneratorLib/Config/Configs.xml instead.</xsd:documentation>
+                  <xsd:documentation>ADVANCED CONFIGURATION. Default configuration to be used for this service to map operation verbs to PowerShell verbs (see https://docs.microsoft.com/en-us/powershell/scripting/developer/cmdlet/approved-verbs-for-windows-powershell-commands). This only applies when the AWS Tools for PowerShell code generator first proposes a cmdlet configuration. For global (non service-specific) configurations, edit https://github.com/aws/aws-tools-for-powershell/blob/main/generator/AWSPSGeneratorLib/Config/Configs.xml instead.</xsd:documentation>
                 </xsd:annotation>
                 <xsd:complexType>
                   <xsd:sequence minOccurs="0">
@@ -323,18 +323,6 @@
                               </xsd:sequence>
                             </xsd:complexType>
                           </xsd:element>
-                          <xsd:element minOccurs="0" name="PassThru">
-                            <xsd:annotation>
-                              <xsd:documentation>ADVANCED CONFIGURATION. This is a legacy configuration, the PassThru feature is deprecated (see https://github.com/aws/aws-tools-for-powershell/issues/67).</xsd:documentation>
-                            </xsd:annotation>
-                            <xsd:complexType>
-                              <xsd:sequence>
-                                <xsd:element name="Expression" type="xsd:string" />
-                                <xsd:element minOccurs="0" name="Type" type="xsd:string" />
-                                <xsd:element name="Documentation" type="xsd:string" />
-                              </xsd:sequence>
-                            </xsd:complexType>
-                          </xsd:element>
                           <xsd:element minOccurs="0" name="AutoIterate">
                             <xsd:annotation>
                               <xsd:documentation>ADVANCED CONFIGURATION. Parameters to use, if present, to perform auto-pagination for this operation. This overrides the service-level AutoIterate configuration. Adding an AutoIterate configuration to an operation is backward compatible. Removing or changing the AutoIterate configuration for an operation has backward compatibility concerns.</xsd:documentation>
@@ -411,6 +399,21 @@
                         <xsd:attribute name="NoPipelineParameter" type="xsd:boolean" use="required">
                           <xsd:annotation>
                             <xsd:documentation>Defaults to false. When set to true, allows to set PipelineParameter="" even if the cmdlet has non-metadata parameters.</xsd:documentation>
+                          </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="LegacyV4Pagination" type="xsd:boolean" use="optional">
+                          <xsd:annotation>
+                            <xsd:documentation>This should not be set for new operations. Defaults to false. When set to true, auto-iteration defined in the config will be used. otherwise .NET SDK's Paginator attributes will be used.</xsd:documentation>
+                          </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="CustomAutoIteration" type="xsd:boolean" use="optional">
+                          <xsd:annotation>
+                            <xsd:documentation>This is for PowerShell team internal use only. When set to true, auto-iteration code will not be generated, instead a method ProcessCustomAutoIteration will be created in the generated cmdlet file. The extensions file will need to define the ProcessCustomAutoIteration method.</xsd:documentation>
+                          </xsd:annotation>
+                        </xsd:attribute>
+                        <xsd:attribute name="NoResetToNullForRequiredParameter" type="xsd:boolean" use="optional">
+                          <xsd:annotation>
+                            <xsd:documentation>This is for PowerShell team internal use only. When set to true, initialized required parameter object would not be reset to null if none of the child properties are set and would be sent as an empty object down the wire.</xsd:documentation>
                           </xsd:annotation>
                         </xsd:attribute>
                         <xsd:attribute name="PositionalParameters" type="xsd:string" use="optional">

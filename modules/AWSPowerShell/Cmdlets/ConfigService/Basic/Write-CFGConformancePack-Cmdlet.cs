@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
@@ -32,8 +34,16 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     /// rules that can be easily deployed in an account and a region and across an organization.
     /// For information on how many conformance packs you can have per account, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/configlimits.html"><b>Service Limits</b></a> in the <i>Config Developer Guide</i>.
     /// 
-    ///  
-    /// <para>
+    ///  <important><para>
+    /// When you use <c>PutConformancePack</c> to deploy conformance packs in your account,
+    /// the operation can create Config rules and remediation actions without requiring <c>config:PutConfigRule</c>
+    /// or <c>config:PutRemediationConfigurations</c> permissions in your account IAM policies.
+    /// </para><para>
+    /// This API uses the <c>AWSServiceRoleForConfigConforms</c> service-linked role in your
+    /// account to create conformance pack resources. This service-linked role includes the
+    /// permissions to create Config rules and remediation configurations, even if your account
+    /// IAM policies explicitly deny these actions.
+    /// </para></important><para>
     /// This API creates a service-linked role <c>AWSServiceRoleForConfigConforms</c> in your
     /// account. The service-linked role is created only when the role does not exist in your
     /// account. 
@@ -47,17 +57,22 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config PutConformancePack API operation.", Operation = new[] {"PutConformancePack"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutConformancePackResponse))]
     [AWSCmdletOutput("System.String or Amazon.ConfigService.Model.PutConformancePackResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ConfigService.Model.PutConformancePackResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.PutConformancePackResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGConformancePackCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConformancePackInputParameter
         /// <summary>
         /// <para>
-        /// <para>A list of <c>ConformancePackInputParameter</c> objects.</para>
+        /// <para>A list of <c>ConformancePackInputParameter</c> objects.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,8 +122,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// <para>
         /// <para>The name or Amazon Resource Name (ARN) of the SSM document to use to create a conformance
         /// pack. If you use the document name, Config checks only your account and Amazon Web
-        /// Services Region for the SSM document. If you want to use an SSM document from another
-        /// Region or account, you must provide the ARN.</para>
+        /// Services Region for the SSM document.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,7 +143,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         #region Parameter TemplateBody
         /// <summary>
         /// <para>
-        /// <para>A string containing the full conformance pack template body. The structure containing
+        /// <para>A string that contains the full conformance pack template body. The structure containing
         /// the template body has a minimum length of 1 byte and a maximum length of 51,200 bytes.</para><note><para>You can use a YAML template with two resource types: Config rule (<c>AWS::Config::ConfigRule</c>)
         /// and remediation action (<c>AWS::Config::RemediationConfiguration</c>).</para></note>
         /// </para>
@@ -163,16 +177,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "ConformancePackArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConformancePackName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConformancePackName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConformancePackName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -183,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConformancePackName), MyInvocation.BoundParameters);
@@ -199,21 +207,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutConformancePackResponse, WriteCFGConformancePackCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConformancePackName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ConformancePackInputParameter != null)
             {
                 context.ConformancePackInputParameter = new List<Amazon.ConfigService.Model.ConformancePackInputParameter>(this.ConformancePackInputParameter);
@@ -338,13 +336,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutConformancePack");
             try
             {
-                #if DESKTOP
-                return client.PutConformancePack(request);
-                #elif CORECLR
-                return client.PutConformancePackAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutConformancePackAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

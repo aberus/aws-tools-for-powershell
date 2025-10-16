@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -51,18 +53,19 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service RestoreDBInstanceToPointInTime API operation.", Operation = new[] {"RestoreDBInstanceToPointInTime"}, SelectReturnType = typeof(Amazon.RDS.Model.RestoreDBInstanceToPointInTimeResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBInstance or Amazon.RDS.Model.RestoreDBInstanceToPointInTimeResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBInstance object.",
-        "The service call response (type Amazon.RDS.Model.RestoreDBInstanceToPointInTimeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.RestoreDBInstanceToPointInTimeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreRDSDBInstanceToPointInTimeCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocatedStorage
         /// <summary>
         /// <para>
         /// <para>The amount of storage (in gibibytes) to allocate initially for the DB instance. Follow
-        /// the allocation rules specified in <c>CreateDBInstance</c>.</para><note><para>Be sure to allocate enough storage for your new DB instance so that the restore operation
+        /// the allocation rules specified in <c>CreateDBInstance</c>.</para><para>This setting isn't valid for RDS for SQL Server.</para><note><para>Be sure to allocate enough storage for your new DB instance so that the restore operation
         /// can succeed. You can also allocate additional storage for future growth.</para></note>
         /// </para>
         /// </summary>
@@ -74,7 +77,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>Specifies whether minor version upgrades are applied automatically to the DB instance
-        /// during the maintenance window.</para><para>This setting doesn't apply to RDS Custom.</para>
+        /// during the maintenance window.</para><para>This setting doesn't apply to RDS Custom.</para><para>For more information about automatic minor version upgrades, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.Upgrading.html#USER_UpgradeDBInstance.Upgrading.AutoMinorVersionUpgrades">Automatically
+        /// upgrading the minor engine version</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,12 +100,26 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The location for storing automated backups and manual snapshots for the restored DB
-        /// instance.</para><para>Valid Values:</para><ul><li><para><c>outposts</c> (Amazon Web Services Outposts)</para></li><li><para><c>region</c> (Amazon Web Services Region)</para></li></ul><para>Default: <c>region</c></para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-on-outposts.html">Working
+        /// instance.</para><para>Valid Values:</para><ul><li><para><c>local</c> (Dedicated Local Zone)</para></li><li><para><c>outposts</c> (Amazon Web Services Outposts)</para></li><li><para><c>region</c> (Amazon Web Services Region)</para></li></ul><para>Default: <c>region</c></para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-on-outposts.html">Working
         /// with Amazon RDS on Amazon Web Services Outposts</a> in the <i>Amazon RDS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String BackupTarget { get; set; }
+        #endregion
+        
+        #region Parameter CACertificateIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The CA certificate identifier to use for the DB instance's server certificate.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html">Using
+        /// SSL/TLS to encrypt a connection to a DB instance</a> in the <i>Amazon RDS User Guide</i>
+        /// and <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html">
+        /// Using SSL/TLS to encrypt a connection to a DB cluster</a> in the <i>Amazon Aurora
+        /// User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CACertificateIdentifier { get; set; }
         #endregion
         
         #region Parameter CopyTagsToSnapshot
@@ -224,7 +242,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The IPv4 DNS IP addresses of your primary and secondary Active Directory domain controllers.</para><para>Constraints:</para><ul><li><para>Two IP addresses must be provided. If there isn't a secondary domain controller, use
-        /// the IP address of the primary domain controller for both entries in the list.</para></li></ul><para>Example: <c>123.124.125.126,234.235.236.237</c></para>
+        /// the IP address of the primary domain controller for both entries in the list.</para></li></ul><para>Example: <c>123.124.125.126,234.235.236.237</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -267,7 +289,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>The list of logs that the restored DB instance is to export to CloudWatch Logs. The
         /// values in the list depend on the DB engine being used. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.html#USER_LogAccess.Procedural.UploadtoCloudWatch">Publishing
-        /// Database Logs to Amazon CloudWatch Logs</a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting doesn't apply to RDS Custom.</para>
+        /// Database Logs to Amazon CloudWatch Logs</a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting doesn't apply to RDS Custom.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -314,6 +340,25 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.String Engine { get; set; }
         #endregion
         
+        #region Parameter EngineLifecycleSupport
+        /// <summary>
+        /// <para>
+        /// <para>The life cycle type for this DB instance.</para><note><para>By default, this value is set to <c>open-source-rds-extended-support</c>, which enrolls
+        /// your DB instance into Amazon RDS Extended Support. At the end of standard support,
+        /// you can avoid charges for Extended Support by setting the value to <c>open-source-rds-extended-support-disabled</c>.
+        /// In this case, RDS automatically upgrades your restored DB instance to a higher engine
+        /// version, if the major engine version is past its end of standard support date.</para></note><para>You can use this setting to enroll your DB instance into Amazon RDS Extended Support.
+        /// With RDS Extended Support, you can run the selected major engine version on your DB
+        /// instance past the end of standard support for that engine version. For more information,
+        /// see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support.html">Amazon
+        /// RDS Extended Support with Amazon RDS</a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting applies only to RDS for MySQL and RDS for PostgreSQL. For Amazon Aurora
+        /// DB instances, the life cycle type is managed by the DB cluster.</para><para>Valid Values: <c>open-source-rds-extended-support | open-source-rds-extended-support-disabled</c></para><para>Default: <c>open-source-rds-extended-support</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String EngineLifecycleSupport { get; set; }
+        #endregion
+        
         #region Parameter Iops
         /// <summary>
         /// <para>
@@ -328,11 +373,47 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter LicenseModel
         /// <summary>
         /// <para>
-        /// <para>The license model information for the restored DB instance.</para><para>This setting doesn't apply to RDS Custom.</para><para>Valid Values: <c>license-included</c> | <c>bring-your-own-license</c> | <c>general-public-license</c></para><para>Default: Same as the source.</para>
+        /// <para>The license model information for the restored DB instance.</para><note><para>License models for RDS for Db2 require additional configuration. The bring your own
+        /// license (BYOL) model requires a custom parameter group and an Amazon Web Services
+        /// License Manager self-managed license. The Db2 license through Amazon Web Services
+        /// Marketplace model requires an Amazon Web Services Marketplace subscription. For more
+        /// information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/db2-licensing.html">Amazon
+        /// RDS for Db2 licensing options</a> in the <i>Amazon RDS User Guide</i>.</para></note><para>This setting doesn't apply to Amazon Aurora or RDS Custom DB instances.</para><para>Valid Values:</para><ul><li><para>RDS for Db2 - <c>bring-your-own-license | marketplace-license</c></para></li><li><para>RDS for MariaDB - <c>general-public-license</c></para></li><li><para>RDS for Microsoft SQL Server - <c>license-included</c></para></li><li><para>RDS for MySQL - <c>general-public-license</c></para></li><li><para>RDS for Oracle - <c>bring-your-own-license | license-included</c></para></li><li><para>RDS for PostgreSQL - <c>postgresql-license</c></para></li></ul><para>Default: Same as the source.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String LicenseModel { get; set; }
+        #endregion
+        
+        #region Parameter ManageMasterUserPassword
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to manage the master user password with Amazon Web Services Secrets
+        /// Manager in the restored DB instance.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html">Password
+        /// management with Amazon Web Services Secrets Manager</a> in the <i>Amazon RDS User
+        /// Guide</i>.</para><para>Constraints:</para><ul><li><para>Applies to RDS for Oracle only.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ManageMasterUserPassword { get; set; }
+        #endregion
+        
+        #region Parameter MasterUserSecretKmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Web Services KMS key identifier to encrypt a secret that is automatically
+        /// generated and managed in Amazon Web Services Secrets Manager.</para><para>This setting is valid only if the master user password is managed by RDS in Amazon
+        /// Web Services Secrets Manager for the DB instance.</para><para>The Amazon Web Services KMS key identifier is the key ARN, key ID, alias ARN, or alias
+        /// name for the KMS key. To use a KMS key in a different Amazon Web Services account,
+        /// specify the key ARN or alias ARN.</para><para>If you don't specify <c>MasterUserSecretKmsKeyId</c>, then the <c>aws/secretsmanager</c>
+        /// KMS key is used to encrypt the secret. If the secret is in a different Amazon Web
+        /// Services account, then you can't use the <c>aws/secretsmanager</c> KMS key to encrypt
+        /// the secret, and you must use a customer managed KMS key.</para><para>There is a default KMS key for your Amazon Web Services account. Your Amazon Web Services
+        /// account has a different default KMS key for each Amazon Web Services Region.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MasterUserSecretKmsKeyId { get; set; }
         #endregion
         
         #region Parameter MaxAllocatedStorage
@@ -399,7 +480,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The number of CPU cores and the number of threads per core for the DB instance class
-        /// of the DB instance.</para><para>This setting doesn't apply to RDS Custom.</para>
+        /// of the DB instance.</para><para>This setting doesn't apply to RDS Custom.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -423,14 +508,14 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Boolean? PubliclyAccessible { get; set; }
         #endregion
         
-        #region Parameter UtcRestoreTime
+        #region Parameter RestoreTime
         /// <summary>
         /// <para>
         /// <para>The date and time to restore from.</para><para>Constraints:</para><ul><li><para>Must be a time in Universal Coordinated Time (UTC) format.</para></li><li><para>Must be before the latest restorable time for the DB instance.</para></li><li><para>Can't be specified if the <c>UseLatestRestorableTime</c> parameter is enabled.</para></li></ul><para>Example: <c>2009-09-07T23:45:00Z</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcRestoreTime { get; set; }
+        public System.DateTime? RestoreTime { get; set; }
         #endregion
         
         #region Parameter SourceDBInstanceAutomatedBackupsArn
@@ -477,8 +562,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter StorageType
         /// <summary>
         /// <para>
-        /// <para>The storage type to associate with the DB instance.</para><para>Valid Values: <c>gp2 | gp3 | io1 | standard</c></para><para>Default: <c>io1</c>, if the <c>Iops</c> parameter is specified. Otherwise, <c>gp2</c>.</para><para>Constraints:</para><ul><li><para>If you specify <c>io1</c> or <c>gp3</c>, you must also include a value for the <c>Iops</c>
-        /// parameter.</para></li></ul>
+        /// <para>The storage type to associate with the DB instance.</para><para>Valid Values: <c>gp2 | gp3 | io1 | io2 | standard</c></para><para>Default: <c>io1</c>, if the <c>Iops</c> parameter is specified. Otherwise, <c>gp3</c>.</para><para>Constraints:</para><ul><li><para>If you specify <c>io1</c>, <c>io2</c>, or <c>gp3</c>, you must also include a value
+        /// for the <c>Iops</c> parameter.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -488,7 +573,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -559,29 +648,16 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of EC2 VPC security groups to associate with this DB instance.</para><para>Default: The default EC2 VPC security group for the DB subnet group's VPC.</para>
+        /// <para>A list of EC2 VPC security groups to associate with this DB instance.</para><para>Default: The default EC2 VPC security group for the DB subnet group's VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("VpcSecurityGroupIds")]
         public System.String[] VpcSecurityGroupId { get; set; }
-        #endregion
-        
-        #region Parameter RestoreTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use RestoreTimeUtc instead. Setting either RestoreTime
-        /// or RestoreTimeUtc results in both RestoreTime and RestoreTimeUtc being assigned, the
-        /// latest assignment to either one of the two property is reflected in the value of both.
-        /// RestoreTime is provided for backwards compatibility only and assigning a non-Utc DateTime
-        /// to it results in the wrong timestamp being passed to the service.</para><para>The date and time to restore from.</para><para>Constraints:</para><ul><li><para>Must be a time in Universal Coordinated Time (UTC) format.</para></li><li><para>Must be before the latest restorable time for the DB instance.</para></li><li><para>Can't be specified if the <c>UseLatestRestorableTime</c> parameter is enabled.</para></li></ul><para>Example: <c>2009-09-07T23:45:00Z</c></para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcRestoreTime instead.")]
-        public System.DateTime? RestoreTime { get; set; }
         #endregion
         
         #region Parameter Select
@@ -595,16 +671,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBInstance";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SourceDBInstanceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SourceDBInstanceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SourceDBInstanceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -615,9 +681,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceDBInstanceIdentifier), MyInvocation.BoundParameters);
@@ -631,25 +701,16 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.RestoreDBInstanceToPointInTimeResponse, RestoreRDSDBInstanceToPointInTimeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SourceDBInstanceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocatedStorage = this.AllocatedStorage;
             context.AutoMinorVersionUpgrade = this.AutoMinorVersionUpgrade;
             context.AvailabilityZone = this.AvailabilityZone;
             context.BackupTarget = this.BackupTarget;
+            context.CACertificateIdentifier = this.CACertificateIdentifier;
             context.CopyTagsToSnapshot = this.CopyTagsToSnapshot;
             context.CustomIamInstanceProfile = this.CustomIamInstanceProfile;
             context.DBInstanceClass = this.DBInstanceClass;
@@ -674,8 +735,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             context.EnableCustomerOwnedIp = this.EnableCustomerOwnedIp;
             context.EnableIAMDatabaseAuthentication = this.EnableIAMDatabaseAuthentication;
             context.Engine = this.Engine;
+            context.EngineLifecycleSupport = this.EngineLifecycleSupport;
             context.Iops = this.Iops;
             context.LicenseModel = this.LicenseModel;
+            context.ManageMasterUserPassword = this.ManageMasterUserPassword;
+            context.MasterUserSecretKmsKeyId = this.MasterUserSecretKmsKeyId;
             context.MaxAllocatedStorage = this.MaxAllocatedStorage;
             context.MultiAZ = this.MultiAZ;
             context.NetworkType = this.NetworkType;
@@ -686,7 +750,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 context.ProcessorFeature = new List<Amazon.RDS.Model.ProcessorFeature>(this.ProcessorFeature);
             }
             context.PubliclyAccessible = this.PubliclyAccessible;
-            context.UtcRestoreTime = this.UtcRestoreTime;
+            context.RestoreTime = this.RestoreTime;
             context.SourceDBInstanceAutomatedBackupsArn = this.SourceDBInstanceAutomatedBackupsArn;
             context.SourceDBInstanceIdentifier = this.SourceDBInstanceIdentifier;
             context.SourceDbiResourceId = this.SourceDbiResourceId;
@@ -711,9 +775,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 context.VpcSecurityGroupId = new List<System.String>(this.VpcSecurityGroupId);
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.RestoreTime = this.RestoreTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -745,6 +806,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.BackupTarget != null)
             {
                 request.BackupTarget = cmdletContext.BackupTarget;
+            }
+            if (cmdletContext.CACertificateIdentifier != null)
+            {
+                request.CACertificateIdentifier = cmdletContext.CACertificateIdentifier;
             }
             if (cmdletContext.CopyTagsToSnapshot != null)
             {
@@ -818,6 +883,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.Engine = cmdletContext.Engine;
             }
+            if (cmdletContext.EngineLifecycleSupport != null)
+            {
+                request.EngineLifecycleSupport = cmdletContext.EngineLifecycleSupport;
+            }
             if (cmdletContext.Iops != null)
             {
                 request.Iops = cmdletContext.Iops.Value;
@@ -825,6 +894,14 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.LicenseModel != null)
             {
                 request.LicenseModel = cmdletContext.LicenseModel;
+            }
+            if (cmdletContext.ManageMasterUserPassword != null)
+            {
+                request.ManageMasterUserPassword = cmdletContext.ManageMasterUserPassword.Value;
+            }
+            if (cmdletContext.MasterUserSecretKmsKeyId != null)
+            {
+                request.MasterUserSecretKmsKeyId = cmdletContext.MasterUserSecretKmsKeyId;
             }
             if (cmdletContext.MaxAllocatedStorage != null)
             {
@@ -854,9 +931,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.PubliclyAccessible = cmdletContext.PubliclyAccessible.Value;
             }
-            if (cmdletContext.UtcRestoreTime != null)
+            if (cmdletContext.RestoreTime != null)
             {
-                request.RestoreTimeUtc = cmdletContext.UtcRestoreTime.Value;
+                request.RestoreTime = cmdletContext.RestoreTime.Value;
             }
             if (cmdletContext.SourceDBInstanceAutomatedBackupsArn != null)
             {
@@ -906,16 +983,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.VpcSecurityGroupIds = cmdletContext.VpcSecurityGroupId;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.RestoreTime != null)
-            {
-                if (cmdletContext.UtcRestoreTime != null)
-                {
-                    throw new System.ArgumentException("Parameters RestoreTime and UtcRestoreTime are mutually exclusive.", nameof(this.RestoreTime));
-                }
-                request.RestoreTime = cmdletContext.RestoreTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             CmdletOutput output;
             
@@ -954,13 +1021,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "RestoreDBInstanceToPointInTime");
             try
             {
-                #if DESKTOP
-                return client.RestoreDBInstanceToPointInTime(request);
-                #elif CORECLR
-                return client.RestoreDBInstanceToPointInTimeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreDBInstanceToPointInTimeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -981,6 +1042,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Boolean? AutoMinorVersionUpgrade { get; set; }
             public System.String AvailabilityZone { get; set; }
             public System.String BackupTarget { get; set; }
+            public System.String CACertificateIdentifier { get; set; }
             public System.Boolean? CopyTagsToSnapshot { get; set; }
             public System.String CustomIamInstanceProfile { get; set; }
             public System.String DBInstanceClass { get; set; }
@@ -999,8 +1061,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Boolean? EnableCustomerOwnedIp { get; set; }
             public System.Boolean? EnableIAMDatabaseAuthentication { get; set; }
             public System.String Engine { get; set; }
+            public System.String EngineLifecycleSupport { get; set; }
             public System.Int32? Iops { get; set; }
             public System.String LicenseModel { get; set; }
+            public System.Boolean? ManageMasterUserPassword { get; set; }
+            public System.String MasterUserSecretKmsKeyId { get; set; }
             public System.Int32? MaxAllocatedStorage { get; set; }
             public System.Boolean? MultiAZ { get; set; }
             public System.String NetworkType { get; set; }
@@ -1008,7 +1073,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Int32? Port { get; set; }
             public List<Amazon.RDS.Model.ProcessorFeature> ProcessorFeature { get; set; }
             public System.Boolean? PubliclyAccessible { get; set; }
-            public System.DateTime? UtcRestoreTime { get; set; }
+            public System.DateTime? RestoreTime { get; set; }
             public System.String SourceDBInstanceAutomatedBackupsArn { get; set; }
             public System.String SourceDBInstanceIdentifier { get; set; }
             public System.String SourceDbiResourceId { get; set; }
@@ -1021,8 +1086,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Boolean? UseDefaultProcessorFeature { get; set; }
             public System.Boolean? UseLatestRestorableTime { get; set; }
             public List<System.String> VpcSecurityGroupId { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? RestoreTime { get; set; }
             public System.Func<Amazon.RDS.Model.RestoreDBInstanceToPointInTimeResponse, RestoreRDSDBInstanceToPointInTimeCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.DBInstance;
         }

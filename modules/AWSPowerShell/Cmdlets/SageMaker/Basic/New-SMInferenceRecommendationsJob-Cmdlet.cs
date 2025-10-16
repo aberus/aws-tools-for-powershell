@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateInferenceRecommendationsJob API operation.", Operation = new[] {"CreateInferenceRecommendationsJob"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateInferenceRecommendationsJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateInferenceRecommendationsJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateInferenceRecommendationsJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateInferenceRecommendationsJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMInferenceRecommendationsJobCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContainerConfig_DataInputConfig
         /// <summary>
@@ -81,7 +84,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InputConfig_EndpointConfiguration
         /// <summary>
         /// <para>
-        /// <para>Specifies the endpoint configuration to use for a job.</para>
+        /// <para>Specifies the endpoint configuration to use for a job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InputConfig_Endpoint
         /// <summary>
         /// <para>
-        /// <para>Existing customer endpoints on which to run an Inference Recommender job.</para>
+        /// <para>Existing customer endpoints on which to run an Inference Recommender job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -253,7 +264,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>The interval of time taken by a model to respond as viewed from SageMaker. The interval
         /// includes the local communication time taken to send the request and to fetch the response
         /// from the container of a model and the time taken to complete the inference in the
-        /// container.</para>
+        /// container.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -310,7 +325,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter TrafficPattern_Phase
         /// <summary>
         /// <para>
-        /// <para>Defines the phases traffic specification.</para>
+        /// <para>Defines the phases traffic specification.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -364,7 +383,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs. IDs have the form of <c>sg-xxxxxxxx</c>. Specify the security
-        /// groups for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// groups for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -375,7 +398,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter VpcConfig_Subnet
         /// <summary>
         /// <para>
-        /// <para>The ID of the subnets in the VPC to which you want to connect your model.</para>
+        /// <para>The ID of the subnets in the VPC to which you want to connect your model.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -386,7 +413,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter PayloadConfig_SupportedContentType
         /// <summary>
         /// <para>
-        /// <para>The supported MIME types for the input data.</para>
+        /// <para>The supported MIME types for the input data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -412,7 +443,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ContainerConfig_SupportedInstanceType
         /// <summary>
         /// <para>
-        /// <para>A list of the instance types that are used to generate inferences in real-time.</para>
+        /// <para>A list of the instance types that are used to generate inferences in real-time.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -423,7 +458,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ContainerConfig_SupportedResponseMIMEType
         /// <summary>
         /// <para>
-        /// <para>The supported MIME types for the output data.</para>
+        /// <para>The supported MIME types for the output data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -437,7 +476,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>The metadata that you apply to Amazon Web Services resources to help you categorize
         /// and organize them. Each tag consists of a key and a value, both of which you define.
         /// For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services Resources</a> in the Amazon Web Services General Reference.</para>
+        /// Amazon Web Services Resources</a> in the Amazon Web Services General Reference.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -509,16 +552,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "JobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -529,9 +562,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -545,21 +582,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateInferenceRecommendationsJobResponse, NewSMInferenceRecommendationsJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContainerConfig_DataInputConfig = this.ContainerConfig_DataInputConfig;
             context.ContainerConfig_Domain = this.ContainerConfig_Domain;
             context.ContainerConfig_Framework = this.ContainerConfig_Framework;
@@ -1160,13 +1187,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateInferenceRecommendationsJob");
             try
             {
-                #if DESKTOP
-                return client.CreateInferenceRecommendationsJob(request);
-                #elif CORECLR
-                return client.CreateInferenceRecommendationsJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateInferenceRecommendationsJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

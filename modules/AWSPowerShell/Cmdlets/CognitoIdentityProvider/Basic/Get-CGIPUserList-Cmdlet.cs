@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Lists users and their basic details in a user pool.
+    /// Given a user pool ID, returns a list of users and their basic details in a user pool.
     /// 
     ///  <note><para>
     /// Amazon Cognito evaluates Identity and Access Management (IAM) policies in requests
@@ -43,14 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider ListUsers API operation.", Operation = new[] {"ListUsers"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.ListUsersResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.UserType or Amazon.CognitoIdentityProvider.Model.ListUsersResponse",
         "This cmdlet returns a collection of Amazon.CognitoIdentityProvider.Model.UserType objects.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.ListUsersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.ListUsersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGIPUserListCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributesToGet
         /// <summary>
@@ -61,7 +62,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// with <c>Filter</c>. Amazon Cognito returns an error if not all users in the results
         /// have set a value for the attribute you request. Attributes that you can't filter on,
         /// including custom attributes, must have a value set in every user profile before an
-        /// <c>AttributesToGet</c> parameter returns results.</para>
+        /// <c>AttributesToGet</c> parameter returns results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,12 +76,12 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>A filter string of the form "<i>AttributeName</i><i>Filter-Type</i> "<i>AttributeValue</i>"".
-        /// Quotation marks within the filter string must be escaped using the backslash (\) character.
-        /// For example, "<c>family_name</c> = \"Reddy\"".</para><ul><li><para><i>AttributeName</i>: The name of the attribute to search for. You can only search
-        /// for one attribute at a time.</para></li><li><para><i>Filter-Type</i>: For an exact match, use =, for example, "<c>given_name</c> =
-        /// \"Jon\"". For a prefix ("starts with") match, use ^=, for example, "<c>given_name</c>
-        /// ^= \"Jon\"". </para></li><li><para><i>AttributeValue</i>: The attribute value that must be matched for each user.</para></li></ul><para>If the filter string is empty, <c>ListUsers</c> returns all users in the user pool.</para><para>You can only search for the following standard attributes:</para><ul><li><para><c>username</c> (case-sensitive)</para></li><li><para><c>email</c></para></li><li><para><c>phone_number</c></para></li><li><para><c>name</c></para></li><li><para><c>given_name</c></para></li><li><para><c>family_name</c></para></li><li><para><c>preferred_username</c></para></li><li><para><c>cognito:user_status</c> (called <b>Status</b> in the Console) (case-insensitive)</para></li><li><para><c>status (called <b>Enabled</b> in the Console) (case-sensitive)</c></para></li><li><para><c>sub</c></para></li></ul><para>Custom attributes aren't searchable.</para><note><para>You can also list users with a client-side filter. The server-side filter matches
+        /// <para>A filter string of the form <c>"AttributeName Filter-Type "AttributeValue"</c>. Quotation
+        /// marks within the filter string must be escaped using the backslash (<c>\</c>) character.
+        /// For example, <c>"family_name = \"Reddy\""</c>.</para><ul><li><para><i>AttributeName</i>: The name of the attribute to search for. You can only search
+        /// for one attribute at a time.</para></li><li><para><i>Filter-Type</i>: For an exact match, use <c>=</c>, for example, "<c>given_name
+        /// = \"Jon\"</c>". For a prefix ("starts with") match, use <c>^=</c>, for example, "<c>given_name
+        /// ^= \"Jon\"</c>". </para></li><li><para><i>AttributeValue</i>: The attribute value that must be matched for each user.</para></li></ul><para>If the filter string is empty, <c>ListUsers</c> returns all users in the user pool.</para><para>You can only search for the following standard attributes:</para><ul><li><para><c>username</c> (case-sensitive)</para></li><li><para><c>email</c></para></li><li><para><c>phone_number</c></para></li><li><para><c>name</c></para></li><li><para><c>given_name</c></para></li><li><para><c>family_name</c></para></li><li><para><c>preferred_username</c></para></li><li><para><c>cognito:user_status</c> (called <b>Status</b> in the Console) (case-insensitive)</para></li><li><para><c>status (called <b>Enabled</b> in the Console) (case-sensitive)</c></para></li><li><para><c>sub</c></para></li></ul><para>Custom attributes aren't searchable.</para><note><para>You can also list users with a client-side filter. The server-side filter matches
         /// no more than one attribute. For an advanced search, use a client-side filter with
         /// the <c>--query</c> parameter of the <c>list-users</c> action in the CLI. When you
         /// use a client-side filter, ListUsers returns a paginated list of zero or more users.
@@ -96,7 +101,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool on which the search should be performed.</para>
+        /// <para>The ID of the user pool where you want to display or search for users.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -113,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Limit
         /// <summary>
         /// <para>
-        /// <para>Maximum number of users to be returned.</para>
+        /// <para>The maximum number of users that you want Amazon Cognito to return in the response.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
@@ -138,7 +143,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-PaginationToken $null' for the first call and '-PaginationToken $AWSHistory.LastServiceResponse.PaginationToken' for subsequent calls.
+        /// <br/>'PaginationToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-PaginationToken' to null for the first call then set the 'PaginationToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,16 +162,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "Users";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserPoolId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -177,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -187,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.ListUsersResponse, GetCGIPUserListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserPoolId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AttributesToGet != null)
             {
                 context.AttributesToGet = new List<System.String>(this.AttributesToGet);
@@ -246,9 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CognitoIdentityProvider.Model.ListUsersRequest();
@@ -320,7 +307,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CognitoIdentityProvider.Model.ListUsersRequest();
@@ -387,7 +374,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Users.Count;
+                    int _receivedThisCall = response.Users?.Count ?? 0;
                     
                     _nextToken = response.PaginationToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -436,13 +423,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "ListUsers");
             try
             {
-                #if DESKTOP
-                return client.ListUsers(request);
-                #elif CORECLR
-                return client.ListUsersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListUsersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

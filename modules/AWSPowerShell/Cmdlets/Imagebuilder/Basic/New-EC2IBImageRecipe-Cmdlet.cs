@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -36,17 +38,38 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [AWSCmdlet("Calls the EC2 Image Builder CreateImageRecipe API operation.", Operation = new[] {"CreateImageRecipe"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.CreateImageRecipeResponse))]
     [AWSCmdletOutput("System.String or Amazon.Imagebuilder.Model.CreateImageRecipeResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Imagebuilder.Model.CreateImageRecipeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Imagebuilder.Model.CreateImageRecipeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2IBImageRecipeCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AmiTag
+        /// <summary>
+        /// <para>
+        /// <para>Tags that are applied to the AMI that Image Builder creates during the Build phase
+        /// prior to image distribution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AmiTags")]
+        public System.Collections.Hashtable AmiTag { get; set; }
+        #endregion
         
         #region Parameter BlockDeviceMapping
         /// <summary>
         /// <para>
-        /// <para>The block device mappings of the image recipe.</para>
+        /// <para>The block device mappings of the image recipe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter Component
         /// <summary>
         /// <para>
-        /// <para>The components included in the image recipe.</para>
+        /// <para>The components included in the image recipe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,11 +129,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter ParentImage
         /// <summary>
         /// <para>
-        /// <para>The base image of the image recipe. The value of the string can be the ARN of the
-        /// base image or an AMI ID. The format for the ARN follows this example: <c>arn:aws:imagebuilder:us-west-2:aws:image/windows-server-2016-english-full-base-x86/x.x.x</c>.
-        /// You can provide the specific version that you want to use, or you can use a wildcard
-        /// in all of the fields. If you enter an AMI ID for the string value, you must have access
-        /// to the AMI, and the AMI must be in the same Region in which you are using Image Builder.</para>
+        /// <para>The base image for customizations specified in the image recipe. You can specify the
+        /// parent image using one of the following options:</para><ul><li><para>AMI ID</para></li><li><para>Image Builder image Amazon Resource Name (ARN)</para></li><li><para>Amazon Web Services Systems Manager (SSM) Parameter Store Parameter, prefixed by <c>ssm:</c>,
+        /// followed by the parameter name or ARN.</para></li><li><para>Amazon Web Services Marketplace product ID</para></li></ul><para>If you enter an AMI ID or an SSM parameter that contains the AMI ID, you must have
+        /// access to the AMI, and the AMI must be in the source Region.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -146,7 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags of the image recipe.</para>
+        /// <para>The tags of the image recipe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -160,7 +190,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// <para>Controls whether the Systems Manager agent is removed from your final build image,
         /// prior to creating the new AMI. If this is set to true, then the agent is removed from
         /// the final image. If it's set to false, then the agent is left in, so that it is included
-        /// in the new AMI. The default value is false.</para>
+        /// in the new AMI. default value is false.</para><para>The default behavior of uninstallAfterBuild is to remove the SSM Agent if it was installed
+        /// by EC2 Image Builder</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -216,16 +247,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public string Select { get; set; } = "ImageRecipeArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -236,9 +257,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -252,23 +277,21 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Imagebuilder.Model.CreateImageRecipeResponse, NewEC2IBImageRecipeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SystemsManagerAgent_UninstallAfterBuild = this.SystemsManagerAgent_UninstallAfterBuild;
             context.AdditionalInstanceConfiguration_UserDataOverride = this.AdditionalInstanceConfiguration_UserDataOverride;
+            if (this.AmiTag != null)
+            {
+                context.AmiTag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.AmiTag.Keys)
+                {
+                    context.AmiTag.Add((String)hashKey, (System.String)(this.AmiTag[hashKey]));
+                }
+            }
             if (this.BlockDeviceMapping != null)
             {
                 context.BlockDeviceMapping = new List<Amazon.Imagebuilder.Model.InstanceBlockDeviceMapping>(this.BlockDeviceMapping);
@@ -375,6 +398,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             {
                 request.AdditionalInstanceConfiguration = null;
             }
+            if (cmdletContext.AmiTag != null)
+            {
+                request.AmiTags = cmdletContext.AmiTag;
+            }
             if (cmdletContext.BlockDeviceMapping != null)
             {
                 request.BlockDeviceMappings = cmdletContext.BlockDeviceMapping;
@@ -449,13 +476,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "CreateImageRecipe");
             try
             {
-                #if DESKTOP
-                return client.CreateImageRecipe(request);
-                #elif CORECLR
-                return client.CreateImageRecipeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateImageRecipeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -474,6 +495,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         {
             public System.Boolean? SystemsManagerAgent_UninstallAfterBuild { get; set; }
             public System.String AdditionalInstanceConfiguration_UserDataOverride { get; set; }
+            public Dictionary<System.String, System.String> AmiTag { get; set; }
             public List<Amazon.Imagebuilder.Model.InstanceBlockDeviceMapping> BlockDeviceMapping { get; set; }
             public System.String ClientToken { get; set; }
             public List<Amazon.Imagebuilder.Model.ComponentConfiguration> Component { get; set; }

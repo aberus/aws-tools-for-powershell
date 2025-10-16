@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConnectParticipant;
 using Amazon.ConnectParticipant.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONNP
 {
     /// <summary>
@@ -33,7 +35,15 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
     /// <a href="https://docs.aws.amazon.com/connect/latest/adminguide/chat-persistence.html">Enable
     /// persistent chat</a>. 
     /// 
-    ///  <note><para><c>ConnectionToken</c> is used for invoking this API instead of <c>ParticipantToken</c>.
+    ///  
+    /// <para>
+    /// For security recommendations, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/security-best-practices.html#bp-security-chat">Amazon
+    /// Connect Chat security best practices</a>. 
+    /// </para><para>
+    /// If you have a process that consumes events in the transcript of an chat that has ended,
+    /// note that chat transcripts contain the following event content types if the event
+    /// has occurred during the chat session:
+    /// </para><ul><li><para><c>application/vnd.amazonaws.connect.event.participant.invited</c></para></li><li><para><c>application/vnd.amazonaws.connect.event.participant.joined</c></para></li><li><para><c>application/vnd.amazonaws.connect.event.participant.left</c></para></li><li><para><c>application/vnd.amazonaws.connect.event.chat.ended</c></para></li><li><para><c>application/vnd.amazonaws.connect.event.transfer.succeeded</c></para></li><li><para><c>application/vnd.amazonaws.connect.event.transfer.failed</c></para></li></ul><note><para><c>ConnectionToken</c> is used for invoking this API instead of <c>ParticipantToken</c>.
     /// </para></note><para>
     /// The Amazon Connect Participant Service APIs do not use <a href="https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html">Signature
     /// Version 4 authentication</a>.
@@ -43,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
     [OutputType("Amazon.ConnectParticipant.Model.GetTranscriptResponse")]
     [AWSCmdlet("Calls the Amazon Connect Participant Service GetTranscript API operation.", Operation = new[] {"GetTranscript"}, SelectReturnType = typeof(Amazon.ConnectParticipant.Model.GetTranscriptResponse))]
     [AWSCmdletOutput("Amazon.ConnectParticipant.Model.GetTranscriptResponse",
-        "This cmdlet returns an Amazon.ConnectParticipant.Model.GetTranscriptResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ConnectParticipant.Model.GetTranscriptResponse object containing multiple properties."
     )]
     public partial class GetCONNPTranscriptCmdlet : AmazonConnectParticipantClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter StartPosition_AbsoluteTime
         /// <summary>
@@ -149,7 +160,7 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,16 +178,6 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectionToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectionToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectionToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -187,9 +188,13 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -197,21 +202,11 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConnectParticipant.Model.GetTranscriptResponse, GetCONNPTranscriptCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectionToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConnectionToken = this.ConnectionToken;
             #if MODULAR
             if (this.ConnectionToken == null && ParameterWasBound(nameof(this.ConnectionToken)))
@@ -240,9 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ConnectParticipant.Model.GetTranscriptRequest();
@@ -368,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Participant Service", "GetTranscript");
             try
             {
-                #if DESKTOP
-                return client.GetTranscript(request);
-                #elif CORECLR
-                return client.GetTranscriptAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTranscriptAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

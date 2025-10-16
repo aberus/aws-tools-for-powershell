@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WellArchitected;
 using Amazon.WellArchitected.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAT
 {
     /// <summary>
@@ -48,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
     [AWSCmdlet("Calls the AWS Well-Architected Tool DeleteLens API operation.", Operation = new[] {"DeleteLens"}, SelectReturnType = typeof(Amazon.WellArchitected.Model.DeleteLensResponse))]
     [AWSCmdletOutput("None or Amazon.WellArchitected.Model.DeleteLensResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WellArchitected.Model.DeleteLensResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WellArchitected.Model.DeleteLensResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveWATLensCmdlet : AmazonWellArchitectedClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -119,9 +122,13 @@ namespace Amazon.PowerShell.Cmdlets.WAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -221,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.WAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Well-Architected Tool", "DeleteLens");
             try
             {
-                #if DESKTOP
-                return client.DeleteLens(request);
-                #elif CORECLR
-                return client.DeleteLensAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteLensAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

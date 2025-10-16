@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
@@ -47,11 +49,15 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     /// </para><para>
     /// To register a delegated administrator, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/set-up-aggregator-cli.html#register-a-delegated-administrator-cli">Register
     /// a Delegated Administrator</a> in the <i>Config developer guide</i>. 
-    /// </para></note><note><para><c>PutConfigurationAggregator</c> is an idempotent API. Subsequent requests won’t
+    /// </para></note><note><para><b>Tags are added at creation and cannot be updated with this operation</b></para><para><c>PutConfigurationAggregator</c> is an idempotent API. Subsequent requests won’t
     /// create a duplicate resource if one was already created. If a following request has
     /// different <c>tags</c> values, Config will ignore these differences and treat it as
     /// an idempotent request of the previous. In this case, <c>tags</c> will not be updated,
     /// even if they are different.
+    /// </para><para>
+    /// Use <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_TagResource.html">TagResource</a>
+    /// and <a href="https://docs.aws.amazon.com/config/latest/APIReference/API_UntagResource.html">UntagResource</a>
+    /// to update tags after creation.
     /// </para></note>
     /// </summary>
     [Cmdlet("Write", "CFGConfigurationAggregator", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -59,17 +65,22 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config PutConfigurationAggregator API operation.", Operation = new[] {"PutConfigurationAggregator"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutConfigurationAggregatorResponse))]
     [AWSCmdletOutput("Amazon.ConfigService.Model.ConfigurationAggregator or Amazon.ConfigService.Model.PutConfigurationAggregatorResponse",
         "This cmdlet returns an Amazon.ConfigService.Model.ConfigurationAggregator object.",
-        "The service call response (type Amazon.ConfigService.Model.PutConfigurationAggregatorResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.PutConfigurationAggregatorResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGConfigurationAggregatorCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountAggregationSource
         /// <summary>
         /// <para>
-        /// <para>A list of AccountAggregationSource object. </para>
+        /// <para>A list of AccountAggregationSource object. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,7 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         #region Parameter OrganizationAggregationSource_AwsRegion
         /// <summary>
         /// <para>
-        /// <para>The source regions being aggregated.</para>
+        /// <para>The source regions being aggregated.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -130,12 +145,75 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>An array of tag object.</para>
+        /// <para>An array of tag object.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.ConfigService.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter ResourceType_Type
+        /// <summary>
+        /// <para>
+        /// <para>The type of resource type filter to apply. <c>INCLUDE</c> specifies that the list
+        /// of resource types in the <c>Value</c> field will be aggregated and no other resource
+        /// types will be filtered.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregatorFilters_ResourceType_Type")]
+        [AWSConstantClassSource("Amazon.ConfigService.AggregatorFilterType")]
+        public Amazon.ConfigService.AggregatorFilterType ResourceType_Type { get; set; }
+        #endregion
+        
+        #region Parameter ServicePrincipal_Type
+        /// <summary>
+        /// <para>
+        /// <para>The type of service principal filter to apply. <c>INCLUDE</c> specifies that the list
+        /// of service principals in the <c>Value</c> field will be aggregated and no other service
+        /// principals will be filtered.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregatorFilters_ServicePrincipal_Type")]
+        [AWSConstantClassSource("Amazon.ConfigService.AggregatorFilterType")]
+        public Amazon.ConfigService.AggregatorFilterType ServicePrincipal_Type { get; set; }
+        #endregion
+        
+        #region Parameter ResourceType_Value
+        /// <summary>
+        /// <para>
+        /// <para>Comma-separate list of resource types to filter your aggregated configuration recorders.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregatorFilters_ResourceType_Value")]
+        public System.String[] ResourceType_Value { get; set; }
+        #endregion
+        
+        #region Parameter ServicePrincipal_Value
+        /// <summary>
+        /// <para>
+        /// <para>Comma-separated list of service principals for the linked Amazon Web Services services
+        /// to filter your aggregated service-linked configuration recorders.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregatorFilters_ServicePrincipal_Value")]
+        public System.String[] ServicePrincipal_Value { get; set; }
         #endregion
         
         #region Parameter Select
@@ -149,16 +227,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "ConfigurationAggregator";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigurationAggregatorName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigurationAggregatorName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigurationAggregatorName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -169,9 +237,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigurationAggregatorName), MyInvocation.BoundParameters);
@@ -185,24 +257,24 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutConfigurationAggregatorResponse, WriteCFGConfigurationAggregatorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigurationAggregatorName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AccountAggregationSource != null)
             {
                 context.AccountAggregationSource = new List<Amazon.ConfigService.Model.AccountAggregationSource>(this.AccountAggregationSource);
+            }
+            context.ResourceType_Type = this.ResourceType_Type;
+            if (this.ResourceType_Value != null)
+            {
+                context.ResourceType_Value = new List<System.String>(this.ResourceType_Value);
+            }
+            context.ServicePrincipal_Type = this.ServicePrincipal_Type;
+            if (this.ServicePrincipal_Value != null)
+            {
+                context.ServicePrincipal_Value = new List<System.String>(this.ServicePrincipal_Value);
             }
             context.ConfigurationAggregatorName = this.ConfigurationAggregatorName;
             #if MODULAR
@@ -240,6 +312,85 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             if (cmdletContext.AccountAggregationSource != null)
             {
                 request.AccountAggregationSources = cmdletContext.AccountAggregationSource;
+            }
+            
+             // populate AggregatorFilters
+            var requestAggregatorFiltersIsNull = true;
+            request.AggregatorFilters = new Amazon.ConfigService.Model.AggregatorFilters();
+            Amazon.ConfigService.Model.AggregatorFilterResourceType requestAggregatorFilters_aggregatorFilters_ResourceType = null;
+            
+             // populate ResourceType
+            var requestAggregatorFilters_aggregatorFilters_ResourceTypeIsNull = true;
+            requestAggregatorFilters_aggregatorFilters_ResourceType = new Amazon.ConfigService.Model.AggregatorFilterResourceType();
+            Amazon.ConfigService.AggregatorFilterType requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Type = null;
+            if (cmdletContext.ResourceType_Type != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Type = cmdletContext.ResourceType_Type;
+            }
+            if (requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Type != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ResourceType.Type = requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Type;
+                requestAggregatorFilters_aggregatorFilters_ResourceTypeIsNull = false;
+            }
+            List<System.String> requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Value = null;
+            if (cmdletContext.ResourceType_Value != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Value = cmdletContext.ResourceType_Value;
+            }
+            if (requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Value != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ResourceType.Value = requestAggregatorFilters_aggregatorFilters_ResourceType_resourceType_Value;
+                requestAggregatorFilters_aggregatorFilters_ResourceTypeIsNull = false;
+            }
+             // determine if requestAggregatorFilters_aggregatorFilters_ResourceType should be set to null
+            if (requestAggregatorFilters_aggregatorFilters_ResourceTypeIsNull)
+            {
+                requestAggregatorFilters_aggregatorFilters_ResourceType = null;
+            }
+            if (requestAggregatorFilters_aggregatorFilters_ResourceType != null)
+            {
+                request.AggregatorFilters.ResourceType = requestAggregatorFilters_aggregatorFilters_ResourceType;
+                requestAggregatorFiltersIsNull = false;
+            }
+            Amazon.ConfigService.Model.AggregatorFilterServicePrincipal requestAggregatorFilters_aggregatorFilters_ServicePrincipal = null;
+            
+             // populate ServicePrincipal
+            var requestAggregatorFilters_aggregatorFilters_ServicePrincipalIsNull = true;
+            requestAggregatorFilters_aggregatorFilters_ServicePrincipal = new Amazon.ConfigService.Model.AggregatorFilterServicePrincipal();
+            Amazon.ConfigService.AggregatorFilterType requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Type = null;
+            if (cmdletContext.ServicePrincipal_Type != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Type = cmdletContext.ServicePrincipal_Type;
+            }
+            if (requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Type != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipal.Type = requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Type;
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipalIsNull = false;
+            }
+            List<System.String> requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Value = null;
+            if (cmdletContext.ServicePrincipal_Value != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Value = cmdletContext.ServicePrincipal_Value;
+            }
+            if (requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Value != null)
+            {
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipal.Value = requestAggregatorFilters_aggregatorFilters_ServicePrincipal_servicePrincipal_Value;
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipalIsNull = false;
+            }
+             // determine if requestAggregatorFilters_aggregatorFilters_ServicePrincipal should be set to null
+            if (requestAggregatorFilters_aggregatorFilters_ServicePrincipalIsNull)
+            {
+                requestAggregatorFilters_aggregatorFilters_ServicePrincipal = null;
+            }
+            if (requestAggregatorFilters_aggregatorFilters_ServicePrincipal != null)
+            {
+                request.AggregatorFilters.ServicePrincipal = requestAggregatorFilters_aggregatorFilters_ServicePrincipal;
+                requestAggregatorFiltersIsNull = false;
+            }
+             // determine if request.AggregatorFilters should be set to null
+            if (requestAggregatorFiltersIsNull)
+            {
+                request.AggregatorFilters = null;
             }
             if (cmdletContext.ConfigurationAggregatorName != null)
             {
@@ -326,13 +477,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutConfigurationAggregator");
             try
             {
-                #if DESKTOP
-                return client.PutConfigurationAggregator(request);
-                #elif CORECLR
-                return client.PutConfigurationAggregatorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutConfigurationAggregatorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -350,6 +495,10 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         internal partial class CmdletContext : ExecutorContext
         {
             public List<Amazon.ConfigService.Model.AccountAggregationSource> AccountAggregationSource { get; set; }
+            public Amazon.ConfigService.AggregatorFilterType ResourceType_Type { get; set; }
+            public List<System.String> ResourceType_Value { get; set; }
+            public Amazon.ConfigService.AggregatorFilterType ServicePrincipal_Type { get; set; }
+            public List<System.String> ServicePrincipal_Value { get; set; }
             public System.String ConfigurationAggregatorName { get; set; }
             public System.Boolean? OrganizationAggregationSource_AllAwsRegion { get; set; }
             public List<System.String> OrganizationAggregationSource_AwsRegion { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Deletes all Amazon QuickSight customizations in this Amazon Web Services Region for
-    /// the specified Amazon Web Services account and Amazon QuickSight namespace.
+    /// <important><para>
+    /// This API permanently deletes all Quick Sight customizations for the specified Amazon
+    /// Web Services account and namespace. When you delete account customizations:
+    /// </para><ul><li><para>
+    /// All customizations are removed including themes, branding, and visual settings
+    /// </para></li><li><para>
+    /// This action cannot be undone through the API
+    /// </para></li><li><para>
+    /// Users will see default Quick Sight styling after customizations are deleted
+    /// </para></li></ul><para><b>Before proceeding:</b> Ensure you have backups of any custom themes or branding
+    /// elements you may want to recreate.
+    /// </para></important><para>
+    /// Deletes all Amazon Quick Sight customizations for the specified Amazon Web Services
+    /// account and Quick Sight namespace.
+    /// </para>
     /// </summary>
     [Cmdlet("Remove", "QSAccountCustomization", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.QuickSight.Model.DeleteAccountCustomizationResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight DeleteAccountCustomization API operation.", Operation = new[] {"DeleteAccountCustomization"}, SelectReturnType = typeof(Amazon.QuickSight.Model.DeleteAccountCustomizationResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.DeleteAccountCustomizationResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.DeleteAccountCustomizationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.DeleteAccountCustomizationResponse object containing multiple properties."
     )]
     public partial class RemoveQSAccountCustomizationCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
-        /// <para>The ID for the Amazon Web Services account that you want to delete Amazon QuickSight
-        /// customizations from in this Amazon Web Services Region.</para>
+        /// <para>The ID for the Amazon Web Services account that you want to delete Quick Sight customizations
+        /// from.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -63,7 +79,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Namespace
         /// <summary>
         /// <para>
-        /// <para>The Amazon QuickSight namespace that you're deleting the customizations from.</para>
+        /// <para>The Quick Sight namespace that you're deleting the customizations from.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,16 +97,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AwsAccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AwsAccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -101,9 +107,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AwsAccountId), MyInvocation.BoundParameters);
@@ -117,21 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.DeleteAccountCustomizationResponse, RemoveQSAccountCustomizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AwsAccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -202,13 +202,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "DeleteAccountCustomization");
             try
             {
-                #if DESKTOP
-                return client.DeleteAccountCustomization(request);
-                #elif CORECLR
-                return client.DeleteAccountCustomizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteAccountCustomizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

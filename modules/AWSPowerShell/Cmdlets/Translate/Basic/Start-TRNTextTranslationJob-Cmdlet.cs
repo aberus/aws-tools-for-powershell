@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Translate;
 using Amazon.Translate.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRN
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.TRN
     [OutputType("Amazon.Translate.Model.StartTextTranslationJobResponse")]
     [AWSCmdlet("Calls the Amazon Translate StartTextTranslationJob API operation.", Operation = new[] {"StartTextTranslationJob"}, SelectReturnType = typeof(Amazon.Translate.Model.StartTextTranslationJobResponse))]
     [AWSCmdletOutput("Amazon.Translate.Model.StartTextTranslationJobResponse",
-        "This cmdlet returns an Amazon.Translate.Model.StartTextTranslationJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Translate.Model.StartTextTranslationJobResponse object containing multiple properties."
     )]
     public partial class StartTRNTextTranslationJobCmdlet : AmazonTranslateClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Settings_Brevity
         /// <summary>
@@ -165,7 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.TRN
         /// job. </para><para>This parameter accepts only one parallel data resource.</para><note><para>Active Custom Translation jobs are priced at a higher rate than other jobs that don't
         /// use parallel data. For more information, see <a href="http://aws.amazon.com/translate/pricing/">Amazon
         /// Translate pricing</a>.</para></note><para>For a list of available parallel data resources, use the <a>ListParallelData</a> operation.</para><para>For more information, see <a href="https://docs.aws.amazon.com/translate/latest/dg/customizing-translations-parallel-data.html">
-        /// Customizing your translations with parallel data</a>.</para>
+        /// Customizing your translations with parallel data</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -255,7 +262,11 @@ namespace Amazon.PowerShell.Cmdlets.TRN
         /// <para>
         /// <para>The target languages of the translation job. Enter up to 10 language codes. Each input
         /// file is translated into each target language.</para><para>Each language code is 2 or 5 characters long. For a list of language codes, see <a href="https://docs.aws.amazon.com/translate/latest/dg/what-is-languages.html">Supported
-        /// languages</a>.</para>
+        /// languages</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -278,7 +289,11 @@ namespace Amazon.PowerShell.Cmdlets.TRN
         /// terminology for each requested target language that has an entry for the source term
         /// in the terminology file.</para><para>For a list of available custom terminology resources, use the <a>ListTerminologies</a>
         /// operation.</para><para>For more information, see <a href="https://docs.aws.amazon.com/translate/latest/dg/how-custom-terminology.html">Custom
-        /// terminology</a>.</para>
+        /// terminology</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -330,9 +345,13 @@ namespace Amazon.PowerShell.Cmdlets.TRN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -615,13 +634,7 @@ namespace Amazon.PowerShell.Cmdlets.TRN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Translate", "StartTextTranslationJob");
             try
             {
-                #if DESKTOP
-                return client.StartTextTranslationJob(request);
-                #elif CORECLR
-                return client.StartTextTranslationJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartTextTranslationJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

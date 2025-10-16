@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KafkaConnect;
 using Amazon.KafkaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MSKC
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
     [OutputType("Amazon.KafkaConnect.Model.CreateCustomPluginResponse")]
     [AWSCmdlet("Calls the Managed Streaming for Kafka Connect CreateCustomPlugin API operation.", Operation = new[] {"CreateCustomPlugin"}, SelectReturnType = typeof(Amazon.KafkaConnect.Model.CreateCustomPluginResponse))]
     [AWSCmdletOutput("Amazon.KafkaConnect.Model.CreateCustomPluginResponse",
-        "This cmdlet returns an Amazon.KafkaConnect.Model.CreateCustomPluginResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KafkaConnect.Model.CreateCustomPluginResponse object containing multiple properties."
     )]
     public partial class NewMSKCCustomPluginCmdlet : AmazonKafkaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3Location_BucketArn
         /// <summary>
@@ -132,6 +135,21 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         public System.String S3Location_ObjectVersion { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>The tags you want to attach to the custom plugin.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -141,16 +159,6 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -163,9 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -179,21 +191,11 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KafkaConnect.Model.CreateCustomPluginResponse, NewMSKCCustomPluginCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContentType = this.ContentType;
             #if MODULAR
             if (this.ContentType == null && ParameterWasBound(nameof(this.ContentType)))
@@ -224,6 +226,14 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -306,6 +316,10 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
             CmdletOutput output;
             
@@ -344,13 +358,7 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Managed Streaming for Kafka Connect", "CreateCustomPlugin");
             try
             {
-                #if DESKTOP
-                return client.CreateCustomPlugin(request);
-                #elif CORECLR
-                return client.CreateCustomPluginAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCustomPluginAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -373,6 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             public System.String S3Location_FileKey { get; set; }
             public System.String S3Location_ObjectVersion { get; set; }
             public System.String Name { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.KafkaConnect.Model.CreateCustomPluginResponse, NewMSKCCustomPluginCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

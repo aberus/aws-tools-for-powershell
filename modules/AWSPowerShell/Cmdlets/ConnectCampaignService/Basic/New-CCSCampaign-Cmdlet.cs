@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConnectCampaignService;
 using Amazon.ConnectCampaignService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CCS
 {
     /// <summary>
@@ -34,12 +36,24 @@ namespace Amazon.PowerShell.Cmdlets.CCS
     [OutputType("Amazon.ConnectCampaignService.Model.CreateCampaignResponse")]
     [AWSCmdlet("Calls the Amazon Connect Campaign Service CreateCampaign API operation.", Operation = new[] {"CreateCampaign"}, SelectReturnType = typeof(Amazon.ConnectCampaignService.Model.CreateCampaignResponse))]
     [AWSCmdletOutput("Amazon.ConnectCampaignService.Model.CreateCampaignResponse",
-        "This cmdlet returns an Amazon.ConnectCampaignService.Model.CreateCampaignResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ConnectCampaignService.Model.CreateCampaignResponse object containing multiple properties."
     )]
     public partial class NewCCSCampaignCmdlet : AmazonConnectCampaignServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt
+        /// <summary>
+        /// <para>
+        /// <para>Enable or disable await answer machine prompt</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("OutboundCallConfig_AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt")]
+        public System.Boolean? AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt { get; set; }
+        #endregion
         
         #region Parameter PredictiveDialerConfig_BandwidthAllocation
         /// <summary>
@@ -181,7 +195,11 @@ namespace Amazon.PowerShell.Cmdlets.CCS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,9 +228,13 @@ namespace Amazon.PowerShell.Cmdlets.CCS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -250,6 +272,7 @@ namespace Amazon.PowerShell.Cmdlets.CCS
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt = this.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt;
             context.AnswerMachineDetectionConfig_EnableAnswerMachineDetection = this.AnswerMachineDetectionConfig_EnableAnswerMachineDetection;
             context.OutboundCallConfig_ConnectContactFlowId = this.OutboundCallConfig_ConnectContactFlowId;
             #if MODULAR
@@ -435,6 +458,16 @@ namespace Amazon.PowerShell.Cmdlets.CCS
              // populate AnswerMachineDetectionConfig
             var requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfigIsNull = true;
             requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig = new Amazon.ConnectCampaignService.Model.AnswerMachineDetectionConfig();
+            System.Boolean? requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt = null;
+            if (cmdletContext.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt != null)
+            {
+                requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt = cmdletContext.AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt.Value;
+            }
+            if (requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt != null)
+            {
+                requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig.AwaitAnswerMachinePrompt = requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig_answerMachineDetectionConfig_AwaitAnswerMachinePrompt.Value;
+                requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfigIsNull = false;
+            }
             System.Boolean? requestOutboundCallConfig_outboundCallConfig_AnswerMachineDetectionConfig_answerMachineDetectionConfig_EnableAnswerMachineDetection = null;
             if (cmdletContext.AnswerMachineDetectionConfig_EnableAnswerMachineDetection != null)
             {
@@ -502,13 +535,7 @@ namespace Amazon.PowerShell.Cmdlets.CCS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Campaign Service", "CreateCampaign");
             try
             {
-                #if DESKTOP
-                return client.CreateCampaign(request);
-                #elif CORECLR
-                return client.CreateCampaignAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCampaignAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -532,6 +559,7 @@ namespace Amazon.PowerShell.Cmdlets.CCS
             public System.Double? ProgressiveDialerConfig_BandwidthAllocation { get; set; }
             public System.Double? ProgressiveDialerConfig_DialingCapacity { get; set; }
             public System.String Name { get; set; }
+            public System.Boolean? AnswerMachineDetectionConfig_AwaitAnswerMachinePrompt { get; set; }
             public System.Boolean? AnswerMachineDetectionConfig_EnableAnswerMachineDetection { get; set; }
             public System.String OutboundCallConfig_ConnectContactFlowId { get; set; }
             public System.String OutboundCallConfig_ConnectQueueId { get; set; }

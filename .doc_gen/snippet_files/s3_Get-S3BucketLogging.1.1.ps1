@@ -1,0 +1,1 @@
+Get-S3BucketLogging -BucketName 'amzn-s3-demo-bucket'

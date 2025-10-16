@@ -122,7 +122,7 @@ $TRS_Completers = {
             ($_ -eq "Update-TRSVocabulary/LanguageCode")
         }
         {
-            $v = "ab-GE","af-ZA","ar-AE","ar-SA","ast-ES","az-AZ","ba-RU","be-BY","bg-BG","bn-IN","bs-BA","ca-ES","ckb-IQ","ckb-IR","cs-CZ","cy-WL","da-DK","de-CH","de-DE","el-GR","en-AB","en-AU","en-GB","en-IE","en-IN","en-NZ","en-US","en-WL","en-ZA","es-ES","es-US","et-ET","eu-ES","fa-IR","fi-FI","fr-CA","fr-FR","gl-ES","gu-IN","ha-NG","he-IL","hi-IN","hr-HR","hu-HU","hy-AM","id-ID","is-IS","it-IT","ja-JP","ka-GE","kab-DZ","kk-KZ","kn-IN","ko-KR","ky-KG","lg-IN","lt-LT","lv-LV","mhr-RU","mi-NZ","mk-MK","ml-IN","mn-MN","mr-IN","ms-MY","mt-MT","nl-NL","no-NO","or-IN","pa-IN","pl-PL","ps-AF","pt-BR","pt-PT","ro-RO","ru-RU","rw-RW","si-LK","sk-SK","sl-SI","so-SO","sr-RS","su-ID","sv-SE","sw-BI","sw-KE","sw-RW","sw-TZ","sw-UG","ta-IN","te-IN","th-TH","tl-PH","tr-TR","tt-RU","ug-CN","uk-UA","uz-UZ","vi-VN","wo-SN","zh-CN","zh-TW","zu-ZA"
+            $v = "ab-GE","af-ZA","ar-AE","ar-SA","ast-ES","az-AZ","ba-RU","be-BY","bg-BG","bn-IN","bs-BA","ca-ES","ckb-IQ","ckb-IR","cs-CZ","cy-WL","da-DK","de-CH","de-DE","el-GR","en-AB","en-AU","en-GB","en-IE","en-IN","en-NZ","en-US","en-WL","en-ZA","es-ES","es-US","et-EE","et-ET","eu-ES","fa-IR","fi-FI","fr-CA","fr-FR","gl-ES","gu-IN","ha-NG","he-IL","hi-IN","hr-HR","hu-HU","hy-AM","id-ID","is-IS","it-IT","ja-JP","ka-GE","kab-DZ","kk-KZ","kn-IN","ko-KR","ky-KG","lg-IN","lt-LT","lv-LV","mhr-RU","mi-NZ","mk-MK","ml-IN","mn-MN","mr-IN","ms-MY","mt-MT","nl-NL","no-NO","or-IN","pa-IN","pl-PL","ps-AF","pt-BR","pt-PT","ro-RO","ru-RU","rw-RW","si-LK","sk-SK","sl-SI","so-SO","sr-RS","su-ID","sv-SE","sw-BI","sw-KE","sw-RW","sw-TZ","sw-UG","ta-IN","te-IN","th-TH","tl-PH","tr-TR","tt-RU","ug-CN","uk-UA","uz-UZ","vi-VN","wo-SN","zh-CN","zh-HK","zh-TW","zu-ZA"
             break
         }
 
@@ -150,17 +150,31 @@ $TRS_Completers = {
             break
         }
 
+        # Amazon.TranscribeService.MedicalScribeNoteTemplate
+        "Start-TRSMedicalScribeJob/ClinicalNoteGenerationSettings_NoteTemplate"
+        {
+            $v = "BEHAVIORAL_SOAP","BIRP","DAP","GIRPP","HISTORY_AND_PHYSICAL","PHYSICAL_SOAP","SIRP"
+            break
+        }
+
         # Amazon.TranscribeService.ModelStatus
-        "Get-TRSLanguageModelList/StatusEquals"
+        "Get-TRSLanguageModelList/StatusEqual"
         {
             $v = "COMPLETED","FAILED","IN_PROGRESS"
             break
         }
 
+        # Amazon.TranscribeService.Pronouns
+        "Start-TRSMedicalScribeJob/PatientContext_Pronoun"
+        {
+            $v = "HE_HIM","SHE_HER","THEY_THEM"
+            break
+        }
+
         # Amazon.TranscribeService.RedactionOutput
         {
-            ($_ -eq "Start-TRSTranscriptionJob/ContentRedaction_RedactionOutput") -Or
-            ($_ -eq "Start-TRSCallAnalyticsJob/Settings_ContentRedaction_RedactionOutput")
+            ($_ -eq "Start-TRSCallAnalyticsJob/ContentRedaction_RedactionOutput") -Or
+            ($_ -eq "Start-TRSTranscriptionJob/ContentRedaction_RedactionOutput")
         }
         {
             $v = "redacted","redacted_and_unredacted"
@@ -169,8 +183,8 @@ $TRS_Completers = {
 
         # Amazon.TranscribeService.RedactionType
         {
-            ($_ -eq "Start-TRSTranscriptionJob/ContentRedaction_RedactionType") -Or
-            ($_ -eq "Start-TRSCallAnalyticsJob/Settings_ContentRedaction_RedactionType")
+            ($_ -eq "Start-TRSCallAnalyticsJob/ContentRedaction_RedactionType") -Or
+            ($_ -eq "Start-TRSTranscriptionJob/ContentRedaction_RedactionType")
         }
         {
             $v = "PII"
@@ -214,8 +228,8 @@ $TRS_Completers = {
 
         # Amazon.TranscribeService.VocabularyState
         {
-            ($_ -eq "Get-TRSMedicalVocabularyList/StateEquals") -Or
-            ($_ -eq "Get-TRSVocabularyList/StateEquals")
+            ($_ -eq "Get-TRSMedicalVocabularyList/StateEqual") -Or
+            ($_ -eq "Get-TRSVocabularyList/StateEqual")
         }
         {
             $v = "FAILED","PENDING","READY"
@@ -232,19 +246,19 @@ $TRS_Completers = {
 
 $TRS_map = @{
     "BaseModelName"=@("New-TRSLanguageModel")
+    "ClinicalNoteGenerationSettings_NoteTemplate"=@("Start-TRSMedicalScribeJob")
     "ContentIdentificationType"=@("Start-TRSMedicalTranscriptionJob")
-    "ContentRedaction_RedactionOutput"=@("Start-TRSTranscriptionJob")
-    "ContentRedaction_RedactionType"=@("Start-TRSTranscriptionJob")
+    "ContentRedaction_RedactionOutput"=@("Start-TRSCallAnalyticsJob","Start-TRSTranscriptionJob")
+    "ContentRedaction_RedactionType"=@("Start-TRSCallAnalyticsJob","Start-TRSTranscriptionJob")
     "InputType"=@("New-TRSCallAnalyticsCategory","Update-TRSCallAnalyticsCategory")
     "LanguageCode"=@("New-TRSLanguageModel","New-TRSMedicalVocabulary","New-TRSVocabulary","New-TRSVocabularyFilter","Start-TRSMedicalTranscriptionJob","Start-TRSTranscriptionJob","Update-TRSMedicalVocabulary","Update-TRSVocabulary")
     "MediaFormat"=@("Start-TRSMedicalTranscriptionJob","Start-TRSTranscriptionJob")
-    "Settings_ContentRedaction_RedactionOutput"=@("Start-TRSCallAnalyticsJob")
-    "Settings_ContentRedaction_RedactionType"=@("Start-TRSCallAnalyticsJob")
+    "PatientContext_Pronoun"=@("Start-TRSMedicalScribeJob")
     "Settings_VocabularyFilterMethod"=@("Start-TRSCallAnalyticsJob","Start-TRSMedicalScribeJob","Start-TRSTranscriptionJob")
     "Specialty"=@("Start-TRSMedicalTranscriptionJob")
-    "StateEquals"=@("Get-TRSMedicalVocabularyList","Get-TRSVocabularyList")
+    "StateEqual"=@("Get-TRSMedicalVocabularyList","Get-TRSVocabularyList")
     "Status"=@("Get-TRSCallAnalyticsJobList","Get-TRSMedicalScribeJobList","Get-TRSMedicalTranscriptionJobList","Get-TRSTranscriptionJobList")
-    "StatusEquals"=@("Get-TRSLanguageModelList")
+    "StatusEqual"=@("Get-TRSLanguageModelList")
     "Type"=@("Start-TRSMedicalTranscriptionJob")
 }
 

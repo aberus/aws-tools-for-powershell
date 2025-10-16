@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Tnb;
 using Amazon.Tnb.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TNB
 {
     /// <summary>
@@ -51,23 +53,24 @@ namespace Amazon.PowerShell.Cmdlets.TNB
     [OutputType("Amazon.Tnb.Model.CreateSolNetworkPackageResponse")]
     [AWSCmdlet("Calls the AWS Telco Network Builder CreateSolNetworkPackage API operation.", Operation = new[] {"CreateSolNetworkPackage"}, SelectReturnType = typeof(Amazon.Tnb.Model.CreateSolNetworkPackageResponse))]
     [AWSCmdletOutput("Amazon.Tnb.Model.CreateSolNetworkPackageResponse",
-        "This cmdlet returns an Amazon.Tnb.Model.CreateSolNetworkPackageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Tnb.Model.CreateSolNetworkPackageResponse object containing multiple properties."
     )]
     public partial class NewTNBSolNetworkPackageCmdlet : AmazonTnbClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>A tag is a label that you assign to an Amazon Web Services resource. Each tag consists
         /// of a key and an optional value. You can use tags to search and filter your resources
-        /// or track your Amazon Web Services costs.</para>
+        /// or track your Amazon Web Services costs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,9 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.TNB
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -167,13 +174,7 @@ namespace Amazon.PowerShell.Cmdlets.TNB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Telco Network Builder", "CreateSolNetworkPackage");
             try
             {
-                #if DESKTOP
-                return client.CreateSolNetworkPackage(request);
-                #elif CORECLR
-                return client.CreateSolNetworkPackageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSolNetworkPackageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

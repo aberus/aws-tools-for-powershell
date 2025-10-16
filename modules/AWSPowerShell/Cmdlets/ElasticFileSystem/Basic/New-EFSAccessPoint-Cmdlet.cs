@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticFileSystem;
 using Amazon.ElasticFileSystem.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EFS
 {
     /// <summary>
@@ -34,14 +36,15 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     /// user and group override any identity information provided by the NFS client. The file
     /// system path is exposed as the access point's root directory. Applications using the
     /// access point can only access data in the application's own directory and any subdirectories.
+    /// A file system can have a maximum of 10,000 access points unless you request an increase.
     /// To learn more, see <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-access-points.html">Mounting
     /// a file system using EFS access points</a>.
     /// 
     ///  <note><para>
     /// If multiple requests to create access points on the same file system are sent in quick
-    /// succession, and the file system is near the limit of 1,000 access points, you may
-    /// experience a throttling response for these requests. This is to ensure that the file
-    /// system does not exceed the stated access point limit.
+    /// succession, and the file system is near the limit of access points, you may experience
+    /// a throttling response for these requests. This is to ensure that the file system does
+    /// not exceed the stated access point limit.
     /// </para></note><para>
     /// This operation requires permissions for the <c>elasticfilesystem:CreateAccessPoint</c>
     /// action.
@@ -58,12 +61,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
     [OutputType("Amazon.ElasticFileSystem.Model.CreateAccessPointResponse")]
     [AWSCmdlet("Calls the Amazon Elastic File System CreateAccessPoint API operation.", Operation = new[] {"CreateAccessPoint"}, SelectReturnType = typeof(Amazon.ElasticFileSystem.Model.CreateAccessPointResponse))]
     [AWSCmdletOutput("Amazon.ElasticFileSystem.Model.CreateAccessPointResponse",
-        "This cmdlet returns an Amazon.ElasticFileSystem.Model.CreateAccessPointResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ElasticFileSystem.Model.CreateAccessPointResponse object containing multiple properties."
     )]
     public partial class NewEFSAccessPointCmdlet : AmazonElasticFileSystemClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FileSystemId
         /// <summary>
@@ -143,7 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         #region Parameter PosixUser_SecondaryGid
         /// <summary>
         /// <para>
-        /// <para>Secondary POSIX group IDs used for all file system operations using this access point.</para>
+        /// <para>Secondary POSIX group IDs used for all file system operations using this access point.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         /// <para>Creates tags associated with the access point. Each tag is a key-value pair, each
         /// key must be unique. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
         /// Amazon Web Services resources</a> in the <i>Amazon Web Services General Reference
-        /// Guide</i>.</para>
+        /// Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,16 +208,6 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileSystemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -216,9 +218,13 @@ namespace Amazon.PowerShell.Cmdlets.EFS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FileSystemId), MyInvocation.BoundParameters);
@@ -232,21 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticFileSystem.Model.CreateAccessPointResponse, NewEFSAccessPointCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FileSystemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.FileSystemId = this.FileSystemId;
             #if MODULAR
@@ -438,13 +434,7 @@ namespace Amazon.PowerShell.Cmdlets.EFS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic File System", "CreateAccessPoint");
             try
             {
-                #if DESKTOP
-                return client.CreateAccessPoint(request);
-                #elif CORECLR
-                return client.CreateAccessPointAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAccessPointAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

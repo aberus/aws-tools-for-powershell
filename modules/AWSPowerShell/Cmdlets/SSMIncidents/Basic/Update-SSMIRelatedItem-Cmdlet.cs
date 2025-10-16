@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SSMIncidents;
 using Amazon.SSMIncidents.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSMI
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SSMI
     [AWSCmdlet("Calls the AWS Systems Manager Incident Manager UpdateRelatedItems API operation.", Operation = new[] {"UpdateRelatedItems"}, SelectReturnType = typeof(Amazon.SSMIncidents.Model.UpdateRelatedItemsResponse))]
     [AWSCmdletOutput("None or Amazon.SSMIncidents.Model.UpdateRelatedItemsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SSMIncidents.Model.UpdateRelatedItemsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SSMIncidents.Model.UpdateRelatedItemsResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateSSMIRelatedItemCmdlet : AmazonSSMIncidentsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RelatedItemsUpdate_ItemToAdd_Identifier_Value_Arn
         /// <summary>
@@ -256,16 +259,6 @@ namespace Amazon.PowerShell.Cmdlets.SSMI
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IncidentRecordArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IncidentRecordArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IncidentRecordArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -276,9 +269,13 @@ namespace Amazon.PowerShell.Cmdlets.SSMI
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IncidentRecordArn), MyInvocation.BoundParameters);
@@ -292,21 +289,11 @@ namespace Amazon.PowerShell.Cmdlets.SSMI
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SSMIncidents.Model.UpdateRelatedItemsResponse, UpdateSSMIRelatedItemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IncidentRecordArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.IncidentRecordArn = this.IncidentRecordArn;
             #if MODULAR
@@ -667,13 +654,7 @@ namespace Amazon.PowerShell.Cmdlets.SSMI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager Incident Manager", "UpdateRelatedItems");
             try
             {
-                #if DESKTOP
-                return client.UpdateRelatedItems(request);
-                #elif CORECLR
-                return client.UpdateRelatedItemsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRelatedItemsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

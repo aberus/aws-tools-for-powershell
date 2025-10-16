@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Macie2;
 using Amazon.Macie2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MAC2
 {
     /// <summary>
@@ -35,18 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
     [AWSCmdlet("Calls the Amazon Macie 2 DeleteInvitations API operation.", Operation = new[] {"DeleteInvitations"}, SelectReturnType = typeof(Amazon.Macie2.Model.DeleteInvitationsResponse))]
     [AWSCmdletOutput("Amazon.Macie2.Model.UnprocessedAccount or Amazon.Macie2.Model.DeleteInvitationsResponse",
         "This cmdlet returns a collection of Amazon.Macie2.Model.UnprocessedAccount objects.",
-        "The service call response (type Amazon.Macie2.Model.DeleteInvitationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Macie2.Model.DeleteInvitationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveMAC2InvitationCmdlet : AmazonMacie2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
         /// <para>An array that lists Amazon Web Services account IDs, one for each account that sent
-        /// an invitation to delete.</para>
+        /// an invitation to delete.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,9 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AccountId), MyInvocation.BoundParameters);
@@ -171,13 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Macie 2", "DeleteInvitations");
             try
             {
-                #if DESKTOP
-                return client.DeleteInvitations(request);
-                #elif CORECLR
-                return client.DeleteInvitationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteInvitationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -33,14 +33,7 @@ namespace Amazon.PowerShell.Common
         public static bool HasValue<T>(T token)
         {
             var tokenDictionary = token as IDictionary;
-            if (tokenDictionary != null)
-            {
-                return tokenDictionary.Count > 0;
-            }
-            else
-            {
-                throw new ArgumentException("Unknown iteration key type.");
-            }
+            return tokenDictionary?.Count > 0;
         }
 
         public static bool HasValue(string s)

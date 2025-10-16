@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpacesWeb;
 using Amazon.WorkSpacesWeb.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WSW
 {
     /// <summary>
@@ -34,19 +36,22 @@ namespace Amazon.PowerShell.Cmdlets.WSW
     [OutputType("Amazon.WorkSpacesWeb.Model.CreatePortalResponse")]
     [AWSCmdlet("Calls the Amazon WorkSpaces Web CreatePortal API operation.", Operation = new[] {"CreatePortal"}, SelectReturnType = typeof(Amazon.WorkSpacesWeb.Model.CreatePortalResponse))]
     [AWSCmdletOutput("Amazon.WorkSpacesWeb.Model.CreatePortalResponse",
-        "This cmdlet returns an Amazon.WorkSpacesWeb.Model.CreatePortalResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.WorkSpacesWeb.Model.CreatePortalResponse object containing multiple properties."
     )]
     public partial class NewWSWPortalCmdlet : AmazonWorkSpacesWebClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalEncryptionContext
         /// <summary>
         /// <para>
-        /// <para>The additional encryption context of the portal.</para>
+        /// <para>The additional encryption context of the portal.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -60,11 +65,9 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// Defaults to <c>Standard</c>.</para><para><c>Standard</c> web portals are authenticated directly through your identity provider.
         /// You need to call <c>CreateIdentityProvider</c> to integrate your identity provider
         /// with your web portal. User and group access to your web portal is controlled through
-        /// your identity provider.</para><para><c>IAM_Identity_Center</c> web portals are authenticated through AWS IAM Identity
-        /// Center (successor to AWS Single Sign-On). They provide additional features, such as
-        /// IdP-initiated authentication. Identity sources (including external identity provider
-        /// integration), plus user and group access to your web portal, can be configured in
-        /// the IAM Identity Center.</para>
+        /// your identity provider.</para><para><c>IAM Identity Center</c> web portals are authenticated through IAM Identity Center.
+        /// Identity sources (including external identity provider integration), plus user and
+        /// group access to your web portal, can be configured in the IAM Identity Center.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,10 +95,36 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public System.String DisplayName { get; set; }
         #endregion
         
+        #region Parameter InstanceType
+        /// <summary>
+        /// <para>
+        /// <para>The type and resources of the underlying instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpacesWeb.InstanceType")]
+        public Amazon.WorkSpacesWeb.InstanceType InstanceType { get; set; }
+        #endregion
+        
+        #region Parameter MaxConcurrentSession
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of concurrent sessions for the portal.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MaxConcurrentSessions")]
+        public System.Int32? MaxConcurrentSession { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to add to the web portal. A tag is a key-value pair.</para>
+        /// <para>The tags to add to the web portal. A tag is a key-value pair.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,7 +139,8 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// the request. Idempotency ensures that an API request completes only once. With an
         /// idempotent request, if the original request completes successfully, subsequent retries
         /// with the same client token returns the result from the original successful request.
-        /// </para><para>If you do not specify a client token, one is automatically generated by the AWS SDK.</para>
+        /// </para><para>If you do not specify a client token, one is automatically generated by the Amazon
+        /// Web Services SDK.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,9 +168,13 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DisplayName), MyInvocation.BoundParameters);
@@ -171,6 +205,8 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             context.ClientToken = this.ClientToken;
             context.CustomerManagedKey = this.CustomerManagedKey;
             context.DisplayName = this.DisplayName;
+            context.InstanceType = this.InstanceType;
+            context.MaxConcurrentSession = this.MaxConcurrentSession;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.WorkSpacesWeb.Model.Tag>(this.Tag);
@@ -210,6 +246,14 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             if (cmdletContext.DisplayName != null)
             {
                 request.DisplayName = cmdletContext.DisplayName;
+            }
+            if (cmdletContext.InstanceType != null)
+            {
+                request.InstanceType = cmdletContext.InstanceType;
+            }
+            if (cmdletContext.MaxConcurrentSession != null)
+            {
+                request.MaxConcurrentSessions = cmdletContext.MaxConcurrentSession.Value;
             }
             if (cmdletContext.Tag != null)
             {
@@ -253,13 +297,7 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces Web", "CreatePortal");
             try
             {
-                #if DESKTOP
-                return client.CreatePortal(request);
-                #elif CORECLR
-                return client.CreatePortalAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePortalAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -281,6 +319,8 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             public System.String ClientToken { get; set; }
             public System.String CustomerManagedKey { get; set; }
             public System.String DisplayName { get; set; }
+            public Amazon.WorkSpacesWeb.InstanceType InstanceType { get; set; }
+            public System.Int32? MaxConcurrentSession { get; set; }
             public List<Amazon.WorkSpacesWeb.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.WorkSpacesWeb.Model.CreatePortalResponse, NewWSWPortalCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

@@ -1,0 +1,30 @@
+---
+ssm_ListDocumentVersions:
+  title: Use Get-SSMDocumentVersionList
+  title_abbrev: Get-SSMDocumentVersionList
+  synopsis: use Get-SSMDocumentVersionList
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Get-SSMDocumentVersionList
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: This example lists all the versions for a document.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/ssm_Get-SSMDocumentVersionList.1.1.ps1
+        - description: <emphasis role="bold">Output:</emphasis>
+          snippet_files: []
+        - description: |-
+            <programlisting language="none" role="nocopy">CreatedDate       : 6/1/2021 5:19:10 PM
+            DocumentFormat    : JSON
+            DocumentVersion   : 1
+            IsDefaultVersion  : True
+            Name              : AWS-UpdateSSMAgent
+            Status            : Active</programlisting>
+          snippet_files: []
+  services:
+    ssm:
+      ListDocumentVersions:
+

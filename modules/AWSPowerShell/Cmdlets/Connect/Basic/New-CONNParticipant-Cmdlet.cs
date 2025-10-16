@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
-    /// Adds a new participant into an on-going chat contact. For more information, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/chat-customize-flow.html">Customize
-    /// chat flow experiences by integrating custom participants</a>.
+    /// Adds a new participant into an on-going chat contact or webRTC call. For more information,
+    /// see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/chat-customize-flow.html">Customize
+    /// chat flow experiences by integrating custom participants</a> or <a href="https://docs.aws.amazon.com/connect/latest/adminguide/enable-multiuser-inapp.html">Enable
+    /// multi-user web, in-app, and video calling</a>.
     /// </summary>
     [Cmdlet("New", "CONNParticipant", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Connect.Model.CreateParticipantResponse")]
     [AWSCmdlet("Calls the Amazon Connect Service CreateParticipant API operation.", Operation = new[] {"CreateParticipant"}, SelectReturnType = typeof(Amazon.Connect.Model.CreateParticipantResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.CreateParticipantResponse",
-        "This cmdlet returns an Amazon.Connect.Model.CreateParticipantResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Connect.Model.CreateParticipantResponse object containing multiple properties."
     )]
     public partial class NewCONNParticipantCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the contact in this instance of Amazon Connect. Only contacts in
-        /// the CHAT channel are supported.</para>
+        /// <para>The identifier of the contact in this instance of Amazon Connect. Supports contacts
+        /// in the CHAT channel and VOICE (WebRTC) channels. For WebRTC calls, this should be
+        /// the initial contact ID that was generated when the contact was first created (from
+        /// the StartWebRTCContact API) in the VOICE channel</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,6 +106,32 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public Amazon.Connect.ParticipantRole ParticipantDetails_ParticipantRole { get; set; }
         #endregion
         
+        #region Parameter ParticipantCapabilities_ScreenShare
+        /// <summary>
+        /// <para>
+        /// <para>The screen sharing capability that is enabled for the participant. <c>SEND</c> indicates
+        /// the participant can share their screen.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ParticipantDetails_ParticipantCapabilities_ScreenShare")]
+        [AWSConstantClassSource("Amazon.Connect.ScreenShareCapability")]
+        public Amazon.Connect.ScreenShareCapability ParticipantCapabilities_ScreenShare { get; set; }
+        #endregion
+        
+        #region Parameter ParticipantCapabilities_Video
+        /// <summary>
+        /// <para>
+        /// <para>The configuration having the video and screen sharing capabilities for participants
+        /// over the call.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ParticipantDetails_ParticipantCapabilities_Video")]
+        [AWSConstantClassSource("Amazon.Connect.VideoCapability")]
+        public Amazon.Connect.VideoCapability ParticipantCapabilities_Video { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
@@ -123,16 +156,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ContactId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ContactId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ContactId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -143,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ContactId), MyInvocation.BoundParameters);
@@ -159,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.CreateParticipantResponse, NewCONNParticipantCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ContactId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ContactId = this.ContactId;
             #if MODULAR
@@ -190,6 +207,8 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             }
             #endif
             context.ParticipantDetails_DisplayName = this.ParticipantDetails_DisplayName;
+            context.ParticipantCapabilities_ScreenShare = this.ParticipantCapabilities_ScreenShare;
+            context.ParticipantCapabilities_Video = this.ParticipantCapabilities_Video;
             context.ParticipantDetails_ParticipantRole = this.ParticipantDetails_ParticipantRole;
             
             // allow further manipulation of loaded context prior to processing
@@ -243,6 +262,41 @@ namespace Amazon.PowerShell.Cmdlets.CONN
                 request.ParticipantDetails.ParticipantRole = requestParticipantDetails_participantDetails_ParticipantRole;
                 requestParticipantDetailsIsNull = false;
             }
+            Amazon.Connect.Model.ParticipantCapabilities requestParticipantDetails_participantDetails_ParticipantCapabilities = null;
+            
+             // populate ParticipantCapabilities
+            var requestParticipantDetails_participantDetails_ParticipantCapabilitiesIsNull = true;
+            requestParticipantDetails_participantDetails_ParticipantCapabilities = new Amazon.Connect.Model.ParticipantCapabilities();
+            Amazon.Connect.ScreenShareCapability requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_ScreenShare = null;
+            if (cmdletContext.ParticipantCapabilities_ScreenShare != null)
+            {
+                requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_ScreenShare = cmdletContext.ParticipantCapabilities_ScreenShare;
+            }
+            if (requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_ScreenShare != null)
+            {
+                requestParticipantDetails_participantDetails_ParticipantCapabilities.ScreenShare = requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_ScreenShare;
+                requestParticipantDetails_participantDetails_ParticipantCapabilitiesIsNull = false;
+            }
+            Amazon.Connect.VideoCapability requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_Video = null;
+            if (cmdletContext.ParticipantCapabilities_Video != null)
+            {
+                requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_Video = cmdletContext.ParticipantCapabilities_Video;
+            }
+            if (requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_Video != null)
+            {
+                requestParticipantDetails_participantDetails_ParticipantCapabilities.Video = requestParticipantDetails_participantDetails_ParticipantCapabilities_participantCapabilities_Video;
+                requestParticipantDetails_participantDetails_ParticipantCapabilitiesIsNull = false;
+            }
+             // determine if requestParticipantDetails_participantDetails_ParticipantCapabilities should be set to null
+            if (requestParticipantDetails_participantDetails_ParticipantCapabilitiesIsNull)
+            {
+                requestParticipantDetails_participantDetails_ParticipantCapabilities = null;
+            }
+            if (requestParticipantDetails_participantDetails_ParticipantCapabilities != null)
+            {
+                request.ParticipantDetails.ParticipantCapabilities = requestParticipantDetails_participantDetails_ParticipantCapabilities;
+                requestParticipantDetailsIsNull = false;
+            }
              // determine if request.ParticipantDetails should be set to null
             if (requestParticipantDetailsIsNull)
             {
@@ -286,13 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "CreateParticipant");
             try
             {
-                #if DESKTOP
-                return client.CreateParticipant(request);
-                #elif CORECLR
-                return client.CreateParticipantAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateParticipantAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -313,6 +361,8 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             public System.String ContactId { get; set; }
             public System.String InstanceId { get; set; }
             public System.String ParticipantDetails_DisplayName { get; set; }
+            public Amazon.Connect.ScreenShareCapability ParticipantCapabilities_ScreenShare { get; set; }
+            public Amazon.Connect.VideoCapability ParticipantCapabilities_Video { get; set; }
             public Amazon.Connect.ParticipantRole ParticipantDetails_ParticipantRole { get; set; }
             public System.Func<Amazon.Connect.Model.CreateParticipantResponse, NewCONNParticipantCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

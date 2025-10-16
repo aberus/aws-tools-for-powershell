@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,42 +22,54 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
     /// Creates a placement queue that processes requests for new game sessions. A queue uses
-    /// FleetIQ algorithms to determine the best placement locations and find an available
-    /// game server there, then prompts the game server process to start a new game session.
-    /// 
+    /// FleetIQ algorithms to locate the best available placement locations for a new game
+    /// session, and then prompts the game server process to start a new game session.
     /// 
     ///  
     /// <para>
-    /// A game session queue is configured with a set of destinations (Amazon GameLift fleets
-    /// or aliases), which determine the locations where the queue can place new game sessions.
-    /// These destinations can span multiple fleet types (Spot and On-Demand), instance types,
-    /// and Amazon Web Services Regions. If the queue includes multi-location fleets, the
-    /// queue is able to place game sessions in all of a fleet's remote locations. You can
-    /// opt to filter out individual locations if needed.
+    /// A game session queue is configured with a set of destinations (Amazon GameLift Servers
+    /// fleets or aliases) that determine where the queue can place new game sessions. These
+    /// destinations can span multiple Amazon Web Services Regions, can use different instance
+    /// types, and can include both Spot and On-Demand fleets. If the queue includes multi-location
+    /// fleets, the queue can place game sessions in any of a fleet's remote locations.
     /// </para><para>
-    /// The queue configuration also determines how FleetIQ selects the best available placement
-    /// for a new game session. Before searching for an available game server, FleetIQ first
-    /// prioritizes the queue's destinations and locations, with the best placement locations
-    /// on top. You can set up the queue to use the FleetIQ default prioritization or provide
-    /// an alternate set of priorities.
-    /// </para><para>
-    /// To create a new queue, provide a name, timeout value, and a list of destinations.
-    /// Optionally, specify a sort configuration and/or a filter, and define a set of latency
-    /// cap policies. You can also include the ARN for an Amazon Simple Notification Service
-    /// (SNS) topic to receive notifications of game session placement activity. Notifications
-    /// using SNS or CloudWatch events is the preferred way to track placement activity.
-    /// </para><para>
-    /// If successful, a new <c>GameSessionQueue</c> object is returned with an assigned queue
-    /// ARN. New game session requests, which are submitted to queue with <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_StartGameSessionPlacement.html">StartGameSessionPlacement</a>
-    /// or <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_StartMatchmaking.html">StartMatchmaking</a>,
-    /// reference a queue's name or ARN. 
+    /// You can configure a queue to determine how it selects the best available placement
+    /// for a new game session. Queues can prioritize placement decisions based on a combination
+    /// of location, hosting cost, and player latency. You can set up the queue to use the
+    /// default prioritization or provide alternate instructions using <c>PriorityConfiguration</c>.
+    /// </para><para><b>Request options</b></para><para>
+    /// Use this operation to make these common types of requests. 
+    /// </para><ul><li><para>
+    /// Create a queue with the minimum required parameters.
+    /// </para><ul><li><para><c>Name</c></para></li><li><para><c>Destinations</c> (This parameter isn't required, but a queue can't make placements
+    /// without at least one destination.)
+    /// </para></li></ul></li><li><para>
+    /// Create a queue with placement notification. Queues that have high placement activity
+    /// must use a notification system, such as with Amazon Simple Notification Service (Amazon
+    /// SNS) or Amazon CloudWatch.
+    /// </para><ul><li><para>
+    /// Required parameters <c>Name</c> and <c>Destinations</c></para></li><li><para><c>NotificationTarget</c></para></li></ul></li><li><para>
+    /// Create a queue with custom prioritization settings. These custom settings replace
+    /// the default prioritization configuration for a queue.
+    /// </para><ul><li><para>
+    /// Required parameters <c>Name</c> and <c>Destinations</c></para></li><li><para><c>PriorityConfiguration</c></para></li></ul></li><li><para>
+    /// Create a queue with special rules for processing player latency data.
+    /// </para><ul><li><para>
+    /// Required parameters <c>Name</c> and <c>Destinations</c></para></li><li><para><c>PlayerLatencyPolicies</c></para></li></ul></li></ul><para><b>Results</b></para><para>
+    /// If successful, this operation returns a new <c>GameSessionQueue</c> object with an
+    /// assigned queue ARN. Use the queue's name or ARN when submitting new game session requests
+    /// with <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_StartGameSessionPlacement.html">StartGameSessionPlacement</a>
+    /// or <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_StartMatchmaking.html">StartMatchmaking</a>.
+    /// 
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/queues-design.html">
     /// Design a game session queue</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/queues-creating.html">
     /// Create a game session queue</a></para><para><b>Related actions</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_CreateGameSessionQueue.html">CreateGameSessionQueue</a>
@@ -72,18 +84,23 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service CreateGameSessionQueue API operation.", Operation = new[] {"CreateGameSessionQueue"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreateGameSessionQueueResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GameSessionQueue or Amazon.GameLift.Model.CreateGameSessionQueueResponse",
         "This cmdlet returns an Amazon.GameLift.Model.GameSessionQueue object.",
-        "The service call response (type Amazon.GameLift.Model.CreateGameSessionQueueResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.CreateGameSessionQueueResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGMLGameSessionQueueCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FilterConfiguration_AllowedLocation
         /// <summary>
         /// <para>
         /// <para> A list of locations to allow game session placement in, in the form of Amazon Web
-        /// Services Region codes such as <c>us-west-2</c>. </para>
+        /// Services Region codes such as <c>us-west-2</c>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>
         /// <para>A list of fleets and/or fleet aliases that can be used to fulfill game session placement
         /// requests in the queue. Destinations are identified by either a fleet ARN or a fleet
-        /// alias ARN, and are listed in order of placement preference.</para>
+        /// alias ARN, and are listed in order of placement preference.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,8 +139,14 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The prioritization order to use for fleet locations, when the <c>PriorityOrder</c>
-        /// property includes <c>LOCATION</c>. Locations are identified by Amazon Web Services
-        /// Region codes such as <c>us-west-2</c>. Each location can only be listed once. </para>
+        /// property includes <c>LOCATION</c>. Locations can include Amazon Web Services Region
+        /// codes (such as <c>us-west-2</c>), local zones, and custom locations (for Anywhere
+        /// fleets). Each location must be listed only once. For details, see <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-regions.html">Amazon
+        /// GameLift Servers service locations.</a></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,11 +186,14 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter PlayerLatencyPolicy
         /// <summary>
         /// <para>
-        /// <para>A set of policies that act as a sliding cap on player latency. FleetIQ works to deliver
-        /// low latency for most players in a game session. These policies ensure that no individual
-        /// player can be placed into a game with unreasonably high latency. Use multiple policies
-        /// to gradually relax latency requirements a step at a time. Multiple policies are applied
-        /// based on their maximum allowed latency, starting with the lowest value.</para>
+        /// <para>A set of policies that enforce a sliding cap on player latency when processing game
+        /// sessions placement requests. Use multiple policies to gradually relax the cap over
+        /// time if Amazon GameLift Servers can't make a placement. Policies are evaluated in
+        /// order starting with the lowest maximum latency value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,13 +204,18 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter PriorityConfiguration_PriorityOrder
         /// <summary>
         /// <para>
-        /// <para>The recommended sequence to use when prioritizing where to place new game sessions.
-        /// Each type can only be listed once.</para><ul><li><para><c>LATENCY</c> -- FleetIQ prioritizes locations where the average player latency
-        /// (provided in each game session request) is lowest. </para></li><li><para><c>COST</c> -- FleetIQ prioritizes destinations with the lowest current hosting costs.
-        /// Cost is evaluated based on the location, instance type, and fleet type (Spot or On-Demand)
-        /// for each destination in the queue.</para></li><li><para><c>DESTINATION</c> -- FleetIQ prioritizes based on the order that destinations are
-        /// listed in the queue configuration.</para></li><li><para><c>LOCATION</c> -- FleetIQ prioritizes based on the provided order of locations,
-        /// as defined in <c>LocationOrder</c>. </para></li></ul>
+        /// <para>A custom sequence to use when prioritizing where to place new game sessions. Each
+        /// priority type is listed once.</para><ul><li><para><c>LATENCY</c> -- Amazon GameLift Servers prioritizes locations where the average
+        /// player latency is lowest. Player latency data is provided in each game session placement
+        /// request.</para></li><li><para><c>COST</c> -- Amazon GameLift Servers prioritizes queue destinations with the lowest
+        /// current hosting costs. Cost is evaluated based on the destination's location, instance
+        /// type, and fleet type (Spot or On-Demand).</para></li><li><para><c>DESTINATION</c> -- Amazon GameLift Servers prioritizes based on the list order
+        /// of destinations in the queue configuration.</para></li><li><para><c>LOCATION</c> -- Amazon GameLift Servers prioritizes based on the provided order
+        /// of locations, as defined in <c>LocationOrder</c>. </para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -193,7 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>A list of labels to assign to the new game session queue resource. Tags are developer-defined
         /// key-value pairs. Tagging Amazon Web Services resources are useful for resource management,
         /// access management and cost allocation. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">
-        /// Tagging Amazon Web Services Resources</a> in the <i>Amazon Web Services General Reference</i>.</para>
+        /// Tagging Amazon Web Services Resources</a> in the <i>Amazon Web Services General Reference</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,7 +245,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>
         /// <para>The maximum time, in seconds, that a new game session placement request remains in
         /// the queue. When a request exceeds this time, the game session placement changes to
-        /// a <c>TIMED_OUT</c> status. By default, this property is set to <c>600</c>.</para>
+        /// a <c>TIMED_OUT</c> status. If you don't specify a request timeout, the queue uses
+        /// a default value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -225,16 +265,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "GameSessionQueue";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -245,9 +275,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -261,21 +295,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreateGameSessionQueueResponse, NewGMLGameSessionQueueCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CustomEventData = this.CustomEventData;
             if (this.Destination != null)
             {
@@ -440,13 +464,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreateGameSessionQueue");
             try
             {
-                #if DESKTOP
-                return client.CreateGameSessionQueue(request);
-                #elif CORECLR
-                return client.CreateGameSessionQueueAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGameSessionQueueAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

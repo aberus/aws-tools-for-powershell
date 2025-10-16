@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,19 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
     /// Amazon Relational Database Service (Amazon RDS) supports importing MySQL databases
     /// by using backup files. You can create a backup of your on-premises database, store
     /// it on Amazon Simple Storage Service (Amazon S3), and then restore the backup file
-    /// onto a new Amazon RDS DB instance running MySQL. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Procedural.Importing.html">Importing
-    /// Data into an Amazon RDS MySQL DB Instance</a> in the <i>Amazon RDS User Guide.</i><para>
+    /// onto a new Amazon RDS DB instance running MySQL. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Procedural.Importing.html">Restoring
+    /// a backup into an Amazon RDS for MySQL DB instance</a> in the <i>Amazon RDS User Guide.</i><para>
     /// This operation doesn't apply to RDS Custom.
     /// </para>
     /// </summary>
@@ -41,18 +43,19 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service RestoreDBInstanceFromS3 API operation.", Operation = new[] {"RestoreDBInstanceFromS3"}, SelectReturnType = typeof(Amazon.RDS.Model.RestoreDBInstanceFromS3Response))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBInstance or Amazon.RDS.Model.RestoreDBInstanceFromS3Response",
         "This cmdlet returns an Amazon.RDS.Model.DBInstance object.",
-        "The service call response (type Amazon.RDS.Model.RestoreDBInstanceFromS3Response) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.RestoreDBInstanceFromS3Response) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreRDSDBInstanceFromS3Cmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocatedStorage
         /// <summary>
         /// <para>
         /// <para>The amount of storage (in gibibytes) to allocate initially for the DB instance. Follow
-        /// the allocation rules specified in <c>CreateDBInstance</c>.</para><note><para>Be sure to allocate enough storage for your new DB instance so that the restore operation
+        /// the allocation rules specified in <c>CreateDBInstance</c>.</para><para>This setting isn't valid for RDS for SQL Server.</para><note><para>Be sure to allocate enough storage for your new DB instance so that the restore operation
         /// can succeed. You can also allocate additional storage for future growth.</para></note>
         /// </para>
         /// </summary>
@@ -64,7 +67,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>Specifies whether to automatically apply minor engine upgrades to the DB instance
-        /// during the maintenance window. By default, minor engine upgrades are not applied automatically.</para>
+        /// during the maintenance window. By default, minor engine upgrades are not applied automatically.</para><para>For more information about automatic minor version upgrades, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.Upgrading.html#USER_UpgradeDBInstance.Upgrading.AutoMinorVersionUpgrades">Automatically
+        /// upgrading the minor engine version</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,6 +101,20 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Int32? BackupRetentionPeriod { get; set; }
         #endregion
         
+        #region Parameter CACertificateIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The CA certificate identifier to use for the DB instance's server certificate.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html">Using
+        /// SSL/TLS to encrypt a connection to a DB instance</a> in the <i>Amazon RDS User Guide</i>
+        /// and <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html">
+        /// Using SSL/TLS to encrypt a connection to a DB cluster</a> in the <i>Amazon Aurora
+        /// User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CACertificateIdentifier { get; set; }
+        #endregion
+        
         #region Parameter CopyTagsToSnapshot
         /// <summary>
         /// <para>
@@ -106,6 +124,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? CopyTagsToSnapshot { get; set; }
+        #endregion
+        
+        #region Parameter DatabaseInsightsMode
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the mode of Database Insights to enable for the DB instance.</para><note><para>Aurora DB instances inherit this value from the DB cluster, so you can't change this
+        /// value.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.DatabaseInsightsMode")]
+        public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
         #endregion
         
         #region Parameter DBInstanceClass
@@ -171,7 +201,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter DBSecurityGroup
         /// <summary>
         /// <para>
-        /// <para>A list of DB security groups to associate with this DB instance.</para><para>Default: The default DB security group for the database engine.</para>
+        /// <para>A list of DB security groups to associate with this DB instance.</para><para>Default: The default DB security group for the database engine.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -217,7 +251,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>The list of logs that the restored DB instance is to export to CloudWatch Logs. The
         /// values in the list depend on the DB engine being used. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_LogAccess.html#USER_LogAccess.Procedural.UploadtoCloudWatch">Publishing
-        /// Database Logs to Amazon CloudWatch Logs</a> in the <i>Amazon RDS User Guide</i>.</para>
+        /// Database Logs to Amazon CloudWatch Logs</a> in the <i>Amazon RDS User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -265,6 +303,25 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Engine { get; set; }
+        #endregion
+        
+        #region Parameter EngineLifecycleSupport
+        /// <summary>
+        /// <para>
+        /// <para>The life cycle type for this DB instance.</para><note><para>By default, this value is set to <c>open-source-rds-extended-support</c>, which enrolls
+        /// your DB instance into Amazon RDS Extended Support. At the end of standard support,
+        /// you can avoid charges for Extended Support by setting the value to <c>open-source-rds-extended-support-disabled</c>.
+        /// In this case, RDS automatically upgrades your restored DB instance to a higher engine
+        /// version, if the major engine version is past its end of standard support date.</para></note><para>You can use this setting to enroll your DB instance into Amazon RDS Extended Support.
+        /// With RDS Extended Support, you can run the selected major engine version on your DB
+        /// instance past the end of standard support for that engine version. For more information,
+        /// see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support.html">Amazon
+        /// RDS Extended Support Amazon RDS</a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting applies only to RDS for MySQL and RDS for PostgreSQL. For Amazon Aurora
+        /// DB instances, the life cycle type is managed by the DB cluster.</para><para>Valid Values: <c>open-source-rds-extended-support | open-source-rds-extended-support-disabled</c></para><para>Default: <c>open-source-rds-extended-support</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String EngineLifecycleSupport { get; set; }
         #endregion
         
         #region Parameter EngineVersion
@@ -509,7 +566,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The number of CPU cores and the number of threads per core for the DB instance class
-        /// of the DB instance.</para>
+        /// of the DB instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -553,8 +614,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter S3IngestionRoleArn
         /// <summary>
         /// <para>
-        /// <para>An Amazon Web Services Identity and Access Management (IAM) role to allow Amazon RDS
-        /// to access your Amazon S3 bucket.</para>
+        /// <para>An Amazon Web Services Identity and Access Management (IAM) role with a trust policy
+        /// and a permissions policy that allows Amazon RDS to access your Amazon S3 bucket. For
+        /// information about this role, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Procedural.Importing.html#MySQL.Procedural.Importing.Enabling.IAM">
+        /// Creating an IAM role manually</a> in the <i>Amazon RDS User Guide.</i></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -635,8 +698,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter StorageType
         /// <summary>
         /// <para>
-        /// <para>Specifies the storage type to be associated with the DB instance.</para><para>Valid Values: <c>gp2 | gp3 | io1 | standard</c></para><para>If you specify <c>io1</c> or <c>gp3</c>, you must also include a value for the <c>Iops</c>
-        /// parameter.</para><para>Default: <c>io1</c> if the <c>Iops</c> parameter is specified; otherwise <c>gp2</c></para>
+        /// <para>Specifies the storage type to be associated with the DB instance.</para><para>Valid Values: <c>gp2 | gp3 | io1 | io2 | standard</c></para><para>If you specify <c>io1</c>, <c>io2</c>, or <c>gp3</c>, you must also include a value
+        /// for the <c>Iops</c> parameter.</para><para>Default: <c>io1</c> if the <c>Iops</c> parameter is specified; otherwise <c>gp2</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -647,7 +710,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>A list of tags to associate with this DB instance. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_Tagging.html">Tagging
-        /// Amazon RDS Resources</a> in the <i>Amazon RDS User Guide.</i></para>
+        /// Amazon RDS Resources</a> in the <i>Amazon RDS User Guide.</i></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -670,7 +737,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of VPC security groups to associate with this DB instance.</para>
+        /// <para>A list of VPC security groups to associate with this DB instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -689,16 +760,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBInstance";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBInstanceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -709,9 +770,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBInstanceIdentifier), MyInvocation.BoundParameters);
@@ -725,26 +790,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.RestoreDBInstanceFromS3Response, RestoreRDSDBInstanceFromS3Cmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBInstanceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocatedStorage = this.AllocatedStorage;
             context.AutoMinorVersionUpgrade = this.AutoMinorVersionUpgrade;
             context.AvailabilityZone = this.AvailabilityZone;
             context.BackupRetentionPeriod = this.BackupRetentionPeriod;
+            context.CACertificateIdentifier = this.CACertificateIdentifier;
             context.CopyTagsToSnapshot = this.CopyTagsToSnapshot;
+            context.DatabaseInsightsMode = this.DatabaseInsightsMode;
             context.DBInstanceClass = this.DBInstanceClass;
             #if MODULAR
             if (this.DBInstanceClass == null && ParameterWasBound(nameof(this.DBInstanceClass)))
@@ -781,6 +838,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 WriteWarning("You are passing $null as a value for parameter Engine which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.EngineLifecycleSupport = this.EngineLifecycleSupport;
             context.EngineVersion = this.EngineVersion;
             context.Iops = this.Iops;
             context.KmsKeyId = this.KmsKeyId;
@@ -878,9 +936,17 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.BackupRetentionPeriod = cmdletContext.BackupRetentionPeriod.Value;
             }
+            if (cmdletContext.CACertificateIdentifier != null)
+            {
+                request.CACertificateIdentifier = cmdletContext.CACertificateIdentifier;
+            }
             if (cmdletContext.CopyTagsToSnapshot != null)
             {
                 request.CopyTagsToSnapshot = cmdletContext.CopyTagsToSnapshot.Value;
+            }
+            if (cmdletContext.DatabaseInsightsMode != null)
+            {
+                request.DatabaseInsightsMode = cmdletContext.DatabaseInsightsMode;
             }
             if (cmdletContext.DBInstanceClass != null)
             {
@@ -929,6 +995,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.Engine != null)
             {
                 request.Engine = cmdletContext.Engine;
+            }
+            if (cmdletContext.EngineLifecycleSupport != null)
+            {
+                request.EngineLifecycleSupport = cmdletContext.EngineLifecycleSupport;
             }
             if (cmdletContext.EngineVersion != null)
             {
@@ -1096,13 +1166,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "RestoreDBInstanceFromS3");
             try
             {
-                #if DESKTOP
-                return client.RestoreDBInstanceFromS3(request);
-                #elif CORECLR
-                return client.RestoreDBInstanceFromS3Async(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreDBInstanceFromS3Async(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1123,7 +1187,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Boolean? AutoMinorVersionUpgrade { get; set; }
             public System.String AvailabilityZone { get; set; }
             public System.Int32? BackupRetentionPeriod { get; set; }
+            public System.String CACertificateIdentifier { get; set; }
             public System.Boolean? CopyTagsToSnapshot { get; set; }
+            public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
             public System.String DBInstanceClass { get; set; }
             public System.String DBInstanceIdentifier { get; set; }
             public System.String DBName { get; set; }
@@ -1136,6 +1202,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Boolean? EnableIAMDatabaseAuthentication { get; set; }
             public System.Boolean? EnablePerformanceInsight { get; set; }
             public System.String Engine { get; set; }
+            public System.String EngineLifecycleSupport { get; set; }
             public System.String EngineVersion { get; set; }
             public System.Int32? Iops { get; set; }
             public System.String KmsKeyId { get; set; }

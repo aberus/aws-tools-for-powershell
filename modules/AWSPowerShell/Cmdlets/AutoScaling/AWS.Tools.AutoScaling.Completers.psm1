@@ -80,6 +80,36 @@ $AS_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.AutoScaling.CapacityDistributionStrategy
+        {
+            ($_ -eq "New-ASAutoScalingGroup/AvailabilityZoneDistribution_CapacityDistributionStrategy") -Or
+            ($_ -eq "Update-ASAutoScalingGroup/AvailabilityZoneDistribution_CapacityDistributionStrategy")
+        }
+        {
+            $v = "balanced-best-effort","balanced-only"
+            break
+        }
+
+        # Amazon.AutoScaling.CapacityReservationPreference
+        {
+            ($_ -eq "New-ASAutoScalingGroup/CapacityReservationSpecification_CapacityReservationPreference") -Or
+            ($_ -eq "Update-ASAutoScalingGroup/CapacityReservationSpecification_CapacityReservationPreference")
+        }
+        {
+            $v = "capacity-reservations-first","capacity-reservations-only","default","none"
+            break
+        }
+
+        # Amazon.AutoScaling.ImpairedZoneHealthCheckBehavior
+        {
+            ($_ -eq "New-ASAutoScalingGroup/AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior") -Or
+            ($_ -eq "Update-ASAutoScalingGroup/AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior")
+        }
+        {
+            $v = "IgnoreUnhealthy","ReplaceUnhealthy"
+            break
+        }
+
         # Amazon.AutoScaling.InstanceMetadataEndpointState
         "New-ASLaunchConfiguration/MetadataOptions_HttpEndpoint"
         {
@@ -88,21 +118,21 @@ $AS_Completers = {
         }
 
         # Amazon.AutoScaling.InstanceMetadataHttpTokensState
-        "New-ASLaunchConfiguration/MetadataOptions_HttpTokens"
+        "New-ASLaunchConfiguration/MetadataOptions_HttpToken"
         {
             $v = "optional","required"
             break
         }
 
         # Amazon.AutoScaling.MetricStatistic
-        "Write-ASScalingPolicy/TargetTrackingConfiguration_CustomizedMetricSpecification_Statistic"
+        "Write-ASScalingPolicy/CustomizedMetricSpecification_Statistic"
         {
             $v = "Average","Maximum","Minimum","SampleCount","Sum"
             break
         }
 
         # Amazon.AutoScaling.MetricType
-        "Write-ASScalingPolicy/TargetTrackingConfiguration_PredefinedMetricSpecification_PredefinedMetricType"
+        "Write-ASScalingPolicy/PredefinedMetricSpecification_PredefinedMetricType"
         {
             $v = "ALBRequestCountPerTarget","ASGAverageCPUUtilization","ASGAverageNetworkIn","ASGAverageNetworkOut"
             break
@@ -130,14 +160,14 @@ $AS_Completers = {
         }
 
         # Amazon.AutoScaling.ScaleInProtectedInstances
-        "Start-ASInstanceRefresh/Preferences_ScaleInProtectedInstances"
+        "Start-ASInstanceRefresh/Preferences_ScaleInProtectedInstance"
         {
             $v = "Ignore","Refresh","Wait"
             break
         }
 
         # Amazon.AutoScaling.StandbyInstances
-        "Start-ASInstanceRefresh/Preferences_StandbyInstances"
+        "Start-ASInstanceRefresh/Preferences_StandbyInstance"
         {
             $v = "Ignore","Terminate","Wait"
             break
@@ -159,16 +189,19 @@ $AS_Completers = {
 }
 
 $AS_map = @{
+    "AvailabilityZoneDistribution_CapacityDistributionStrategy"=@("New-ASAutoScalingGroup","Update-ASAutoScalingGroup")
+    "AvailabilityZoneImpairmentPolicy_ImpairedZoneHealthCheckBehavior"=@("New-ASAutoScalingGroup","Update-ASAutoScalingGroup")
+    "CapacityReservationSpecification_CapacityReservationPreference"=@("New-ASAutoScalingGroup","Update-ASAutoScalingGroup")
+    "CustomizedMetricSpecification_Statistic"=@("Write-ASScalingPolicy")
     "MetadataOptions_HttpEndpoint"=@("New-ASLaunchConfiguration")
-    "MetadataOptions_HttpTokens"=@("New-ASLaunchConfiguration")
+    "MetadataOptions_HttpToken"=@("New-ASLaunchConfiguration")
     "PoolState"=@("Write-ASWarmPool")
+    "PredefinedMetricSpecification_PredefinedMetricType"=@("Write-ASScalingPolicy")
     "PredictiveScalingConfiguration_MaxCapacityBreachBehavior"=@("Write-ASScalingPolicy")
     "PredictiveScalingConfiguration_Mode"=@("Write-ASScalingPolicy")
-    "Preferences_ScaleInProtectedInstances"=@("Start-ASInstanceRefresh")
-    "Preferences_StandbyInstances"=@("Start-ASInstanceRefresh")
+    "Preferences_ScaleInProtectedInstance"=@("Start-ASInstanceRefresh")
+    "Preferences_StandbyInstance"=@("Start-ASInstanceRefresh")
     "Strategy"=@("Start-ASInstanceRefresh")
-    "TargetTrackingConfiguration_CustomizedMetricSpecification_Statistic"=@("Write-ASScalingPolicy")
-    "TargetTrackingConfiguration_PredefinedMetricSpecification_PredefinedMetricType"=@("Write-ASScalingPolicy")
 }
 
 _awsArgumentCompleterRegistration $AS_Completers $AS_map

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,21 +22,24 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SQS
 {
     /// <summary>
-    /// Returns the URL of an existing Amazon SQS queue.
+    /// The <c>GetQueueUrl</c> API returns the URL of an existing Amazon SQS queue. This is
+    /// useful when you know the queue's name but need to retrieve its URL for further operations.
     /// 
     ///  
     /// <para>
-    /// To access a queue that belongs to another AWS account, use the <c>QueueOwnerAWSAccountId</c>
-    /// parameter to specify the account ID of the queue's owner. The queue's owner must grant
-    /// you permission to access the queue. For more information about shared queue access,
-    /// see <c><a>AddPermission</a></c> or see <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-writing-an-sqs-policy.html#write-messages-to-shared-queue">Allow
-    /// Developers to Write Messages to a Shared Queue</a> in the <i>Amazon SQS Developer
+    /// To access a queue owned by another Amazon Web Services account, use the <c>QueueOwnerAWSAccountId</c>
+    /// parameter to specify the account ID of the queue's owner. Note that the queue owner
+    /// must grant you the necessary permissions to access the queue. For more information
+    /// about accessing shared queues, see the <c><a>AddPermission</a></c> API or <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-writing-an-sqs-policy.html#write-messages-to-shared-queue">Allow
+    /// developers to write messages to a shared queue</a> in the <i>Amazon SQS Developer
     /// Guide</i>. 
     /// </para>
     /// </summary>
@@ -45,18 +48,20 @@ namespace Amazon.PowerShell.Cmdlets.SQS
     [AWSCmdlet("Calls the Amazon Simple Queue Service (SQS) GetQueueUrl API operation.", Operation = new[] {"GetQueueUrl"}, SelectReturnType = typeof(Amazon.SQS.Model.GetQueueUrlResponse))]
     [AWSCmdletOutput("System.String or Amazon.SQS.Model.GetQueueUrlResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SQS.Model.GetQueueUrlResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SQS.Model.GetQueueUrlResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSQSQueueUrlCmdlet : AmazonSQSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter QueueName
         /// <summary>
         /// <para>
-        /// <para>The name of the queue whose URL must be fetched. Maximum 80 characters. Valid values:
-        /// alphanumeric characters, hyphens (<c>-</c>), and underscores (<c>_</c>).</para><para>Queue URLs and names are case-sensitive.</para>
+        /// <para>(Required) The name of the queue for which you want to fetch the URL. The name can
+        /// be up to 80 characters long and can include alphanumeric characters, hyphens (-),
+        /// and underscores (_). Queue URLs and names are case-sensitive.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,7 +78,9 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         #region Parameter QueueOwnerAWSAccountId
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services account ID of the account that created the queue.</para>
+        /// <para>(Optional) The Amazon Web Services account ID of the account that created the queue.
+        /// This is only required when you are attempting to access a queue owned by another Amazon
+        /// Web Services account.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -91,19 +98,13 @@ namespace Amazon.PowerShell.Cmdlets.SQS
         public string Select { get; set; } = "QueueUrl";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueueName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueueName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueueName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -111,21 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SQS.Model.GetQueueUrlResponse, GetSQSQueueUrlCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueueName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.QueueName = this.QueueName;
             #if MODULAR
             if (this.QueueName == null && ParameterWasBound(nameof(this.QueueName)))
@@ -196,13 +187,7 @@ namespace Amazon.PowerShell.Cmdlets.SQS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Queue Service (SQS)", "GetQueueUrl");
             try
             {
-                #if DESKTOP
-                return client.GetQueueUrl(request);
-                #elif CORECLR
-                return client.GetQueueUrlAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetQueueUrlAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

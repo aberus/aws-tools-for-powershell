@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TranscribeService;
 using Amazon.TranscribeService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRS
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
     [AWSCmdlet("Calls the Amazon Transcribe Service ListMedicalVocabularies API operation.", Operation = new[] {"ListMedicalVocabularies"}, SelectReturnType = typeof(Amazon.TranscribeService.Model.ListMedicalVocabulariesResponse))]
     [AWSCmdletOutput("Amazon.TranscribeService.Model.VocabularyInfo or Amazon.TranscribeService.Model.ListMedicalVocabulariesResponse",
         "This cmdlet returns a collection of Amazon.TranscribeService.Model.VocabularyInfo objects.",
-        "The service call response (type Amazon.TranscribeService.Model.ListMedicalVocabulariesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.TranscribeService.Model.ListMedicalVocabulariesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetTRSMedicalVocabularyListCmdlet : AmazonTranscribeServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NameContain
         /// <summary>
@@ -97,7 +100,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,9 +128,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -236,13 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Transcribe Service", "ListMedicalVocabularies");
             try
             {
-                #if DESKTOP
-                return client.ListMedicalVocabularies(request);
-                #elif CORECLR
-                return client.ListMedicalVocabulariesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListMedicalVocabulariesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

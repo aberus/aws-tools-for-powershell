@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -37,20 +39,23 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service UpdateNotebookInstance API operation.", Operation = new[] {"UpdateNotebookInstance"}, SelectReturnType = typeof(Amazon.SageMaker.Model.UpdateNotebookInstanceResponse))]
     [AWSCmdletOutput("None or Amazon.SageMaker.Model.UpdateNotebookInstanceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SageMaker.Model.UpdateNotebookInstanceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SageMaker.Model.UpdateNotebookInstanceResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateSMNotebookInstanceCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceleratorType
         /// <summary>
         /// <para>
-        /// <para>A list of the Elastic Inference (EI) instance types to associate with this notebook
-        /// instance. Currently only one EI instance type can be associated with a notebook instance.
-        /// For more information, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/ei.html">Using
-        /// Elastic Inference in Amazon SageMaker</a>.</para>
+        /// <para>This parameter is no longer supported. Elastic Inference (EI) is no longer available.</para><para>This parameter was used to specify a list of the EI instance types to associate with
+        /// this notebook instance.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,7 +72,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// Web Services CodeCommit</a> or in any other Git repository. These repositories are
         /// cloned at the same level as the default repository of your notebook instance. For
         /// more information, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/nbi-git-repo.html">Associating
-        /// Git Repositories with SageMaker Notebook Instances</a>.</para>
+        /// Git Repositories with SageMaker AI Notebook Instances</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,7 +93,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// Web Services CodeCommit</a> or in any other Git repository. When you open a notebook
         /// instance, it opens in the directory that contains this repository. For more information,
         /// see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/nbi-git-repo.html">Associating
-        /// Git Repositories with SageMaker Notebook Instances</a>.</para>
+        /// Git Repositories with SageMaker AI Notebook Instances</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,9 +103,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter DisassociateAcceleratorType
         /// <summary>
         /// <para>
-        /// <para>A list of the Elastic Inference (EI) instance types to remove from this notebook instance.
-        /// This operation is idempotent. If you specify an accelerator type that is not associated
-        /// with the notebook instance when you call this method, it does not throw an error.</para>
+        /// <para>This parameter is no longer supported. Elastic Inference (EI) is no longer available.</para><para>This parameter was used to specify a list of the EI instance types to remove from
+        /// this notebook instance.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -154,6 +162,20 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public Amazon.SageMaker.InstanceType InstanceType { get; set; }
         #endregion
         
+        #region Parameter IpAddressType
+        /// <summary>
+        /// <para>
+        /// <para>The IP address type for the notebook instance. Specify <c>ipv4</c> for IPv4-only connectivity
+        /// or <c>dualstack</c> for both IPv4 and IPv6 connectivity. The notebook instance must
+        /// be stopped before updating this setting. When you specify <c>dualstack</c>, the subnet
+        /// must support IPv6 addressing.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.IPAddressType")]
+        public Amazon.SageMaker.IPAddressType IpAddressType { get; set; }
+        #endregion
+        
         #region Parameter LifecycleConfigName
         /// <summary>
         /// <para>
@@ -199,10 +221,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter RoleArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the IAM role that SageMaker can assume to access
+        /// <para>The Amazon Resource Name (ARN) of the IAM role that SageMaker AI can assume to access
         /// the notebook instance. For more information, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html">SageMaker
-        /// Roles</a>. </para><note><para>To be able to pass this role to SageMaker, the caller of this API must have the <c>iam:PassRole</c>
-        /// permission.</para></note>
+        /// AI Roles</a>. </para><note><para>To be able to pass this role to SageMaker AI, the caller of this API must have the
+        /// <c>iam:PassRole</c> permission.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -226,7 +248,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The size, in GB, of the ML storage volume to attach to the notebook instance. The
-        /// default value is 5 GB. ML storage volumes are encrypted, so SageMaker can't determine
+        /// default value is 5 GB. ML storage volumes are encrypted, so SageMaker AI can't determine
         /// the amount of available free space on the volume. Because of this, you can increase
         /// the volume size when you update a notebook instance, but you can't decrease the volume
         /// size. If you want to decrease the size of the ML storage volume in use, create a new
@@ -247,16 +269,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NotebookInstanceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NotebookInstanceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NotebookInstanceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -267,9 +279,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NotebookInstanceName), MyInvocation.BoundParameters);
@@ -283,21 +299,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.UpdateNotebookInstanceResponse, UpdateSMNotebookInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NotebookInstanceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AcceleratorType != null)
             {
                 context.AcceleratorType = new List<System.String>(this.AcceleratorType);
@@ -313,6 +319,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             context.DisassociateLifecycleConfig = this.DisassociateLifecycleConfig;
             context.InstanceMetadataServiceConfiguration_MinimumInstanceMetadataServiceVersion = this.InstanceMetadataServiceConfiguration_MinimumInstanceMetadataServiceVersion;
             context.InstanceType = this.InstanceType;
+            context.IpAddressType = this.IpAddressType;
             context.LifecycleConfigName = this.LifecycleConfigName;
             context.NotebookInstanceName = this.NotebookInstanceName;
             #if MODULAR
@@ -391,6 +398,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 request.InstanceType = cmdletContext.InstanceType;
             }
+            if (cmdletContext.IpAddressType != null)
+            {
+                request.IpAddressType = cmdletContext.IpAddressType;
+            }
             if (cmdletContext.LifecycleConfigName != null)
             {
                 request.LifecycleConfigName = cmdletContext.LifecycleConfigName;
@@ -449,13 +460,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "UpdateNotebookInstance");
             try
             {
-                #if DESKTOP
-                return client.UpdateNotebookInstance(request);
-                #elif CORECLR
-                return client.UpdateNotebookInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateNotebookInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -481,6 +486,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.Boolean? DisassociateLifecycleConfig { get; set; }
             public System.String InstanceMetadataServiceConfiguration_MinimumInstanceMetadataServiceVersion { get; set; }
             public Amazon.SageMaker.InstanceType InstanceType { get; set; }
+            public Amazon.SageMaker.IPAddressType IpAddressType { get; set; }
             public System.String LifecycleConfigName { get; set; }
             public System.String NotebookInstanceName { get; set; }
             public System.String RoleArn { get; set; }

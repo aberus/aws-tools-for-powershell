@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -37,14 +39,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeLaunchTemplateVersions API operation.", Operation = new[] {"DescribeLaunchTemplateVersions"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeLaunchTemplateVersionsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.LaunchTemplateVersion or Amazon.EC2.Model.DescribeLaunchTemplateVersionsResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.LaunchTemplateVersion objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeLaunchTemplateVersionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeLaunchTemplateVersionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2TemplateVersionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -55,7 +68,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// metadata service is enabled (<c>enabled</c> | <c>disabled</c>).</para></li><li><para><c>host-resource-group-arn</c> - The ARN of the host resource group in which to launch
         /// the instances.</para></li><li><para><c>http-tokens</c> - The state of token usage for your instance metadata requests
         /// (<c>optional</c> | <c>required</c>).</para></li><li><para><c>iam-instance-profile</c> - The ARN of the IAM instance profile.</para></li><li><para><c>image-id</c> - The ID of the AMI.</para></li><li><para><c>instance-type</c> - The instance type.</para></li><li><para><c>is-default-version</c> - A boolean that indicates whether the launch template
-        /// version is the default version.</para></li><li><para><c>kernel-id</c> - The kernel ID.</para></li><li><para><c>license-configuration-arn</c> - The ARN of the license configuration.</para></li><li><para><c>network-card-index</c> - The index of the network card.</para></li><li><para><c>ram-disk-id</c> - The RAM disk ID.</para></li></ul>
+        /// version is the default version.</para></li><li><para><c>kernel-id</c> - The kernel ID.</para></li><li><para><c>license-configuration-arn</c> - The ARN of the license configuration.</para></li><li><para><c>network-card-index</c> - The index of the network card.</para></li><li><para><c>ram-disk-id</c> - The RAM disk ID.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The ID of the launch template.</para><para>To describe one or more versions of a specified launch template, you must specify
-        /// either the <c>LaunchTemplateId</c> or the <c>LaunchTemplateName</c>, but not both.</para><para>To describe all the latest or default launch template versions in your account, you
+        /// either the launch template ID or the launch template name, but not both.</para><para>To describe all the latest or default launch template versions in your account, you
         /// must omit this parameter.</para>
         /// </para>
         /// </summary>
@@ -79,7 +96,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The name of the launch template.</para><para>To describe one or more versions of a specified launch template, you must specify
-        /// either the <c>LaunchTemplateName</c> or the <c>LaunchTemplateId</c>, but not both.</para><para>To describe all the latest or default launch template versions in your account, you
+        /// either the launch template name or the launch template ID, but not both.</para><para>To describe all the latest or default launch template versions in your account, you
         /// must omit this parameter.</para>
         /// </para>
         /// </summary>
@@ -112,9 +129,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>If <c>true</c>, and if a Systems Manager parameter is specified for <c>ImageId</c>,
         /// the AMI ID is displayed in the response for <c>imageId</c>.</para><para>If <c>false</c>, and if a Systems Manager parameter is specified for <c>ImageId</c>,
-        /// the parameter is displayed in the response for <c>imageId</c>.</para><para> For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html#use-an-ssm-parameter-instead-of-an-ami-id">Use
-        /// a Systems Manager parameter instead of an AMI ID</a> in the <i>Amazon Elastic Compute
-        /// Cloud User Guide</i>.</para><para>Default: <c>false</c></para>
+        /// the parameter is displayed in the response for <c>imageId</c>.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id">Use
+        /// a Systems Manager parameter instead of an AMI ID</a> in the <i>Amazon EC2 User Guide</i>.</para><para>Default: <c>false</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,7 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// the valid value is <c>$Latest</c>. To describe all launch templates in your account
         /// that are defined as the default version, the valid value is <c>$Default</c>. You can
         /// specify <c>$Latest</c> and <c>$Default</c> in the same request. You cannot specify
-        /// numbers.</para>
+        /// numbers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -164,7 +184,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -207,6 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeLaunchTemplateVersionsResponse, GetEC2TemplateVersionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -250,6 +275,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeLaunchTemplateVersionsRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -337,6 +366,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeLaunchTemplateVersionsRequest();
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -405,7 +438,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.LaunchTemplateVersions.Count;
+                    int _receivedThisCall = response.LaunchTemplateVersions?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -454,13 +487,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeLaunchTemplateVersions");
             try
             {
-                #if DESKTOP
-                return client.DescribeLaunchTemplateVersions(request);
-                #elif CORECLR
-                return client.DescribeLaunchTemplateVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeLaunchTemplateVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -477,6 +504,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public System.String LaunchTemplateId { get; set; }
             public System.String LaunchTemplateName { get; set; }

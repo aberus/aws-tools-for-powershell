@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.HealthLake;
 using Amazon.HealthLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AHL
 {
     /// <summary>
-    /// Creates a data store that can ingest and export FHIR formatted data.
+    /// Create a FHIR-enabled data store.
     /// </summary>
     [Cmdlet("New", "AHLFHIRDatastore", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.HealthLake.Model.CreateFHIRDatastoreResponse")]
     [AWSCmdlet("Calls the Amazon HealthLake CreateFHIRDatastore API operation.", Operation = new[] {"CreateFHIRDatastore"}, SelectReturnType = typeof(Amazon.HealthLake.Model.CreateFHIRDatastoreResponse))]
     [AWSCmdletOutput("Amazon.HealthLake.Model.CreateFHIRDatastoreResponse",
-        "This cmdlet returns an Amazon.HealthLake.Model.CreateFHIRDatastoreResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.HealthLake.Model.CreateFHIRDatastoreResponse object containing multiple properties."
     )]
     public partial class NewAHLFHIRDatastoreCmdlet : AmazonHealthLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IdentityProviderConfiguration_AuthorizationStrategy
         /// <summary>
         /// <para>
-        /// <para>The authorization strategy that you selected when you created the data store.</para>
+        /// <para>The authorization strategy selected when the HealthLake data store is created.</para><note><para>HealthLake provides support for both SMART on FHIR V1 and V2 as described below.</para><ul><li><para><c>SMART_ON_FHIR_V1</c> – Support for only SMART on FHIR V1, which includes <c>read</c>
+        /// (read/search) and <c>write</c> (create/update/delete) permissions.</para></li><li><para><c>SMART_ON_FHIR</c> – Support for both SMART on FHIR V1 and V2, which includes <c>create</c>,
+        /// <c>read</c>, <c>update</c>, <c>delete</c>, and <c>search</c> permissions.</para></li><li><para><c>AWS_AUTH</c> – The default HealthLake authorization strategy; not affiliated with
+        /// SMART on FHIR.</para></li></ul></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -55,8 +61,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter KmsEncryptionConfig_CmkType
         /// <summary>
         /// <para>
-        /// <para> The type of customer-managed-key(CMK) used for encryption. The two types of supported
-        /// CMKs are customer owned CMKs and AWS owned CMKs. </para>
+        /// <para>The type of customer-managed-key (CMK) used for encryption.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +73,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter DatastoreName
         /// <summary>
         /// <para>
-        /// <para>The user generated name for the data store.</para>
+        /// <para>The data store name (user-generated).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +83,8 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter DatastoreTypeVersion
         /// <summary>
         /// <para>
-        /// <para>The FHIR version of the data store. The only supported version is R4.</para>
+        /// <para>The FHIR release version supported by the data store. Current support is for version
+        /// <c>R4</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -95,7 +101,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter IdentityProviderConfiguration_FineGrainedAuthorizationEnabled
         /// <summary>
         /// <para>
-        /// <para>If you enabled fine-grained authorization when you created the data store.</para>
+        /// <para>The parameter to enable SMART on FHIR fine-grained authorization for the data store.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,8 +111,8 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter IdentityProviderConfiguration_IdpLambdaArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Lambda function that you want to use to decode
-        /// the access token created by the authorization server.</para>
+        /// <para>The Amazon Resource Name (ARN) of the Lambda function to use to decode the access
+        /// token created by the authorization server.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,8 +122,8 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter KmsEncryptionConfig_KmsKeyId
         /// <summary>
         /// <para>
-        /// <para> The KMS encryption key id/alias used to encrypt the data store contents at rest.
-        /// </para>
+        /// <para>The Key Management Service (KMS) encryption key id/alias used to encrypt the data
+        /// store contents at rest.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,9 +134,9 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter IdentityProviderConfiguration_Metadata
         /// <summary>
         /// <para>
-        /// <para>The JSON metadata elements that you want to use in your identity provider configuration.
-        /// Required elements are listed based on the launch specification of the SMART application.
-        /// For more information on all possible elements, see <a href="https://build.fhir.org/ig/HL7/smart-app-launch/conformance.html#metadata">Metadata</a>
+        /// <para>The JSON metadata elements to use in your identity provider configuration. Required
+        /// elements are listed based on the launch specification of the SMART application. For
+        /// more information on all possible elements, see <a href="https://build.fhir.org/ig/HL7/smart-app-launch/conformance.html#metadata">Metadata</a>
         /// in SMART's App Launch specification.</para><para><c>authorization_endpoint</c>: The URL to the OAuth2 authorization endpoint.</para><para><c>grant_types_supported</c>: An array of grant types that are supported at the token
         /// endpoint. You must provide at least one grant type option. Valid options are <c>authorization_code</c>
         /// and <c>client_credentials</c>.</para><para><c>token_endpoint</c>: The URL to the OAuth2 token endpoint.</para><para><c>capabilities</c>: An array of strings of the SMART capabilities that the authorization
@@ -157,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para> Resource tags that are applied to a data store when it is created. </para>
+        /// <para>The resource tags applied to a data store when it is created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,7 +178,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>Optional user provided token used for ensuring idempotency.</para>
+        /// <para>An optional user-provided token to ensure API idempotency.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,16 +196,6 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DatastoreTypeVersion parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DatastoreTypeVersion' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DatastoreTypeVersion' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -206,9 +206,13 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatastoreName), MyInvocation.BoundParameters);
@@ -222,21 +226,11 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.HealthLake.Model.CreateFHIRDatastoreResponse, NewAHLFHIRDatastoreCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DatastoreTypeVersion;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.DatastoreName = this.DatastoreName;
             context.DatastoreTypeVersion = this.DatastoreTypeVersion;
@@ -439,13 +433,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon HealthLake", "CreateFHIRDatastore");
             try
             {
-                #if DESKTOP
-                return client.CreateFHIRDatastore(request);
-                #elif CORECLR
-                return client.CreateFHIRDatastoreAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFHIRDatastoreAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

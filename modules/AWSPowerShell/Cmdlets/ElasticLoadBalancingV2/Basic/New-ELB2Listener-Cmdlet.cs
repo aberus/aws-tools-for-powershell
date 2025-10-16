@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
@@ -47,19 +49,36 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     [AWSCmdlet("Calls the Elastic Load Balancing V2 CreateListener API operation.", Operation = new[] {"CreateListener"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.CreateListenerResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.Listener or Amazon.ElasticLoadBalancingV2.Model.CreateListenerResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.Listener objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.CreateListenerResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.CreateListenerResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewELB2ListenerCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter MutualAuthentication_AdvertiseTrustStoreCaName
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether trust store CA certificate names are advertised.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MutualAuthentication_AdvertiseTrustStoreCaNames")]
+        [AWSConstantClassSource("Amazon.ElasticLoadBalancingV2.AdvertiseTrustStoreCaNamesEnum")]
+        public Amazon.ElasticLoadBalancingV2.AdvertiseTrustStoreCaNamesEnum MutualAuthentication_AdvertiseTrustStoreCaName { get; set; }
+        #endregion
         
         #region Parameter AlpnPolicy
         /// <summary>
         /// <para>
         /// <para>[TLS listeners] The name of the Application-Layer Protocol Negotiation (ALPN) policy.
-        /// You can specify one policy name. The following are the possible values:</para><ul><li><para><c>HTTP1Only</c></para></li><li><para><c>HTTP2Only</c></para></li><li><para><c>HTTP2Optional</c></para></li><li><para><c>HTTP2Preferred</c></para></li><li><para><c>None</c></para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-tls-listener.html#alpn-policies">ALPN
-        /// policies</a> in the <i>Network Load Balancers Guide</i>.</para>
+        /// You can specify one policy name. The following are the possible values:</para><ul><li><para><c>HTTP1Only</c></para></li><li><para><c>HTTP2Only</c></para></li><li><para><c>HTTP2Optional</c></para></li><li><para><c>HTTP2Preferred</c></para></li><li><para><c>None</c></para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-listeners.html#alpn-policies">ALPN
+        /// policies</a> in the <i>Network Load Balancers Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,7 +90,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// <para>
         /// <para>[HTTPS and TLS listeners] The default certificate for the listener. You must provide
         /// exactly one certificate. Set <c>CertificateArn</c> to the certificate ARN but do not
-        /// set <c>IsDefault</c>.</para>
+        /// set <c>IsDefault</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +105,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter DefaultAction
         /// <summary>
         /// <para>
-        /// <para>The actions for the default rule.</para>
+        /// <para>The actions for the default rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -138,8 +165,8 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter Port
         /// <summary>
         /// <para>
-        /// <para>The port on which the load balancer is listening. You cannot specify a port for a
-        /// Gateway Load Balancer.</para>
+        /// <para>The port on which the load balancer is listening. You can't specify a port for a Gateway
+        /// Load Balancer.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,7 +179,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// <para>The protocol for connections from clients to the load balancer. For Application Load
         /// Balancers, the supported protocols are HTTP and HTTPS. For Network Load Balancers,
         /// the supported protocols are TCP, TLS, UDP, and TCP_UDP. You can’t specify the UDP
-        /// or TCP_UDP protocol if dual-stack mode is enabled. You cannot specify a protocol for
+        /// or TCP_UDP protocol if dual-stack mode is enabled. You can't specify a protocol for
         /// a Gateway Load Balancer.</para>
         /// </para>
         /// </summary>
@@ -165,8 +192,8 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// <summary>
         /// <para>
         /// <para>[HTTPS and TLS listeners] The security policy that defines which protocols and ciphers
-        /// are supported.</para><para>For more information, see <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html#describe-ssl-policies">Security
-        /// policies</a> in the <i>Application Load Balancers Guide</i> and <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-tls-listener.html#describe-ssl-policies">Security
+        /// are supported.</para><para>For more information, see <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/application/describe-ssl-policies.html">Security
+        /// policies</a> in the <i>Application Load Balancers Guide</i> and <a href="https://docs.aws.amazon.com/elasticloadbalancing/latest/network/describe-ssl-policies.html">Security
         /// policies</a> in the <i>Network Load Balancers Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -177,7 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to assign to the listener.</para>
+        /// <para>The tags to assign to the listener.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -195,6 +226,17 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public System.String MutualAuthentication_TrustStoreArn { get; set; }
         #endregion
         
+        #region Parameter MutualAuthentication_TrustStoreAssociationStatus
+        /// <summary>
+        /// <para>
+        /// <para>Indicates a shared trust stores association status.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ElasticLoadBalancingV2.TrustStoreAssociationStatusEnum")]
+        public Amazon.ElasticLoadBalancingV2.TrustStoreAssociationStatusEnum MutualAuthentication_TrustStoreAssociationStatus { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Listeners'.
@@ -204,16 +246,6 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Listeners";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LoadBalancerArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LoadBalancerArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LoadBalancerArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -226,9 +258,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LoadBalancerArn), MyInvocation.BoundParameters);
@@ -242,21 +278,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticLoadBalancingV2.Model.CreateListenerResponse, NewELB2ListenerCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LoadBalancerArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AlpnPolicy != null)
             {
                 context.AlpnPolicy = new List<System.String>(this.AlpnPolicy);
@@ -282,9 +308,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
                 WriteWarning("You are passing $null as a value for parameter LoadBalancerArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.MutualAuthentication_AdvertiseTrustStoreCaName = this.MutualAuthentication_AdvertiseTrustStoreCaName;
             context.MutualAuthentication_IgnoreClientCertificateExpiry = this.MutualAuthentication_IgnoreClientCertificateExpiry;
             context.MutualAuthentication_Mode = this.MutualAuthentication_Mode;
             context.MutualAuthentication_TrustStoreArn = this.MutualAuthentication_TrustStoreArn;
+            context.MutualAuthentication_TrustStoreAssociationStatus = this.MutualAuthentication_TrustStoreAssociationStatus;
             context.Port = this.Port;
             context.Protocol = this.Protocol;
             context.SslPolicy = this.SslPolicy;
@@ -328,6 +356,16 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
              // populate MutualAuthentication
             var requestMutualAuthenticationIsNull = true;
             request.MutualAuthentication = new Amazon.ElasticLoadBalancingV2.Model.MutualAuthenticationAttributes();
+            Amazon.ElasticLoadBalancingV2.AdvertiseTrustStoreCaNamesEnum requestMutualAuthentication_mutualAuthentication_AdvertiseTrustStoreCaName = null;
+            if (cmdletContext.MutualAuthentication_AdvertiseTrustStoreCaName != null)
+            {
+                requestMutualAuthentication_mutualAuthentication_AdvertiseTrustStoreCaName = cmdletContext.MutualAuthentication_AdvertiseTrustStoreCaName;
+            }
+            if (requestMutualAuthentication_mutualAuthentication_AdvertiseTrustStoreCaName != null)
+            {
+                request.MutualAuthentication.AdvertiseTrustStoreCaNames = requestMutualAuthentication_mutualAuthentication_AdvertiseTrustStoreCaName;
+                requestMutualAuthenticationIsNull = false;
+            }
             System.Boolean? requestMutualAuthentication_mutualAuthentication_IgnoreClientCertificateExpiry = null;
             if (cmdletContext.MutualAuthentication_IgnoreClientCertificateExpiry != null)
             {
@@ -356,6 +394,16 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             if (requestMutualAuthentication_mutualAuthentication_TrustStoreArn != null)
             {
                 request.MutualAuthentication.TrustStoreArn = requestMutualAuthentication_mutualAuthentication_TrustStoreArn;
+                requestMutualAuthenticationIsNull = false;
+            }
+            Amazon.ElasticLoadBalancingV2.TrustStoreAssociationStatusEnum requestMutualAuthentication_mutualAuthentication_TrustStoreAssociationStatus = null;
+            if (cmdletContext.MutualAuthentication_TrustStoreAssociationStatus != null)
+            {
+                requestMutualAuthentication_mutualAuthentication_TrustStoreAssociationStatus = cmdletContext.MutualAuthentication_TrustStoreAssociationStatus;
+            }
+            if (requestMutualAuthentication_mutualAuthentication_TrustStoreAssociationStatus != null)
+            {
+                request.MutualAuthentication.TrustStoreAssociationStatus = requestMutualAuthentication_mutualAuthentication_TrustStoreAssociationStatus;
                 requestMutualAuthenticationIsNull = false;
             }
              // determine if request.MutualAuthentication should be set to null
@@ -417,13 +465,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "CreateListener");
             try
             {
-                #if DESKTOP
-                return client.CreateListener(request);
-                #elif CORECLR
-                return client.CreateListenerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateListenerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -444,9 +486,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             public List<Amazon.ElasticLoadBalancingV2.Model.Certificate> Certificate { get; set; }
             public List<Amazon.ElasticLoadBalancingV2.Model.Action> DefaultAction { get; set; }
             public System.String LoadBalancerArn { get; set; }
+            public Amazon.ElasticLoadBalancingV2.AdvertiseTrustStoreCaNamesEnum MutualAuthentication_AdvertiseTrustStoreCaName { get; set; }
             public System.Boolean? MutualAuthentication_IgnoreClientCertificateExpiry { get; set; }
             public System.String MutualAuthentication_Mode { get; set; }
             public System.String MutualAuthentication_TrustStoreArn { get; set; }
+            public Amazon.ElasticLoadBalancingV2.TrustStoreAssociationStatusEnum MutualAuthentication_TrustStoreAssociationStatus { get; set; }
             public System.Int32? Port { get; set; }
             public Amazon.ElasticLoadBalancingV2.ProtocolEnum Protocol { get; set; }
             public System.String SslPolicy { get; set; }

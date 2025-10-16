@@ -28,7 +28,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-@DateTime.UtcNow.Year Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = '@Description'
@@ -38,6 +38,8 @@
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -53,13 +55,17 @@
 
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules = @@(
-@(string.Join("," + Environment.NewLine, RequiredModules.Select(module => "        @{"
-                                                 + Environment.NewLine + $"            ModuleName = '{module.Name}';"
-                                                 + Environment.NewLine + $"            RequiredVersion = '{Version}';"
-                                                 + Environment.NewLine + $"            Guid = '{module.Guid}' }}")))
+        @if (string.IsNullOrWhiteSpace(PrereleaseTag))
+        {
+            @(string.Join("," + Environment.NewLine, RequiredModules.Select(module => "        @{"
+                                                                                    + Environment.NewLine + $"            ModuleName = '{module.Name}';"
+                                                                                    + Environment.NewLine + $"            RequiredVersion = '{Version}';"
+                                                                                    + Environment.NewLine + $"            Guid = '{module.Guid}' }}")));
+
+        }
     )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @@(
 @(string.Join("," + Environment.NewLine, Assemblies.Select(assembly => $"        '{assembly}.dll'")))
     )
@@ -112,7 +118,7 @@
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
 @if (!string.IsNullOrWhiteSpace(PrereleaseTag))
 {
 @:            Prerelease = '@PrereleaseTag'

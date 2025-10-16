@@ -80,6 +80,16 @@ $QBUS_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.QBusiness.APISchemaType
+        {
+            ($_ -eq "New-QBUSPlugin/CustomPluginConfiguration_ApiSchemaType") -Or
+            ($_ -eq "Update-QBUSPlugin/CustomPluginConfiguration_ApiSchemaType")
+        }
+        {
+            $v = "OPEN_API_V3"
+            break
+        }
+
         # Amazon.QBusiness.AttachmentsControlMode
         {
             ($_ -eq "New-QBUSApplication/AttachmentsConfiguration_AttachmentsControlMode") -Or
@@ -87,6 +97,47 @@ $QBUS_Completers = {
         }
         {
             $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.AudioExtractionStatus
+        {
+            ($_ -eq "New-QBUSDataSource/AudioExtractionConfiguration_AudioExtractionStatus") -Or
+            ($_ -eq "Update-QBUSDataSource/AudioExtractionConfiguration_AudioExtractionStatus")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.AutoSubscriptionStatus
+        "Update-QBUSApplication/AutoSubscriptionConfiguration_AutoSubscribe"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.ChatMode
+        "Set-QBUSChatSync/ChatMode"
+        {
+            $v = "CREATOR_MODE","PLUGIN_MODE","RETRIEVAL_MODE"
+            break
+        }
+
+        # Amazon.QBusiness.CreatorModeControl
+        "Update-QBUSChatControlsConfiguration/CreatorModeConfiguration_CreatorModeControl"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.DataAccessorAuthenticationType
+        {
+            ($_ -eq "New-QBUSDataAccessor/AuthenticationDetail_AuthenticationType") -Or
+            ($_ -eq "Update-QBUSDataAccessor/AuthenticationDetail_AuthenticationType")
+        }
+        {
+            $v = "AWS_IAM_IDC_AUTH_CODE","AWS_IAM_IDC_TTI"
             break
         }
 
@@ -99,13 +150,44 @@ $QBUS_Completers = {
 
         # Amazon.QBusiness.DocumentEnrichmentConditionOperator
         {
-            ($_ -eq "New-QBUSDataSource/DocumentEnrichmentConfiguration_PostExtractionHookConfiguration_InvocationCondition_Operator") -Or
-            ($_ -eq "Update-QBUSDataSource/DocumentEnrichmentConfiguration_PostExtractionHookConfiguration_InvocationCondition_Operator") -Or
-            ($_ -eq "New-QBUSDataSource/DocumentEnrichmentConfiguration_PreExtractionHookConfiguration_InvocationCondition_Operator") -Or
-            ($_ -eq "Update-QBUSDataSource/DocumentEnrichmentConfiguration_PreExtractionHookConfiguration_InvocationCondition_Operator")
+            ($_ -eq "New-QBUSDataSource/DocumentEnrichmentConfiguration_PostInvocationCondition_Operator") -Or
+            ($_ -eq "Update-QBUSDataSource/DocumentEnrichmentConfiguration_PostInvocationCondition_Operator") -Or
+            ($_ -eq "New-QBUSDataSource/DocumentEnrichmentConfiguration_PreInvocationCondition_Operator") -Or
+            ($_ -eq "Update-QBUSDataSource/DocumentEnrichmentConfiguration_PreInvocationCondition_Operator")
         }
         {
             $v = "BEGINS_WITH","CONTAINS","EQUALS","EXISTS","GREATER_THAN","GREATER_THAN_OR_EQUALS","LESS_THAN","LESS_THAN_OR_EQUALS","NOT_CONTAINS","NOT_EQUALS","NOT_EXISTS"
+            break
+        }
+
+        # Amazon.QBusiness.HallucinationReductionControl
+        "Update-QBUSChatControlsConfiguration/HallucinationReductionConfiguration_HallucinationReductionControl"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.IdentityType
+        "New-QBUSApplication/IdentityType"
+        {
+            $v = "ANONYMOUS","AWS_IAM_IDC","AWS_IAM_IDP_OIDC","AWS_IAM_IDP_SAML","AWS_QUICKSIGHT_IDP"
+            break
+        }
+
+        # Amazon.QBusiness.ImageExtractionStatus
+        {
+            ($_ -eq "New-QBUSDataSource/ImageExtractionConfiguration_ImageExtractionStatus") -Or
+            ($_ -eq "Update-QBUSDataSource/ImageExtractionConfiguration_ImageExtractionStatus")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.IndexType
+        "New-QBUSIndex/Type"
+        {
+            $v = "ENTERPRISE","STARTER"
             break
         }
 
@@ -126,7 +208,31 @@ $QBUS_Completers = {
         # Amazon.QBusiness.MessageUsefulnessReason
         "Write-QBUSFeedback/MessageUsefulness_Reason"
         {
-            $v = "COMPLETE","FACTUALLY_CORRECT","HARMFUL_OR_UNSAFE","HELPFUL","INCORRECT_OR_MISSING_SOURCES","NOT_FACTUALLY_CORRECT","NOT_HELPFUL","RELEVANT_SOURCES"
+            $v = "COMPLETE","FACTUALLY_CORRECT","HARMFUL_OR_UNSAFE","HELPFUL","INCORRECT_OR_MISSING_SOURCES","NOT_BASED_ON_DOCUMENTS","NOT_COMPLETE","NOT_CONCISE","NOT_FACTUALLY_CORRECT","NOT_HELPFUL","OTHER","RELEVANT_SOURCES"
+            break
+        }
+
+        # Amazon.QBusiness.OrchestrationControl
+        "Update-QBUSChatControlsConfiguration/OrchestrationConfiguration_Control"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QBusiness.OutputFormat
+        "Get-QBUSDocumentContent/OutputFormat"
+        {
+            $v = "EXTRACTED","RAW"
+            break
+        }
+
+        # Amazon.QBusiness.PersonalizationControlMode
+        {
+            ($_ -eq "New-QBUSApplication/PersonalizationConfiguration_PersonalizationControlMode") -Or
+            ($_ -eq "Update-QBUSApplication/PersonalizationConfiguration_PersonalizationControlMode")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -138,9 +244,22 @@ $QBUS_Completers = {
         }
 
         # Amazon.QBusiness.PluginType
-        "New-QBUSPlugin/Type"
         {
-            $v = "JIRA","SALESFORCE","SERVICE_NOW","ZENDESK"
+            ($_ -eq "Get-QBUSPluginTypeActionList/PluginType") -Or
+            ($_ -eq "New-QBUSPlugin/Type")
+        }
+        {
+            $v = "ASANA","ATLASSIAN_CONFLUENCE","CUSTOM","GOOGLE_CALENDAR","JIRA","JIRA_CLOUD","MICROSOFT_EXCHANGE","MICROSOFT_TEAMS","PAGERDUTY_ADVANCE","QUICKSIGHT","SALESFORCE","SALESFORCE_CRM","SERVICENOW_NOW_PLATFORM","SERVICE_NOW","SMARTSHEET","ZENDESK","ZENDESK_SUITE"
+            break
+        }
+
+        # Amazon.QBusiness.QAppsControlMode
+        {
+            ($_ -eq "New-QBUSApplication/QAppsConfiguration_QAppsControlMode") -Or
+            ($_ -eq "Update-QBUSApplication/QAppsConfiguration_QAppsControlMode")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -155,6 +274,27 @@ $QBUS_Completers = {
         "New-QBUSRetriever/Type"
         {
             $v = "KENDRA_INDEX","NATIVE_INDEX"
+            break
+        }
+
+        # Amazon.QBusiness.SubscriptionType
+        {
+            ($_ -eq "Update-QBUSApplication/AutoSubscriptionConfiguration_DefaultSubscriptionType") -Or
+            ($_ -eq "New-QBUSSubscription/Type") -Or
+            ($_ -eq "Update-QBUSSubscription/Type")
+        }
+        {
+            $v = "Q_BUSINESS","Q_LITE"
+            break
+        }
+
+        # Amazon.QBusiness.VideoExtractionStatus
+        {
+            ($_ -eq "New-QBUSDataSource/VideoExtractionConfiguration_VideoExtractionStatus") -Or
+            ($_ -eq "Update-QBUSDataSource/VideoExtractionConfiguration_VideoExtractionStatus")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -178,15 +318,31 @@ $QBUS_Completers = {
 
 $QBUS_map = @{
     "AttachmentsConfiguration_AttachmentsControlMode"=@("New-QBUSApplication","Update-QBUSApplication")
-    "DocumentEnrichmentConfiguration_PostExtractionHookConfiguration_InvocationCondition_Operator"=@("New-QBUSDataSource","Update-QBUSDataSource")
-    "DocumentEnrichmentConfiguration_PreExtractionHookConfiguration_InvocationCondition_Operator"=@("New-QBUSDataSource","Update-QBUSDataSource")
+    "AudioExtractionConfiguration_AudioExtractionStatus"=@("New-QBUSDataSource","Update-QBUSDataSource")
+    "AuthenticationDetail_AuthenticationType"=@("New-QBUSDataAccessor","Update-QBUSDataAccessor")
+    "AutoSubscriptionConfiguration_AutoSubscribe"=@("Update-QBUSApplication")
+    "AutoSubscriptionConfiguration_DefaultSubscriptionType"=@("Update-QBUSApplication")
+    "ChatMode"=@("Set-QBUSChatSync")
+    "CreatorModeConfiguration_CreatorModeControl"=@("Update-QBUSChatControlsConfiguration")
+    "CustomPluginConfiguration_ApiSchemaType"=@("New-QBUSPlugin","Update-QBUSPlugin")
+    "DocumentEnrichmentConfiguration_PostInvocationCondition_Operator"=@("New-QBUSDataSource","Update-QBUSDataSource")
+    "DocumentEnrichmentConfiguration_PreInvocationCondition_Operator"=@("New-QBUSDataSource","Update-QBUSDataSource")
+    "HallucinationReductionConfiguration_HallucinationReductionControl"=@("Update-QBUSChatControlsConfiguration")
+    "IdentityType"=@("New-QBUSApplication")
+    "ImageExtractionConfiguration_ImageExtractionStatus"=@("New-QBUSDataSource","Update-QBUSDataSource")
     "MessageUsefulness_Reason"=@("Write-QBUSFeedback")
     "MessageUsefulness_Usefulness"=@("Write-QBUSFeedback")
+    "OrchestrationConfiguration_Control"=@("Update-QBUSChatControlsConfiguration")
+    "OutputFormat"=@("Get-QBUSDocumentContent")
+    "PersonalizationConfiguration_PersonalizationControlMode"=@("New-QBUSApplication","Update-QBUSApplication")
+    "PluginType"=@("Get-QBUSPluginTypeActionList")
+    "QAppsConfiguration_QAppsControlMode"=@("New-QBUSApplication","Update-QBUSApplication")
     "ResponseScope"=@("Update-QBUSChatControlsConfiguration")
     "SamplePromptsControlMode"=@("New-QBUSWebExperience","Update-QBUSWebExperience")
     "State"=@("Update-QBUSPlugin")
     "StatusFilter"=@("Get-QBUSDataSourceSyncJobList")
-    "Type"=@("New-QBUSPlugin","New-QBUSRetriever","Write-QBUSGroup")
+    "Type"=@("New-QBUSIndex","New-QBUSPlugin","New-QBUSRetriever","New-QBUSSubscription","Update-QBUSSubscription","Write-QBUSGroup")
+    "VideoExtractionConfiguration_VideoExtractionStatus"=@("New-QBUSDataSource","Update-QBUSDataSource")
 }
 
 _awsArgumentCompleterRegistration $QBUS_Completers $QBUS_map
@@ -239,19 +395,29 @@ $QBUS_SelectCompleters = {
 }
 
 $QBUS_SelectMap = @{
-    "Select"=@("Remove-QBUSBatchDeleteDocument",
+    "Select"=@("Add-QBUSPermission",
+               "Remove-QBUSBatchDeleteDocument",
                "Set-QBUSBatchPutDocument",
+               "Stop-QBUSSubscription",
                "Set-QBUSChatSync",
+               "Get-QBUSDocumentAccess",
+               "New-QBUSAnonymousWebExperienceUrl",
                "New-QBUSApplication",
+               "New-QBUSChatResponseConfiguration",
+               "New-QBUSDataAccessor",
                "New-QBUSDataSource",
                "New-QBUSIndex",
                "New-QBUSPlugin",
                "New-QBUSRetriever",
+               "New-QBUSSubscription",
                "New-QBUSUser",
                "New-QBUSWebExperience",
                "Remove-QBUSApplication",
+               "Remove-QBUSAttachment",
                "Remove-QBUSChatControlsConfiguration",
+               "Remove-QBUSChatResponseConfiguration",
                "Remove-QBUSConversation",
+               "Remove-QBUSDataAccessor",
                "Remove-QBUSDataSource",
                "Remove-QBUSGroup",
                "Remove-QBUSIndex",
@@ -259,39 +425,56 @@ $QBUS_SelectMap = @{
                "Remove-QBUSRetriever",
                "Remove-QBUSUser",
                "Remove-QBUSWebExperience",
+               "Remove-QBUSPermission",
                "Get-QBUSApplication",
                "Get-QBUSChatControlsConfiguration",
+               "Get-QBUSChatResponseConfiguration",
+               "Get-QBUSDataAccessor",
                "Get-QBUSDataSource",
+               "Get-QBUSDocumentContent",
                "Get-QBUSGroup",
                "Get-QBUSIndex",
+               "Get-QBUSMedia",
                "Get-QBUSPlugin",
+               "Get-QBUSPolicy",
                "Get-QBUSRetriever",
                "Get-QBUSUser",
                "Get-QBUSWebExperience",
                "Get-QBUSApplicationList",
+               "Get-QBUSAttachmentList",
+               "Get-QBUSChatResponseConfigurationList",
                "Get-QBUSConversationList",
+               "Get-QBUSDataAccessorList",
                "Get-QBUSDataSourceList",
                "Get-QBUSDataSourceSyncJobList",
                "Get-QBUSDocumentList",
                "Get-QBUSGroupList",
                "Get-QBUSIndexList",
                "Get-QBUSMessageList",
+               "Get-QBUSPluginActionList",
                "Get-QBUSPluginList",
+               "Get-QBUSPluginTypeActionList",
+               "Get-QBUSPluginTypeMetadataList",
                "Get-QBUSRetrieverList",
+               "Get-QBUSSubscriptionList",
                "Get-QBUSResourceTag",
                "Get-QBUSWebExperienceList",
                "Write-QBUSFeedback",
                "Write-QBUSGroup",
+               "Search-QBUSRelevantContent",
                "Start-QBUSDataSourceSyncJob",
                "Stop-QBUSDataSourceSyncJob",
                "Add-QBUSResourceTag",
                "Remove-QBUSResourceTag",
                "Update-QBUSApplication",
                "Update-QBUSChatControlsConfiguration",
+               "Update-QBUSChatResponseConfiguration",
+               "Update-QBUSDataAccessor",
                "Update-QBUSDataSource",
                "Update-QBUSIndex",
                "Update-QBUSPlugin",
                "Update-QBUSRetriever",
+               "Update-QBUSSubscription",
                "Update-QBUSUser",
                "Update-QBUSWebExperience")
 }

@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The IoTSiteWise module of AWS Tools for PowerShell lets developers and administrators manage AWS IoT SiteWise from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.IoTSiteWise.dll'
     )
@@ -102,6 +103,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTSWAssetModel', 
         'Get-IOTSWAssetModelCompositeModel', 
         'Get-IOTSWAssetModelCompositeModelList', 
+        'Get-IOTSWAssetModelInterfaceRelationship', 
         'Get-IOTSWAssetModelList', 
         'Get-IOTSWAssetModelPropertyList', 
         'Get-IOTSWAssetProperty', 
@@ -117,12 +119,22 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTSWBulkImportJob', 
         'Get-IOTSWBulkImportJobList', 
         'Get-IOTSWCompositionRelationshipList', 
+        'Get-IOTSWComputationModel', 
+        'Get-IOTSWComputationModelDataBindingUsageList', 
+        'Get-IOTSWComputationModelExecutionSummary', 
+        'Get-IOTSWComputationModelList', 
+        'Get-IOTSWComputationModelResolveToResourceList', 
         'Get-IOTSWDashboard', 
         'Get-IOTSWDashboardList', 
+        'Get-IOTSWDataset', 
+        'Get-IOTSWDatasetList', 
         'Get-IOTSWDefaultEncryptionConfiguration', 
+        'Get-IOTSWExecution', 
+        'Get-IOTSWExecutionList', 
         'Get-IOTSWGateway', 
         'Get-IOTSWGatewayCapabilityConfiguration', 
         'Get-IOTSWGatewayList', 
+        'Get-IOTSWInterfaceRelationshipList', 
         'Get-IOTSWInterpolatedAssetPropertyValue', 
         'Get-IOTSWLoggingOption', 
         'Get-IOTSWPortal', 
@@ -135,12 +147,15 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTSWTimeSeries', 
         'Get-IOTSWTimeSeriesList', 
         'Import-IOTSWPutAssetPropertyValue', 
+        'Invoke-IOTSWAssistant', 
         'New-IOTSWAccessPolicy', 
         'New-IOTSWAsset', 
         'New-IOTSWAssetModel', 
         'New-IOTSWAssetModelCompositeModel', 
         'New-IOTSWBulkImportJob', 
+        'New-IOTSWComputationModel', 
         'New-IOTSWDashboard', 
+        'New-IOTSWDataset', 
         'New-IOTSWGateway', 
         'New-IOTSWPortal', 
         'New-IOTSWProject', 
@@ -148,7 +163,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-IOTSWAsset', 
         'Remove-IOTSWAssetModel', 
         'Remove-IOTSWAssetModelCompositeModel', 
+        'Remove-IOTSWAssetModelInterfaceRelationship', 
+        'Remove-IOTSWComputationModel', 
         'Remove-IOTSWDashboard', 
+        'Remove-IOTSWDataset', 
         'Remove-IOTSWGateway', 
         'Remove-IOTSWPortal', 
         'Remove-IOTSWProject', 
@@ -162,11 +180,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-IOTSWAssetModel', 
         'Update-IOTSWAssetModelCompositeModel', 
         'Update-IOTSWAssetProperty', 
+        'Update-IOTSWComputationModel', 
         'Update-IOTSWDashboard', 
+        'Update-IOTSWDataset', 
         'Update-IOTSWGateway', 
         'Update-IOTSWGatewayCapabilityConfiguration', 
         'Update-IOTSWPortal', 
         'Update-IOTSWProject', 
+        'Write-IOTSWAssetModelInterfaceRelationship', 
         'Write-IOTSWDefaultEncryptionConfiguration', 
         'Write-IOTSWLoggingOption', 
         'Write-IOTSWStorageConfiguration')
@@ -193,7 +214,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

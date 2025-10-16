@@ -101,15 +101,29 @@ $S3C_Completers = {
             break
         }
 
+        # Amazon.S3Control.ComputeObjectChecksumAlgorithm
+        "New-S3CJob/S3ComputeObjectChecksum_ChecksumAlgorithm"
+        {
+            $v = "CRC32","CRC32C","CRC64NVME","MD5","SHA1","SHA256"
+            break
+        }
+
+        # Amazon.S3Control.ComputeObjectChecksumType
+        "New-S3CJob/S3ComputeObjectChecksum_ChecksumType"
+        {
+            $v = "COMPOSITE","FULL_OBJECT"
+            break
+        }
+
         # Amazon.S3Control.Format
-        "Write-S3CStorageLensConfiguration/StorageLensConfiguration_DataExport_S3BucketDestination_Format"
+        "Write-S3CStorageLensConfiguration/S3BucketDestination_Format"
         {
             $v = "CSV","Parquet"
             break
         }
 
         # Amazon.S3Control.GeneratedManifestFormat
-        "New-S3CJob/ManifestGenerator_S3JobManifestGenerator_ManifestOutputLocation_ManifestFormat"
+        "New-S3CJob/ManifestOutputLocation_ManifestFormat"
         {
             $v = "S3InventoryReport_CSV_20211130"
             break
@@ -126,7 +140,7 @@ $S3C_Completers = {
         }
 
         # Amazon.S3Control.JobManifestFormat
-        "New-S3CJob/Manifest_Spec_Format"
+        "New-S3CJob/Spec_Format"
         {
             $v = "S3BatchOperations_CSV_20180820","S3InventoryReport_CSV_20161130"
             break
@@ -154,7 +168,7 @@ $S3C_Completers = {
         }
 
         # Amazon.S3Control.OutputSchemaVersion
-        "Write-S3CStorageLensConfiguration/StorageLensConfiguration_DataExport_S3BucketDestination_OutputSchemaVersion"
+        "Write-S3CStorageLensConfiguration/S3BucketDestination_OutputSchemaVersion"
         {
             $v = "V_1"
             break
@@ -187,8 +201,8 @@ $S3C_Completers = {
 
         # Amazon.S3Control.S3CannedAccessControlList
         {
-            ($_ -eq "New-S3CJob/Operation_S3PutObjectAcl_AccessControlPolicy_CannedAccessControlList") -Or
-            ($_ -eq "New-S3CJob/Operation_S3PutObjectCopy_CannedAccessControlList")
+            ($_ -eq "New-S3CJob/AccessControlPolicy_CannedAccessControlList") -Or
+            ($_ -eq "New-S3CJob/S3PutObjectCopy_CannedAccessControlList")
         }
         {
             $v = "authenticated-read","aws-exec-read","bucket-owner-full-control","bucket-owner-read","private","public-read","public-read-write"
@@ -196,21 +210,21 @@ $S3C_Completers = {
         }
 
         # Amazon.S3Control.S3ChecksumAlgorithm
-        "New-S3CJob/Operation_S3PutObjectCopy_ChecksumAlgorithm"
+        "New-S3CJob/S3PutObjectCopy_ChecksumAlgorithm"
         {
-            $v = "CRC32","CRC32C","SHA1","SHA256"
+            $v = "CRC32","CRC32C","CRC64NVME","SHA1","SHA256"
             break
         }
 
         # Amazon.S3Control.S3GlacierJobTier
-        "New-S3CJob/Operation_S3InitiateRestoreObject_GlacierJobTier"
+        "New-S3CJob/S3InitiateRestoreObject_GlacierJobTier"
         {
             $v = "BULK","STANDARD"
             break
         }
 
         # Amazon.S3Control.S3MetadataDirective
-        "New-S3CJob/Operation_S3PutObjectCopy_MetadataDirective"
+        "New-S3CJob/S3PutObjectCopy_MetadataDirective"
         {
             $v = "COPY","REPLACE"
             break
@@ -218,8 +232,8 @@ $S3C_Completers = {
 
         # Amazon.S3Control.S3ObjectLockLegalHoldStatus
         {
-            ($_ -eq "New-S3CJob/Operation_S3PutObjectCopy_ObjectLockLegalHoldStatus") -Or
-            ($_ -eq "New-S3CJob/Operation_S3PutObjectLegalHold_LegalHold_Status")
+            ($_ -eq "New-S3CJob/LegalHold_Status") -Or
+            ($_ -eq "New-S3CJob/S3PutObjectCopy_ObjectLockLegalHoldStatus")
         }
         {
             $v = "OFF","ON"
@@ -227,14 +241,14 @@ $S3C_Completers = {
         }
 
         # Amazon.S3Control.S3ObjectLockMode
-        "New-S3CJob/Operation_S3PutObjectCopy_ObjectLockMode"
+        "New-S3CJob/S3PutObjectCopy_ObjectLockMode"
         {
             $v = "COMPLIANCE","GOVERNANCE"
             break
         }
 
         # Amazon.S3Control.S3ObjectLockRetentionMode
-        "New-S3CJob/Operation_S3PutObjectRetention_Retention_Mode"
+        "New-S3CJob/Retention_Mode"
         {
             $v = "COMPLIANCE","GOVERNANCE"
             break
@@ -251,14 +265,14 @@ $S3C_Completers = {
         }
 
         # Amazon.S3Control.S3SSEAlgorithm
-        "New-S3CJob/Operation_S3PutObjectCopy_NewObjectMetadata_SSEAlgorithm"
+        "New-S3CJob/NewObjectMetadata_SSEAlgorithm"
         {
             $v = "AES256","KMS"
             break
         }
 
         # Amazon.S3Control.S3StorageClass
-        "New-S3CJob/Operation_S3PutObjectCopy_StorageClass"
+        "New-S3CJob/S3PutObjectCopy_StorageClass"
         {
             $v = "DEEP_ARCHIVE","GLACIER","GLACIER_IR","INTELLIGENT_TIERING","ONEZONE_IA","STANDARD","STANDARD_IA"
             break
@@ -273,31 +287,33 @@ $S3C_Completers = {
 }
 
 $S3C_map = @{
+    "AccessControlPolicy_CannedAccessControlList"=@("New-S3CJob")
     "ACL"=@("New-S3CBucket")
     "CreateBucketConfiguration_LocationConstraint"=@("New-S3CBucket")
     "Grantee_GranteeType"=@("New-S3CAccessGrant")
     "GranteeType"=@("Get-S3CAccessGrantList")
-    "Manifest_Spec_Format"=@("New-S3CJob")
-    "ManifestGenerator_S3JobManifestGenerator_ManifestOutputLocation_ManifestFormat"=@("New-S3CJob")
-    "Operation_S3InitiateRestoreObject_GlacierJobTier"=@("New-S3CJob")
-    "Operation_S3PutObjectAcl_AccessControlPolicy_CannedAccessControlList"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_CannedAccessControlList"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_ChecksumAlgorithm"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_MetadataDirective"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_NewObjectMetadata_SSEAlgorithm"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_ObjectLockLegalHoldStatus"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_ObjectLockMode"=@("New-S3CJob")
-    "Operation_S3PutObjectCopy_StorageClass"=@("New-S3CJob")
-    "Operation_S3PutObjectLegalHold_LegalHold_Status"=@("New-S3CJob")
-    "Operation_S3PutObjectRetention_Retention_Mode"=@("New-S3CJob")
+    "LegalHold_Status"=@("New-S3CJob")
+    "ManifestOutputLocation_ManifestFormat"=@("New-S3CJob")
+    "NewObjectMetadata_SSEAlgorithm"=@("New-S3CJob")
     "Permission"=@("Get-S3CAccessGrantList","Get-S3CDataAccess","New-S3CAccessGrant")
     "Privilege"=@("Get-S3CDataAccess")
     "Report_Format"=@("New-S3CJob")
     "Report_ReportScope"=@("New-S3CJob")
     "RequestedJobStatus"=@("Update-S3CJobStatus")
+    "Retention_Mode"=@("New-S3CJob")
+    "S3BucketDestination_Format"=@("Write-S3CStorageLensConfiguration")
+    "S3BucketDestination_OutputSchemaVersion"=@("Write-S3CStorageLensConfiguration")
+    "S3ComputeObjectChecksum_ChecksumAlgorithm"=@("New-S3CJob")
+    "S3ComputeObjectChecksum_ChecksumType"=@("New-S3CJob")
+    "S3InitiateRestoreObject_GlacierJobTier"=@("New-S3CJob")
     "S3PrefixType"=@("New-S3CAccessGrant")
-    "StorageLensConfiguration_DataExport_S3BucketDestination_Format"=@("Write-S3CStorageLensConfiguration")
-    "StorageLensConfiguration_DataExport_S3BucketDestination_OutputSchemaVersion"=@("Write-S3CStorageLensConfiguration")
+    "S3PutObjectCopy_CannedAccessControlList"=@("New-S3CJob")
+    "S3PutObjectCopy_ChecksumAlgorithm"=@("New-S3CJob")
+    "S3PutObjectCopy_MetadataDirective"=@("New-S3CJob")
+    "S3PutObjectCopy_ObjectLockLegalHoldStatus"=@("New-S3CJob")
+    "S3PutObjectCopy_ObjectLockMode"=@("New-S3CJob")
+    "S3PutObjectCopy_StorageClass"=@("New-S3CJob")
+    "Spec_Format"=@("New-S3CJob")
     "TargetType"=@("Get-S3CDataAccess")
     "VersioningConfiguration_MFADelete"=@("Write-S3CBucketVersioning")
     "VersioningConfiguration_Status"=@("Write-S3CBucketVersioning")
@@ -371,6 +387,7 @@ $S3C_SelectMap = @{
                "Remove-S3CAccessPointForObjectLambda",
                "Remove-S3CAccessPointPolicy",
                "Remove-S3CAccessPointPolicyForObjectLambda",
+               "Remove-S3CAccessPointScope",
                "Remove-S3CBucket",
                "Remove-S3CBucketLifecycleConfiguration",
                "Remove-S3CBucketPolicy",
@@ -397,6 +414,7 @@ $S3C_SelectMap = @{
                "Get-S3CAccessPointPolicyForObjectLambda",
                "Get-S3CAccessPointPolicyStatus",
                "Get-S3CAccessPointPolicyStatusForObjectLambda",
+               "Get-S3CAccessPointScope",
                "Get-S3CBucket",
                "Get-S3CBucketLifecycleConfiguration",
                "Get-S3CBucketPolicy",
@@ -417,7 +435,9 @@ $S3C_SelectMap = @{
                "Get-S3CAccessGrantsInstanceList",
                "Get-S3CAccessGrantsLocationList",
                "Get-S3CAccessPointList",
+               "Get-S3CAccessPointsForDirectoryBucketList",
                "Get-S3CAccessPointsForObjectLambdaList",
+               "Get-S3CCallerAccessGrantList",
                "Get-S3CJobList",
                "Get-S3CMultiRegionAccessPointList",
                "Get-S3CRegionalBucketList",
@@ -428,6 +448,7 @@ $S3C_SelectMap = @{
                "Write-S3CAccessPointConfigurationForObjectLambda",
                "Write-S3CAccessPointPolicy",
                "Write-S3CAccessPointPolicyForObjectLambda",
+               "Write-S3CAccessPointScope",
                "Write-S3CBucketLifecycleConfiguration",
                "Write-S3CBucketPolicy",
                "Write-S3CBucketReplication",

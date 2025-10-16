@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Amplify;
 using Amazon.Amplify.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMP
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
     [AWSCmdlet("Calls the AWS Amplify UpdateDomainAssociation API operation.", Operation = new[] {"UpdateDomainAssociation"}, SelectReturnType = typeof(Amazon.Amplify.Model.UpdateDomainAssociationResponse))]
     [AWSCmdletOutput("Amazon.Amplify.Model.DomainAssociation or Amazon.Amplify.Model.UpdateDomainAssociationResponse",
         "This cmdlet returns an Amazon.Amplify.Model.DomainAssociation object.",
-        "The service call response (type Amazon.Amplify.Model.UpdateDomainAssociationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Amplify.Model.UpdateDomainAssociationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateAMPDomainAssociationCmdlet : AmazonAmplifyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppId
         /// <summary>
@@ -62,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter AutoSubDomainCreationPattern
         /// <summary>
         /// <para>
-        /// <para> Sets the branch patterns for automatic subdomain creation. </para>
+        /// <para> Sets the branch patterns for automatic subdomain creation. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -79,6 +86,17 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AutoSubDomainIAMRole { get; set; }
+        #endregion
+        
+        #region Parameter CertificateSettings_CustomCertificateArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon resource name (ARN) for the custom certificate that you have already added
+        /// to Certificate Manager in your Amazon Web Services account.</para><para>This field is required only when the certificate type is <c>CUSTOM</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CertificateSettings_CustomCertificateArn { get; set; }
         #endregion
         
         #region Parameter DomainName
@@ -111,12 +129,32 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         #region Parameter SubDomainSetting
         /// <summary>
         /// <para>
-        /// <para> Describes the settings for the subdomain. </para>
+        /// <para> Describes the settings for the subdomain. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SubDomainSettings")]
         public Amazon.Amplify.Model.SubDomainSetting[] SubDomainSetting { get; set; }
+        #endregion
+        
+        #region Parameter CertificateSettings_Type
+        /// <summary>
+        /// <para>
+        /// <para>The certificate type.</para><para>Specify <c>AMPLIFY_MANAGED</c> to use the default certificate that Amplify provisions
+        /// for you.</para><para>Specify <c>CUSTOM</c> to use your own certificate that you have already added to Certificate
+        /// Manager in your Amazon Web Services account. Make sure you request (or import) the
+        /// certificate in the US East (N. Virginia) Region (us-east-1). For more information
+        /// about using ACM, see <a href="https://docs.aws.amazon.com/acm/latest/userguide/import-certificate.html">Importing
+        /// certificates into Certificate Manager</a> in the <i>ACM User guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Amplify.CertificateType")]
+        public Amazon.Amplify.CertificateType CertificateSettings_Type { get; set; }
         #endregion
         
         #region Parameter Select
@@ -130,16 +168,6 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public string Select { get; set; } = "DomainAssociation";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -150,9 +178,13 @@ namespace Amazon.PowerShell.Cmdlets.AMP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainName), MyInvocation.BoundParameters);
@@ -166,21 +198,11 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Amplify.Model.UpdateDomainAssociationResponse, UpdateAMPDomainAssociationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppId = this.AppId;
             #if MODULAR
             if (this.AppId == null && ParameterWasBound(nameof(this.AppId)))
@@ -193,6 +215,8 @@ namespace Amazon.PowerShell.Cmdlets.AMP
                 context.AutoSubDomainCreationPattern = new List<System.String>(this.AutoSubDomainCreationPattern);
             }
             context.AutoSubDomainIAMRole = this.AutoSubDomainIAMRole;
+            context.CertificateSettings_CustomCertificateArn = this.CertificateSettings_CustomCertificateArn;
+            context.CertificateSettings_Type = this.CertificateSettings_Type;
             context.DomainName = this.DomainName;
             #if MODULAR
             if (this.DomainName == null && ParameterWasBound(nameof(this.DomainName)))
@@ -232,6 +256,35 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             if (cmdletContext.AutoSubDomainIAMRole != null)
             {
                 request.AutoSubDomainIAMRole = cmdletContext.AutoSubDomainIAMRole;
+            }
+            
+             // populate CertificateSettings
+            var requestCertificateSettingsIsNull = true;
+            request.CertificateSettings = new Amazon.Amplify.Model.CertificateSettings();
+            System.String requestCertificateSettings_certificateSettings_CustomCertificateArn = null;
+            if (cmdletContext.CertificateSettings_CustomCertificateArn != null)
+            {
+                requestCertificateSettings_certificateSettings_CustomCertificateArn = cmdletContext.CertificateSettings_CustomCertificateArn;
+            }
+            if (requestCertificateSettings_certificateSettings_CustomCertificateArn != null)
+            {
+                request.CertificateSettings.CustomCertificateArn = requestCertificateSettings_certificateSettings_CustomCertificateArn;
+                requestCertificateSettingsIsNull = false;
+            }
+            Amazon.Amplify.CertificateType requestCertificateSettings_certificateSettings_Type = null;
+            if (cmdletContext.CertificateSettings_Type != null)
+            {
+                requestCertificateSettings_certificateSettings_Type = cmdletContext.CertificateSettings_Type;
+            }
+            if (requestCertificateSettings_certificateSettings_Type != null)
+            {
+                request.CertificateSettings.Type = requestCertificateSettings_certificateSettings_Type;
+                requestCertificateSettingsIsNull = false;
+            }
+             // determine if request.CertificateSettings should be set to null
+            if (requestCertificateSettingsIsNull)
+            {
+                request.CertificateSettings = null;
             }
             if (cmdletContext.DomainName != null)
             {
@@ -283,13 +336,7 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify", "UpdateDomainAssociation");
             try
             {
-                #if DESKTOP
-                return client.UpdateDomainAssociation(request);
-                #elif CORECLR
-                return client.UpdateDomainAssociationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDomainAssociationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -309,6 +356,8 @@ namespace Amazon.PowerShell.Cmdlets.AMP
             public System.String AppId { get; set; }
             public List<System.String> AutoSubDomainCreationPattern { get; set; }
             public System.String AutoSubDomainIAMRole { get; set; }
+            public System.String CertificateSettings_CustomCertificateArn { get; set; }
+            public Amazon.Amplify.CertificateType CertificateSettings_Type { get; set; }
             public System.String DomainName { get; set; }
             public System.Boolean? EnableAutoSubDomain { get; set; }
             public List<Amazon.Amplify.Model.SubDomainSetting> SubDomainSetting { get; set; }

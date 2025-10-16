@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -38,7 +40,8 @@ namespace Amazon.PowerShell.Cmdlets.AS
     /// your Auto Scaling group after you make configuration changes.
     /// </para><para>
     /// When you cancel an instance refresh, this does not roll back any changes that it made.
-    /// Use the <a>RollbackInstanceRefresh</a> API to roll back instead.
+    /// Use the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_RollbackInstanceRefresh.html">RollbackInstanceRefresh</a>
+    /// API to roll back instead.
     /// </para>
     /// </summary>
     [Cmdlet("Stop", "ASInstanceRefresh", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -46,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
     [AWSCmdlet("Calls the AWS Auto Scaling CancelInstanceRefresh API operation.", Operation = new[] {"CancelInstanceRefresh"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.CancelInstanceRefreshResponse))]
     [AWSCmdletOutput("System.String or Amazon.AutoScaling.Model.CancelInstanceRefreshResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.AutoScaling.Model.CancelInstanceRefreshResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AutoScaling.Model.CancelInstanceRefreshResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StopASInstanceRefreshCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoScalingGroupName
         /// <summary>
@@ -70,6 +74,19 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public System.String AutoScalingGroupName { get; set; }
         #endregion
         
+        #region Parameter WaitForTransitioningInstance
+        /// <summary>
+        /// <para>
+        /// <para>When cancelling an instance refresh, this indicates whether to wait for in-flight
+        /// launches and terminations to complete. The default is true.</para><para>When set to false, Amazon EC2 Auto Scaling cancels the instance refresh without waiting
+        /// for any pending launches or terminations to complete.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("WaitForTransitioningInstances")]
+        public System.Boolean? WaitForTransitioningInstance { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'InstanceRefreshId'.
@@ -79,16 +96,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "InstanceRefreshId";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutoScalingGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -101,9 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutoScalingGroupName), MyInvocation.BoundParameters);
@@ -117,21 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.CancelInstanceRefreshResponse, StopASInstanceRefreshCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutoScalingGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScalingGroupName = this.AutoScalingGroupName;
             #if MODULAR
             if (this.AutoScalingGroupName == null && ParameterWasBound(nameof(this.AutoScalingGroupName)))
@@ -139,6 +140,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
                 WriteWarning("You are passing $null as a value for parameter AutoScalingGroupName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.WaitForTransitioningInstance = this.WaitForTransitioningInstance;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -158,6 +160,10 @@ namespace Amazon.PowerShell.Cmdlets.AS
             if (cmdletContext.AutoScalingGroupName != null)
             {
                 request.AutoScalingGroupName = cmdletContext.AutoScalingGroupName;
+            }
+            if (cmdletContext.WaitForTransitioningInstance != null)
+            {
+                request.WaitForTransitioningInstances = cmdletContext.WaitForTransitioningInstance.Value;
             }
             
             CmdletOutput output;
@@ -197,13 +203,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "CancelInstanceRefresh");
             try
             {
-                #if DESKTOP
-                return client.CancelInstanceRefresh(request);
-                #elif CORECLR
-                return client.CancelInstanceRefreshAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CancelInstanceRefreshAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -221,6 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AutoScalingGroupName { get; set; }
+            public System.Boolean? WaitForTransitioningInstance { get; set; }
             public System.Func<Amazon.AutoScaling.Model.CancelInstanceRefreshResponse, StopASInstanceRefreshCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.InstanceRefreshId;
         }

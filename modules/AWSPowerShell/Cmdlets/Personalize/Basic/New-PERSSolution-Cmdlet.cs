@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,48 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Personalize;
 using Amazon.Personalize.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PERS
 {
     /// <summary>
-    /// Creates the configuration for training a model. A trained model is known as a solution
-    /// version. After the configuration is created, you train the model (create a solution
-    /// version) by calling the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolutionVersion.html">CreateSolutionVersion</a>
-    /// operation. Every time you call <c>CreateSolutionVersion</c>, a new version of the
-    /// solution is created.
+    /// <important><para>
+    /// By default, all new solutions use automatic training. With automatic training, you
+    /// incur training costs while your solution is active. To avoid unnecessary costs, when
+    /// you are finished you can <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_UpdateSolution.html">update
+    /// the solution</a> to turn off automatic training. For information about training costs,
+    /// see <a href="https://aws.amazon.com/personalize/pricing/">Amazon Personalize pricing</a>.
+    /// </para></important><para>
+    /// Creates the configuration for training a model (creating a solution version). This
+    /// configuration includes the recipe to use for model training and optional training
+    /// configuration, such as columns to use in training and feature transformation parameters.
+    /// For more information about configuring a solution, see <a href="https://docs.aws.amazon.com/personalize/latest/dg/customizing-solution-config.html">Creating
+    /// and configuring a solution</a>. 
+    /// </para><para>
+    ///  By default, new solutions use automatic training to create solution versions every
+    /// 7 days. You can change the training frequency. Automatic solution version creation
+    /// starts within one hour after the solution is ACTIVE. If you manually create a solution
+    /// version within the hour, the solution skips the first automatic training. For more
+    /// information, see <a href="https://docs.aws.amazon.com/personalize/latest/dg/solution-config-auto-training.html">Configuring
+    /// automatic training</a>.
+    /// </para><para>
+    ///  To turn off automatic training, set <c>performAutoTraining</c> to false. If you turn
+    /// off automatic training, you must manually create a solution version by calling the
+    /// <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolutionVersion.html">CreateSolutionVersion</a>
+    /// operation.
+    /// </para><para>
+    /// After training starts, you can get the solution version's Amazon Resource Name (ARN)
+    /// with the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_ListSolutionVersions.html">ListSolutionVersions</a>
+    /// API operation. To get its status, use the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolutionVersion.html">DescribeSolutionVersion</a>.
     /// 
-    ///  
-    /// <para>
-    /// After creating a solution version, you check its accuracy by calling <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_GetSolutionMetrics.html">GetSolutionMetrics</a>.
-    /// When you are satisfied with the version, you deploy it using <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">CreateCampaign</a>.
+    /// </para><para>
+    /// After training completes you can evaluate model accuracy by calling <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_GetSolutionMetrics.html">GetSolutionMetrics</a>.
+    /// When you are satisfied with the solution version, you deploy it using <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html">CreateCampaign</a>.
     /// The campaign provides recommendations to a client through the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html">GetRecommendations</a>
     /// API.
-    /// </para><para>
-    /// To train a model, Amazon Personalize requires training data and a recipe. The training
-    /// data comes from the dataset group that you provide in the request. A recipe specifies
-    /// the training algorithm and a feature transformation. You can specify one of the predefined
-    /// recipes provided by Amazon Personalize. 
     /// </para><note><para>
     /// Amazon Personalize doesn't support configuring the <c>hpoObjective</c> for solution
     /// hyperparameter optimization at this time.
@@ -56,25 +75,30 @@ namespace Amazon.PowerShell.Cmdlets.PERS
     /// DELETE PENDING &gt; DELETE IN_PROGRESS
     /// </para></li></ul><para>
     /// To get the status of the solution, call <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolution.html">DescribeSolution</a>.
-    /// Wait until the status shows as ACTIVE before calling <c>CreateSolutionVersion</c>.
-    /// </para><para><b>Related APIs</b></para><ul><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_ListSolutions.html">ListSolutions</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolutionVersion.html">CreateSolutionVersion</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolution.html">DescribeSolution</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DeleteSolution.html">DeleteSolution</a></para></li></ul><ul><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_ListSolutionVersions.html">ListSolutionVersions</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolutionVersion.html">DescribeSolutionVersion</a></para></li></ul>
+    /// If you use manual training, the status must be ACTIVE before you call <c>CreateSolutionVersion</c>.
+    /// </para><para><b>Related APIs</b></para><ul><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_UpdateSolution.html">UpdateSolution</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_ListSolutions.html">ListSolutions</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_CreateSolutionVersion.html">CreateSolutionVersion</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolution.html">DescribeSolution</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DeleteSolution.html">DeleteSolution</a></para></li></ul><ul><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_ListSolutionVersions.html">ListSolutionVersions</a></para></li><li><para><a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolutionVersion.html">DescribeSolutionVersion</a></para></li></ul>
     /// </summary>
     [Cmdlet("New", "PERSSolution", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Personalize CreateSolution API operation.", Operation = new[] {"CreateSolution"}, SelectReturnType = typeof(Amazon.Personalize.Model.CreateSolutionResponse))]
     [AWSCmdletOutput("System.String or Amazon.Personalize.Model.CreateSolutionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Personalize.Model.CreateSolutionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Personalize.Model.CreateSolutionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPERSSolutionCmdlet : AmazonPersonalizeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SolutionConfig_AlgorithmHyperParameter
         /// <summary>
         /// <para>
-        /// <para>Lists the algorithm hyperparameters and their values.</para>
+        /// <para>Lists the algorithm hyperparameters and their values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -85,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #region Parameter AlgorithmHyperParameterRanges_CategoricalHyperParameterRange
         /// <summary>
         /// <para>
-        /// <para>The categorical hyperparameters and their ranges.</para>
+        /// <para>The categorical hyperparameters and their ranges.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #region Parameter AlgorithmHyperParameterRanges_ContinuousHyperParameterRange
         /// <summary>
         /// <para>
-        /// <para>The continuous hyperparameters and their ranges.</para>
+        /// <para>The continuous hyperparameters and their ranges.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -119,6 +151,22 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String DatasetGroupArn { get; set; }
+        #endregion
+        
+        #region Parameter EventsConfig_EventParametersList
+        /// <summary>
+        /// <para>
+        /// <para>A list of event parameters, which includes event types and their event value thresholds
+        /// and weights.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SolutionConfig_EventsConfig_EventParametersList")]
+        public Amazon.Personalize.Model.EventParameters[] EventsConfig_EventParametersList { get; set; }
         #endregion
         
         #region Parameter EventType
@@ -150,9 +198,13 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         /// <para>
         /// <para>Specifies the columns to exclude from training. Each key is a dataset type, and each
         /// value is a list of columns. Exclude columns to control what data Amazon Personalize
-        /// uses to generate recommendations. For example, you might have a column that you want
-        /// to use only to filter recommendations. You can exclude this column from training and
-        /// Amazon Personalize considers it only when filtering. </para>
+        /// uses to generate recommendations.</para><para> For example, you might have a column that you want to use only to filter recommendations.
+        /// You can exclude this column from training and Amazon Personalize considers it only
+        /// when filtering. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +215,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #region Parameter SolutionConfig_FeatureTransformationParameter
         /// <summary>
         /// <para>
-        /// <para>Lists the feature transformation parameters.</para>
+        /// <para>Lists the feature transformation parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #region Parameter AlgorithmHyperParameterRanges_IntegerHyperParameterRange
         /// <summary>
         /// <para>
-        /// <para>The integer-valued hyperparameters and their ranges.</para>
+        /// <para>The integer-valued hyperparameters and their ranges.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -298,6 +358,26 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public System.Boolean? PerformAutoML { get; set; }
         #endregion
         
+        #region Parameter PerformAutoTraining
+        /// <summary>
+        /// <para>
+        /// <para>Whether the solution uses automatic training to create new solution versions (trained
+        /// models). The default is <c>True</c> and the solution automatically creates new solution
+        /// versions every 7 days. You can change the training frequency by specifying a <c>schedulingExpression</c>
+        /// in the <c>AutoTrainingConfig</c> as part of solution configuration. For more information
+        /// about automatic training, see <a href="https://docs.aws.amazon.com/personalize/latest/dg/solution-config-auto-training.html">Configuring
+        /// automatic training</a>.</para><para> Automatic solution version creation starts within one hour after the solution is
+        /// ACTIVE. If you manually create a solution version within the hour, the solution skips
+        /// the first automatic training. </para><para> After training starts, you can get the solution version's Amazon Resource Name (ARN)
+        /// with the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_ListSolutionVersions.html">ListSolutionVersions</a>
+        /// API operation. To get its status, use the <a href="https://docs.aws.amazon.com/personalize/latest/dg/API_DescribeSolutionVersion.html">DescribeSolutionVersion</a>.
+        /// </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? PerformAutoTraining { get; set; }
+        #endregion
+        
         #region Parameter PerformHPO
         /// <summary>
         /// <para>
@@ -326,7 +406,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         #region Parameter AutoMLConfig_RecipeList
         /// <summary>
         /// <para>
-        /// <para>The list of candidate recipes.</para>
+        /// <para>The list of candidate recipes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -334,11 +418,31 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public System.String[] AutoMLConfig_RecipeList { get; set; }
         #endregion
         
+        #region Parameter AutoTrainingConfig_SchedulingExpression
+        /// <summary>
+        /// <para>
+        /// <para>Specifies how often to automatically train new solution versions. Specify a rate expression
+        /// in rate(<i>value</i><i>unit</i>) format. For value, specify a number between 1 and
+        /// 30. For unit, specify <c>day</c> or <c>days</c>. For example, to automatically create
+        /// a new solution version every 5 days, specify <c>rate(5 days)</c>. The default is every
+        /// 7 days.</para><para>For more information about auto training, see <a href="https://docs.aws.amazon.com/personalize/latest/dg/customizing-solution-config.html">Creating
+        /// and configuring a solution</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SolutionConfig_AutoTrainingConfig_SchedulingExpression")]
+        public System.String AutoTrainingConfig_SchedulingExpression { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>A list of <a href="https://docs.aws.amazon.com/personalize/latest/dg/tagging-resources.html">tags</a>
-        /// to apply to the solution.</para>
+        /// to apply to the solution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -368,16 +472,6 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public string Select { get; set; } = "SolutionArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -388,9 +482,13 @@ namespace Amazon.PowerShell.Cmdlets.PERS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -404,21 +502,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Personalize.Model.CreateSolutionResponse, NewPERSSolutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DatasetGroupArn = this.DatasetGroupArn;
             #if MODULAR
             if (this.DatasetGroupArn == null && ParameterWasBound(nameof(this.DatasetGroupArn)))
@@ -435,6 +523,7 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             }
             #endif
             context.PerformAutoML = this.PerformAutoML;
+            context.PerformAutoTraining = this.PerformAutoTraining;
             context.PerformHPO = this.PerformHPO;
             context.RecipeArn = this.RecipeArn;
             if (this.SolutionConfig_AlgorithmHyperParameter != null)
@@ -449,6 +538,11 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             if (this.AutoMLConfig_RecipeList != null)
             {
                 context.AutoMLConfig_RecipeList = new List<System.String>(this.AutoMLConfig_RecipeList);
+            }
+            context.AutoTrainingConfig_SchedulingExpression = this.AutoTrainingConfig_SchedulingExpression;
+            if (this.EventsConfig_EventParametersList != null)
+            {
+                context.EventsConfig_EventParametersList = new List<Amazon.Personalize.Model.EventParameters>(this.EventsConfig_EventParametersList);
             }
             context.SolutionConfig_EventValueThreshold = this.SolutionConfig_EventValueThreshold;
             if (this.SolutionConfig_FeatureTransformationParameter != null)
@@ -534,6 +628,10 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             {
                 request.PerformAutoML = cmdletContext.PerformAutoML.Value;
             }
+            if (cmdletContext.PerformAutoTraining != null)
+            {
+                request.PerformAutoTraining = cmdletContext.PerformAutoTraining.Value;
+            }
             if (cmdletContext.PerformHPO != null)
             {
                 request.PerformHPO = cmdletContext.PerformHPO.Value;
@@ -574,6 +672,56 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             if (requestSolutionConfig_solutionConfig_FeatureTransformationParameter != null)
             {
                 request.SolutionConfig.FeatureTransformationParameters = requestSolutionConfig_solutionConfig_FeatureTransformationParameter;
+                requestSolutionConfigIsNull = false;
+            }
+            Amazon.Personalize.Model.AutoTrainingConfig requestSolutionConfig_solutionConfig_AutoTrainingConfig = null;
+            
+             // populate AutoTrainingConfig
+            var requestSolutionConfig_solutionConfig_AutoTrainingConfigIsNull = true;
+            requestSolutionConfig_solutionConfig_AutoTrainingConfig = new Amazon.Personalize.Model.AutoTrainingConfig();
+            System.String requestSolutionConfig_solutionConfig_AutoTrainingConfig_autoTrainingConfig_SchedulingExpression = null;
+            if (cmdletContext.AutoTrainingConfig_SchedulingExpression != null)
+            {
+                requestSolutionConfig_solutionConfig_AutoTrainingConfig_autoTrainingConfig_SchedulingExpression = cmdletContext.AutoTrainingConfig_SchedulingExpression;
+            }
+            if (requestSolutionConfig_solutionConfig_AutoTrainingConfig_autoTrainingConfig_SchedulingExpression != null)
+            {
+                requestSolutionConfig_solutionConfig_AutoTrainingConfig.SchedulingExpression = requestSolutionConfig_solutionConfig_AutoTrainingConfig_autoTrainingConfig_SchedulingExpression;
+                requestSolutionConfig_solutionConfig_AutoTrainingConfigIsNull = false;
+            }
+             // determine if requestSolutionConfig_solutionConfig_AutoTrainingConfig should be set to null
+            if (requestSolutionConfig_solutionConfig_AutoTrainingConfigIsNull)
+            {
+                requestSolutionConfig_solutionConfig_AutoTrainingConfig = null;
+            }
+            if (requestSolutionConfig_solutionConfig_AutoTrainingConfig != null)
+            {
+                request.SolutionConfig.AutoTrainingConfig = requestSolutionConfig_solutionConfig_AutoTrainingConfig;
+                requestSolutionConfigIsNull = false;
+            }
+            Amazon.Personalize.Model.EventsConfig requestSolutionConfig_solutionConfig_EventsConfig = null;
+            
+             // populate EventsConfig
+            var requestSolutionConfig_solutionConfig_EventsConfigIsNull = true;
+            requestSolutionConfig_solutionConfig_EventsConfig = new Amazon.Personalize.Model.EventsConfig();
+            List<Amazon.Personalize.Model.EventParameters> requestSolutionConfig_solutionConfig_EventsConfig_eventsConfig_EventParametersList = null;
+            if (cmdletContext.EventsConfig_EventParametersList != null)
+            {
+                requestSolutionConfig_solutionConfig_EventsConfig_eventsConfig_EventParametersList = cmdletContext.EventsConfig_EventParametersList;
+            }
+            if (requestSolutionConfig_solutionConfig_EventsConfig_eventsConfig_EventParametersList != null)
+            {
+                requestSolutionConfig_solutionConfig_EventsConfig.EventParametersList = requestSolutionConfig_solutionConfig_EventsConfig_eventsConfig_EventParametersList;
+                requestSolutionConfig_solutionConfig_EventsConfigIsNull = false;
+            }
+             // determine if requestSolutionConfig_solutionConfig_EventsConfig should be set to null
+            if (requestSolutionConfig_solutionConfig_EventsConfigIsNull)
+            {
+                requestSolutionConfig_solutionConfig_EventsConfig = null;
+            }
+            if (requestSolutionConfig_solutionConfig_EventsConfig != null)
+            {
+                request.SolutionConfig.EventsConfig = requestSolutionConfig_solutionConfig_EventsConfig;
                 requestSolutionConfigIsNull = false;
             }
             Amazon.Personalize.Model.TrainingDataConfig requestSolutionConfig_solutionConfig_TrainingDataConfig = null;
@@ -858,13 +1006,7 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Personalize", "CreateSolution");
             try
             {
-                #if DESKTOP
-                return client.CreateSolution(request);
-                #elif CORECLR
-                return client.CreateSolutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSolutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -885,11 +1027,14 @@ namespace Amazon.PowerShell.Cmdlets.PERS
             public System.String EventType { get; set; }
             public System.String Name { get; set; }
             public System.Boolean? PerformAutoML { get; set; }
+            public System.Boolean? PerformAutoTraining { get; set; }
             public System.Boolean? PerformHPO { get; set; }
             public System.String RecipeArn { get; set; }
             public Dictionary<System.String, System.String> SolutionConfig_AlgorithmHyperParameter { get; set; }
             public System.String AutoMLConfig_MetricName { get; set; }
             public List<System.String> AutoMLConfig_RecipeList { get; set; }
+            public System.String AutoTrainingConfig_SchedulingExpression { get; set; }
+            public List<Amazon.Personalize.Model.EventParameters> EventsConfig_EventParametersList { get; set; }
             public System.String SolutionConfig_EventValueThreshold { get; set; }
             public Dictionary<System.String, System.String> SolutionConfig_FeatureTransformationParameter { get; set; }
             public List<Amazon.Personalize.Model.CategoricalHyperParameterRange> AlgorithmHyperParameterRanges_CategoricalHyperParameterRange { get; set; }

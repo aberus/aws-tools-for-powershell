@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,69 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SSOAdmin;
 using Amazon.SSOAdmin.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSOADMN
 {
     /// <summary>
-    /// Adds a grant to an application.
+    /// Creates a configuration for an application to use grants. Conceptually grants are
+    /// authorization to request actions related to tokens. This configuration will be used
+    /// when parties are requesting and receiving tokens during the trusted identity propagation
+    /// process. For more information on the IAM Identity Center supported grant workflows,
+    /// see <a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/customermanagedapps-saml2-oauth2.html">SAML
+    /// 2.0 and OAuth 2.0</a>.
+    /// 
+    ///  
+    /// <para>
+    /// A grant is created between your applications and Identity Center instance which enables
+    /// an application to use specified mechanisms to obtain tokens. These tokens are used
+    /// by your applications to gain access to Amazon Web Services resources on behalf of
+    /// users. The following elements are within these exchanges:
+    /// </para><ul><li><para><b>Requester</b> - The application requesting access to Amazon Web Services resources.
+    /// </para></li><li><para><b>Subject</b> - Typically the user that is requesting access to Amazon Web Services
+    /// resources.
+    /// </para></li><li><para><b>Grant</b> - Conceptually, a grant is authorization to access Amazon Web Services
+    /// resources. These grants authorize token generation for authenticating access to the
+    /// requester and for the request to make requests on behalf of the subjects. There are
+    /// four types of grants:
+    /// </para><ul><li><para><b>AuthorizationCode</b> - Allows an application to request authorization through
+    /// a series of user-agent redirects.
+    /// </para></li><li><para><b>JWT bearer </b> - Authorizes an application to exchange a JSON Web Token that
+    /// came from an external identity provider. To learn more, see <a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC
+    /// 6479</a>.
+    /// </para></li><li><para><b>Refresh token</b> - Enables application to request new access tokens to replace
+    /// expiring or expired access tokens.
+    /// </para></li><li><para><b>Exchange token</b> - A grant that requests tokens from the authorization server
+    /// by providing a ‘subject’ token with access scope authorizing trusted identity propagation
+    /// to this application. To learn more, see <a href="https://datatracker.ietf.org/doc/html/rfc8693">RFC
+    /// 8693</a>.
+    /// </para></li></ul></li><li><para><b>Authorization server</b> - IAM Identity Center requests tokens.
+    /// </para></li></ul><para>
+    /// User credentials are never shared directly within these exchanges. Instead, applications
+    /// use grants to request access tokens from IAM Identity Center. For more information,
+    /// see <a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC 6479</a>.
+    /// </para><para><b>Use cases</b></para><ul><li><para>
+    /// Connecting to custom applications.
+    /// </para></li><li><para>
+    /// Configuring an Amazon Web Services service to make calls to another Amazon Web Services
+    /// services using JWT tokens.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Write", "SSOADMNApplicationGrant", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Single Sign-On Admin PutApplicationGrant API operation.", Operation = new[] {"PutApplicationGrant"}, SelectReturnType = typeof(Amazon.SSOAdmin.Model.PutApplicationGrantResponse))]
     [AWSCmdletOutput("None or Amazon.SSOAdmin.Model.PutApplicationGrantResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SSOAdmin.Model.PutApplicationGrantResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SSOAdmin.Model.PutApplicationGrantResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteSSOADMNApplicationGrantCmdlet : AmazonSSOAdminClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationArn
         /// <summary>
@@ -63,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.SSOADMN
         /// <summary>
         /// <para>
         /// <para>A list of allowed token issuers trusted by the Identity Center instances for this
-        /// application.</para>
+        /// application.</para><note><para><c>AuthorizedTokenIssuers</c> is required when the grant type is <c>JwtBearerGrant</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +140,11 @@ namespace Amazon.PowerShell.Cmdlets.SSOADMN
         /// <summary>
         /// <para>
         /// <para>A list of URIs that are valid locations to redirect a user's browser after the user
-        /// is authorized.</para>
+        /// is authorized.</para><note><para>RedirectUris is required when the grant type is <c>authorization_code</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,16 +183,6 @@ namespace Amazon.PowerShell.Cmdlets.SSOADMN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -151,9 +193,13 @@ namespace Amazon.PowerShell.Cmdlets.SSOADMN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationArn), MyInvocation.BoundParameters);
@@ -167,21 +213,11 @@ namespace Amazon.PowerShell.Cmdlets.SSOADMN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SSOAdmin.Model.PutApplicationGrantResponse, WriteSSOADMNApplicationGrantCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationArn = this.ApplicationArn;
             #if MODULAR
             if (this.ApplicationArn == null && ParameterWasBound(nameof(this.ApplicationArn)))
@@ -347,13 +383,7 @@ namespace Amazon.PowerShell.Cmdlets.SSOADMN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Single Sign-On Admin", "PutApplicationGrant");
             try
             {
-                #if DESKTOP
-                return client.PutApplicationGrant(request);
-                #elif CORECLR
-                return client.PutApplicationGrantAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutApplicationGrantAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

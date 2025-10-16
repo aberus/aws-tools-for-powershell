@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GlueDataBrew;
 using Amazon.GlueDataBrew.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GDB
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.GDB
     [AWSCmdlet("Calls the AWS Glue DataBrew CreateDataset API operation.", Operation = new[] {"CreateDataset"}, SelectReturnType = typeof(Amazon.GlueDataBrew.Model.CreateDatasetResponse))]
     [AWSCmdletOutput("System.String or Amazon.GlueDataBrew.Model.CreateDatasetResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.GlueDataBrew.Model.CreateDatasetResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GlueDataBrew.Model.CreateDatasetResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGDBDatasetCmdlet : AmazonGlueDataBrewClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DatabaseInputDefinition_TempDirectory_Bucket
         /// <summary>
@@ -317,7 +320,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         /// <summary>
         /// <para>
         /// <para>A structure that maps names of parameters used in the Amazon S3 path of a dataset
-        /// to their definitions.</para>
+        /// to their definitions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -340,7 +347,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         #region Parameter Excel_SheetIndex
         /// <summary>
         /// <para>
-        /// <para>One or more sheet numbers in the Excel file that will be included in the dataset.</para>
+        /// <para>One or more sheet numbers in the Excel file that will be included in the dataset.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -351,7 +362,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         #region Parameter Excel_SheetName
         /// <summary>
         /// <para>
-        /// <para>One or more named sheets in the Excel file that will be included in the dataset.</para>
+        /// <para>One or more named sheets in the Excel file that will be included in the dataset.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -386,7 +401,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata tags to apply to this dataset.</para>
+        /// <para>Metadata tags to apply to this dataset.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -397,7 +416,11 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         #region Parameter LastModifiedDateCondition_ValuesMap
         /// <summary>
         /// <para>
-        /// <para>The map of substitution variable names to their values used in this filter expression.</para>
+        /// <para>The map of substitution variable names to their values used in this filter expression.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -426,9 +449,13 @@ namespace Amazon.PowerShell.Cmdlets.GDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -1049,13 +1076,7 @@ namespace Amazon.PowerShell.Cmdlets.GDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue DataBrew", "CreateDataset");
             try
             {
-                #if DESKTOP
-                return client.CreateDataset(request);
-                #elif CORECLR
-                return client.CreateDatasetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDatasetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

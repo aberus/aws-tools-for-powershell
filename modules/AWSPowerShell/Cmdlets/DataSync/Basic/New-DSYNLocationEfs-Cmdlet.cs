@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
@@ -42,18 +44,20 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
     [AWSCmdlet("Calls the AWS DataSync CreateLocationEfs API operation.", Operation = new[] {"CreateLocationEfs"}, SelectReturnType = typeof(Amazon.DataSync.Model.CreateLocationEfsResponse))]
     [AWSCmdletOutput("System.String or Amazon.DataSync.Model.CreateLocationEfsResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DataSync.Model.CreateLocationEfsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataSync.Model.CreateLocationEfsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDSYNLocationEfsCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessPointArn
         /// <summary>
         /// <para>
         /// <para>Specifies the Amazon Resource Name (ARN) of the access point that DataSync uses to
-        /// access the Amazon EFS file system.</para>
+        /// mount your Amazon EFS file system.</para><para>For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-efs-location.html#create-efs-location-iam">Accessing
+        /// restricted file systems</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,7 +67,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter EfsFilesystemArn
         /// <summary>
         /// <para>
-        /// <para>Specifies the ARN for the Amazon EFS file system.</para>
+        /// <para>Specifies the ARN for your Amazon EFS file system.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -80,8 +84,9 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter FileSystemAccessRoleArn
         /// <summary>
         /// <para>
-        /// <para>Specifies an Identity and Access Management (IAM) role that DataSync assumes when
-        /// mounting the Amazon EFS file system.</para>
+        /// <para>Specifies an Identity and Access Management (IAM) role that allows DataSync to access
+        /// your Amazon EFS file system.</para><para>For information on creating this role, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-efs-location.html#create-efs-location-iam-role">Creating
+        /// a DataSync IAM role for file system access</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +97,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// <summary>
         /// <para>
         /// <para>Specifies whether you want DataSync to use Transport Layer Security (TLS) 1.2 encryption
-        /// when it copies data to or from the Amazon EFS file system.</para><para>If you specify an access point using <c>AccessPointArn</c> or an IAM role using <c>FileSystemAccessRoleArn</c>,
+        /// when it transfers data to or from your Amazon EFS file system.</para><para>If you specify an access point using <c>AccessPointArn</c> or an IAM role using <c>FileSystemAccessRoleArn</c>,
         /// you must set this parameter to <c>TLS1_2</c>.</para>
         /// </para>
         /// </summary>
@@ -105,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// <summary>
         /// <para>
         /// <para>Specifies the Amazon Resource Names (ARNs) of the security groups associated with
-        /// an Amazon EFS file system's mount target.</para>
+        /// an Amazon EFS file system's mount target.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -124,8 +133,10 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// <summary>
         /// <para>
         /// <para>Specifies a mount path for your Amazon EFS file system. This is where DataSync reads
-        /// or writes data (depending on if this is a source or destination location). By default,
-        /// DataSync uses the root directory, but you can also include subdirectories.</para><note><para>You must specify a value with forward slashes (for example, <c>/path/to/folder</c>).</para></note>
+        /// or writes data on your file system (depending on if this is a source or destination
+        /// location).</para><para>By default, DataSync uses the root directory (or <a href="https://docs.aws.amazon.com/efs/latest/ug/efs-access-points.html">access
+        /// point</a> if you provide one by using <c>AccessPointArn</c>). You can also include
+        /// subdirectories using forward slashes (for example, <c>/path/to/folder</c>).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,7 +167,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// <para>
         /// <para>Specifies the key-value pair that represents a tag that you want to add to the resource.
         /// The value can be an empty string. This value helps you manage, filter, and search
-        /// for your resources. We recommend that you create a name tag for your location.</para>
+        /// for your resources. We recommend that you create a name tag for your location.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,9 +200,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -345,13 +364,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "CreateLocationEfs");
             try
             {
-                #if DESKTOP
-                return client.CreateLocationEfs(request);
-                #elif CORECLR
-                return client.CreateLocationEfsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLocationEfsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

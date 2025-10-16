@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
     [OutputType("Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse")]
     [AWSCmdlet("Calls the Amazon DataZone PutEnvironmentBlueprintConfiguration API operation.", Operation = new[] {"PutEnvironmentBlueprintConfiguration"}, SelectReturnType = typeof(Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse object containing multiple properties."
     )]
     public partial class WriteDZEnvironmentBlueprintConfigurationCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DomainIdentifier
         /// <summary>
@@ -61,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter EnabledRegion
         /// <summary>
         /// <para>
-        /// <para>Specifies the enabled Amazon Web Services Regions.</para>
+        /// <para>Specifies the enabled Amazon Web Services Regions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,6 +100,31 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public System.String EnvironmentBlueprintIdentifier { get; set; }
         #endregion
         
+        #region Parameter EnvironmentRolePermissionBoundary
+        /// <summary>
+        /// <para>
+        /// <para>The environment role permissions boundary.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String EnvironmentRolePermissionBoundary { get; set; }
+        #endregion
+        
+        #region Parameter GlobalParameter
+        /// <summary>
+        /// <para>
+        /// <para>Region-agnostic environment blueprint parameters. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("GlobalParameters")]
+        public System.Collections.Hashtable GlobalParameter { get; set; }
+        #endregion
+        
         #region Parameter ManageAccessRoleArn
         /// <summary>
         /// <para>
@@ -101,6 +133,21 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ManageAccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter ProvisioningConfiguration
+        /// <summary>
+        /// <para>
+        /// <para>The provisioning configuration of a blueprint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ProvisioningConfigurations")]
+        public Amazon.DataZone.Model.ProvisioningConfiguration[] ProvisioningConfiguration { get; set; }
         #endregion
         
         #region Parameter ProvisioningRoleArn
@@ -116,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter RegionalParameter
         /// <summary>
         /// <para>
-        /// <para>The regional parameters in the environment blueprint.</para>
+        /// <para>The regional parameters in the environment blueprint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,16 +186,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EnvironmentBlueprintIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EnvironmentBlueprintIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EnvironmentBlueprintIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -155,9 +196,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.EnvironmentBlueprintIdentifier), MyInvocation.BoundParameters);
@@ -171,21 +216,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse, WriteDZEnvironmentBlueprintConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EnvironmentBlueprintIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainIdentifier = this.DomainIdentifier;
             #if MODULAR
             if (this.DomainIdentifier == null && ParameterWasBound(nameof(this.DomainIdentifier)))
@@ -210,7 +245,20 @@ namespace Amazon.PowerShell.Cmdlets.DZ
                 WriteWarning("You are passing $null as a value for parameter EnvironmentBlueprintIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.EnvironmentRolePermissionBoundary = this.EnvironmentRolePermissionBoundary;
+            if (this.GlobalParameter != null)
+            {
+                context.GlobalParameter = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.GlobalParameter.Keys)
+                {
+                    context.GlobalParameter.Add((String)hashKey, (System.String)(this.GlobalParameter[hashKey]));
+                }
+            }
             context.ManageAccessRoleArn = this.ManageAccessRoleArn;
+            if (this.ProvisioningConfiguration != null)
+            {
+                context.ProvisioningConfiguration = new List<Amazon.DataZone.Model.ProvisioningConfiguration>(this.ProvisioningConfiguration);
+            }
             context.ProvisioningRoleArn = this.ProvisioningRoleArn;
             if (this.RegionalParameter != null)
             {
@@ -248,9 +296,21 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             {
                 request.EnvironmentBlueprintIdentifier = cmdletContext.EnvironmentBlueprintIdentifier;
             }
+            if (cmdletContext.EnvironmentRolePermissionBoundary != null)
+            {
+                request.EnvironmentRolePermissionBoundary = cmdletContext.EnvironmentRolePermissionBoundary;
+            }
+            if (cmdletContext.GlobalParameter != null)
+            {
+                request.GlobalParameters = cmdletContext.GlobalParameter;
+            }
             if (cmdletContext.ManageAccessRoleArn != null)
             {
                 request.ManageAccessRoleArn = cmdletContext.ManageAccessRoleArn;
+            }
+            if (cmdletContext.ProvisioningConfiguration != null)
+            {
+                request.ProvisioningConfigurations = cmdletContext.ProvisioningConfiguration;
             }
             if (cmdletContext.ProvisioningRoleArn != null)
             {
@@ -298,13 +358,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "PutEnvironmentBlueprintConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutEnvironmentBlueprintConfiguration(request);
-                #elif CORECLR
-                return client.PutEnvironmentBlueprintConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutEnvironmentBlueprintConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -324,7 +378,10 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             public System.String DomainIdentifier { get; set; }
             public List<System.String> EnabledRegion { get; set; }
             public System.String EnvironmentBlueprintIdentifier { get; set; }
+            public System.String EnvironmentRolePermissionBoundary { get; set; }
+            public Dictionary<System.String, System.String> GlobalParameter { get; set; }
             public System.String ManageAccessRoleArn { get; set; }
+            public List<Amazon.DataZone.Model.ProvisioningConfiguration> ProvisioningConfiguration { get; set; }
             public System.String ProvisioningRoleArn { get; set; }
             public Dictionary<System.String, Dictionary<System.String, System.String>> RegionalParameter { get; set; }
             public System.Func<Amazon.DataZone.Model.PutEnvironmentBlueprintConfigurationResponse, WriteDZEnvironmentBlueprintConfigurationCmdlet, object> Select { get; set; } =

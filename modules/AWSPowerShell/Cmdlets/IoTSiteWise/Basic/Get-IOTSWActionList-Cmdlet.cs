@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -35,12 +37,34 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [AWSCmdlet("Calls the AWS IoT SiteWise ListActions API operation.", Operation = new[] {"ListActions"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.ListActionsResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.ActionSummary or Amazon.IoTSiteWise.Model.ListActionsResponse",
         "This cmdlet returns a collection of Amazon.IoTSiteWise.Model.ActionSummary objects.",
-        "The service call response (type Amazon.IoTSiteWise.Model.ListActionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTSiteWise.Model.ListActionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTSWActionListCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ResolveToResourceId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the resolved resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ResolveToResourceId { get; set; }
+        #endregion
+        
+        #region Parameter ResolveToResourceType
+        /// <summary>
+        /// <para>
+        /// <para>The type of the resolved resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IoTSiteWise.ResolveToResourceType")]
+        public Amazon.IoTSiteWise.ResolveToResourceType ResolveToResourceType { get; set; }
+        #endregion
         
         #region Parameter TargetResourceId
         /// <summary>
@@ -94,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -139,6 +167,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             }
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
+            context.ResolveToResourceId = this.ResolveToResourceId;
+            context.ResolveToResourceType = this.ResolveToResourceType;
             context.TargetResourceId = this.TargetResourceId;
             #if MODULAR
             if (this.TargetResourceId == null && ParameterWasBound(nameof(this.TargetResourceId)))
@@ -174,6 +204,14 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = cmdletContext.MaxResult.Value;
+            }
+            if (cmdletContext.ResolveToResourceId != null)
+            {
+                request.ResolveToResourceId = cmdletContext.ResolveToResourceId;
+            }
+            if (cmdletContext.ResolveToResourceType != null)
+            {
+                request.ResolveToResourceType = cmdletContext.ResolveToResourceType;
             }
             if (cmdletContext.TargetResourceId != null)
             {
@@ -245,13 +283,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "ListActions");
             try
             {
-                #if DESKTOP
-                return client.ListActions(request);
-                #elif CORECLR
-                return client.ListActionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListActionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -270,6 +302,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         {
             public System.Int32? MaxResult { get; set; }
             public System.String NextToken { get; set; }
+            public System.String ResolveToResourceId { get; set; }
+            public Amazon.IoTSiteWise.ResolveToResourceType ResolveToResourceType { get; set; }
             public System.String TargetResourceId { get; set; }
             public Amazon.IoTSiteWise.TargetResourceType TargetResourceType { get; set; }
             public System.Func<Amazon.IoTSiteWise.Model.ListActionsResponse, GetIOTSWActionListCmdlet, object> Select { get; set; } =

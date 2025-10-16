@@ -82,15 +82,15 @@ $CP_Completers = {
     {
         # Amazon.CodePipeline.ActionCategory
         {
-            ($_ -eq "Update-CPActionType/ActionType_Id_Category") -Or
             ($_ -eq "Get-CPActionableJobList/ActionTypeId_Category") -Or
             ($_ -eq "Get-CPActionableThirdPartyJobList/ActionTypeId_Category") -Or
             ($_ -eq "Get-CPActionTypeDeclaration/Category") -Or
             ($_ -eq "New-CPCustomActionType/Category") -Or
-            ($_ -eq "Remove-CPCustomActionType/Category")
+            ($_ -eq "Remove-CPCustomActionType/Category") -Or
+            ($_ -eq "Update-CPActionType/Id_Category")
         }
         {
-            $v = "Approval","Build","Deploy","Invoke","Source","Test"
+            $v = "Approval","Build","Compute","Deploy","Invoke","Source","Test"
             break
         }
 
@@ -112,8 +112,15 @@ $CP_Completers = {
             break
         }
 
+        # Amazon.CodePipeline.ConditionType
+        "Skip-CPStageCondition/ConditionType"
+        {
+            $v = "BEFORE_ENTRY","ON_SUCCESS"
+            break
+        }
+
         # Amazon.CodePipeline.ExecutorType
-        "Update-CPActionType/ActionType_Executor_Type"
+        "Update-CPActionType/Executor_Type"
         {
             $v = "JobWorker","Lambda"
             break
@@ -126,6 +133,13 @@ $CP_Completers = {
         }
         {
             $v = "ConfigurationError","JobFailed","PermissionError","RevisionOutOfSync","RevisionUnavailable","SystemUnavailable"
+            break
+        }
+
+        # Amazon.CodePipeline.RuleOwner
+        "Get-CPRuleTypeList/RuleOwnerFilter"
+        {
+            $v = "AWS"
             break
         }
 
@@ -147,7 +161,10 @@ $CP_Completers = {
         }
 
         # Amazon.CodePipeline.StartTimeRange
-        "Get-CPActionExecutionList/Filter_LatestInPipelineExecution_StartTimeRange"
+        {
+            ($_ -eq "Get-CPActionExecutionList/LatestInPipelineExecution_StartTimeRange") -Or
+            ($_ -eq "Get-CPRuleExecutionList/LatestInPipelineExecution_StartTimeRange")
+        }
         {
             $v = "All","Latest"
             break
@@ -170,15 +187,17 @@ $CP_Completers = {
 
 $CP_map = @{
     "ActionOwnerFilter"=@("Get-CPActionType")
-    "ActionType_Executor_Type"=@("Update-CPActionType")
-    "ActionType_Id_Category"=@("Update-CPActionType")
     "ActionTypeId_Category"=@("Get-CPActionableJobList","Get-CPActionableThirdPartyJobList")
     "ActionTypeId_Owner"=@("Get-CPActionableJobList","Get-CPActionableThirdPartyJobList")
     "Category"=@("Get-CPActionTypeDeclaration","New-CPCustomActionType","Remove-CPCustomActionType")
+    "ConditionType"=@("Skip-CPStageCondition")
+    "Executor_Type"=@("Update-CPActionType")
     "FailureDetails_Type"=@("Write-CPJobFailureResult","Write-CPThirdPartyJobFailureResult")
-    "Filter_LatestInPipelineExecution_StartTimeRange"=@("Get-CPActionExecutionList")
+    "Id_Category"=@("Update-CPActionType")
+    "LatestInPipelineExecution_StartTimeRange"=@("Get-CPActionExecutionList","Get-CPRuleExecutionList")
     "Result_Status"=@("Write-CPApprovalResult")
     "RetryMode"=@("Redo-CPStageExecution")
+    "RuleOwnerFilter"=@("Get-CPRuleTypeList")
     "TransitionType"=@("Disable-CPStageTransition","Enable-CPStageTransition")
     "Webhook_Authentication"=@("Write-CPWebhook")
 }
@@ -251,10 +270,14 @@ $CP_SelectMap = @{
                "Get-CPThirdPartyJobDetail",
                "Get-CPActionExecutionList",
                "Get-CPActionType",
+               "Get-CPDeployActionExecutionTargetList",
                "Get-CPPipelineExecutionSummary",
                "Get-CPPipelineList",
+               "Get-CPRuleExecutionList",
+               "Get-CPRuleTypeList",
                "Get-CPResourceTag",
                "Get-CPWebhookList",
+               "Skip-CPStageCondition",
                "Get-CPActionableJobList",
                "Get-CPActionableThirdPartyJobList",
                "Write-CPActionRevision",
@@ -266,6 +289,7 @@ $CP_SelectMap = @{
                "Write-CPWebhook",
                "Register-CPWebhookWithThirdParty",
                "Redo-CPStageExecution",
+               "Undo-CPStageExecution",
                "Start-CPPipelineExecution",
                "Stop-CPPipelineExecution",
                "Add-CPResourceTag",

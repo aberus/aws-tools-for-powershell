@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.VPCLattice;
 using Amazon.VPCLattice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.VPCL
 {
     /// <summary>
-    /// Updates the service network and VPC association. Once you add a security group, it
-    /// cannot be removed.
+    /// Updates the service network and VPC association. If you add a security group to the
+    /// service network and VPC association, the association must continue to have at least
+    /// one security group. You can add or edit security groups at any time. However, to remove
+    /// all security groups, you must first delete the association and then recreate it without
+    /// security groups.
     /// </summary>
     [Cmdlet("Update", "VPCLServiceNetworkVpcAssociation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.VPCLattice.Model.UpdateServiceNetworkVpcAssociationResponse")]
     [AWSCmdlet("Calls the VPC Lattice UpdateServiceNetworkVpcAssociation API operation.", Operation = new[] {"UpdateServiceNetworkVpcAssociation"}, SelectReturnType = typeof(Amazon.VPCLattice.Model.UpdateServiceNetworkVpcAssociationResponse))]
     [AWSCmdletOutput("Amazon.VPCLattice.Model.UpdateServiceNetworkVpcAssociationResponse",
-        "This cmdlet returns an Amazon.VPCLattice.Model.UpdateServiceNetworkVpcAssociationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.VPCLattice.Model.UpdateServiceNetworkVpcAssociationResponse object containing multiple properties."
     )]
     public partial class UpdateVPCLServiceNetworkVpcAssociationCmdlet : AmazonVPCLatticeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the security groups. Once you add a security group, it cannot be removed.</para>
+        /// <para>The IDs of the security groups.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -63,7 +73,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         #region Parameter ServiceNetworkVpcAssociationIdentifier
         /// <summary>
         /// <para>
-        /// <para>The ID or Amazon Resource Name (ARN) of the association.</para>
+        /// <para>The ID or ARN of the association.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -88,16 +98,6 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServiceNetworkVpcAssociationIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServiceNetworkVpcAssociationIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServiceNetworkVpcAssociationIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -108,9 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ServiceNetworkVpcAssociationIdentifier), MyInvocation.BoundParameters);
@@ -124,21 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.VPCLattice.Model.UpdateServiceNetworkVpcAssociationResponse, UpdateVPCLServiceNetworkVpcAssociationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServiceNetworkVpcAssociationIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.SecurityGroupId != null)
             {
                 context.SecurityGroupId = new List<System.String>(this.SecurityGroupId);
@@ -218,13 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.VPCL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "VPC Lattice", "UpdateServiceNetworkVpcAssociation");
             try
             {
-                #if DESKTOP
-                return client.UpdateServiceNetworkVpcAssociation(request);
-                #elif CORECLR
-                return client.UpdateServiceNetworkVpcAssociationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateServiceNetworkVpcAssociationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

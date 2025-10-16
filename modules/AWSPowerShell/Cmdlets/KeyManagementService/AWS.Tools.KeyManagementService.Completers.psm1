@@ -83,7 +83,7 @@ $KMS_Completers = {
         # Amazon.KeyManagementService.AlgorithmSpec
         "Get-KMSParametersForImport/WrappingAlgorithm"
         {
-            $v = "RSAES_OAEP_SHA_1","RSAES_OAEP_SHA_256","RSAES_PKCS1_V1_5","RSA_AES_KEY_WRAP_SHA_1","RSA_AES_KEY_WRAP_SHA_256"
+            $v = "RSAES_OAEP_SHA_1","RSAES_OAEP_SHA_256","RSAES_PKCS1_V1_5","RSA_AES_KEY_WRAP_SHA_1","RSA_AES_KEY_WRAP_SHA_256","SM2PKE"
             break
         }
 
@@ -140,8 +140,30 @@ $KMS_Completers = {
             break
         }
 
+        # Amazon.KeyManagementService.ImportType
+        "Import-KMSKeyMaterial/ImportType"
+        {
+            $v = "EXISTING_KEY_MATERIAL","NEW_KEY_MATERIAL"
+            break
+        }
+
+        # Amazon.KeyManagementService.IncludeKeyMaterial
+        "Get-KMSKeyRotation/IncludeKeyMaterial"
+        {
+            $v = "ALL_KEY_MATERIAL","ROTATIONS_ONLY"
+            break
+        }
+
+        # Amazon.KeyManagementService.KeyAgreementAlgorithmSpec
+        "Get-KMSSharedSecret/KeyAgreementAlgorithm"
+        {
+            $v = "ECDH"
+            break
+        }
+
         # Amazon.KeyManagementService.KeyEncryptionMechanism
         {
+            ($_ -eq "Get-KMSSharedSecret/Recipient_KeyEncryptionAlgorithm") -Or
             ($_ -eq "Invoke-KMSDecrypt/Recipient_KeyEncryptionAlgorithm") -Or
             ($_ -eq "New-KMSDataKey/Recipient_KeyEncryptionAlgorithm") -Or
             ($_ -eq "New-KMSDataKeyPair/Recipient_KeyEncryptionAlgorithm") -Or
@@ -155,14 +177,14 @@ $KMS_Completers = {
         # Amazon.KeyManagementService.KeySpec
         "New-KMSKey/KeySpec"
         {
-            $v = "ECC_NIST_P256","ECC_NIST_P384","ECC_NIST_P521","ECC_SECG_P256K1","HMAC_224","HMAC_256","HMAC_384","HMAC_512","RSA_2048","RSA_3072","RSA_4096","SM2","SYMMETRIC_DEFAULT"
+            $v = "ECC_NIST_P256","ECC_NIST_P384","ECC_NIST_P521","ECC_SECG_P256K1","HMAC_224","HMAC_256","HMAC_384","HMAC_512","ML_DSA_44","ML_DSA_65","ML_DSA_87","RSA_2048","RSA_3072","RSA_4096","SM2","SYMMETRIC_DEFAULT"
             break
         }
 
         # Amazon.KeyManagementService.KeyUsageType
         "New-KMSKey/KeyUsage"
         {
-            $v = "ENCRYPT_DECRYPT","GENERATE_VERIFY_MAC","SIGN_VERIFY"
+            $v = "ENCRYPT_DECRYPT","GENERATE_VERIFY_MAC","KEY_AGREEMENT","SIGN_VERIFY"
             break
         }
 
@@ -182,7 +204,7 @@ $KMS_Completers = {
             ($_ -eq "Test-KMSSignature/MessageType")
         }
         {
-            $v = "DIGEST","RAW"
+            $v = "DIGEST","EXTERNAL_MU","RAW"
             break
         }
 
@@ -199,14 +221,14 @@ $KMS_Completers = {
             ($_ -eq "Test-KMSSignature/SigningAlgorithm")
         }
         {
-            $v = "ECDSA_SHA_256","ECDSA_SHA_384","ECDSA_SHA_512","RSASSA_PKCS1_V1_5_SHA_256","RSASSA_PKCS1_V1_5_SHA_384","RSASSA_PKCS1_V1_5_SHA_512","RSASSA_PSS_SHA_256","RSASSA_PSS_SHA_384","RSASSA_PSS_SHA_512","SM2DSA"
+            $v = "ECDSA_SHA_256","ECDSA_SHA_384","ECDSA_SHA_512","ML_DSA_SHAKE_256","RSASSA_PKCS1_V1_5_SHA_256","RSASSA_PKCS1_V1_5_SHA_384","RSASSA_PKCS1_V1_5_SHA_512","RSASSA_PSS_SHA_256","RSASSA_PSS_SHA_384","RSASSA_PSS_SHA_512","SM2DSA"
             break
         }
 
         # Amazon.KeyManagementService.WrappingKeySpec
         "Get-KMSParametersForImport/WrappingKeySpec"
         {
-            $v = "RSA_2048","RSA_3072","RSA_4096"
+            $v = "RSA_2048","RSA_3072","RSA_4096","SM2"
             break
         }
 
@@ -234,13 +256,16 @@ $KMS_map = @{
     "DestinationEncryptionAlgorithm"=@("Invoke-KMSReEncrypt")
     "EncryptionAlgorithm"=@("Invoke-KMSDecrypt","Invoke-KMSEncrypt")
     "ExpirationModel"=@("Import-KMSKeyMaterial")
+    "ImportType"=@("Import-KMSKeyMaterial")
+    "IncludeKeyMaterial"=@("Get-KMSKeyRotation")
+    "KeyAgreementAlgorithm"=@("Get-KMSSharedSecret")
     "KeyPairSpec"=@("New-KMSDataKeyPair","New-KMSDataKeyPairWithoutPlaintext")
     "KeySpec"=@("New-KMSDataKey","New-KMSDataKeyWithoutPlaintext","New-KMSKey")
     "KeyUsage"=@("New-KMSKey")
     "MacAlgorithm"=@("New-KMSMac","Test-KMSMac")
     "MessageType"=@("Invoke-KMSSigning","Test-KMSSignature")
     "Origin"=@("New-KMSKey")
-    "Recipient_KeyEncryptionAlgorithm"=@("Invoke-KMSDecrypt","New-KMSDataKey","New-KMSDataKeyPair","New-KMSRandom")
+    "Recipient_KeyEncryptionAlgorithm"=@("Get-KMSSharedSecret","Invoke-KMSDecrypt","New-KMSDataKey","New-KMSDataKeyPair","New-KMSRandom")
     "SigningAlgorithm"=@("Invoke-KMSSigning","Test-KMSSignature")
     "SourceEncryptionAlgorithm"=@("Invoke-KMSReEncrypt")
     "WrappingAlgorithm"=@("Get-KMSParametersForImport")
@@ -308,6 +333,7 @@ $KMS_SelectMap = @{
                "Remove-KMSAlias",
                "Remove-KMSCustomKeyStore",
                "Remove-KMSImportedKeyMaterial",
+               "Get-KMSSharedSecret",
                "Get-KMSCustomKeyStore",
                "Get-KMSKey",
                "Disable-KMSKey",
@@ -330,6 +356,7 @@ $KMS_SelectMap = @{
                "Get-KMSAliasList",
                "Get-KMSGrantList",
                "Get-KMSKeyPolicyList",
+               "Get-KMSKeyRotation",
                "Get-KMSKeyList",
                "Get-KMSResourceTag",
                "Get-KMSRetirableGrant",
@@ -338,6 +365,7 @@ $KMS_SelectMap = @{
                "New-KMSReplicaKey",
                "Disable-KMSGrant",
                "Revoke-KMSGrant",
+               "Start-KMSRotateKeyOnDemand",
                "Request-KMSKeyDeletion",
                "Invoke-KMSSigning",
                "Add-KMSResourceTag",

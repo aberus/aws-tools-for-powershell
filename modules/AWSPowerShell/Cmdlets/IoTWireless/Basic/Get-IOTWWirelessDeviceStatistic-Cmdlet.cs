@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
     [OutputType("Amazon.IoTWireless.Model.GetWirelessDeviceStatisticsResponse")]
     [AWSCmdlet("Calls the AWS IoT Wireless GetWirelessDeviceStatistics API operation.", Operation = new[] {"GetWirelessDeviceStatistics"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.GetWirelessDeviceStatisticsResponse))]
     [AWSCmdletOutput("Amazon.IoTWireless.Model.GetWirelessDeviceStatisticsResponse",
-        "This cmdlet returns an Amazon.IoTWireless.Model.GetWirelessDeviceStatisticsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTWireless.Model.GetWirelessDeviceStatisticsResponse object containing multiple properties."
     )]
     public partial class GetIOTWWirelessDeviceStatisticCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WirelessDeviceId
         /// <summary>
@@ -69,19 +72,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WirelessDeviceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WirelessDeviceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WirelessDeviceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -89,21 +86,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTWireless.Model.GetWirelessDeviceStatisticsResponse, GetIOTWWirelessDeviceStatisticCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WirelessDeviceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.WirelessDeviceId = this.WirelessDeviceId;
             #if MODULAR
             if (this.WirelessDeviceId == null && ParameterWasBound(nameof(this.WirelessDeviceId)))
@@ -169,13 +156,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "GetWirelessDeviceStatistics");
             try
             {
-                #if DESKTOP
-                return client.GetWirelessDeviceStatistics(request);
-                #elif CORECLR
-                return client.GetWirelessDeviceStatisticsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetWirelessDeviceStatisticsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

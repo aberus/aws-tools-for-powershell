@@ -1,0 +1,20 @@
+---
+dynamodb_PutItem:
+  title: Use Set-DDBItem
+  title_abbrev: Set-DDBItem
+  synopsis: use Set-DDBItem
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Set-DDBItem
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: Creates a new item, or replaces an existing item with a new item.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/dynamodb_Set-DDBItem.1.1.ps1
+  services:
+    dynamodb:
+      PutItem:
+

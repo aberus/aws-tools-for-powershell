@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Tnb;
 using Amazon.Tnb.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TNB
 {
     /// <summary>
@@ -35,6 +37,9 @@ namespace Amazon.PowerShell.Cmdlets.TNB
     /// A network instance is a single network created in Amazon Web Services TNB that can
     /// be deployed and on which life-cycle operations (like terminate, update, and delete)
     /// can be performed.
+    /// </para><para>
+    /// Choose the <i>updateType</i> parameter to target the necessary update of the network
+    /// instance.
     /// </para>
     /// </summary>
     [Cmdlet("Update", "TNBSolNetworkInstance", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -42,16 +47,33 @@ namespace Amazon.PowerShell.Cmdlets.TNB
     [AWSCmdlet("Calls the AWS Telco Network Builder UpdateSolNetworkInstance API operation.", Operation = new[] {"UpdateSolNetworkInstance"}, SelectReturnType = typeof(Amazon.Tnb.Model.UpdateSolNetworkInstanceResponse))]
     [AWSCmdletOutput("System.String or Amazon.Tnb.Model.UpdateSolNetworkInstanceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Tnb.Model.UpdateSolNetworkInstanceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Tnb.Model.UpdateSolNetworkInstanceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateTNBSolNetworkInstanceCmdlet : AmazonTnbClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter UpdateNs_AdditionalParamsForNs
+        /// <summary>
+        /// <para>
+        /// <para>Values for the configurable properties declared in the network service descriptor.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Management.Automation.PSObject UpdateNs_AdditionalParamsForNs { get; set; }
+        #endregion
+        
+        #region Parameter UpdateNs_NsdInfoId
+        /// <summary>
+        /// <para>
+        /// <para>ID of the network service descriptor.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String UpdateNs_NsdInfoId { get; set; }
+        #endregion
         
         #region Parameter NsInstanceId
         /// <summary>
@@ -74,9 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.TNB
         /// <summary>
         /// <para>
         /// <para>A tag is a label that you assign to an Amazon Web Services resource. Each tag consists
-        /// of a key and an optional value. When you use this API, the tags are transferred to
-        /// the network operation that is created. Use tags to search and filter your resources
-        /// or track your Amazon Web Services costs.</para>
+        /// of a key and an optional value. When you use this API, the tags are only applied to
+        /// the network operation that is created. These tags are not applied to the network instance.
+        /// Use tags to search and filter your resources or track your Amazon Web Services costs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -87,7 +113,9 @@ namespace Amazon.PowerShell.Cmdlets.TNB
         #region Parameter UpdateType
         /// <summary>
         /// <para>
-        /// <para>The type of update.</para>
+        /// <para>The type of update.</para><ul><li><para>Use the <c>MODIFY_VNF_INFORMATION</c> update type, to update a specific network function
+        /// configuration, in the network instance.</para></li><li><para>Use the <c>UPDATE_NS</c> update type, to update the network instance to a new network
+        /// service descriptor.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -143,9 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.TNB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NsInstanceId), MyInvocation.BoundParameters);
@@ -181,6 +213,8 @@ namespace Amazon.PowerShell.Cmdlets.TNB
                     context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
                 }
             }
+            context.UpdateNs_AdditionalParamsForNs = this.UpdateNs_AdditionalParamsForNs;
+            context.UpdateNs_NsdInfoId = this.UpdateNs_NsdInfoId;
             context.UpdateType = this.UpdateType;
             #if MODULAR
             if (this.UpdateType == null && ParameterWasBound(nameof(this.UpdateType)))
@@ -241,6 +275,35 @@ namespace Amazon.PowerShell.Cmdlets.TNB
             {
                 request.Tags = cmdletContext.Tag;
             }
+            
+             // populate UpdateNs
+            var requestUpdateNsIsNull = true;
+            request.UpdateNs = new Amazon.Tnb.Model.UpdateSolNetworkServiceData();
+            Amazon.Runtime.Documents.Document? requestUpdateNs_updateNs_AdditionalParamsForNs = null;
+            if (cmdletContext.UpdateNs_AdditionalParamsForNs != null)
+            {
+                requestUpdateNs_updateNs_AdditionalParamsForNs = Amazon.PowerShell.Common.DocumentHelper.ToDocument(cmdletContext.UpdateNs_AdditionalParamsForNs);
+            }
+            if (requestUpdateNs_updateNs_AdditionalParamsForNs != null)
+            {
+                request.UpdateNs.AdditionalParamsForNs = requestUpdateNs_updateNs_AdditionalParamsForNs.Value;
+                requestUpdateNsIsNull = false;
+            }
+            System.String requestUpdateNs_updateNs_NsdInfoId = null;
+            if (cmdletContext.UpdateNs_NsdInfoId != null)
+            {
+                requestUpdateNs_updateNs_NsdInfoId = cmdletContext.UpdateNs_NsdInfoId;
+            }
+            if (requestUpdateNs_updateNs_NsdInfoId != null)
+            {
+                request.UpdateNs.NsdInfoId = requestUpdateNs_updateNs_NsdInfoId;
+                requestUpdateNsIsNull = false;
+            }
+             // determine if request.UpdateNs should be set to null
+            if (requestUpdateNsIsNull)
+            {
+                request.UpdateNs = null;
+            }
             if (cmdletContext.UpdateType != null)
             {
                 request.UpdateType = cmdletContext.UpdateType;
@@ -283,13 +346,7 @@ namespace Amazon.PowerShell.Cmdlets.TNB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Telco Network Builder", "UpdateSolNetworkInstance");
             try
             {
-                #if DESKTOP
-                return client.UpdateSolNetworkInstance(request);
-                #elif CORECLR
-                return client.UpdateSolNetworkInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSolNetworkInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -310,6 +367,8 @@ namespace Amazon.PowerShell.Cmdlets.TNB
             public System.String ModifyVnfInfoData_VnfInstanceId { get; set; }
             public System.String NsInstanceId { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
+            public System.Management.Automation.PSObject UpdateNs_AdditionalParamsForNs { get; set; }
+            public System.String UpdateNs_NsdInfoId { get; set; }
             public Amazon.Tnb.UpdateSolNetworkType UpdateType { get; set; }
             public System.Func<Amazon.Tnb.Model.UpdateSolNetworkInstanceResponse, UpdateTNBSolNetworkInstanceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.NsLcmOpOccId;

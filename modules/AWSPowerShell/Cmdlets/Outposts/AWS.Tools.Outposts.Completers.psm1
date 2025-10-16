@@ -102,8 +102,8 @@ $OUTP_Completers = {
 
         # Amazon.Outposts.MaximumSupportedWeightLbs
         {
-            ($_ -eq "Update-OUTPSiteRackPhysicalProperty/MaximumSupportedWeightLbs") -Or
-            ($_ -eq "New-OUTPSite/RackPhysicalProperties_MaximumSupportedWeightLbs")
+            ($_ -eq "Update-OUTPSiteRackPhysicalProperty/MaximumSupportedWeightLb") -Or
+            ($_ -eq "New-OUTPSite/RackPhysicalProperties_MaximumSupportedWeightLb")
         }
         {
             $v = "MAX_1400_LBS","MAX_1600_LBS","MAX_1800_LBS","MAX_2000_LBS","NO_LIMIT"
@@ -130,7 +130,7 @@ $OUTP_Completers = {
         # Amazon.Outposts.PaymentTerm
         "New-OUTPOrder/PaymentTerm"
         {
-            $v = "ONE_YEAR","THREE_YEARS"
+            $v = "FIVE_YEARS","ONE_YEAR","THREE_YEARS"
             break
         }
 
@@ -140,7 +140,7 @@ $OUTP_Completers = {
             ($_ -eq "New-OUTPSite/RackPhysicalProperties_PowerConnector")
         }
         {
-            $v = "AH530P7W","AH532P6W","IEC309","L6_30P"
+            $v = "AH530P7W","AH532P6W","CS8365C","IEC309","L6_30P"
             break
         }
 
@@ -184,6 +184,13 @@ $OUTP_Completers = {
             break
         }
 
+        # Amazon.Outposts.TaskActionOnBlockingInstances
+        "Start-OUTPCapacityTask/TaskActionOnBlockingInstance"
+        {
+            $v = "FAIL_TASK","WAIT_FOR_EVACUATION"
+            break
+        }
+
         # Amazon.Outposts.UplinkCount
         {
             ($_ -eq "New-OUTPSite/RackPhysicalProperties_UplinkCount") -Or
@@ -196,8 +203,8 @@ $OUTP_Completers = {
 
         # Amazon.Outposts.UplinkGbps
         {
-            ($_ -eq "New-OUTPSite/RackPhysicalProperties_UplinkGbps") -Or
-            ($_ -eq "Update-OUTPSiteRackPhysicalProperty/UplinkGbps")
+            ($_ -eq "New-OUTPSite/RackPhysicalProperties_UplinkGbp") -Or
+            ($_ -eq "Update-OUTPSiteRackPhysicalProperty/UplinkGbp")
         }
         {
             $v = "UPLINK_100G","UPLINK_10G","UPLINK_1G","UPLINK_40G"
@@ -215,7 +222,7 @@ $OUTP_Completers = {
 $OUTP_map = @{
     "AddressType"=@("Get-OUTPSiteAddress","Update-OUTPSiteAddress")
     "FiberOpticCableType"=@("Update-OUTPSiteRackPhysicalProperty")
-    "MaximumSupportedWeightLbs"=@("Update-OUTPSiteRackPhysicalProperty")
+    "MaximumSupportedWeightLb"=@("Update-OUTPSiteRackPhysicalProperty")
     "OpticalStandard"=@("Update-OUTPSiteRackPhysicalProperty")
     "PaymentOption"=@("New-OUTPOrder")
     "PaymentTerm"=@("New-OUTPOrder")
@@ -224,17 +231,18 @@ $OUTP_map = @{
     "PowerFeedDrop"=@("Update-OUTPSiteRackPhysicalProperty")
     "PowerPhase"=@("Update-OUTPSiteRackPhysicalProperty")
     "RackPhysicalProperties_FiberOpticCableType"=@("New-OUTPSite")
-    "RackPhysicalProperties_MaximumSupportedWeightLbs"=@("New-OUTPSite")
+    "RackPhysicalProperties_MaximumSupportedWeightLb"=@("New-OUTPSite")
     "RackPhysicalProperties_OpticalStandard"=@("New-OUTPSite")
     "RackPhysicalProperties_PowerConnector"=@("New-OUTPSite")
     "RackPhysicalProperties_PowerDrawKva"=@("New-OUTPSite")
     "RackPhysicalProperties_PowerFeedDrop"=@("New-OUTPSite")
     "RackPhysicalProperties_PowerPhase"=@("New-OUTPSite")
     "RackPhysicalProperties_UplinkCount"=@("New-OUTPSite")
-    "RackPhysicalProperties_UplinkGbps"=@("New-OUTPSite")
+    "RackPhysicalProperties_UplinkGbp"=@("New-OUTPSite")
     "SupportedHardwareType"=@("New-OUTPOutpost","Update-OUTPOutpost")
+    "TaskActionOnBlockingInstance"=@("Start-OUTPCapacityTask")
     "UplinkCount"=@("Update-OUTPSiteRackPhysicalProperty")
-    "UplinkGbps"=@("Update-OUTPSiteRackPhysicalProperty")
+    "UplinkGbp"=@("Update-OUTPSiteRackPhysicalProperty")
 }
 
 _awsArgumentCompleterRegistration $OUTP_Completers $OUTP_map
@@ -287,26 +295,35 @@ $OUTP_SelectCompleters = {
 }
 
 $OUTP_SelectMap = @{
-    "Select"=@("Stop-OUTPOrder",
+    "Select"=@("Stop-OUTPCapacityTask",
+               "Stop-OUTPOrder",
                "New-OUTPOrder",
                "New-OUTPOutpost",
                "New-OUTPSite",
                "Remove-OUTPOutpost",
                "Remove-OUTPSite",
+               "Get-OUTPCapacityTask",
                "Get-OUTPCatalogItem",
                "Get-OUTPConnection",
                "Get-OUTPOrder",
                "Get-OUTPOutpost",
+               "Get-OUTPOutpostBillingInformation",
                "Get-OUTPOutpostInstanceType",
+               "Get-OUTPOutpostSupportedInstanceType",
                "Get-OUTPSite",
                "Get-OUTPSiteAddress",
+               "Get-OUTPAssetInstanceList",
                "Get-OUTPAssetList",
+               "Get-OUTPBlockingInstancesForCapacityTaskList",
+               "Get-OUTPCapacityTaskList",
                "Get-OUTPCatalogItemList",
                "Get-OUTPOrderList",
                "Get-OUTPOutpostList",
                "Get-OUTPSiteList",
                "Get-OUTPResourceTag",
+               "Start-OUTPCapacityTask",
                "Start-OUTPConnection",
+               "Start-OUTPOutpostDecommission",
                "Add-OUTPResourceTag",
                "Remove-OUTPResourceTag",
                "Update-OUTPOutpost",

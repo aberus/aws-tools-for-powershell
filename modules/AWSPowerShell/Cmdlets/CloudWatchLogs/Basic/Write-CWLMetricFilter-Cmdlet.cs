@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -35,6 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     ///  
     /// <para>
     /// The maximum number of metric filters that can be associated with a log group is 100.
+    /// </para><para>
+    /// Using regular expressions in filter patterns is supported. For these filters, there
+    /// is a quota of two regular expression patterns within a single filter pattern. There
+    /// is also a quota of five regular expression patterns per log group. For more information
+    /// about using regular expressions in filter patterns, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html">
+    /// Filter pattern syntax for metric filters, subscription filters, filter log events,
+    /// and Live Tail</a>.
     /// </para><para>
     /// When you create a metric filter, you can also optionally assign a unit and dimensions
     /// to the metric that is created.
@@ -58,12 +67,60 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs PutMetricFilter API operation.", Operation = new[] {"PutMetricFilter"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.PutMetricFilterResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchLogs.Model.PutMetricFilterResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchLogs.Model.PutMetricFilterResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchLogs.Model.PutMetricFilterResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCWLMetricFilterCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ApplyOnTransformedLog
+        /// <summary>
+        /// <para>
+        /// <para>This parameter is valid only for log groups that have an active log transformer. For
+        /// more information about log transformers, see <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutTransformer.html">PutTransformer</a>.</para><para>If the log group uses either a log-group level or account-level transformer, and you
+        /// specify <c>true</c>, the metric filter will be applied on the transformed version
+        /// of the log events instead of the original ingested log events.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ApplyOnTransformedLogs")]
+        public System.Boolean? ApplyOnTransformedLog { get; set; }
+        #endregion
+        
+        #region Parameter EmitSystemFieldDimension
+        /// <summary>
+        /// <para>
+        /// <para>A list of system fields to emit as additional dimensions in the generated metrics.
+        /// Valid values are <c>@aws.account</c> and <c>@aws.region</c>. These dimensions help
+        /// identify the source of centralized log data and count toward the total dimension limit
+        /// for metric filters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EmitSystemFieldDimensions")]
+        public System.String[] EmitSystemFieldDimension { get; set; }
+        #endregion
+        
+        #region Parameter FieldSelectionCriterion
+        /// <summary>
+        /// <para>
+        /// <para>A filter expression that specifies which log events should be processed by this metric
+        /// filter based on system fields such as source account and source region. Uses selection
+        /// criteria syntax with operators like <c>=</c>, <c>!=</c>, <c>AND</c>, <c>OR</c>, <c>IN</c>,
+        /// <c>NOT IN</c>. Example: <c>@aws.region = "us-east-1"</c> or <c>@aws.account IN ["123456789012",
+        /// "987654321098"]</c>. Maximum length: 2000 characters.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FieldSelectionCriteria")]
+        public System.String FieldSelectionCriterion { get; set; }
+        #endregion
         
         #region Parameter FilterName
         /// <summary>
@@ -119,7 +176,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         #region Parameter MetricTransformation
         /// <summary>
         /// <para>
-        /// <para>A collection of information that defines how metric data gets emitted.</para>
+        /// <para>A collection of information that defines how metric data gets emitted.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -144,16 +205,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -164,9 +215,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LogGroupName), MyInvocation.BoundParameters);
@@ -180,21 +235,17 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.PutMetricFilterResponse, WriteCWLMetricFilterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            context.ApplyOnTransformedLog = this.ApplyOnTransformedLog;
+            if (this.EmitSystemFieldDimension != null)
             {
-                context.Select = (response, cmdlet) => this.LogGroupName;
+                context.EmitSystemFieldDimension = new List<System.String>(this.EmitSystemFieldDimension);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.FieldSelectionCriterion = this.FieldSelectionCriterion;
             context.FilterName = this.FilterName;
             #if MODULAR
             if (this.FilterName == null && ParameterWasBound(nameof(this.FilterName)))
@@ -242,6 +293,18 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // create request
             var request = new Amazon.CloudWatchLogs.Model.PutMetricFilterRequest();
             
+            if (cmdletContext.ApplyOnTransformedLog != null)
+            {
+                request.ApplyOnTransformedLogs = cmdletContext.ApplyOnTransformedLog.Value;
+            }
+            if (cmdletContext.EmitSystemFieldDimension != null)
+            {
+                request.EmitSystemFieldDimensions = cmdletContext.EmitSystemFieldDimension;
+            }
+            if (cmdletContext.FieldSelectionCriterion != null)
+            {
+                request.FieldSelectionCriteria = cmdletContext.FieldSelectionCriterion;
+            }
             if (cmdletContext.FilterName != null)
             {
                 request.FilterName = cmdletContext.FilterName;
@@ -296,13 +359,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "PutMetricFilter");
             try
             {
-                #if DESKTOP
-                return client.PutMetricFilter(request);
-                #elif CORECLR
-                return client.PutMetricFilterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutMetricFilterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -319,6 +376,9 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? ApplyOnTransformedLog { get; set; }
+            public List<System.String> EmitSystemFieldDimension { get; set; }
+            public System.String FieldSelectionCriterion { get; set; }
             public System.String FilterName { get; set; }
             public System.String FilterPattern { get; set; }
             public System.String LogGroupName { get; set; }

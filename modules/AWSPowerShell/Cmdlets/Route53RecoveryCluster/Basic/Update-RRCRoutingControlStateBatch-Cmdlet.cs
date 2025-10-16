@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53RecoveryCluster;
 using Amazon.Route53RecoveryCluster.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RRC
 {
     /// <summary>
@@ -61,12 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.RRC
     [AWSCmdlet("Calls the Route53 Recovery Cluster UpdateRoutingControlStates API operation.", Operation = new[] {"UpdateRoutingControlStates"}, SelectReturnType = typeof(Amazon.Route53RecoveryCluster.Model.UpdateRoutingControlStatesResponse))]
     [AWSCmdletOutput("None or Amazon.Route53RecoveryCluster.Model.UpdateRoutingControlStatesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Route53RecoveryCluster.Model.UpdateRoutingControlStatesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Route53RecoveryCluster.Model.UpdateRoutingControlStatesResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateRRCRoutingControlStateBatchCmdlet : AmazonRoute53RecoveryClusterClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SafetyRulesToOverride
         /// <summary>
@@ -75,7 +78,11 @@ namespace Amazon.PowerShell.Cmdlets.RRC
         /// you're updating routing control states. You can override one safety rule or multiple
         /// safety rules by including one or more ARNs, separated by commas.</para><para>For more information, see <a href="https://docs.aws.amazon.com/r53recovery/latest/dg/routing-control.override-safety-rule.html">
         /// Override safety rules to reroute traffic</a> in the Amazon Route 53 Application Recovery
-        /// Controller Developer Guide.</para>
+        /// Controller Developer Guide.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -85,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.RRC
         #region Parameter UpdateRoutingControlStateEntry
         /// <summary>
         /// <para>
-        /// <para>A set of routing control entries that you want to update.</para>
+        /// <para>A set of routing control entries that you want to update.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.RRC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UpdateRoutingControlStateEntry), MyInvocation.BoundParameters);
@@ -217,13 +232,7 @@ namespace Amazon.PowerShell.Cmdlets.RRC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Route53 Recovery Cluster", "UpdateRoutingControlStates");
             try
             {
-                #if DESKTOP
-                return client.UpdateRoutingControlStates(request);
-                #elif CORECLR
-                return client.UpdateRoutingControlStatesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRoutingControlStatesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

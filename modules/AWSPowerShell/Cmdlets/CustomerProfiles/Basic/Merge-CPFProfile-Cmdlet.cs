@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CustomerProfiles;
 using Amazon.CustomerProfiles.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CPF
 {
     /// <summary>
@@ -61,12 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
     [AWSCmdlet("Calls the Amazon Connect Customer Profiles MergeProfiles API operation.", Operation = new[] {"MergeProfiles"}, SelectReturnType = typeof(Amazon.CustomerProfiles.Model.MergeProfilesResponse))]
     [AWSCmdletOutput("System.String or Amazon.CustomerProfiles.Model.MergeProfilesResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CustomerProfiles.Model.MergeProfilesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CustomerProfiles.Model.MergeProfilesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class MergeCPFProfileCmdlet : AmazonCustomerProfilesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FieldSourceProfileIds_AccountNumber
         /// <summary>
@@ -101,7 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter FieldSourceProfileIds_Attribute
         /// <summary>
         /// <para>
-        /// <para>A unique identifier for the attributes field to be merged.</para>
+        /// <para>A unique identifier for the attributes field to be merged.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,6 +191,17 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String FieldSourceProfileIds_EmailAddress { get; set; }
+        #endregion
+        
+        #region Parameter FieldSourceProfileIds_EngagementPreference
+        /// <summary>
+        /// <para>
+        /// <para>A unique identifier for the engagement preferences field to be merged.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FieldSourceProfileIds_EngagementPreferences")]
+        public System.String FieldSourceProfileIds_EngagementPreference { get; set; }
         #endregion
         
         #region Parameter FieldSourceProfileIds_FirstName
@@ -306,7 +324,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter ProfileIdsToBeMerged
         /// <summary>
         /// <para>
-        /// <para>The identifier of the profile to be merged into MainProfileId.</para>
+        /// <para>The identifier of the profile to be merged into MainProfileId.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -318,6 +340,16 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String[] ProfileIdsToBeMerged { get; set; }
+        #endregion
+        
+        #region Parameter FieldSourceProfileIds_ProfileType
+        /// <summary>
+        /// <para>
+        /// <para>A unique identifier for the profile type field to be merged.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String FieldSourceProfileIds_ProfileType { get; set; }
         #endregion
         
         #region Parameter FieldSourceProfileIds_ShippingAddress
@@ -341,16 +373,6 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public string Select { get; set; } = "Message";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -361,9 +383,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MainProfileId), MyInvocation.BoundParameters);
@@ -377,21 +403,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CustomerProfiles.Model.MergeProfilesResponse, MergeCPFProfileCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainName = this.DomainName;
             #if MODULAR
             if (this.DomainName == null && ParameterWasBound(nameof(this.DomainName)))
@@ -416,6 +432,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             context.FieldSourceProfileIds_BusinessName = this.FieldSourceProfileIds_BusinessName;
             context.FieldSourceProfileIds_BusinessPhoneNumber = this.FieldSourceProfileIds_BusinessPhoneNumber;
             context.FieldSourceProfileIds_EmailAddress = this.FieldSourceProfileIds_EmailAddress;
+            context.FieldSourceProfileIds_EngagementPreference = this.FieldSourceProfileIds_EngagementPreference;
             context.FieldSourceProfileIds_FirstName = this.FieldSourceProfileIds_FirstName;
             context.FieldSourceProfileIds_Gender = this.FieldSourceProfileIds_Gender;
             context.FieldSourceProfileIds_HomePhoneNumber = this.FieldSourceProfileIds_HomePhoneNumber;
@@ -426,6 +443,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             context.FieldSourceProfileIds_PartyType = this.FieldSourceProfileIds_PartyType;
             context.FieldSourceProfileIds_PersonalEmailAddress = this.FieldSourceProfileIds_PersonalEmailAddress;
             context.FieldSourceProfileIds_PhoneNumber = this.FieldSourceProfileIds_PhoneNumber;
+            context.FieldSourceProfileIds_ProfileType = this.FieldSourceProfileIds_ProfileType;
             context.FieldSourceProfileIds_ShippingAddress = this.FieldSourceProfileIds_ShippingAddress;
             context.MainProfileId = this.MainProfileId;
             #if MODULAR
@@ -568,6 +586,16 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 request.FieldSourceProfileIds.EmailAddress = requestFieldSourceProfileIds_fieldSourceProfileIds_EmailAddress;
                 requestFieldSourceProfileIdsIsNull = false;
             }
+            System.String requestFieldSourceProfileIds_fieldSourceProfileIds_EngagementPreference = null;
+            if (cmdletContext.FieldSourceProfileIds_EngagementPreference != null)
+            {
+                requestFieldSourceProfileIds_fieldSourceProfileIds_EngagementPreference = cmdletContext.FieldSourceProfileIds_EngagementPreference;
+            }
+            if (requestFieldSourceProfileIds_fieldSourceProfileIds_EngagementPreference != null)
+            {
+                request.FieldSourceProfileIds.EngagementPreferences = requestFieldSourceProfileIds_fieldSourceProfileIds_EngagementPreference;
+                requestFieldSourceProfileIdsIsNull = false;
+            }
             System.String requestFieldSourceProfileIds_fieldSourceProfileIds_FirstName = null;
             if (cmdletContext.FieldSourceProfileIds_FirstName != null)
             {
@@ -668,6 +696,16 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 request.FieldSourceProfileIds.PhoneNumber = requestFieldSourceProfileIds_fieldSourceProfileIds_PhoneNumber;
                 requestFieldSourceProfileIdsIsNull = false;
             }
+            System.String requestFieldSourceProfileIds_fieldSourceProfileIds_ProfileType = null;
+            if (cmdletContext.FieldSourceProfileIds_ProfileType != null)
+            {
+                requestFieldSourceProfileIds_fieldSourceProfileIds_ProfileType = cmdletContext.FieldSourceProfileIds_ProfileType;
+            }
+            if (requestFieldSourceProfileIds_fieldSourceProfileIds_ProfileType != null)
+            {
+                request.FieldSourceProfileIds.ProfileType = requestFieldSourceProfileIds_fieldSourceProfileIds_ProfileType;
+                requestFieldSourceProfileIdsIsNull = false;
+            }
             System.String requestFieldSourceProfileIds_fieldSourceProfileIds_ShippingAddress = null;
             if (cmdletContext.FieldSourceProfileIds_ShippingAddress != null)
             {
@@ -729,13 +767,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Customer Profiles", "MergeProfiles");
             try
             {
-                #if DESKTOP
-                return client.MergeProfiles(request);
-                #elif CORECLR
-                return client.MergeProfilesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.MergeProfilesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -763,6 +795,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             public System.String FieldSourceProfileIds_BusinessName { get; set; }
             public System.String FieldSourceProfileIds_BusinessPhoneNumber { get; set; }
             public System.String FieldSourceProfileIds_EmailAddress { get; set; }
+            public System.String FieldSourceProfileIds_EngagementPreference { get; set; }
             public System.String FieldSourceProfileIds_FirstName { get; set; }
             public System.String FieldSourceProfileIds_Gender { get; set; }
             public System.String FieldSourceProfileIds_HomePhoneNumber { get; set; }
@@ -773,6 +806,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             public System.String FieldSourceProfileIds_PartyType { get; set; }
             public System.String FieldSourceProfileIds_PersonalEmailAddress { get; set; }
             public System.String FieldSourceProfileIds_PhoneNumber { get; set; }
+            public System.String FieldSourceProfileIds_ProfileType { get; set; }
             public System.String FieldSourceProfileIds_ShippingAddress { get; set; }
             public System.String MainProfileId { get; set; }
             public List<System.String> ProfileIdsToBeMerged { get; set; }

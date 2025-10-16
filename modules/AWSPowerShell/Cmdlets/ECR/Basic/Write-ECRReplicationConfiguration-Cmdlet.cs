@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECR;
 using Amazon.ECR.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECR
 {
     /// <summary>
@@ -34,7 +36,8 @@ namespace Amazon.PowerShell.Cmdlets.ECR
     /// IAM role is created in your account for the replication process. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/using-service-linked-roles.html">Using
     /// service-linked roles for Amazon ECR</a> in the <i>Amazon Elastic Container Registry
-    /// User Guide</i>.
+    /// User Guide</i>. For more information on the custom role for replication, see <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/replication-creation-templates.html#roles-creatingrole-user-console">Creating
+    /// an IAM role for replication</a>.
     /// 
     ///  <note><para>
     /// When configuring cross-account replication, the destination account must grant the
@@ -47,18 +50,23 @@ namespace Amazon.PowerShell.Cmdlets.ECR
     [AWSCmdlet("Calls the Amazon EC2 Container Registry PutReplicationConfiguration API operation.", Operation = new[] {"PutReplicationConfiguration"}, SelectReturnType = typeof(Amazon.ECR.Model.PutReplicationConfigurationResponse))]
     [AWSCmdletOutput("Amazon.ECR.Model.ReplicationConfiguration or Amazon.ECR.Model.PutReplicationConfigurationResponse",
         "This cmdlet returns an Amazon.ECR.Model.ReplicationConfiguration object.",
-        "The service call response (type Amazon.ECR.Model.PutReplicationConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECR.Model.PutReplicationConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteECRReplicationConfigurationCmdlet : AmazonECRClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ReplicationConfiguration_Rule
         /// <summary>
         /// <para>
         /// <para>An array of objects representing the replication destinations and repository filters
-        /// for a replication configuration.</para>
+        /// for a replication configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -94,9 +102,13 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ReplicationConfiguration_Rule), MyInvocation.BoundParameters);
@@ -198,13 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Registry", "PutReplicationConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutReplicationConfiguration(request);
-                #elif CORECLR
-                return client.PutReplicationConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutReplicationConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StepFunctions;
 using Amazon.StepFunctions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SFN
 {
     /// <summary>
@@ -62,14 +64,29 @@ namespace Amazon.PowerShell.Cmdlets.SFN
     [OutputType("Amazon.StepFunctions.Model.DescribeStateMachineResponse")]
     [AWSCmdlet("Calls the AWS Step Functions DescribeStateMachine API operation.", Operation = new[] {"DescribeStateMachine"}, SelectReturnType = typeof(Amazon.StepFunctions.Model.DescribeStateMachineResponse))]
     [AWSCmdletOutput("Amazon.StepFunctions.Model.DescribeStateMachineResponse",
-        "This cmdlet returns an Amazon.StepFunctions.Model.DescribeStateMachineResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.StepFunctions.Model.DescribeStateMachineResponse object containing multiple properties."
     )]
     public partial class GetSFNStateMachineCmdlet : AmazonStepFunctionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter IncludedData
+        /// <summary>
+        /// <para>
+        /// <para>If your state machine definition is encrypted with a KMS key, callers must have <c>kms:Decrypt</c>
+        /// permission to decrypt the definition. Alternatively, you can call the API with <c>includedData
+        /// = METADATA_ONLY</c> to get a successful response without the encrypted definition.</para><note><para> When calling a labelled ARN for an encrypted state machine, the <c>includedData =
+        /// METADATA_ONLY</c> parameter will not apply because Step Functions needs to decrypt
+        /// the entire state machine definition to get the Distributed Map state’s definition.
+        /// In this case, the API caller needs to have <c>kms:Decrypt</c> permission. </para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.StepFunctions.IncludedData")]
+        public Amazon.StepFunctions.IncludedData IncludedData { get; set; }
+        #endregion
         
         #region Parameter StateMachineArn
         /// <summary>
@@ -101,19 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StateMachineArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StateMachineArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StateMachineArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -121,21 +132,12 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StepFunctions.Model.DescribeStateMachineResponse, GetSFNStateMachineCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StateMachineArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.IncludedData = this.IncludedData;
             context.StateMachineArn = this.StateMachineArn;
             #if MODULAR
             if (this.StateMachineArn == null && ParameterWasBound(nameof(this.StateMachineArn)))
@@ -159,6 +161,10 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             // create request
             var request = new Amazon.StepFunctions.Model.DescribeStateMachineRequest();
             
+            if (cmdletContext.IncludedData != null)
+            {
+                request.IncludedData = cmdletContext.IncludedData;
+            }
             if (cmdletContext.StateMachineArn != null)
             {
                 request.StateMachineArn = cmdletContext.StateMachineArn;
@@ -201,13 +207,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Step Functions", "DescribeStateMachine");
             try
             {
-                #if DESKTOP
-                return client.DescribeStateMachine(request);
-                #elif CORECLR
-                return client.DescribeStateMachineAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeStateMachineAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -224,6 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.StepFunctions.IncludedData IncludedData { get; set; }
             public System.String StateMachineArn { get; set; }
             public System.Func<Amazon.StepFunctions.Model.DescribeStateMachineResponse, GetSFNStateMachineCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

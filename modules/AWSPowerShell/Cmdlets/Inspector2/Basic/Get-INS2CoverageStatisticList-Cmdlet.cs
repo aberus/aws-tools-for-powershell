@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,39 +22,93 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector2;
 using Amazon.Inspector2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS2
 {
     /// <summary>
-    /// Lists Amazon Inspector coverage statistics for your environment.
+    /// Lists Amazon Inspector coverage statistics for your environment.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "INS2CoverageStatisticList")]
     [OutputType("Amazon.Inspector2.Model.ListCoverageStatisticsResponse")]
     [AWSCmdlet("Calls the Inspector2 ListCoverageStatistics API operation.", Operation = new[] {"ListCoverageStatistics"}, SelectReturnType = typeof(Amazon.Inspector2.Model.ListCoverageStatisticsResponse))]
     [AWSCmdletOutput("Amazon.Inspector2.Model.ListCoverageStatisticsResponse",
-        "This cmdlet returns an Amazon.Inspector2.Model.ListCoverageStatisticsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Inspector2.Model.ListCoverageStatisticsResponse object containing multiple properties."
     )]
     public partial class GetINS2CoverageStatisticListCmdlet : AmazonInspector2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FilterCriteria_AccountId
         /// <summary>
         /// <para>
-        /// <para>An array of Amazon Web Services account IDs to return coverage statistics for.</para>
+        /// <para>An array of Amazon Web Services account IDs to return coverage statistics for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_AccountId { get; set; }
         #endregion
         
+        #region Parameter FilterCriteria_CodeRepositoryProjectName
+        /// <summary>
+        /// <para>
+        /// <para>Filter criteria for code repositories based on project name.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_CodeRepositoryProjectName { get; set; }
+        #endregion
+        
+        #region Parameter FilterCriteria_CodeRepositoryProviderType
+        /// <summary>
+        /// <para>
+        /// <para>Filter criteria for code repositories based on provider type (such as GitHub, GitLab,
+        /// etc.).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_CodeRepositoryProviderType { get; set; }
+        #endregion
+        
+        #region Parameter FilterCriteria_CodeRepositoryProviderTypeVisibility
+        /// <summary>
+        /// <para>
+        /// <para>Filter criteria for code repositories based on visibility setting (public or private).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_CodeRepositoryProviderTypeVisibility { get; set; }
+        #endregion
+        
         #region Parameter FilterCriteria_Ec2InstanceTag
         /// <summary>
         /// <para>
-        /// <para>The Amazon EC2 instance tags to filter on.</para>
+        /// <para>The Amazon EC2 instance tags to filter on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -62,10 +116,42 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public Amazon.Inspector2.Model.CoverageMapFilter[] FilterCriteria_Ec2InstanceTag { get; set; }
         #endregion
         
+        #region Parameter FilterCriteria_EcrImageInUseCount
+        /// <summary>
+        /// <para>
+        /// <para>The number of Amazon ECR images in use.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageNumberFilter[] FilterCriteria_EcrImageInUseCount { get; set; }
+        #endregion
+        
+        #region Parameter FilterCriteria_EcrImageLastInUseAt
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon ECR image that was last in use.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageDateFilter[] FilterCriteria_EcrImageLastInUseAt { get; set; }
+        #endregion
+        
         #region Parameter FilterCriteria_EcrImageTag
         /// <summary>
         /// <para>
-        /// <para>The Amazon ECR image tags to filter on.</para>
+        /// <para>The Amazon ECR image tags to filter on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter FilterCriteria_EcrRepositoryName
         /// <summary>
         /// <para>
-        /// <para>The Amazon ECR repository name to filter on.</para>
+        /// <para>The Amazon ECR repository name to filter on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter FilterCriteria_ImagePulledAt
         /// <summary>
         /// <para>
-        /// <para>The date an image was last pulled at.</para>
+        /// <para>The date an image was last pulled at.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,7 +202,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// <summary>
         /// <para>
         /// <para>Returns coverage statistics for Amazon Web Services Lambda functions filtered by function
-        /// names.</para>
+        /// names.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,7 +216,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter FilterCriteria_LambdaFunctionRuntime
         /// <summary>
         /// <para>
-        /// <para>Returns coverage statistics for Amazon Web Services Lambda functions filtered by runtime.</para>
+        /// <para>Returns coverage statistics for Amazon Web Services Lambda functions filtered by runtime.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter FilterCriteria_LambdaFunctionTag
         /// <summary>
         /// <para>
-        /// <para>Returns coverage statistics for Amazon Web Services Lambda functions filtered by tag.</para>
+        /// <para>Returns coverage statistics for Amazon Web Services Lambda functions filtered by tag.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,17 +246,39 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// <summary>
         /// <para>
         /// <para>Filters Amazon Web Services resources based on whether Amazon Inspector has checked
-        /// them for vulnerabilities within the specified time range.</para>
+        /// them for vulnerabilities within the specified time range.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.Inspector2.Model.CoverageDateFilter[] FilterCriteria_LastScannedAt { get; set; }
         #endregion
         
+        #region Parameter FilterCriteria_LastScannedCommitId
+        /// <summary>
+        /// <para>
+        /// <para>Filter criteria for code repositories based on the ID of the last scanned commit.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_LastScannedCommitId { get; set; }
+        #endregion
+        
         #region Parameter FilterCriteria_ResourceId
         /// <summary>
         /// <para>
-        /// <para>An array of Amazon Web Services resource IDs to return coverage statistics for.</para>
+        /// <para>An array of Amazon Web Services resource IDs to return coverage statistics for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,18 +290,41 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// <para>
         /// <para>An array of Amazon Web Services resource types to return coverage statistics for.
         /// The values can be <c>AWS_EC2_INSTANCE</c>, <c>AWS_LAMBDA_FUNCTION</c>, <c>AWS_ECR_CONTAINER_IMAGE</c>,
-        /// <c>AWS_ECR_REPOSITORY</c> or <c>AWS_ACCOUNT</c>.</para>
+        /// <c>AWS_ECR_REPOSITORY</c> or <c>AWS_ACCOUNT</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_ResourceType { get; set; }
         #endregion
         
+        #region Parameter FilterCriteria_ScanMode
+        /// <summary>
+        /// <para>
+        /// <para>The filter to search for Amazon EC2 instance coverage by scan mode. Valid values are
+        /// <c>EC2_SSM_AGENT_BASED</c> and <c>EC2_AGENTLESS</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Inspector2.Model.CoverageStringFilter[] FilterCriteria_ScanMode { get; set; }
+        #endregion
+        
         #region Parameter FilterCriteria_ScanStatusCode
         /// <summary>
         /// <para>
         /// <para>The scan status code to filter on. Valid values are: <c>ValidationException</c>, <c>InternalServerException</c>,
-        /// <c>ResourceNotFoundException</c>, <c>BadRequestException</c>, and <c>ThrottlingException</c>.</para>
+        /// <c>ResourceNotFoundException</c>, <c>BadRequestException</c>, and <c>ThrottlingException</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,7 +334,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter FilterCriteria_ScanStatusReason
         /// <summary>
         /// <para>
-        /// <para>The scan status reason to filter on.</para>
+        /// <para>The scan status reason to filter on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -193,7 +348,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter FilterCriteria_ScanType
         /// <summary>
         /// <para>
-        /// <para>An array of Amazon Inspector scan types to return coverage statistics for.</para>
+        /// <para>An array of Amazon Inspector scan types to return coverage statistics for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -207,6 +366,10 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// of this parameter to null for the first request to a list action. For subsequent calls,
         /// use the <c>NextToken</c> value returned from the previous request to continue listing
         /// results after the first page.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -224,19 +387,24 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
+        #region Parameter NoAutoIteration
         /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GroupBy parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GroupBy' instead. This parameter will be removed in a future version.
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
         /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GroupBy' instead. This parameter will be removed in a future version.")]
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -244,28 +412,38 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Inspector2.Model.ListCoverageStatisticsResponse, GetINS2CoverageStatisticListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GroupBy;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.FilterCriteria_AccountId != null)
             {
                 context.FilterCriteria_AccountId = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_AccountId);
             }
+            if (this.FilterCriteria_CodeRepositoryProjectName != null)
+            {
+                context.FilterCriteria_CodeRepositoryProjectName = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_CodeRepositoryProjectName);
+            }
+            if (this.FilterCriteria_CodeRepositoryProviderType != null)
+            {
+                context.FilterCriteria_CodeRepositoryProviderType = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_CodeRepositoryProviderType);
+            }
+            if (this.FilterCriteria_CodeRepositoryProviderTypeVisibility != null)
+            {
+                context.FilterCriteria_CodeRepositoryProviderTypeVisibility = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_CodeRepositoryProviderTypeVisibility);
+            }
             if (this.FilterCriteria_Ec2InstanceTag != null)
             {
                 context.FilterCriteria_Ec2InstanceTag = new List<Amazon.Inspector2.Model.CoverageMapFilter>(this.FilterCriteria_Ec2InstanceTag);
+            }
+            if (this.FilterCriteria_EcrImageInUseCount != null)
+            {
+                context.FilterCriteria_EcrImageInUseCount = new List<Amazon.Inspector2.Model.CoverageNumberFilter>(this.FilterCriteria_EcrImageInUseCount);
+            }
+            if (this.FilterCriteria_EcrImageLastInUseAt != null)
+            {
+                context.FilterCriteria_EcrImageLastInUseAt = new List<Amazon.Inspector2.Model.CoverageDateFilter>(this.FilterCriteria_EcrImageLastInUseAt);
             }
             if (this.FilterCriteria_EcrImageTag != null)
             {
@@ -295,6 +473,10 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             {
                 context.FilterCriteria_LastScannedAt = new List<Amazon.Inspector2.Model.CoverageDateFilter>(this.FilterCriteria_LastScannedAt);
             }
+            if (this.FilterCriteria_LastScannedCommitId != null)
+            {
+                context.FilterCriteria_LastScannedCommitId = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_LastScannedCommitId);
+            }
             if (this.FilterCriteria_ResourceId != null)
             {
                 context.FilterCriteria_ResourceId = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_ResourceId);
@@ -302,6 +484,10 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             if (this.FilterCriteria_ResourceType != null)
             {
                 context.FilterCriteria_ResourceType = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_ResourceType);
+            }
+            if (this.FilterCriteria_ScanMode != null)
+            {
+                context.FilterCriteria_ScanMode = new List<Amazon.Inspector2.Model.CoverageStringFilter>(this.FilterCriteria_ScanMode);
             }
             if (this.FilterCriteria_ScanStatusCode != null)
             {
@@ -330,7 +516,9 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.Inspector2.Model.ListCoverageStatisticsRequest();
             
             
@@ -347,6 +535,36 @@ namespace Amazon.PowerShell.Cmdlets.INS2
                 request.FilterCriteria.AccountId = requestFilterCriteria_filterCriteria_AccountId;
                 requestFilterCriteriaIsNull = false;
             }
+            List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_CodeRepositoryProjectName = null;
+            if (cmdletContext.FilterCriteria_CodeRepositoryProjectName != null)
+            {
+                requestFilterCriteria_filterCriteria_CodeRepositoryProjectName = cmdletContext.FilterCriteria_CodeRepositoryProjectName;
+            }
+            if (requestFilterCriteria_filterCriteria_CodeRepositoryProjectName != null)
+            {
+                request.FilterCriteria.CodeRepositoryProjectName = requestFilterCriteria_filterCriteria_CodeRepositoryProjectName;
+                requestFilterCriteriaIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_CodeRepositoryProviderType = null;
+            if (cmdletContext.FilterCriteria_CodeRepositoryProviderType != null)
+            {
+                requestFilterCriteria_filterCriteria_CodeRepositoryProviderType = cmdletContext.FilterCriteria_CodeRepositoryProviderType;
+            }
+            if (requestFilterCriteria_filterCriteria_CodeRepositoryProviderType != null)
+            {
+                request.FilterCriteria.CodeRepositoryProviderType = requestFilterCriteria_filterCriteria_CodeRepositoryProviderType;
+                requestFilterCriteriaIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_CodeRepositoryProviderTypeVisibility = null;
+            if (cmdletContext.FilterCriteria_CodeRepositoryProviderTypeVisibility != null)
+            {
+                requestFilterCriteria_filterCriteria_CodeRepositoryProviderTypeVisibility = cmdletContext.FilterCriteria_CodeRepositoryProviderTypeVisibility;
+            }
+            if (requestFilterCriteria_filterCriteria_CodeRepositoryProviderTypeVisibility != null)
+            {
+                request.FilterCriteria.CodeRepositoryProviderTypeVisibility = requestFilterCriteria_filterCriteria_CodeRepositoryProviderTypeVisibility;
+                requestFilterCriteriaIsNull = false;
+            }
             List<Amazon.Inspector2.Model.CoverageMapFilter> requestFilterCriteria_filterCriteria_Ec2InstanceTag = null;
             if (cmdletContext.FilterCriteria_Ec2InstanceTag != null)
             {
@@ -355,6 +573,26 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             if (requestFilterCriteria_filterCriteria_Ec2InstanceTag != null)
             {
                 request.FilterCriteria.Ec2InstanceTags = requestFilterCriteria_filterCriteria_Ec2InstanceTag;
+                requestFilterCriteriaIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.CoverageNumberFilter> requestFilterCriteria_filterCriteria_EcrImageInUseCount = null;
+            if (cmdletContext.FilterCriteria_EcrImageInUseCount != null)
+            {
+                requestFilterCriteria_filterCriteria_EcrImageInUseCount = cmdletContext.FilterCriteria_EcrImageInUseCount;
+            }
+            if (requestFilterCriteria_filterCriteria_EcrImageInUseCount != null)
+            {
+                request.FilterCriteria.EcrImageInUseCount = requestFilterCriteria_filterCriteria_EcrImageInUseCount;
+                requestFilterCriteriaIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.CoverageDateFilter> requestFilterCriteria_filterCriteria_EcrImageLastInUseAt = null;
+            if (cmdletContext.FilterCriteria_EcrImageLastInUseAt != null)
+            {
+                requestFilterCriteria_filterCriteria_EcrImageLastInUseAt = cmdletContext.FilterCriteria_EcrImageLastInUseAt;
+            }
+            if (requestFilterCriteria_filterCriteria_EcrImageLastInUseAt != null)
+            {
+                request.FilterCriteria.EcrImageLastInUseAt = requestFilterCriteria_filterCriteria_EcrImageLastInUseAt;
                 requestFilterCriteriaIsNull = false;
             }
             List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_EcrImageTag = null;
@@ -427,6 +665,16 @@ namespace Amazon.PowerShell.Cmdlets.INS2
                 request.FilterCriteria.LastScannedAt = requestFilterCriteria_filterCriteria_LastScannedAt;
                 requestFilterCriteriaIsNull = false;
             }
+            List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_LastScannedCommitId = null;
+            if (cmdletContext.FilterCriteria_LastScannedCommitId != null)
+            {
+                requestFilterCriteria_filterCriteria_LastScannedCommitId = cmdletContext.FilterCriteria_LastScannedCommitId;
+            }
+            if (requestFilterCriteria_filterCriteria_LastScannedCommitId != null)
+            {
+                request.FilterCriteria.LastScannedCommitId = requestFilterCriteria_filterCriteria_LastScannedCommitId;
+                requestFilterCriteriaIsNull = false;
+            }
             List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_ResourceId = null;
             if (cmdletContext.FilterCriteria_ResourceId != null)
             {
@@ -445,6 +693,16 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             if (requestFilterCriteria_filterCriteria_ResourceType != null)
             {
                 request.FilterCriteria.ResourceType = requestFilterCriteria_filterCriteria_ResourceType;
+                requestFilterCriteriaIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_ScanMode = null;
+            if (cmdletContext.FilterCriteria_ScanMode != null)
+            {
+                requestFilterCriteria_filterCriteria_ScanMode = cmdletContext.FilterCriteria_ScanMode;
+            }
+            if (requestFilterCriteria_filterCriteria_ScanMode != null)
+            {
+                request.FilterCriteria.ScanMode = requestFilterCriteria_filterCriteria_ScanMode;
                 requestFilterCriteriaIsNull = false;
             }
             List<Amazon.Inspector2.Model.CoverageStringFilter> requestFilterCriteria_filterCriteria_ScanStatusCode = null;
@@ -486,32 +744,53 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             {
                 request.GroupBy = cmdletContext.GroupBy;
             }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
-            }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.NextToken;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.NextToken));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.NextToken = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextToken;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -528,13 +807,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Inspector2", "ListCoverageStatistics");
             try
             {
-                #if DESKTOP
-                return client.ListCoverageStatistics(request);
-                #elif CORECLR
-                return client.ListCoverageStatisticsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListCoverageStatisticsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -552,7 +825,12 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         internal partial class CmdletContext : ExecutorContext
         {
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_AccountId { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_CodeRepositoryProjectName { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_CodeRepositoryProviderType { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_CodeRepositoryProviderTypeVisibility { get; set; }
             public List<Amazon.Inspector2.Model.CoverageMapFilter> FilterCriteria_Ec2InstanceTag { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageNumberFilter> FilterCriteria_EcrImageInUseCount { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageDateFilter> FilterCriteria_EcrImageLastInUseAt { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_EcrImageTag { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_EcrRepositoryName { get; set; }
             public List<Amazon.Inspector2.Model.CoverageDateFilter> FilterCriteria_ImagePulledAt { get; set; }
@@ -560,8 +838,10 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_LambdaFunctionRuntime { get; set; }
             public List<Amazon.Inspector2.Model.CoverageMapFilter> FilterCriteria_LambdaFunctionTag { get; set; }
             public List<Amazon.Inspector2.Model.CoverageDateFilter> FilterCriteria_LastScannedAt { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_LastScannedCommitId { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_ResourceId { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_ResourceType { get; set; }
+            public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_ScanMode { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_ScanStatusCode { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_ScanStatusReason { get; set; }
             public List<Amazon.Inspector2.Model.CoverageStringFilter> FilterCriteria_ScanType { get; set; }

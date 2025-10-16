@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
@@ -37,8 +39,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// </para><para>
     /// This operation is not designed to be continually called to track game session status.
     /// This practice can cause you to exceed your API limit, which results in errors. Instead,
-    /// you must configure configure an Amazon Simple Notification Service (SNS) topic to
-    /// receive notifications from FlexMatch or queues. Continuously polling with <c>DescribeGameSessionPlacement</c>
+    /// you must configure an Amazon Simple Notification Service (SNS) topic to receive notifications
+    /// from FlexMatch or queues. Continuously polling with <c>DescribeGameSessionPlacement</c>
     /// should only be used for games in development with low game session usage. 
     /// </para>
     /// </summary>
@@ -47,14 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service DescribeGameSessionPlacement API operation.", Operation = new[] {"DescribeGameSessionPlacement"}, SelectReturnType = typeof(Amazon.GameLift.Model.DescribeGameSessionPlacementResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GameSessionPlacement or Amazon.GameLift.Model.DescribeGameSessionPlacementResponse",
         "This cmdlet returns an Amazon.GameLift.Model.GameSessionPlacement object.",
-        "The service call response (type Amazon.GameLift.Model.DescribeGameSessionPlacementResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.DescribeGameSessionPlacementResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGMLGameSessionPlacementCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PlacementId
         /// <summary>
@@ -84,19 +85,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "GameSessionPlacement";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PlacementId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PlacementId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PlacementId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -104,21 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.DescribeGameSessionPlacementResponse, GetGMLGameSessionPlacementCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PlacementId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.PlacementId = this.PlacementId;
             #if MODULAR
             if (this.PlacementId == null && ParameterWasBound(nameof(this.PlacementId)))
@@ -184,13 +169,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DescribeGameSessionPlacement");
             try
             {
-                #if DESKTOP
-                return client.DescribeGameSessionPlacement(request);
-                #elif CORECLR
-                return client.DescribeGameSessionPlacementAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeGameSessionPlacementAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

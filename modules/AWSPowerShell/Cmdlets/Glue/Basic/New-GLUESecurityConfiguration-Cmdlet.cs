@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [OutputType("Amazon.Glue.Model.CreateSecurityConfigurationResponse")]
     [AWSCmdlet("Calls the AWS Glue CreateSecurityConfiguration API operation.", Operation = new[] {"CreateSecurityConfiguration"}, SelectReturnType = typeof(Amazon.Glue.Model.CreateSecurityConfigurationResponse))]
     [AWSCmdletOutput("Amazon.Glue.Model.CreateSecurityConfigurationResponse",
-        "This cmdlet returns an Amazon.Glue.Model.CreateSecurityConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Glue.Model.CreateSecurityConfigurationResponse object containing multiple properties."
     )]
     public partial class NewGLUESecurityConfigurationCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CloudWatchEncryption_CloudWatchEncryptionMode
         /// <summary>
@@ -54,6 +57,20 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         [Alias("EncryptionConfiguration_CloudWatchEncryption_CloudWatchEncryptionMode")]
         [AWSConstantClassSource("Amazon.Glue.CloudWatchEncryptionMode")]
         public Amazon.Glue.CloudWatchEncryptionMode CloudWatchEncryption_CloudWatchEncryptionMode { get; set; }
+        #endregion
+        
+        #region Parameter DataQualityEncryption_DataQualityEncryptionMode
+        /// <summary>
+        /// <para>
+        /// <para>The encryption mode to use for encrypting Data Quality assets. These assets include
+        /// data quality rulesets, results, statistics, anomaly detection models and observations.</para><para>Valid values are <c>SSEKMS</c> for encryption using a customer-managed KMS key, or
+        /// <c>DISABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EncryptionConfiguration_DataQualityEncryption_DataQualityEncryptionMode")]
+        [AWSConstantClassSource("Amazon.Glue.DataQualityEncryptionMode")]
+        public Amazon.Glue.DataQualityEncryptionMode DataQualityEncryption_DataQualityEncryptionMode { get; set; }
         #endregion
         
         #region Parameter JobBookmarksEncryption_JobBookmarksEncryptionMode
@@ -77,6 +94,17 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("EncryptionConfiguration_CloudWatchEncryption_KmsKeyArn")]
         public System.String CloudWatchEncryption_KmsKeyArn { get; set; }
+        #endregion
+        
+        #region Parameter DataQualityEncryption_KmsKeyArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the KMS key to be used to encrypt the data.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EncryptionConfiguration_DataQualityEncryption_KmsKeyArn")]
+        public System.String DataQualityEncryption_KmsKeyArn { get; set; }
         #endregion
         
         #region Parameter JobBookmarksEncryption_KmsKeyArn
@@ -110,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #region Parameter EncryptionConfiguration_S3Encryption
         /// <summary>
         /// <para>
-        /// <para>The encryption configuration for Amazon Simple Storage Service (Amazon S3) data.</para>
+        /// <para>The encryption configuration for Amazon Simple Storage Service (Amazon S3) data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -128,16 +160,6 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -148,9 +170,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -164,23 +190,15 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.CreateSecurityConfigurationResponse, NewGLUESecurityConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CloudWatchEncryption_CloudWatchEncryptionMode = this.CloudWatchEncryption_CloudWatchEncryptionMode;
             context.CloudWatchEncryption_KmsKeyArn = this.CloudWatchEncryption_KmsKeyArn;
+            context.DataQualityEncryption_DataQualityEncryptionMode = this.DataQualityEncryption_DataQualityEncryptionMode;
+            context.DataQualityEncryption_KmsKeyArn = this.DataQualityEncryption_KmsKeyArn;
             context.JobBookmarksEncryption_JobBookmarksEncryptionMode = this.JobBookmarksEncryption_JobBookmarksEncryptionMode;
             context.JobBookmarksEncryption_KmsKeyArn = this.JobBookmarksEncryption_KmsKeyArn;
             if (this.EncryptionConfiguration_S3Encryption != null)
@@ -257,6 +275,41 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             if (requestEncryptionConfiguration_encryptionConfiguration_CloudWatchEncryption != null)
             {
                 request.EncryptionConfiguration.CloudWatchEncryption = requestEncryptionConfiguration_encryptionConfiguration_CloudWatchEncryption;
+                requestEncryptionConfigurationIsNull = false;
+            }
+            Amazon.Glue.Model.DataQualityEncryption requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption = null;
+            
+             // populate DataQualityEncryption
+            var requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryptionIsNull = true;
+            requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption = new Amazon.Glue.Model.DataQualityEncryption();
+            Amazon.Glue.DataQualityEncryptionMode requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_DataQualityEncryptionMode = null;
+            if (cmdletContext.DataQualityEncryption_DataQualityEncryptionMode != null)
+            {
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_DataQualityEncryptionMode = cmdletContext.DataQualityEncryption_DataQualityEncryptionMode;
+            }
+            if (requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_DataQualityEncryptionMode != null)
+            {
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption.DataQualityEncryptionMode = requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_DataQualityEncryptionMode;
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryptionIsNull = false;
+            }
+            System.String requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_KmsKeyArn = null;
+            if (cmdletContext.DataQualityEncryption_KmsKeyArn != null)
+            {
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_KmsKeyArn = cmdletContext.DataQualityEncryption_KmsKeyArn;
+            }
+            if (requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_KmsKeyArn != null)
+            {
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption.KmsKeyArn = requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption_dataQualityEncryption_KmsKeyArn;
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryptionIsNull = false;
+            }
+             // determine if requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption should be set to null
+            if (requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryptionIsNull)
+            {
+                requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption = null;
+            }
+            if (requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption != null)
+            {
+                request.EncryptionConfiguration.DataQualityEncryption = requestEncryptionConfiguration_encryptionConfiguration_DataQualityEncryption;
                 requestEncryptionConfigurationIsNull = false;
             }
             Amazon.Glue.Model.JobBookmarksEncryption requestEncryptionConfiguration_encryptionConfiguration_JobBookmarksEncryption = null;
@@ -341,13 +394,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "CreateSecurityConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateSecurityConfiguration(request);
-                #elif CORECLR
-                return client.CreateSecurityConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSecurityConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -366,6 +413,8 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         {
             public Amazon.Glue.CloudWatchEncryptionMode CloudWatchEncryption_CloudWatchEncryptionMode { get; set; }
             public System.String CloudWatchEncryption_KmsKeyArn { get; set; }
+            public Amazon.Glue.DataQualityEncryptionMode DataQualityEncryption_DataQualityEncryptionMode { get; set; }
+            public System.String DataQualityEncryption_KmsKeyArn { get; set; }
             public Amazon.Glue.JobBookmarksEncryptionMode JobBookmarksEncryption_JobBookmarksEncryptionMode { get; set; }
             public System.String JobBookmarksEncryption_KmsKeyArn { get; set; }
             public List<Amazon.Glue.Model.S3Encryption> EncryptionConfiguration_S3Encryption { get; set; }

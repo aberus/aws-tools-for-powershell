@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaLive;
 using Amazon.MediaLive.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EML
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
     [AWSCmdlet("Calls the AWS Elemental MediaLive CreateChannel API operation.", Operation = new[] {"CreateChannel"}, SelectReturnType = typeof(Amazon.MediaLive.Model.CreateChannelResponse))]
     [AWSCmdletOutput("Amazon.MediaLive.Model.Channel or Amazon.MediaLive.Model.CreateChannelResponse",
         "This cmdlet returns an Amazon.MediaLive.Model.Channel object.",
-        "The service call response (type Amazon.MediaLive.Model.CreateChannelResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaLive.Model.CreateChannelResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEMLChannelCmdlet : AmazonMediaLiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChannelClass
         /// <summary>
@@ -52,6 +55,27 @@ namespace Amazon.PowerShell.Cmdlets.EML
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.MediaLive.ChannelClass")]
         public Amazon.MediaLive.ChannelClass ChannelClass { get; set; }
+        #endregion
+        
+        #region Parameter AnywhereSettings_ChannelPlacementGroupId
+        /// <summary>
+        /// <para>
+        /// The ID of the channel placement
+        /// group for the channel.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AnywhereSettings_ChannelPlacementGroupId { get; set; }
+        #endregion
+        
+        #region Parameter AnywhereSettings_ClusterId
+        /// <summary>
+        /// <para>
+        /// The ID of the cluster for the channel.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AnywhereSettings_ClusterId { get; set; }
         #endregion
         
         #region Parameter InputSpecification_Codec
@@ -68,12 +92,26 @@ namespace Amazon.PowerShell.Cmdlets.EML
         #region Parameter Destination
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Destinations")]
         public Amazon.MediaLive.Model.OutputDestination[] Destination { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EncoderSetting
@@ -91,6 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// <summary>
         /// <para>
         /// List of input attachments for channel.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,6 +202,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// List of public address allocation
         /// ids to associate with ENIs that will be created in Output VPC.Must specify one for
         /// SINGLE_PIPELINE, two for STANDARD channels
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -216,6 +264,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// A list of up to 5 EC2 VPC security group
         /// IDs to attach to the Output VPC network interfaces.If none are specified then the
         /// VPC default security group will be used
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -228,6 +281,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// <para>
         /// A list of VPC subnet IDs from the same VPC.If
         /// STANDARD channel, subnet IDs must be mapped to two unique availability zones (AZ).
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -239,11 +297,27 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// <summary>
         /// <para>
         /// A collection of key-value pairs.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter ChannelEngineVersion_Version
+        /// <summary>
+        /// <para>
+        /// The build identifier of the engine version to
+        /// use for this channel. Specify 'DEFAULT' to reset to the default version.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ChannelEngineVersion_Version { get; set; }
         #endregion
         
         #region Parameter Reserved
@@ -270,16 +344,6 @@ namespace Amazon.PowerShell.Cmdlets.EML
         public string Select { get; set; } = "Channel";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -290,9 +354,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -306,27 +374,21 @@ namespace Amazon.PowerShell.Cmdlets.EML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaLive.Model.CreateChannelResponse, NewEMLChannelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.AnywhereSettings_ChannelPlacementGroupId = this.AnywhereSettings_ChannelPlacementGroupId;
+            context.AnywhereSettings_ClusterId = this.AnywhereSettings_ClusterId;
             context.CdiInputSpecification_Resolution = this.CdiInputSpecification_Resolution;
             context.ChannelClass = this.ChannelClass;
+            context.ChannelEngineVersion_Version = this.ChannelEngineVersion_Version;
             if (this.Destination != null)
             {
                 context.Destination = new List<Amazon.MediaLive.Model.OutputDestination>(this.Destination);
             }
+            context.DryRun = this.DryRun;
             context.EncoderSetting = this.EncoderSetting;
             if (this.InputAttachment != null)
             {
@@ -381,6 +443,35 @@ namespace Amazon.PowerShell.Cmdlets.EML
             var request = new Amazon.MediaLive.Model.CreateChannelRequest();
             
             
+             // populate AnywhereSettings
+            var requestAnywhereSettingsIsNull = true;
+            request.AnywhereSettings = new Amazon.MediaLive.Model.AnywhereSettings();
+            System.String requestAnywhereSettings_anywhereSettings_ChannelPlacementGroupId = null;
+            if (cmdletContext.AnywhereSettings_ChannelPlacementGroupId != null)
+            {
+                requestAnywhereSettings_anywhereSettings_ChannelPlacementGroupId = cmdletContext.AnywhereSettings_ChannelPlacementGroupId;
+            }
+            if (requestAnywhereSettings_anywhereSettings_ChannelPlacementGroupId != null)
+            {
+                request.AnywhereSettings.ChannelPlacementGroupId = requestAnywhereSettings_anywhereSettings_ChannelPlacementGroupId;
+                requestAnywhereSettingsIsNull = false;
+            }
+            System.String requestAnywhereSettings_anywhereSettings_ClusterId = null;
+            if (cmdletContext.AnywhereSettings_ClusterId != null)
+            {
+                requestAnywhereSettings_anywhereSettings_ClusterId = cmdletContext.AnywhereSettings_ClusterId;
+            }
+            if (requestAnywhereSettings_anywhereSettings_ClusterId != null)
+            {
+                request.AnywhereSettings.ClusterId = requestAnywhereSettings_anywhereSettings_ClusterId;
+                requestAnywhereSettingsIsNull = false;
+            }
+             // determine if request.AnywhereSettings should be set to null
+            if (requestAnywhereSettingsIsNull)
+            {
+                request.AnywhereSettings = null;
+            }
+            
              // populate CdiInputSpecification
             var requestCdiInputSpecificationIsNull = true;
             request.CdiInputSpecification = new Amazon.MediaLive.Model.CdiInputSpecification();
@@ -403,9 +494,32 @@ namespace Amazon.PowerShell.Cmdlets.EML
             {
                 request.ChannelClass = cmdletContext.ChannelClass;
             }
+            
+             // populate ChannelEngineVersion
+            var requestChannelEngineVersionIsNull = true;
+            request.ChannelEngineVersion = new Amazon.MediaLive.Model.ChannelEngineVersionRequest();
+            System.String requestChannelEngineVersion_channelEngineVersion_Version = null;
+            if (cmdletContext.ChannelEngineVersion_Version != null)
+            {
+                requestChannelEngineVersion_channelEngineVersion_Version = cmdletContext.ChannelEngineVersion_Version;
+            }
+            if (requestChannelEngineVersion_channelEngineVersion_Version != null)
+            {
+                request.ChannelEngineVersion.Version = requestChannelEngineVersion_channelEngineVersion_Version;
+                requestChannelEngineVersionIsNull = false;
+            }
+             // determine if request.ChannelEngineVersion should be set to null
+            if (requestChannelEngineVersionIsNull)
+            {
+                request.ChannelEngineVersion = null;
+            }
             if (cmdletContext.Destination != null)
             {
                 request.Destinations = cmdletContext.Destination;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.EncoderSetting != null)
             {
@@ -586,13 +700,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaLive", "CreateChannel");
             try
             {
-                #if DESKTOP
-                return client.CreateChannel(request);
-                #elif CORECLR
-                return client.CreateChannelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateChannelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -609,9 +717,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String AnywhereSettings_ChannelPlacementGroupId { get; set; }
+            public System.String AnywhereSettings_ClusterId { get; set; }
             public Amazon.MediaLive.CdiInputResolution CdiInputSpecification_Resolution { get; set; }
             public Amazon.MediaLive.ChannelClass ChannelClass { get; set; }
+            public System.String ChannelEngineVersion_Version { get; set; }
             public List<Amazon.MediaLive.Model.OutputDestination> Destination { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public Amazon.MediaLive.Model.EncoderSettings EncoderSetting { get; set; }
             public List<Amazon.MediaLive.Model.InputAttachment> InputAttachment { get; set; }
             public Amazon.MediaLive.InputCodec InputSpecification_Codec { get; set; }

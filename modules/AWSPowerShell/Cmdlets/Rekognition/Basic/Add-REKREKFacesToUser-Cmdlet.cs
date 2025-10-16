@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
     /// Associates one or more faces with an existing UserID. Takes an array of <c>FaceIds</c>.
     /// Each <c>FaceId</c> that are present in the <c>FaceIds</c> list is associated with
-    /// the provided UserID. The maximum number of total <c>FaceIds</c> per UserID is 100.
-    /// 
+    /// the provided UserID. The number of FaceIds that can be used as input in a single request
+    /// is limited to 100.
     /// 
     ///  
     /// <para>
+    /// Note that the total number of faces that can be associated with a single <c>UserID</c>
+    /// is also limited to 100. Once a <c>UserID</c> has 100 faces associated with it, no
+    /// additional faces can be added. If more API calls are made after the limit is reached,
+    /// a <c>ServiceQuotaExceededException</c> will result.
+    /// </para><para>
     /// The <c>UserMatchThreshold</c> parameter specifies the minimum user match confidence
     /// required for the face to be associated with a UserID that has at least one <c>FaceID</c>
     /// already associated. This ensures that the <c>FaceIds</c> are associated with the right
@@ -61,12 +68,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [OutputType("Amazon.Rekognition.Model.AssociateFacesResponse")]
     [AWSCmdlet("Calls the Amazon Rekognition AssociateFaces API operation.", Operation = new[] {"AssociateFaces"}, SelectReturnType = typeof(Amazon.Rekognition.Model.AssociateFacesResponse))]
     [AWSCmdletOutput("Amazon.Rekognition.Model.AssociateFacesResponse",
-        "This cmdlet returns an Amazon.Rekognition.Model.AssociateFacesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Rekognition.Model.AssociateFacesResponse object containing multiple properties."
     )]
     public partial class AddREKREKFacesToUserCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -101,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
         #region Parameter FaceId
         /// <summary>
         /// <para>
-        /// <para>An array of FaceIDs to associate with the UserID.</para>
+        /// <para>An array of FaceIDs to associate with the UserID.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -155,16 +167,6 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CollectionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CollectionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CollectionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -175,9 +177,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CollectionId), MyInvocation.BoundParameters);
@@ -191,21 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Rekognition.Model.AssociateFacesResponse, AddREKREKFacesToUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CollectionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.CollectionId = this.CollectionId;
             #if MODULAR
@@ -306,13 +302,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "AssociateFaces");
             try
             {
-                #if DESKTOP
-                return client.AssociateFaces(request);
-                #elif CORECLR
-                return client.AssociateFacesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateFacesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

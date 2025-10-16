@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The WorkSpaces module of AWS Tools for PowerShell lets developers and administrators manage Amazon WorkSpaces from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.WorkSpaces.dll'
     )
@@ -86,18 +87,24 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Cmdlets to export from this module
     CmdletsToExport = @(
+        'Approve-WKSAccountLinkInvitation', 
         'Approve-WKSIpRule', 
         'Copy-WKSWorkspaceImage', 
+        'Deny-WKSAccountLinkInvitation', 
         'Edit-WKSAccount', 
         'Edit-WKSCertificateBasedAuthProperty', 
         'Edit-WKSClientProperty', 
+        'Edit-WKSEndpointEncryptionMode', 
         'Edit-WKSSamlProperty', 
         'Edit-WKSSelfservicePermission', 
+        'Edit-WKSStreamingProperty', 
         'Edit-WKSWorkspaceAccessProperty', 
         'Edit-WKSWorkspaceCreationProperty', 
         'Edit-WKSWorkspaceProperty', 
         'Edit-WKSWorkspaceState', 
         'Get-WKSAccount', 
+        'Get-WKSAccountLink', 
+        'Get-WKSAccountLinkList', 
         'Get-WKSAccountModification', 
         'Get-WKSApplication', 
         'Get-WKSApplicationAssociation', 
@@ -108,6 +115,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-WKSConnectClientAddIn', 
         'Get-WKSConnectionAlias', 
         'Get-WKSConnectionAliasPermission', 
+        'Get-WKSCustomWorkspaceImageImport', 
         'Get-WKSImageAssociation', 
         'Get-WKSIpGroup', 
         'Get-WKSTag', 
@@ -119,8 +127,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-WKSWorkspaceImagePermission', 
         'Get-WKSWorkspacesConnectionStatus', 
         'Get-WKSWorkspaceSnapshot', 
+        'Get-WKSWorkspacesPool', 
+        'Get-WKSWorkspacesPoolSession', 
         'Import-WKSClientBranding', 
+        'Import-WKSCustomWorkspaceImage', 
         'Import-WKSWorkspaceImage', 
+        'New-WKSAccountLinkInvitation', 
         'New-WKSConnectClientAddIn', 
         'New-WKSConnectionAlias', 
         'New-WKSIpGroup', 
@@ -130,11 +142,13 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-WKSWorkspace', 
         'New-WKSWorkspaceBundle', 
         'New-WKSWorkspaceImage', 
+        'New-WKSWorkspacesPool', 
         'Publish-WKSWorkspaceApplication', 
         'Register-WKSConnectionAlias', 
         'Register-WKSIpGroup', 
         'Register-WKSWorkspaceApplication', 
         'Register-WKSWorkspaceDirectory', 
+        'Remove-WKSAccountLinkInvitation', 
         'Remove-WKSClientBranding', 
         'Remove-WKSConnectClientAddIn', 
         'Remove-WKSConnectionAlias', 
@@ -143,13 +157,17 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-WKSWorkspace', 
         'Remove-WKSWorkspaceBundle', 
         'Remove-WKSWorkspaceImage', 
+        'Remove-WKSWorkspacesPool', 
+        'Remove-WKSWorkspacesPoolSession', 
         'Reset-WKSWorkspace', 
         'Restart-WKSWorkspace', 
         'Restore-WKSWorkspace', 
         'Revoke-WKSIpRule', 
         'Start-WKSWorkspace', 
         'Start-WKSWorkspaceMigration', 
+        'Start-WKSWorkspacesPool', 
         'Stop-WKSWorkspace', 
+        'Stop-WKSWorkspacesPool', 
         'Unregister-WKSConnectionAlias', 
         'Unregister-WKSIpGroup', 
         'Unregister-WKSWorkspaceApplication', 
@@ -158,7 +176,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-WKSConnectionAliasPermission', 
         'Update-WKSRulesOfIpGroup', 
         'Update-WKSWorkspaceBundle', 
-        'Update-WKSWorkspaceImagePermission')
+        'Update-WKSWorkspaceImagePermission', 
+        'Update-WKSWorkspacesPool')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -185,7 +204,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

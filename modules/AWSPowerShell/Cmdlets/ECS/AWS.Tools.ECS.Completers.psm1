@@ -82,14 +82,44 @@ $ECS_Completers = {
     {
         # Amazon.ECS.AssignPublicIp
         {
-            ($_ -eq "New-ECSService/NetworkConfiguration_AwsvpcConfiguration_AssignPublicIp") -Or
-            ($_ -eq "New-ECSTask/NetworkConfiguration_AwsvpcConfiguration_AssignPublicIp") -Or
-            ($_ -eq "New-ECSTaskSet/NetworkConfiguration_AwsvpcConfiguration_AssignPublicIp") -Or
-            ($_ -eq "Start-ECSTask/NetworkConfiguration_AwsvpcConfiguration_AssignPublicIp") -Or
-            ($_ -eq "Update-ECSService/NetworkConfiguration_AwsvpcConfiguration_AssignPublicIp")
+            ($_ -eq "New-ECSService/AwsvpcConfiguration_AssignPublicIp") -Or
+            ($_ -eq "New-ECSTask/AwsvpcConfiguration_AssignPublicIp") -Or
+            ($_ -eq "New-ECSTaskSet/AwsvpcConfiguration_AssignPublicIp") -Or
+            ($_ -eq "Start-ECSTask/AwsvpcConfiguration_AssignPublicIp") -Or
+            ($_ -eq "Update-ECSService/AwsvpcConfiguration_AssignPublicIp")
         }
         {
             $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.ECS.AvailabilityZoneRebalancing
+        {
+            ($_ -eq "New-ECSService/AvailabilityZoneRebalancing") -Or
+            ($_ -eq "Update-ECSService/AvailabilityZoneRebalancing")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.ECS.BareMetal
+        {
+            ($_ -eq "New-ECSCapacityProvider/InstanceRequirements_BareMetal") -Or
+            ($_ -eq "Update-ECSCapacityProvider/InstanceRequirements_BareMetal")
+        }
+        {
+            $v = "excluded","included","required"
+            break
+        }
+
+        # Amazon.ECS.BurstablePerformance
+        {
+            ($_ -eq "New-ECSCapacityProvider/InstanceRequirements_BurstablePerformance") -Or
+            ($_ -eq "Update-ECSCapacityProvider/InstanceRequirements_BurstablePerformance")
+        }
+        {
+            $v = "excluded","included","required"
             break
         }
 
@@ -111,9 +141,22 @@ $ECS_Completers = {
         }
 
         # Amazon.ECS.DeploymentControllerType
-        "New-ECSService/DeploymentController_Type"
+        {
+            ($_ -eq "New-ECSService/DeploymentController_Type") -Or
+            ($_ -eq "Update-ECSService/DeploymentController_Type")
+        }
         {
             $v = "CODE_DEPLOY","ECS","EXTERNAL"
+            break
+        }
+
+        # Amazon.ECS.DeploymentStrategy
+        {
+            ($_ -eq "New-ECSService/DeploymentConfiguration_Strategy") -Or
+            ($_ -eq "Update-ECSService/DeploymentConfiguration_Strategy")
+        }
+        {
+            $v = "BLUE_GREEN","ROLLING"
             break
         }
 
@@ -126,8 +169,8 @@ $ECS_Completers = {
 
         # Amazon.ECS.ExecuteCommandLogging
         {
-            ($_ -eq "New-ECSCluster/Configuration_ExecuteCommandConfiguration_Logging") -Or
-            ($_ -eq "Update-ECSCluster/Configuration_ExecuteCommandConfiguration_Logging")
+            ($_ -eq "New-ECSCluster/ExecuteCommandConfiguration_Logging") -Or
+            ($_ -eq "Update-ECSCluster/ExecuteCommandConfiguration_Logging")
         }
         {
             $v = "DEFAULT","NONE","OVERRIDE"
@@ -150,14 +193,24 @@ $ECS_Completers = {
             ($_ -eq "New-ECSTaskSet/LaunchType")
         }
         {
-            $v = "EC2","EXTERNAL","FARGATE"
+            $v = "EC2","EXTERNAL","FARGATE","MANAGED_INSTANCES"
+            break
+        }
+
+        # Amazon.ECS.LocalStorage
+        {
+            ($_ -eq "New-ECSCapacityProvider/InstanceRequirements_LocalStorage") -Or
+            ($_ -eq "Update-ECSCapacityProvider/InstanceRequirements_LocalStorage")
+        }
+        {
+            $v = "excluded","included","required"
             break
         }
 
         # Amazon.ECS.LogDriver
         {
-            ($_ -eq "New-ECSService/ServiceConnectConfiguration_LogConfiguration_LogDriver") -Or
-            ($_ -eq "Update-ECSService/ServiceConnectConfiguration_LogConfiguration_LogDriver")
+            ($_ -eq "New-ECSService/LogConfiguration_LogDriver") -Or
+            ($_ -eq "Update-ECSService/LogConfiguration_LogDriver")
         }
         {
             $v = "awsfirelens","awslogs","fluentd","gelf","journald","json-file","splunk","syslog"
@@ -174,10 +227,20 @@ $ECS_Completers = {
             break
         }
 
+        # Amazon.ECS.ManagedInstancesMonitoringOptions
+        {
+            ($_ -eq "New-ECSCapacityProvider/InstanceLaunchTemplate_Monitoring") -Or
+            ($_ -eq "Update-ECSCapacityProvider/InstanceLaunchTemplate_Monitoring")
+        }
+        {
+            $v = "BASIC","DETAILED"
+            break
+        }
+
         # Amazon.ECS.ManagedScalingStatus
         {
-            ($_ -eq "New-ECSCapacityProvider/AutoScalingGroupProvider_ManagedScaling_Status") -Or
-            ($_ -eq "Update-ECSCapacityProvider/AutoScalingGroupProvider_ManagedScaling_Status")
+            ($_ -eq "New-ECSCapacityProvider/ManagedScaling_Status") -Or
+            ($_ -eq "Update-ECSCapacityProvider/ManagedScaling_Status")
         }
         {
             $v = "DISABLED","ENABLED"
@@ -204,7 +267,7 @@ $ECS_Completers = {
         # Amazon.ECS.OSFamily
         "Register-ECSTaskDefinition/RuntimePlatform_OperatingSystemFamily"
         {
-            $v = "LINUX","WINDOWS_SERVER_2004_CORE","WINDOWS_SERVER_2016_FULL","WINDOWS_SERVER_2019_CORE","WINDOWS_SERVER_2019_FULL","WINDOWS_SERVER_2022_CORE","WINDOWS_SERVER_2022_FULL","WINDOWS_SERVER_20H2_CORE"
+            $v = "LINUX","WINDOWS_SERVER_2004_CORE","WINDOWS_SERVER_2016_FULL","WINDOWS_SERVER_2019_CORE","WINDOWS_SERVER_2019_FULL","WINDOWS_SERVER_2022_CORE","WINDOWS_SERVER_2022_FULL","WINDOWS_SERVER_2025_CORE","WINDOWS_SERVER_2025_FULL","WINDOWS_SERVER_20H2_CORE"
             break
         }
 
@@ -215,12 +278,22 @@ $ECS_Completers = {
             break
         }
 
+        # Amazon.ECS.PropagateMITags
+        {
+            ($_ -eq "New-ECSCapacityProvider/ManagedInstancesProvider_PropagateTag") -Or
+            ($_ -eq "Update-ECSCapacityProvider/ManagedInstancesProvider_PropagateTag")
+        }
+        {
+            $v = "CAPACITY_PROVIDER","NONE"
+            break
+        }
+
         # Amazon.ECS.PropagateTags
         {
-            ($_ -eq "New-ECSService/PropagateTags") -Or
-            ($_ -eq "New-ECSTask/PropagateTags") -Or
-            ($_ -eq "Start-ECSTask/PropagateTags") -Or
-            ($_ -eq "Update-ECSService/PropagateTags")
+            ($_ -eq "New-ECSService/PropagateTag") -Or
+            ($_ -eq "New-ECSTask/PropagateTag") -Or
+            ($_ -eq "Start-ECSTask/PropagateTag") -Or
+            ($_ -eq "Update-ECSService/PropagateTag")
         }
         {
             $v = "NONE","SERVICE","TASK_DEFINITION"
@@ -262,7 +335,7 @@ $ECS_Completers = {
             ($_ -eq "Write-ECSAccountSettingDefault/Name")
         }
         {
-            $v = "awsvpcTrunking","containerInsights","containerInstanceLongArnFormat","fargateFIPSMode","fargateTaskRetirementWaitPeriod","guardDutyActivate","serviceLongArnFormat","tagResourceAuthorization","taskLongArnFormat"
+            $v = "awsvpcTrunking","containerInsights","containerInstanceLongArnFormat","defaultLogDriverMode","fargateFIPSMode","fargateTaskRetirementWaitPeriod","guardDutyActivate","serviceLongArnFormat","tagResourceAuthorization","taskLongArnFormat"
             break
         }
 
@@ -270,6 +343,13 @@ $ECS_Completers = {
         "Get-ECSTaskDefinitionList/Sort"
         {
             $v = "ASC","DESC"
+            break
+        }
+
+        # Amazon.ECS.StopServiceDeploymentStopType
+        "Stop-ECSServiceDeployment/StopType"
+        {
+            $v = "ABORT","ROLLBACK"
             break
         }
 
@@ -304,26 +384,34 @@ $ECS_Completers = {
 
 $ECS_map = @{
     "AutoScalingGroupProvider_ManagedDraining"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
-    "AutoScalingGroupProvider_ManagedScaling_Status"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
     "AutoScalingGroupProvider_ManagedTerminationProtection"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
-    "Configuration_ExecuteCommandConfiguration_Logging"=@("New-ECSCluster","Update-ECSCluster")
-    "DeploymentController_Type"=@("New-ECSService")
+    "AvailabilityZoneRebalancing"=@("New-ECSService","Update-ECSService")
+    "AwsvpcConfiguration_AssignPublicIp"=@("New-ECSService","New-ECSTask","New-ECSTaskSet","Start-ECSTask","Update-ECSService")
+    "DeploymentConfiguration_Strategy"=@("New-ECSService","Update-ECSService")
+    "DeploymentController_Type"=@("New-ECSService","Update-ECSService")
     "DesiredStatus"=@("Get-ECSTaskList")
+    "ExecuteCommandConfiguration_Logging"=@("New-ECSCluster","Update-ECSCluster")
+    "InstanceLaunchTemplate_Monitoring"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
+    "InstanceRequirements_BareMetal"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
+    "InstanceRequirements_BurstablePerformance"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
+    "InstanceRequirements_LocalStorage"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
     "IpcMode"=@("Register-ECSTaskDefinition")
     "LaunchType"=@("Get-ECSClusterService","Get-ECSTaskList","New-ECSService","New-ECSTask","New-ECSTaskSet")
+    "LogConfiguration_LogDriver"=@("New-ECSService","Update-ECSService")
+    "ManagedInstancesProvider_PropagateTag"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
+    "ManagedScaling_Status"=@("New-ECSCapacityProvider","Update-ECSCapacityProvider")
     "Name"=@("Get-ECSAccountSetting","Remove-ECSAccountSetting","Write-ECSAccountSetting","Write-ECSAccountSettingDefault")
-    "NetworkConfiguration_AwsvpcConfiguration_AssignPublicIp"=@("New-ECSService","New-ECSTask","New-ECSTaskSet","Start-ECSTask","Update-ECSService")
     "NetworkMode"=@("Register-ECSTaskDefinition")
     "PidMode"=@("Register-ECSTaskDefinition")
-    "PropagateTags"=@("New-ECSService","New-ECSTask","Start-ECSTask","Update-ECSService")
+    "PropagateTag"=@("New-ECSService","New-ECSTask","Start-ECSTask","Update-ECSService")
     "ProxyConfiguration_Type"=@("Register-ECSTaskDefinition")
     "RuntimePlatform_CpuArchitecture"=@("Register-ECSTaskDefinition")
     "RuntimePlatform_OperatingSystemFamily"=@("Register-ECSTaskDefinition")
     "Scale_Unit"=@("New-ECSTaskSet","Update-ECSTaskSet")
     "SchedulingStrategy"=@("Get-ECSClusterService","New-ECSService")
-    "ServiceConnectConfiguration_LogConfiguration_LogDriver"=@("New-ECSService","Update-ECSService")
     "Sort"=@("Get-ECSTaskDefinitionList")
     "Status"=@("Get-ECSContainerInstanceList","Get-ECSTaskDefinitionFamilyList","Get-ECSTaskDefinitionList","Update-ECSContainerInstancesState")
+    "StopType"=@("Stop-ECSServiceDeployment")
     "TargetType"=@("Get-ECSAttributeList")
 }
 
@@ -393,6 +481,8 @@ $ECS_SelectMap = @{
                "Get-ECSCapacityProvider",
                "Get-ECSClusterDetail",
                "Get-ECSContainerInstanceDetail",
+               "Get-ECSServiceDeploymentDetail",
+               "Get-ECSServiceRevision",
                "Get-ECSService",
                "Get-ECSTaskDefinitionDetail",
                "Get-ECSTaskDetail",
@@ -403,6 +493,7 @@ $ECS_SelectMap = @{
                "Get-ECSAttributeList",
                "Get-ECSClusterList",
                "Get-ECSContainerInstanceList",
+               "Get-ECSServiceDeploymentList",
                "Get-ECSClusterService",
                "Get-ECSServicesByNamespace",
                "Get-ECSTagsForResource",
@@ -416,6 +507,7 @@ $ECS_SelectMap = @{
                "Register-ECSTaskDefinition",
                "New-ECSTask",
                "Start-ECSTask",
+               "Stop-ECSServiceDeployment",
                "Stop-ECSTask",
                "Submit-ECSAttachmentStateChange",
                "Add-ECSResourceTag",

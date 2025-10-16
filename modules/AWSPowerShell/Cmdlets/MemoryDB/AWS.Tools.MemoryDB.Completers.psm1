@@ -90,10 +90,34 @@ $MDB_Completers = {
             break
         }
 
+        # Amazon.MemoryDB.IpDiscovery
+        {
+            ($_ -eq "New-MDBCluster/IpDiscovery") -Or
+            ($_ -eq "Update-MDBCluster/IpDiscovery")
+        }
+        {
+            $v = "ipv4","ipv6"
+            break
+        }
+
+        # Amazon.MemoryDB.NetworkType
+        "New-MDBCluster/NetworkType"
+        {
+            $v = "dual_stack","ipv4","ipv6"
+            break
+        }
+
         # Amazon.MemoryDB.SourceType
         "Get-MDBEvent/SourceType"
         {
             $v = "acl","cluster","node","parameter-group","subnet-group","user"
+            break
+        }
+
+        # Amazon.MemoryDB.UpdateStrategy
+        "Update-MDBMultiRegionCluster/UpdateStrategy"
+        {
+            $v = "coordinated","uncoordinated"
             break
         }
 
@@ -107,7 +131,10 @@ $MDB_Completers = {
 
 $MDB_map = @{
     "AuthenticationMode_Type"=@("New-MDBUser","Update-MDBUser")
+    "IpDiscovery"=@("New-MDBCluster","Update-MDBCluster")
+    "NetworkType"=@("New-MDBCluster")
     "SourceType"=@("Get-MDBEvent")
+    "UpdateStrategy"=@("Update-MDBMultiRegionCluster")
 }
 
 _awsArgumentCompleterRegistration $MDB_Completers $MDB_map
@@ -164,12 +191,14 @@ $MDB_SelectMap = @{
                "Copy-MDBSnapshot",
                "New-MDBACL",
                "New-MDBCluster",
+               "New-MDBMultiRegionCluster",
                "New-MDBParameterGroup",
                "New-MDBSnapshot",
                "New-MDBSubnetGroup",
                "New-MDBUser",
                "Remove-MDBACL",
                "Remove-MDBCluster",
+               "Remove-MDBMultiRegionCluster",
                "Remove-MDBParameterGroup",
                "Remove-MDBSnapshot",
                "Remove-MDBSubnetGroup",
@@ -178,6 +207,9 @@ $MDB_SelectMap = @{
                "Get-MDBCluster",
                "Get-MDBEngineVersion",
                "Get-MDBEvent",
+               "Get-MDBMultiRegionCluster",
+               "Get-MDBMultiRegionParameterGroup",
+               "Get-MDBMultiRegionParameter",
                "Get-MDBParameterGroup",
                "Get-MDBParameter",
                "Get-MDBReservedNode",
@@ -187,6 +219,7 @@ $MDB_SelectMap = @{
                "Get-MDBSubnetGroup",
                "Get-MDBUser",
                "Start-MDBFailoverShard",
+               "Get-MDBAllowedMultiRegionClusterUpdateList",
                "Get-MDBAllowedNodeTypeUpdateList",
                "Get-MDBTag",
                "Request-MDBReservedNodesOffering",
@@ -195,6 +228,7 @@ $MDB_SelectMap = @{
                "Remove-MDBResourceTag",
                "Update-MDBACL",
                "Update-MDBCluster",
+               "Update-MDBMultiRegionCluster",
                "Update-MDBParameterGroup",
                "Update-MDBSubnetGroup",
                "Update-MDBUser")

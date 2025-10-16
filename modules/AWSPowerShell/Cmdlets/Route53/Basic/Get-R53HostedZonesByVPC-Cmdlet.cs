@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -42,7 +44,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
     /// that created and owns the hosted zone. For example, if a hosted zone was created by
     /// Amazon Elastic File System (Amazon EFS), the value of <c>Owner</c> is <c>efs.amazonaws.com</c>.
     /// 
-    /// </para></li></ul><note><para>
+    /// </para></li></ul><para><c>ListHostedZonesByVPC</c> returns the hosted zones associated with the specified
+    /// VPC and does not reflect the hosted zone associations to VPCs via Route 53 Profiles.
+    /// To get the associations to a Profile, call the <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53profiles_ListProfileResourceAssociations.html">ListProfileResourceAssociations</a>
+    /// API.
+    /// </para><note><para>
     /// When listing private hosted zones, the hosted zone and the Amazon VPC must belong
     /// to the same partition where the hosted zones were created. A partition is a group
     /// of Amazon Web Services Regions. Each Amazon Web Services account is scoped to one
@@ -62,12 +68,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [AWSCmdlet("Calls the Amazon Route 53 ListHostedZonesByVPC API operation.", Operation = new[] {"ListHostedZonesByVPC"}, SelectReturnType = typeof(Amazon.Route53.Model.ListHostedZonesByVPCResponse))]
     [AWSCmdletOutput("Amazon.Route53.Model.HostedZoneSummary or Amazon.Route53.Model.ListHostedZonesByVPCResponse",
         "This cmdlet returns a collection of Amazon.Route53.Model.HostedZoneSummary objects.",
-        "The service call response (type Amazon.Route53.Model.ListHostedZonesByVPCResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Route53.Model.ListHostedZonesByVPCResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetR53HostedZonesByVPCCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter VPCId
         /// <summary>
@@ -144,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public string Select { get; set; } = "HostedZoneSummaries";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -245,13 +256,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "ListHostedZonesByVPC");
             try
             {
-                #if DESKTOP
-                return client.ListHostedZonesByVPC(request);
-                #elif CORECLR
-                return client.ListHostedZonesByVPCAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListHostedZonesByVPCAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

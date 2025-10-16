@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Management.Automation;
 using System.Text;
+using System.Threading;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.SecurityToken;
@@ -98,10 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.STS
     [OutputType("Amazon.SecurityToken.Model.AssumeRoleWithSAMLResponse")]
     [AWSCmdlet("Calls the AWS Security Token Service AssumeRoleWithSAML API operation.", Operation = new[] { "AssumeRoleWithSAML" }, SelectReturnType = typeof(Amazon.SecurityToken.Model.AssumeRoleWithSAMLResponse))]
     [AWSCmdletOutput("Amazon.SecurityToken.Model.AssumeRoleWithSAMLResponse",
-        "This cmdlet returns an Amazon.SecurityToken.Model.AssumeRoleWithSAMLResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack.")]
+        "This cmdlet returns an Amazon.SecurityToken.Model.AssumeRoleWithSAMLResponse object containing multiple properties. The object can be returned by specifying '-Select *'.")]
     [AWSClientCmdlet("AWS Security Token Service", "STS", null, "SecurityToken")]
     public partial class UseSTSRoleWithSAMLCmdlet : BaseCmdlet, IExecutor
     {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         protected IAmazonSecurityTokenService Client { get; private set; }
 
         #region Parameter DurationInSeconds
@@ -225,6 +227,12 @@ namespace Amazon.PowerShell.Cmdlets.STS
             return client;
         }
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
+        
         protected override void ProcessRecord()
         {
             base.ProcessRecord();
@@ -331,13 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.STS
 
             try
             {
-#if DESKTOP
-                return client.AssumeRoleWithSAML(request);
-#elif CORECLR
-                return client.AssumeRoleWithSAMLAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.AssumeRoleWithSAMLAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

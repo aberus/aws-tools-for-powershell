@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
@@ -33,8 +35,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// and any values specified as template parameters. This information includes actual
     /// and expected property values for resources in which CloudFormation detects drift.
     /// Only resource properties explicitly defined in the stack template are checked for
-    /// drift. For more information about stack and resource drift, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html">Detecting
-    /// Unregulated Configuration Changes to Stacks and Resources</a>.
+    /// drift. For more information about stack and resource drift, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift.html">Detect
+    /// unmanaged configuration changes to stacks and resources with drift detection</a>.
     /// 
     ///  
     /// <para>
@@ -42,8 +44,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     /// to detect drift on all resources in a given stack that support drift detection.
     /// </para><para>
     /// Resources that don't currently support drift detection can't be checked. For a list
-    /// of resources that support drift detection, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-stack-drift-resource-list.html">Resources
-    /// that Support Drift Detection</a>.
+    /// of resources that support drift detection, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resource-import-supported-resources.html">Resource
+    /// type support for imports and drift detection</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "CFNStackResourceDrift")]
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation DetectStackResourceDrift API operation.", Operation = new[] {"DetectStackResourceDrift"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.DetectStackResourceDriftResponse))]
     [AWSCmdletOutput("Amazon.CloudFormation.Model.StackResourceDrift or Amazon.CloudFormation.Model.DetectStackResourceDriftResponse",
         "This cmdlet returns an Amazon.CloudFormation.Model.StackResourceDrift object.",
-        "The service call response (type Amazon.CloudFormation.Model.DetectStackResourceDriftResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFormation.Model.DetectStackResourceDriftResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFNStackResourceDriftCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LogicalResourceId
         /// <summary>
@@ -103,19 +106,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "StackResourceDrift";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StackName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,21 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFormation.Model.DetectStackResourceDriftResponse, GetCFNStackResourceDriftCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StackName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LogicalResourceId = this.LogicalResourceId;
             #if MODULAR
             if (this.LogicalResourceId == null && ParameterWasBound(nameof(this.LogicalResourceId)))
@@ -214,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "DetectStackResourceDrift");
             try
             {
-                #if DESKTOP
-                return client.DetectStackResourceDrift(request);
-                #elif CORECLR
-                return client.DetectStackResourceDriftAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DetectStackResourceDriftAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -107,6 +107,26 @@ $OSS_Completers = {
             break
         }
 
+        # Amazon.OpenSearchServerless.IamIdentityCenterGroupAttribute
+        {
+            ($_ -eq "New-OSSSecurityConfig/IamIdentityCenterOptions_GroupAttribute") -Or
+            ($_ -eq "Update-OSSSecurityConfig/IamIdentityCenterOptionsUpdates_GroupAttribute")
+        }
+        {
+            $v = "GroupId","GroupName"
+            break
+        }
+
+        # Amazon.OpenSearchServerless.IamIdentityCenterUserAttribute
+        {
+            ($_ -eq "New-OSSSecurityConfig/IamIdentityCenterOptions_UserAttribute") -Or
+            ($_ -eq "Update-OSSSecurityConfig/IamIdentityCenterOptionsUpdates_UserAttribute")
+        }
+        {
+            $v = "Email","UserId","UserName"
+            break
+        }
+
         # Amazon.OpenSearchServerless.LifecyclePolicyType
         {
             ($_ -eq "Get-OSSLifecyclePolicyList/Type") -Or
@@ -125,7 +145,7 @@ $OSS_Completers = {
             ($_ -eq "New-OSSSecurityConfig/Type")
         }
         {
-            $v = "saml"
+            $v = "iamfederation","iamidentitycenter","saml"
             break
         }
 
@@ -143,7 +163,7 @@ $OSS_Completers = {
         }
 
         # Amazon.OpenSearchServerless.StandbyReplicas
-        "New-OSSCollection/StandbyReplicas"
+        "New-OSSCollection/StandbyReplica"
         {
             $v = "DISABLED","ENABLED"
             break
@@ -166,7 +186,11 @@ $OSS_Completers = {
 
 $OSS_map = @{
     "CollectionFilters_Status"=@("Get-OSSCollectionList")
-    "StandbyReplicas"=@("New-OSSCollection")
+    "IamIdentityCenterOptions_GroupAttribute"=@("New-OSSSecurityConfig")
+    "IamIdentityCenterOptions_UserAttribute"=@("New-OSSSecurityConfig")
+    "IamIdentityCenterOptionsUpdates_GroupAttribute"=@("Update-OSSSecurityConfig")
+    "IamIdentityCenterOptionsUpdates_UserAttribute"=@("Update-OSSSecurityConfig")
+    "StandbyReplica"=@("New-OSSCollection")
     "Type"=@("Get-OSSAccessPolicy","Get-OSSAccessPolicyList","Get-OSSLifecyclePolicyList","Get-OSSSecurityConfigList","Get-OSSSecurityPolicy","Get-OSSSecurityPolicyList","New-OSSAccessPolicy","New-OSSCollection","New-OSSLifecyclePolicy","New-OSSSecurityConfig","New-OSSSecurityPolicy","Remove-OSSAccessPolicy","Remove-OSSLifecyclePolicy","Remove-OSSSecurityPolicy","Update-OSSAccessPolicy","Update-OSSLifecyclePolicy","Update-OSSSecurityPolicy")
     "VpcEndpointFilters_Status"=@("Get-OSSVpcEndpointList")
 }
@@ -227,18 +251,21 @@ $OSS_SelectMap = @{
                "Get-OSSGetVpcEndpoint",
                "New-OSSAccessPolicy",
                "New-OSSCollection",
+               "New-OSSIndex",
                "New-OSSLifecyclePolicy",
                "New-OSSSecurityConfig",
                "New-OSSSecurityPolicy",
                "New-OSSVpcEndpoint",
                "Remove-OSSAccessPolicy",
                "Remove-OSSCollection",
+               "Remove-OSSIndex",
                "Remove-OSSLifecyclePolicy",
                "Remove-OSSSecurityConfig",
                "Remove-OSSSecurityPolicy",
                "Remove-OSSVpcEndpoint",
                "Get-OSSAccessPolicy",
                "Get-OSSAccountSetting",
+               "Get-OSSIndex",
                "Get-OSSPoliciesStat",
                "Get-OSSSecurityConfig",
                "Get-OSSSecurityPolicy",
@@ -254,6 +281,7 @@ $OSS_SelectMap = @{
                "Update-OSSAccessPolicy",
                "Update-OSSAccountSetting",
                "Update-OSSCollection",
+               "Update-OSSIndex",
                "Update-OSSLifecyclePolicy",
                "Update-OSSSecurityConfig",
                "Update-OSSSecurityPolicy",

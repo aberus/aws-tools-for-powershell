@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaTailor;
 using Amazon.MediaTailor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMT
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
     [OutputType("Amazon.MediaTailor.Model.PutPlaybackConfigurationResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaTailor PutPlaybackConfiguration API operation.", Operation = new[] {"PutPlaybackConfiguration"}, SelectReturnType = typeof(Amazon.MediaTailor.Model.PutPlaybackConfigurationResponse))]
     [AWSCmdletOutput("Amazon.MediaTailor.Model.PutPlaybackConfigurationResponse",
-        "This cmdlet returns an Amazon.MediaTailor.Model.PutPlaybackConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaTailor.Model.PutPlaybackConfigurationResponse object containing multiple properties."
     )]
     public partial class SetEMTPlaybackConfigurationCmdlet : AmazonMediaTailorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdDecisionServerUrl
         /// <summary>
@@ -85,8 +88,12 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// <summary>
         /// <para>
         /// <para>The player parameters and aliases used as dynamic variables during session initialization.
-        /// For more information, see <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/variables-domain.html">Domain
-        /// Variables</a>.</para>
+        /// For more information, see <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/variables-domains.html">Domain
+        /// Variables</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,6 +143,21 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.MediaTailor.FillPolicy")]
         public Amazon.MediaTailor.FillPolicy AvailSuppression_FillPolicy { get; set; }
+        #endregion
+        
+        #region Parameter InsertionMode
+        /// <summary>
+        /// <para>
+        /// <para>The setting that controls whether players can use stitched or guided ad insertion.
+        /// The default, <c>STITCHED_ONLY</c>, forces all player sessions to use stitched (server-side)
+        /// ad insertion. Choosing <c>PLAYER_SELECT</c> allows players to select either stitched
+        /// or guided ad insertion at session-initialization time. The default for players that
+        /// do not specify an insertion mode is stitched.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaTailor.InsertionMode")]
+        public Amazon.MediaTailor.InsertionMode InsertionMode { get; set; }
         #endregion
         
         #region Parameter LivePreRollConfiguration_MaxDurationSecond
@@ -226,13 +248,34 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public System.String Bumper_StartUrl { get; set; }
         #endregion
         
+        #region Parameter AdConditioningConfiguration_StreamingMediaFileConditioning
+        /// <summary>
+        /// <para>
+        /// <para>For ads that have media files with streaming delivery and supported file extensions,
+        /// indicates what transcoding action MediaTailor takes when it first receives these ads
+        /// from the ADS. <c>TRANSCODE</c> indicates that MediaTailor must transcode the ads.
+        /// <c>NONE</c> indicates that you have already transcoded the ads outside of MediaTailor
+        /// and don't need them transcoded as part of the ad insertion workflow. For more information
+        /// about ad conditioning see <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/precondition-ads.html">Using
+        /// preconditioned ads</a> in the Elemental MediaTailor user guide.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MediaTailor.StreamingMediaFileConditioning")]
+        public Amazon.MediaTailor.StreamingMediaFileConditioning AdConditioningConfiguration_StreamingMediaFileConditioning { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>The tags to assign to the playback configuration. Tags are key-value pairs that you
         /// can associate with Amazon resources to help with organization, access control, and
         /// cost tracking. For more information, see <a href="https://docs.aws.amazon.com/mediatailor/latest/ug/tagging.html">Tagging
-        /// AWS Elemental MediaTailor Resources</a>.</para>
+        /// AWS Elemental MediaTailor Resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -290,16 +333,6 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -310,9 +343,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -326,21 +363,12 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaTailor.Model.PutPlaybackConfigurationResponse, SetEMTPlaybackConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.AdConditioningConfiguration_StreamingMediaFileConditioning = this.AdConditioningConfiguration_StreamingMediaFileConditioning;
             context.AdDecisionServerUrl = this.AdDecisionServerUrl;
             context.AvailSuppression_FillPolicy = this.AvailSuppression_FillPolicy;
             context.AvailSuppression_Mode = this.AvailSuppression_Mode;
@@ -357,6 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
                 }
             }
             context.DashConfiguration = this.DashConfiguration;
+            context.InsertionMode = this.InsertionMode;
             context.LivePreRollConfiguration_AdDecisionServerUrl = this.LivePreRollConfiguration_AdDecisionServerUrl;
             context.LivePreRollConfiguration_MaxDurationSecond = this.LivePreRollConfiguration_MaxDurationSecond;
             context.AdMarkerPassthrough_Enabled = this.AdMarkerPassthrough_Enabled;
@@ -395,6 +424,25 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             // create request
             var request = new Amazon.MediaTailor.Model.PutPlaybackConfigurationRequest();
             
+            
+             // populate AdConditioningConfiguration
+            var requestAdConditioningConfigurationIsNull = true;
+            request.AdConditioningConfiguration = new Amazon.MediaTailor.Model.AdConditioningConfiguration();
+            Amazon.MediaTailor.StreamingMediaFileConditioning requestAdConditioningConfiguration_adConditioningConfiguration_StreamingMediaFileConditioning = null;
+            if (cmdletContext.AdConditioningConfiguration_StreamingMediaFileConditioning != null)
+            {
+                requestAdConditioningConfiguration_adConditioningConfiguration_StreamingMediaFileConditioning = cmdletContext.AdConditioningConfiguration_StreamingMediaFileConditioning;
+            }
+            if (requestAdConditioningConfiguration_adConditioningConfiguration_StreamingMediaFileConditioning != null)
+            {
+                request.AdConditioningConfiguration.StreamingMediaFileConditioning = requestAdConditioningConfiguration_adConditioningConfiguration_StreamingMediaFileConditioning;
+                requestAdConditioningConfigurationIsNull = false;
+            }
+             // determine if request.AdConditioningConfiguration should be set to null
+            if (requestAdConditioningConfigurationIsNull)
+            {
+                request.AdConditioningConfiguration = null;
+            }
             if (cmdletContext.AdDecisionServerUrl != null)
             {
                 request.AdDecisionServerUrl = cmdletContext.AdDecisionServerUrl;
@@ -478,6 +526,10 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             if (cmdletContext.DashConfiguration != null)
             {
                 request.DashConfiguration = cmdletContext.DashConfiguration;
+            }
+            if (cmdletContext.InsertionMode != null)
+            {
+                request.InsertionMode = cmdletContext.InsertionMode;
             }
             
              // populate LivePreRollConfiguration
@@ -604,13 +656,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaTailor", "PutPlaybackConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutPlaybackConfiguration(request);
-                #elif CORECLR
-                return client.PutPlaybackConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutPlaybackConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -627,6 +673,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.MediaTailor.StreamingMediaFileConditioning AdConditioningConfiguration_StreamingMediaFileConditioning { get; set; }
             public System.String AdDecisionServerUrl { get; set; }
             public Amazon.MediaTailor.FillPolicy AvailSuppression_FillPolicy { get; set; }
             public Amazon.MediaTailor.Mode AvailSuppression_Mode { get; set; }
@@ -636,6 +683,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             public Amazon.MediaTailor.Model.CdnConfiguration CdnConfiguration { get; set; }
             public Dictionary<System.String, Dictionary<System.String, System.String>> ConfigurationAlias { get; set; }
             public Amazon.MediaTailor.Model.DashConfigurationForPut DashConfiguration { get; set; }
+            public Amazon.MediaTailor.InsertionMode InsertionMode { get; set; }
             public System.String LivePreRollConfiguration_AdDecisionServerUrl { get; set; }
             public System.Int32? LivePreRollConfiguration_MaxDurationSecond { get; set; }
             public System.Boolean? AdMarkerPassthrough_Enabled { get; set; }

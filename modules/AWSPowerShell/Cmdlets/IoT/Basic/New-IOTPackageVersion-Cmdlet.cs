@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoT;
 using Amazon.IoT.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOT
 {
     /// <summary>
@@ -41,27 +43,39 @@ namespace Amazon.PowerShell.Cmdlets.IOT
     [OutputType("Amazon.IoT.Model.CreatePackageVersionResponse")]
     [AWSCmdlet("Calls the AWS IoT CreatePackageVersion API operation.", Operation = new[] {"CreatePackageVersion"}, SelectReturnType = typeof(Amazon.IoT.Model.CreatePackageVersionResponse))]
     [AWSCmdletOutput("Amazon.IoT.Model.CreatePackageVersionResponse",
-        "This cmdlet returns an Amazon.IoT.Model.CreatePackageVersionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoT.Model.CreatePackageVersionResponse object containing multiple properties."
     )]
     public partial class NewIOTPackageVersionCmdlet : AmazonIoTClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
         /// <para>
         /// <para>Metadata that can be used to define a package version’s configuration. For example,
-        /// the S3 file location, configuration options that are being sent to the device or fleet.</para><para>The combined size of all the attributes on a package version is limited to 3KB.</para>
+        /// the S3 file location, configuration options that are being sent to the device or fleet.</para><para>The combined size of all the attributes on a package version is limited to 3KB.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Attributes")]
         public System.Collections.Hashtable Attribute { get; set; }
+        #endregion
+        
+        #region Parameter S3Location_Bucket
+        /// <summary>
+        /// <para>
+        /// <para>The S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Artifact_S3Location_Bucket")]
+        public System.String S3Location_Bucket { get; set; }
         #endregion
         
         #region Parameter Description
@@ -73,6 +87,17 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter S3Location_Key
+        /// <summary>
+        /// <para>
+        /// <para>The S3 key.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Artifact_S3Location_Key")]
+        public System.String S3Location_Key { get; set; }
         #endregion
         
         #region Parameter PackageName
@@ -92,15 +117,41 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public System.String PackageName { get; set; }
         #endregion
         
+        #region Parameter Recipe
+        /// <summary>
+        /// <para>
+        /// <para>The inline job document associated with a software package version used for a quick
+        /// job deployment.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Recipe { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata that can be used to manage the package version.</para>
+        /// <para>Metadata that can be used to manage the package version.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter S3Location_Version
+        /// <summary>
+        /// <para>
+        /// <para>The S3 bucket version.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Artifact_S3Location_Version")]
+        public System.String S3Location_Version { get; set; }
         #endregion
         
         #region Parameter VersionName
@@ -142,16 +193,6 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VersionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VersionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VersionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -162,9 +203,13 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VersionName), MyInvocation.BoundParameters);
@@ -178,21 +223,14 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoT.Model.CreatePackageVersionResponse, NewIOTPackageVersionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VersionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.S3Location_Bucket = this.S3Location_Bucket;
+            context.S3Location_Key = this.S3Location_Key;
+            context.S3Location_Version = this.S3Location_Version;
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -210,6 +248,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
                 WriteWarning("You are passing $null as a value for parameter PackageName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Recipe = this.Recipe;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -241,6 +280,60 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             // create request
             var request = new Amazon.IoT.Model.CreatePackageVersionRequest();
             
+            
+             // populate Artifact
+            var requestArtifactIsNull = true;
+            request.Artifact = new Amazon.IoT.Model.PackageVersionArtifact();
+            Amazon.IoT.Model.S3Location requestArtifact_artifact_S3Location = null;
+            
+             // populate S3Location
+            var requestArtifact_artifact_S3LocationIsNull = true;
+            requestArtifact_artifact_S3Location = new Amazon.IoT.Model.S3Location();
+            System.String requestArtifact_artifact_S3Location_s3Location_Bucket = null;
+            if (cmdletContext.S3Location_Bucket != null)
+            {
+                requestArtifact_artifact_S3Location_s3Location_Bucket = cmdletContext.S3Location_Bucket;
+            }
+            if (requestArtifact_artifact_S3Location_s3Location_Bucket != null)
+            {
+                requestArtifact_artifact_S3Location.Bucket = requestArtifact_artifact_S3Location_s3Location_Bucket;
+                requestArtifact_artifact_S3LocationIsNull = false;
+            }
+            System.String requestArtifact_artifact_S3Location_s3Location_Key = null;
+            if (cmdletContext.S3Location_Key != null)
+            {
+                requestArtifact_artifact_S3Location_s3Location_Key = cmdletContext.S3Location_Key;
+            }
+            if (requestArtifact_artifact_S3Location_s3Location_Key != null)
+            {
+                requestArtifact_artifact_S3Location.Key = requestArtifact_artifact_S3Location_s3Location_Key;
+                requestArtifact_artifact_S3LocationIsNull = false;
+            }
+            System.String requestArtifact_artifact_S3Location_s3Location_Version = null;
+            if (cmdletContext.S3Location_Version != null)
+            {
+                requestArtifact_artifact_S3Location_s3Location_Version = cmdletContext.S3Location_Version;
+            }
+            if (requestArtifact_artifact_S3Location_s3Location_Version != null)
+            {
+                requestArtifact_artifact_S3Location.Version = requestArtifact_artifact_S3Location_s3Location_Version;
+                requestArtifact_artifact_S3LocationIsNull = false;
+            }
+             // determine if requestArtifact_artifact_S3Location should be set to null
+            if (requestArtifact_artifact_S3LocationIsNull)
+            {
+                requestArtifact_artifact_S3Location = null;
+            }
+            if (requestArtifact_artifact_S3Location != null)
+            {
+                request.Artifact.S3Location = requestArtifact_artifact_S3Location;
+                requestArtifactIsNull = false;
+            }
+             // determine if request.Artifact should be set to null
+            if (requestArtifactIsNull)
+            {
+                request.Artifact = null;
+            }
             if (cmdletContext.Attribute != null)
             {
                 request.Attributes = cmdletContext.Attribute;
@@ -256,6 +349,10 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             if (cmdletContext.PackageName != null)
             {
                 request.PackageName = cmdletContext.PackageName;
+            }
+            if (cmdletContext.Recipe != null)
+            {
+                request.Recipe = cmdletContext.Recipe;
             }
             if (cmdletContext.Tag != null)
             {
@@ -303,13 +400,7 @@ namespace Amazon.PowerShell.Cmdlets.IOT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT", "CreatePackageVersion");
             try
             {
-                #if DESKTOP
-                return client.CreatePackageVersion(request);
-                #elif CORECLR
-                return client.CreatePackageVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePackageVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -326,10 +417,14 @@ namespace Amazon.PowerShell.Cmdlets.IOT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String S3Location_Bucket { get; set; }
+            public System.String S3Location_Key { get; set; }
+            public System.String S3Location_Version { get; set; }
             public Dictionary<System.String, System.String> Attribute { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
             public System.String PackageName { get; set; }
+            public System.String Recipe { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.String VersionName { get; set; }
             public System.Func<Amazon.IoT.Model.CreatePackageVersionResponse, NewIOTPackageVersionCmdlet, object> Select { get; set; } =

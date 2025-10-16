@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeBuild;
 using Amazon.CodeBuild.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CB
 {
     /// <summary>
@@ -47,12 +49,32 @@ namespace Amazon.PowerShell.Cmdlets.CB
     [AWSCmdlet("Calls the AWS CodeBuild CreateWebhook API operation.", Operation = new[] {"CreateWebhook"}, SelectReturnType = typeof(Amazon.CodeBuild.Model.CreateWebhookResponse))]
     [AWSCmdletOutput("Amazon.CodeBuild.Model.Webhook or Amazon.CodeBuild.Model.CreateWebhookResponse",
         "This cmdlet returns an Amazon.CodeBuild.Model.Webhook object.",
-        "The service call response (type Amazon.CodeBuild.Model.CreateWebhookResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeBuild.Model.CreateWebhookResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCBWebhookCmdlet : AmazonCodeBuildClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter PullRequestBuildPolicy_ApproverRole
+        /// <summary>
+        /// <para>
+        /// <para>List of repository roles that have approval privileges for pull request builds when
+        /// comment approval is required. Only users with these roles can provide valid comment
+        /// approvals. If a pull request contributor is one of these roles, their pull request
+        /// builds will trigger automatically. This field is only applicable when <c>requiresCommentApproval</c>
+        /// is not <i>DISABLED</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("PullRequestBuildPolicy_ApproverRoles")]
+        public System.String[] PullRequestBuildPolicy_ApproverRole { get; set; }
+        #endregion
         
         #region Parameter BranchFilter
         /// <summary>
@@ -70,12 +92,27 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter BuildType
         /// <summary>
         /// <para>
-        /// <para>Specifies the type of build this webhook will trigger.</para>
+        /// <para>Specifies the type of build this webhook will trigger.</para><note><para><c>RUNNER_BUILDKITE_BUILD</c> is only available for <c>NO_SOURCE</c> source type
+        /// projects configured for Buildkite runner builds. For more information about CodeBuild-hosted
+        /// Buildkite runner builds, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/sample-runner-buildkite.html">Tutorial:
+        /// Configure a CodeBuild-hosted Buildkite runner</a> in the <i>CodeBuild user guide</i>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.CodeBuild.WebhookBuildType")]
         public Amazon.CodeBuild.WebhookBuildType BuildType { get; set; }
+        #endregion
+        
+        #region Parameter ScopeConfiguration_Domain
+        /// <summary>
+        /// <para>
+        /// <para>The domain of the GitHub Enterprise organization or the GitLab Self Managed group.
+        /// Note that this parameter is only required if your project's source type is GITHUB_ENTERPRISE
+        /// or GITLAB_SELF_MANAGED.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ScopeConfiguration_Domain { get; set; }
         #endregion
         
         #region Parameter FilterGroup
@@ -84,12 +121,40 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <para>An array of arrays of <c>WebhookFilter</c> objects used to determine which webhooks
         /// are triggered. At least one <c>WebhookFilter</c> in the array must specify <c>EVENT</c>
         /// as its <c>type</c>. </para><para>For a build to be triggered, at least one filter group in the <c>filterGroups</c>
-        /// array must pass. For a filter group to pass, each of its filters must pass. </para>
+        /// array must pass. For a filter group to pass, each of its filters must pass. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("FilterGroups")]
         public Amazon.CodeBuild.Model.WebhookFilter[][] FilterGroup { get; set; }
+        #endregion
+        
+        #region Parameter ManualCreation
+        /// <summary>
+        /// <para>
+        /// <para>If manualCreation is true, CodeBuild doesn't create a webhook in GitHub and instead
+        /// returns <c>payloadUrl</c> and <c>secret</c> values for the webhook. The <c>payloadUrl</c>
+        /// and <c>secret</c> values in the output can be used to manually create a webhook within
+        /// GitHub.</para><note><para><c>manualCreation</c> is only available for GitHub webhooks.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ManualCreation { get; set; }
+        #endregion
+        
+        #region Parameter ScopeConfiguration_Name
+        /// <summary>
+        /// <para>
+        /// <para>The name of either the group, enterprise, or organization that will send webhook events
+        /// to CodeBuild, depending on the type of webhook.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ScopeConfiguration_Name { get; set; }
         #endregion
         
         #region Parameter ProjectName
@@ -109,6 +174,32 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public System.String ProjectName { get; set; }
         #endregion
         
+        #region Parameter PullRequestBuildPolicy_RequiresCommentApproval
+        /// <summary>
+        /// <para>
+        /// <para>Specifies when comment-based approval is required before triggering a build on pull
+        /// requests. This setting determines whether builds run automatically or require explicit
+        /// approval through comments.</para><ul><li><para><i>DISABLED</i>: Builds trigger automatically without requiring comment approval</para></li><li><para><i>ALL_PULL_REQUESTS</i>: All pull requests require comment approval before builds
+        /// execute (unless contributor is one of the approver roles)</para></li><li><para><i>FORK_PULL_REQUESTS</i>: Only pull requests from forked repositories require comment
+        /// approval (unless contributor is one of the approver roles)</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CodeBuild.PullRequestBuildCommentApproval")]
+        public Amazon.CodeBuild.PullRequestBuildCommentApproval PullRequestBuildPolicy_RequiresCommentApproval { get; set; }
+        #endregion
+        
+        #region Parameter ScopeConfiguration_Scope
+        /// <summary>
+        /// <para>
+        /// <para>The type of scope for a GitHub or GitLab webhook. The scope default is GITHUB_ORGANIZATION.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CodeBuild.WebhookScopeType")]
+        public Amazon.CodeBuild.WebhookScopeType ScopeConfiguration_Scope { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Webhook'.
@@ -118,16 +209,6 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Webhook";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProjectName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProjectName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProjectName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -140,9 +221,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProjectName), MyInvocation.BoundParameters);
@@ -156,21 +241,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodeBuild.Model.CreateWebhookResponse, NewCBWebhookCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProjectName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BranchFilter = this.BranchFilter;
             context.BuildType = this.BuildType;
             if (this.FilterGroup != null)
@@ -181,6 +256,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
                     context.FilterGroup.Add(new List<Amazon.CodeBuild.Model.WebhookFilter>(innerList));
                 }
             }
+            context.ManualCreation = this.ManualCreation;
             context.ProjectName = this.ProjectName;
             #if MODULAR
             if (this.ProjectName == null && ParameterWasBound(nameof(this.ProjectName)))
@@ -188,6 +264,14 @@ namespace Amazon.PowerShell.Cmdlets.CB
                 WriteWarning("You are passing $null as a value for parameter ProjectName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.PullRequestBuildPolicy_ApproverRole != null)
+            {
+                context.PullRequestBuildPolicy_ApproverRole = new List<System.String>(this.PullRequestBuildPolicy_ApproverRole);
+            }
+            context.PullRequestBuildPolicy_RequiresCommentApproval = this.PullRequestBuildPolicy_RequiresCommentApproval;
+            context.ScopeConfiguration_Domain = this.ScopeConfiguration_Domain;
+            context.ScopeConfiguration_Name = this.ScopeConfiguration_Name;
+            context.ScopeConfiguration_Scope = this.ScopeConfiguration_Scope;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -216,9 +300,81 @@ namespace Amazon.PowerShell.Cmdlets.CB
             {
                 request.FilterGroups = cmdletContext.FilterGroup;
             }
+            if (cmdletContext.ManualCreation != null)
+            {
+                request.ManualCreation = cmdletContext.ManualCreation.Value;
+            }
             if (cmdletContext.ProjectName != null)
             {
                 request.ProjectName = cmdletContext.ProjectName;
+            }
+            
+             // populate PullRequestBuildPolicy
+            var requestPullRequestBuildPolicyIsNull = true;
+            request.PullRequestBuildPolicy = new Amazon.CodeBuild.Model.PullRequestBuildPolicy();
+            List<System.String> requestPullRequestBuildPolicy_pullRequestBuildPolicy_ApproverRole = null;
+            if (cmdletContext.PullRequestBuildPolicy_ApproverRole != null)
+            {
+                requestPullRequestBuildPolicy_pullRequestBuildPolicy_ApproverRole = cmdletContext.PullRequestBuildPolicy_ApproverRole;
+            }
+            if (requestPullRequestBuildPolicy_pullRequestBuildPolicy_ApproverRole != null)
+            {
+                request.PullRequestBuildPolicy.ApproverRoles = requestPullRequestBuildPolicy_pullRequestBuildPolicy_ApproverRole;
+                requestPullRequestBuildPolicyIsNull = false;
+            }
+            Amazon.CodeBuild.PullRequestBuildCommentApproval requestPullRequestBuildPolicy_pullRequestBuildPolicy_RequiresCommentApproval = null;
+            if (cmdletContext.PullRequestBuildPolicy_RequiresCommentApproval != null)
+            {
+                requestPullRequestBuildPolicy_pullRequestBuildPolicy_RequiresCommentApproval = cmdletContext.PullRequestBuildPolicy_RequiresCommentApproval;
+            }
+            if (requestPullRequestBuildPolicy_pullRequestBuildPolicy_RequiresCommentApproval != null)
+            {
+                request.PullRequestBuildPolicy.RequiresCommentApproval = requestPullRequestBuildPolicy_pullRequestBuildPolicy_RequiresCommentApproval;
+                requestPullRequestBuildPolicyIsNull = false;
+            }
+             // determine if request.PullRequestBuildPolicy should be set to null
+            if (requestPullRequestBuildPolicyIsNull)
+            {
+                request.PullRequestBuildPolicy = null;
+            }
+            
+             // populate ScopeConfiguration
+            var requestScopeConfigurationIsNull = true;
+            request.ScopeConfiguration = new Amazon.CodeBuild.Model.ScopeConfiguration();
+            System.String requestScopeConfiguration_scopeConfiguration_Domain = null;
+            if (cmdletContext.ScopeConfiguration_Domain != null)
+            {
+                requestScopeConfiguration_scopeConfiguration_Domain = cmdletContext.ScopeConfiguration_Domain;
+            }
+            if (requestScopeConfiguration_scopeConfiguration_Domain != null)
+            {
+                request.ScopeConfiguration.Domain = requestScopeConfiguration_scopeConfiguration_Domain;
+                requestScopeConfigurationIsNull = false;
+            }
+            System.String requestScopeConfiguration_scopeConfiguration_Name = null;
+            if (cmdletContext.ScopeConfiguration_Name != null)
+            {
+                requestScopeConfiguration_scopeConfiguration_Name = cmdletContext.ScopeConfiguration_Name;
+            }
+            if (requestScopeConfiguration_scopeConfiguration_Name != null)
+            {
+                request.ScopeConfiguration.Name = requestScopeConfiguration_scopeConfiguration_Name;
+                requestScopeConfigurationIsNull = false;
+            }
+            Amazon.CodeBuild.WebhookScopeType requestScopeConfiguration_scopeConfiguration_Scope = null;
+            if (cmdletContext.ScopeConfiguration_Scope != null)
+            {
+                requestScopeConfiguration_scopeConfiguration_Scope = cmdletContext.ScopeConfiguration_Scope;
+            }
+            if (requestScopeConfiguration_scopeConfiguration_Scope != null)
+            {
+                request.ScopeConfiguration.Scope = requestScopeConfiguration_scopeConfiguration_Scope;
+                requestScopeConfigurationIsNull = false;
+            }
+             // determine if request.ScopeConfiguration should be set to null
+            if (requestScopeConfigurationIsNull)
+            {
+                request.ScopeConfiguration = null;
             }
             
             CmdletOutput output;
@@ -258,13 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeBuild", "CreateWebhook");
             try
             {
-                #if DESKTOP
-                return client.CreateWebhook(request);
-                #elif CORECLR
-                return client.CreateWebhookAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateWebhookAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -284,7 +434,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
             public System.String BranchFilter { get; set; }
             public Amazon.CodeBuild.WebhookBuildType BuildType { get; set; }
             public List<List<Amazon.CodeBuild.Model.WebhookFilter>> FilterGroup { get; set; }
+            public System.Boolean? ManualCreation { get; set; }
             public System.String ProjectName { get; set; }
+            public List<System.String> PullRequestBuildPolicy_ApproverRole { get; set; }
+            public Amazon.CodeBuild.PullRequestBuildCommentApproval PullRequestBuildPolicy_RequiresCommentApproval { get; set; }
+            public System.String ScopeConfiguration_Domain { get; set; }
+            public System.String ScopeConfiguration_Name { get; set; }
+            public Amazon.CodeBuild.WebhookScopeType ScopeConfiguration_Scope { get; set; }
             public System.Func<Amazon.CodeBuild.Model.CreateWebhookResponse, NewCBWebhookCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Webhook;
         }

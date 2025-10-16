@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Use <c>CreateRoleMembership</c> to add an existing Amazon QuickSight group to an existing
+    /// Use <c>CreateRoleMembership</c> to add an existing Quick Sight group to an existing
     /// role.
     /// </summary>
     [Cmdlet("New", "QSRoleMembership", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QuickSight.Model.CreateRoleMembershipResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight CreateRoleMembership API operation.", Operation = new[] {"CreateRoleMembership"}, SelectReturnType = typeof(Amazon.QuickSight.Model.CreateRoleMembershipResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.CreateRoleMembershipResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.CreateRoleMembershipResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.CreateRoleMembershipResponse object containing multiple properties."
     )]
     public partial class NewQSRoleMembershipCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsAccountId
         /// <summary>
         /// <para>
         /// <para>The ID for the Amazon Web Services account that you want to create a group in. The
         /// Amazon Web Services account ID that you provide must be the same Amazon Web Services
-        /// account that contains your Amazon QuickSight account.</para>
+        /// account that contains your Amazon Quick Sight account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -133,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -252,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "CreateRoleMembership");
             try
             {
-                #if DESKTOP
-                return client.CreateRoleMembership(request);
-                #elif CORECLR
-                return client.CreateRoleMembershipAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRoleMembershipAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

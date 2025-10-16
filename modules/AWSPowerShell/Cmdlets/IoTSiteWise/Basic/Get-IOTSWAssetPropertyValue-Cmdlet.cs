@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [AWSCmdlet("Calls the AWS IoT SiteWise GetAssetPropertyValue API operation.", Operation = new[] {"GetAssetPropertyValue"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.GetAssetPropertyValueResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.AssetPropertyValue or Amazon.IoTSiteWise.Model.GetAssetPropertyValueResponse",
         "This cmdlet returns an Amazon.IoTSiteWise.Model.AssetPropertyValue object.",
-        "The service call response (type Amazon.IoTSiteWise.Model.GetAssetPropertyValueResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTSiteWise.Model.GetAssetPropertyValueResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTSWAssetPropertyValueCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetId
         /// <summary>
@@ -97,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public string Select { get; set; } = "PropertyValue";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -181,13 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "GetAssetPropertyValue");
             try
             {
-                #if DESKTOP
-                return client.GetAssetPropertyValue(request);
-                #elif CORECLR
-                return client.GetAssetPropertyValueAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAssetPropertyValueAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

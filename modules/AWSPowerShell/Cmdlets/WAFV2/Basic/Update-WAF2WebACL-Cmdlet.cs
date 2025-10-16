@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAFV2;
 using Amazon.WAFV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAF2
 {
     /// <summary>
@@ -48,10 +50,10 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
     /// a default action to take (allow, block) for any request that does not match any of
     /// the rules. The rules in a web ACL can be a combination of the types <a>Rule</a>, <a>RuleGroup</a>,
     /// and managed rule group. You can associate a web ACL with one or more Amazon Web Services
-    /// resources to protect. The resources can be an Amazon CloudFront distribution, an Amazon
-    /// API Gateway REST API, an Application Load Balancer, an AppSync GraphQL API, an Amazon
-    /// Cognito user pool, an App Runner service, or an Amazon Web Services Verified Access
-    /// instance. 
+    /// resources to protect. The resource types include Amazon CloudFront distribution, Amazon
+    /// API Gateway REST API, Application Load Balancer, AppSync GraphQL API, Amazon Cognito
+    /// user pool, App Runner service, Amplify application, and Amazon Web Services Verified
+    /// Access instance. 
     /// </para><para><b>Temporary inconsistencies during updates</b></para><para>
     /// When you create or change a web ACL or other WAF resources, the changes take a small
     /// amount of time to propagate to all areas where the resources are stored. The propagation
@@ -78,12 +80,32 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
     [AWSCmdlet("Calls the AWS WAF V2 UpdateWebACL API operation.", Operation = new[] {"UpdateWebACL"}, SelectReturnType = typeof(Amazon.WAFV2.Model.UpdateWebACLResponse))]
     [AWSCmdletOutput("System.String or Amazon.WAFV2.Model.UpdateWebACLResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.WAFV2.Model.UpdateWebACLResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WAFV2.Model.UpdateWebACLResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateWAF2WebACLCmdlet : AmazonWAFV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter OnSourceDDoSProtectionConfig_ALBLowReputationMode
+        /// <summary>
+        /// <para>
+        /// <para>The level of DDoS protection that applies to web ACLs associated with Application
+        /// Load Balancers. <c>ACTIVE_UNDER_DDOS</c> protection is enabled by default whenever
+        /// a web ACL is associated with an Application Load Balancer. In the event that an Application
+        /// Load Balancer experiences high-load conditions or suspected DDoS attacks, the <c>ACTIVE_UNDER_DDOS</c>
+        /// protection automatically rate limits traffic from known low reputation sources without
+        /// disrupting Application Load Balancer availability. <c>ALWAYS_ON</c> protection provides
+        /// constant, always-on monitoring of known low reputation sources for suspected DDoS
+        /// attacks. While this provides a higher level of protection, there may be potential
+        /// impacts on legitimate traffic.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WAFV2.LowReputationMode")]
+        public Amazon.WAFV2.LowReputationMode OnSourceDDoSProtectionConfig_ALBLowReputationMode { get; set; }
+        #endregion
         
         #region Parameter DefaultAction_Allow
         /// <summary>
@@ -93,6 +115,21 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.WAFV2.Model.AllowAction DefaultAction_Allow { get; set; }
+        #endregion
+        
+        #region Parameter ApplicationConfig_Attribute
+        /// <summary>
+        /// <para>
+        /// <para>Contains the attribute name and a list of values for that attribute.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ApplicationConfig_Attributes")]
+        public Amazon.WAFV2.Model.ApplicationAttribute[] ApplicationConfig_Attribute { get; set; }
         #endregion
         
         #region Parameter DefaultAction_Block
@@ -136,12 +173,33 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// web ACL. </para><para>For information about customizing web requests and responses, see <a href="https://docs.aws.amazon.com/waf/latest/developerguide/waf-custom-request-response.html">Customizing
         /// web requests and responses in WAF</a> in the <i>WAF Developer Guide</i>. </para><para>For information about the limits on count and size for custom request and response
         /// settings, see <a href="https://docs.aws.amazon.com/waf/latest/developerguide/limits.html">WAF
-        /// quotas</a> in the <i>WAF Developer Guide</i>. </para>
+        /// quotas</a> in the <i>WAF Developer Guide</i>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("CustomResponseBodies")]
         public System.Collections.Hashtable CustomResponseBody { get; set; }
+        #endregion
+        
+        #region Parameter DataProtectionConfig_DataProtection
+        /// <summary>
+        /// <para>
+        /// <para>An array of data protection configurations for specific web request field types. This
+        /// is defined for each web ACL. WAF applies the specified protection to all web requests
+        /// that the web ACL inspects. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataProtectionConfig_DataProtections")]
+        public Amazon.WAFV2.Model.DataProtection[] DataProtectionConfig_DataProtection { get; set; }
         #endregion
         
         #region Parameter Description
@@ -259,10 +317,16 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         #region Parameter AssociationConfig_RequestBody
         /// <summary>
         /// <para>
-        /// <para>Customizes the maximum size of the request body that your protected CloudFront distributions
-        /// forward to WAF for inspection. The default size is 16 KB (16,384 bytes). </para><note><para>You are charged additional fees when your protected resources forward body sizes that
+        /// <para>Customizes the maximum size of the request body that your protected CloudFront, API
+        /// Gateway, Amazon Cognito, App Runner, and Verified Access resources forward to WAF
+        /// for inspection. The default size is 16 KB (16,384 bytes). You can change the setting
+        /// for any of the available resource types. </para><note><para>You are charged additional fees when your protected resources forward body sizes that
         /// are larger than the default. For more information, see <a href="http://aws.amazon.com/waf/pricing/">WAF
-        /// Pricing</a>.</para></note>
+        /// Pricing</a>.</para></note><para>Example JSON: <c> { "API_GATEWAY": "KB_48", "APP_RUNNER_SERVICE": "KB_32" }</c></para><para>For Application Load Balancer and AppSync, the limit is fixed at 8 KB (8,192 bytes).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -274,7 +338,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// <para>
         /// <para>The <a>Rule</a> statements used to identify the web requests that you want to manage.
         /// Each rule includes one top-level statement that WAF uses to identify matching web
-        /// requests, and parameters that govern how WAF handles them. </para>
+        /// requests, and parameters that govern how WAF handles them. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -286,7 +354,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// <summary>
         /// <para>
         /// <para>Indicates whether WAF should store a sampling of the web requests that match the rules.
-        /// You can view the sampled requests through the WAF console. </para>
+        /// You can view the sampled requests through the WAF console. </para><para>If you configure data protection for the web ACL, the protection applies to the web
+        /// ACL's sampled web request data. </para><note><para>Request sampling doesn't provide a field redaction option, and any field redaction
+        /// that you specify in your logging configuration doesn't affect sampling. You can only
+        /// exclude fields from request sampling by disabling sampling in the web ACL visibility
+        /// configuration or by configuring data protection for the web ACL.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -302,10 +374,8 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         #region Parameter Scope
         /// <summary>
         /// <para>
-        /// <para>Specifies whether this is for an Amazon CloudFront distribution or for a regional
-        /// application. A regional application can be an Application Load Balancer (ALB), an
-        /// Amazon API Gateway REST API, an AppSync GraphQL API, an Amazon Cognito user pool,
-        /// an App Runner service, or an Amazon Web Services Verified Access instance. </para><para>To work with CloudFront, you must also specify the Region US East (N. Virginia) as
+        /// <para>Specifies whether this is for a global resource type, such as a Amazon CloudFront
+        /// distribution. For an Amplify application, use <c>CLOUDFRONT</c>.</para><para>To work with CloudFront, you must also specify the Region US East (N. Virginia) as
         /// follows: </para><ul><li><para>CLI - Specify the Region when you use the CloudFront scope: <c>--scope=CLOUDFRONT
         /// --region=us-east-1</c>. </para></li><li><para>API and SDKs - For all calls, use the Region endpoint us-east-1. </para></li></ul>
         /// </para>
@@ -330,7 +400,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// If you don't specify a list of token domains, WAF accepts tokens only for the domain
         /// of the protected resource. With a token domain list, WAF accepts the resource's host
         /// domain plus all domains in the token domain list, including their prefixed subdomains.</para><para>Example JSON: <c>"TokenDomains": { "mywebsite.com", "myotherwebsite.com" }</c></para><para>Public suffixes aren't allowed. For example, you can't use <c>gov.au</c> or <c>co.uk</c>
-        /// as token domains.</para>
+        /// as token domains.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -349,16 +423,6 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public string Select { get; set; } = "NextLockToken";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -369,9 +433,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -385,21 +453,15 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WAFV2.Model.UpdateWebACLResponse, UpdateWAF2WebACLCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            if (this.ApplicationConfig_Attribute != null)
             {
-                context.Select = (response, cmdlet) => this.Id;
+                context.ApplicationConfig_Attribute = new List<Amazon.WAFV2.Model.ApplicationAttribute>(this.ApplicationConfig_Attribute);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AssociationConfig_RequestBody != null)
             {
                 context.AssociationConfig_RequestBody = new Dictionary<System.String, Amazon.WAFV2.Model.RequestBodyAssociatedResourceTypeConfig>(StringComparer.Ordinal);
@@ -417,6 +479,10 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
                 {
                     context.CustomResponseBody.Add((String)hashKey, (Amazon.WAFV2.Model.CustomResponseBody)(this.CustomResponseBody[hashKey]));
                 }
+            }
+            if (this.DataProtectionConfig_DataProtection != null)
+            {
+                context.DataProtectionConfig_DataProtection = new List<Amazon.WAFV2.Model.DataProtection>(this.DataProtectionConfig_DataProtection);
             }
             context.DefaultAction_Allow = this.DefaultAction_Allow;
             context.DefaultAction_Block = this.DefaultAction_Block;
@@ -442,6 +508,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.OnSourceDDoSProtectionConfig_ALBLowReputationMode = this.OnSourceDDoSProtectionConfig_ALBLowReputationMode;
             if (this.Rule != null)
             {
                 context.Rule = new List<Amazon.WAFV2.Model.Rule>(this.Rule);
@@ -494,6 +561,25 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             // create request
             var request = new Amazon.WAFV2.Model.UpdateWebACLRequest();
             
+            
+             // populate ApplicationConfig
+            var requestApplicationConfigIsNull = true;
+            request.ApplicationConfig = new Amazon.WAFV2.Model.ApplicationConfig();
+            List<Amazon.WAFV2.Model.ApplicationAttribute> requestApplicationConfig_applicationConfig_Attribute = null;
+            if (cmdletContext.ApplicationConfig_Attribute != null)
+            {
+                requestApplicationConfig_applicationConfig_Attribute = cmdletContext.ApplicationConfig_Attribute;
+            }
+            if (requestApplicationConfig_applicationConfig_Attribute != null)
+            {
+                request.ApplicationConfig.Attributes = requestApplicationConfig_applicationConfig_Attribute;
+                requestApplicationConfigIsNull = false;
+            }
+             // determine if request.ApplicationConfig should be set to null
+            if (requestApplicationConfigIsNull)
+            {
+                request.ApplicationConfig = null;
+            }
             
              // populate AssociationConfig
             var requestAssociationConfigIsNull = true;
@@ -586,6 +672,25 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
                 request.CustomResponseBodies = cmdletContext.CustomResponseBody;
             }
             
+             // populate DataProtectionConfig
+            var requestDataProtectionConfigIsNull = true;
+            request.DataProtectionConfig = new Amazon.WAFV2.Model.DataProtectionConfig();
+            List<Amazon.WAFV2.Model.DataProtection> requestDataProtectionConfig_dataProtectionConfig_DataProtection = null;
+            if (cmdletContext.DataProtectionConfig_DataProtection != null)
+            {
+                requestDataProtectionConfig_dataProtectionConfig_DataProtection = cmdletContext.DataProtectionConfig_DataProtection;
+            }
+            if (requestDataProtectionConfig_dataProtectionConfig_DataProtection != null)
+            {
+                request.DataProtectionConfig.DataProtections = requestDataProtectionConfig_dataProtectionConfig_DataProtection;
+                requestDataProtectionConfigIsNull = false;
+            }
+             // determine if request.DataProtectionConfig should be set to null
+            if (requestDataProtectionConfigIsNull)
+            {
+                request.DataProtectionConfig = null;
+            }
+            
              // populate DefaultAction
             var requestDefaultActionIsNull = true;
             request.DefaultAction = new Amazon.WAFV2.Model.DefaultAction();
@@ -629,6 +734,25 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            
+             // populate OnSourceDDoSProtectionConfig
+            var requestOnSourceDDoSProtectionConfigIsNull = true;
+            request.OnSourceDDoSProtectionConfig = new Amazon.WAFV2.Model.OnSourceDDoSProtectionConfig();
+            Amazon.WAFV2.LowReputationMode requestOnSourceDDoSProtectionConfig_onSourceDDoSProtectionConfig_ALBLowReputationMode = null;
+            if (cmdletContext.OnSourceDDoSProtectionConfig_ALBLowReputationMode != null)
+            {
+                requestOnSourceDDoSProtectionConfig_onSourceDDoSProtectionConfig_ALBLowReputationMode = cmdletContext.OnSourceDDoSProtectionConfig_ALBLowReputationMode;
+            }
+            if (requestOnSourceDDoSProtectionConfig_onSourceDDoSProtectionConfig_ALBLowReputationMode != null)
+            {
+                request.OnSourceDDoSProtectionConfig.ALBLowReputationMode = requestOnSourceDDoSProtectionConfig_onSourceDDoSProtectionConfig_ALBLowReputationMode;
+                requestOnSourceDDoSProtectionConfigIsNull = false;
+            }
+             // determine if request.OnSourceDDoSProtectionConfig should be set to null
+            if (requestOnSourceDDoSProtectionConfigIsNull)
+            {
+                request.OnSourceDDoSProtectionConfig = null;
             }
             if (cmdletContext.Rule != null)
             {
@@ -719,13 +843,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF V2", "UpdateWebACL");
             try
             {
-                #if DESKTOP
-                return client.UpdateWebACL(request);
-                #elif CORECLR
-                return client.UpdateWebACLAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateWebACLAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -742,16 +860,19 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public List<Amazon.WAFV2.Model.ApplicationAttribute> ApplicationConfig_Attribute { get; set; }
             public Dictionary<System.String, Amazon.WAFV2.Model.RequestBodyAssociatedResourceTypeConfig> AssociationConfig_RequestBody { get; set; }
             public System.Int64? CaptchaConfig_ImmunityTimeProperty_ImmunityTime { get; set; }
             public System.Int64? ChallengeConfig_ImmunityTimeProperty_ImmunityTime { get; set; }
             public Dictionary<System.String, Amazon.WAFV2.Model.CustomResponseBody> CustomResponseBody { get; set; }
+            public List<Amazon.WAFV2.Model.DataProtection> DataProtectionConfig_DataProtection { get; set; }
             public Amazon.WAFV2.Model.AllowAction DefaultAction_Allow { get; set; }
             public Amazon.WAFV2.Model.BlockAction DefaultAction_Block { get; set; }
             public System.String Description { get; set; }
             public System.String Id { get; set; }
             public System.String LockToken { get; set; }
             public System.String Name { get; set; }
+            public Amazon.WAFV2.LowReputationMode OnSourceDDoSProtectionConfig_ALBLowReputationMode { get; set; }
             public List<Amazon.WAFV2.Model.Rule> Rule { get; set; }
             public Amazon.WAFV2.Scope Scope { get; set; }
             public List<System.String> TokenDomain { get; set; }

@@ -83,7 +83,7 @@ $AMM_Completers = {
         # Amazon.MainframeModernization.BatchJobExecutionStatus
         "Get-AMMBatchJobExecutionList/Status"
         {
-            $v = "Cancelled","Cancelling","Dispatching","Failed","Holding","Running","Submitting","Succeeded","Succeeded With Warning"
+            $v = "Cancelled","Cancelling","Dispatching","Failed","Holding","Purged","Running","Submitting","Succeeded","Succeeded With Warning"
             break
         }
 
@@ -99,6 +99,13 @@ $AMM_Completers = {
             break
         }
 
+        # Amazon.MainframeModernization.NetworkType
+        "New-AMMEnvironment/NetworkType"
+        {
+            $v = "dual","ipv4"
+            break
+        }
+
 
     }
 
@@ -109,6 +116,7 @@ $AMM_Completers = {
 
 $AMM_map = @{
     "EngineType"=@("Get-AMMEngineVersionList","Get-AMMEnvironmentList","New-AMMApplication","New-AMMEnvironment")
+    "NetworkType"=@("New-AMMEnvironment")
     "Status"=@("Get-AMMBatchJobExecutionList")
 }
 
@@ -164,6 +172,7 @@ $AMM_SelectCompleters = {
 $AMM_SelectMap = @{
     "Select"=@("Stop-AMMBatchJobExecution",
                "New-AMMApplication",
+               "New-AMMDataSetExportTask",
                "New-AMMDataSetImportTask",
                "New-AMMDeployment",
                "New-AMMEnvironment",
@@ -174,6 +183,7 @@ $AMM_SelectMap = @{
                "Get-AMMApplicationVersion",
                "Get-AMMBatchJobExecution",
                "Get-AMMDataSetDetail",
+               "Get-AMMDataSetExportTask",
                "Get-AMMDataSetImportTask",
                "Get-AMMDeployment",
                "Get-AMMEnvironment",
@@ -182,6 +192,8 @@ $AMM_SelectMap = @{
                "Get-AMMApplicationVersionList",
                "Get-AMMBatchJobDefinitionList",
                "Get-AMMBatchJobExecutionList",
+               "Get-AMMBatchJobRestartPointList",
+               "Get-AMMDataSetExportHistoryList",
                "Get-AMMDataSetImportHistoryList",
                "Get-AMMDataSetList",
                "Get-AMMDeploymentList",

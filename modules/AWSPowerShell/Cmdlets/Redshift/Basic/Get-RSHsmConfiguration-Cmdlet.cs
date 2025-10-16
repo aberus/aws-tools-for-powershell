@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
     [AWSCmdlet("Calls the Amazon Redshift DescribeHsmConfigurations API operation.", Operation = new[] {"DescribeHsmConfigurations"}, SelectReturnType = typeof(Amazon.Redshift.Model.DescribeHsmConfigurationsResponse), LegacyAlias="Get-RSHsmConfigurations")]
     [AWSCmdletOutput("Amazon.Redshift.Model.HsmConfiguration or Amazon.Redshift.Model.DescribeHsmConfigurationsResponse",
         "This cmdlet returns a collection of Amazon.Redshift.Model.HsmConfiguration objects.",
-        "The service call response (type Amazon.Redshift.Model.DescribeHsmConfigurationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.DescribeHsmConfigurationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetRSHsmConfigurationCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HsmConfigurationIdentifier
         /// <summary>
@@ -76,7 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// HSM configurations that are tagged with keys called <c>owner</c> and <c>environment</c>.
         /// If you specify both of these tag keys in the request, Amazon Redshift returns a response
         /// with the HSM configurations that have either or both of these tag keys associated
-        /// with them.</para>
+        /// with them.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// you have HSM configurations that are tagged with values called <c>admin</c> and <c>test</c>.
         /// If you specify both of these tag values in the request, Amazon Redshift returns a
         /// response with the HSM configurations that have either or both of these tag values
-        /// associated with them.</para>
+        /// associated with them.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,7 +123,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -356,7 +371,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.HsmConfigurations.Count;
+                    int _receivedThisCall = response.HsmConfigurations?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -405,13 +420,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "DescribeHsmConfigurations");
             try
             {
-                #if DESKTOP
-                return client.DescribeHsmConfigurations(request);
-                #elif CORECLR
-                return client.DescribeHsmConfigurationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeHsmConfigurationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LookoutMetrics;
 using Amazon.LookoutMetrics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOM
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.LOM
     [OutputType("Amazon.LookoutMetrics.Model.GetSampleDataResponse")]
     [AWSCmdlet("Calls the Amazon Lookout for Metrics GetSampleData API operation.", Operation = new[] {"GetSampleData"}, SelectReturnType = typeof(Amazon.LookoutMetrics.Model.GetSampleDataResponse))]
     [AWSCmdletOutput("Amazon.LookoutMetrics.Model.GetSampleDataResponse",
-        "This cmdlet returns an Amazon.LookoutMetrics.Model.GetSampleDataResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LookoutMetrics.Model.GetSampleDataResponse object containing multiple properties."
     )]
     public partial class GetLOMSampleDataCmdlet : AmazonLookoutMetricsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CsvFormatDescriptor_Charset
         /// <summary>
@@ -112,7 +115,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter CsvFormatDescriptor_HeaderList
         /// <summary>
         /// <para>
-        /// <para>A list of the source CSV file's headers, if any.</para>
+        /// <para>A list of the source CSV file's headers, if any.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter S3SourceConfig_HistoricalDataPathList
         /// <summary>
         /// <para>
-        /// <para>An array of strings containing the historical set of data paths.</para>
+        /// <para>An array of strings containing the historical set of data paths.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -154,7 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter S3SourceConfig_TemplatedPathList
         /// <summary>
         /// <para>
-        /// <para>An array of strings containing the list of templated paths.</para>
+        /// <para>An array of strings containing the list of templated paths.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -425,13 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.LOM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lookout for Metrics", "GetSampleData");
             try
             {
-                #if DESKTOP
-                return client.GetSampleData(request);
-                #elif CORECLR
-                return client.GetSampleDataAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetSampleDataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

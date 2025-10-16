@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -38,27 +40,30 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// </para></dd><dt>Additional Permissions</dt><dd><para>
     /// The IAM role that S3 Access Grants assumes must have the following permissions specified
     /// in the trust policy when registering the location: <c>sts:AssumeRole</c>, for directory
-    /// users or groups <c>sts:SetContext</c>, and for IAM users or roles <c>sts:SourceIdentity</c>.
+    /// users or groups <c>sts:SetContext</c>, and for IAM users or roles <c>sts:SetSourceIdentity</c>.
     /// 
-    /// </para></dd></dl>
+    /// </para></dd></dl><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Get", "S3CDataAccess")]
     [OutputType("Amazon.S3Control.Model.GetDataAccessResponse")]
     [AWSCmdlet("Calls the Amazon S3 Control GetDataAccess API operation.", Operation = new[] {"GetDataAccess"}, SelectReturnType = typeof(Amazon.S3Control.Model.GetDataAccessResponse))]
     [AWSCmdletOutput("Amazon.S3Control.Model.GetDataAccessResponse",
-        "This cmdlet returns an Amazon.S3Control.Model.GetDataAccessResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.S3Control.Model.GetDataAccessResponse object containing multiple properties."
     )]
     public partial class GetS3CDataAccessCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
-        /// <para>The ID of the Amazon Web Services account that is making this request.</para>
+        /// <para>The Amazon Web Services account ID of the S3 Access Grants instance.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -163,9 +168,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -280,13 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "GetDataAccess");
             try
             {
-                #if DESKTOP
-                return client.GetDataAccess(request);
-                #elif CORECLR
-                return client.GetDataAccessAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDataAccessAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

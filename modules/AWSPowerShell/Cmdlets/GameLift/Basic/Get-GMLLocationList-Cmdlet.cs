@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,52 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Lists all custom and Amazon Web Services locations.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Lists all custom and Amazon Web Services locations where Amazon GameLift Servers can
+    /// host game servers. 
+    /// 
+    ///  
+    /// <para>
+    /// Note that if you call this API using a location that doesn't have a service endpoint,
+    /// such as one that can only be a remote location in a multi-location fleet, the API
+    /// returns an error.
+    /// </para><para>
+    /// Consult the table of supported locations in <a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-regions.html">Amazon
+    /// GameLift Servers service locations</a> to identify home Regions that support single
+    /// and multi-location fleets.
+    /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-regions.html">Service
+    /// locations</a></para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "GMLLocationList")]
     [OutputType("Amazon.GameLift.Model.LocationModel")]
     [AWSCmdlet("Calls the Amazon GameLift Service ListLocations API operation.", Operation = new[] {"ListLocations"}, SelectReturnType = typeof(Amazon.GameLift.Model.ListLocationsResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.LocationModel or Amazon.GameLift.Model.ListLocationsResponse",
         "This cmdlet returns a collection of Amazon.GameLift.Model.LocationModel objects.",
-        "The service call response (type Amazon.GameLift.Model.ListLocationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.ListLocationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGMLLocationListCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>Filters the list for <c>AWS</c> or <c>CUSTOM</c> locations.</para>
+        /// <para>Filters the list for <c>AWS</c> or <c>CUSTOM</c> locations. Use this parameter to
+        /// narrow down results to only Amazon Web Services-managed locations (Amazon EC2 or container)
+        /// or only your custom locations (such as an Amazon GameLift Servers Anywhere fleet).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +95,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -210,13 +236,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "ListLocations");
             try
             {
-                #if DESKTOP
-                return client.ListLocations(request);
-                #elif CORECLR
-                return client.ListLocationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListLocationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

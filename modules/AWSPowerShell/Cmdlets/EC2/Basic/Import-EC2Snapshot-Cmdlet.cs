@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -40,16 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [OutputType("Amazon.EC2.Model.ImportSnapshotResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ImportSnapshot API operation.", Operation = new[] {"ImportSnapshot"}, SelectReturnType = typeof(Amazon.EC2.Model.ImportSnapshotResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.ImportSnapshotResponse",
-        "This cmdlet returns an Amazon.EC2.Model.ImportSnapshotResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.ImportSnapshotResponse object containing multiple properties."
     )]
     public partial class ImportEC2SnapshotCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientData_Comment
         /// <summary>
@@ -79,6 +78,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DiskContainer_Description { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter Encrypted
@@ -159,7 +170,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the import snapshot task during creation.</para>
+        /// <para>The tags to apply to the import snapshot task during creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,14 +182,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public Amazon.EC2.Model.TagSpecification[] TagSpecification { get; set; }
         #endregion
         
-        #region Parameter ClientData_UtcUploadEnd
+        #region Parameter ClientData_UploadEnd
         /// <summary>
         /// <para>
         /// <para>The time that the disk upload ends.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? ClientData_UtcUploadEnd { get; set; }
+        public System.DateTime? ClientData_UploadEnd { get; set; }
         #endregion
         
         #region Parameter ClientData_UploadSize
@@ -187,14 +202,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.Double? ClientData_UploadSize { get; set; }
         #endregion
         
-        #region Parameter ClientData_UtcUploadStart
+        #region Parameter ClientData_UploadStart
         /// <summary>
         /// <para>
         /// <para>The time that the disk upload starts.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? ClientData_UtcUploadStart { get; set; }
+        public System.DateTime? ClientData_UploadStart { get; set; }
         #endregion
         
         #region Parameter DiskContainer_Url
@@ -218,40 +233,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String ClientToken { get; set; }
         #endregion
         
-        #region Parameter ClientData_UploadEnd
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use UploadEndUtc instead. Setting either UploadEnd or
-        /// UploadEndUtc results in both UploadEnd and UploadEndUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. UploadEnd
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The time that the disk upload ends.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use ClientData_UtcUploadEnd instead.")]
-        public System.DateTime? ClientData_UploadEnd { get; set; }
-        #endregion
-        
-        #region Parameter ClientData_UploadStart
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use UploadStartUtc instead. Setting either UploadStart
-        /// or UploadStartUtc results in both UploadStart and UploadStartUtc being assigned, the
-        /// latest assignment to either one of the two property is reflected in the value of both.
-        /// UploadStart is provided for backwards compatibility only and assigning a non-Utc DateTime
-        /// to it results in the wrong timestamp being passed to the service.</para><para>The time that the disk upload starts.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use ClientData_UtcUploadStart instead.")]
-        public System.DateTime? ClientData_UploadStart { get; set; }
-        #endregion
-        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -273,9 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RoleName), MyInvocation.BoundParameters);
@@ -295,15 +280,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.ClientData_Comment = this.ClientData_Comment;
-            context.ClientData_UtcUploadEnd = this.ClientData_UtcUploadEnd;
-            context.ClientData_UploadSize = this.ClientData_UploadSize;
-            context.ClientData_UtcUploadStart = this.ClientData_UtcUploadStart;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientData_UploadEnd = this.ClientData_UploadEnd;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ClientData_UploadSize = this.ClientData_UploadSize;
             context.ClientData_UploadStart = this.ClientData_UploadStart;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.DiskContainer_Description = this.DiskContainer_Description;
@@ -311,6 +290,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.DiskContainer_Url = this.DiskContainer_Url;
             context.DiskContainer_S3Bucket = this.DiskContainer_S3Bucket;
             context.DiskContainer_S3Key = this.DiskContainer_S3Key;
+            context.DryRun = this.DryRun;
             context.Encrypted = this.Encrypted;
             context.KmsKeyId = this.KmsKeyId;
             context.RoleName = this.RoleName;
@@ -348,14 +328,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 request.ClientData.Comment = requestClientData_clientData_Comment;
                 requestClientDataIsNull = false;
             }
-            System.DateTime? requestClientData_clientData_UtcUploadEnd = null;
-            if (cmdletContext.ClientData_UtcUploadEnd != null)
+            System.DateTime? requestClientData_clientData_UploadEnd = null;
+            if (cmdletContext.ClientData_UploadEnd != null)
             {
-                requestClientData_clientData_UtcUploadEnd = cmdletContext.ClientData_UtcUploadEnd.Value;
+                requestClientData_clientData_UploadEnd = cmdletContext.ClientData_UploadEnd.Value;
             }
-            if (requestClientData_clientData_UtcUploadEnd != null)
+            if (requestClientData_clientData_UploadEnd != null)
             {
-                request.ClientData.UploadEndUtc = requestClientData_clientData_UtcUploadEnd.Value;
+                request.ClientData.UploadEnd = requestClientData_clientData_UploadEnd.Value;
                 requestClientDataIsNull = false;
             }
             System.Double? requestClientData_clientData_UploadSize = null;
@@ -368,40 +348,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 request.ClientData.UploadSize = requestClientData_clientData_UploadSize.Value;
                 requestClientDataIsNull = false;
             }
-            System.DateTime? requestClientData_clientData_UtcUploadStart = null;
-            if (cmdletContext.ClientData_UtcUploadStart != null)
-            {
-                requestClientData_clientData_UtcUploadStart = cmdletContext.ClientData_UtcUploadStart.Value;
-            }
-            if (requestClientData_clientData_UtcUploadStart != null)
-            {
-                request.ClientData.UploadStartUtc = requestClientData_clientData_UtcUploadStart.Value;
-                requestClientDataIsNull = false;
-            }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            System.DateTime? requestClientData_clientData_UploadEnd = null;
-            if (cmdletContext.ClientData_UploadEnd != null)
-            {
-                if (cmdletContext.ClientData_UtcUploadEnd != null)
-                {
-                    throw new System.ArgumentException("Parameters ClientData_UploadEnd and ClientData_UtcUploadEnd are mutually exclusive.", nameof(this.ClientData_UploadEnd));
-                }
-                requestClientData_clientData_UploadEnd = cmdletContext.ClientData_UploadEnd.Value;
-            }
-            if (requestClientData_clientData_UploadEnd != null)
-            {
-                request.ClientData.UploadEnd = requestClientData_clientData_UploadEnd.Value;
-                requestClientDataIsNull = false;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             System.DateTime? requestClientData_clientData_UploadStart = null;
             if (cmdletContext.ClientData_UploadStart != null)
             {
-                if (cmdletContext.ClientData_UtcUploadStart != null)
-                {
-                    throw new System.ArgumentException("Parameters ClientData_UploadStart and ClientData_UtcUploadStart are mutually exclusive.", nameof(this.ClientData_UploadStart));
-                }
                 requestClientData_clientData_UploadStart = cmdletContext.ClientData_UploadStart.Value;
             }
             if (requestClientData_clientData_UploadStart != null)
@@ -409,7 +358,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 request.ClientData.UploadStart = requestClientData_clientData_UploadStart.Value;
                 requestClientDataIsNull = false;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
              // determine if request.ClientData should be set to null
             if (requestClientDataIsNull)
             {
@@ -497,6 +445,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.DiskContainer = null;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Encrypted != null)
             {
                 request.Encrypted = cmdletContext.Encrypted.Value;
@@ -551,13 +503,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ImportSnapshot");
             try
             {
-                #if DESKTOP
-                return client.ImportSnapshot(request);
-                #elif CORECLR
-                return client.ImportSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -575,12 +521,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientData_Comment { get; set; }
-            public System.DateTime? ClientData_UtcUploadEnd { get; set; }
-            public System.Double? ClientData_UploadSize { get; set; }
-            public System.DateTime? ClientData_UtcUploadStart { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? ClientData_UploadEnd { get; set; }
-            [System.ObsoleteAttribute]
+            public System.Double? ClientData_UploadSize { get; set; }
             public System.DateTime? ClientData_UploadStart { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
@@ -589,6 +531,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String DiskContainer_Url { get; set; }
             public System.String DiskContainer_S3Bucket { get; set; }
             public System.String DiskContainer_S3Key { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? Encrypted { get; set; }
             public System.String KmsKeyId { get; set; }
             public System.String RoleName { get; set; }

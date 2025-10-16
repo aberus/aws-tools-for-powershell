@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
     /// Lists the SAML provider resource objects defined in IAM in the account. IAM resource-listing
     /// operations return a subset of the available attributes for the resource. For example,
     /// this operation does not return tags, even though they are an attribute of the returned
-    /// object. To view all of the information for a SAML provider, see <a>GetSAMLProvider</a>.
+    /// object. To view all of the information for a SAML provider, see <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetSAMLProvider.html">GetSAMLProvider</a>.
     /// 
     ///  <important><para>
     ///  This operation requires <a href="https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html">Signature
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management ListSAMLProviders API operation.", Operation = new[] {"ListSAMLProviders"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.ListSAMLProvidersResponse), LegacyAlias="Get-IAMSAMLProviders")]
     [AWSCmdletOutput("Amazon.IdentityManagement.Model.SAMLProviderListEntry or Amazon.IdentityManagement.Model.ListSAMLProvidersResponse",
         "This cmdlet returns a collection of Amazon.IdentityManagement.Model.SAMLProviderListEntry objects.",
-        "The service call response (type Amazon.IdentityManagement.Model.ListSAMLProvidersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.ListSAMLProvidersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIAMSAMLProviderListCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -61,9 +64,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "SAMLProviderList";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -130,13 +137,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "ListSAMLProviders");
             try
             {
-                #if DESKTOP
-                return client.ListSAMLProviders(request);
-                #elif CORECLR
-                return client.ListSAMLProvidersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListSAMLProvidersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

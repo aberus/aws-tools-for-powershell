@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager StartAutomationExecution API operation.", Operation = new[] {"StartAutomationExecution"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.StartAutomationExecutionResponse))]
     [AWSCmdletOutput("System.String or Amazon.SimpleSystemsManagement.Model.StartAutomationExecutionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.StartAutomationExecutionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.StartAutomationExecutionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartSSMAutomationExecutionCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlarmConfiguration_Alarm
         /// <summary>
         /// <para>
-        /// <para>The name of the CloudWatch alarm specified in the configuration.</para>
+        /// <para>The name of the CloudWatch alarm specified in the configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -58,8 +65,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>The name of the SSM document to run. This can be a public document or a custom document.
         /// To run a shared document belonging to another account, specify the document ARN. For
-        /// more information about how to use shared documents, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-using-shared.html">Using
-        /// shared SSM documents</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para>
+        /// more information about how to use shared documents, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/documents-ssm-sharing.html">Sharing
+        /// SSM documents</a> in the <i>Amazon Web Services Systems Manager User Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -100,7 +107,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>The maximum number of targets allowed to run this task in parallel. You can specify
-        /// a number, such as 10, or a percentage, such as 10%. The default value is <c>10</c>.</para>
+        /// a number, such as 10, or a percentage, such as 10%. The default value is <c>10</c>.</para><para>If both this parameter and the <c>TargetLocation:TargetsMaxConcurrency</c> are supplied,
+        /// <c>TargetLocation:TargetsMaxConcurrency</c> takes precedence.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -120,7 +128,8 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// when the sixth error is received.</para><para>Executions that are already running an automation when max-errors is reached are allowed
         /// to complete, but some of these executions may fail as well. If you need to ensure
         /// that there won't be more than max-errors failed executions, set max-concurrency to
-        /// 1 so the executions proceed one at a time.</para>
+        /// 1 so the executions proceed one at a time.</para><para>If this parameter and the <c>TargetLocation:TargetsMaxErrors</c> parameter are both
+        /// supplied, <c>TargetLocation:TargetsMaxErrors</c> takes precedence.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>A key-value map of execution parameters, which match the declared parameters in the
-        /// Automation runbook.</para>
+        /// Automation runbook.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +172,14 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// tags for an automation. Tags enable you to categorize a resource in different ways,
         /// such as by purpose, owner, or environment. For example, you might want to tag an automation
         /// to identify an environment or operating system. In this case, you could specify the
-        /// following key-value pairs:</para><ul><li><para><c>Key=environment,Value=test</c></para></li><li><para><c>Key=OS,Value=Windows</c></para></li></ul><note><para>To add tags to an existing automation, use the <a>AddTagsToResource</a> operation.</para></note>
+        /// following key-value pairs:</para><ul><li><para><c>Key=environment,Value=test</c></para></li><li><para><c>Key=OS,Value=Windows</c></para></li></ul><note><para>The <c>Array Members</c> maximum value is reported as 1000. This number includes capacity
+        /// reserved for internal operations. When calling the <c>StartAutomationExecution</c>
+        /// action, you can specify a maximum of 5 tags. You can, however, use the <a>AddTagsToResource</a>
+        /// action to add up to a total of 50 tags to an existing automation configuration.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,8 +194,12 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// accounts where you want to run the automation. Use this operation to start an automation
         /// in multiple Amazon Web Services Regions and multiple Amazon Web Services accounts.
         /// For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-automation-multiple-accounts-and-regions.html">Running
-        /// Automation workflows in multiple Amazon Web Services Regions and Amazon Web Services
-        /// accounts</a> in the <i>Amazon Web Services Systems Manager User Guide</i>. </para>
+        /// automations in multiple Amazon Web Services Regions and accounts</a> in the <i>Amazon
+        /// Web Services Systems Manager User Guide</i>. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -183,11 +207,26 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public Amazon.SimpleSystemsManagement.Model.TargetLocation[] TargetLocation { get; set; }
         #endregion
         
+        #region Parameter TargetLocationsURL
+        /// <summary>
+        /// <para>
+        /// <para>Specify a publicly accessible URL for a file that contains the <c>TargetLocations</c>
+        /// body. Currently, only files in presigned Amazon S3 buckets are supported. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TargetLocationsURL { get; set; }
+        #endregion
+        
         #region Parameter TargetMap
         /// <summary>
         /// <para>
         /// <para>A key-value mapping of document parameters to target resources. Both Targets and TargetMaps
-        /// can't be specified together.</para>
+        /// can't be specified together.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -209,7 +248,12 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter Target
         /// <summary>
         /// <para>
-        /// <para>A key-value mapping to target resources. Required if you specify TargetParameterName.</para>
+        /// <para>A key-value mapping to target resources. Required if you specify TargetParameterName.</para><para>If both this parameter and the <c>TargetLocation:Targets</c> parameter are supplied,
+        /// <c>TargetLocation:Targets</c> takes precedence.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -239,16 +283,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "AutomationExecutionId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DocumentName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DocumentName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DocumentName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -259,9 +293,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DocumentName), MyInvocation.BoundParameters);
@@ -275,21 +313,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.StartAutomationExecutionResponse, StartSSMAutomationExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DocumentName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AlarmConfiguration_Alarm != null)
             {
                 context.AlarmConfiguration_Alarm = new List<Amazon.SimpleSystemsManagement.Model.Alarm>(this.AlarmConfiguration_Alarm);
@@ -335,6 +363,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             {
                 context.TargetLocation = new List<Amazon.SimpleSystemsManagement.Model.TargetLocation>(this.TargetLocation);
             }
+            context.TargetLocationsURL = this.TargetLocationsURL;
             if (this.TargetMap != null)
             {
                 context.TargetMap = new List<Dictionary<System.String, List<System.String>>>();
@@ -446,6 +475,10 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             {
                 request.TargetLocations = cmdletContext.TargetLocation;
             }
+            if (cmdletContext.TargetLocationsURL != null)
+            {
+                request.TargetLocationsURL = cmdletContext.TargetLocationsURL;
+            }
             if (cmdletContext.TargetMap != null)
             {
                 request.TargetMaps = cmdletContext.TargetMap;
@@ -496,13 +529,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "StartAutomationExecution");
             try
             {
-                #if DESKTOP
-                return client.StartAutomationExecution(request);
-                #elif CORECLR
-                return client.StartAutomationExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartAutomationExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -530,6 +557,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             public Dictionary<System.String, List<System.String>> Parameter { get; set; }
             public List<Amazon.SimpleSystemsManagement.Model.Tag> Tag { get; set; }
             public List<Amazon.SimpleSystemsManagement.Model.TargetLocation> TargetLocation { get; set; }
+            public System.String TargetLocationsURL { get; set; }
             public List<Dictionary<System.String, List<System.String>>> TargetMap { get; set; }
             public System.String TargetParameterName { get; set; }
             public List<Amazon.SimpleSystemsManagement.Model.Target> Target { get; set; }

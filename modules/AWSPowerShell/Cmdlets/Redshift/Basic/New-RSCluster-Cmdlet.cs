@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Redshift;
 using Amazon.Redshift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RS
 {
     /// <summary>
@@ -37,6 +39,23 @@ namespace Amazon.PowerShell.Cmdlets.RS
     /// Redshift uses when creating the cluster. For more information about managing clusters,
     /// go to <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html">Amazon
     /// Redshift Clusters</a> in the <i>Amazon Redshift Cluster Management Guide</i>.
+    /// </para><para>
+    /// VPC Block Public Access (BPA) enables you to block resources in VPCs and subnets that
+    /// you own in a Region from reaching or being reached from the internet through internet
+    /// gateways and egress-only internet gateways. If a subnet group for a provisioned cluster
+    /// is in an account with VPC BPA turned on, the following capabilities are blocked:
+    /// </para><ul><li><para>
+    /// Creating a public cluster
+    /// </para></li><li><para>
+    /// Restoring a public cluster
+    /// </para></li><li><para>
+    /// Modifying a private cluster to be public
+    /// </para></li><li><para>
+    /// Adding a subnet with VPC BPA turned on to the subnet group when there's at least one
+    /// public cluster within the group
+    /// </para></li></ul><para>
+    /// For more information about VPC BPA, see <a href="https://docs.aws.amazon.com/vpc/latest/userguide/security-vpc-bpa.html">Block
+    /// public access to VPCs and subnets</a> in the <i>Amazon VPC User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "RSCluster", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -44,16 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
     [AWSCmdlet("Calls the Amazon Redshift CreateCluster API operation.", Operation = new[] {"CreateCluster"}, SelectReturnType = typeof(Amazon.Redshift.Model.CreateClusterResponse))]
     [AWSCmdletOutput("Amazon.Redshift.Model.Cluster or Amazon.Redshift.Model.CreateClusterResponse",
         "This cmdlet returns an Amazon.Redshift.Model.Cluster object.",
-        "The service call response (type Amazon.Redshift.Model.CreateClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Redshift.Model.CreateClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewRSClusterCmdlet : AmazonRedshiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalInfo
         /// <summary>
@@ -163,7 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter ClusterSecurityGroup
         /// <summary>
         /// <para>
-        /// <para>A list of security groups to be associated with this cluster.</para><para>Default: The default cluster security group for Amazon Redshift.</para>
+        /// <para>A list of security groups to be associated with this cluster.</para><para>Default: The default cluster security group for Amazon Redshift.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -246,7 +266,8 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter Encrypted
         /// <summary>
         /// <para>
-        /// <para>If <c>true</c>, the data in the cluster is encrypted at rest. </para><para>Default: false</para>
+        /// <para>If <c>true</c>, the data in the cluster is encrypted at rest. If you set the value
+        /// on this parameter to <c>false</c>, the request will fail.</para><para>Default: true</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -295,7 +316,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// to access other Amazon Web Services services. You must supply the IAM roles in their
         /// Amazon Resource Name (ARN) format. </para><para>The maximum number of IAM roles that you can associate is subject to a quota. For
         /// more information, go to <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/amazon-redshift-limits.html">Quotas
-        /// and limits</a> in the <i>Amazon Redshift Cluster Management Guide</i>.</para>
+        /// and limits</a> in the <i>Amazon Redshift Cluster Management Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -432,9 +457,8 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// <para>The node type to be provisioned for the cluster. For information about node types,
         /// go to <a href="https://docs.aws.amazon.com/redshift/latest/mgmt/working-with-clusters.html#how-many-nodes">
         /// Working with Clusters</a> in the <i>Amazon Redshift Cluster Management Guide</i>.
-        /// </para><para>Valid Values: <c>ds2.xlarge</c> | <c>ds2.8xlarge</c> | <c>dc1.large</c> | <c>dc1.8xlarge</c>
-        /// | <c>dc2.large</c> | <c>dc2.8xlarge</c> | <c>ra3.xlplus</c> | <c>ra3.4xlarge</c> |
-        /// <c>ra3.16xlarge</c></para>
+        /// </para><para>Valid Values: <c>dc2.large</c> | <c>dc2.8xlarge</c> | <c>ra3.large</c> | <c>ra3.xlplus</c>
+        /// | <c>ra3.4xlarge</c> | <c>ra3.16xlarge</c></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -467,7 +491,9 @@ namespace Amazon.PowerShell.Cmdlets.RS
         /// <para>
         /// <para>The port number on which the cluster accepts incoming connections.</para><para>The cluster is accessible only via the JDBC and ODBC connection strings. Part of the
         /// connection string requires the port on which the cluster will listen for incoming
-        /// connections.</para><para>Default: <c>5439</c></para><para>Valid Values: <c>1150-65535</c></para>
+        /// connections.</para><para>Default: <c>5439</c></para><para>Valid Values: </para><ul><li><para>For clusters with ra3 nodes - Select a port within the ranges <c>5431-5455</c> or
+        /// <c>8191-8215</c>. (If you have an existing cluster with ra3 nodes, it isn't required
+        /// that you change the port to these ranges.)</para></li><li><para>For clusters with dc2 nodes - Select a port within the range <c>1150-65535</c>.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -490,7 +516,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter PubliclyAccessible
         /// <summary>
         /// <para>
-        /// <para>If <c>true</c>, the cluster can be accessed from a public network. </para>
+        /// <para>If <c>true</c>, the cluster can be accessed from a public network. </para><para>Default: false</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -520,7 +546,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of tag instances.</para>
+        /// <para>A list of tag instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -531,7 +561,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of Virtual Private Cloud (VPC) security groups to be associated with the cluster.</para><para>Default: The default VPC security group is associated with the cluster.</para>
+        /// <para>A list of Virtual Private Cloud (VPC) security groups to be associated with the cluster.</para><para>Default: The default VPC security group is associated with the cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -550,16 +584,6 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -570,9 +594,13 @@ namespace Amazon.PowerShell.Cmdlets.RS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBName), MyInvocation.BoundParameters);
@@ -586,21 +614,11 @@ namespace Amazon.PowerShell.Cmdlets.RS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Redshift.Model.CreateClusterResponse, NewRSClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdditionalInfo = this.AdditionalInfo;
             context.AllowVersionUpgrade = this.AllowVersionUpgrade;
             context.AquaConfigurationStatus = this.AquaConfigurationStatus;
@@ -880,13 +898,7 @@ namespace Amazon.PowerShell.Cmdlets.RS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Redshift", "CreateCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateCluster(request);
-                #elif CORECLR
-                return client.CreateClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

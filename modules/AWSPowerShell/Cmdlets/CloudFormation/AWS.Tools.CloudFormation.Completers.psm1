@@ -99,6 +99,7 @@ $CFN_Completers = {
             ($_ -eq "Get-CFNStackInstanceList/CallAs") -Or
             ($_ -eq "Get-CFNStackInstanceResourceDrift/CallAs") -Or
             ($_ -eq "Get-CFNStackSet/CallAs") -Or
+            ($_ -eq "Get-CFNStackSetAutoDeploymentTarget/CallAs") -Or
             ($_ -eq "Get-CFNStackSetList/CallAs") -Or
             ($_ -eq "Get-CFNStackSetOperation/CallAs") -Or
             ($_ -eq "Get-CFNStackSetOperationList/CallAs") -Or
@@ -130,6 +131,13 @@ $CFN_Completers = {
         "New-CFNChangeSet/ChangeSetType"
         {
             $v = "CREATE","IMPORT","UPDATE"
+            break
+        }
+
+        # Amazon.CloudFormation.DeletionMode
+        "Remove-CFNStack/DeletionMode"
+        {
+            $v = "FORCE_DELETE_STACK","STANDARD"
             break
         }
 
@@ -167,6 +175,20 @@ $CFN_Completers = {
         "Write-CFNHandlerProgress/ErrorCode"
         {
             $v = "AccessDenied","AlreadyExists","GeneralServiceException","HandlerInternalFailure","InternalFailure","InvalidCredentials","InvalidRequest","InvalidTypeConfiguration","NetworkFailure","NonCompliant","NotFound","NotStabilized","NotUpdatable","ResourceConflict","ServiceInternalError","ServiceLimitExceeded","Throttling","Unknown","UnsupportedTarget"
+            break
+        }
+
+        # Amazon.CloudFormation.HookStatus
+        "Get-CFNHookResult/Status"
+        {
+            $v = "HOOK_COMPLETE_FAILED","HOOK_COMPLETE_SUCCEEDED","HOOK_FAILED","HOOK_IN_PROGRESS"
+            break
+        }
+
+        # Amazon.CloudFormation.ListHookResultsTargetType
+        "Get-CFNHookResult/TargetType"
+        {
+            $v = "CHANGE_SET","CLOUD_CONTROL","RESOURCE","STACK"
             break
         }
 
@@ -240,6 +262,13 @@ $CFN_Completers = {
             break
         }
 
+        # Amazon.CloudFormation.ScanType
+        "Get-CFNResourceScanList/ScanTypeFilter"
+        {
+            $v = "FULL","PARTIAL"
+            break
+        }
+
         # Amazon.CloudFormation.StackSetStatus
         "Get-CFNStackSetList/Status"
         {
@@ -307,9 +336,10 @@ $CFN_Completers = {
 }
 
 $CFN_map = @{
-    "CallAs"=@("Get-CFNOrganizationsAccess","Get-CFNStackInstance","Get-CFNStackInstanceList","Get-CFNStackInstanceResourceDrift","Get-CFNStackSet","Get-CFNStackSetList","Get-CFNStackSetOperation","Get-CFNStackSetOperationList","Get-CFNStackSetOperationResultList","Get-CFNTemplateSummary","Import-CFNStacksToStackSet","New-CFNStackInstance","New-CFNStackSet","Remove-CFNStackInstance","Remove-CFNStackSet","Start-CFNStackSetDriftDetection","Stop-CFNStackSetOperation","Update-CFNStackInstance","Update-CFNStackSet")
+    "CallAs"=@("Get-CFNOrganizationsAccess","Get-CFNStackInstance","Get-CFNStackInstanceList","Get-CFNStackInstanceResourceDrift","Get-CFNStackSet","Get-CFNStackSetAutoDeploymentTarget","Get-CFNStackSetList","Get-CFNStackSetOperation","Get-CFNStackSetOperationList","Get-CFNStackSetOperationResultList","Get-CFNTemplateSummary","Import-CFNStacksToStackSet","New-CFNStackInstance","New-CFNStackSet","Remove-CFNStackInstance","Remove-CFNStackSet","Start-CFNStackSetDriftDetection","Stop-CFNStackSetOperation","Update-CFNStackInstance","Update-CFNStackSet")
     "ChangeSetType"=@("New-CFNChangeSet")
     "CurrentOperationStatus"=@("Write-CFNHandlerProgress")
+    "DeletionMode"=@("Remove-CFNStack")
     "DeploymentTargets_AccountFilterType"=@("New-CFNStackInstance","Remove-CFNStackInstance","Update-CFNStackInstance","Update-CFNStackSet")
     "DeprecatedStatus"=@("Get-CFNTypeList","Get-CFNTypeVersion")
     "ErrorCode"=@("Write-CFNHandlerProgress")
@@ -321,7 +351,9 @@ $CFN_map = @{
     "PermissionModel"=@("New-CFNStackSet","Update-CFNStackSet")
     "ProvisioningType"=@("Get-CFNTypeList")
     "RegistrationStatusFilter"=@("Get-CFNTypeRegistrationList")
-    "Status"=@("Get-CFNStackSetList","Send-CFNResourceSignal","Test-CFNStack","Wait-CFNStack")
+    "ScanTypeFilter"=@("Get-CFNResourceScanList")
+    "Status"=@("Get-CFNHookResult","Get-CFNStackSetList","Send-CFNResourceSignal","Test-CFNStack","Wait-CFNStack")
+    "TargetType"=@("Get-CFNHookResult")
     "TemplateConfiguration_DeletionPolicy"=@("New-CFNGeneratedTemplate","Update-CFNGeneratedTemplate")
     "TemplateConfiguration_UpdateReplacePolicy"=@("New-CFNGeneratedTemplate","Update-CFNGeneratedTemplate")
     "TemplateStage"=@("Get-CFNTemplate")
@@ -389,6 +421,7 @@ $CFN_SelectMap = @{
                "New-CFNGeneratedTemplate",
                "New-CFNStack",
                "New-CFNStackInstance",
+               "New-CFNCFNStackRefactor",
                "New-CFNStackSet",
                "Disable-CFNOrganizationsAccess",
                "Disable-CFNType",
@@ -408,6 +441,7 @@ $CFN_SelectMap = @{
                "Get-CFNStackDriftDetectionStatus",
                "Get-CFNStackEvent",
                "Get-CFNStackInstance",
+               "Get-CFNCFNStackRefactor",
                "Get-CFNStackResource",
                "Get-CFNDetectedStackResourceDrift",
                "Get-CFNStackResourceList",
@@ -421,6 +455,7 @@ $CFN_SelectMap = @{
                "Start-CFNStackSetDriftDetection",
                "Measure-CFNTemplateCost",
                "Start-CFNChangeSet",
+               "Start-CFNCFNStackRefactor",
                "Get-CFNGeneratedTemplate",
                "Get-CFNStackPolicy",
                "Get-CFNTemplate",
@@ -429,14 +464,18 @@ $CFN_SelectMap = @{
                "Get-CFNChangeSetList",
                "Get-CFNExport",
                "Get-CFNGeneratedTemplateList",
+               "Get-CFNHookResult",
                "Get-CFNImportList",
                "Get-CFNResourceScanRelatedResource",
                "Get-CFNResourceScanResource",
                "Get-CFNResourceScanList",
                "Get-CFNStackInstanceResourceDrift",
                "Get-CFNStackInstanceList",
+               "Get-CFNCFNStackRefactorActionList",
+               "Get-CFNCFNStackRefactorList",
                "Get-CFNStackResourceSummary",
                "Get-CFNStackSummary",
+               "Get-CFNStackSetAutoDeploymentTarget",
                "Get-CFNStackSetOperationResultList",
                "Get-CFNStackSetOperationList",
                "Get-CFNStackSetList",

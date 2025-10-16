@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkDocs;
 using Amazon.WorkDocs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WD
 {
     /// <summary>
@@ -35,16 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WD
     [AWSCmdlet("Calls the Amazon WorkDocs DescribeActivities API operation.", Operation = new[] {"DescribeActivities"}, SelectReturnType = typeof(Amazon.WorkDocs.Model.DescribeActivitiesResponse))]
     [AWSCmdletOutput("Amazon.WorkDocs.Model.Activity or Amazon.WorkDocs.Model.DescribeActivitiesResponse",
         "This cmdlet returns a collection of Amazon.WorkDocs.Model.Activity objects.",
-        "The service call response (type Amazon.WorkDocs.Model.DescribeActivitiesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkDocs.Model.DescribeActivitiesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetWDActivityCmdlet : AmazonWorkDocsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActivityType
         /// <summary>
@@ -69,7 +68,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
         public System.String AuthenticationToken { get; set; }
         #endregion
         
-        #region Parameter UtcEndTime
+        #region Parameter EndTime
         /// <summary>
         /// <para>
         /// <para>The timestamp that determines the end time of the activities. The response includes
@@ -77,7 +76,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcEndTime { get; set; }
+        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter IncludeIndirectActivity
@@ -115,7 +114,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
         public System.String ResourceId { get; set; }
         #endregion
         
-        #region Parameter UtcStartTime
+        #region Parameter StartTime
         /// <summary>
         /// <para>
         /// <para>The timestamp that determines the starting time of the activities. The response includes
@@ -123,7 +122,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcStartTime { get; set; }
+        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter UserId
@@ -136,24 +135,6 @@ namespace Amazon.PowerShell.Cmdlets.WD
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String UserId { get; set; }
-        #endregion
-        
-        #region Parameter EndTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use EndTimeUtc instead. Setting either EndTime or EndTimeUtc
-        /// results in both EndTime and EndTimeUtc being assigned, the latest assignment to either
-        /// one of the two property is reflected in the value of both. EndTime is provided for
-        /// backwards compatibility only and assigning a non-Utc DateTime to it results in the
-        /// wrong timestamp being passed to the service.</para><para>The timestamp that determines the end time of the activities. The response includes
-        /// the activities performed before the specified timestamp.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcEndTime instead.")]
-        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter Limit
@@ -179,30 +160,12 @@ namespace Amazon.PowerShell.Cmdlets.WD
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("NextToken")]
         public System.String Marker { get; set; }
-        #endregion
-        
-        #region Parameter StartTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use StartTimeUtc instead. Setting either StartTime or
-        /// StartTimeUtc results in both StartTime and StartTimeUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. StartTime
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The timestamp that determines the starting time of the activities. The response includes
-        /// the activities performed after the specified timestamp.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcStartTime instead.")]
-        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter Select
@@ -226,9 +189,13 @@ namespace Amazon.PowerShell.Cmdlets.WD
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -243,7 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
             }
             context.ActivityType = this.ActivityType;
             context.AuthenticationToken = this.AuthenticationToken;
-            context.UtcEndTime = this.UtcEndTime;
+            context.EndTime = this.EndTime;
             context.IncludeIndirectActivity = this.IncludeIndirectActivity;
             context.Limit = this.Limit;
             #if !MODULAR
@@ -258,14 +225,8 @@ namespace Amazon.PowerShell.Cmdlets.WD
             context.Marker = this.Marker;
             context.OrganizationId = this.OrganizationId;
             context.ResourceId = this.ResourceId;
-            context.UtcStartTime = this.UtcStartTime;
-            context.UserId = this.UserId;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.EndTime = this.EndTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.StartTime = this.StartTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.UserId = this.UserId;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -293,9 +254,9 @@ namespace Amazon.PowerShell.Cmdlets.WD
             {
                 request.AuthenticationToken = cmdletContext.AuthenticationToken;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.IncludeIndirectActivity != null)
             {
@@ -313,34 +274,14 @@ namespace Amazon.PowerShell.Cmdlets.WD
             {
                 request.ResourceId = cmdletContext.ResourceId;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
             if (cmdletContext.UserId != null)
             {
                 request.UserId = cmdletContext.UserId;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variant and commence piping
             var _nextToken = cmdletContext.Marker;
@@ -404,9 +345,9 @@ namespace Amazon.PowerShell.Cmdlets.WD
             {
                 request.AuthenticationToken = cmdletContext.AuthenticationToken;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.EndTime != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.IncludeIndirectActivity != null)
             {
@@ -420,34 +361,14 @@ namespace Amazon.PowerShell.Cmdlets.WD
             {
                 request.ResourceId = cmdletContext.ResourceId;
             }
-            if (cmdletContext.UtcStartTime != null)
+            if (cmdletContext.StartTime != null)
             {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
+                request.StartTime = cmdletContext.StartTime.Value;
             }
             if (cmdletContext.UserId != null)
             {
                 request.UserId = cmdletContext.UserId;
             }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.StartTime != null)
-            {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
-                request.StartTime = cmdletContext.StartTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variants and commence piping
             System.String _nextToken = null;
@@ -495,7 +416,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.UserActivities.Count;
+                    int _receivedThisCall = response.UserActivities?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -544,13 +465,7 @@ namespace Amazon.PowerShell.Cmdlets.WD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkDocs", "DescribeActivities");
             try
             {
-                #if DESKTOP
-                return client.DescribeActivities(request);
-                #elif CORECLR
-                return client.DescribeActivitiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeActivitiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -569,18 +484,14 @@ namespace Amazon.PowerShell.Cmdlets.WD
         {
             public System.String ActivityType { get; set; }
             public System.String AuthenticationToken { get; set; }
-            public System.DateTime? UtcEndTime { get; set; }
+            public System.DateTime? EndTime { get; set; }
             public System.Boolean? IncludeIndirectActivity { get; set; }
             public int? Limit { get; set; }
             public System.String Marker { get; set; }
             public System.String OrganizationId { get; set; }
             public System.String ResourceId { get; set; }
-            public System.DateTime? UtcStartTime { get; set; }
-            public System.String UserId { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? EndTime { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? StartTime { get; set; }
+            public System.String UserId { get; set; }
             public System.Func<Amazon.WorkDocs.Model.DescribeActivitiesResponse, GetWDActivityCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.UserActivities;
         }

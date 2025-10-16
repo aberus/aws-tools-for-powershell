@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Creates a new version of a launch template. You can specify an existing version of
-    /// launch template from which to base the new version.
+    /// Creates a new version of a launch template. You must specify an existing launch template,
+    /// either by name or ID. You can determine whether the new version inherits parameters
+    /// from a source version, and add or overwrite parameters as needed.
     /// 
     ///  
     /// <para>
     /// Launch template versions are numbered in the order in which they are created. You
-    /// cannot specify, change, or replace the numbering of launch template versions.
+    /// can't specify, change, or replace the numbering of launch template versions.
     /// </para><para>
     /// Launch templates are immutable; after you create a launch template, you can't modify
-    /// it. Instead, you can create a new version of the launch template that includes any
-    /// changes you require.
+    /// it. Instead, you can create a new version of the launch template that includes the
+    /// changes that you require.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html#manage-launch-template-versions">Modify
-    /// a launch template (manage launch template versions)</a> in the <i>Amazon Elastic Compute
-    /// Cloud User Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-launch-template-versions.html">Modify
+    /// a launch template (manage launch template versions)</a> in the <i>Amazon EC2 User
+    /// Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EC2LaunchTemplateVersion", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -50,16 +53,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateLaunchTemplateVersion API operation.", Operation = new[] {"CreateLaunchTemplateVersion"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateLaunchTemplateVersionResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.LaunchTemplateVersion or Amazon.EC2.Model.CreateLaunchTemplateVersionResponse",
         "This cmdlet returns an Amazon.EC2.Model.LaunchTemplateVersion object.",
-        "The service call response (type Amazon.EC2.Model.CreateLaunchTemplateVersionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateLaunchTemplateVersionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2LaunchTemplateVersionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter LaunchTemplateData
         /// <summary>
@@ -80,8 +92,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchTemplateId
         /// <summary>
         /// <para>
-        /// <para>The ID of the launch template.</para><para>You must specify either the <c>LaunchTemplateId</c> or the <c>LaunchTemplateName</c>,
-        /// but not both.</para>
+        /// <para>The ID of the launch template.</para><para>You must specify either the launch template ID or the launch template name, but not
+        /// both.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,8 +103,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchTemplateName
         /// <summary>
         /// <para>
-        /// <para>The name of the launch template.</para><para>You must specify the <c>LaunchTemplateName</c> or the <c>LaunchTemplateId</c>, but
-        /// not both.</para>
+        /// <para>The name of the launch template.</para><para>You must specify either the launch template ID or the launch template name, but not
+        /// both.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,9 +116,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>If <c>true</c>, and if a Systems Manager parameter is specified for <c>ImageId</c>,
         /// the AMI ID is displayed in the response for <c>imageID</c>. For more information,
-        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html#use-an-ssm-parameter-instead-of-an-ami-id">Use
-        /// a Systems Manager parameter instead of an AMI ID</a> in the <i>Amazon Elastic Compute
-        /// Cloud User Guide</i>.</para><para>Default: <c>false</c></para>
+        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-launch-template.html#use-an-ssm-parameter-instead-of-an-ami-id">Use
+        /// a Systems Manager parameter instead of an AMI ID</a> in the <i>Amazon EC2 User Guide</i>.</para><para>Default: <c>false</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,11 +127,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter SourceVersion
         /// <summary>
         /// <para>
-        /// <para>The version number of the launch template version on which to base the new version.
-        /// The new version inherits the same launch parameters as the source version, except
-        /// for parameters that you specify in <c>LaunchTemplateData</c>. Snapshots applied to
-        /// the block device mapping are ignored when creating a new version unless they are explicitly
-        /// included.</para>
+        /// <para>The version of the launch template on which to base the new version. Snapshots applied
+        /// to the block device mapping are ignored when creating a new version unless they are
+        /// explicitly included.</para><para>If you specify this parameter, the new version inherits the launch parameters from
+        /// the source version. If you specify additional launch parameters for the new version,
+        /// they overwrite any corresponding launch parameters inherited from the source version.</para><para>If you omit this parameter, the new version contains only the launch parameters that
+        /// you specify for the new version.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,7 +153,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Unique, case-sensitive identifier you provide to ensure the idempotency of the request.
-        /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
+        /// If a client token isn't specified, a randomly generated token is used in the request
+        /// to ensure idempotency.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
         /// idempotency</a>.</para><para>Constraint: Maximum 128 ASCII characters.</para>
         /// </para>
         /// </summary>
@@ -160,16 +173,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "LaunchTemplateVersion";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LaunchTemplateData parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LaunchTemplateData' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LaunchTemplateData' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -180,9 +183,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -196,22 +203,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateLaunchTemplateVersionResponse, NewEC2LaunchTemplateVersionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LaunchTemplateData;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
+            context.DryRun = this.DryRun;
             context.LaunchTemplateData = this.LaunchTemplateData;
             #if MODULAR
             if (this.LaunchTemplateData == null && ParameterWasBound(nameof(this.LaunchTemplateData)))
@@ -243,6 +241,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.LaunchTemplateData != null)
             {
@@ -306,13 +308,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateLaunchTemplateVersion");
             try
             {
-                #if DESKTOP
-                return client.CreateLaunchTemplateVersion(request);
-                #elif CORECLR
-                return client.CreateLaunchTemplateVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLaunchTemplateVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -330,6 +326,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientToken { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public Amazon.EC2.Model.RequestLaunchTemplateData LaunchTemplateData { get; set; }
             public System.String LaunchTemplateId { get; set; }
             public System.String LaunchTemplateName { get; set; }

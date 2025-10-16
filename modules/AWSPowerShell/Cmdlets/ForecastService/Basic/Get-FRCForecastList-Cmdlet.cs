@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ForecastService;
 using Amazon.ForecastService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FRC
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.FRC
     [AWSCmdlet("Calls the Amazon Forecast Service ListForecasts API operation.", Operation = new[] {"ListForecasts"}, SelectReturnType = typeof(Amazon.ForecastService.Model.ListForecastsResponse))]
     [AWSCmdletOutput("Amazon.ForecastService.Model.ForecastSummary or Amazon.ForecastService.Model.ListForecastsResponse",
         "This cmdlet returns a collection of Amazon.ForecastService.Model.ForecastSummary objects.",
-        "The service call response (type Amazon.ForecastService.Model.ListForecastsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ForecastService.Model.ListForecastsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetFRCForecastListCmdlet : AmazonForecastServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -55,7 +58,11 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         /// match statement consists of a key and a value.</para><para><b>Filter properties</b></para><ul><li><para><c>Condition</c> - The condition to apply. Valid values are <c>IS</c> and <c>IS_NOT</c>.
         /// To include the forecasts that match the statement, specify <c>IS</c>. To exclude matching
         /// forecasts, specify <c>IS_NOT</c>.</para></li><li><para><c>Key</c> - The name of the parameter to filter on. Valid values are <c>DatasetGroupArn</c>,
-        /// <c>PredictorArn</c>, and <c>Status</c>.</para></li><li><para><c>Value</c> - The value to match.</para></li></ul><para>For example, to list all forecasts whose status is not ACTIVE, you would specify:</para><para><c>"Filters": [ { "Condition": "IS_NOT", "Key": "Status", "Value": "ACTIVE" } ]</c></para>
+        /// <c>PredictorArn</c>, and <c>Status</c>.</para></li><li><para><c>Value</c> - The value to match.</para></li></ul><para>For example, to list all forecasts whose status is not ACTIVE, you would specify:</para><para><c>"Filters": [ { "Condition": "IS_NOT", "Key": "Status", "Value": "ACTIVE" } ]</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +95,7 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.FRC
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -279,7 +290,7 @@ namespace Amazon.PowerShell.Cmdlets.FRC
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Forecasts.Count;
+                    int _receivedThisCall = response.Forecasts?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -328,13 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.FRC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Forecast Service", "ListForecasts");
             try
             {
-                #if DESKTOP
-                return client.ListForecasts(request);
-                #elif CORECLR
-                return client.ListForecastsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListForecastsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

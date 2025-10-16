@@ -80,6 +80,13 @@ $QS_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.QuickSight.ActionConnectorType
+        "New-QSActionConnector/Type"
+        {
+            $v = "AMAZON_BEDROCK_AGENT_RUNTIME","AMAZON_BEDROCK_DATA_AUTOMATION_RUNTIME","AMAZON_BEDROCK_RUNTIME","AMAZON_COMPREHEND","AMAZON_COMPREHEND_MEDICAL","AMAZON_S3","AMAZON_TEXTRACT","ASANA","ATLASSIAN_CONFLUENCE","BAMBOO_HR","GENERIC_HTTP","JIRA_CLOUD","MICROSOFT_ONEDRIVE","MICROSOFT_OUTLOOK","MICROSOFT_SHAREPOINT","MICROSOFT_TEAMS","PAGERDUTY_ADVANCE","SALESFORCE_CRM","SAP_BILLOFMATERIALS","SAP_BUSINESSPARTNER","SAP_MATERIALSTOCK","SAP_PHYSICALINVENTORY","SAP_PRODUCTMASTERDATA","SERVICENOW_NOW_PLATFORM","SLACK","SMARTSHEET","ZENDESK_SUITE"
+            break
+        }
+
         # Amazon.QuickSight.AssetBundleExportFormat
         "Start-QSAssetBundleExportJob/ExportFormat"
         {
@@ -112,29 +119,168 @@ $QS_Completers = {
             break
         }
 
+        # Amazon.QuickSight.AuthenticationType
+        {
+            ($_ -eq "New-QSDataSource/SnowflakeParameters_AuthenticationType") -Or
+            ($_ -eq "Update-QSDataSource/SnowflakeParameters_AuthenticationType") -Or
+            ($_ -eq "New-QSDataSource/StarburstParameters_AuthenticationType") -Or
+            ($_ -eq "Update-QSDataSource/StarburstParameters_AuthenticationType")
+        }
+        {
+            $v = "PASSWORD","TOKEN","X509"
+            break
+        }
+
+        # Amazon.QuickSight.AuthorizationCodeGrantCredentialsSource
+        {
+            ($_ -eq "New-QSActionConnector/AuthorizationCodeGrantMetadata_AuthorizationCodeGrantCredentialsSource") -Or
+            ($_ -eq "Update-QSActionConnector/AuthorizationCodeGrantMetadata_AuthorizationCodeGrantCredentialsSource")
+        }
+        {
+            $v = "PLAIN_CREDENTIALS"
+            break
+        }
+
+        # Amazon.QuickSight.CapabilityState
+        {
+            ($_ -eq "New-QSCustomPermission/Capabilities_Action") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Action") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_AddOrRunAnomalyDetectionForAnalyses") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_AddOrRunAnomalyDetectionForAnalyses") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_Analysis") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Analysis") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_Automate") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Automate") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ChatAgent") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ChatAgent") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateAndUpdateDashboardEmailReport") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateAndUpdateDashboardEmailReport") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateAndUpdateDataset") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateAndUpdateDataset") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateAndUpdateDataSource") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateAndUpdateDataSource") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateAndUpdateTheme") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateAndUpdateTheme") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateAndUpdateThresholdAlert") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateAndUpdateThresholdAlert") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateChatAgent") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateChatAgent") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateSharedFolder") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateSharedFolder") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_CreateSPICEDataset") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_CreateSPICEDataset") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_Dashboard") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Dashboard") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ExportToCsv") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ExportToCsv") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ExportToCsvInScheduledReport") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ExportToCsvInScheduledReport") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ExportToExcel") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ExportToExcel") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ExportToExcelInScheduledReport") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ExportToExcelInScheduledReport") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ExportToPdf") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ExportToPdf") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ExportToPdfInScheduledReport") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ExportToPdfInScheduledReport") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_Flow") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Flow") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_IncludeContentInScheduledReportsEmail") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_IncludeContentInScheduledReportsEmail") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_KnowledgeBase") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_KnowledgeBase") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_PerformFlowUiTask") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_PerformFlowUiTask") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_PrintReport") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_PrintReport") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_PublishWithoutApproval") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_PublishWithoutApproval") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_RenameSharedFolder") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_RenameSharedFolder") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_Research") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Research") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ShareAnalyses") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ShareAnalyses") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ShareDashboard") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ShareDashboard") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ShareDataset") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ShareDataset") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ShareDataSource") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ShareDataSource") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_Space") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_Space") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_SubscribeDashboardEmailReport") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_SubscribeDashboardEmailReport") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_UseAgentWebSearch") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_UseAgentWebSearch") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_UseBedrockModel") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_UseBedrockModel") -Or
+            ($_ -eq "New-QSCustomPermission/Capabilities_ViewAccountSPICECapacity") -Or
+            ($_ -eq "Update-QSCustomPermission/Capabilities_ViewAccountSPICECapacity")
+        }
+        {
+            $v = "DENY"
+            break
+        }
+
+        # Amazon.QuickSight.ClientCredentialsSource
+        {
+            ($_ -eq "New-QSActionConnector/ClientCredentialsGrantMetadata_ClientCredentialsSource") -Or
+            ($_ -eq "Update-QSActionConnector/ClientCredentialsGrantMetadata_ClientCredentialsSource")
+        }
+        {
+            $v = "PLAIN_CREDENTIALS"
+            break
+        }
+
+        # Amazon.QuickSight.ConnectionAuthType
+        {
+            ($_ -eq "New-QSActionConnector/AuthenticationConfig_AuthenticationType") -Or
+            ($_ -eq "Update-QSActionConnector/AuthenticationConfig_AuthenticationType")
+        }
+        {
+            $v = "API_KEY","BASIC","IAM","NONE","OAUTH2_AUTHORIZATION_CODE","OAUTH2_CLIENT_CREDENTIALS"
+            break
+        }
+
         # Amazon.QuickSight.DashboardBehavior
         {
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_AdHocFilteringOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_AdHocFilteringOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_DataPointDrillUpDownOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_DataPointDrillUpDownOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_DataPointMenuLabelOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_DataPointMenuLabelOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_DataPointTooltipOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_DataPointTooltipOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_ExportToCSVOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_ExportToCSVOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_ExportWithHiddenFieldsOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_ExportWithHiddenFieldsOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_SheetLayoutElementMaximizationOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_SheetLayoutElementMaximizationOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_VisualAxisSortOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_VisualAxisSortOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_VisualMenuOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_VisualMenuOption_AvailabilityStatus") -Or
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_VisualPublishOptions_ExportHiddenFieldsOption_AvailabilityStatus") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_VisualPublishOptions_ExportHiddenFieldsOption_AvailabilityStatus")
+            ($_ -eq "New-QSDashboard/AdHocFilteringOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/AdHocFilteringOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/DataPointDrillUpDownOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/DataPointDrillUpDownOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/DataPointMenuLabelOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/DataPointMenuLabelOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/DataPointTooltipOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/DataPointTooltipOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/DataQAEnabledOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/DataQAEnabledOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/DataStoriesSharingOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/DataStoriesSharingOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/ExecutiveSummaryOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/ExecutiveSummaryOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/ExportHiddenFieldsOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/ExportHiddenFieldsOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/ExportToCSVOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/ExportToCSVOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/ExportWithHiddenFieldsOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/ExportWithHiddenFieldsOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/QuickSuiteActionsOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/QuickSuiteActionsOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/SheetLayoutElementMaximizationOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/SheetLayoutElementMaximizationOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/VisualAxisSortOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/VisualAxisSortOption_AvailabilityStatus") -Or
+            ($_ -eq "New-QSDashboard/VisualMenuOption_AvailabilityStatus") -Or
+            ($_ -eq "Update-QSDashboard/VisualMenuOption_AvailabilityStatus")
         }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QuickSight.DashboardsQAStatus
+        "Update-QSDashboardsQAConfiguration/DashboardsQAStatus"
         {
             $v = "DISABLED","ENABLED"
             break
@@ -142,8 +288,8 @@ $QS_Completers = {
 
         # Amazon.QuickSight.DashboardUIState
         {
-            ($_ -eq "New-QSDashboard/DashboardPublishOptions_SheetControlsOption_VisibilityState") -Or
-            ($_ -eq "Update-QSDashboard/DashboardPublishOptions_SheetControlsOption_VisibilityState")
+            ($_ -eq "New-QSDashboard/SheetControlsOption_VisibilityState") -Or
+            ($_ -eq "Update-QSDashboard/SheetControlsOption_VisibilityState")
         }
         {
             $v = "COLLAPSED","EXPANDED"
@@ -160,21 +306,28 @@ $QS_Completers = {
             break
         }
 
+        # Amazon.QuickSight.DataSetUseAs
+        "New-QSDataSet/UseAs"
+        {
+            $v = "RLS_RULES"
+            break
+        }
+
         # Amazon.QuickSight.DataSourceType
         "New-QSDataSource/Type"
         {
-            $v = "ADOBE_ANALYTICS","AMAZON_ELASTICSEARCH","AMAZON_OPENSEARCH","ATHENA","AURORA","AURORA_POSTGRESQL","AWS_IOT_ANALYTICS","BIGQUERY","DATABRICKS","EXASOL","GITHUB","JIRA","MARIADB","MYSQL","ORACLE","POSTGRESQL","PRESTO","REDSHIFT","S3","SALESFORCE","SERVICENOW","SNOWFLAKE","SPARK","SQLSERVER","STARBURST","TERADATA","TIMESTREAM","TRINO","TWITTER"
+            $v = "ADOBE_ANALYTICS","AMAZON_ELASTICSEARCH","AMAZON_OPENSEARCH","ATHENA","AURORA","AURORA_POSTGRESQL","AWS_IOT_ANALYTICS","BIGQUERY","CONFLUENCE","DATABRICKS","EXASOL","GITHUB","GOOGLESHEETS","GOOGLE_DRIVE","JIRA","MARIADB","MYSQL","ONE_DRIVE","ORACLE","POSTGRESQL","PRESTO","QBUSINESS","REDSHIFT","S3","S3_KNOWLEDGE_BASE","SALESFORCE","SERVICENOW","SHAREPOINT","SNOWFLAKE","SPARK","SQLSERVER","STARBURST","TERADATA","TIMESTREAM","TRINO","TWITTER","WEB_CRAWLER"
             break
         }
 
         # Amazon.QuickSight.DayOfTheWeek
         {
-            ($_ -eq "New-QSAnalysis/Definition_Options_WeekStart") -Or
-            ($_ -eq "New-QSDashboard/Definition_Options_WeekStart") -Or
-            ($_ -eq "New-QSTemplate/Definition_Options_WeekStart") -Or
-            ($_ -eq "Update-QSAnalysis/Definition_Options_WeekStart") -Or
-            ($_ -eq "Update-QSDashboard/Definition_Options_WeekStart") -Or
-            ($_ -eq "Update-QSTemplate/Definition_Options_WeekStart")
+            ($_ -eq "New-QSAnalysis/Options_WeekStart") -Or
+            ($_ -eq "New-QSDashboard/Options_WeekStart") -Or
+            ($_ -eq "New-QSTemplate/Options_WeekStart") -Or
+            ($_ -eq "Update-QSAnalysis/Options_WeekStart") -Or
+            ($_ -eq "Update-QSDashboard/Options_WeekStart") -Or
+            ($_ -eq "Update-QSTemplate/Options_WeekStart")
         }
         {
             $v = "FRIDAY","MONDAY","SATURDAY","SUNDAY","THURSDAY","TUESDAY","WEDNESDAY"
@@ -183,8 +336,8 @@ $QS_Completers = {
 
         # Amazon.QuickSight.DayOfWeek
         {
-            ($_ -eq "New-QSRefreshSchedule/Schedule_ScheduleFrequency_RefreshOnDay_DayOfWeek") -Or
-            ($_ -eq "Update-QSRefreshSchedule/Schedule_ScheduleFrequency_RefreshOnDay_DayOfWeek")
+            ($_ -eq "New-QSRefreshSchedule/RefreshOnDay_DayOfWeek") -Or
+            ($_ -eq "Update-QSRefreshSchedule/RefreshOnDay_DayOfWeek")
         }
         {
             $v = "FRIDAY","MONDAY","SATURDAY","SUNDAY","THURSDAY","TUESDAY","WEDNESDAY"
@@ -226,6 +379,27 @@ $QS_Completers = {
             break
         }
 
+        # Amazon.QuickSight.IncludeFolderMembers
+        "Start-QSAssetBundleExportJob/IncludeFolderMember"
+        {
+            $v = "NONE","ONE_LEVEL","RECURSE"
+            break
+        }
+
+        # Amazon.QuickSight.IncludeGeneratedAnswer
+        "Search-QSQAResult/IncludeGeneratedAnswer"
+        {
+            $v = "EXCLUDE","INCLUDE"
+            break
+        }
+
+        # Amazon.QuickSight.IncludeQuickSightQIndex
+        "Search-QSQAResult/IncludeQuickSightQIndex"
+        {
+            $v = "EXCLUDE","INCLUDE"
+            break
+        }
+
         # Amazon.QuickSight.IngestionType
         {
             ($_ -eq "New-QSIngestion/IngestionType") -Or
@@ -238,7 +412,7 @@ $QS_Completers = {
         }
 
         # Amazon.QuickSight.LookbackWindowSizeUnit
-        "Write-QSDataSetRefreshProperty/DataSetRefreshProperties_RefreshConfiguration_IncrementalRefresh_LookbackWindow_SizeUnit"
+        "Write-QSDataSetRefreshProperty/LookbackWindow_SizeUnit"
         {
             $v = "DAY","HOUR","WEEK"
             break
@@ -256,12 +430,12 @@ $QS_Completers = {
 
         # Amazon.QuickSight.PaperOrientation
         {
-            ($_ -eq "New-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation") -Or
-            ($_ -eq "New-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation") -Or
-            ($_ -eq "New-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation") -Or
-            ($_ -eq "Update-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation") -Or
-            ($_ -eq "Update-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation") -Or
-            ($_ -eq "Update-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation")
+            ($_ -eq "New-QSAnalysis/PaperCanvasSizeOptions_PaperOrientation") -Or
+            ($_ -eq "New-QSDashboard/PaperCanvasSizeOptions_PaperOrientation") -Or
+            ($_ -eq "New-QSTemplate/PaperCanvasSizeOptions_PaperOrientation") -Or
+            ($_ -eq "Update-QSAnalysis/PaperCanvasSizeOptions_PaperOrientation") -Or
+            ($_ -eq "Update-QSDashboard/PaperCanvasSizeOptions_PaperOrientation") -Or
+            ($_ -eq "Update-QSTemplate/PaperCanvasSizeOptions_PaperOrientation")
         }
         {
             $v = "LANDSCAPE","PORTRAIT"
@@ -270,22 +444,76 @@ $QS_Completers = {
 
         # Amazon.QuickSight.PaperSize
         {
-            ($_ -eq "New-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize") -Or
-            ($_ -eq "New-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize") -Or
-            ($_ -eq "New-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize") -Or
-            ($_ -eq "Update-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize") -Or
-            ($_ -eq "Update-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize") -Or
-            ($_ -eq "Update-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize")
+            ($_ -eq "New-QSAnalysis/PaperCanvasSizeOptions_PaperSize") -Or
+            ($_ -eq "New-QSDashboard/PaperCanvasSizeOptions_PaperSize") -Or
+            ($_ -eq "New-QSTemplate/PaperCanvasSizeOptions_PaperSize") -Or
+            ($_ -eq "Update-QSAnalysis/PaperCanvasSizeOptions_PaperSize") -Or
+            ($_ -eq "Update-QSDashboard/PaperCanvasSizeOptions_PaperSize") -Or
+            ($_ -eq "Update-QSTemplate/PaperCanvasSizeOptions_PaperSize")
         }
         {
             $v = "A0","A1","A2","A3","A4","A5","JIS_B4","JIS_B5","US_LEGAL","US_LETTER","US_TABLOID_LEDGER"
             break
         }
 
+        # Amazon.QuickSight.PersonalizationMode
+        "Update-QSQPersonalizationConfiguration/PersonalizationMode"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QuickSight.PurchaseMode
+        "Update-QSSPICECapacityConfiguration/PurchaseMode"
+        {
+            $v = "AUTO_PURCHASE","MANUAL"
+            break
+        }
+
+        # Amazon.QuickSight.QBusinessInsightsStatus
+        {
+            ($_ -eq "New-QSAnalysis/Options_QBusinessInsightsStatus") -Or
+            ($_ -eq "New-QSDashboard/Options_QBusinessInsightsStatus") -Or
+            ($_ -eq "New-QSTemplate/Options_QBusinessInsightsStatus") -Or
+            ($_ -eq "Update-QSAnalysis/Options_QBusinessInsightsStatus") -Or
+            ($_ -eq "Update-QSDashboard/Options_QBusinessInsightsStatus") -Or
+            ($_ -eq "Update-QSTemplate/Options_QBusinessInsightsStatus")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QuickSight.QSearchStatus
+        "Update-QSQuickSightQSearchConfiguration/QSearchStatus"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.QuickSight.QueryExecutionMode
+        {
+            ($_ -eq "New-QSAnalysis/QueryExecutionOptions_QueryExecutionMode") -Or
+            ($_ -eq "New-QSTemplate/QueryExecutionOptions_QueryExecutionMode") -Or
+            ($_ -eq "Update-QSAnalysis/QueryExecutionOptions_QueryExecutionMode") -Or
+            ($_ -eq "Update-QSTemplate/QueryExecutionOptions_QueryExecutionMode")
+        }
+        {
+            $v = "AUTO","MANUAL"
+            break
+        }
+
+        # Amazon.QuickSight.RefreshFailureAlertStatus
+        "Write-QSDataSetRefreshProperty/EmailAlert_AlertStatus"
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
         # Amazon.QuickSight.RefreshInterval
         {
-            ($_ -eq "New-QSRefreshSchedule/Schedule_ScheduleFrequency_Interval") -Or
-            ($_ -eq "Update-QSRefreshSchedule/Schedule_ScheduleFrequency_Interval")
+            ($_ -eq "New-QSRefreshSchedule/ScheduleFrequency_Interval") -Or
+            ($_ -eq "Update-QSRefreshSchedule/ScheduleFrequency_Interval")
         }
         {
             $v = "DAILY","HOURLY","MINUTE15","MINUTE30","MONTHLY","WEEKLY"
@@ -294,12 +522,12 @@ $QS_Completers = {
 
         # Amazon.QuickSight.ResizeOption
         {
-            ($_ -eq "New-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption") -Or
-            ($_ -eq "New-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption") -Or
-            ($_ -eq "New-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption") -Or
-            ($_ -eq "Update-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption") -Or
-            ($_ -eq "Update-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption") -Or
-            ($_ -eq "Update-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption")
+            ($_ -eq "New-QSAnalysis/ScreenCanvasSizeOptions_ResizeOption") -Or
+            ($_ -eq "New-QSDashboard/ScreenCanvasSizeOptions_ResizeOption") -Or
+            ($_ -eq "New-QSTemplate/ScreenCanvasSizeOptions_ResizeOption") -Or
+            ($_ -eq "Update-QSAnalysis/ScreenCanvasSizeOptions_ResizeOption") -Or
+            ($_ -eq "Update-QSDashboard/ScreenCanvasSizeOptions_ResizeOption") -Or
+            ($_ -eq "Update-QSTemplate/ScreenCanvasSizeOptions_ResizeOption")
         }
         {
             $v = "FIXED","RESPONSIVE"
@@ -316,7 +544,7 @@ $QS_Completers = {
             ($_ -eq "Update-QSRoleCustomPermission/Role")
         }
         {
-            $v = "ADMIN","AUTHOR","READER"
+            $v = "ADMIN","ADMIN_PRO","AUTHOR","AUTHOR_PRO","READER","READER_PRO"
             break
         }
 
@@ -346,7 +574,7 @@ $QS_Completers = {
             ($_ -eq "Update-QSIdentityPropagationConfig/Service")
         }
         {
-            $v = "REDSHIFT"
+            $v = "ATHENA","QBUSINESS","REDSHIFT"
             break
         }
 
@@ -359,12 +587,12 @@ $QS_Completers = {
 
         # Amazon.QuickSight.SheetContentType
         {
-            ($_ -eq "New-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType") -Or
-            ($_ -eq "New-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType") -Or
-            ($_ -eq "New-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType") -Or
-            ($_ -eq "Update-QSAnalysis/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType") -Or
-            ($_ -eq "Update-QSDashboard/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType") -Or
-            ($_ -eq "Update-QSTemplate/Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType")
+            ($_ -eq "New-QSAnalysis/DefaultNewSheetConfiguration_SheetContentType") -Or
+            ($_ -eq "New-QSDashboard/DefaultNewSheetConfiguration_SheetContentType") -Or
+            ($_ -eq "New-QSTemplate/DefaultNewSheetConfiguration_SheetContentType") -Or
+            ($_ -eq "Update-QSAnalysis/DefaultNewSheetConfiguration_SheetContentType") -Or
+            ($_ -eq "Update-QSDashboard/DefaultNewSheetConfiguration_SheetContentType") -Or
+            ($_ -eq "Update-QSTemplate/DefaultNewSheetConfiguration_SheetContentType")
         }
         {
             $v = "INTERACTIVE","PAGINATED"
@@ -373,8 +601,8 @@ $QS_Completers = {
 
         # Amazon.QuickSight.StarburstProductType
         {
-            ($_ -eq "New-QSDataSource/DataSourceParameters_StarburstParameters_ProductType") -Or
-            ($_ -eq "Update-QSDataSource/DataSourceParameters_StarburstParameters_ProductType")
+            ($_ -eq "New-QSDataSource/StarburstParameters_ProductType") -Or
+            ($_ -eq "Update-QSDataSource/StarburstParameters_ProductType")
         }
         {
             $v = "ENTERPRISE","GALAXY"
@@ -426,7 +654,7 @@ $QS_Completers = {
             ($_ -eq "Register-QSUser/UserRole")
         }
         {
-            $v = "ADMIN","AUTHOR","READER","RESTRICTED_AUTHOR","RESTRICTED_READER"
+            $v = "ADMIN","ADMIN_PRO","AUTHOR","AUTHOR_PRO","READER","READER_PRO","RESTRICTED_AUTHOR","RESTRICTED_READER"
             break
         }
 
@@ -444,6 +672,30 @@ $QS_Completers = {
             break
         }
 
+        # Amazon.QuickSight.VisualHighlightTrigger
+        {
+            ($_ -eq "New-QSAnalysis/HighlightOperation_Trigger") -Or
+            ($_ -eq "New-QSDashboard/HighlightOperation_Trigger") -Or
+            ($_ -eq "New-QSTemplate/HighlightOperation_Trigger") -Or
+            ($_ -eq "Update-QSAnalysis/HighlightOperation_Trigger") -Or
+            ($_ -eq "Update-QSDashboard/HighlightOperation_Trigger") -Or
+            ($_ -eq "Update-QSTemplate/HighlightOperation_Trigger")
+        }
+        {
+            $v = "DATA_POINT_CLICK","DATA_POINT_HOVER","NONE"
+            break
+        }
+
+        # Amazon.QuickSight.WebCrawlerAuthType
+        {
+            ($_ -eq "New-QSDataSource/WebCrawlerParameters_WebCrawlerAuthType") -Or
+            ($_ -eq "Update-QSDataSource/WebCrawlerParameters_WebCrawlerAuthType")
+        }
+        {
+            $v = "BASIC_AUTH","FORM","NO_AUTH","SAML"
+            break
+        }
+
 
     }
 
@@ -453,35 +705,85 @@ $QS_Completers = {
 }
 
 $QS_map = @{
+    "AdHocFilteringOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
     "AssignmentStatus"=@("Get-QSIAMPolicyAssignmentList","New-QSIAMPolicyAssignment","Update-QSIAMPolicyAssignment")
+    "AuthenticationConfig_AuthenticationType"=@("New-QSActionConnector","Update-QSActionConnector")
     "AuthenticationMethod"=@("New-QSAccountSubscription")
-    "DashboardPublishOptions_AdHocFilteringOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_DataPointDrillUpDownOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_DataPointMenuLabelOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_DataPointTooltipOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_ExportToCSVOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_ExportWithHiddenFieldsOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_SheetControlsOption_VisibilityState"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_SheetLayoutElementMaximizationOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_VisualAxisSortOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_VisualMenuOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DashboardPublishOptions_VisualPublishOptions_ExportHiddenFieldsOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
-    "DataSetRefreshProperties_RefreshConfiguration_IncrementalRefresh_LookbackWindow_SizeUnit"=@("Write-QSDataSetRefreshProperty")
-    "DataSourceParameters_StarburstParameters_ProductType"=@("New-QSDataSource","Update-QSDataSource")
-    "Definition_AnalysisDefaults_DefaultNewSheetConfiguration_InteractiveLayoutConfiguration_Grid_CanvasSizeOptions_ScreenCanvasSizeOptions_ResizeOption"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
-    "Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperOrientation"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
-    "Definition_AnalysisDefaults_DefaultNewSheetConfiguration_PaginatedLayoutConfiguration_SectionBased_CanvasSizeOptions_PaperCanvasSizeOptions_PaperSize"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
-    "Definition_AnalysisDefaults_DefaultNewSheetConfiguration_SheetContentType"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
-    "Definition_Options_WeekStart"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
+    "AuthorizationCodeGrantMetadata_AuthorizationCodeGrantCredentialsSource"=@("New-QSActionConnector","Update-QSActionConnector")
+    "Capabilities_Action"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_AddOrRunAnomalyDetectionForAnalyses"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_Analysis"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_Automate"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ChatAgent"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateAndUpdateDashboardEmailReport"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateAndUpdateDataset"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateAndUpdateDataSource"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateAndUpdateTheme"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateAndUpdateThresholdAlert"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateChatAgent"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateSharedFolder"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_CreateSPICEDataset"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_Dashboard"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ExportToCsv"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ExportToCsvInScheduledReport"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ExportToExcel"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ExportToExcelInScheduledReport"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ExportToPdf"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ExportToPdfInScheduledReport"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_Flow"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_IncludeContentInScheduledReportsEmail"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_KnowledgeBase"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_PerformFlowUiTask"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_PrintReport"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_PublishWithoutApproval"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_RenameSharedFolder"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_Research"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ShareAnalyses"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ShareDashboard"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ShareDataset"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ShareDataSource"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_Space"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_SubscribeDashboardEmailReport"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_UseAgentWebSearch"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_UseBedrockModel"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "Capabilities_ViewAccountSPICECapacity"=@("New-QSCustomPermission","Update-QSCustomPermission")
+    "ClientCredentialsGrantMetadata_ClientCredentialsSource"=@("New-QSActionConnector","Update-QSActionConnector")
+    "DashboardsQAStatus"=@("Update-QSDashboardsQAConfiguration")
+    "DataPointDrillUpDownOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "DataPointMenuLabelOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "DataPointTooltipOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "DataQAEnabledOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "DataStoriesSharingOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "DefaultNewSheetConfiguration_SheetContentType"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
     "Edition"=@("New-QSAccountSubscription")
+    "EmailAlert_AlertStatus"=@("Write-QSDataSetRefreshProperty")
+    "ExecutiveSummaryOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
     "ExportFormat"=@("Start-QSAssetBundleExportJob")
+    "ExportHiddenFieldsOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "ExportToCSVOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "ExportWithHiddenFieldsOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
     "FailureAction"=@("Start-QSAssetBundleImportJob")
     "FolderType"=@("New-QSFolder")
+    "HighlightOperation_Trigger"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
     "IdentityStore"=@("New-QSNamespace")
     "IdentityType"=@("Get-QSDashboardEmbedUrl","Register-QSUser")
     "ImportMode"=@("New-QSDataSet","Update-QSDataSet")
+    "IncludeFolderMember"=@("Start-QSAssetBundleExportJob")
+    "IncludeGeneratedAnswer"=@("Search-QSQAResult")
+    "IncludeQuickSightQIndex"=@("Search-QSQAResult")
     "IngestionType"=@("New-QSIngestion")
+    "LookbackWindow_SizeUnit"=@("Write-QSDataSetRefreshProperty")
     "MemberType"=@("New-QSFolderMembership","Remove-QSFolderMembership")
+    "Options_QBusinessInsightsStatus"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
+    "Options_WeekStart"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
+    "PaperCanvasSizeOptions_PaperOrientation"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
+    "PaperCanvasSizeOptions_PaperSize"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
+    "PersonalizationMode"=@("Update-QSQPersonalizationConfiguration")
+    "PurchaseMode"=@("Update-QSSPICECapacityConfiguration")
+    "QSearchStatus"=@("Update-QSQuickSightQSearchConfiguration")
+    "QueryExecutionOptions_QueryExecutionMode"=@("New-QSAnalysis","New-QSTemplate","Update-QSAnalysis","Update-QSTemplate")
+    "QuickSuiteActionsOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "RefreshOnDay_DayOfWeek"=@("New-QSRefreshSchedule","Update-QSRefreshSchedule")
     "RefreshSchedule_TopicScheduleType"=@("New-QSTopicRefreshSchedule","Update-QSTopicRefreshSchedule")
     "Role"=@("Get-QSRoleCustomPermission","Get-QSRoleMembershipList","New-QSRoleMembership","Remove-QSRoleCustomPermission","Remove-QSRoleMembership","Update-QSRoleCustomPermission","Update-QSUser")
     "RowLevelPermissionDataSet_FormatVersion"=@("New-QSDataSet","Update-QSDataSet")
@@ -489,14 +791,23 @@ $QS_map = @{
     "RowLevelPermissionDataSet_Status"=@("New-QSDataSet","Update-QSDataSet")
     "RowLevelPermissionTagConfiguration_Status"=@("New-QSDataSet","Update-QSDataSet")
     "Schedule_RefreshType"=@("New-QSRefreshSchedule","Update-QSRefreshSchedule")
-    "Schedule_ScheduleFrequency_Interval"=@("New-QSRefreshSchedule","Update-QSRefreshSchedule")
-    "Schedule_ScheduleFrequency_RefreshOnDay_DayOfWeek"=@("New-QSRefreshSchedule","Update-QSRefreshSchedule")
+    "ScheduleFrequency_Interval"=@("New-QSRefreshSchedule","Update-QSRefreshSchedule")
+    "ScreenCanvasSizeOptions_ResizeOption"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
     "Service"=@("Remove-QSIdentityPropagationConfig","Update-QSIdentityPropagationConfig")
     "SharingModel"=@("New-QSFolder")
+    "SheetControlsOption_VisibilityState"=@("New-QSDashboard","Update-QSDashboard")
+    "SheetLayoutElementMaximizationOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "SnowflakeParameters_AuthenticationType"=@("New-QSDataSource","Update-QSDataSource")
+    "StarburstParameters_AuthenticationType"=@("New-QSDataSource","Update-QSDataSource")
+    "StarburstParameters_ProductType"=@("New-QSDataSource","Update-QSDataSource")
     "Topic_UserExperienceVersion"=@("New-QSTopic","Update-QSTopic")
-    "Type"=@("Get-QSThemeList","New-QSDataSource")
+    "Type"=@("Get-QSThemeList","New-QSActionConnector","New-QSDataSource")
+    "UseAs"=@("New-QSDataSet")
     "UserRole"=@("Register-QSUser")
     "ValidationStrategy_Mode"=@("New-QSAnalysis","New-QSDashboard","New-QSTemplate","Update-QSAnalysis","Update-QSDashboard","Update-QSTemplate")
+    "VisualAxisSortOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "VisualMenuOption_AvailabilityStatus"=@("New-QSDashboard","Update-QSDashboard")
+    "WebCrawlerParameters_WebCrawlerAuthType"=@("New-QSDataSource","Update-QSDataSource")
 }
 
 _awsArgumentCompleterRegistration $QS_Completers $QS_map
@@ -549,10 +860,15 @@ $QS_SelectCompleters = {
 }
 
 $QS_SelectMap = @{
-    "Select"=@("Stop-QSIngestion",
+    "Select"=@("Set-QSBatchCreateTopicReviewedAnswer",
+               "Set-QSBatchDeleteTopicReviewedAnswer",
+               "Stop-QSIngestion",
                "New-QSAccountCustomization",
                "New-QSAccountSubscription",
+               "New-QSActionConnector",
                "New-QSAnalysis",
+               "New-QSBrand",
+               "New-QSCustomPermission",
                "New-QSDashboard",
                "New-QSDataSet",
                "New-QSDataSource",
@@ -573,12 +889,18 @@ $QS_SelectMap = @{
                "New-QSTopicRefreshSchedule",
                "New-QSVPCConnection",
                "Remove-QSAccountCustomization",
+               "Remove-QSAccountCustomPermission",
                "Remove-QSAccountSubscription",
+               "Remove-QSActionConnector",
                "Remove-QSAnalysis",
+               "Remove-QSBrand",
+               "Remove-QSBrandAssignment",
+               "Remove-QSCustomPermission",
                "Remove-QSDashboard",
                "Remove-QSDataSet",
                "Remove-QSDataSetRefreshProperty",
                "Remove-QSDataSource",
+               "Remove-QSDefaultQBusinessApplication",
                "Remove-QSFolder",
                "Remove-QSFolderMembership",
                "Remove-QSGroup",
@@ -597,25 +919,35 @@ $QS_SelectMap = @{
                "Remove-QSTopicRefreshSchedule",
                "Remove-QSUser",
                "Remove-QSUserByPrincipalId",
+               "Remove-QSUserCustomPermission",
                "Remove-QSVPCConnection",
                "Get-QSAccountCustomization",
+               "Get-QSAccountCustomPermission",
                "Get-QSAccountSetting",
                "Get-QSAccountSubscription",
+               "Get-QSActionConnector",
+               "Get-QSActionConnectorPermission",
                "Get-QSAnalysis",
                "Get-QSAnalysisDefinition",
                "Get-QSAnalysisPermission",
                "Get-QSAssetBundleExportJob",
                "Get-QSAssetBundleImportJob",
+               "Get-QSBrand",
+               "Get-QSBrandAssignment",
+               "Get-QSBrandPublishedVersion",
+               "Get-QSCustomPermission",
                "Get-QSDashboard",
                "Get-QSDashboardDefinition",
                "Get-QSDashboardPermission",
                "Get-QSDashboardSnapshotJob",
                "Get-QSDashboardSnapshotJobResult",
+               "Get-QSDashboardsQAConfiguration",
                "Get-QSDataSet",
                "Get-QSDataSetPermission",
                "Get-QSDataSetRefreshProperty",
                "Get-QSDataSource",
                "Get-QSDataSourcePermission",
+               "Get-QSDefaultQBusinessApplication",
                "Get-QSFolder",
                "Get-QSFolderPermission",
                "Get-QSFolderResolvedPermission",
@@ -624,7 +956,10 @@ $QS_SelectMap = @{
                "Get-QSIAMPolicyAssignment",
                "Get-QSIngestion",
                "Get-QSIpRestriction",
+               "Get-QSKeyRegistration",
                "Get-QSNamespace",
+               "Get-QSQPersonalizationConfiguration",
+               "Get-QSQuickSightQSearchConfiguration",
                "Get-QSRefreshSchedule",
                "Get-QSRoleCustomPermission",
                "Get-QSTemplate",
@@ -642,17 +977,25 @@ $QS_SelectMap = @{
                "Get-QSVPCConnection",
                "New-QSEmbedUrlForAnonymousUser",
                "New-QSEmbedUrlForRegisteredUser",
+               "Initialize-QSEmbedUrlForRegisteredUserWithIdentity",
                "Get-QSDashboardEmbedUrl",
+               "Get-QSFlowMetadata",
+               "Get-QSFlowPermission",
                "Get-QSSessionEmbedUrl",
+               "Get-QSActionConnectorList",
                "Get-QSAnalysisList",
                "Get-QSAssetBundleExportJobList",
                "Get-QSAssetBundleImportJobList",
+               "Get-QSBrandList",
+               "Get-QSCustomPermissionList",
                "Get-QSDashboardList",
                "Get-QSDashboardVersionList",
                "Get-QSDataSetList",
                "Get-QSDataSourceList",
+               "Get-QSFlowList",
                "Get-QSFolderMemberList",
                "Get-QSFolderList",
+               "Get-QSFoldersForResourceList",
                "Get-QSGroupMembershipList",
                "Get-QSGroupList",
                "Get-QSIAMPolicyAssignmentList",
@@ -670,45 +1013,66 @@ $QS_SelectMap = @{
                "Get-QSThemeList",
                "Get-QSThemeVersionList",
                "Get-QSTopicRefreshScheduleList",
+               "Get-QSTopicReviewedAnswerList",
                "Get-QSTopicList",
                "Get-QSUserGroupList",
                "Get-QSUserList",
                "Get-QSVPCConnectionList",
+               "Search-QSQAResult",
                "Write-QSDataSetRefreshProperty",
                "Register-QSUser",
                "Restore-QSAnalysis",
+               "Search-QSActionConnector",
                "Search-QSAnalysis",
                "Search-QSDashboard",
                "Search-QSDataSet",
                "Search-QSDataSource",
+               "Search-QSFlow",
                "Search-QSFolder",
                "Find-QSGroup",
+               "Search-QSTopic",
                "Start-QSAssetBundleExportJob",
                "Start-QSAssetBundleImportJob",
                "Start-QSDashboardSnapshotJob",
+               "Start-QSDashboardSnapshotJobSchedule",
                "Add-QSResourceTag",
                "Remove-QSResourceTag",
                "Update-QSAccountCustomization",
+               "Update-QSAccountCustomPermission",
                "Update-QSAccountSetting",
+               "Update-QSActionConnector",
+               "Update-QSActionConnectorPermission",
                "Update-QSAnalysis",
                "Update-QSAnalysisPermission",
+               "Update-QSApplicationWithTokenExchangeGrant",
+               "Update-QSBrand",
+               "Update-QSBrandAssignment",
+               "Update-QSBrandPublishedVersion",
+               "Update-QSCustomPermission",
                "Update-QSDashboard",
                "Update-QSDashboardLink",
                "Update-QSDashboardPermission",
                "Update-QSDashboardPublishedVersion",
+               "Update-QSDashboardsQAConfiguration",
                "Update-QSDataSet",
                "Update-QSDataSetPermission",
                "Update-QSDataSource",
                "Update-QSDataSourcePermission",
+               "Update-QSDefaultQBusinessApplication",
+               "Update-QSFlowPermission",
                "Update-QSFolder",
                "Update-QSFolderPermission",
                "Update-QSGroup",
                "Update-QSIAMPolicyAssignment",
                "Update-QSIdentityPropagationConfig",
                "Update-QSIpRestriction",
+               "Update-QSKeyRegistration",
                "Update-QSPublicSharingSetting",
+               "Update-QSQPersonalizationConfiguration",
+               "Update-QSQuickSightQSearchConfiguration",
                "Update-QSRefreshSchedule",
                "Update-QSRoleCustomPermission",
+               "Update-QSSPICECapacityConfiguration",
                "Update-QSTemplate",
                "Update-QSTemplateAlias",
                "Update-QSTemplatePermission",
@@ -719,6 +1083,7 @@ $QS_SelectMap = @{
                "Update-QSTopicPermission",
                "Update-QSTopicRefreshSchedule",
                "Update-QSUser",
+               "Update-QSUserCustomPermission",
                "Update-QSVPCConnection")
 }
 

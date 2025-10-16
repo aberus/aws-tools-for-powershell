@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EMRContainers;
 using Amazon.EMRContainers.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMRC
 {
     /// <summary>
@@ -38,12 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
     [OutputType("Amazon.EMRContainers.Model.CreateVirtualClusterResponse")]
     [AWSCmdlet("Calls the Amazon EMR Containers CreateVirtualCluster API operation.", Operation = new[] {"CreateVirtualCluster"}, SelectReturnType = typeof(Amazon.EMRContainers.Model.CreateVirtualClusterResponse))]
     [AWSCmdletOutput("Amazon.EMRContainers.Model.CreateVirtualClusterResponse",
-        "This cmdlet returns an Amazon.EMRContainers.Model.CreateVirtualClusterResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EMRContainers.Model.CreateVirtualClusterResponse object containing multiple properties."
     )]
     public partial class NewEMRCVirtualClusterCmdlet : AmazonEMRContainersClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContainerProvider_Id
         /// <summary>
@@ -90,10 +93,36 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         public System.String EksInfo_Namespace { get; set; }
         #endregion
         
+        #region Parameter EksInfo_NodeLabel
+        /// <summary>
+        /// <para>
+        /// <para>The nodeLabel of the nodes where the resources of this virtual cluster can get scheduled.
+        /// It requires relevant scaling and policy engine addons.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ContainerProvider_Info_EksInfo_NodeLabel")]
+        public System.String EksInfo_NodeLabel { get; set; }
+        #endregion
+        
+        #region Parameter SecurityConfigurationId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the security configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SecurityConfigurationId { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags assigned to the virtual cluster.</para>
+        /// <para>The tags assigned to the virtual cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,16 +168,6 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -159,9 +178,13 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -175,21 +198,11 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EMRContainers.Model.CreateVirtualClusterResponse, NewEMRCVirtualClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ContainerProvider_Id = this.ContainerProvider_Id;
             #if MODULAR
@@ -199,6 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             }
             #endif
             context.EksInfo_Namespace = this.EksInfo_Namespace;
+            context.EksInfo_NodeLabel = this.EksInfo_NodeLabel;
             context.ContainerProvider_Type = this.ContainerProvider_Type;
             #if MODULAR
             if (this.ContainerProvider_Type == null && ParameterWasBound(nameof(this.ContainerProvider_Type)))
@@ -213,6 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SecurityConfigurationId = this.SecurityConfigurationId;
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -285,6 +300,16 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
                 requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo.Namespace = requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo_eksInfo_Namespace;
                 requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfoIsNull = false;
             }
+            System.String requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo_eksInfo_NodeLabel = null;
+            if (cmdletContext.EksInfo_NodeLabel != null)
+            {
+                requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo_eksInfo_NodeLabel = cmdletContext.EksInfo_NodeLabel;
+            }
+            if (requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo_eksInfo_NodeLabel != null)
+            {
+                requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo.NodeLabel = requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo_eksInfo_NodeLabel;
+                requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfoIsNull = false;
+            }
              // determine if requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfo should be set to null
             if (requestContainerProvider_containerProvider_Info_containerProvider_Info_EksInfoIsNull)
             {
@@ -313,6 +338,10 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.SecurityConfigurationId != null)
+            {
+                request.SecurityConfigurationId = cmdletContext.SecurityConfigurationId;
             }
             if (cmdletContext.Tag != null)
             {
@@ -356,13 +385,7 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EMR Containers", "CreateVirtualCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateVirtualCluster(request);
-                #elif CORECLR
-                return client.CreateVirtualClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVirtualClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -382,8 +405,10 @@ namespace Amazon.PowerShell.Cmdlets.EMRC
             public System.String ClientToken { get; set; }
             public System.String ContainerProvider_Id { get; set; }
             public System.String EksInfo_Namespace { get; set; }
+            public System.String EksInfo_NodeLabel { get; set; }
             public Amazon.EMRContainers.ContainerProviderType ContainerProvider_Type { get; set; }
             public System.String Name { get; set; }
+            public System.String SecurityConfigurationId { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.EMRContainers.Model.CreateVirtualClusterResponse, NewEMRCVirtualClusterCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

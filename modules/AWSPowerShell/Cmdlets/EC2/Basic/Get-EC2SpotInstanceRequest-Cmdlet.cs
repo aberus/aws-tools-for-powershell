@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -54,14 +56,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeSpotInstanceRequests API operation.", Operation = new[] {"DescribeSpotInstanceRequests"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeSpotInstanceRequestsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.SpotInstanceRequest or Amazon.EC2.Model.DescribeSpotInstanceRequestsResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.SpotInstanceRequest objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeSpotInstanceRequestsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeSpotInstanceRequestsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2SpotInstanceRequestCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -74,7 +87,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// SSD, <c>st1</c> for Throughput Optimized HDD, <c>sc1</c> for Cold HDD, or <c>standard</c>
         /// for Magnetic.</para></li><li><para><c>launch.group-id</c> - The ID of the security group for the instance.</para></li><li><para><c>launch.group-name</c> - The name of the security group for the instance.</para></li><li><para><c>launch.image-id</c> - The ID of the AMI.</para></li><li><para><c>launch.instance-type</c> - The type of instance (for example, <c>m3.medium</c>).</para></li><li><para><c>launch.kernel-id</c> - The kernel ID.</para></li><li><para><c>launch.key-name</c> - The name of the key pair the instance launched with.</para></li><li><para><c>launch.monitoring-enabled</c> - Whether detailed monitoring is enabled for the
         /// Spot Instance.</para></li><li><para><c>launch.ramdisk-id</c> - The RAM disk ID.</para></li><li><para><c>launched-availability-zone</c> - The Availability Zone in which the request is
-        /// launched.</para></li><li><para><c>network-interface.addresses.primary</c> - Indicates whether the IP address is
+        /// launched.</para></li><li><para><c>launched-availability-zone-id</c> - The ID of the Availability Zone in which the
+        /// request is launched.</para></li><li><para><c>network-interface.addresses.primary</c> - Indicates whether the IP address is
         /// the primary private IP address.</para></li><li><para><c>network-interface.delete-on-termination</c> - Indicates whether the network interface
         /// is deleted when the instance is terminated.</para></li><li><para><c>network-interface.description</c> - A description of the network interface.</para></li><li><para><c>network-interface.device-index</c> - The index of the device for the network interface
         /// attachment on the instance.</para></li><li><para><c>network-interface.group-id</c> - The ID of the security group associated with
@@ -85,12 +99,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// | <c>closed</c> | <c>cancelled</c> | <c>failed</c>). Spot request status information
         /// can help you track your Amazon EC2 Spot Instance requests. For more information, see
         /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-request-status.html">Spot
-        /// request status</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.</para></li><li><para><c>status-code</c> - The short code describing the most recent evaluation of your
+        /// request status</a> in the <i>Amazon EC2 User Guide</i>.</para></li><li><para><c>status-code</c> - The short code describing the most recent evaluation of your
         /// Spot Instance request.</para></li><li><para><c>status-message</c> - The message explaining the status of the Spot Instance request.</para></li><li><para><c>tag:&lt;key&gt;</c> - The key/value combination of a tag assigned to the resource.
         /// Use the tag key in the filter name and the tag value as the filter value. For example,
         /// to find all resources that have a tag with the key <c>Owner</c> and the value <c>TeamA</c>,
         /// specify <c>tag:Owner</c> for the filter name and <c>TeamA</c> for the filter value.</para></li><li><para><c>tag-key</c> - The key of a tag assigned to the resource. Use this filter to find
-        /// all resources assigned a tag with a specific key, regardless of the tag value.</para></li><li><para><c>type</c> - The type of Spot Instance request (<c>one-time</c> | <c>persistent</c>).</para></li><li><para><c>valid-from</c> - The start date of the request.</para></li><li><para><c>valid-until</c> - The end date of the request.</para></li></ul>
+        /// all resources assigned a tag with a specific key, regardless of the tag value.</para></li><li><para><c>type</c> - The type of Spot Instance request (<c>one-time</c> | <c>persistent</c>).</para></li><li><para><c>valid-from</c> - The start date of the request.</para></li><li><para><c>valid-until</c> - The end date of the request.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -101,7 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter SpotInstanceRequestId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the Spot Instance requests.</para>
+        /// <para>The IDs of the Spot Instance requests.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -135,7 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,16 +175,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "SpotInstanceRequests";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SpotInstanceRequestId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SpotInstanceRequestId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SpotInstanceRequestId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -173,9 +185,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -183,21 +199,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeSpotInstanceRequestsResponse, GetEC2SpotInstanceRequestCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SpotInstanceRequestId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -231,13 +238,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeSpotInstanceRequestsRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -301,10 +310,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeSpotInstanceRequestsRequest();
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -353,7 +366,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.SpotInstanceRequests.Count;
+                    int _receivedThisCall = response.SpotInstanceRequests?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -402,13 +415,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeSpotInstanceRequests");
             try
             {
-                #if DESKTOP
-                return client.DescribeSpotInstanceRequests(request);
-                #elif CORECLR
-                return client.DescribeSpotInstanceRequestsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeSpotInstanceRequestsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -425,6 +432,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }

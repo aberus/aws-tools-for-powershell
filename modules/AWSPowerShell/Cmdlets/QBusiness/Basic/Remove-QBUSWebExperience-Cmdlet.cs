@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QBusiness;
 using Amazon.QBusiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QBUS
 {
     /// <summary>
-    /// Deletes an Amazon Q web experience.
+    /// Deletes an Amazon Q Business web experience.
     /// </summary>
     [Cmdlet("Remove", "QBUSWebExperience", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon QBusiness DeleteWebExperience API operation.", Operation = new[] {"DeleteWebExperience"}, SelectReturnType = typeof(Amazon.QBusiness.Model.DeleteWebExperienceResponse))]
     [AWSCmdletOutput("None or Amazon.QBusiness.Model.DeleteWebExperienceResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.QBusiness.Model.DeleteWebExperienceResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.QBusiness.Model.DeleteWebExperienceResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveQBUSWebExperienceCmdlet : AmazonQBusinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Amazon Q application linked to the Amazon Q web experience.</para>
+        /// <para>The identifier of the Amazon Q Business application linked to the Amazon Q Business
+        /// web experience.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +66,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter WebExperienceId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Amazon Q web experience being deleted.</para>
+        /// <para>The identifier of the Amazon Q Business web experience being deleted.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -86,16 +90,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WebExperienceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WebExperienceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WebExperienceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -106,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.WebExperienceId), MyInvocation.BoundParameters);
@@ -122,21 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QBusiness.Model.DeleteWebExperienceResponse, RemoveQBUSWebExperienceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WebExperienceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -213,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QBusiness", "DeleteWebExperience");
             try
             {
-                #if DESKTOP
-                return client.DeleteWebExperience(request);
-                #elif CORECLR
-                return client.DeleteWebExperienceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteWebExperienceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

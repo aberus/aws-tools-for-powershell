@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MachineLearning;
 using Amazon.MachineLearning.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ML
 {
     /// <summary>
@@ -51,14 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.ML
     [AWSCmdlet("Calls the Amazon Machine Learning CreateDataSourceFromRDS API operation.", Operation = new[] {"CreateDataSourceFromRDS"}, SelectReturnType = typeof(Amazon.MachineLearning.Model.CreateDataSourceFromRDSResponse))]
     [AWSCmdletOutput("System.String or Amazon.MachineLearning.Model.CreateDataSourceFromRDSResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.MachineLearning.Model.CreateDataSourceFromRDSResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MachineLearning.Model.CreateDataSourceFromRDSResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewMLDataSourceFromRDSCmdlet : AmazonMachineLearningClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComputeStatistic
         /// <summary>
@@ -289,7 +290,11 @@ namespace Amazon.PowerShell.Cmdlets.ML
         /// <para>The security group IDs to be used to access a VPC-based RDS DB instance. Ensure that
         /// there are appropriate ingress rules set up to allow access to the RDS DB instance.
         /// This attribute is used by Data Pipeline to carry out the copy operation from Amazon
-        /// RDS to an Amazon S3 task.</para>
+        /// RDS to an Amazon S3 task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -398,9 +403,13 @@ namespace Amazon.PowerShell.Cmdlets.ML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DataSourceName), MyInvocation.BoundParameters);
@@ -750,13 +759,7 @@ namespace Amazon.PowerShell.Cmdlets.ML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Machine Learning", "CreateDataSourceFromRDS");
             try
             {
-                #if DESKTOP
-                return client.CreateDataSourceFromRDS(request);
-                #elif CORECLR
-                return client.CreateDataSourceFromRDSAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDataSourceFromRDSAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

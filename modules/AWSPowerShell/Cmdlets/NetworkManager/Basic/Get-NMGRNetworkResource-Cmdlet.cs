@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkManager;
 using Amazon.NetworkManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NMGR
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
     [AWSCmdlet("Calls the AWS Network Manager GetNetworkResources API operation.", Operation = new[] {"GetNetworkResources"}, SelectReturnType = typeof(Amazon.NetworkManager.Model.GetNetworkResourcesResponse))]
     [AWSCmdletOutput("Amazon.NetworkManager.Model.NetworkResource or Amazon.NetworkManager.Model.GetNetworkResourcesResponse",
         "This cmdlet returns a collection of Amazon.NetworkManager.Model.NetworkResource objects.",
-        "The service call response (type Amazon.NetworkManager.Model.GetNetworkResourcesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.NetworkManager.Model.GetNetworkResourcesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetNMGRNetworkResourceCmdlet : AmazonNetworkManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -118,7 +121,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>The resource type.</para><para>The following are the supported resource types for Direct Connect:</para><ul><li><para><c>dxcon</c> - The definition model is <a href="https://docs.aws.amazon.com/directconnect/latest/APIReference/API_Connection.html">Connection</a>.</para></li><li><para><c>dx-gateway</c> - The definition model is <a href="https://docs.aws.amazon.com/directconnect/latest/APIReference/API_DirectConnectGateway.html">DirectConnectGateway</a>.</para></li><li><para><c>dx-vif</c> - The definition model is <a href="https://docs.aws.amazon.com/directconnect/latest/APIReference/API_VirtualInterface.html">VirtualInterface</a>.</para></li></ul><para>The following are the supported resource types for Network Manager:</para><ul><li><para><c>connection</c> - The definition model is <a href="https://docs.aws.amazon.com/networkmanager/latest/APIReference/API_Connection.html">Connection</a>.</para></li><li><para><c>device</c> - The definition model is <a href="https://docs.aws.amazon.com/networkmanager/latest/APIReference/API_Device.html">Device</a>.</para></li><li><para><c>link</c> - The definition model is <a href="https://docs.aws.amazon.com/networkmanager/latest/APIReference/API_Link.html">Link</a>.</para></li><li><para><c>site</c> - The definition model is <a href="https://docs.aws.amazon.com/networkmanager/latest/APIReference/API_Site.html">Site</a>.</para></li></ul><para>The following are the supported resource types for Amazon VPC:</para><ul><li><para><c>customer-gateway</c> - The definition model is <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CustomerGateway.html">CustomerGateway</a>.</para></li><li><para><c>transit-gateway</c> - The definition model is <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TransitGateway.html">TransitGateway</a>.</para></li><li><para><c>transit-gateway-attachment</c> - The definition model is <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TransitGatewayAttachment.html">TransitGatewayAttachment</a>.</para></li><li><para><c>transit-gateway-connect-peer</c> - The definition model is <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TransitGatewayConnectPeer.html">TransitGatewayConnectPeer</a>.</para></li><li><para><c>transit-gateway-route-table</c> - The definition model is <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_TransitGatewayRouteTable.html">TransitGatewayRouteTable</a>.</para></li><li><para><c>vpn-connection</c> - The definition model is <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_VpnConnection.html">VpnConnection</a>.</para></li></ul>
+        /// <para>The resource type.</para><para>The following are the supported resource types for Direct Connect:</para><ul><li><para><c>dxcon</c></para></li><li><para><c>dx-gateway</c></para></li><li><para><c>dx-vif</c></para></li></ul><para>The following are the supported resource types for Network Manager:</para><ul><li><para><c>attachment</c></para></li><li><para><c>connect-peer</c></para></li><li><para><c>connection</c></para></li><li><para><c>core-network</c></para></li><li><para><c>device</c></para></li><li><para><c>link</c></para></li><li><para><c>peering</c></para></li><li><para><c>site</c></para></li></ul><para>The following are the supported resource types for Amazon VPC:</para><ul><li><para><c>customer-gateway</c></para></li><li><para><c>transit-gateway</c></para></li><li><para><c>transit-gateway-attachment</c></para></li><li><para><c>transit-gateway-connect-peer</c></para></li><li><para><c>transit-gateway-route-table</c></para></li><li><para><c>vpn-connection</c></para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,7 +146,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,16 +164,6 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public string Select { get; set; } = "NetworkResources";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GlobalNetworkId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GlobalNetworkId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GlobalNetworkId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -181,9 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -191,21 +188,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkManager.Model.GetNetworkResourcesResponse, GetNMGRNetworkResourceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GlobalNetworkId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             context.AwsRegion = this.AwsRegion;
             context.CoreNetworkId = this.CoreNetworkId;
@@ -234,9 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.NetworkManager.Model.GetNetworkResourcesRequest();
@@ -335,13 +320,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Manager", "GetNetworkResources");
             try
             {
-                #if DESKTOP
-                return client.GetNetworkResources(request);
-                #elif CORECLR
-                return client.GetNetworkResourcesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetNetworkResourcesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

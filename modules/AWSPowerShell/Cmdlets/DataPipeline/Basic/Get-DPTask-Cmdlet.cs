@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataPipeline;
 using Amazon.DataPipeline.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DP
 {
     /// <summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.DP
     [AWSCmdlet("Calls the AWS Data Pipeline PollForTask API operation.", Operation = new[] {"PollForTask"}, SelectReturnType = typeof(Amazon.DataPipeline.Model.PollForTaskResponse))]
     [AWSCmdletOutput("Amazon.DataPipeline.Model.TaskObject or Amazon.DataPipeline.Model.PollForTaskResponse",
         "This cmdlet returns an Amazon.DataPipeline.Model.TaskObject object.",
-        "The service call response (type Amazon.DataPipeline.Model.PollForTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataPipeline.Model.PollForTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDPTaskCmdlet : AmazonDataPipelineClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter InstanceIdentity_Document
         /// <summary>
@@ -122,19 +125,13 @@ namespace Amazon.PowerShell.Cmdlets.DP
         public string Select { get; set; } = "TaskObject";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkerGroup parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkerGroup' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkerGroup' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -142,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.DP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataPipeline.Model.PollForTaskResponse, GetDPTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkerGroup;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Hostname = this.Hostname;
             context.InstanceIdentity_Document = this.InstanceIdentity_Document;
             context.InstanceIdentity_Signature = this.InstanceIdentity_Signature;
@@ -258,13 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.DP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Data Pipeline", "PollForTask");
             try
             {
-                #if DESKTOP
-                return client.PollForTask(request);
-                #elif CORECLR
-                return client.PollForTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PollForTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

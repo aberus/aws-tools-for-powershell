@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -63,12 +65,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [OutputType("Amazon.Route53.Model.CreateHealthCheckResponse")]
     [AWSCmdlet("Calls the Amazon Route 53 CreateHealthCheck API operation.", Operation = new[] {"CreateHealthCheck"}, SelectReturnType = typeof(Amazon.Route53.Model.CreateHealthCheckResponse))]
     [AWSCmdletOutput("Amazon.Route53.Model.CreateHealthCheckResponse",
-        "This cmdlet returns an Amazon.Route53.Model.CreateHealthCheckResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53.Model.CreateHealthCheckResponse object containing multiple properties."
     )]
     public partial class NewR53HealthCheckCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CallerReference
         /// <summary>
@@ -104,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// <para>
         /// <para>(CALCULATED Health Checks Only) A complex type that contains one <c>ChildHealthCheck</c>
         /// element for each health check that you want to associate with a <c>CALCULATED</c>
-        /// health check.</para>
+        /// health check.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -333,7 +340,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// checks from all of the regions that are listed under <b>Valid Values</b>.</para><para>If you update a health check to remove a region that has been performing health checks,
         /// Route 53 will briefly continue to perform checks from that region to ensure that some
         /// health checkers are always checking the endpoint (for example, if you replace three
-        /// regions with four different regions). </para>
+        /// regions with four different regions). </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -403,7 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// than 400.</para></li><li><para><b>HTTPS</b>: Route 53 tries to establish a TCP connection. If successful, Route
         /// 53 submits an HTTPS request and waits for an HTTP status code of 200 or greater and
         /// less than 400.</para><important><para>If you specify <c>HTTPS</c> for the value of <c>Type</c>, the endpoint must support
-        /// TLS v1.0 or later.</para></important></li><li><para><b>HTTP_STR_MATCH</b>: Route 53 tries to establish a TCP connection. If successful,
+        /// TLS v1.0, v1.1, or v1.2.</para></important></li><li><para><b>HTTP_STR_MATCH</b>: Route 53 tries to establish a TCP connection. If successful,
         /// Route 53 submits an HTTP request and searches the first 5,120 bytes of the response
         /// body for the string that you specify in <c>SearchString</c>.</para></li><li><para><b>HTTPS_STR_MATCH</b>: Route 53 tries to establish a TCP connection. If successful,
         /// Route 53 submits an <c>HTTPS</c> request and searches the first 5,120 bytes of the
@@ -444,19 +455,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CallerReference parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CallerReference' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CallerReference' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -464,21 +469,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Route53.Model.CreateHealthCheckResponse, NewR53HealthCheckCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CallerReference;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CallerReference = this.CallerReference;
             #if MODULAR
             if (this.CallerReference == null && ParameterWasBound(nameof(this.CallerReference)))
@@ -789,13 +784,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "CreateHealthCheck");
             try
             {
-                #if DESKTOP
-                return client.CreateHealthCheck(request);
-                #elif CORECLR
-                return client.CreateHealthCheckAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateHealthCheckAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

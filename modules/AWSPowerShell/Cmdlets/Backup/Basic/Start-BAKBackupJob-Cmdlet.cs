@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -34,22 +36,25 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [OutputType("Amazon.Backup.Model.StartBackupJobResponse")]
     [AWSCmdlet("Calls the AWS Backup StartBackupJob API operation.", Operation = new[] {"StartBackupJob"}, SelectReturnType = typeof(Amazon.Backup.Model.StartBackupJobResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.StartBackupJobResponse",
-        "This cmdlet returns an Amazon.Backup.Model.StartBackupJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Backup.Model.StartBackupJobResponse object containing multiple properties."
     )]
     public partial class StartBAKBackupJobCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupOption
         /// <summary>
         /// <para>
-        /// <para>Specifies the backup option for a selected resource. This option is only available
-        /// for Windows Volume Shadow Copy Service (VSS) backup jobs.</para><para>Valid values: Set to <c>"WindowsVSS":"enabled"</c> to enable the <c>WindowsVSS</c>
+        /// <para>The backup option for a selected resource. This option is only available for Windows
+        /// Volume Shadow Copy Service (VSS) backup jobs.</para><para>Valid values: Set to <c>"WindowsVSS":"enabled"</c> to enable the <c>WindowsVSS</c>
         /// backup option and create a Windows VSS backup. Set to <c>"WindowsVSS""disabled"</c>
-        /// to create a regular backup. The <c>WindowsVSS</c> option is not enabled by default.</para>
+        /// to create a regular backup. The <c>WindowsVSS</c> option is not enabled by default.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -62,7 +67,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <para>
         /// <para>The name of a logical container where backups are stored. Backup vaults are identified
         /// by names that are unique to the account used to create them and the Amazon Web Services
-        /// Region where they are created. They consist of lowercase letters, numbers, and hyphens.</para>
+        /// Region where they are created.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -94,8 +99,8 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter Lifecycle_DeleteAfterDay
         /// <summary>
         /// <para>
-        /// <para>Specifies the number of days after creation that a recovery point is deleted. Must
-        /// be greater than 90 days plus <c>MoveToColdStorageAfterDays</c>.</para>
+        /// <para>The number of days after creation that a recovery point is deleted. This value must
+        /// be at least 90 days after the number of days specified in <c>MoveToColdStorageAfterDays</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,11 +138,23 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public System.String IdempotencyToken { get; set; }
         #endregion
         
+        #region Parameter Index
+        /// <summary>
+        /// <para>
+        /// <para>Include this parameter to enable index creation if your backup job has a resource
+        /// type that supports backup indexes.</para><para>Resource types that support backup indexes include:</para><ul><li><para><c>EBS</c> for Amazon Elastic Block Store</para></li><li><para><c>S3</c> for Amazon Simple Storage Service (Amazon S3)</para></li></ul><para>Index can have 1 of 2 possible values, either <c>ENABLED</c> or <c>DISABLED</c>.</para><para>To create a backup index for an eligible <c>ACTIVE</c> recovery point that does not
+        /// yet have a backup index, set value to <c>ENABLED</c>.</para><para>To delete a backup index, set value to <c>DISABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Backup.Index")]
+        public Amazon.Backup.Index Index { get; set; }
+        #endregion
+        
         #region Parameter Lifecycle_MoveToColdStorageAfterDay
         /// <summary>
         /// <para>
-        /// <para>Specifies the number of days after creation that a recovery point is moved to cold
-        /// storage.</para>
+        /// <para>The number of days after creation that a recovery point is moved to cold storage.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,9 +165,8 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter Lifecycle_OptInToArchiveForSupportedResource
         /// <summary>
         /// <para>
-        /// <para>Optional Boolean. If this is true, this setting will instruct your backup plan to
-        /// transition supported resources to archive (cold) storage tier in accordance with your
-        /// lifecycle settings.</para>
+        /// <para>If the value is true, your backup plan transitions supported resources to archive
+        /// (cold) storage tier in accordance with your lifecycle settings.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,8 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter RecoveryPointTag
         /// <summary>
         /// <para>
-        /// <para>To help organize your resources, you can assign your own metadata to the resources
-        /// that you create. Each tag is a key-value pair.</para>
+        /// <para>The tags to assign to the resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -218,16 +237,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -238,9 +247,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceArn), MyInvocation.BoundParameters);
@@ -254,21 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.StartBackupJobResponse, StartBAKBackupJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.BackupOption != null)
             {
                 context.BackupOption = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -293,6 +296,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             }
             #endif
             context.IdempotencyToken = this.IdempotencyToken;
+            context.Index = this.Index;
             context.Lifecycle_DeleteAfterDay = this.Lifecycle_DeleteAfterDay;
             context.Lifecycle_MoveToColdStorageAfterDay = this.Lifecycle_MoveToColdStorageAfterDay;
             context.Lifecycle_OptInToArchiveForSupportedResource = this.Lifecycle_OptInToArchiveForSupportedResource;
@@ -347,6 +351,10 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             if (cmdletContext.IdempotencyToken != null)
             {
                 request.IdempotencyToken = cmdletContext.IdempotencyToken;
+            }
+            if (cmdletContext.Index != null)
+            {
+                request.Index = cmdletContext.Index;
             }
             
              // populate Lifecycle
@@ -437,13 +445,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "StartBackupJob");
             try
             {
-                #if DESKTOP
-                return client.StartBackupJob(request);
-                #elif CORECLR
-                return client.StartBackupJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartBackupJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -465,6 +467,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             public System.Int64? CompleteWindowMinute { get; set; }
             public System.String IamRoleArn { get; set; }
             public System.String IdempotencyToken { get; set; }
+            public Amazon.Backup.Index Index { get; set; }
             public System.Int64? Lifecycle_DeleteAfterDay { get; set; }
             public System.Int64? Lifecycle_MoveToColdStorageAfterDay { get; set; }
             public System.Boolean? Lifecycle_OptInToArchiveForSupportedResource { get; set; }

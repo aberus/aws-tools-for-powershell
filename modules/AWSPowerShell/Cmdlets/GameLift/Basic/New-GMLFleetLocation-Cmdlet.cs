@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,42 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Adds remote locations to a fleet and begins populating the new locations with EC2
-    /// instances. The new instances conform to the fleet's instance type, auto-scaling, and
-    /// other configuration settings. 
+    /// Adds remote locations to an EC2 and begins populating the new locations with instances.
+    /// The new instances conform to the fleet's instance type, auto-scaling, and other configuration
+    /// settings.
     /// 
     ///  <note><para>
-    /// This operation cannot be used with fleets that don't support remote locations. Fleets
-    /// can have multiple locations only if they reside in Amazon Web Services Regions that
-    /// support this feature and were created after the feature was released in March 2021.
+    /// You can't add remote locations to a fleet that resides in an Amazon Web Services Region
+    /// that doesn't support multiple locations. Fleets created prior to March 2021 can't
+    /// support multiple locations.
     /// </para></note><para>
     /// To add fleet locations, specify the fleet to be updated and provide a list of one
     /// or more locations. 
     /// </para><para>
     /// If successful, this operation returns the list of added locations with their status
-    /// set to <c>NEW</c>. Amazon GameLift initiates the process of starting an instance in
-    /// each added location. You can track the status of each new location by monitoring location
-    /// creation events using <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeFleetEvents.html">DescribeFleetEvents</a>.
+    /// set to <c>NEW</c>. Amazon GameLift Servers initiates the process of starting an instance
+    /// in each added location. You can track the status of each new location by monitoring
+    /// location creation events using <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_DescribeFleetEvents.html">DescribeFleetEvents</a>.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-intro.html">Setting
-    /// up fleets</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-intro.html">Multi-location
-    /// fleets</a></para>
+    /// up fleets</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-editing.html#fleets-update-locations">Update
+    /// fleet locations</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/gamelift-regions.html">
+    /// Amazon GameLift Servers service locations</a> for managed hosting.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "GMLFleetLocation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.GameLift.Model.CreateFleetLocationsResponse")]
     [AWSCmdlet("Calls the Amazon GameLift Service CreateFleetLocations API operation.", Operation = new[] {"CreateFleetLocations"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreateFleetLocationsResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.CreateFleetLocationsResponse",
-        "This cmdlet returns an Amazon.GameLift.Model.CreateFleetLocationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GameLift.Model.CreateFleetLocationsResponse object containing multiple properties."
     )]
     public partial class NewGMLFleetLocationCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FleetId
         /// <summary>
@@ -81,8 +86,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A list of locations to deploy additional instances to and manage as part of the fleet.
-        /// You can add any Amazon GameLift-supported Amazon Web Services Region as a remote location,
-        /// in the form of an Amazon Web Services Region code such as <c>us-west-2</c>. </para>
+        /// You can add any Amazon GameLift Servers-supported Amazon Web Services Region as a
+        /// remote location, in the form of an Amazon Web Services Region code such as <c>us-west-2</c>.
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,16 +118,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FleetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -128,9 +128,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FleetId), MyInvocation.BoundParameters);
@@ -144,21 +148,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreateFleetLocationsResponse, NewGMLFleetLocationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FleetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FleetId = this.FleetId;
             #if MODULAR
             if (this.FleetId == null && ParameterWasBound(nameof(this.FleetId)))
@@ -238,13 +232,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreateFleetLocations");
             try
             {
-                #if DESKTOP
-                return client.CreateFleetLocations(request);
-                #elif CORECLR
-                return client.CreateFleetLocationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFleetLocationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

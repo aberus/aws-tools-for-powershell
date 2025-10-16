@@ -97,6 +97,20 @@ $EMT_Completers = {
             break
         }
 
+        # Amazon.MediaTailor.InsertionMode
+        "Set-EMTPlaybackConfiguration/InsertionMode"
+        {
+            $v = "PLAYER_SELECT","STITCHED_ONLY"
+            break
+        }
+
+        # Amazon.MediaTailor.ListPrefetchScheduleType
+        "Get-EMTPrefetchScheduleList/ScheduleType"
+        {
+            $v = "ALL","RECURRING","SINGLE"
+            break
+        }
+
         # Amazon.MediaTailor.Mode
         "Set-EMTPlaybackConfiguration/AvailSuppression_Mode"
         {
@@ -111,10 +125,24 @@ $EMT_Completers = {
             break
         }
 
+        # Amazon.MediaTailor.PrefetchScheduleType
+        "New-EMTPrefetchSchedule/ScheduleType"
+        {
+            $v = "RECURRING","SINGLE"
+            break
+        }
+
         # Amazon.MediaTailor.RelativePosition
-        "New-EMTProgram/ScheduleConfiguration_Transition_RelativePosition"
+        "New-EMTProgram/Transition_RelativePosition"
         {
             $v = "AFTER_PROGRAM","BEFORE_PROGRAM"
+            break
+        }
+
+        # Amazon.MediaTailor.StreamingMediaFileConditioning
+        "Set-EMTPlaybackConfiguration/AdConditioningConfiguration_StreamingMediaFileConditioning"
+        {
+            $v = "NONE","TRANSCODE"
             break
         }
 
@@ -122,6 +150,16 @@ $EMT_Completers = {
         "New-EMTChannel/Tier"
         {
             $v = "BASIC","STANDARD"
+            break
+        }
+
+        # Amazon.MediaTailor.TrafficShapingType
+        {
+            ($_ -eq "New-EMTPrefetchSchedule/RecurringRetrieval_TrafficShapingType") -Or
+            ($_ -eq "New-EMTPrefetchSchedule/Retrieval_TrafficShapingType")
+        }
+        {
+            $v = "RETRIEVAL_WINDOW","TPS"
             break
         }
 
@@ -135,11 +173,16 @@ $EMT_Completers = {
 
 $EMT_map = @{
     "AccessConfiguration_AccessType"=@("New-EMTSourceLocation","Update-EMTSourceLocation")
+    "AdConditioningConfiguration_StreamingMediaFileConditioning"=@("Set-EMTPlaybackConfiguration")
     "AvailSuppression_FillPolicy"=@("Set-EMTPlaybackConfiguration")
     "AvailSuppression_Mode"=@("Set-EMTPlaybackConfiguration")
+    "InsertionMode"=@("Set-EMTPlaybackConfiguration")
     "PlaybackMode"=@("New-EMTChannel")
-    "ScheduleConfiguration_Transition_RelativePosition"=@("New-EMTProgram")
+    "RecurringRetrieval_TrafficShapingType"=@("New-EMTPrefetchSchedule")
+    "Retrieval_TrafficShapingType"=@("New-EMTPrefetchSchedule")
+    "ScheduleType"=@("Get-EMTPrefetchScheduleList","New-EMTPrefetchSchedule")
     "Tier"=@("New-EMTChannel")
+    "Transition_RelativePosition"=@("New-EMTProgram")
 }
 
 _awsArgumentCompleterRegistration $EMT_Completers $EMT_map

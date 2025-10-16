@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,111 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
-    /// <note><para>
-    /// This operation is not supported by directory buckets.
+    /// <important><para>
+    /// End of support notice: Beginning October 1, 2025, Amazon S3 will stop returning <c>DisplayName</c>.
+    /// Update your applications to use canonical IDs (unique identifier for Amazon Web Services
+    /// accounts), Amazon Web Services account ID (12 digit identifier) or IAM ARNs (full
+    /// resource naming) as a direct replacement of <c>DisplayName</c>. 
+    /// </para><para>
+    /// This change affects the following Amazon Web Services Regions: US East (N. Virginia)
+    /// Region, US West (N. California) Region, US West (Oregon) Region, Asia Pacific (Singapore)
+    /// Region, Asia Pacific (Sydney) Region, Asia Pacific (Tokyo) Region, Europe (Ireland)
+    /// Region, and South America (São Paulo) Region.
+    /// </para></important><note><para>
+    /// This operation is not supported for directory buckets.
     /// </para></note><para>
     /// Returns a list of all buckets owned by the authenticated sender of the request. To
-    /// use this operation, you must have the <c>s3:ListAllMyBuckets</c> permission. 
+    /// grant IAM permission to use this operation, you must add the <c>s3:ListAllMyBuckets</c>
+    /// policy action. 
     /// </para><para>
     /// For information about Amazon S3 buckets, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-buckets-s3.html">Creating,
     /// configuring, and working with Amazon S3 buckets</a>.
-    /// </para>
+    /// </para><important><para>
+    /// We strongly recommend using only paginated <c>ListBuckets</c> requests. Unpaginated
+    /// <c>ListBuckets</c> requests are only supported for Amazon Web Services accounts set
+    /// to the default general purpose bucket quota of 10,000. If you have an approved general
+    /// purpose bucket quota above 10,000, you must send paginated <c>ListBuckets</c> requests
+    /// to list your account’s buckets. All unpaginated <c>ListBuckets</c> requests will be
+    /// rejected for Amazon Web Services accounts with a general purpose bucket quota greater
+    /// than 10,000. 
+    /// </para></important>
     /// </summary>
     [Cmdlet("Get", "S3Bucket")]
     [OutputType("Amazon.S3.Model.S3Bucket")]
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) ListBuckets API operation.", Operation = new[] {"ListBuckets"}, SelectReturnType = typeof(Amazon.S3.Model.ListBucketsResponse))]
     [AWSCmdletOutput("Amazon.S3.Model.S3Bucket or Amazon.S3.Model.ListBucketsResponse",
         "This cmdlet returns a collection of Amazon.S3.Model.S3Bucket objects.",
-        "The service call response (type Amazon.S3.Model.ListBucketsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3.Model.ListBucketsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetS3BucketCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter BucketRegion
+        /// <summary>
+        /// <para>
+        /// <para>Limits the response to buckets that are located in the specified Amazon Web Services
+        /// Region. The Amazon Web Services Region must be expressed according to the Amazon Web
+        /// Services Region code, such as <c>us-west-2</c> for the US West (Oregon) Region. For
+        /// a list of the valid values for all of the Amazon Web Services Regions, see <a href="https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region">Regions
+        /// and Endpoints</a>.</para><note><para>Requests made to a Regional endpoint that is different from the <c>bucket-region</c>
+        /// parameter are not supported. For example, if you want to limit the response to your
+        /// buckets in Region <c>us-west-2</c>, the request must be made to an endpoint in Region
+        /// <c>us-west-2</c>.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String BucketRegion { get; set; }
+        #endregion
+        
+        #region Parameter ContinuationToken
+        /// <summary>
+        /// <para>
+        /// <para><c>ContinuationToken</c> indicates to Amazon S3 that the list is being continued
+        /// on this bucket with a token. <c>ContinuationToken</c> is obfuscated and is not a real
+        /// key. You can use this <c>ContinuationToken</c> for pagination of the list results.
+        /// </para><para>Length Constraints: Minimum length of 0. Maximum length of 1024.</para><para>Required: No.</para><note><para>If you specify the <c>bucket-region</c>, <c>prefix</c>, or <c>continuation-token</c>
+        /// query parameters without using <c>max-buckets</c> to set the maximum number of buckets
+        /// returned in the response, Amazon S3 applies a default page size of 10,000 and provides
+        /// a continuation token if there are more buckets.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ContinuationToken { get; set; }
+        #endregion
+        
+        #region Parameter MaxBucket
+        /// <summary>
+        /// <para>
+        /// <para>Maximum number of buckets to be returned in response. When the number is more than
+        /// the count of buckets that are owned by an Amazon Web Services account, return all
+        /// the buckets in response.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MaxBuckets")]
+        public System.Int32? MaxBucket { get; set; }
+        #endregion
+        
+        #region Parameter Prefix
+        /// <summary>
+        /// <para>
+        /// <para>Limits the response to bucket names that begin with the specified bucket name prefix.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Prefix { get; set; }
+        #endregion
         
         #region Parameter Select
         /// <summary>
@@ -61,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "Buckets";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -76,6 +158,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.ListBucketsResponse, GetS3BucketCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.BucketRegion = this.BucketRegion;
+            context.ContinuationToken = this.ContinuationToken;
+            context.MaxBucket = this.MaxBucket;
+            context.Prefix = this.Prefix;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -92,6 +178,22 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // create request
             var request = new Amazon.S3.Model.ListBucketsRequest();
             
+            if (cmdletContext.BucketRegion != null)
+            {
+                request.BucketRegion = cmdletContext.BucketRegion;
+            }
+            if (cmdletContext.ContinuationToken != null)
+            {
+                request.ContinuationToken = cmdletContext.ContinuationToken;
+            }
+            if (cmdletContext.MaxBucket != null)
+            {
+                request.MaxBuckets = cmdletContext.MaxBucket.Value;
+            }
+            if (cmdletContext.Prefix != null)
+            {
+                request.Prefix = cmdletContext.Prefix;
+            }
             
             CmdletOutput output;
             
@@ -130,13 +232,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "ListBuckets");
             try
             {
-                #if DESKTOP
-                return client.ListBuckets(request);
-                #elif CORECLR
-                return client.ListBucketsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListBucketsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -153,6 +249,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String BucketRegion { get; set; }
+            public System.String ContinuationToken { get; set; }
+            public System.Int32? MaxBucket { get; set; }
+            public System.String Prefix { get; set; }
             public System.Func<Amazon.S3.Model.ListBucketsResponse, GetS3BucketCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Buckets;
         }

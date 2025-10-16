@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,34 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
-    /// Describes the current Amazon Pinpoint monthly spend limits for sending voice and text
-    /// messages.
+    /// Describes the current monthly spend limits for sending voice and text messages.
     /// 
     ///  
     /// <para>
     /// When you establish an Amazon Web Services account, the account has initial monthly
     /// spend limit in a given Region. For more information on increasing your monthly spend
-    /// limit, see <a href="https://docs.aws.amazon.com/pinpoint/latest/userguide/channels-sms-awssupport-spend-threshold.html">
-    /// Requesting increases to your monthly SMS spending quota for Amazon Pinpoint </a> in
-    /// the <i>Amazon Pinpoint User Guide</i>.
+    /// limit, see <a href="https://docs.aws.amazon.com/sms-voice/latest/userguide/awssupport-spend-threshold.html">
+    /// Requesting increases to your monthly SMS, MMS, or Voice spending quota </a> in the
+    /// <i>AWS End User Messaging SMS User Guide</i>.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "SMSVSpendLimit")]
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.DescribeSpendLimitsResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 DescribeSpendLimits API operation.", Operation = new[] {"DescribeSpendLimits"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.DescribeSpendLimitsResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.DescribeSpendLimitsResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.DescribeSpendLimitsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.DescribeSpendLimitsResponse object containing multiple properties."
     )]
     public partial class GetSMSVSpendLimitCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -70,7 +72,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,9 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -199,13 +205,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "DescribeSpendLimits");
             try
             {
-                #if DESKTOP
-                return client.DescribeSpendLimits(request);
-                #elif CORECLR
-                return client.DescribeSpendLimitsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeSpendLimitsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

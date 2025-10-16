@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
@@ -35,18 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     [AWSCmdlet("Calls the Amazon EC2 Container Service DescribeCapacityProviders API operation.", Operation = new[] {"DescribeCapacityProviders"}, SelectReturnType = typeof(Amazon.ECS.Model.DescribeCapacityProvidersResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.CapacityProvider or Amazon.ECS.Model.DescribeCapacityProvidersResponse",
         "This cmdlet returns a collection of Amazon.ECS.Model.CapacityProvider objects.",
-        "The service call response (type Amazon.ECS.Model.DescribeCapacityProvidersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECS.Model.DescribeCapacityProvidersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetECSCapacityProviderCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CapacityProvider
         /// <summary>
         /// <para>
         /// <para>The short name or full Amazon Resource Name (ARN) of one or more capacity providers.
-        /// Up to <c>100</c> capacity providers can be described in an action.</para>
+        /// Up to <c>100</c> capacity providers can be described in an action.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -54,12 +61,28 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public System.String[] CapacityProvider { get; set; }
         #endregion
         
+        #region Parameter Cluster
+        /// <summary>
+        /// <para>
+        /// <para>The name of the cluster to describe capacity providers for. When specified, only capacity
+        /// providers associated with this cluster are returned, including Amazon ECS Managed
+        /// Instances capacity providers.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        public System.String Cluster { get; set; }
+        #endregion
+        
         #region Parameter Include
         /// <summary>
         /// <para>
         /// <para>Specifies whether or not you want to see the resource tags for the capacity provider.
         /// If <c>TAGS</c> is specified, the tags are included in the response. If this field
-        /// is omitted, tags aren't included in the response.</para>
+        /// is omitted, tags aren't included in the response.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,7 +122,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,9 +150,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -146,6 +173,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             {
                 context.CapacityProvider = new List<System.String>(this.CapacityProvider);
             }
+            context.Cluster = this.Cluster;
             if (this.Include != null)
             {
                 context.Include = new List<System.String>(this.Include);
@@ -183,6 +211,10 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             if (cmdletContext.CapacityProvider != null)
             {
                 request.CapacityProviders = cmdletContext.CapacityProvider;
+            }
+            if (cmdletContext.Cluster != null)
+            {
+                request.Cluster = cmdletContext.Cluster;
             }
             if (cmdletContext.Include != null)
             {
@@ -251,6 +283,10 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             {
                 request.CapacityProviders = cmdletContext.CapacityProvider;
             }
+            if (cmdletContext.Cluster != null)
+            {
+                request.Cluster = cmdletContext.Cluster;
+            }
             if (cmdletContext.Include != null)
             {
                 request.Include = cmdletContext.Include;
@@ -295,7 +331,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.CapacityProviders.Count;
+                    int _receivedThisCall = response.CapacityProviders?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -344,13 +380,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "DescribeCapacityProviders");
             try
             {
-                #if DESKTOP
-                return client.DescribeCapacityProviders(request);
-                #elif CORECLR
-                return client.DescribeCapacityProvidersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeCapacityProvidersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -368,6 +398,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> CapacityProvider { get; set; }
+            public System.String Cluster { get; set; }
             public List<System.String> Include { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
-    /// Deactivates a public extension that was previously activated in this account and Region.
+    /// Deactivates a public third-party extension, such as a resource or module, or a CloudFormation
+    /// Hook when you no longer use it.
     /// 
     ///  
     /// <para>
+    /// Deactivating an extension deletes the configuration details that are associated with
+    /// it. To temporarily disable a CloudFormation Hook instead, you can use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_SetTypeConfiguration.html">SetTypeConfiguration</a>.
+    /// </para><para>
     /// Once deactivated, an extension can't be used in any CloudFormation operation. This
     /// includes stack update operations where the stack template includes the extension,
     /// even if no updates are being made to the extension. In addition, deactivated extensions
     /// aren't automatically updated if a new version of the extension is released.
+    /// </para><para>
+    /// To see which extensions are currently activated, use <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_ListTypes.html">ListTypes</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Disable", "CFNType", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -43,17 +51,18 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation DeactivateType API operation.", Operation = new[] {"DeactivateType"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.DeactivateTypeResponse))]
     [AWSCmdletOutput("None or Amazon.CloudFormation.Model.DeactivateTypeResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudFormation.Model.DeactivateTypeResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudFormation.Model.DeactivateTypeResponse) be returned by specifying '-Select *'."
     )]
     public partial class DisableCFNTypeCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Arn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) for the extension, in this account and Region.</para><para>Conditional: You must specify either <c>Arn</c>, or <c>TypeName</c> and <c>Type</c>.</para>
+        /// <para>The Amazon Resource Name (ARN) for the extension in this account and Region.</para><para>Conditional: You must specify either <c>Arn</c>, or <c>TypeName</c> and <c>Type</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -74,7 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TypeName
         /// <summary>
         /// <para>
-        /// <para>The type name of the extension, in this account and Region. If you specified a type
+        /// <para>The type name of the extension in this account and Region. If you specified a type
         /// name alias when enabling the extension, use the type name alias.</para><para>Conditional: You must specify either <c>Arn</c>, or <c>TypeName</c> and <c>Type</c>.</para>
         /// </para>
         /// </summary>
@@ -102,9 +111,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Arn), MyInvocation.BoundParameters);
@@ -192,13 +205,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "DeactivateType");
             try
             {
-                #if DESKTOP
-                return client.DeactivateType(request);
-                #elif CORECLR
-                return client.DeactivateTypeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeactivateTypeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

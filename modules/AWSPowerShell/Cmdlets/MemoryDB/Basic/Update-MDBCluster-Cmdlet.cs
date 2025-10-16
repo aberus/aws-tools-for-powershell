@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MemoryDB;
 using Amazon.MemoryDB.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MDB
 {
     /// <summary>
@@ -36,17 +38,18 @@ namespace Amazon.PowerShell.Cmdlets.MDB
     [AWSCmdlet("Calls the Amazon MemoryDB UpdateCluster API operation.", Operation = new[] {"UpdateCluster"}, SelectReturnType = typeof(Amazon.MemoryDB.Model.UpdateClusterResponse))]
     [AWSCmdletOutput("Amazon.MemoryDB.Model.Cluster or Amazon.MemoryDB.Model.UpdateClusterResponse",
         "This cmdlet returns an Amazon.MemoryDB.Model.Cluster object.",
-        "The service call response (type Amazon.MemoryDB.Model.UpdateClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MemoryDB.Model.UpdateClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateMDBClusterCmdlet : AmazonMemoryDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ACLName
         /// <summary>
         /// <para>
-        /// <para>The Access Control List that is associated with the cluster</para>
+        /// <para>The Access Control List that is associated with the cluster.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +59,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         #region Parameter ClusterName
         /// <summary>
         /// <para>
-        /// <para>The name of the cluster to update</para>
+        /// <para>The name of the cluster to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -73,11 +76,21 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// <para>The description of the cluster to update</para>
+        /// <para>The description of the cluster to update.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter Engine
+        /// <summary>
+        /// <para>
+        /// <para>The name of the engine to be used for the cluster.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Engine { get; set; }
         #endregion
         
         #region Parameter EngineVersion
@@ -91,6 +104,22 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EngineVersion { get; set; }
+        #endregion
+        
+        #region Parameter IpDiscovery
+        /// <summary>
+        /// <para>
+        /// <para>The mechanism for discovering IP addresses for the cluster discovery protocol. Valid
+        /// values are 'ipv4' or 'ipv6'. When set to 'ipv4', cluster discovery functions such
+        /// as cluster slots, cluster shards, and cluster nodes will return IPv4 addresses for
+        /// cluster nodes. When set to 'ipv6', the cluster discovery functions return IPv6 addresses
+        /// for cluster nodes. The value must be compatible with the NetworkType parameter. If
+        /// not specified, the default is 'ipv4'.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.MemoryDB.IpDiscovery")]
+        public Amazon.MemoryDB.IpDiscovery IpDiscovery { get; set; }
         #endregion
         
         #region Parameter MaintenanceWindow
@@ -118,7 +147,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         #region Parameter ParameterGroupName
         /// <summary>
         /// <para>
-        /// <para>The name of the parameter group to update</para>
+        /// <para>The name of the parameter group to update.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,7 +167,11 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         #region Parameter SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>The SecurityGroupIds to update</para>
+        /// <para>The SecurityGroupIds to update.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,7 +215,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         #region Parameter SnsTopicArn
         /// <summary>
         /// <para>
-        /// <para>The SNS topic ARN to update</para>
+        /// <para>The SNS topic ARN to update.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -211,16 +244,6 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ClusterName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ClusterName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -231,9 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.MDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterName), MyInvocation.BoundParameters);
@@ -247,21 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MemoryDB.Model.UpdateClusterResponse, UpdateMDBClusterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ClusterName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ACLName = this.ACLName;
             context.ClusterName = this.ClusterName;
             #if MODULAR
@@ -271,7 +288,9 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             }
             #endif
             context.Description = this.Description;
+            context.Engine = this.Engine;
             context.EngineVersion = this.EngineVersion;
+            context.IpDiscovery = this.IpDiscovery;
             context.MaintenanceWindow = this.MaintenanceWindow;
             context.NodeType = this.NodeType;
             context.ParameterGroupName = this.ParameterGroupName;
@@ -313,9 +332,17 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.Engine != null)
+            {
+                request.Engine = cmdletContext.Engine;
+            }
             if (cmdletContext.EngineVersion != null)
             {
                 request.EngineVersion = cmdletContext.EngineVersion;
+            }
+            if (cmdletContext.IpDiscovery != null)
+            {
+                request.IpDiscovery = cmdletContext.IpDiscovery;
             }
             if (cmdletContext.MaintenanceWindow != null)
             {
@@ -425,13 +452,7 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon MemoryDB", "UpdateCluster");
             try
             {
-                #if DESKTOP
-                return client.UpdateCluster(request);
-                #elif CORECLR
-                return client.UpdateClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -451,7 +472,9 @@ namespace Amazon.PowerShell.Cmdlets.MDB
             public System.String ACLName { get; set; }
             public System.String ClusterName { get; set; }
             public System.String Description { get; set; }
+            public System.String Engine { get; set; }
             public System.String EngineVersion { get; set; }
+            public Amazon.MemoryDB.IpDiscovery IpDiscovery { get; set; }
             public System.String MaintenanceWindow { get; set; }
             public System.String NodeType { get; set; }
             public System.String ParameterGroupName { get; set; }

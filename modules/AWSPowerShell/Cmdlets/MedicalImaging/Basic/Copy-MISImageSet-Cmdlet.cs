@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MedicalImaging;
 using Amazon.MedicalImaging.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MIS
 {
     /// <summary>
@@ -34,12 +36,25 @@ namespace Amazon.PowerShell.Cmdlets.MIS
     [OutputType("Amazon.MedicalImaging.Model.CopyImageSetResponse")]
     [AWSCmdlet("Calls the Amazon Medical Imaging Service CopyImageSet API operation.", Operation = new[] {"CopyImageSet"}, SelectReturnType = typeof(Amazon.MedicalImaging.Model.CopyImageSetResponse))]
     [AWSCmdletOutput("Amazon.MedicalImaging.Model.CopyImageSetResponse",
-        "This cmdlet returns an Amazon.MedicalImaging.Model.CopyImageSetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MedicalImaging.Model.CopyImageSetResponse object containing multiple properties."
     )]
     public partial class CopyMISImageSetCmdlet : AmazonMedicalImagingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DICOMCopies_CopiableAttribute
+        /// <summary>
+        /// <para>
+        /// <para>The JSON string used to specify a subset of SOP Instances to copy from source to destination
+        /// image set.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CopyImageSetInformation_SourceImageSet_DICOMCopies_CopiableAttributes")]
+        public System.String DICOMCopies_CopiableAttribute { get; set; }
+        #endregion
         
         #region Parameter DatastoreId
         /// <summary>
@@ -56,6 +71,18 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String DatastoreId { get; set; }
+        #endregion
+        
+        #region Parameter ForceCopy
+        /// <summary>
+        /// <para>
+        /// <para>Providing this parameter will force completion of the <c>CopyImageSet</c> operation,
+        /// even if there are inconsistent Patient, Study, and/or Series level metadata elements
+        /// between the <c>sourceImageSet</c> and <c>destinationImageSet</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ForceCopy { get; set; }
         #endregion
         
         #region Parameter DestinationImageSet_ImageSetId
@@ -98,6 +125,18 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         public System.String SourceImageSet_LatestVersionId { get; set; }
         #endregion
         
+        #region Parameter PromoteToPrimary
+        /// <summary>
+        /// <para>
+        /// <para>Providing this parameter will configure the <c>CopyImageSet</c> operation to promote
+        /// the given image set to the primary DICOM hierarchy. If successful, a new primary image
+        /// set ID will be returned as the destination image set.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? PromoteToPrimary { get; set; }
+        #endregion
+        
         #region Parameter SourceImageSetId
         /// <summary>
         /// <para>
@@ -126,16 +165,6 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DatastoreId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DatastoreId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DatastoreId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -146,9 +175,13 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatastoreId), MyInvocation.BoundParameters);
@@ -162,23 +195,14 @@ namespace Amazon.PowerShell.Cmdlets.MIS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MedicalImaging.Model.CopyImageSetResponse, CopyMISImageSetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DatastoreId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DestinationImageSet_ImageSetId = this.DestinationImageSet_ImageSetId;
             context.DestinationImageSet_LatestVersionId = this.DestinationImageSet_LatestVersionId;
+            context.DICOMCopies_CopiableAttribute = this.DICOMCopies_CopiableAttribute;
             context.SourceImageSet_LatestVersionId = this.SourceImageSet_LatestVersionId;
             #if MODULAR
             if (this.SourceImageSet_LatestVersionId == null && ParameterWasBound(nameof(this.SourceImageSet_LatestVersionId)))
@@ -193,6 +217,8 @@ namespace Amazon.PowerShell.Cmdlets.MIS
                 WriteWarning("You are passing $null as a value for parameter DatastoreId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ForceCopy = this.ForceCopy;
+            context.PromoteToPrimary = this.PromoteToPrimary;
             context.SourceImageSetId = this.SourceImageSetId;
             #if MODULAR
             if (this.SourceImageSetId == null && ParameterWasBound(nameof(this.SourceImageSetId)))
@@ -220,31 +246,6 @@ namespace Amazon.PowerShell.Cmdlets.MIS
              // populate CopyImageSetInformation
             var requestCopyImageSetInformationIsNull = true;
             request.CopyImageSetInformation = new Amazon.MedicalImaging.Model.CopyImageSetInformation();
-            Amazon.MedicalImaging.Model.CopySourceImageSetInformation requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet = null;
-            
-             // populate SourceImageSet
-            var requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull = true;
-            requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet = new Amazon.MedicalImaging.Model.CopySourceImageSetInformation();
-            System.String requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId = null;
-            if (cmdletContext.SourceImageSet_LatestVersionId != null)
-            {
-                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId = cmdletContext.SourceImageSet_LatestVersionId;
-            }
-            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId != null)
-            {
-                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet.LatestVersionId = requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId;
-                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull = false;
-            }
-             // determine if requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet should be set to null
-            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull)
-            {
-                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet = null;
-            }
-            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet != null)
-            {
-                request.CopyImageSetInformation.SourceImageSet = requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet;
-                requestCopyImageSetInformationIsNull = false;
-            }
             Amazon.MedicalImaging.Model.CopyDestinationImageSet requestCopyImageSetInformation_copyImageSetInformation_DestinationImageSet = null;
             
              // populate DestinationImageSet
@@ -280,6 +281,56 @@ namespace Amazon.PowerShell.Cmdlets.MIS
                 request.CopyImageSetInformation.DestinationImageSet = requestCopyImageSetInformation_copyImageSetInformation_DestinationImageSet;
                 requestCopyImageSetInformationIsNull = false;
             }
+            Amazon.MedicalImaging.Model.CopySourceImageSetInformation requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet = null;
+            
+             // populate SourceImageSet
+            var requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull = true;
+            requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet = new Amazon.MedicalImaging.Model.CopySourceImageSetInformation();
+            System.String requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId = null;
+            if (cmdletContext.SourceImageSet_LatestVersionId != null)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId = cmdletContext.SourceImageSet_LatestVersionId;
+            }
+            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId != null)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet.LatestVersionId = requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_sourceImageSet_LatestVersionId;
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull = false;
+            }
+            Amazon.MedicalImaging.Model.MetadataCopies requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies = null;
+            
+             // populate DICOMCopies
+            var requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopiesIsNull = true;
+            requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies = new Amazon.MedicalImaging.Model.MetadataCopies();
+            System.String requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies_dICOMCopies_CopiableAttribute = null;
+            if (cmdletContext.DICOMCopies_CopiableAttribute != null)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies_dICOMCopies_CopiableAttribute = cmdletContext.DICOMCopies_CopiableAttribute;
+            }
+            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies_dICOMCopies_CopiableAttribute != null)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies.CopiableAttributes = requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies_dICOMCopies_CopiableAttribute;
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopiesIsNull = false;
+            }
+             // determine if requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies should be set to null
+            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopiesIsNull)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies = null;
+            }
+            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies != null)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet.DICOMCopies = requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet_copyImageSetInformation_SourceImageSet_DICOMCopies;
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull = false;
+            }
+             // determine if requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet should be set to null
+            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSetIsNull)
+            {
+                requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet = null;
+            }
+            if (requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet != null)
+            {
+                request.CopyImageSetInformation.SourceImageSet = requestCopyImageSetInformation_copyImageSetInformation_SourceImageSet;
+                requestCopyImageSetInformationIsNull = false;
+            }
              // determine if request.CopyImageSetInformation should be set to null
             if (requestCopyImageSetInformationIsNull)
             {
@@ -288,6 +339,14 @@ namespace Amazon.PowerShell.Cmdlets.MIS
             if (cmdletContext.DatastoreId != null)
             {
                 request.DatastoreId = cmdletContext.DatastoreId;
+            }
+            if (cmdletContext.ForceCopy != null)
+            {
+                request.Force = cmdletContext.ForceCopy.Value;
+            }
+            if (cmdletContext.PromoteToPrimary != null)
+            {
+                request.PromoteToPrimary = cmdletContext.PromoteToPrimary.Value;
             }
             if (cmdletContext.SourceImageSetId != null)
             {
@@ -331,13 +390,7 @@ namespace Amazon.PowerShell.Cmdlets.MIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Medical Imaging Service", "CopyImageSet");
             try
             {
-                #if DESKTOP
-                return client.CopyImageSet(request);
-                #elif CORECLR
-                return client.CopyImageSetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CopyImageSetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -356,8 +409,11 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         {
             public System.String DestinationImageSet_ImageSetId { get; set; }
             public System.String DestinationImageSet_LatestVersionId { get; set; }
+            public System.String DICOMCopies_CopiableAttribute { get; set; }
             public System.String SourceImageSet_LatestVersionId { get; set; }
             public System.String DatastoreId { get; set; }
+            public System.Boolean? ForceCopy { get; set; }
+            public System.Boolean? PromoteToPrimary { get; set; }
             public System.String SourceImageSetId { get; set; }
             public System.Func<Amazon.MedicalImaging.Model.CopyImageSetResponse, CopyMISImageSetCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

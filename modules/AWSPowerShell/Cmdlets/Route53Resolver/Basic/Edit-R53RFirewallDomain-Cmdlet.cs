@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53Resolver;
 using Amazon.Route53Resolver.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53R
 {
     /// <summary>
@@ -34,19 +36,24 @@ namespace Amazon.PowerShell.Cmdlets.R53R
     [OutputType("Amazon.Route53Resolver.Model.UpdateFirewallDomainsResponse")]
     [AWSCmdlet("Calls the Amazon Route 53 Resolver UpdateFirewallDomains API operation.", Operation = new[] {"UpdateFirewallDomains"}, SelectReturnType = typeof(Amazon.Route53Resolver.Model.UpdateFirewallDomainsResponse))]
     [AWSCmdletOutput("Amazon.Route53Resolver.Model.UpdateFirewallDomainsResponse",
-        "This cmdlet returns an Amazon.Route53Resolver.Model.UpdateFirewallDomainsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Route53Resolver.Model.UpdateFirewallDomainsResponse object containing multiple properties."
     )]
     public partial class EditR53RFirewallDomainCmdlet : AmazonRoute53ResolverClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Domain
         /// <summary>
         /// <para>
         /// <para>A list of domains to use in the update operation.</para><important><para>There is a limit of 1000 domains per request.</para></important><para>Each domain specification in your domain list must satisfy the following requirements:
         /// </para><ul><li><para>It can optionally start with <c>*</c> (asterisk).</para></li><li><para>With the exception of the optional starting asterisk, it must only contain the following
-        /// characters: <c>A-Z</c>, <c>a-z</c>, <c>0-9</c>, <c>-</c> (hyphen).</para></li><li><para>It must be from 1-255 characters in length. </para></li></ul>
+        /// characters: <c>A-Z</c>, <c>a-z</c>, <c>0-9</c>, <c>-</c> (hyphen).</para></li><li><para>It must be from 1-255 characters in length. </para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -107,16 +114,6 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FirewallDomainListId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FirewallDomainListId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FirewallDomainListId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -127,9 +124,13 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FirewallDomainListId), MyInvocation.BoundParameters);
@@ -143,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.R53R
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Route53Resolver.Model.UpdateFirewallDomainsResponse, EditR53RFirewallDomainCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FirewallDomainListId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Domain != null)
             {
                 context.Domain = new List<System.String>(this.Domain);
@@ -248,13 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53 Resolver", "UpdateFirewallDomains");
             try
             {
-                #if DESKTOP
-                return client.UpdateFirewallDomains(request);
-                #elif CORECLR
-                return client.UpdateFirewallDomainsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateFirewallDomainsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

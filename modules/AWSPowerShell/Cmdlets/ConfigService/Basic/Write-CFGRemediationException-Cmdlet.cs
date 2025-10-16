@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
@@ -32,11 +34,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     /// This API adds a new exception or updates an existing exception for a specified resource
     /// with a specified Config rule. 
     /// 
-    ///  <note><para>
+    ///  <note><para><b>Exceptions block auto remediation</b></para><para>
     /// Config generates a remediation exception when a problem occurs running a remediation
     /// action for a specified resource. Remediation exceptions blocks auto-remediation until
     /// the exception is cleared.
-    /// </para></note><note><para>
+    /// </para></note><note><para><b>Manual remediation is recommended when placing an exception</b></para><para>
     /// When placing an exception on an Amazon Web Services resource, it is recommended that
     /// remediation is set as manual remediation until the given Config rule for the specified
     /// resource evaluates the resource as <c>NON_COMPLIANT</c>. Once the resource has been
@@ -44,12 +46,26 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     /// remediation type back from Manual to Auto if you want to use auto-remediation. Otherwise,
     /// using auto-remediation before a <c>NON_COMPLIANT</c> evaluation result can delete
     /// resources before the exception is applied.
-    /// </para></note><note><para>
+    /// </para></note><note><para><b>Exceptions can only be performed on non-compliant resources</b></para><para>
     /// Placing an exception can only be performed on resources that are <c>NON_COMPLIANT</c>.
     /// If you use this API for <c>COMPLIANT</c> resources or resources that are <c>NOT_APPLICABLE</c>,
     /// a remediation exception will not be generated. For more information on the conditions
     /// that initiate the possible Config evaluation results, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/config-concepts.html#aws-config-rules">Concepts
     /// | Config Rules</a> in the <i>Config Developer Guide</i>.
+    /// </para></note><note><para><b>Exceptions cannot be placed on service-linked remediation actions</b></para><para>
+    /// You cannot place an exception on service-linked remediation actions, such as remediation
+    /// actions put by an organizational conformance pack.
+    /// </para></note><note><para><b>Auto remediation can be initiated even for compliant resources</b></para><para>
+    /// If you enable auto remediation for a specific Config rule using the <a href="https://docs.aws.amazon.com/config/latest/APIReference/emAPI_PutRemediationConfigurations.html">PutRemediationConfigurations</a>
+    /// API or the Config console, it initiates the remediation process for all non-compliant
+    /// resources for that specific rule. The auto remediation process relies on the compliance
+    /// data snapshot which is captured on a periodic basis. Any non-compliant resource that
+    /// is updated between the snapshot schedule will continue to be remediated based on the
+    /// last known compliance data snapshot.
+    /// </para><para>
+    /// This means that in some cases auto remediation can be initiated even for compliant
+    /// resources, since the bootstrap processor uses a database that can have stale evaluation
+    /// results based on the last known compliance data snapshot.
     /// </para></note>
     /// </summary>
     [Cmdlet("Write", "CFGRemediationException", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -57,12 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config PutRemediationExceptions API operation.", Operation = new[] {"PutRemediationExceptions"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutRemediationExceptionsResponse))]
     [AWSCmdletOutput("Amazon.ConfigService.Model.FailedRemediationExceptionBatch or Amazon.ConfigService.Model.PutRemediationExceptionsResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.FailedRemediationExceptionBatch objects.",
-        "The service call response (type Amazon.ConfigService.Model.PutRemediationExceptionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.PutRemediationExceptionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGRemediationExceptionCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigRuleName
         /// <summary>
@@ -106,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         /// <para>
         /// <para>An exception list of resource exception keys to be processed with the current request.
         /// Config adds exception for each resource key. For example, Config adds 3 exceptions
-        /// for 3 resource keys. </para>
+        /// for 3 resource keys. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -132,16 +153,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "FailedBatches";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigRuleName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigRuleName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigRuleName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +163,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigRuleName), MyInvocation.BoundParameters);
@@ -168,21 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutRemediationExceptionsResponse, WriteCFGRemediationExceptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigRuleName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConfigRuleName = this.ConfigRuleName;
             #if MODULAR
             if (this.ConfigRuleName == null && ParameterWasBound(nameof(this.ConfigRuleName)))
@@ -272,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutRemediationExceptions");
             try
             {
-                #if DESKTOP
-                return client.PutRemediationExceptions(request);
-                #elif CORECLR
-                return client.PutRemediationExceptionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutRemediationExceptionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -35,21 +37,40 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// If you are describing a long list of volumes, we recommend that you paginate the output
     /// to make the list more manageable. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination">Pagination</a>.
     /// </para><para>
-    /// For more information about EBS volumes, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumes.html">Amazon
-    /// EBS volumes</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
-    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// For more information about EBS volumes, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes.html">Amazon
+    /// EBS volumes</a> in the <i>Amazon EBS User Guide</i>.
+    /// </para><important><para>
+    /// We strongly recommend using only paginated requests. Unpaginated requests are susceptible
+    /// to throttling and timeouts.
+    /// </para></important><note><para>
+    /// The order of the elements in the response, including those within nested structures,
+    /// might vary. Applications should not assume the elements appear in a particular order.
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2Volume", DefaultParameterSetName="ByFilter")]
     [OutputType("Amazon.EC2.Model.Volume")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeVolumes API operation.", Operation = new[] {"DescribeVolumes"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeVolumesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Volume or Amazon.EC2.Model.DescribeVolumesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.Volume objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeVolumesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeVolumesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2VolumeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Filter
         /// <summary>
@@ -57,15 +78,21 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The filters.</para><ul><li><para><c>attachment.attach-time</c> - The time stamp when the attachment initiated.</para></li><li><para><c>attachment.delete-on-termination</c> - Whether the volume is deleted on instance
         /// termination.</para></li><li><para><c>attachment.device</c> - The device name specified in the block device mapping
         /// (for example, <c>/dev/sda1</c>).</para></li><li><para><c>attachment.instance-id</c> - The ID of the instance the volume is attached to.</para></li><li><para><c>attachment.status</c> - The attachment state (<c>attaching</c> | <c>attached</c>
-        /// | <c>detaching</c>).</para></li><li><para><c>availability-zone</c> - The Availability Zone in which the volume was created.</para></li><li><para><c>create-time</c> - The time stamp when the volume was created.</para></li><li><para><c>encrypted</c> - Indicates whether the volume is encrypted (<c>true</c> | <c>false</c>)</para></li><li><para><c>multi-attach-enabled</c> - Indicates whether the volume is enabled for Multi-Attach
-        /// (<c>true</c> | <c>false</c>)</para></li><li><para><c>fast-restored</c> - Indicates whether the volume was created from a snapshot that
-        /// is enabled for fast snapshot restore (<c>true</c> | <c>false</c>).</para></li><li><para><c>size</c> - The size of the volume, in GiB.</para></li><li><para><c>snapshot-id</c> - The snapshot from which the volume was created.</para></li><li><para><c>status</c> - The state of the volume (<c>creating</c> | <c>available</c> | <c>in-use</c>
+        /// | <c>detaching</c>).</para></li><li><para><c>availability-zone</c> - The Availability Zone in which the volume was created.</para></li><li><para><c>availability-zone-id</c> - The ID of the Availability Zone in which the volume
+        /// was created.</para></li><li><para><c>create-time</c> - The time stamp when the volume was created.</para></li><li><para><c>encrypted</c> - Indicates whether the volume is encrypted (<c>true</c> | <c>false</c>)</para></li><li><para><c>fast-restored</c> - Indicates whether the volume was created from a snapshot that
+        /// is enabled for fast snapshot restore (<c>true</c> | <c>false</c>).</para></li><li><para><c>multi-attach-enabled</c> - Indicates whether the volume is enabled for Multi-Attach
+        /// (<c>true</c> | <c>false</c>)</para></li><li><para><c>operator.managed</c> - A Boolean that indicates whether this is a managed volume.</para></li><li><para><c>operator.principal</c> - The principal that manages the volume. Only valid for
+        /// managed volumes, where <c>managed</c> is <c>true</c>.</para></li><li><para><c>size</c> - The size of the volume, in GiB.</para></li><li><para><c>snapshot-id</c> - The snapshot from which the volume was created.</para></li><li><para><c>status</c> - The state of the volume (<c>creating</c> | <c>available</c> | <c>in-use</c>
         /// | <c>deleting</c> | <c>deleted</c> | <c>error</c>).</para></li><li><para><c>tag</c>:&lt;key&gt; - The key/value combination of a tag assigned to the resource.
         /// Use the tag key in the filter name and the tag value as the filter value. For example,
         /// to find all resources that have a tag with the key <c>Owner</c> and the value <c>TeamA</c>,
         /// specify <c>tag:Owner</c> for the filter name and <c>TeamA</c> for the filter value.</para></li><li><para><c>tag-key</c> - The key of a tag assigned to the resource. Use this filter to find
         /// all resources assigned a tag with a specific key, regardless of the tag value.</para></li><li><para><c>volume-id</c> - The volume ID.</para></li><li><para><c>volume-type</c> - The Amazon EBS volume type (<c>gp2</c> | <c>gp3</c> | <c>io1</c>
-        /// | <c>io2</c> | <c>st1</c> | <c>sc1</c>| <c>standard</c>)</para></li></ul>
+        /// | <c>io2</c> | <c>st1</c> | <c>sc1</c>| <c>standard</c>)</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true, ParameterSetName = "ByFilter")]
@@ -76,7 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter VolumeId
         /// <summary>
         /// <para>
-        /// <para>The volume IDs.</para>
+        /// <para>The volume IDs. If not specified, then all volumes are included in the response.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, ParameterSetName = "ByID")]
@@ -87,10 +118,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>The maximum number of volumes to return for this request. This value can be between
-        /// 5 and 500; if you specify a value larger than 500, only 500 items are returned. If
-        /// this parameter is not used, then all items are returned. You cannot specify this parameter
-        /// and the volume IDs parameter in the same request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination">Pagination</a>.</para>
+        /// <para>The maximum number of items to return for this request. To get the next page of items,
+        /// make another request with the token returned in the output. For more information,
+        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Query-Requests.html#api-pagination">Pagination</a>.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
@@ -107,11 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The token returned from a previous paginated request. Pagination continues from the
-        /// end of the items returned from the previous request.</para>
+        /// end of the items returned by the previous request.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, ParameterSetName = "ByFilter")]
@@ -129,16 +159,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Volumes";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VolumeId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VolumeId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -149,9 +169,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -159,21 +183,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeVolumesResponse, GetEC2VolumeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VolumeId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -207,13 +222,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeVolumesRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -277,10 +294,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeVolumesRequest();
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -336,7 +357,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Volumes.Count;
+                    int _receivedThisCall = response.Volumes?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -385,13 +406,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeVolumes");
             try
             {
-                #if DESKTOP
-                return client.DescribeVolumes(request);
-                #elif CORECLR
-                return client.DescribeVolumesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeVolumesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -408,6 +423,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }

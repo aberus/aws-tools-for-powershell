@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchEvidently;
 using Amazon.CloudWatchEvidently.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWEVD
 {
     /// <summary>
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
     [OutputType("Amazon.CloudWatchEvidently.Model.GetExperimentResultsResponse")]
     [AWSCmdlet("Calls the Amazon CloudWatch Evidently GetExperimentResults API operation.", Operation = new[] {"GetExperimentResults"}, SelectReturnType = typeof(Amazon.CloudWatchEvidently.Model.GetExperimentResultsResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchEvidently.Model.GetExperimentResultsResponse",
-        "This cmdlet returns an Amazon.CloudWatchEvidently.Model.GetExperimentResultsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudWatchEvidently.Model.GetExperimentResultsResponse object containing multiple properties."
     )]
     public partial class GetCWEVDExperimentResultCmdlet : AmazonCloudWatchEvidentlyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BaseStat
         /// <summary>
@@ -95,7 +98,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         #region Parameter MetricName
         /// <summary>
         /// <para>
-        /// <para>The names of the experiment metrics that you want to see the results of.</para>
+        /// <para>The names of the experiment metrics that you want to see the results of.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -142,7 +149,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         /// <summary>
         /// <para>
         /// <para>The names of the report types that you want to see. Currently, <c>BayesianInference</c>
-        /// is the only valid value.</para>
+        /// is the only valid value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +174,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         /// parameter between each variation and the default variation. </para></li><li><para><c>BaseStat</c> returns the statistical values collected for the metric for each
         /// variation. The statistic uses the same statistic specified in the <c>baseStat</c>
         /// parameter. Therefore, if <c>baseStat</c> is <c>mean</c>, this returns the mean of
-        /// the values collected for each variation.</para></li></ul>
+        /// the values collected for each variation.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,7 +199,11 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         #region Parameter TreatmentName
         /// <summary>
         /// <para>
-        /// <para>The names of the experiment treatments that you want to see the results for.</para>
+        /// <para>The names of the experiment treatments that you want to see the results for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -210,9 +229,13 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -365,13 +388,7 @@ namespace Amazon.PowerShell.Cmdlets.CWEVD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Evidently", "GetExperimentResults");
             try
             {
-                #if DESKTOP
-                return client.GetExperimentResults(request);
-                #elif CORECLR
-                return client.GetExperimentResultsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetExperimentResultsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kendra;
 using Amazon.Kendra.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KNDR
 {
     /// <summary>
@@ -52,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
     [AWSCmdlet("Calls the Amazon Kendra PutPrincipalMapping API operation.", Operation = new[] {"PutPrincipalMapping"}, SelectReturnType = typeof(Amazon.Kendra.Model.PutPrincipalMappingResponse))]
     [AWSCmdletOutput("None or Amazon.Kendra.Model.PutPrincipalMappingResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Kendra.Model.PutPrincipalMappingResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Kendra.Model.PutPrincipalMappingResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteKNDRPrincipalMappingCmdlet : AmazonKendraClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter S3PathforGroupMembers_Bucket
         /// <summary>
@@ -132,8 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         #region Parameter GroupMembers_MemberGroup
         /// <summary>
         /// <para>
-        /// <para>A list of sub groups that belong to a group. For example, the sub groups "Research",
-        /// "Engineering", and "Sales and Marketing" all belong to the group "Company".</para>
+        /// <para>A list of users that belong to a group. This can also include sub groups. For example,
+        /// the sub groups "Research", "Engineering", and "Sales and Marketing" all belong to
+        /// the group "Company A".</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>A list of users that belong to a group. For example, a list of interns all belong
-        /// to the "Interns" group.</para>
+        /// to the "Interns" group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -156,7 +168,7 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         #region Parameter OrderingId
         /// <summary>
         /// <para>
-        /// <para>The timestamp identifier you specify to ensure Amazon Kendra does not override the
+        /// <para>The timestamp identifier you specify to ensure Amazon Kendra doesn't override the
         /// latest <c>PUT</c> action with previous actions. The highest number ID, which is the
         /// ordering ID, is the latest action you want to process and apply on top of other actions
         /// with lower number IDs. This prevents previous actions with lower number IDs from possibly
@@ -175,8 +187,8 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         #region Parameter RoleArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of a role that has access to the S3 file that contains
-        /// your list of users or sub groups that belong to a group.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kendra/latest/dg/iam-roles.html#iam-roles-ds">IAM
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that has access to the S3 file that
+        /// contains your list of users that belong to a group.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kendra/latest/dg/iam-roles.html#iam-roles-ds">IAM
         /// roles for Amazon Kendra</a>.</para>
         /// </para>
         /// </summary>
@@ -194,16 +206,6 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GroupId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GroupId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GroupId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -214,9 +216,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IndexId), MyInvocation.BoundParameters);
@@ -230,21 +236,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kendra.Model.PutPrincipalMappingResponse, WriteKNDRPrincipalMappingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GroupId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DataSourceId = this.DataSourceId;
             context.GroupId = this.GroupId;
             #if MODULAR
@@ -410,13 +406,7 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kendra", "PutPrincipalMapping");
             try
             {
-                #if DESKTOP
-                return client.PutPrincipalMapping(request);
-                #elif CORECLR
-                return client.PutPrincipalMappingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutPrincipalMappingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

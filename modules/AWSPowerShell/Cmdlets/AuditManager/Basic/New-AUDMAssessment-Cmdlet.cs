@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AuditManager;
 using Amazon.AuditManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AUDM
 {
     /// <summary>
@@ -35,39 +37,28 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
     [AWSCmdlet("Calls the AWS Audit Manager CreateAssessment API operation.", Operation = new[] {"CreateAssessment"}, SelectReturnType = typeof(Amazon.AuditManager.Model.CreateAssessmentResponse))]
     [AWSCmdletOutput("Amazon.AuditManager.Model.Assessment or Amazon.AuditManager.Model.CreateAssessmentResponse",
         "This cmdlet returns an Amazon.AuditManager.Model.Assessment object.",
-        "The service call response (type Amazon.AuditManager.Model.CreateAssessmentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AuditManager.Model.CreateAssessmentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAUDMAssessmentCmdlet : AmazonAuditManagerClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Scope_AwsAccount
         /// <summary>
         /// <para>
         /// <para> The Amazon Web Services accounts that are included in the scope of the assessment.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Scope_AwsAccounts")]
         public Amazon.AuditManager.Model.AWSAccount[] Scope_AwsAccount { get; set; }
-        #endregion
-        
-        #region Parameter Scope_AwsService
-        /// <summary>
-        /// <para>
-        /// <para> The Amazon Web Services services that are included in the scope of the assessment.
-        /// </para>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("Scope_AwsServices")]
-        public Amazon.AuditManager.Model.AWSService[] Scope_AwsService { get; set; }
         #endregion
         
         #region Parameter Description
@@ -138,7 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
         #region Parameter Role
         /// <summary>
         /// <para>
-        /// <para> The list of roles for the assessment. </para>
+        /// <para> The list of roles for the assessment. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -156,12 +151,36 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para> The tags that are associated with the assessment. </para>
+        /// <para> The tags that are associated with the assessment. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter Scope_AwsService
+        /// <summary>
+        /// <para>
+        /// <para> The Amazon Web Services services that are included in the scope of the assessment.
+        /// </para><important><para>This API parameter is no longer supported. If you use this parameter to specify one
+        /// or more Amazon Web Services services, Audit Manager ignores this input. Instead, the
+        /// value for <c>awsServices</c> will show as empty.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("You can\u0027t specify services in scope when creating/updating an assessment. If you use the parameter to specify one or more AWS services, Audit Manager ignores the input. Instead the value of the parameter will show as empty indicating that the services are defined and managed by Audit Manager.")]
+        [Alias("Scope_AwsServices")]
+        public Amazon.AuditManager.Model.AWSService[] Scope_AwsService { get; set; }
         #endregion
         
         #region Parameter Select
@@ -175,16 +194,6 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
         public string Select { get; set; } = "Assessment";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FrameworkId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FrameworkId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FrameworkId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -195,9 +204,13 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -211,21 +224,11 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AuditManager.Model.CreateAssessmentResponse, NewAUDMAssessmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FrameworkId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssessmentReportsDestination_Destination = this.AssessmentReportsDestination_Destination;
             context.AssessmentReportsDestination_DestinationType = this.AssessmentReportsDestination_DestinationType;
             context.Description = this.Description;
@@ -257,10 +260,12 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
             {
                 context.Scope_AwsAccount = new List<Amazon.AuditManager.Model.AWSAccount>(this.Scope_AwsAccount);
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Scope_AwsService != null)
             {
                 context.Scope_AwsService = new List<Amazon.AuditManager.Model.AWSService>(this.Scope_AwsService);
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -344,6 +349,7 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
                 request.Scope.AwsAccounts = requestScope_scope_AwsAccount;
                 requestScopeIsNull = false;
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             List<Amazon.AuditManager.Model.AWSService> requestScope_scope_AwsService = null;
             if (cmdletContext.Scope_AwsService != null)
             {
@@ -354,6 +360,7 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
                 request.Scope.AwsServices = requestScope_scope_AwsService;
                 requestScopeIsNull = false;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
              // determine if request.Scope should be set to null
             if (requestScopeIsNull)
             {
@@ -401,13 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Audit Manager", "CreateAssessment");
             try
             {
-                #if DESKTOP
-                return client.CreateAssessment(request);
-                #elif CORECLR
-                return client.CreateAssessmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAssessmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -431,6 +432,7 @@ namespace Amazon.PowerShell.Cmdlets.AUDM
             public System.String Name { get; set; }
             public List<Amazon.AuditManager.Model.Role> Role { get; set; }
             public List<Amazon.AuditManager.Model.AWSAccount> Scope_AwsAccount { get; set; }
+            [System.ObsoleteAttribute]
             public List<Amazon.AuditManager.Model.AWSService> Scope_AwsService { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.AuditManager.Model.CreateAssessmentResponse, NewAUDMAssessmentCmdlet, object> Select { get; set; } =

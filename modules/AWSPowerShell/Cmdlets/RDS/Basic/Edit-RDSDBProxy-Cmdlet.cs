@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyDBProxy API operation.", Operation = new[] {"ModifyDBProxy"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyDBProxyResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBProxy or Amazon.RDS.Model.ModifyDBProxyResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBProxy object.",
-        "The service call response (type Amazon.RDS.Model.ModifyDBProxyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyDBProxyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSDBProxyCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Auth
         /// <summary>
         /// <para>
-        /// <para>The new authentication settings for the <c>DBProxy</c>.</para>
+        /// <para>The new authentication settings for the <c>DBProxy</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,16 +79,29 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter DebugLogging
         /// <summary>
         /// <para>
-        /// <para>Whether the proxy includes detailed information about SQL statements in its logs.
-        /// This information helps you to debug issues involving SQL behavior or the performance
-        /// and scalability of the proxy connections. The debug information includes the text
-        /// of SQL statements that you submit through the proxy. Thus, only enable this setting
-        /// when needed for debugging, and only when you have security measures in place to safeguard
-        /// any sensitive information that appears in the logs.</para>
+        /// <para>Specifies whether the proxy logs detailed connection and query information. When you
+        /// enable <c>DebugLogging</c>, the proxy captures connection details and connection pool
+        /// behavior from your queries. Debug logging increases CloudWatch costs and can impact
+        /// proxy performance. Enable this option only when you need to troubleshoot connection
+        /// or performance issues.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? DebugLogging { get; set; }
+        #endregion
+        
+        #region Parameter DefaultAuthScheme
+        /// <summary>
+        /// <para>
+        /// <para>The default authentication scheme that the proxy uses for client connections to the
+        /// proxy and connections from the proxy to the underlying database. Valid values are
+        /// <c>NONE</c> and <c>IAM_AUTH</c>. When set to <c>IAM_AUTH</c>, the proxy uses end-to-end
+        /// IAM authentication to connect to the database.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.DefaultAuthScheme")]
+        public Amazon.RDS.DefaultAuthScheme DefaultAuthScheme { get; set; }
         #endregion
         
         #region Parameter IdleClientTimeout
@@ -134,7 +154,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter SecurityGroup
         /// <summary>
         /// <para>
-        /// <para>The new list of security groups for the <c>DBProxy</c>.</para>
+        /// <para>The new list of security groups for the <c>DBProxy</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,16 +177,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBProxy";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBProxyName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBProxyName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBProxyName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -173,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBProxyName), MyInvocation.BoundParameters);
@@ -189,21 +207,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyDBProxyResponse, EditRDSDBProxyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBProxyName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Auth != null)
             {
                 context.Auth = new List<Amazon.RDS.Model.UserAuthConfig>(this.Auth);
@@ -216,6 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             }
             #endif
             context.DebugLogging = this.DebugLogging;
+            context.DefaultAuthScheme = this.DefaultAuthScheme;
             context.IdleClientTimeout = this.IdleClientTimeout;
             context.NewDBProxyName = this.NewDBProxyName;
             context.RequireTLS = this.RequireTLS;
@@ -251,6 +260,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.DebugLogging != null)
             {
                 request.DebugLogging = cmdletContext.DebugLogging.Value;
+            }
+            if (cmdletContext.DefaultAuthScheme != null)
+            {
+                request.DefaultAuthScheme = cmdletContext.DefaultAuthScheme;
             }
             if (cmdletContext.IdleClientTimeout != null)
             {
@@ -310,13 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyDBProxy");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBProxy(request);
-                #elif CORECLR
-                return client.ModifyDBProxyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBProxyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -336,6 +343,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public List<Amazon.RDS.Model.UserAuthConfig> Auth { get; set; }
             public System.String DBProxyName { get; set; }
             public System.Boolean? DebugLogging { get; set; }
+            public Amazon.RDS.DefaultAuthScheme DefaultAuthScheme { get; set; }
             public System.Int32? IdleClientTimeout { get; set; }
             public System.String NewDBProxyName { get; set; }
             public System.Boolean? RequireTLS { get; set; }

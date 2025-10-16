@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,20 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
-    /// Configures a transfer task, which defines where and how DataSync moves your data.
+    /// Configures a <i>task</i>, which defines where and how DataSync transfers your data.
     /// 
     ///  
     /// <para>
-    /// A task includes a source location, destination location, and the options for how and
-    /// when you want to transfer your data (such as bandwidth limits, scheduling, among other
-    /// options).
+    /// A task includes a source location, destination location, and transfer options (such
+    /// as bandwidth limits, scheduling, and more).
     /// </para><important><para>
     /// If you're planning to transfer data to or from an Amazon S3 location, review <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-s3-location.html#create-s3-location-s3-requests">how
     /// DataSync can affect your S3 request charges</a> and the <a href="http://aws.amazon.com/datasync/pricing/">DataSync
@@ -46,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
     [AWSCmdlet("Calls the AWS DataSync CreateTask API operation.", Operation = new[] {"CreateTask"}, SelectReturnType = typeof(Amazon.DataSync.Model.CreateTaskResponse))]
     [AWSCmdletOutput("System.String or Amazon.DataSync.Model.CreateTaskResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DataSync.Model.CreateTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataSync.Model.CreateTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDSYNTaskCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ManifestConfig_Action
         /// <summary>
@@ -91,8 +93,9 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter CloudWatchLogGroupArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Amazon CloudWatch log group that is used to
-        /// monitor and log events in the task. </para>
+        /// <para>Specifies the Amazon Resource Name (ARN) of an Amazon CloudWatch log group for monitoring
+        /// your task.</para><para>For Enhanced mode tasks, you don't need to specify anything. DataSync automatically
+        /// sends logs to a CloudWatch log group named <c>/aws/datasync</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,8 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter DestinationLocationArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of an Amazon Web Services storage resource's location.
-        /// </para>
+        /// <para>Specifies the ARN of your transfer's destination location. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,9 +122,14 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Exclude
         /// <summary>
         /// <para>
-        /// <para>Specifies a list of filter rules that exclude specific data during your transfer.
-        /// For more information and examples, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/filtering.html">Filtering
-        /// data transferred by DataSync</a>.</para>
+        /// <para>Specifies exclude filters that define the files, objects, and folders in your source
+        /// location that you don't want DataSync to transfer. For more information and examples,
+        /// see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/filtering.html">Specifying
+        /// what DataSync transfers by using filters</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,9 +152,14 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Include
         /// <summary>
         /// <para>
-        /// <para>Specifies a list of filter rules that include specific data during your transfer.
-        /// For more information and examples, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/filtering.html">Filtering
-        /// data transferred by DataSync</a>.</para>
+        /// <para>Specifies include filters that define the files, objects, and folders in your source
+        /// location that you want DataSync to transfer. For more information and examples, see
+        /// <a href="https://docs.aws.amazon.com/datasync/latest/userguide/filtering.html">Specifying
+        /// what DataSync transfers by using filters</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,8 +194,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The name of a task. This value is a text reference that is used to identify the task
-        /// in the console. </para>
+        /// <para>Specifies the name of your task.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -208,9 +219,8 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Option
         /// <summary>
         /// <para>
-        /// <para>Specifies the configuration options for a task. Some options include preserving file
-        /// or object metadata and verifying data integrity.</para><para>You can also override these options before starting an individual run of a task (also
-        /// known as a <i>task execution</i>). For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/API_StartTaskExecution.html">StartTaskExecution</a>.</para>
+        /// <para>Specifies your task's settings, such as preserving file metadata, verifying data integrity,
+        /// among other options.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -333,8 +343,10 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Schedule_ScheduleExpression
         /// <summary>
         /// <para>
-        /// <para>A cron expression that specifies when DataSync initiates a scheduled transfer from
-        /// a source to a destination location. </para>
+        /// <para>Specifies your task schedule by using a cron or rate expression.</para><para>Use cron expressions for task schedules that run on a specific time and day. For example,
+        /// the following cron expression creates a task schedule that runs at 8 AM on the first
+        /// Wednesday of every month:</para><para><c>cron(0 8 * * 3#1)</c></para><para>Use rate expressions for task schedules that run on a regular interval. For example,
+        /// the following rate expression creates a task schedule that runs every 12 hours:</para><para><c>rate(12 hours)</c></para><para>For information about cron and rate expression syntax, see the <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-scheduled-rule-pattern.html"><i>Amazon EventBridge User Guide</i></a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -344,7 +356,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter SourceLocationArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the source location for the task.</para>
+        /// <para>Specifies the ARN of your transfer's source location.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -356,6 +368,21 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String SourceLocationArn { get; set; }
+        #endregion
+        
+        #region Parameter Schedule_Status
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to enable or disable your task schedule. Your schedule is enabled
+        /// by default, but there can be situations where you need to disable it. For example,
+        /// you might need to pause a recurring transfer to fix an issue with your task or perform
+        /// maintenance on your storage system.</para><para>DataSync might disable your schedule automatically if your task fails repeatedly with
+        /// the same error. For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/API_TaskScheduleDetails.html">TaskScheduleDetails</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DataSync.ScheduleStatus")]
+        public Amazon.DataSync.ScheduleStatus Schedule_Status { get; set; }
         #endregion
         
         #region Parameter S3_Subdirectory
@@ -372,14 +399,39 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Specifies the tags that you want to apply to the Amazon Resource Name (ARN) representing
-        /// the task.</para><para><i>Tags</i> are key-value pairs that help you manage, filter, and search for your
-        /// DataSync resources.</para>
+        /// <para>Specifies the tags that you want to apply to your task.</para><para><i>Tags</i> are key-value pairs that help you manage, filter, and search for your
+        /// DataSync resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.DataSync.Model.TagListEntry[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter TaskMode
+        /// <summary>
+        /// <para>
+        /// <para>Specifies one of the following task modes for your data transfer:</para><ul><li><para><c>ENHANCED</c> - Transfer virtually unlimited numbers of objects with higher performance
+        /// than Basic mode. Enhanced mode tasks optimize the data transfer process by listing,
+        /// preparing, transferring, and verifying data in parallel. Enhanced mode is currently
+        /// available for transfers between Amazon S3 locations, transfers between Azure Blob
+        /// and Amazon S3 without an agent, and transfers between other clouds and Amazon S3 without
+        /// an agent.</para><note><para>To create an Enhanced mode task, the IAM role that you use to call the <c>CreateTask</c>
+        /// operation must have the <c>iam:CreateServiceLinkedRole</c> permission.</para></note></li><li><para><c>BASIC</c> (default) - Transfer files or objects between Amazon Web Services storage
+        /// and all other supported DataSync locations. Basic mode tasks are subject to <a href="https://docs.aws.amazon.com/datasync/latest/userguide/datasync-limits.html">quotas</a>
+        /// on the number of files, objects, and directories in a dataset. Basic mode sequentially
+        /// prepares, transfers, and verifies data, making it slower than Enhanced mode for most
+        /// workloads.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/choosing-task-mode.html#task-mode-differences">Understanding
+        /// task mode differences</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DataSync.TaskMode")]
+        public Amazon.DataSync.TaskMode TaskMode { get; set; }
         #endregion
         
         #region Parameter Select
@@ -393,16 +445,6 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public string Select { get; set; } = "TaskArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SourceLocationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SourceLocationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SourceLocationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -413,9 +455,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceLocationArn), MyInvocation.BoundParameters);
@@ -429,21 +475,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataSync.Model.CreateTaskResponse, NewDSYNTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SourceLocationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CloudWatchLogGroupArn = this.CloudWatchLogGroupArn;
             context.DestinationLocationArn = this.DestinationLocationArn;
             #if MODULAR
@@ -469,6 +505,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             context.Name = this.Name;
             context.Option = this.Option;
             context.Schedule_ScheduleExpression = this.Schedule_ScheduleExpression;
+            context.Schedule_Status = this.Schedule_Status;
             context.SourceLocationArn = this.SourceLocationArn;
             #if MODULAR
             if (this.SourceLocationArn == null && ParameterWasBound(nameof(this.SourceLocationArn)))
@@ -480,6 +517,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             {
                 context.Tag = new List<Amazon.DataSync.Model.TagListEntry>(this.Tag);
             }
+            context.TaskMode = this.TaskMode;
             context.TaskReportConfig_Destination_S3_BucketAccessRoleArn = this.TaskReportConfig_Destination_S3_BucketAccessRoleArn;
             context.TaskReportConfig_Destination_S3_S3BucketArn = this.TaskReportConfig_Destination_S3_S3BucketArn;
             context.S3_Subdirectory = this.S3_Subdirectory;
@@ -643,6 +681,16 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
                 request.Schedule.ScheduleExpression = requestSchedule_schedule_ScheduleExpression;
                 requestScheduleIsNull = false;
             }
+            Amazon.DataSync.ScheduleStatus requestSchedule_schedule_Status = null;
+            if (cmdletContext.Schedule_Status != null)
+            {
+                requestSchedule_schedule_Status = cmdletContext.Schedule_Status;
+            }
+            if (requestSchedule_schedule_Status != null)
+            {
+                request.Schedule.Status = requestSchedule_schedule_Status;
+                requestScheduleIsNull = false;
+            }
              // determine if request.Schedule should be set to null
             if (requestScheduleIsNull)
             {
@@ -655,6 +703,10 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
+            }
+            if (cmdletContext.TaskMode != null)
+            {
+                request.TaskMode = cmdletContext.TaskMode;
             }
             
              // populate TaskReportConfig
@@ -908,13 +960,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "CreateTask");
             try
             {
-                #if DESKTOP
-                return client.CreateTask(request);
-                #elif CORECLR
-                return client.CreateTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -944,8 +990,10 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             public System.String Name { get; set; }
             public Amazon.DataSync.Model.Options Option { get; set; }
             public System.String Schedule_ScheduleExpression { get; set; }
+            public Amazon.DataSync.ScheduleStatus Schedule_Status { get; set; }
             public System.String SourceLocationArn { get; set; }
             public List<Amazon.DataSync.Model.TagListEntry> Tag { get; set; }
+            public Amazon.DataSync.TaskMode TaskMode { get; set; }
             public System.String TaskReportConfig_Destination_S3_BucketAccessRoleArn { get; set; }
             public System.String TaskReportConfig_Destination_S3_S3BucketArn { get; set; }
             public System.String S3_Subdirectory { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,39 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConnect;
 using Amazon.MediaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMCN
 {
     /// <summary>
-    /// Creates a new gateway. The request must include at least one network (up to 4).
+    /// Creates a new gateway. The request must include at least one network (up to four).
     /// </summary>
     [Cmdlet("New", "EMCNGateway", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.MediaConnect.Model.Gateway")]
     [AWSCmdlet("Calls the AWS Elemental MediaConnect CreateGateway API operation.", Operation = new[] {"CreateGateway"}, SelectReturnType = typeof(Amazon.MediaConnect.Model.CreateGatewayResponse))]
     [AWSCmdletOutput("Amazon.MediaConnect.Model.Gateway or Amazon.MediaConnect.Model.CreateGatewayResponse",
         "This cmdlet returns an Amazon.MediaConnect.Model.Gateway object.",
-        "The service call response (type Amazon.MediaConnect.Model.CreateGatewayResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaConnect.Model.CreateGatewayResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEMCNGatewayCmdlet : AmazonMediaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EgressCidrBlock
         /// <summary>
         /// <para>
-        /// The range of IP addresses that are allowed
-        /// to contribute content or initiate output requests for flows communicating with this
-        /// gateway. These IP addresses should be in the form of a Classless Inter-Domain Routing
-        /// (CIDR) block; for example, 10.0.0.0/16.
+        /// <para> The range of IP addresses that are allowed to contribute content or initiate output
+        /// requests for flows communicating with this gateway. These IP addresses should be in
+        /// the form of a Classless Inter-Domain Routing (CIDR) block; for example, 10.0.0.0/16.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -66,8 +72,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// The name of the gateway. This name can not be modified
-        /// after the gateway is created.
+        /// <para> The name of the gateway. This name can not be modified after the gateway is created.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -84,7 +89,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter Network
         /// <summary>
         /// <para>
-        /// The list of networks that you want to add.
+        /// <para> The list of networks that you want to add to the gateway.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -110,16 +119,6 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public string Select { get; set; } = "Gateway";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -130,9 +129,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -146,21 +149,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConnect.Model.CreateGatewayResponse, NewEMCNGatewayCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.EgressCidrBlock != null)
             {
                 context.EgressCidrBlock = new List<System.String>(this.EgressCidrBlock);
@@ -254,13 +247,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConnect", "CreateGateway");
             try
             {
-                #if DESKTOP
-                return client.CreateGateway(request);
-                #elif CORECLR
-                return client.CreateGatewayAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGatewayAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

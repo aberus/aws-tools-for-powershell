@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
@@ -44,16 +46,17 @@ namespace Amazon.PowerShell.Cmdlets.GD
     /// irrespective of the accounts being new or existing members. For more information about
     /// the existing auto-enable settings for your organization, see <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DescribeOrganizationConfiguration.html">DescribeOrganizationConfiguration</a>.
     /// </para><para>
-    /// If you are adding accounts by invitation, before using <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_InviteMembers.html">InviteMembers</a>,
-    /// use <c>CreateMembers</c> after GuardDuty has been enabled in potential member accounts.
-    /// </para><para>
-    /// If you disassociate a member from a GuardDuty delegated administrator, the member
-    /// account details obtained from this API, including the associated email addresses,
-    /// will be retained. This is done so that the delegated administrator can invoke the
-    /// <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_InviteMembers.html">InviteMembers</a>
+    /// If you disassociate a member account that was added by invitation, the member account
+    /// details obtained from this API, including the associated email addresses, will be
+    /// retained. This is done so that the delegated administrator can invoke the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_InviteMembers.html">InviteMembers</a>
     /// API without the need to invoke the CreateMembers API again. To remove the details
     /// associated with a member account, the delegated administrator must invoke the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_DeleteMembers.html">DeleteMembers</a>
     /// API. 
+    /// </para><para>
+    /// When the member accounts added through Organizations are later disassociated, you
+    /// (administrator) can't invite them by calling the InviteMembers API. You can create
+    /// an association with these member accounts again only by calling the CreateMembers
+    /// API.
     /// </para>
     /// </summary>
     [Cmdlet("New", "GDMember", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -61,18 +64,23 @@ namespace Amazon.PowerShell.Cmdlets.GD
     [AWSCmdlet("Calls the Amazon GuardDuty CreateMembers API operation.", Operation = new[] {"CreateMembers"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.CreateMembersResponse))]
     [AWSCmdletOutput("Amazon.GuardDuty.Model.UnprocessedAccount or Amazon.GuardDuty.Model.CreateMembersResponse",
         "This cmdlet returns a collection of Amazon.GuardDuty.Model.UnprocessedAccount objects.",
-        "The service call response (type Amazon.GuardDuty.Model.CreateMembersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GuardDuty.Model.CreateMembersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGDMemberCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountDetail
         /// <summary>
         /// <para>
         /// <para>A list of account ID and email address pairs of the accounts that you want to associate
-        /// with the GuardDuty administrator account.</para>
+        /// with the GuardDuty administrator account.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -90,8 +98,10 @@ namespace Amazon.PowerShell.Cmdlets.GD
         #region Parameter DetectorId
         /// <summary>
         /// <para>
-        /// <para>The unique ID of the detector of the GuardDuty account that you want to associate
-        /// member accounts with.</para>
+        /// <para>The unique ID of the detector of the GuardDuty account for which you want to associate
+        /// member accounts.</para><para>To find the <c>detectorId</c> in the current Region, see the Settings page in the
+        /// GuardDuty console, or run the <a href="https://docs.aws.amazon.com/guardduty/latest/APIReference/API_ListDetectors.html">ListDetectors</a>
+        /// API.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -116,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "UnprocessedAccounts";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AccountDetail parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AccountDetail' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AccountDetail' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DetectorId), MyInvocation.BoundParameters);
@@ -152,21 +156,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GuardDuty.Model.CreateMembersResponse, NewGDMemberCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AccountDetail;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AccountDetail != null)
             {
                 context.AccountDetail = new List<Amazon.GuardDuty.Model.AccountDetail>(this.AccountDetail);
@@ -246,13 +240,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "CreateMembers");
             try
             {
-                #if DESKTOP
-                return client.CreateMembers(request);
-                #elif CORECLR
-                return client.CreateMembersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateMembersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

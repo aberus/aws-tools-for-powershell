@@ -75,6 +75,98 @@ function _awsArgumentCompleterRegistration()
 # Argument completions for service AWS Supply Chain
 
 
+$SUPCH_Completers = {
+    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
+
+    switch ($("$commandName/$parameterName"))
+    {
+        # Amazon.SupplyChain.DataIntegrationEventDatasetOperationType
+        "Send-SUPCHDataIntegrationEvent/DatasetTarget_OperationType"
+        {
+            $v = "APPEND","DELETE","UPSERT"
+            break
+        }
+
+        # Amazon.SupplyChain.DataIntegrationEventType
+        {
+            ($_ -eq "Get-SUPCHDataIntegrationEventList/EventType") -Or
+            ($_ -eq "Send-SUPCHDataIntegrationEvent/EventType")
+        }
+        {
+            $v = "scn.data.dataset","scn.data.forecast","scn.data.inboundorder","scn.data.inboundorderline","scn.data.inboundorderlineschedule","scn.data.inventorylevel","scn.data.outboundorderline","scn.data.outboundshipment","scn.data.processheader","scn.data.processoperation","scn.data.processproduct","scn.data.reservation","scn.data.shipment","scn.data.shipmentstop","scn.data.shipmentstoporder","scn.data.supplyplan"
+            break
+        }
+
+        # Amazon.SupplyChain.DataIntegrationFlowDedupeStrategyType
+        {
+            ($_ -eq "New-SUPCHDataIntegrationFlow/DedupeStrategy_Type") -Or
+            ($_ -eq "Update-SUPCHDataIntegrationFlow/DedupeStrategy_Type")
+        }
+        {
+            $v = "FIELD_PRIORITY"
+            break
+        }
+
+        # Amazon.SupplyChain.DataIntegrationFlowFileType
+        {
+            ($_ -eq "New-SUPCHDataIntegrationFlow/Options_FileType") -Or
+            ($_ -eq "Update-SUPCHDataIntegrationFlow/Options_FileType")
+        }
+        {
+            $v = "CSV","JSON","PARQUET"
+            break
+        }
+
+        # Amazon.SupplyChain.DataIntegrationFlowLoadType
+        {
+            ($_ -eq "New-SUPCHDataIntegrationFlow/Options_LoadType") -Or
+            ($_ -eq "Update-SUPCHDataIntegrationFlow/Options_LoadType")
+        }
+        {
+            $v = "INCREMENTAL","REPLACE"
+            break
+        }
+
+        # Amazon.SupplyChain.DataIntegrationFlowTargetType
+        {
+            ($_ -eq "New-SUPCHDataIntegrationFlow/Target_TargetType") -Or
+            ($_ -eq "Update-SUPCHDataIntegrationFlow/Target_TargetType")
+        }
+        {
+            $v = "DATASET","S3"
+            break
+        }
+
+        # Amazon.SupplyChain.DataIntegrationFlowTransformationType
+        {
+            ($_ -eq "New-SUPCHDataIntegrationFlow/Transformation_TransformationType") -Or
+            ($_ -eq "Update-SUPCHDataIntegrationFlow/Transformation_TransformationType")
+        }
+        {
+            $v = "NONE","SQL"
+            break
+        }
+
+
+    }
+
+    $v |
+        Where-Object { $_ -like "$wordToComplete*" } |
+        ForEach-Object { New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_ }
+}
+
+$SUPCH_map = @{
+    "DatasetTarget_OperationType"=@("Send-SUPCHDataIntegrationEvent")
+    "DedupeStrategy_Type"=@("New-SUPCHDataIntegrationFlow","Update-SUPCHDataIntegrationFlow")
+    "EventType"=@("Get-SUPCHDataIntegrationEventList","Send-SUPCHDataIntegrationEvent")
+    "Options_FileType"=@("New-SUPCHDataIntegrationFlow","Update-SUPCHDataIntegrationFlow")
+    "Options_LoadType"=@("New-SUPCHDataIntegrationFlow","Update-SUPCHDataIntegrationFlow")
+    "Target_TargetType"=@("New-SUPCHDataIntegrationFlow","Update-SUPCHDataIntegrationFlow")
+    "Transformation_TransformationType"=@("New-SUPCHDataIntegrationFlow","Update-SUPCHDataIntegrationFlow")
+}
+
+_awsArgumentCompleterRegistration $SUPCH_Completers $SUPCH_map
+
 $SUPCH_SelectCompleters = {
     param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
 
@@ -124,7 +216,35 @@ $SUPCH_SelectCompleters = {
 
 $SUPCH_SelectMap = @{
     "Select"=@("New-SUPCHBillOfMaterialsImportJob",
-               "Get-SUPCHBillOfMaterialsImportJob")
+               "New-SUPCHDataIntegrationFlow",
+               "New-SUPCHDataLakeDataset",
+               "New-SUPCHDataLakeNamespace",
+               "New-SUPCHInstance",
+               "Remove-SUPCHDataIntegrationFlow",
+               "Remove-SUPCHDataLakeDataset",
+               "Remove-SUPCHDataLakeNamespace",
+               "Remove-SUPCHInstance",
+               "Get-SUPCHBillOfMaterialsImportJob",
+               "Get-SUPCHDataIntegrationEvent",
+               "Get-SUPCHDataIntegrationFlow",
+               "Get-SUPCHDataIntegrationFlowExecution",
+               "Get-SUPCHDataLakeDataset",
+               "Get-SUPCHDataLakeNamespace",
+               "Get-SUPCHInstance",
+               "Get-SUPCHDataIntegrationEventList",
+               "Get-SUPCHDataIntegrationFlowExecutionList",
+               "Get-SUPCHDataIntegrationFlowList",
+               "Get-SUPCHDataLakeDatasetList",
+               "Get-SUPCHDataLakeNamespaceList",
+               "Get-SUPCHInstanceList",
+               "Get-SUPCHResourceTag",
+               "Send-SUPCHDataIntegrationEvent",
+               "Add-SUPCHResourceTag",
+               "Remove-SUPCHResourceTag",
+               "Update-SUPCHDataIntegrationFlow",
+               "Update-SUPCHDataLakeDataset",
+               "Update-SUPCHDataLakeNamespace",
+               "Update-SUPCHInstance")
 }
 
 _awsArgumentCompleterRegistration $SUPCH_SelectCompleters $SUPCH_SelectMap

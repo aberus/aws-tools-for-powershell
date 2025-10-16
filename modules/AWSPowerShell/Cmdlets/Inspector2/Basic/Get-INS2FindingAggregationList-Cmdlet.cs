@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector2;
 using Amazon.Inspector2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS2
 {
     /// <summary>
-    /// Lists aggregated finding data for your environment based on specific criteria.
+    /// Lists aggregated finding data for your environment based on specific criteria.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "INS2FindingAggregationList")]
     [OutputType("Amazon.Inspector2.Model.ListFindingAggregationsResponse")]
     [AWSCmdlet("Calls the Inspector2 ListFindingAggregations API operation.", Operation = new[] {"ListFindingAggregations"}, SelectReturnType = typeof(Amazon.Inspector2.Model.ListFindingAggregationsResponse))]
     [AWSCmdletOutput("Amazon.Inspector2.Model.ListFindingAggregationsResponse",
-        "This cmdlet returns an Amazon.Inspector2.Model.ListFindingAggregationsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Inspector2.Model.ListFindingAggregationsResponse object containing multiple properties."
     )]
     public partial class GetINS2FindingAggregationListCmdlet : AmazonInspector2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services account IDs to retrieve finding aggregation data for.</para>
+        /// <para>The Amazon Web Services account IDs to retrieve finding aggregation data for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,7 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter AmiAggregation_Ami
         /// <summary>
         /// <para>
-        /// <para>The IDs of AMIs to aggregate findings for.</para>
+        /// <para>The IDs of AMIs to aggregate findings for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter Ec2InstanceAggregation_Ami
         /// <summary>
         /// <para>
-        /// <para>The AMI IDs associated with the Amazon EC2 instances to aggregate findings for.</para>
+        /// <para>The AMI IDs associated with the Amazon EC2 instances to aggregate findings for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter AwsEcrContainerAggregation_Architecture
         /// <summary>
         /// <para>
-        /// <para>The architecture of the containers.</para>
+        /// <para>The architecture of the containers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,7 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter LambdaFunctionAggregation_FunctionName
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services Lambda function names to include in the aggregation results.</para>
+        /// <para>The Amazon Web Services Lambda function names to include in the aggregation results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,7 +175,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter LambdaLayerAggregation_FunctionName
         /// <summary>
         /// <para>
-        /// <para>The names of the Amazon Web Services Lambda functions associated with the layers.</para>
+        /// <para>The names of the Amazon Web Services Lambda functions associated with the layers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter LambdaFunctionAggregation_FunctionTag
         /// <summary>
         /// <para>
-        /// <para>The tags to include in the aggregation results.</para>
+        /// <para>The tags to include in the aggregation results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,7 +205,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter AwsEcrContainerAggregation_ImageSha
         /// <summary>
         /// <para>
-        /// <para>The image SHA values.</para>
+        /// <para>The image SHA values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,7 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter AwsEcrContainerAggregation_ImageTag
         /// <summary>
         /// <para>
-        /// <para>The image tags.</para>
+        /// <para>The image tags.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,7 +235,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter Ec2InstanceAggregation_InstanceId
         /// <summary>
         /// <para>
-        /// <para>The Amazon EC2 instance IDs to aggregate findings for.</para>
+        /// <para>The Amazon EC2 instance IDs to aggregate findings for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -207,7 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter Ec2InstanceAggregation_InstanceTag
         /// <summary>
         /// <para>
-        /// <para>The Amazon EC2 instance tags to aggregate findings for.</para>
+        /// <para>The Amazon EC2 instance tags to aggregate findings for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,10 +262,45 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public Amazon.Inspector2.Model.MapFilter[] Ec2InstanceAggregation_InstanceTag { get; set; }
         #endregion
         
+        #region Parameter AwsEcrContainerAggregation_InUseCount
+        /// <summary>
+        /// <para>
+        /// <para>The number of Amazon ECS tasks or Amazon EKS pods where the Amazon ECR container image
+        /// is in use.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_AwsEcrContainerAggregation_InUseCount")]
+        public Amazon.Inspector2.Model.NumberFilter[] AwsEcrContainerAggregation_InUseCount { get; set; }
+        #endregion
+        
+        #region Parameter AwsEcrContainerAggregation_LastInUseAt
+        /// <summary>
+        /// <para>
+        /// <para>The last time an Amazon ECR image was used in an Amazon ECS task or Amazon EKS pod.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_AwsEcrContainerAggregation_LastInUseAt")]
+        public Amazon.Inspector2.Model.DateFilter[] AwsEcrContainerAggregation_LastInUseAt { get; set; }
+        #endregion
+        
         #region Parameter LambdaLayerAggregation_LayerArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Amazon Web Services Lambda function layer. </para>
+        /// <para>The Amazon Resource Name (ARN) of the Amazon Web Services Lambda function layer. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,7 +311,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter ImageLayerAggregation_LayerHash
         /// <summary>
         /// <para>
-        /// <para>The hashes associated with the layers.</para>
+        /// <para>The hashes associated with the layers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -241,7 +327,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// <summary>
         /// <para>
         /// <para>The operating system types to aggregate findings for. Valid values must be uppercase
-        /// and underscore separated, examples are <c>ORACLE_LINUX_7</c> and <c>ALPINE_LINUX_3_8</c>.</para>
+        /// and underscore separated, examples are <c>ORACLE_LINUX_7</c> and <c>ALPINE_LINUX_3_8</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -252,7 +342,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter PackageAggregation_PackageName
         /// <summary>
         /// <para>
-        /// <para>The names of packages to aggregate findings on.</para>
+        /// <para>The names of packages to aggregate findings on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -260,10 +354,44 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public Amazon.Inspector2.Model.StringFilter[] PackageAggregation_PackageName { get; set; }
         #endregion
         
+        #region Parameter CodeRepositoryAggregation_ProjectName
+        /// <summary>
+        /// <para>
+        /// <para>The project names to include in the aggregation results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_CodeRepositoryAggregation_ProjectNames")]
+        public Amazon.Inspector2.Model.StringFilter[] CodeRepositoryAggregation_ProjectName { get; set; }
+        #endregion
+        
+        #region Parameter CodeRepositoryAggregation_ProviderType
+        /// <summary>
+        /// <para>
+        /// <para>The repository provider types to include in the aggregation results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_CodeRepositoryAggregation_ProviderTypes")]
+        public Amazon.Inspector2.Model.StringFilter[] CodeRepositoryAggregation_ProviderType { get; set; }
+        #endregion
+        
         #region Parameter AwsEcrContainerAggregation_Repository
         /// <summary>
         /// <para>
-        /// <para>The container repositories.</para>
+        /// <para>The container repositories.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -274,7 +402,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter ImageLayerAggregation_Repository
         /// <summary>
         /// <para>
-        /// <para>The repository associated with the container image hosting the layers.</para>
+        /// <para>The repository associated with the container image hosting the layers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,7 +417,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter RepositoryAggregation_Repository
         /// <summary>
         /// <para>
-        /// <para>The names of repositories to aggregate findings on.</para>
+        /// <para>The names of repositories to aggregate findings on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -296,7 +432,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter AwsEcrContainerAggregation_ResourceId
         /// <summary>
         /// <para>
-        /// <para>The container resource IDs.</para>
+        /// <para>The container resource IDs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -304,10 +444,29 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public Amazon.Inspector2.Model.StringFilter[] AwsEcrContainerAggregation_ResourceId { get; set; }
         #endregion
         
+        #region Parameter CodeRepositoryAggregation_ResourceId
+        /// <summary>
+        /// <para>
+        /// <para>The resource IDs to include in the aggregation results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_CodeRepositoryAggregation_ResourceIds")]
+        public Amazon.Inspector2.Model.StringFilter[] CodeRepositoryAggregation_ResourceId { get; set; }
+        #endregion
+        
         #region Parameter ImageLayerAggregation_ResourceId
         /// <summary>
         /// <para>
-        /// <para>The ID of the container image layer.</para>
+        /// <para>The ID of the container image layer.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -318,7 +477,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter LambdaFunctionAggregation_ResourceId
         /// <summary>
         /// <para>
-        /// <para>The resource IDs to include in the aggregation results.</para>
+        /// <para>The resource IDs to include in the aggregation results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -329,7 +492,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter LambdaLayerAggregation_ResourceId
         /// <summary>
         /// <para>
-        /// <para>The resource IDs for the Amazon Web Services Lambda function layers.</para>
+        /// <para>The resource IDs for the Amazon Web Services Lambda function layers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -376,7 +543,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter LambdaFunctionAggregation_Runtime
         /// <summary>
         /// <para>
-        /// <para>Returns findings aggregated by Amazon Web Services Lambda function runtime environments.</para>
+        /// <para>Returns findings aggregated by Amazon Web Services Lambda function runtime environments.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -418,6 +589,18 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         [Alias("AggregationRequest_AwsEcrContainerAggregation_SortBy")]
         [AWSConstantClassSource("Amazon.Inspector2.AwsEcrContainerSortBy")]
         public Amazon.Inspector2.AwsEcrContainerSortBy AwsEcrContainerAggregation_SortBy { get; set; }
+        #endregion
+        
+        #region Parameter CodeRepositoryAggregation_SortBy
+        /// <summary>
+        /// <para>
+        /// <para>The value to sort results by in the code repository aggregation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_CodeRepositoryAggregation_SortBy")]
+        [AWSConstantClassSource("Amazon.Inspector2.CodeRepositorySortBy")]
+        public Amazon.Inspector2.CodeRepositorySortBy CodeRepositoryAggregation_SortBy { get; set; }
         #endregion
         
         #region Parameter Ec2InstanceAggregation_SortBy
@@ -552,6 +735,18 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public Amazon.Inspector2.SortOrder AwsEcrContainerAggregation_SortOrder { get; set; }
         #endregion
         
+        #region Parameter CodeRepositoryAggregation_SortOrder
+        /// <summary>
+        /// <para>
+        /// <para>The order to sort results by (ascending or descending) in the code repository aggregation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AggregationRequest_CodeRepositoryAggregation_SortOrder")]
+        [AWSConstantClassSource("Amazon.Inspector2.SortOrder")]
+        public Amazon.Inspector2.SortOrder CodeRepositoryAggregation_SortOrder { get; set; }
+        #endregion
+        
         #region Parameter Ec2InstanceAggregation_SortOrder
         /// <summary>
         /// <para>
@@ -651,7 +846,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter TitleAggregation_Title
         /// <summary>
         /// <para>
-        /// <para>The finding titles to aggregate on.</para>
+        /// <para>The finding titles to aggregate on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -662,7 +861,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         #region Parameter TitleAggregation_VulnerabilityId
         /// <summary>
         /// <para>
-        /// <para>The vulnerability IDs of the findings.</para>
+        /// <para>The vulnerability IDs of the findings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -677,10 +880,15 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// more than the maximum the response will return a <c>nextToken</c> value, use this
         /// value when you call the action again to get the remaining results.</para>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("MaxResults")]
-        public System.Int32? MaxResult { get; set; }
+        [Alias("MaxItems","MaxResults")]
+        public int? MaxResult { get; set; }
         #endregion
         
         #region Parameter NextToken
@@ -691,6 +899,10 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         /// returns more than the <c>maxResults</c> maximum value it will also return a <c>nextToken</c>
         /// value. For subsequent calls, use the <c>nextToken</c> value returned from the previous
         /// request to continue listing results after the first page.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -708,19 +920,24 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
+        #region Parameter NoAutoIteration
         /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AggregationType parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AggregationType' instead. This parameter will be removed in a future version.
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
         /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AggregationType' instead. This parameter will be removed in a future version.")]
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
+        public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -728,21 +945,11 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Inspector2.Model.ListFindingAggregationsResponse, GetINS2FindingAggregationListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AggregationType;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AccountId != null)
             {
                 context.AccountId = new List<Amazon.Inspector2.Model.StringFilter>(this.AccountId);
@@ -769,6 +976,14 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             {
                 context.AwsEcrContainerAggregation_ImageTag = new List<Amazon.Inspector2.Model.StringFilter>(this.AwsEcrContainerAggregation_ImageTag);
             }
+            if (this.AwsEcrContainerAggregation_InUseCount != null)
+            {
+                context.AwsEcrContainerAggregation_InUseCount = new List<Amazon.Inspector2.Model.NumberFilter>(this.AwsEcrContainerAggregation_InUseCount);
+            }
+            if (this.AwsEcrContainerAggregation_LastInUseAt != null)
+            {
+                context.AwsEcrContainerAggregation_LastInUseAt = new List<Amazon.Inspector2.Model.DateFilter>(this.AwsEcrContainerAggregation_LastInUseAt);
+            }
             if (this.AwsEcrContainerAggregation_Repository != null)
             {
                 context.AwsEcrContainerAggregation_Repository = new List<Amazon.Inspector2.Model.StringFilter>(this.AwsEcrContainerAggregation_Repository);
@@ -779,6 +994,20 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             }
             context.AwsEcrContainerAggregation_SortBy = this.AwsEcrContainerAggregation_SortBy;
             context.AwsEcrContainerAggregation_SortOrder = this.AwsEcrContainerAggregation_SortOrder;
+            if (this.CodeRepositoryAggregation_ProjectName != null)
+            {
+                context.CodeRepositoryAggregation_ProjectName = new List<Amazon.Inspector2.Model.StringFilter>(this.CodeRepositoryAggregation_ProjectName);
+            }
+            if (this.CodeRepositoryAggregation_ProviderType != null)
+            {
+                context.CodeRepositoryAggregation_ProviderType = new List<Amazon.Inspector2.Model.StringFilter>(this.CodeRepositoryAggregation_ProviderType);
+            }
+            if (this.CodeRepositoryAggregation_ResourceId != null)
+            {
+                context.CodeRepositoryAggregation_ResourceId = new List<Amazon.Inspector2.Model.StringFilter>(this.CodeRepositoryAggregation_ResourceId);
+            }
+            context.CodeRepositoryAggregation_SortBy = this.CodeRepositoryAggregation_SortBy;
+            context.CodeRepositoryAggregation_SortOrder = this.CodeRepositoryAggregation_SortOrder;
             if (this.Ec2InstanceAggregation_Ami != null)
             {
                 context.Ec2InstanceAggregation_Ami = new List<Amazon.Inspector2.Model.StringFilter>(this.Ec2InstanceAggregation_Ami);
@@ -879,6 +1108,15 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             }
             #endif
             context.MaxResult = this.MaxResult;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the MaxResult parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing MaxResult" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             context.NextToken = this.NextToken;
             
             // allow further manipulation of loaded context prior to processing
@@ -893,7 +1131,9 @@ namespace Amazon.PowerShell.Cmdlets.INS2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.Inspector2.Model.ListFindingAggregationsRequest();
             
             if (cmdletContext.AccountId != null)
@@ -1147,6 +1387,71 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             if (requestAggregationRequest_aggregationRequest_FindingTypeAggregation != null)
             {
                 request.AggregationRequest.FindingTypeAggregation = requestAggregationRequest_aggregationRequest_FindingTypeAggregation;
+                requestAggregationRequestIsNull = false;
+            }
+            Amazon.Inspector2.Model.CodeRepositoryAggregation requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation = null;
+            
+             // populate CodeRepositoryAggregation
+            var requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull = true;
+            requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation = new Amazon.Inspector2.Model.CodeRepositoryAggregation();
+            List<Amazon.Inspector2.Model.StringFilter> requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProjectName = null;
+            if (cmdletContext.CodeRepositoryAggregation_ProjectName != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProjectName = cmdletContext.CodeRepositoryAggregation_ProjectName;
+            }
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProjectName != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation.ProjectNames = requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProjectName;
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.StringFilter> requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProviderType = null;
+            if (cmdletContext.CodeRepositoryAggregation_ProviderType != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProviderType = cmdletContext.CodeRepositoryAggregation_ProviderType;
+            }
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProviderType != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation.ProviderTypes = requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ProviderType;
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.StringFilter> requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ResourceId = null;
+            if (cmdletContext.CodeRepositoryAggregation_ResourceId != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ResourceId = cmdletContext.CodeRepositoryAggregation_ResourceId;
+            }
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ResourceId != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation.ResourceIds = requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_ResourceId;
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull = false;
+            }
+            Amazon.Inspector2.CodeRepositorySortBy requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortBy = null;
+            if (cmdletContext.CodeRepositoryAggregation_SortBy != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortBy = cmdletContext.CodeRepositoryAggregation_SortBy;
+            }
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortBy != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation.SortBy = requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortBy;
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull = false;
+            }
+            Amazon.Inspector2.SortOrder requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortOrder = null;
+            if (cmdletContext.CodeRepositoryAggregation_SortOrder != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortOrder = cmdletContext.CodeRepositoryAggregation_SortOrder;
+            }
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortOrder != null)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation.SortOrder = requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation_codeRepositoryAggregation_SortOrder;
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull = false;
+            }
+             // determine if requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation should be set to null
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregationIsNull)
+            {
+                requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation = null;
+            }
+            if (requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation != null)
+            {
+                request.AggregationRequest.CodeRepositoryAggregation = requestAggregationRequest_aggregationRequest_CodeRepositoryAggregation;
                 requestAggregationRequestIsNull = false;
             }
             Amazon.Inspector2.Model.ImageLayerAggregation requestAggregationRequest_aggregationRequest_ImageLayerAggregation = null;
@@ -1539,6 +1844,26 @@ namespace Amazon.PowerShell.Cmdlets.INS2
                 requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation.ImageTags = requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_ImageTag;
                 requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregationIsNull = false;
             }
+            List<Amazon.Inspector2.Model.NumberFilter> requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_InUseCount = null;
+            if (cmdletContext.AwsEcrContainerAggregation_InUseCount != null)
+            {
+                requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_InUseCount = cmdletContext.AwsEcrContainerAggregation_InUseCount;
+            }
+            if (requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_InUseCount != null)
+            {
+                requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation.InUseCount = requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_InUseCount;
+                requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregationIsNull = false;
+            }
+            List<Amazon.Inspector2.Model.DateFilter> requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_LastInUseAt = null;
+            if (cmdletContext.AwsEcrContainerAggregation_LastInUseAt != null)
+            {
+                requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_LastInUseAt = cmdletContext.AwsEcrContainerAggregation_LastInUseAt;
+            }
+            if (requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_LastInUseAt != null)
+            {
+                requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation.LastInUseAt = requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_LastInUseAt;
+                requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregationIsNull = false;
+            }
             List<Amazon.Inspector2.Model.StringFilter> requestAggregationRequest_aggregationRequest_AwsEcrContainerAggregation_awsEcrContainerAggregation_Repository = null;
             if (cmdletContext.AwsEcrContainerAggregation_Repository != null)
             {
@@ -1600,34 +1925,55 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             }
             if (cmdletContext.MaxResult != null)
             {
-                request.MaxResults = cmdletContext.MaxResult.Value;
-            }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
+                request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
             }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.NextToken;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.NextToken));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.NextToken = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextToken;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -1644,13 +1990,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Inspector2", "ListFindingAggregations");
             try
             {
-                #if DESKTOP
-                return client.ListFindingAggregations(request);
-                #elif CORECLR
-                return client.ListFindingAggregationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListFindingAggregationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1678,10 +2018,17 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             public List<Amazon.Inspector2.Model.StringFilter> AwsEcrContainerAggregation_Architecture { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> AwsEcrContainerAggregation_ImageSha { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> AwsEcrContainerAggregation_ImageTag { get; set; }
+            public List<Amazon.Inspector2.Model.NumberFilter> AwsEcrContainerAggregation_InUseCount { get; set; }
+            public List<Amazon.Inspector2.Model.DateFilter> AwsEcrContainerAggregation_LastInUseAt { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> AwsEcrContainerAggregation_Repository { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> AwsEcrContainerAggregation_ResourceId { get; set; }
             public Amazon.Inspector2.AwsEcrContainerSortBy AwsEcrContainerAggregation_SortBy { get; set; }
             public Amazon.Inspector2.SortOrder AwsEcrContainerAggregation_SortOrder { get; set; }
+            public List<Amazon.Inspector2.Model.StringFilter> CodeRepositoryAggregation_ProjectName { get; set; }
+            public List<Amazon.Inspector2.Model.StringFilter> CodeRepositoryAggregation_ProviderType { get; set; }
+            public List<Amazon.Inspector2.Model.StringFilter> CodeRepositoryAggregation_ResourceId { get; set; }
+            public Amazon.Inspector2.CodeRepositorySortBy CodeRepositoryAggregation_SortBy { get; set; }
+            public Amazon.Inspector2.SortOrder CodeRepositoryAggregation_SortOrder { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> Ec2InstanceAggregation_Ami { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> Ec2InstanceAggregation_InstanceId { get; set; }
             public List<Amazon.Inspector2.Model.MapFilter> Ec2InstanceAggregation_InstanceTag { get; set; }
@@ -1721,7 +2068,7 @@ namespace Amazon.PowerShell.Cmdlets.INS2
             public List<Amazon.Inspector2.Model.StringFilter> TitleAggregation_Title { get; set; }
             public List<Amazon.Inspector2.Model.StringFilter> TitleAggregation_VulnerabilityId { get; set; }
             public Amazon.Inspector2.AggregationType AggregationType { get; set; }
-            public System.Int32? MaxResult { get; set; }
+            public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.Func<Amazon.Inspector2.Model.ListFindingAggregationsResponse, GetINS2FindingAggregationListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

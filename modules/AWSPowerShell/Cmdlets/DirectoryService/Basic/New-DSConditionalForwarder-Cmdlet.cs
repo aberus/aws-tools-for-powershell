@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectoryService;
 using Amazon.DirectoryService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DS
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
     [AWSCmdlet("Calls the AWS Directory Service CreateConditionalForwarder API operation.", Operation = new[] {"CreateConditionalForwarder"}, SelectReturnType = typeof(Amazon.DirectoryService.Model.CreateConditionalForwarderResponse))]
     [AWSCmdletOutput("None or Amazon.DirectoryService.Model.CreateConditionalForwarderResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DirectoryService.Model.CreateConditionalForwarderResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DirectoryService.Model.CreateConditionalForwarderResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewDSConditionalForwarderCmdlet : AmazonDirectoryServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DirectoryId
         /// <summary>
@@ -65,19 +68,31 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter DnsIpAddr
         /// <summary>
         /// <para>
-        /// <para>The IP addresses of the remote DNS server associated with RemoteDomainName.</para>
+        /// <para>The IP addresses of the remote DNS server associated with RemoteDomainName.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("DnsIpAddrs")]
         public System.String[] DnsIpAddr { get; set; }
+        #endregion
+        
+        #region Parameter DnsIpv6Addr
+        /// <summary>
+        /// <para>
+        /// <para>The IPv6 addresses of the remote DNS server associated with RemoteDomainName.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DnsIpv6Addrs")]
+        public System.String[] DnsIpv6Addr { get; set; }
         #endregion
         
         #region Parameter RemoteDomainName
@@ -108,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DirectoryId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -128,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DirectoryId), MyInvocation.BoundParameters);
@@ -144,21 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectoryService.Model.CreateConditionalForwarderResponse, NewDSConditionalForwarderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DirectoryId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DirectoryId = this.DirectoryId;
             #if MODULAR
             if (this.DirectoryId == null && ParameterWasBound(nameof(this.DirectoryId)))
@@ -170,12 +169,10 @@ namespace Amazon.PowerShell.Cmdlets.DS
             {
                 context.DnsIpAddr = new List<System.String>(this.DnsIpAddr);
             }
-            #if MODULAR
-            if (this.DnsIpAddr == null && ParameterWasBound(nameof(this.DnsIpAddr)))
+            if (this.DnsIpv6Addr != null)
             {
-                WriteWarning("You are passing $null as a value for parameter DnsIpAddr which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+                context.DnsIpv6Addr = new List<System.String>(this.DnsIpv6Addr);
             }
-            #endif
             context.RemoteDomainName = this.RemoteDomainName;
             #if MODULAR
             if (this.RemoteDomainName == null && ParameterWasBound(nameof(this.RemoteDomainName)))
@@ -206,6 +203,10 @@ namespace Amazon.PowerShell.Cmdlets.DS
             if (cmdletContext.DnsIpAddr != null)
             {
                 request.DnsIpAddrs = cmdletContext.DnsIpAddr;
+            }
+            if (cmdletContext.DnsIpv6Addr != null)
+            {
+                request.DnsIpv6Addrs = cmdletContext.DnsIpv6Addr;
             }
             if (cmdletContext.RemoteDomainName != null)
             {
@@ -249,13 +250,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Directory Service", "CreateConditionalForwarder");
             try
             {
-                #if DESKTOP
-                return client.CreateConditionalForwarder(request);
-                #elif CORECLR
-                return client.CreateConditionalForwarderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConditionalForwarderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -274,6 +269,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
         {
             public System.String DirectoryId { get; set; }
             public List<System.String> DnsIpAddr { get; set; }
+            public List<System.String> DnsIpv6Addr { get; set; }
             public System.String RemoteDomainName { get; set; }
             public System.Func<Amazon.DirectoryService.Model.CreateConditionalForwarderResponse, NewDSConditionalForwarderCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;

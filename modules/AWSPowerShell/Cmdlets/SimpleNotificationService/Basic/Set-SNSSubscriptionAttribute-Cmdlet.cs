@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SNS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SNS
     [AWSCmdlet("Calls the Amazon Simple Notification Service (SNS) SetSubscriptionAttributes API operation.", Operation = new[] {"SetSubscriptionAttributes"}, SelectReturnType = typeof(Amazon.SimpleNotificationService.Model.SetSubscriptionAttributesResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleNotificationService.Model.SetSubscriptionAttributesResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleNotificationService.Model.SetSubscriptionAttributesResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleNotificationService.Model.SetSubscriptionAttributesResponse) be returned by specifying '-Select *'."
     )]
     public partial class SetSNSSubscriptionAttributeCmdlet : AmazonSimpleNotificationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeName
         /// <summary>
@@ -55,10 +58,9 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         /// Amazon SQS dead-letter queue. Messages that can't be delivered due to client errors
         /// (for example, when the subscribed endpoint is unreachable) or server errors (for example,
         /// when the service that powers the subscribed endpoint becomes unavailable) are held
-        /// in the dead-letter queue for further analysis or reprocessing.</para></li></ul><para>The following attribute applies only to Amazon Kinesis Data Firehose delivery stream
-        /// subscriptions:</para><ul><li><para><c>SubscriptionRoleArn</c> – The ARN of the IAM role that has the following:</para><ul><li><para>Permission to write to the Kinesis Data Firehose delivery stream</para></li><li><para>Amazon SNS listed as a trusted entity</para></li></ul><para>Specifying a valid ARN for this attribute is required for Kinesis Data Firehose delivery
-        /// stream subscriptions. For more information, see <a href="https://docs.aws.amazon.com/sns/latest/dg/sns-firehose-as-subscriber.html">Fanout
-        /// to Kinesis Data Firehose delivery streams</a> in the <i>Amazon SNS Developer Guide</i>.</para></li></ul>
+        /// in the dead-letter queue for further analysis or reprocessing.</para></li></ul><para>The following attribute applies only to Amazon Data Firehose delivery stream subscriptions:</para><ul><li><para><c>SubscriptionRoleArn</c> – The ARN of the IAM role that has the following:</para><ul><li><para>Permission to write to the Firehose delivery stream</para></li><li><para>Amazon SNS listed as a trusted entity</para></li></ul><para>Specifying a valid ARN for this attribute is required for Firehose delivery stream
+        /// subscriptions. For more information, see <a href="https://docs.aws.amazon.com/sns/latest/dg/sns-firehose-as-subscriber.html">Fanout
+        /// to Firehose delivery streams</a> in the <i>Amazon SNS Developer Guide</i>.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,16 +111,6 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SubscriptionArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SubscriptionArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SubscriptionArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -129,9 +121,13 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SubscriptionArn), MyInvocation.BoundParameters);
@@ -145,21 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleNotificationService.Model.SetSubscriptionAttributesResponse, SetSNSSubscriptionAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SubscriptionArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AttributeName = this.AttributeName;
             #if MODULAR
             if (this.AttributeName == null && ParameterWasBound(nameof(this.AttributeName)))
@@ -241,13 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Notification Service (SNS)", "SetSubscriptionAttributes");
             try
             {
-                #if DESKTOP
-                return client.SetSubscriptionAttributes(request);
-                #elif CORECLR
-                return client.SetSubscriptionAttributesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SetSubscriptionAttributesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

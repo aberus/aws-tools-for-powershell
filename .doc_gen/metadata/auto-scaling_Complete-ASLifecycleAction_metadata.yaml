@@ -1,0 +1,21 @@
+---
+auto-scaling_CompleteLifecycleAction:
+  title: Use Complete-ASLifecycleAction
+  title_abbrev: Complete-ASLifecycleAction
+  synopsis: use Complete-ASLifecycleAction
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Complete-ASLifecycleAction
+        excerpts:
+        - snippet_files: []
+          description: '<emphasis role="bold">Example 1: This example completes the specified lifecycle action.</emphasis>'
+        - snippet_files:
+          - .doc_gen/snippet_files/auto-scaling_Complete-ASLifecycleAction.1.1.ps1
+          description:
+  services:
+    auto-scaling:
+      CompleteLifecycleAction:
+
+

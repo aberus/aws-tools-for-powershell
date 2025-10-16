@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Braket;
 using Amazon.Braket.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BRKT
 {
     /// <summary>
@@ -35,17 +37,18 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
     [AWSCmdlet("Calls the Amazon Braket CreateQuantumTask API operation.", Operation = new[] {"CreateQuantumTask"}, SelectReturnType = typeof(Amazon.Braket.Model.CreateQuantumTaskResponse))]
     [AWSCmdletOutput("System.String or Amazon.Braket.Model.CreateQuantumTaskResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Braket.Model.CreateQuantumTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Braket.Model.CreateQuantumTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewBRKTQuantumTaskCmdlet : AmazonBraketClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
         /// <para>
-        /// <para>The action associated with the task.</para>
+        /// <para>The action associated with the quantum task.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter Association
         /// <summary>
         /// <para>
-        /// <para>The list of Amazon Braket resources associated with the quantum task.</para>
+        /// <para>The list of Amazon Braket resources associated with the quantum task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,7 +80,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter DeviceArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the device to run the task on.</para>
+        /// <para>The ARN of the device to run the quantum task on.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -90,7 +97,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter DeviceParameter
         /// <summary>
         /// <para>
-        /// <para>The parameters for the device to run the task on.</para>
+        /// <para>The parameters for the device to run the quantum task on.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,7 +108,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter JobToken
         /// <summary>
         /// <para>
-        /// <para>The token for an Amazon Braket job that associates it with the quantum task.</para>
+        /// <para>The token for an Amazon Braket hybrid job that associates it with the quantum task.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter OutputS3Bucket
         /// <summary>
         /// <para>
-        /// <para>The S3 bucket to store task result files in.</para>
+        /// <para>The S3 bucket to store quantum task result files in.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -128,7 +135,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter OutputS3KeyPrefix
         /// <summary>
         /// <para>
-        /// <para>The key prefix for the location in the S3 bucket to store task results in.</para>
+        /// <para>The key prefix for the location in the S3 bucket to store quantum task results in.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -145,7 +152,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter Shot
         /// <summary>
         /// <para>
-        /// <para>The number of shots to use for the task.</para>
+        /// <para>The number of shots to use for the quantum task.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -162,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags to be added to the quantum task you're creating.</para>
+        /// <para>Tags to be added to the quantum task you're creating.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -201,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeviceArn), MyInvocation.BoundParameters);
@@ -366,13 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.BRKT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Braket", "CreateQuantumTask");
             try
             {
-                #if DESKTOP
-                return client.CreateQuantumTask(request);
-                #elif CORECLR
-                return client.CreateQuantumTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateQuantumTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

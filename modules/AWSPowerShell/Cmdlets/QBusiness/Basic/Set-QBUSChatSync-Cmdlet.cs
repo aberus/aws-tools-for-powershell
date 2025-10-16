@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QBusiness;
 using Amazon.QBusiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QBUS
 {
     /// <summary>
-    /// Starts or continues a non-streaming Amazon Q conversation.
+    /// Starts or continues a non-streaming Amazon Q Business conversation.
     /// </summary>
     [Cmdlet("Set", "QBUSChatSync", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QBusiness.Model.ChatSyncResponse")]
     [AWSCmdlet("Calls the Amazon QBusiness ChatSync API operation.", Operation = new[] {"ChatSync"}, SelectReturnType = typeof(Amazon.QBusiness.Model.ChatSyncResponse))]
     [AWSCmdletOutput("Amazon.QBusiness.Model.ChatSyncResponse",
-        "This cmdlet returns an Amazon.QBusiness.Model.ChatSyncResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QBusiness.Model.ChatSyncResponse object containing multiple properties."
     )]
     public partial class SetQBUSChatSyncCmdlet : AmazonQBusinessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Amazon Q application linked to the Amazon Q conversation.</para>
+        /// <para>The identifier of the Amazon Q Business application linked to the Amazon Q Business
+        /// conversation.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>A list of files uploaded directly during chat. You can upload a maximum of 5 files
-        /// of upto 10 MB each.</para>
+        /// of upto 10 MB each.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -73,18 +81,43 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter AttributeFilter
         /// <summary>
         /// <para>
-        /// <para>Enables filtering of Amazon Q web experience responses based on document attributes
-        /// or metadata fields.</para>
+        /// <para>Enables filtering of Amazon Q Business web experience responses based on document
+        /// attributes or metadata fields.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.QBusiness.Model.AttributeFilter AttributeFilter { get; set; }
         #endregion
         
+        #region Parameter ChatMode
+        /// <summary>
+        /// <para>
+        /// <para>The <c>chatMode</c> parameter determines the chat modes available to Amazon Q Business
+        /// users:</para><ul><li><para><c>RETRIEVAL_MODE</c> - If you choose this mode, Amazon Q generates responses solely
+        /// from the data sources connected and indexed by the application. If an answer is not
+        /// found in the data sources or there are no data sources available, Amazon Q will respond
+        /// with a "<i>No Answer Found</i>" message, unless LLM knowledge has been enabled. In
+        /// that case, Amazon Q will generate a response from the LLM knowledge</para></li><li><para><c>CREATOR_MODE</c> - By selecting this mode, you can choose to generate responses
+        /// only from the LLM knowledge. You can also attach files and have Amazon Q generate
+        /// a response based on the data in those files. If the attached files do not contain
+        /// an answer for the query, Amazon Q will automatically fall back to generating a response
+        /// from the LLM knowledge.</para></li><li><para><c>PLUGIN_MODE</c> - By selecting this mode, users can choose to use plugins in chat
+        /// to get their responses.</para></li></ul><note><para>If none of the modes are selected, Amazon Q will only respond using the information
+        /// from the attached files.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/guardrails.html">Admin
+        /// controls and guardrails</a>, <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/plugins.html">Plugins</a>,
+        /// and <a href="https://docs.aws.amazon.com/amazonq/latest/business-use-dg/using-web-experience.html#chat-source-scope">Response
+        /// sources</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.QBusiness.ChatMode")]
+        public Amazon.QBusiness.ChatMode ChatMode { get; set; }
+        #endregion
+        
         #region Parameter ConversationId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Amazon Q conversation.</para>
+        /// <para>The identifier of the Amazon Q Business conversation.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +127,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter ParentMessageId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the previous end user text input message in a conversation.</para>
+        /// <para>The identifier of the previous system message in a conversation.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <summary>
         /// <para>
         /// <para>A mapping of field names to the field values in input that an end user provides to
-        /// Amazon Q requests to perform their plugin action. </para>
+        /// Amazon Q Business requests to perform their plugin action. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,10 +170,39 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public System.String ActionExecution_PluginId { get; set; }
         #endregion
         
+        #region Parameter PluginConfiguration_PluginId
+        /// <summary>
+        /// <para>
+        /// <para> The identifier of the plugin you want to use.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ChatModeConfiguration_PluginConfiguration_PluginId")]
+        public System.String PluginConfiguration_PluginId { get; set; }
+        #endregion
+        
+        #region Parameter AuthChallengeResponse_ResponseMap
+        /// <summary>
+        /// <para>
+        /// <para>The mapping of key-value pairs in an authentication challenge response.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Collections.Hashtable AuthChallengeResponse_ResponseMap { get; set; }
+        #endregion
+        
         #region Parameter UserGroup
         /// <summary>
         /// <para>
-        /// <para>The groups that a user associated with the chat input belongs to.</para>
+        /// <para>The group names that a user associated with the chat input belongs to.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,14 +216,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         /// <para>The identifier of the user attached to the chat input.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String UserId { get; set; }
         #endregion
         
@@ -192,16 +251,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -212,9 +261,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -228,21 +281,11 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QBusiness.Model.ChatSyncResponse, SetQBUSChatSyncCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ActionExecution_Payload != null)
             {
                 context.ActionExecution_Payload = new Dictionary<System.String, Amazon.QBusiness.Model.ActionExecutionPayloadField>(StringComparer.Ordinal);
@@ -265,6 +308,16 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
                 context.Attachment = new List<Amazon.QBusiness.Model.AttachmentInput>(this.Attachment);
             }
             context.AttributeFilter = this.AttributeFilter;
+            if (this.AuthChallengeResponse_ResponseMap != null)
+            {
+                context.AuthChallengeResponse_ResponseMap = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.AuthChallengeResponse_ResponseMap.Keys)
+                {
+                    context.AuthChallengeResponse_ResponseMap.Add((String)hashKey, (System.String)(this.AuthChallengeResponse_ResponseMap[hashKey]));
+                }
+            }
+            context.ChatMode = this.ChatMode;
+            context.PluginConfiguration_PluginId = this.PluginConfiguration_PluginId;
             context.ClientToken = this.ClientToken;
             context.ConversationId = this.ConversationId;
             context.ParentMessageId = this.ParentMessageId;
@@ -273,12 +326,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
                 context.UserGroup = new List<System.String>(this.UserGroup);
             }
             context.UserId = this.UserId;
-            #if MODULAR
-            if (this.UserId == null && ParameterWasBound(nameof(this.UserId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter UserId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.UserMessage = this.UserMessage;
             
             // allow further manipulation of loaded context prior to processing
@@ -347,6 +394,63 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             {
                 request.AttributeFilter = cmdletContext.AttributeFilter;
             }
+            
+             // populate AuthChallengeResponse
+            var requestAuthChallengeResponseIsNull = true;
+            request.AuthChallengeResponse = new Amazon.QBusiness.Model.AuthChallengeResponse();
+            Dictionary<System.String, System.String> requestAuthChallengeResponse_authChallengeResponse_ResponseMap = null;
+            if (cmdletContext.AuthChallengeResponse_ResponseMap != null)
+            {
+                requestAuthChallengeResponse_authChallengeResponse_ResponseMap = cmdletContext.AuthChallengeResponse_ResponseMap;
+            }
+            if (requestAuthChallengeResponse_authChallengeResponse_ResponseMap != null)
+            {
+                request.AuthChallengeResponse.ResponseMap = requestAuthChallengeResponse_authChallengeResponse_ResponseMap;
+                requestAuthChallengeResponseIsNull = false;
+            }
+             // determine if request.AuthChallengeResponse should be set to null
+            if (requestAuthChallengeResponseIsNull)
+            {
+                request.AuthChallengeResponse = null;
+            }
+            if (cmdletContext.ChatMode != null)
+            {
+                request.ChatMode = cmdletContext.ChatMode;
+            }
+            
+             // populate ChatModeConfiguration
+            var requestChatModeConfigurationIsNull = true;
+            request.ChatModeConfiguration = new Amazon.QBusiness.Model.ChatModeConfiguration();
+            Amazon.QBusiness.Model.PluginConfiguration requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration = null;
+            
+             // populate PluginConfiguration
+            var requestChatModeConfiguration_chatModeConfiguration_PluginConfigurationIsNull = true;
+            requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration = new Amazon.QBusiness.Model.PluginConfiguration();
+            System.String requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration_pluginConfiguration_PluginId = null;
+            if (cmdletContext.PluginConfiguration_PluginId != null)
+            {
+                requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration_pluginConfiguration_PluginId = cmdletContext.PluginConfiguration_PluginId;
+            }
+            if (requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration_pluginConfiguration_PluginId != null)
+            {
+                requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration.PluginId = requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration_pluginConfiguration_PluginId;
+                requestChatModeConfiguration_chatModeConfiguration_PluginConfigurationIsNull = false;
+            }
+             // determine if requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration should be set to null
+            if (requestChatModeConfiguration_chatModeConfiguration_PluginConfigurationIsNull)
+            {
+                requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration = null;
+            }
+            if (requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration != null)
+            {
+                request.ChatModeConfiguration.PluginConfiguration = requestChatModeConfiguration_chatModeConfiguration_PluginConfiguration;
+                requestChatModeConfigurationIsNull = false;
+            }
+             // determine if request.ChatModeConfiguration should be set to null
+            if (requestChatModeConfigurationIsNull)
+            {
+                request.ChatModeConfiguration = null;
+            }
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
@@ -409,13 +513,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QBusiness", "ChatSync");
             try
             {
-                #if DESKTOP
-                return client.ChatSync(request);
-                #elif CORECLR
-                return client.ChatSyncAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ChatSyncAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -438,6 +536,9 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             public System.String ApplicationId { get; set; }
             public List<Amazon.QBusiness.Model.AttachmentInput> Attachment { get; set; }
             public Amazon.QBusiness.Model.AttributeFilter AttributeFilter { get; set; }
+            public Dictionary<System.String, System.String> AuthChallengeResponse_ResponseMap { get; set; }
+            public Amazon.QBusiness.ChatMode ChatMode { get; set; }
+            public System.String PluginConfiguration_PluginId { get; set; }
             public System.String ClientToken { get; set; }
             public System.String ConversationId { get; set; }
             public System.String ParentMessageId { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedBlockchain;
 using Amazon.ManagedBlockchain.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MBC
 {
     /// <summary>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
     [AWSCmdlet("Calls the Amazon Managed Blockchain GetProposal API operation.", Operation = new[] {"GetProposal"}, SelectReturnType = typeof(Amazon.ManagedBlockchain.Model.GetProposalResponse))]
     [AWSCmdletOutput("Amazon.ManagedBlockchain.Model.Proposal or Amazon.ManagedBlockchain.Model.GetProposalResponse",
         "This cmdlet returns an Amazon.ManagedBlockchain.Model.Proposal object.",
-        "The service call response (type Amazon.ManagedBlockchain.Model.GetProposalResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ManagedBlockchain.Model.GetProposalResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMBCProposalCmdlet : AmazonManagedBlockchainClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter NetworkId
         /// <summary>
@@ -92,19 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.MBC
         public string Select { get; set; } = "Proposal";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProposalId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProposalId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProposalId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -112,21 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ManagedBlockchain.Model.GetProposalResponse, GetMBCProposalCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProposalId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.NetworkId = this.NetworkId;
             #if MODULAR
             if (this.NetworkId == null && ParameterWasBound(nameof(this.NetworkId)))
@@ -203,13 +190,7 @@ namespace Amazon.PowerShell.Cmdlets.MBC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Blockchain", "GetProposal");
             try
             {
-                #if DESKTOP
-                return client.GetProposal(request);
-                #elif CORECLR
-                return client.GetProposalAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetProposalAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

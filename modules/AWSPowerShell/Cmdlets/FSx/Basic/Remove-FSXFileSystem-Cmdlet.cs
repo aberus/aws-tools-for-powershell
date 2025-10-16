@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FSx;
 using Amazon.FSx.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FSX
 {
     /// <summary>
@@ -35,7 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     /// <para>
     /// To delete an Amazon FSx for NetApp ONTAP file system, first delete all the volumes
     /// and storage virtual machines (SVMs) on the file system. Then provide a <c>FileSystemId</c>
-    /// value to the <c>DeleFileSystem</c> operation.
+    /// value to the <c>DeleteFileSystem</c> operation.
+    /// </para><para>
+    /// Before deleting an Amazon FSx for OpenZFS file system, make sure that there aren't
+    /// any Amazon S3 access points attached to any volume. For more information on how to
+    /// list S3 access points that are attached to volumes, see <a href="https://docs.aws.amazon.com/fsx/latest/OpenZFSGuide/access-points-list.html">Listing
+    /// S3 access point attachments</a>. For more information on how to delete S3 access points,
+    /// see <a href="https://docs.aws.amazon.com/fsx/latest/OpenZFSGuide/delete-access-point.html">Deleting
+    /// an S3 access point attachment</a>.
     /// </para><para>
     /// By default, when you delete an Amazon FSx for Windows File Server file system, a final
     /// backup is created upon deletion. This final backup isn't subject to the file system's
@@ -43,7 +52,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     /// </para><para>
     /// To delete an Amazon FSx for Lustre file system, first <a href="https://docs.aws.amazon.com/fsx/latest/LustreGuide/unmounting-fs.html">unmount</a>
     /// it from every connected Amazon EC2 instance, then provide a <c>FileSystemId</c> value
-    /// to the <c>DeleFileSystem</c> operation. By default, Amazon FSx will not take a final
+    /// to the <c>DeleteFileSystem</c> operation. By default, Amazon FSx will not take a final
     /// backup when the <c>DeleteFileSystem</c> operation is invoked. On file systems not
     /// linked to an Amazon S3 bucket, set <c>SkipFinalBackup</c> to <c>false</c> to take
     /// a final backup of the file system you are deleting. Backups cannot be enabled on S3-linked
@@ -70,12 +79,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     [OutputType("Amazon.FSx.Model.DeleteFileSystemResponse")]
     [AWSCmdlet("Calls the Amazon FSx DeleteFileSystem API operation.", Operation = new[] {"DeleteFileSystem"}, SelectReturnType = typeof(Amazon.FSx.Model.DeleteFileSystemResponse))]
     [AWSCmdletOutput("Amazon.FSx.Model.DeleteFileSystemResponse",
-        "This cmdlet returns an Amazon.FSx.Model.DeleteFileSystemResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.FSx.Model.DeleteFileSystemResponse object containing multiple properties."
     )]
     public partial class RemoveFSXFileSystemCmdlet : AmazonFSxClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -112,7 +122,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>Use if <c>SkipFinalBackup</c> is set to <c>false</c>, and you want to apply an array
         /// of tags to the final backup. If you have set the file system property <c>CopyTagsToBackups</c>
         /// to true, and you specify one or more <c>FinalBackupTags</c> when deleting a file system,
-        /// Amazon FSx will not copy any existing file system tags to the backup.</para>
+        /// Amazon FSx will not copy any existing file system tags to the backup.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter OpenZFSConfiguration_FinalBackupTag
         /// <summary>
         /// <para>
-        /// <para>A list of tags to apply to the file system's final backup.</para>
+        /// <para>A list of tags to apply to the file system's final backup.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter WindowsConfiguration_FinalBackupTag
         /// <summary>
         /// <para>
-        /// <para>A set of tags for your final backup.</para>
+        /// <para>A set of tags for your final backup.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>
         /// <para>To delete a file system if there are child volumes present below the root volume,
         /// use the string <c>DELETE_CHILD_VOLUMES_AND_SNAPSHOTS</c>. If your file system has
-        /// child volumes and you don't use this option, the delete request will fail.</para>
+        /// child volumes and you don't use this option, the delete request will fail.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,16 +230,6 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FileSystemId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FileSystemId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -224,9 +240,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FileSystemId), MyInvocation.BoundParameters);
@@ -240,21 +260,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FSx.Model.DeleteFileSystemResponse, RemoveFSXFileSystemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FileSystemId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.FileSystemId = this.FileSystemId;
             #if MODULAR
@@ -441,13 +451,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon FSx", "DeleteFileSystem");
             try
             {
-                #if DESKTOP
-                return client.DeleteFileSystem(request);
-                #elif CORECLR
-                return client.DeleteFileSystemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteFileSystemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

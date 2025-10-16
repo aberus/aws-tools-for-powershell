@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -36,12 +38,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [AWSCmdlet("Calls the EC2 Image Builder UpdateInfrastructureConfiguration API operation.", Operation = new[] {"UpdateInfrastructureConfiguration"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.UpdateInfrastructureConfigurationResponse))]
     [AWSCmdletOutput("System.String or Amazon.Imagebuilder.Model.UpdateInfrastructureConfigurationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Imagebuilder.Model.UpdateInfrastructureConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Imagebuilder.Model.UpdateInfrastructureConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateEC2IBInfrastructureConfigurationCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Placement_AvailabilityZone
+        /// <summary>
+        /// <para>
+        /// <para>The Availability Zone where your build and test instances will launch.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Placement_AvailabilityZone { get; set; }
+        #endregion
         
         #region Parameter Description
         /// <summary>
@@ -51,6 +64,31 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter Placement_HostId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the Dedicated Host on which build and test instances run. This only applies
+        /// if <c>tenancy</c> is <c>host</c>. If you specify the host ID, you must not specify
+        /// the resource group ARN. If you specify both, Image Builder returns an error.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Placement_HostId { get; set; }
+        #endregion
+        
+        #region Parameter Placement_HostResourceGroupArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the host resource group in which to launch build
+        /// and test instances. This only applies if <c>tenancy</c> is <c>host</c>. If you specify
+        /// the resource group ARN, you must not specify the host ID. If you specify both, Image
+        /// Builder returns an error.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Placement_HostResourceGroupArn { get; set; }
         #endregion
         
         #region Parameter InstanceMetadataOptions_HttpPutResponseHopLimit
@@ -121,7 +159,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// <para>
         /// <para>The instance types of the infrastructure configuration. You can specify one or more
         /// instance types to use for this build. The service will pick one of these instance
-        /// types based on availability.</para>
+        /// types based on availability.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,7 +185,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter ResourceTag
         /// <summary>
         /// <para>
-        /// <para>The tags attached to the resource created by Image Builder.</para>
+        /// <para>The tags attached to the resource created by Image Builder.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -177,7 +223,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// <summary>
         /// <para>
         /// <para>The security group IDs to associate with the instance used to customize your Amazon
-        /// EC2 AMI.</para>
+        /// EC2 AMI.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,6 +256,22 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SubnetId { get; set; }
+        #endregion
+        
+        #region Parameter Placement_Tenancy
+        /// <summary>
+        /// <para>
+        /// <para>The tenancy of the instance. An instance with a tenancy of <c>dedicated</c> runs on
+        /// single-tenant hardware. An instance with a tenancy of <c>host</c> runs on a Dedicated
+        /// Host.</para><para>If tenancy is set to <c>host</c>, then you can optionally specify one target for placement
+        /// – either host ID or host resource group ARN. If automatic placement is enabled for
+        /// your host, and you don't specify any placement target, Amazon EC2 will try to find
+        /// an available host for your build and test instances.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Imagebuilder.TenancyType")]
+        public Amazon.Imagebuilder.TenancyType Placement_Tenancy { get; set; }
         #endregion
         
         #region Parameter TerminateInstanceOnFailure
@@ -243,16 +309,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public string Select { get; set; } = "InfrastructureConfigurationArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InfrastructureConfigurationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InfrastructureConfigurationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InfrastructureConfigurationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -263,9 +319,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InfrastructureConfigurationArn), MyInvocation.BoundParameters);
@@ -279,21 +339,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Imagebuilder.Model.UpdateInfrastructureConfigurationResponse, UpdateEC2IBInfrastructureConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InfrastructureConfigurationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.InfrastructureConfigurationArn = this.InfrastructureConfigurationArn;
@@ -319,6 +369,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             context.KeyPair = this.KeyPair;
             context.S3Logs_S3BucketName = this.S3Logs_S3BucketName;
             context.S3Logs_S3KeyPrefix = this.S3Logs_S3KeyPrefix;
+            context.Placement_AvailabilityZone = this.Placement_AvailabilityZone;
+            context.Placement_HostId = this.Placement_HostId;
+            context.Placement_HostResourceGroupArn = this.Placement_HostResourceGroupArn;
+            context.Placement_Tenancy = this.Placement_Tenancy;
             if (this.ResourceTag != null)
             {
                 context.ResourceTag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -447,6 +501,55 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             {
                 request.Logging = null;
             }
+            
+             // populate Placement
+            var requestPlacementIsNull = true;
+            request.Placement = new Amazon.Imagebuilder.Model.Placement();
+            System.String requestPlacement_placement_AvailabilityZone = null;
+            if (cmdletContext.Placement_AvailabilityZone != null)
+            {
+                requestPlacement_placement_AvailabilityZone = cmdletContext.Placement_AvailabilityZone;
+            }
+            if (requestPlacement_placement_AvailabilityZone != null)
+            {
+                request.Placement.AvailabilityZone = requestPlacement_placement_AvailabilityZone;
+                requestPlacementIsNull = false;
+            }
+            System.String requestPlacement_placement_HostId = null;
+            if (cmdletContext.Placement_HostId != null)
+            {
+                requestPlacement_placement_HostId = cmdletContext.Placement_HostId;
+            }
+            if (requestPlacement_placement_HostId != null)
+            {
+                request.Placement.HostId = requestPlacement_placement_HostId;
+                requestPlacementIsNull = false;
+            }
+            System.String requestPlacement_placement_HostResourceGroupArn = null;
+            if (cmdletContext.Placement_HostResourceGroupArn != null)
+            {
+                requestPlacement_placement_HostResourceGroupArn = cmdletContext.Placement_HostResourceGroupArn;
+            }
+            if (requestPlacement_placement_HostResourceGroupArn != null)
+            {
+                request.Placement.HostResourceGroupArn = requestPlacement_placement_HostResourceGroupArn;
+                requestPlacementIsNull = false;
+            }
+            Amazon.Imagebuilder.TenancyType requestPlacement_placement_Tenancy = null;
+            if (cmdletContext.Placement_Tenancy != null)
+            {
+                requestPlacement_placement_Tenancy = cmdletContext.Placement_Tenancy;
+            }
+            if (requestPlacement_placement_Tenancy != null)
+            {
+                request.Placement.Tenancy = requestPlacement_placement_Tenancy;
+                requestPlacementIsNull = false;
+            }
+             // determine if request.Placement should be set to null
+            if (requestPlacementIsNull)
+            {
+                request.Placement = null;
+            }
             if (cmdletContext.ResourceTag != null)
             {
                 request.ResourceTags = cmdletContext.ResourceTag;
@@ -505,13 +608,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "UpdateInfrastructureConfiguration");
             try
             {
-                #if DESKTOP
-                return client.UpdateInfrastructureConfiguration(request);
-                #elif CORECLR
-                return client.UpdateInfrastructureConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateInfrastructureConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -538,6 +635,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             public System.String KeyPair { get; set; }
             public System.String S3Logs_S3BucketName { get; set; }
             public System.String S3Logs_S3KeyPrefix { get; set; }
+            public System.String Placement_AvailabilityZone { get; set; }
+            public System.String Placement_HostId { get; set; }
+            public System.String Placement_HostResourceGroupArn { get; set; }
+            public Amazon.Imagebuilder.TenancyType Placement_Tenancy { get; set; }
             public Dictionary<System.String, System.String> ResourceTag { get; set; }
             public List<System.String> SecurityGroupId { get; set; }
             public System.String SnsTopicArn { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Retrieves a fleet's runtime configuration settings. The runtime configuration tells
-    /// Amazon GameLift which server processes to run (and how) on each instance in the fleet.
+    /// Retrieves a fleet's runtime configuration settings. The runtime configuration determines
+    /// which server processes run, and how, on computes in the fleet. For managed EC2 fleets,
+    /// the runtime configuration describes server processes that run on each fleet instance.
+    /// can update a fleet's runtime configuration at any time using <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_UpdateRuntimeConfiguration.html">UpdateRuntimeConfiguration</a>.
     /// 
     ///  
     /// <para>
-    /// To get the runtime configuration that is currently in forces for a fleet, provide
-    /// the fleet ID. 
+    /// To get the current runtime configuration for a fleet, provide the fleet ID. 
     /// </para><para>
     /// If successful, a <c>RuntimeConfiguration</c> object is returned for the requested
     /// fleet. If the requested fleet has been deleted, the result set is empty.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-intro.html">Setting
-    /// up Amazon GameLift fleets</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-multiprocess.html">Running
+    /// up Amazon GameLift Servers fleets</a></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-multiprocess.html">Running
     /// multiple processes on a fleet</a></para>
     /// </summary>
     [Cmdlet("Get", "GMLRuntimeConfiguration")]
@@ -47,12 +50,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service DescribeRuntimeConfiguration API operation.", Operation = new[] {"DescribeRuntimeConfiguration"}, SelectReturnType = typeof(Amazon.GameLift.Model.DescribeRuntimeConfigurationResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.RuntimeConfiguration or Amazon.GameLift.Model.DescribeRuntimeConfigurationResponse",
         "This cmdlet returns an Amazon.GameLift.Model.RuntimeConfiguration object.",
-        "The service call response (type Amazon.GameLift.Model.DescribeRuntimeConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.DescribeRuntimeConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGMLRuntimeConfigurationCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FleetId
         /// <summary>
@@ -83,19 +87,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "RuntimeConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FleetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FleetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -103,21 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.DescribeRuntimeConfigurationResponse, GetGMLRuntimeConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FleetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FleetId = this.FleetId;
             #if MODULAR
             if (this.FleetId == null && ParameterWasBound(nameof(this.FleetId)))
@@ -183,13 +171,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DescribeRuntimeConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DescribeRuntimeConfiguration(request);
-                #elif CORECLR
-                return client.DescribeRuntimeConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeRuntimeConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

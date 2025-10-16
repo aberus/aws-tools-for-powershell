@@ -90,6 +90,13 @@ $IAMAA_Completers = {
             break
         }
 
+        # Amazon.AccessAnalyzer.AccessCheckResourceType
+        "Test-IAMAANoPublicAccess/ResourceType"
+        {
+            $v = "AWS::ApiGateway::RestApi","AWS::Backup::BackupVault","AWS::CloudTrail::Dashboard","AWS::CloudTrail::EventDataStore","AWS::CodeArtifact::Domain","AWS::DynamoDB::Stream","AWS::DynamoDB::Table","AWS::EFS::FileSystem","AWS::IAM::AssumeRolePolicyDocument","AWS::Kinesis::Stream","AWS::Kinesis::StreamConsumer","AWS::KMS::Key","AWS::Lambda::Function","AWS::OpenSearchService::Domain","AWS::S3::AccessPoint","AWS::S3::Bucket","AWS::S3::Glacier","AWS::S3Express::AccessPoint","AWS::S3Express::DirectoryBucket","AWS::S3Outposts::AccessPoint","AWS::S3Outposts::Bucket","AWS::S3Tables::Table","AWS::S3Tables::TableBucket","AWS::SecretsManager::Secret","AWS::SNS::Topic","AWS::SQS::Queue"
+            break
+        }
+
         # Amazon.AccessAnalyzer.FindingStatusUpdate
         "Update-IAMAAFinding/Status"
         {
@@ -117,14 +124,14 @@ $IAMAA_Completers = {
         # Amazon.AccessAnalyzer.PolicyType
         "Use-IAMAAPolicyValidation/PolicyType"
         {
-            $v = "IDENTITY_POLICY","RESOURCE_POLICY","SERVICE_CONTROL_POLICY"
+            $v = "IDENTITY_POLICY","RESOURCE_CONTROL_POLICY","RESOURCE_POLICY","SERVICE_CONTROL_POLICY"
             break
         }
 
         # Amazon.AccessAnalyzer.ResourceType
         "Get-IAMAAAnalyzedResourceList/ResourceType"
         {
-            $v = "AWS::EC2::Snapshot","AWS::ECR::Repository","AWS::EFS::FileSystem","AWS::IAM::Role","AWS::KMS::Key","AWS::Lambda::Function","AWS::Lambda::LayerVersion","AWS::RDS::DBClusterSnapshot","AWS::RDS::DBSnapshot","AWS::S3::Bucket","AWS::S3Express::DirectoryBucket","AWS::SecretsManager::Secret","AWS::SNS::Topic","AWS::SQS::Queue"
+            $v = "AWS::DynamoDB::Stream","AWS::DynamoDB::Table","AWS::EC2::Snapshot","AWS::ECR::Repository","AWS::EFS::FileSystem","AWS::IAM::Role","AWS::IAM::User","AWS::KMS::Key","AWS::Lambda::Function","AWS::Lambda::LayerVersion","AWS::RDS::DBClusterSnapshot","AWS::RDS::DBSnapshot","AWS::S3::Bucket","AWS::S3Express::DirectoryBucket","AWS::SecretsManager::Secret","AWS::SNS::Topic","AWS::SQS::Queue"
             break
         }
 
@@ -134,14 +141,14 @@ $IAMAA_Completers = {
             ($_ -eq "New-IAMAAAnalyzer/Type")
         }
         {
-            $v = "ACCOUNT","ACCOUNT_UNUSED_ACCESS","ORGANIZATION","ORGANIZATION_UNUSED_ACCESS"
+            $v = "ACCOUNT","ACCOUNT_INTERNAL_ACCESS","ACCOUNT_UNUSED_ACCESS","ORGANIZATION","ORGANIZATION_INTERNAL_ACCESS","ORGANIZATION_UNUSED_ACCESS"
             break
         }
 
         # Amazon.AccessAnalyzer.ValidatePolicyResourceType
         "Use-IAMAAPolicyValidation/ValidatePolicyResourceType"
         {
-            $v = "AWS::IAM::AssumeRolePolicyDocument","AWS::S3::AccessPoint","AWS::S3::Bucket","AWS::S3::MultiRegionAccessPoint","AWS::S3ObjectLambda::AccessPoint"
+            $v = "AWS::DynamoDB::Table","AWS::IAM::AssumeRolePolicyDocument","AWS::S3::AccessPoint","AWS::S3::Bucket","AWS::S3::MultiRegionAccessPoint","AWS::S3ObjectLambda::AccessPoint"
             break
         }
 
@@ -156,7 +163,7 @@ $IAMAA_Completers = {
 $IAMAA_map = @{
     "Locale"=@("Use-IAMAAPolicyValidation")
     "PolicyType"=@("Test-IAMAAAccessNotGranted","Test-IAMAANoNewAccess","Use-IAMAAPolicyValidation")
-    "ResourceType"=@("Get-IAMAAAnalyzedResourceList")
+    "ResourceType"=@("Get-IAMAAAnalyzedResourceList","Test-IAMAANoPublicAccess")
     "Sort_OrderBy"=@("Get-IAMAAFindingList","Get-IAMAAFindingsV2List")
     "Status"=@("Update-IAMAAFinding")
     "Type"=@("Get-IAMAAAnalyzerList","New-IAMAAAnalyzer")
@@ -217,16 +224,20 @@ $IAMAA_SelectMap = @{
                "Stop-IAMAAPolicyGeneration",
                "Test-IAMAAAccessNotGranted",
                "Test-IAMAANoNewAccess",
+               "Test-IAMAANoPublicAccess",
                "New-IAMAAAccessPreview",
                "New-IAMAAAnalyzer",
                "New-IAMAAArchiveRule",
                "Remove-IAMAAAnalyzer",
                "Remove-IAMAAArchiveRule",
+               "Start-IAMAAFindingRecommendation",
                "Get-IAMAAAccessPreview",
                "Get-IAMAAAnalyzedResource",
                "Get-IAMAAAnalyzer",
                "Get-IAMAAArchiveRule",
                "Get-IAMAAFinding",
+               "Get-IAMAAFindingRecommendation",
+               "Get-IAMAAFindingsStatistic",
                "Get-IAMAAFindingV2",
                "Get-IAMAAGeneratedPolicy",
                "Get-IAMAAAccessPreviewFindingList",
@@ -242,6 +253,7 @@ $IAMAA_SelectMap = @{
                "Start-IAMAAResourceScan",
                "Add-IAMAAResourceTag",
                "Remove-IAMAAResourceTag",
+               "Update-IAMAAAnalyzer",
                "Update-IAMAAArchiveRule",
                "Update-IAMAAFinding",
                "Use-IAMAAPolicyValidation")

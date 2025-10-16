@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StepFunctions;
 using Amazon.StepFunctions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SFN
 {
     /// <summary>
@@ -51,14 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
     [OutputType("Amazon.StepFunctions.Model.DescribeExecutionResponse")]
     [AWSCmdlet("Calls the AWS Step Functions DescribeExecution API operation.", Operation = new[] {"DescribeExecution"}, SelectReturnType = typeof(Amazon.StepFunctions.Model.DescribeExecutionResponse))]
     [AWSCmdletOutput("Amazon.StepFunctions.Model.DescribeExecutionResponse",
-        "This cmdlet returns an Amazon.StepFunctions.Model.DescribeExecutionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.StepFunctions.Model.DescribeExecutionResponse object containing multiple properties."
     )]
     public partial class GetSFNExecutionCmdlet : AmazonStepFunctionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExecutionArn
         /// <summary>
@@ -77,6 +78,20 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public System.String ExecutionArn { get; set; }
         #endregion
         
+        #region Parameter IncludedData
+        /// <summary>
+        /// <para>
+        /// <para>If your state machine definition is encrypted with a KMS key, callers must have <c>kms:Decrypt</c>
+        /// permission to decrypt the definition. Alternatively, you can call DescribeStateMachine
+        /// API with <c>includedData = METADATA_ONLY</c> to get a successful response without
+        /// the encrypted definition.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.StepFunctions.IncludedData")]
+        public Amazon.StepFunctions.IncludedData IncludedData { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -88,19 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ExecutionArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ExecutionArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ExecutionArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -108,21 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.StepFunctions.Model.DescribeExecutionResponse, GetSFNExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ExecutionArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ExecutionArn = this.ExecutionArn;
             #if MODULAR
             if (this.ExecutionArn == null && ParameterWasBound(nameof(this.ExecutionArn)))
@@ -130,6 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
                 WriteWarning("You are passing $null as a value for parameter ExecutionArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.IncludedData = this.IncludedData;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -149,6 +149,10 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             if (cmdletContext.ExecutionArn != null)
             {
                 request.ExecutionArn = cmdletContext.ExecutionArn;
+            }
+            if (cmdletContext.IncludedData != null)
+            {
+                request.IncludedData = cmdletContext.IncludedData;
             }
             
             CmdletOutput output;
@@ -188,13 +192,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Step Functions", "DescribeExecution");
             try
             {
-                #if DESKTOP
-                return client.DescribeExecution(request);
-                #elif CORECLR
-                return client.DescribeExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -212,6 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ExecutionArn { get; set; }
+            public Amazon.StepFunctions.IncludedData IncludedData { get; set; }
             public System.Func<Amazon.StepFunctions.Model.DescribeExecutionResponse, GetSFNExecutionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

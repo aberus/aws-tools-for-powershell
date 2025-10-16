@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
     [AWSCmdlet("Calls the AWS Database Migration Service CreateDataProvider API operation.", Operation = new[] {"CreateDataProvider"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.CreateDataProviderResponse))]
     [AWSCmdletOutput("Amazon.DatabaseMigrationService.Model.DataProvider or Amazon.DatabaseMigrationService.Model.CreateDataProviderResponse",
         "This cmdlet returns an Amazon.DatabaseMigrationService.Model.DataProvider object.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.CreateDataProviderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.CreateDataProviderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDMSDataProviderCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OracleSettings_AsmServer
         /// <summary>
@@ -105,6 +108,28 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Settings_DocDbSettings_CertificateArn")]
         public System.String DocDbSettings_CertificateArn { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2LuwSettings_CertificateArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the certificate used for SSL connection.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_CertificateArn")]
+        public System.String IbmDb2LuwSettings_CertificateArn { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_CertificateArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the certificate used for SSL connection.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_CertificateArn")]
+        public System.String IbmDb2zOsSettings_CertificateArn { get; set; }
         #endregion
         
         #region Parameter MariaDbSettings_CertificateArn
@@ -182,6 +207,28 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Settings_DocDbSettings_DatabaseName")]
         public System.String DocDbSettings_DatabaseName { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2LuwSettings_DatabaseName
+        /// <summary>
+        /// <para>
+        /// <para>The database name on the DB2 LUW data provider.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_DatabaseName")]
+        public System.String IbmDb2LuwSettings_DatabaseName { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_DatabaseName
+        /// <summary>
+        /// <para>
+        /// <para>The database name on the DB2 for z/OS data provider.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_DatabaseName")]
+        public System.String IbmDb2zOsSettings_DatabaseName { get; set; }
         #endregion
         
         #region Parameter MicrosoftSqlServerSettings_DatabaseName
@@ -264,8 +311,8 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         /// <para>
         /// <para>The type of database engine for the data provider. Valid values include <c>"aurora"</c>,
         /// <c>"aurora-postgresql"</c>, <c>"mysql"</c>, <c>"oracle"</c>, <c>"postgres"</c>, <c>"sqlserver"</c>,
-        /// <c>redshift</c>, <c>mariadb</c>, <c>mongodb</c>, and <c>docdb</c>. A value of <c>"aurora"</c>
-        /// represents Amazon Aurora MySQL-Compatible Edition.</para>
+        /// <c>redshift</c>, <c>mariadb</c>, <c>mongodb</c>, <c>db2</c>, <c>db2-zos</c> and <c>docdb</c>.
+        /// A value of <c>"aurora"</c> represents Amazon Aurora MySQL-Compatible Edition.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -288,6 +335,28 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Settings_DocDbSettings_Port")]
         public System.Int32? DocDbSettings_Port { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2LuwSettings_Port
+        /// <summary>
+        /// <para>
+        /// <para>The port value for the DB2 LUW data provider.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_Port")]
+        public System.Int32? IbmDb2LuwSettings_Port { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_Port
+        /// <summary>
+        /// <para>
+        /// <para>The port value for the DB2 for z/OS data provider.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_Port")]
+        public System.Int32? IbmDb2zOsSettings_Port { get; set; }
         #endregion
         
         #region Parameter MariaDbSettings_Port
@@ -367,6 +436,190 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public System.Int32? RedshiftSettings_Port { get; set; }
         #endregion
         
+        #region Parameter IbmDb2LuwSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_S3AccessRoleArn")]
+        public System.String IbmDb2LuwSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_S3AccessRoleArn")]
+        public System.String IbmDb2zOsSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter MariaDbSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_MariaDbSettings_S3AccessRoleArn")]
+        public System.String MariaDbSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter MicrosoftSqlServerSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_MicrosoftSqlServerSettings_S3AccessRoleArn")]
+        public System.String MicrosoftSqlServerSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter MySqlSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_MySqlSettings_S3AccessRoleArn")]
+        public System.String MySqlSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter OracleSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_OracleSettings_S3AccessRoleArn")]
+        public System.String OracleSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter PostgreSqlSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_PostgreSqlSettings_S3AccessRoleArn")]
+        public System.String PostgreSqlSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter RedshiftSettings_S3AccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN for the role the application uses to access its Amazon S3 bucket.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_RedshiftSettings_S3AccessRoleArn")]
+        public System.String RedshiftSettings_S3AccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2LuwSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_S3Path")]
+        public System.String IbmDb2LuwSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_S3Path")]
+        public System.String IbmDb2zOsSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter MariaDbSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_MariaDbSettings_S3Path")]
+        public System.String MariaDbSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter MicrosoftSqlServerSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_MicrosoftSqlServerSettings_S3Path")]
+        public System.String MicrosoftSqlServerSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter MySqlSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_MySqlSettings_S3Path")]
+        public System.String MySqlSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter OracleSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_OracleSettings_S3Path")]
+        public System.String OracleSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter PostgreSqlSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_PostgreSqlSettings_S3Path")]
+        public System.String PostgreSqlSettings_S3Path { get; set; }
+        #endregion
+        
+        #region Parameter RedshiftSettings_S3Path
+        /// <summary>
+        /// <para>
+        /// <para>The path for the Amazon S3 bucket that the application uses for accessing the user-defined
+        /// schema.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_RedshiftSettings_S3Path")]
+        public System.String RedshiftSettings_S3Path { get; set; }
+        #endregion
+        
         #region Parameter OracleSettings_SecretsManagerOracleAsmAccessRoleArn
         /// <summary>
         /// <para>
@@ -425,6 +678,28 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Settings_DocDbSettings_ServerName")]
         public System.String DocDbSettings_ServerName { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2LuwSettings_ServerName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the DB2 LUW server.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_ServerName")]
+        public System.String IbmDb2LuwSettings_ServerName { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_ServerName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the DB2 for z/OS server.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_ServerName")]
+        public System.String IbmDb2zOsSettings_ServerName { get; set; }
         #endregion
         
         #region Parameter MariaDbSettings_ServerName
@@ -517,6 +792,32 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public Amazon.DatabaseMigrationService.DmsSslModeValue DocDbSettings_SslMode { get; set; }
         #endregion
         
+        #region Parameter IbmDb2LuwSettings_SslMode
+        /// <summary>
+        /// <para>
+        /// <para>The SSL mode used to connect to the DB2 LUW data provider. The default value is <c>none</c>.
+        /// Valid Values: <c>none</c> and <c>verify-ca</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2LuwSettings_SslMode")]
+        [AWSConstantClassSource("Amazon.DatabaseMigrationService.DmsSslModeValue")]
+        public Amazon.DatabaseMigrationService.DmsSslModeValue IbmDb2LuwSettings_SslMode { get; set; }
+        #endregion
+        
+        #region Parameter IbmDb2zOsSettings_SslMode
+        /// <summary>
+        /// <para>
+        /// <para>The SSL mode used to connect to the DB2 for z/OS data provider. The default value
+        /// is <c>none</c>. Valid Values: <c>none</c> and <c>verify-ca</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Settings_IbmDb2zOsSettings_SslMode")]
+        [AWSConstantClassSource("Amazon.DatabaseMigrationService.DmsSslModeValue")]
+        public Amazon.DatabaseMigrationService.DmsSslModeValue IbmDb2zOsSettings_SslMode { get; set; }
+        #endregion
+        
         #region Parameter MariaDbSettings_SslMode
         /// <summary>
         /// <para>
@@ -594,12 +895,26 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>One or more tags to be assigned to the data provider.</para>
+        /// <para>One or more tags to be assigned to the data provider.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.DatabaseMigrationService.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter Virtual
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether the data provider is virtual.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Virtual { get; set; }
         #endregion
         
         #region Parameter Select
@@ -613,16 +928,6 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public string Select { get; set; } = "DataProvider";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Engine parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Engine' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Engine' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -633,9 +938,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DataProviderName), MyInvocation.BoundParameters);
@@ -649,21 +958,11 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DatabaseMigrationService.Model.CreateDataProviderResponse, NewDMSDataProviderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Engine;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DataProviderName = this.DataProviderName;
             context.Description = this.Description;
             context.Engine = this.Engine;
@@ -678,13 +977,31 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             context.DocDbSettings_Port = this.DocDbSettings_Port;
             context.DocDbSettings_ServerName = this.DocDbSettings_ServerName;
             context.DocDbSettings_SslMode = this.DocDbSettings_SslMode;
+            context.IbmDb2LuwSettings_CertificateArn = this.IbmDb2LuwSettings_CertificateArn;
+            context.IbmDb2LuwSettings_DatabaseName = this.IbmDb2LuwSettings_DatabaseName;
+            context.IbmDb2LuwSettings_Port = this.IbmDb2LuwSettings_Port;
+            context.IbmDb2LuwSettings_S3AccessRoleArn = this.IbmDb2LuwSettings_S3AccessRoleArn;
+            context.IbmDb2LuwSettings_S3Path = this.IbmDb2LuwSettings_S3Path;
+            context.IbmDb2LuwSettings_ServerName = this.IbmDb2LuwSettings_ServerName;
+            context.IbmDb2LuwSettings_SslMode = this.IbmDb2LuwSettings_SslMode;
+            context.IbmDb2zOsSettings_CertificateArn = this.IbmDb2zOsSettings_CertificateArn;
+            context.IbmDb2zOsSettings_DatabaseName = this.IbmDb2zOsSettings_DatabaseName;
+            context.IbmDb2zOsSettings_Port = this.IbmDb2zOsSettings_Port;
+            context.IbmDb2zOsSettings_S3AccessRoleArn = this.IbmDb2zOsSettings_S3AccessRoleArn;
+            context.IbmDb2zOsSettings_S3Path = this.IbmDb2zOsSettings_S3Path;
+            context.IbmDb2zOsSettings_ServerName = this.IbmDb2zOsSettings_ServerName;
+            context.IbmDb2zOsSettings_SslMode = this.IbmDb2zOsSettings_SslMode;
             context.MariaDbSettings_CertificateArn = this.MariaDbSettings_CertificateArn;
             context.MariaDbSettings_Port = this.MariaDbSettings_Port;
+            context.MariaDbSettings_S3AccessRoleArn = this.MariaDbSettings_S3AccessRoleArn;
+            context.MariaDbSettings_S3Path = this.MariaDbSettings_S3Path;
             context.MariaDbSettings_ServerName = this.MariaDbSettings_ServerName;
             context.MariaDbSettings_SslMode = this.MariaDbSettings_SslMode;
             context.MicrosoftSqlServerSettings_CertificateArn = this.MicrosoftSqlServerSettings_CertificateArn;
             context.MicrosoftSqlServerSettings_DatabaseName = this.MicrosoftSqlServerSettings_DatabaseName;
             context.MicrosoftSqlServerSettings_Port = this.MicrosoftSqlServerSettings_Port;
+            context.MicrosoftSqlServerSettings_S3AccessRoleArn = this.MicrosoftSqlServerSettings_S3AccessRoleArn;
+            context.MicrosoftSqlServerSettings_S3Path = this.MicrosoftSqlServerSettings_S3Path;
             context.MicrosoftSqlServerSettings_ServerName = this.MicrosoftSqlServerSettings_ServerName;
             context.MicrosoftSqlServerSettings_SslMode = this.MicrosoftSqlServerSettings_SslMode;
             context.MongoDbSettings_AuthMechanism = this.MongoDbSettings_AuthMechanism;
@@ -697,12 +1014,16 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             context.MongoDbSettings_SslMode = this.MongoDbSettings_SslMode;
             context.MySqlSettings_CertificateArn = this.MySqlSettings_CertificateArn;
             context.MySqlSettings_Port = this.MySqlSettings_Port;
+            context.MySqlSettings_S3AccessRoleArn = this.MySqlSettings_S3AccessRoleArn;
+            context.MySqlSettings_S3Path = this.MySqlSettings_S3Path;
             context.MySqlSettings_ServerName = this.MySqlSettings_ServerName;
             context.MySqlSettings_SslMode = this.MySqlSettings_SslMode;
             context.OracleSettings_AsmServer = this.OracleSettings_AsmServer;
             context.OracleSettings_CertificateArn = this.OracleSettings_CertificateArn;
             context.OracleSettings_DatabaseName = this.OracleSettings_DatabaseName;
             context.OracleSettings_Port = this.OracleSettings_Port;
+            context.OracleSettings_S3AccessRoleArn = this.OracleSettings_S3AccessRoleArn;
+            context.OracleSettings_S3Path = this.OracleSettings_S3Path;
             context.OracleSettings_SecretsManagerOracleAsmAccessRoleArn = this.OracleSettings_SecretsManagerOracleAsmAccessRoleArn;
             context.OracleSettings_SecretsManagerOracleAsmSecretId = this.OracleSettings_SecretsManagerOracleAsmSecretId;
             context.OracleSettings_SecretsManagerSecurityDbEncryptionAccessRoleArn = this.OracleSettings_SecretsManagerSecurityDbEncryptionAccessRoleArn;
@@ -712,15 +1033,20 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             context.PostgreSqlSettings_CertificateArn = this.PostgreSqlSettings_CertificateArn;
             context.PostgreSqlSettings_DatabaseName = this.PostgreSqlSettings_DatabaseName;
             context.PostgreSqlSettings_Port = this.PostgreSqlSettings_Port;
+            context.PostgreSqlSettings_S3AccessRoleArn = this.PostgreSqlSettings_S3AccessRoleArn;
+            context.PostgreSqlSettings_S3Path = this.PostgreSqlSettings_S3Path;
             context.PostgreSqlSettings_ServerName = this.PostgreSqlSettings_ServerName;
             context.PostgreSqlSettings_SslMode = this.PostgreSqlSettings_SslMode;
             context.RedshiftSettings_DatabaseName = this.RedshiftSettings_DatabaseName;
             context.RedshiftSettings_Port = this.RedshiftSettings_Port;
+            context.RedshiftSettings_S3AccessRoleArn = this.RedshiftSettings_S3AccessRoleArn;
+            context.RedshiftSettings_S3Path = this.RedshiftSettings_S3Path;
             context.RedshiftSettings_ServerName = this.RedshiftSettings_ServerName;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.DatabaseMigrationService.Model.Tag>(this.Tag);
             }
+            context.Virtual = this.Virtual;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -753,161 +1079,6 @@ namespace Amazon.PowerShell.Cmdlets.DMS
              // populate Settings
             var requestSettingsIsNull = true;
             request.Settings = new Amazon.DatabaseMigrationService.Model.DataProviderSettings();
-            Amazon.DatabaseMigrationService.Model.RedshiftDataProviderSettings requestSettings_settings_RedshiftSettings = null;
-            
-             // populate RedshiftSettings
-            var requestSettings_settings_RedshiftSettingsIsNull = true;
-            requestSettings_settings_RedshiftSettings = new Amazon.DatabaseMigrationService.Model.RedshiftDataProviderSettings();
-            System.String requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName = null;
-            if (cmdletContext.RedshiftSettings_DatabaseName != null)
-            {
-                requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName = cmdletContext.RedshiftSettings_DatabaseName;
-            }
-            if (requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName != null)
-            {
-                requestSettings_settings_RedshiftSettings.DatabaseName = requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName;
-                requestSettings_settings_RedshiftSettingsIsNull = false;
-            }
-            System.Int32? requestSettings_settings_RedshiftSettings_redshiftSettings_Port = null;
-            if (cmdletContext.RedshiftSettings_Port != null)
-            {
-                requestSettings_settings_RedshiftSettings_redshiftSettings_Port = cmdletContext.RedshiftSettings_Port.Value;
-            }
-            if (requestSettings_settings_RedshiftSettings_redshiftSettings_Port != null)
-            {
-                requestSettings_settings_RedshiftSettings.Port = requestSettings_settings_RedshiftSettings_redshiftSettings_Port.Value;
-                requestSettings_settings_RedshiftSettingsIsNull = false;
-            }
-            System.String requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName = null;
-            if (cmdletContext.RedshiftSettings_ServerName != null)
-            {
-                requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName = cmdletContext.RedshiftSettings_ServerName;
-            }
-            if (requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName != null)
-            {
-                requestSettings_settings_RedshiftSettings.ServerName = requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName;
-                requestSettings_settings_RedshiftSettingsIsNull = false;
-            }
-             // determine if requestSettings_settings_RedshiftSettings should be set to null
-            if (requestSettings_settings_RedshiftSettingsIsNull)
-            {
-                requestSettings_settings_RedshiftSettings = null;
-            }
-            if (requestSettings_settings_RedshiftSettings != null)
-            {
-                request.Settings.RedshiftSettings = requestSettings_settings_RedshiftSettings;
-                requestSettingsIsNull = false;
-            }
-            Amazon.DatabaseMigrationService.Model.MariaDbDataProviderSettings requestSettings_settings_MariaDbSettings = null;
-            
-             // populate MariaDbSettings
-            var requestSettings_settings_MariaDbSettingsIsNull = true;
-            requestSettings_settings_MariaDbSettings = new Amazon.DatabaseMigrationService.Model.MariaDbDataProviderSettings();
-            System.String requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn = null;
-            if (cmdletContext.MariaDbSettings_CertificateArn != null)
-            {
-                requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn = cmdletContext.MariaDbSettings_CertificateArn;
-            }
-            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn != null)
-            {
-                requestSettings_settings_MariaDbSettings.CertificateArn = requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn;
-                requestSettings_settings_MariaDbSettingsIsNull = false;
-            }
-            System.Int32? requestSettings_settings_MariaDbSettings_mariaDbSettings_Port = null;
-            if (cmdletContext.MariaDbSettings_Port != null)
-            {
-                requestSettings_settings_MariaDbSettings_mariaDbSettings_Port = cmdletContext.MariaDbSettings_Port.Value;
-            }
-            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_Port != null)
-            {
-                requestSettings_settings_MariaDbSettings.Port = requestSettings_settings_MariaDbSettings_mariaDbSettings_Port.Value;
-                requestSettings_settings_MariaDbSettingsIsNull = false;
-            }
-            System.String requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName = null;
-            if (cmdletContext.MariaDbSettings_ServerName != null)
-            {
-                requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName = cmdletContext.MariaDbSettings_ServerName;
-            }
-            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName != null)
-            {
-                requestSettings_settings_MariaDbSettings.ServerName = requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName;
-                requestSettings_settings_MariaDbSettingsIsNull = false;
-            }
-            Amazon.DatabaseMigrationService.DmsSslModeValue requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode = null;
-            if (cmdletContext.MariaDbSettings_SslMode != null)
-            {
-                requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode = cmdletContext.MariaDbSettings_SslMode;
-            }
-            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode != null)
-            {
-                requestSettings_settings_MariaDbSettings.SslMode = requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode;
-                requestSettings_settings_MariaDbSettingsIsNull = false;
-            }
-             // determine if requestSettings_settings_MariaDbSettings should be set to null
-            if (requestSettings_settings_MariaDbSettingsIsNull)
-            {
-                requestSettings_settings_MariaDbSettings = null;
-            }
-            if (requestSettings_settings_MariaDbSettings != null)
-            {
-                request.Settings.MariaDbSettings = requestSettings_settings_MariaDbSettings;
-                requestSettingsIsNull = false;
-            }
-            Amazon.DatabaseMigrationService.Model.MySqlDataProviderSettings requestSettings_settings_MySqlSettings = null;
-            
-             // populate MySqlSettings
-            var requestSettings_settings_MySqlSettingsIsNull = true;
-            requestSettings_settings_MySqlSettings = new Amazon.DatabaseMigrationService.Model.MySqlDataProviderSettings();
-            System.String requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn = null;
-            if (cmdletContext.MySqlSettings_CertificateArn != null)
-            {
-                requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn = cmdletContext.MySqlSettings_CertificateArn;
-            }
-            if (requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn != null)
-            {
-                requestSettings_settings_MySqlSettings.CertificateArn = requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn;
-                requestSettings_settings_MySqlSettingsIsNull = false;
-            }
-            System.Int32? requestSettings_settings_MySqlSettings_mySqlSettings_Port = null;
-            if (cmdletContext.MySqlSettings_Port != null)
-            {
-                requestSettings_settings_MySqlSettings_mySqlSettings_Port = cmdletContext.MySqlSettings_Port.Value;
-            }
-            if (requestSettings_settings_MySqlSettings_mySqlSettings_Port != null)
-            {
-                requestSettings_settings_MySqlSettings.Port = requestSettings_settings_MySqlSettings_mySqlSettings_Port.Value;
-                requestSettings_settings_MySqlSettingsIsNull = false;
-            }
-            System.String requestSettings_settings_MySqlSettings_mySqlSettings_ServerName = null;
-            if (cmdletContext.MySqlSettings_ServerName != null)
-            {
-                requestSettings_settings_MySqlSettings_mySqlSettings_ServerName = cmdletContext.MySqlSettings_ServerName;
-            }
-            if (requestSettings_settings_MySqlSettings_mySqlSettings_ServerName != null)
-            {
-                requestSettings_settings_MySqlSettings.ServerName = requestSettings_settings_MySqlSettings_mySqlSettings_ServerName;
-                requestSettings_settings_MySqlSettingsIsNull = false;
-            }
-            Amazon.DatabaseMigrationService.DmsSslModeValue requestSettings_settings_MySqlSettings_mySqlSettings_SslMode = null;
-            if (cmdletContext.MySqlSettings_SslMode != null)
-            {
-                requestSettings_settings_MySqlSettings_mySqlSettings_SslMode = cmdletContext.MySqlSettings_SslMode;
-            }
-            if (requestSettings_settings_MySqlSettings_mySqlSettings_SslMode != null)
-            {
-                requestSettings_settings_MySqlSettings.SslMode = requestSettings_settings_MySqlSettings_mySqlSettings_SslMode;
-                requestSettings_settings_MySqlSettingsIsNull = false;
-            }
-             // determine if requestSettings_settings_MySqlSettings should be set to null
-            if (requestSettings_settings_MySqlSettingsIsNull)
-            {
-                requestSettings_settings_MySqlSettings = null;
-            }
-            if (requestSettings_settings_MySqlSettings != null)
-            {
-                request.Settings.MySqlSettings = requestSettings_settings_MySqlSettings;
-                requestSettingsIsNull = false;
-            }
             Amazon.DatabaseMigrationService.Model.DocDbDataProviderSettings requestSettings_settings_DocDbSettings = null;
             
              // populate DocDbSettings
@@ -973,6 +1144,391 @@ namespace Amazon.PowerShell.Cmdlets.DMS
                 request.Settings.DocDbSettings = requestSettings_settings_DocDbSettings;
                 requestSettingsIsNull = false;
             }
+            Amazon.DatabaseMigrationService.Model.RedshiftDataProviderSettings requestSettings_settings_RedshiftSettings = null;
+            
+             // populate RedshiftSettings
+            var requestSettings_settings_RedshiftSettingsIsNull = true;
+            requestSettings_settings_RedshiftSettings = new Amazon.DatabaseMigrationService.Model.RedshiftDataProviderSettings();
+            System.String requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName = null;
+            if (cmdletContext.RedshiftSettings_DatabaseName != null)
+            {
+                requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName = cmdletContext.RedshiftSettings_DatabaseName;
+            }
+            if (requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName != null)
+            {
+                requestSettings_settings_RedshiftSettings.DatabaseName = requestSettings_settings_RedshiftSettings_redshiftSettings_DatabaseName;
+                requestSettings_settings_RedshiftSettingsIsNull = false;
+            }
+            System.Int32? requestSettings_settings_RedshiftSettings_redshiftSettings_Port = null;
+            if (cmdletContext.RedshiftSettings_Port != null)
+            {
+                requestSettings_settings_RedshiftSettings_redshiftSettings_Port = cmdletContext.RedshiftSettings_Port.Value;
+            }
+            if (requestSettings_settings_RedshiftSettings_redshiftSettings_Port != null)
+            {
+                requestSettings_settings_RedshiftSettings.Port = requestSettings_settings_RedshiftSettings_redshiftSettings_Port.Value;
+                requestSettings_settings_RedshiftSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_RedshiftSettings_redshiftSettings_S3AccessRoleArn = null;
+            if (cmdletContext.RedshiftSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_RedshiftSettings_redshiftSettings_S3AccessRoleArn = cmdletContext.RedshiftSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_RedshiftSettings_redshiftSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_RedshiftSettings.S3AccessRoleArn = requestSettings_settings_RedshiftSettings_redshiftSettings_S3AccessRoleArn;
+                requestSettings_settings_RedshiftSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_RedshiftSettings_redshiftSettings_S3Path = null;
+            if (cmdletContext.RedshiftSettings_S3Path != null)
+            {
+                requestSettings_settings_RedshiftSettings_redshiftSettings_S3Path = cmdletContext.RedshiftSettings_S3Path;
+            }
+            if (requestSettings_settings_RedshiftSettings_redshiftSettings_S3Path != null)
+            {
+                requestSettings_settings_RedshiftSettings.S3Path = requestSettings_settings_RedshiftSettings_redshiftSettings_S3Path;
+                requestSettings_settings_RedshiftSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName = null;
+            if (cmdletContext.RedshiftSettings_ServerName != null)
+            {
+                requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName = cmdletContext.RedshiftSettings_ServerName;
+            }
+            if (requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName != null)
+            {
+                requestSettings_settings_RedshiftSettings.ServerName = requestSettings_settings_RedshiftSettings_redshiftSettings_ServerName;
+                requestSettings_settings_RedshiftSettingsIsNull = false;
+            }
+             // determine if requestSettings_settings_RedshiftSettings should be set to null
+            if (requestSettings_settings_RedshiftSettingsIsNull)
+            {
+                requestSettings_settings_RedshiftSettings = null;
+            }
+            if (requestSettings_settings_RedshiftSettings != null)
+            {
+                request.Settings.RedshiftSettings = requestSettings_settings_RedshiftSettings;
+                requestSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.Model.MariaDbDataProviderSettings requestSettings_settings_MariaDbSettings = null;
+            
+             // populate MariaDbSettings
+            var requestSettings_settings_MariaDbSettingsIsNull = true;
+            requestSettings_settings_MariaDbSettings = new Amazon.DatabaseMigrationService.Model.MariaDbDataProviderSettings();
+            System.String requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn = null;
+            if (cmdletContext.MariaDbSettings_CertificateArn != null)
+            {
+                requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn = cmdletContext.MariaDbSettings_CertificateArn;
+            }
+            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn != null)
+            {
+                requestSettings_settings_MariaDbSettings.CertificateArn = requestSettings_settings_MariaDbSettings_mariaDbSettings_CertificateArn;
+                requestSettings_settings_MariaDbSettingsIsNull = false;
+            }
+            System.Int32? requestSettings_settings_MariaDbSettings_mariaDbSettings_Port = null;
+            if (cmdletContext.MariaDbSettings_Port != null)
+            {
+                requestSettings_settings_MariaDbSettings_mariaDbSettings_Port = cmdletContext.MariaDbSettings_Port.Value;
+            }
+            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_Port != null)
+            {
+                requestSettings_settings_MariaDbSettings.Port = requestSettings_settings_MariaDbSettings_mariaDbSettings_Port.Value;
+                requestSettings_settings_MariaDbSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MariaDbSettings_mariaDbSettings_S3AccessRoleArn = null;
+            if (cmdletContext.MariaDbSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_MariaDbSettings_mariaDbSettings_S3AccessRoleArn = cmdletContext.MariaDbSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_MariaDbSettings.S3AccessRoleArn = requestSettings_settings_MariaDbSettings_mariaDbSettings_S3AccessRoleArn;
+                requestSettings_settings_MariaDbSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MariaDbSettings_mariaDbSettings_S3Path = null;
+            if (cmdletContext.MariaDbSettings_S3Path != null)
+            {
+                requestSettings_settings_MariaDbSettings_mariaDbSettings_S3Path = cmdletContext.MariaDbSettings_S3Path;
+            }
+            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_S3Path != null)
+            {
+                requestSettings_settings_MariaDbSettings.S3Path = requestSettings_settings_MariaDbSettings_mariaDbSettings_S3Path;
+                requestSettings_settings_MariaDbSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName = null;
+            if (cmdletContext.MariaDbSettings_ServerName != null)
+            {
+                requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName = cmdletContext.MariaDbSettings_ServerName;
+            }
+            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName != null)
+            {
+                requestSettings_settings_MariaDbSettings.ServerName = requestSettings_settings_MariaDbSettings_mariaDbSettings_ServerName;
+                requestSettings_settings_MariaDbSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.DmsSslModeValue requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode = null;
+            if (cmdletContext.MariaDbSettings_SslMode != null)
+            {
+                requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode = cmdletContext.MariaDbSettings_SslMode;
+            }
+            if (requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode != null)
+            {
+                requestSettings_settings_MariaDbSettings.SslMode = requestSettings_settings_MariaDbSettings_mariaDbSettings_SslMode;
+                requestSettings_settings_MariaDbSettingsIsNull = false;
+            }
+             // determine if requestSettings_settings_MariaDbSettings should be set to null
+            if (requestSettings_settings_MariaDbSettingsIsNull)
+            {
+                requestSettings_settings_MariaDbSettings = null;
+            }
+            if (requestSettings_settings_MariaDbSettings != null)
+            {
+                request.Settings.MariaDbSettings = requestSettings_settings_MariaDbSettings;
+                requestSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.Model.MySqlDataProviderSettings requestSettings_settings_MySqlSettings = null;
+            
+             // populate MySqlSettings
+            var requestSettings_settings_MySqlSettingsIsNull = true;
+            requestSettings_settings_MySqlSettings = new Amazon.DatabaseMigrationService.Model.MySqlDataProviderSettings();
+            System.String requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn = null;
+            if (cmdletContext.MySqlSettings_CertificateArn != null)
+            {
+                requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn = cmdletContext.MySqlSettings_CertificateArn;
+            }
+            if (requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn != null)
+            {
+                requestSettings_settings_MySqlSettings.CertificateArn = requestSettings_settings_MySqlSettings_mySqlSettings_CertificateArn;
+                requestSettings_settings_MySqlSettingsIsNull = false;
+            }
+            System.Int32? requestSettings_settings_MySqlSettings_mySqlSettings_Port = null;
+            if (cmdletContext.MySqlSettings_Port != null)
+            {
+                requestSettings_settings_MySqlSettings_mySqlSettings_Port = cmdletContext.MySqlSettings_Port.Value;
+            }
+            if (requestSettings_settings_MySqlSettings_mySqlSettings_Port != null)
+            {
+                requestSettings_settings_MySqlSettings.Port = requestSettings_settings_MySqlSettings_mySqlSettings_Port.Value;
+                requestSettings_settings_MySqlSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MySqlSettings_mySqlSettings_S3AccessRoleArn = null;
+            if (cmdletContext.MySqlSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_MySqlSettings_mySqlSettings_S3AccessRoleArn = cmdletContext.MySqlSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_MySqlSettings_mySqlSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_MySqlSettings.S3AccessRoleArn = requestSettings_settings_MySqlSettings_mySqlSettings_S3AccessRoleArn;
+                requestSettings_settings_MySqlSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MySqlSettings_mySqlSettings_S3Path = null;
+            if (cmdletContext.MySqlSettings_S3Path != null)
+            {
+                requestSettings_settings_MySqlSettings_mySqlSettings_S3Path = cmdletContext.MySqlSettings_S3Path;
+            }
+            if (requestSettings_settings_MySqlSettings_mySqlSettings_S3Path != null)
+            {
+                requestSettings_settings_MySqlSettings.S3Path = requestSettings_settings_MySqlSettings_mySqlSettings_S3Path;
+                requestSettings_settings_MySqlSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MySqlSettings_mySqlSettings_ServerName = null;
+            if (cmdletContext.MySqlSettings_ServerName != null)
+            {
+                requestSettings_settings_MySqlSettings_mySqlSettings_ServerName = cmdletContext.MySqlSettings_ServerName;
+            }
+            if (requestSettings_settings_MySqlSettings_mySqlSettings_ServerName != null)
+            {
+                requestSettings_settings_MySqlSettings.ServerName = requestSettings_settings_MySqlSettings_mySqlSettings_ServerName;
+                requestSettings_settings_MySqlSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.DmsSslModeValue requestSettings_settings_MySqlSettings_mySqlSettings_SslMode = null;
+            if (cmdletContext.MySqlSettings_SslMode != null)
+            {
+                requestSettings_settings_MySqlSettings_mySqlSettings_SslMode = cmdletContext.MySqlSettings_SslMode;
+            }
+            if (requestSettings_settings_MySqlSettings_mySqlSettings_SslMode != null)
+            {
+                requestSettings_settings_MySqlSettings.SslMode = requestSettings_settings_MySqlSettings_mySqlSettings_SslMode;
+                requestSettings_settings_MySqlSettingsIsNull = false;
+            }
+             // determine if requestSettings_settings_MySqlSettings should be set to null
+            if (requestSettings_settings_MySqlSettingsIsNull)
+            {
+                requestSettings_settings_MySqlSettings = null;
+            }
+            if (requestSettings_settings_MySqlSettings != null)
+            {
+                request.Settings.MySqlSettings = requestSettings_settings_MySqlSettings;
+                requestSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.Model.IbmDb2LuwDataProviderSettings requestSettings_settings_IbmDb2LuwSettings = null;
+            
+             // populate IbmDb2LuwSettings
+            var requestSettings_settings_IbmDb2LuwSettingsIsNull = true;
+            requestSettings_settings_IbmDb2LuwSettings = new Amazon.DatabaseMigrationService.Model.IbmDb2LuwDataProviderSettings();
+            System.String requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_CertificateArn = null;
+            if (cmdletContext.IbmDb2LuwSettings_CertificateArn != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_CertificateArn = cmdletContext.IbmDb2LuwSettings_CertificateArn;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_CertificateArn != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.CertificateArn = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_CertificateArn;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_DatabaseName = null;
+            if (cmdletContext.IbmDb2LuwSettings_DatabaseName != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_DatabaseName = cmdletContext.IbmDb2LuwSettings_DatabaseName;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_DatabaseName != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.DatabaseName = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_DatabaseName;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+            System.Int32? requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_Port = null;
+            if (cmdletContext.IbmDb2LuwSettings_Port != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_Port = cmdletContext.IbmDb2LuwSettings_Port.Value;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_Port != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.Port = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_Port.Value;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3AccessRoleArn = null;
+            if (cmdletContext.IbmDb2LuwSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3AccessRoleArn = cmdletContext.IbmDb2LuwSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.S3AccessRoleArn = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3AccessRoleArn;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3Path = null;
+            if (cmdletContext.IbmDb2LuwSettings_S3Path != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3Path = cmdletContext.IbmDb2LuwSettings_S3Path;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3Path != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.S3Path = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_S3Path;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_ServerName = null;
+            if (cmdletContext.IbmDb2LuwSettings_ServerName != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_ServerName = cmdletContext.IbmDb2LuwSettings_ServerName;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_ServerName != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.ServerName = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_ServerName;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.DmsSslModeValue requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_SslMode = null;
+            if (cmdletContext.IbmDb2LuwSettings_SslMode != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_SslMode = cmdletContext.IbmDb2LuwSettings_SslMode;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_SslMode != null)
+            {
+                requestSettings_settings_IbmDb2LuwSettings.SslMode = requestSettings_settings_IbmDb2LuwSettings_ibmDb2LuwSettings_SslMode;
+                requestSettings_settings_IbmDb2LuwSettingsIsNull = false;
+            }
+             // determine if requestSettings_settings_IbmDb2LuwSettings should be set to null
+            if (requestSettings_settings_IbmDb2LuwSettingsIsNull)
+            {
+                requestSettings_settings_IbmDb2LuwSettings = null;
+            }
+            if (requestSettings_settings_IbmDb2LuwSettings != null)
+            {
+                request.Settings.IbmDb2LuwSettings = requestSettings_settings_IbmDb2LuwSettings;
+                requestSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.Model.IbmDb2zOsDataProviderSettings requestSettings_settings_IbmDb2zOsSettings = null;
+            
+             // populate IbmDb2zOsSettings
+            var requestSettings_settings_IbmDb2zOsSettingsIsNull = true;
+            requestSettings_settings_IbmDb2zOsSettings = new Amazon.DatabaseMigrationService.Model.IbmDb2zOsDataProviderSettings();
+            System.String requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_CertificateArn = null;
+            if (cmdletContext.IbmDb2zOsSettings_CertificateArn != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_CertificateArn = cmdletContext.IbmDb2zOsSettings_CertificateArn;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_CertificateArn != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.CertificateArn = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_CertificateArn;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_DatabaseName = null;
+            if (cmdletContext.IbmDb2zOsSettings_DatabaseName != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_DatabaseName = cmdletContext.IbmDb2zOsSettings_DatabaseName;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_DatabaseName != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.DatabaseName = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_DatabaseName;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+            System.Int32? requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_Port = null;
+            if (cmdletContext.IbmDb2zOsSettings_Port != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_Port = cmdletContext.IbmDb2zOsSettings_Port.Value;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_Port != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.Port = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_Port.Value;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3AccessRoleArn = null;
+            if (cmdletContext.IbmDb2zOsSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3AccessRoleArn = cmdletContext.IbmDb2zOsSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.S3AccessRoleArn = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3AccessRoleArn;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3Path = null;
+            if (cmdletContext.IbmDb2zOsSettings_S3Path != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3Path = cmdletContext.IbmDb2zOsSettings_S3Path;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3Path != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.S3Path = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_S3Path;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_ServerName = null;
+            if (cmdletContext.IbmDb2zOsSettings_ServerName != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_ServerName = cmdletContext.IbmDb2zOsSettings_ServerName;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_ServerName != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.ServerName = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_ServerName;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+            Amazon.DatabaseMigrationService.DmsSslModeValue requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_SslMode = null;
+            if (cmdletContext.IbmDb2zOsSettings_SslMode != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_SslMode = cmdletContext.IbmDb2zOsSettings_SslMode;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_SslMode != null)
+            {
+                requestSettings_settings_IbmDb2zOsSettings.SslMode = requestSettings_settings_IbmDb2zOsSettings_ibmDb2zOsSettings_SslMode;
+                requestSettings_settings_IbmDb2zOsSettingsIsNull = false;
+            }
+             // determine if requestSettings_settings_IbmDb2zOsSettings should be set to null
+            if (requestSettings_settings_IbmDb2zOsSettingsIsNull)
+            {
+                requestSettings_settings_IbmDb2zOsSettings = null;
+            }
+            if (requestSettings_settings_IbmDb2zOsSettings != null)
+            {
+                request.Settings.IbmDb2zOsSettings = requestSettings_settings_IbmDb2zOsSettings;
+                requestSettingsIsNull = false;
+            }
             Amazon.DatabaseMigrationService.Model.MicrosoftSqlServerDataProviderSettings requestSettings_settings_MicrosoftSqlServerSettings = null;
             
              // populate MicrosoftSqlServerSettings
@@ -1006,6 +1562,26 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             if (requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_Port != null)
             {
                 requestSettings_settings_MicrosoftSqlServerSettings.Port = requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_Port.Value;
+                requestSettings_settings_MicrosoftSqlServerSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3AccessRoleArn = null;
+            if (cmdletContext.MicrosoftSqlServerSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3AccessRoleArn = cmdletContext.MicrosoftSqlServerSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_MicrosoftSqlServerSettings.S3AccessRoleArn = requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3AccessRoleArn;
+                requestSettings_settings_MicrosoftSqlServerSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3Path = null;
+            if (cmdletContext.MicrosoftSqlServerSettings_S3Path != null)
+            {
+                requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3Path = cmdletContext.MicrosoftSqlServerSettings_S3Path;
+            }
+            if (requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3Path != null)
+            {
+                requestSettings_settings_MicrosoftSqlServerSettings.S3Path = requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_S3Path;
                 requestSettings_settings_MicrosoftSqlServerSettingsIsNull = false;
             }
             System.String requestSettings_settings_MicrosoftSqlServerSettings_microsoftSqlServerSettings_ServerName = null;
@@ -1071,6 +1647,26 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             if (requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_Port != null)
             {
                 requestSettings_settings_PostgreSqlSettings.Port = requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_Port.Value;
+                requestSettings_settings_PostgreSqlSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3AccessRoleArn = null;
+            if (cmdletContext.PostgreSqlSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3AccessRoleArn = cmdletContext.PostgreSqlSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_PostgreSqlSettings.S3AccessRoleArn = requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3AccessRoleArn;
+                requestSettings_settings_PostgreSqlSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3Path = null;
+            if (cmdletContext.PostgreSqlSettings_S3Path != null)
+            {
+                requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3Path = cmdletContext.PostgreSqlSettings_S3Path;
+            }
+            if (requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3Path != null)
+            {
+                requestSettings_settings_PostgreSqlSettings.S3Path = requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_S3Path;
                 requestSettings_settings_PostgreSqlSettingsIsNull = false;
             }
             System.String requestSettings_settings_PostgreSqlSettings_postgreSqlSettings_ServerName = null;
@@ -1243,6 +1839,26 @@ namespace Amazon.PowerShell.Cmdlets.DMS
                 requestSettings_settings_OracleSettings.Port = requestSettings_settings_OracleSettings_oracleSettings_Port.Value;
                 requestSettings_settings_OracleSettingsIsNull = false;
             }
+            System.String requestSettings_settings_OracleSettings_oracleSettings_S3AccessRoleArn = null;
+            if (cmdletContext.OracleSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_OracleSettings_oracleSettings_S3AccessRoleArn = cmdletContext.OracleSettings_S3AccessRoleArn;
+            }
+            if (requestSettings_settings_OracleSettings_oracleSettings_S3AccessRoleArn != null)
+            {
+                requestSettings_settings_OracleSettings.S3AccessRoleArn = requestSettings_settings_OracleSettings_oracleSettings_S3AccessRoleArn;
+                requestSettings_settings_OracleSettingsIsNull = false;
+            }
+            System.String requestSettings_settings_OracleSettings_oracleSettings_S3Path = null;
+            if (cmdletContext.OracleSettings_S3Path != null)
+            {
+                requestSettings_settings_OracleSettings_oracleSettings_S3Path = cmdletContext.OracleSettings_S3Path;
+            }
+            if (requestSettings_settings_OracleSettings_oracleSettings_S3Path != null)
+            {
+                requestSettings_settings_OracleSettings.S3Path = requestSettings_settings_OracleSettings_oracleSettings_S3Path;
+                requestSettings_settings_OracleSettingsIsNull = false;
+            }
             System.String requestSettings_settings_OracleSettings_oracleSettings_SecretsManagerOracleAsmAccessRoleArn = null;
             if (cmdletContext.OracleSettings_SecretsManagerOracleAsmAccessRoleArn != null)
             {
@@ -1322,6 +1938,10 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             {
                 request.Tags = cmdletContext.Tag;
             }
+            if (cmdletContext.Virtual != null)
+            {
+                request.Virtual = cmdletContext.Virtual.Value;
+            }
             
             CmdletOutput output;
             
@@ -1360,13 +1980,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "CreateDataProvider");
             try
             {
-                #if DESKTOP
-                return client.CreateDataProvider(request);
-                #elif CORECLR
-                return client.CreateDataProviderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDataProviderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1391,13 +2005,31 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             public System.Int32? DocDbSettings_Port { get; set; }
             public System.String DocDbSettings_ServerName { get; set; }
             public Amazon.DatabaseMigrationService.DmsSslModeValue DocDbSettings_SslMode { get; set; }
+            public System.String IbmDb2LuwSettings_CertificateArn { get; set; }
+            public System.String IbmDb2LuwSettings_DatabaseName { get; set; }
+            public System.Int32? IbmDb2LuwSettings_Port { get; set; }
+            public System.String IbmDb2LuwSettings_S3AccessRoleArn { get; set; }
+            public System.String IbmDb2LuwSettings_S3Path { get; set; }
+            public System.String IbmDb2LuwSettings_ServerName { get; set; }
+            public Amazon.DatabaseMigrationService.DmsSslModeValue IbmDb2LuwSettings_SslMode { get; set; }
+            public System.String IbmDb2zOsSettings_CertificateArn { get; set; }
+            public System.String IbmDb2zOsSettings_DatabaseName { get; set; }
+            public System.Int32? IbmDb2zOsSettings_Port { get; set; }
+            public System.String IbmDb2zOsSettings_S3AccessRoleArn { get; set; }
+            public System.String IbmDb2zOsSettings_S3Path { get; set; }
+            public System.String IbmDb2zOsSettings_ServerName { get; set; }
+            public Amazon.DatabaseMigrationService.DmsSslModeValue IbmDb2zOsSettings_SslMode { get; set; }
             public System.String MariaDbSettings_CertificateArn { get; set; }
             public System.Int32? MariaDbSettings_Port { get; set; }
+            public System.String MariaDbSettings_S3AccessRoleArn { get; set; }
+            public System.String MariaDbSettings_S3Path { get; set; }
             public System.String MariaDbSettings_ServerName { get; set; }
             public Amazon.DatabaseMigrationService.DmsSslModeValue MariaDbSettings_SslMode { get; set; }
             public System.String MicrosoftSqlServerSettings_CertificateArn { get; set; }
             public System.String MicrosoftSqlServerSettings_DatabaseName { get; set; }
             public System.Int32? MicrosoftSqlServerSettings_Port { get; set; }
+            public System.String MicrosoftSqlServerSettings_S3AccessRoleArn { get; set; }
+            public System.String MicrosoftSqlServerSettings_S3Path { get; set; }
             public System.String MicrosoftSqlServerSettings_ServerName { get; set; }
             public Amazon.DatabaseMigrationService.DmsSslModeValue MicrosoftSqlServerSettings_SslMode { get; set; }
             public Amazon.DatabaseMigrationService.AuthMechanismValue MongoDbSettings_AuthMechanism { get; set; }
@@ -1410,12 +2042,16 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             public Amazon.DatabaseMigrationService.DmsSslModeValue MongoDbSettings_SslMode { get; set; }
             public System.String MySqlSettings_CertificateArn { get; set; }
             public System.Int32? MySqlSettings_Port { get; set; }
+            public System.String MySqlSettings_S3AccessRoleArn { get; set; }
+            public System.String MySqlSettings_S3Path { get; set; }
             public System.String MySqlSettings_ServerName { get; set; }
             public Amazon.DatabaseMigrationService.DmsSslModeValue MySqlSettings_SslMode { get; set; }
             public System.String OracleSettings_AsmServer { get; set; }
             public System.String OracleSettings_CertificateArn { get; set; }
             public System.String OracleSettings_DatabaseName { get; set; }
             public System.Int32? OracleSettings_Port { get; set; }
+            public System.String OracleSettings_S3AccessRoleArn { get; set; }
+            public System.String OracleSettings_S3Path { get; set; }
             public System.String OracleSettings_SecretsManagerOracleAsmAccessRoleArn { get; set; }
             public System.String OracleSettings_SecretsManagerOracleAsmSecretId { get; set; }
             public System.String OracleSettings_SecretsManagerSecurityDbEncryptionAccessRoleArn { get; set; }
@@ -1425,12 +2061,17 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             public System.String PostgreSqlSettings_CertificateArn { get; set; }
             public System.String PostgreSqlSettings_DatabaseName { get; set; }
             public System.Int32? PostgreSqlSettings_Port { get; set; }
+            public System.String PostgreSqlSettings_S3AccessRoleArn { get; set; }
+            public System.String PostgreSqlSettings_S3Path { get; set; }
             public System.String PostgreSqlSettings_ServerName { get; set; }
             public Amazon.DatabaseMigrationService.DmsSslModeValue PostgreSqlSettings_SslMode { get; set; }
             public System.String RedshiftSettings_DatabaseName { get; set; }
             public System.Int32? RedshiftSettings_Port { get; set; }
+            public System.String RedshiftSettings_S3AccessRoleArn { get; set; }
+            public System.String RedshiftSettings_S3Path { get; set; }
             public System.String RedshiftSettings_ServerName { get; set; }
             public List<Amazon.DatabaseMigrationService.Model.Tag> Tag { get; set; }
+            public System.Boolean? Virtual { get; set; }
             public System.Func<Amazon.DatabaseMigrationService.Model.CreateDataProviderResponse, NewDMSDataProviderCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.DataProvider;
         }

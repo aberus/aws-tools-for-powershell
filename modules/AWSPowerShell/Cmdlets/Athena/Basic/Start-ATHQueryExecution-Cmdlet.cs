@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Athena;
 using Amazon.Athena.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ATH
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
     [AWSCmdlet("Calls the Amazon Athena StartQueryExecution API operation.", Operation = new[] {"StartQueryExecution"}, SelectReturnType = typeof(Amazon.Athena.Model.StartQueryExecutionResponse))]
     [AWSCmdletOutput("System.String or Amazon.Athena.Model.StartQueryExecutionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Athena.Model.StartQueryExecutionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Athena.Model.StartQueryExecutionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartATHQueryExecutionCmdlet : AmazonAthenaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter QueryExecutionContext_Catalog
         /// <summary>
@@ -117,7 +120,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         /// <summary>
         /// <para>
         /// <para>A list of values for the parameters in a query. The values are applied sequentially
-        /// to the parameters in the query in the order in which the parameters occur.</para>
+        /// to the parameters in the query in the order in which the parameters occur.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -175,10 +182,8 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         /// results location using one of the ways: either for individual queries using either
         /// this setting (client-side), or in the workgroup, using <a>WorkGroupConfiguration</a>.
         /// If none of them is set, Athena issues an error that no output location is provided.
-        /// For more information, see <a href="https://docs.aws.amazon.com/athena/latest/ug/querying.html">Working
-        /// with query results, recent queries, and output files</a>. If workgroup settings override
-        /// client-side settings, then the query uses the settings specified for the workgroup.
-        /// See <a>WorkGroupConfiguration$EnforceWorkGroupConfiguration</a>.</para>
+        /// If workgroup settings override client-side settings, then the query uses the settings
+        /// specified for the workgroup. See <a>WorkGroupConfiguration$EnforceWorkGroupConfiguration</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,11 +210,12 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         #region Parameter AclConfiguration_S3AclOption
         /// <summary>
         /// <para>
-        /// <para>The Amazon S3 canned ACL that Athena should specify when storing query results. Currently
-        /// the only supported canned ACL is <c>BUCKET_OWNER_FULL_CONTROL</c>. If a query runs
-        /// in a workgroup and the workgroup overrides client-side settings, then the Amazon S3
-        /// canned ACL specified in the workgroup's settings is used for all queries that run
-        /// in the workgroup. For more information about Amazon S3 canned ACLs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">Canned
+        /// <para>The Amazon S3 canned ACL that Athena should specify when storing query results, including
+        /// data files inserted by Athena as the result of statements like CTAS or INSERT INTO.
+        /// Currently the only supported canned ACL is <c>BUCKET_OWNER_FULL_CONTROL</c>. If a
+        /// query runs in a workgroup and the workgroup overrides client-side settings, then the
+        /// Amazon S3 canned ACL specified in the workgroup's settings is used for all queries
+        /// that run in the workgroup. For more information about Amazon S3 canned ACLs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl">Canned
         /// ACL</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -240,16 +246,6 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public string Select { get; set; } = "QueryExecutionId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueryString parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueryString' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueryString' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -260,9 +256,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.QueryString), MyInvocation.BoundParameters);
@@ -276,21 +276,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Athena.Model.StartQueryExecutionResponse, StartATHQueryExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueryString;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             if (this.ExecutionParameter != null)
             {
@@ -545,13 +535,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Athena", "StartQueryExecution");
             try
             {
-                #if DESKTOP
-                return client.StartQueryExecution(request);
-                #elif CORECLR
-                return client.StartQueryExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartQueryExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -46,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue SearchTables API operation.", Operation = new[] {"SearchTables"}, SelectReturnType = typeof(Amazon.Glue.Model.SearchTablesResponse))]
     [AWSCmdletOutput("Amazon.Glue.Model.Table or Amazon.Glue.Model.SearchTablesResponse",
         "This cmdlet returns a collection of Amazon.Glue.Model.Table objects.",
-        "The service call response (type Amazon.Glue.Model.SearchTablesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Glue.Model.SearchTablesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class FindGLUETableCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CatalogId
         /// <summary>
@@ -74,12 +77,28 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// characters, for example, -, :, #, etc. into tokens. Then each token is exact-match
         /// compared with the <c>Value</c> member of <c>PropertyPredicate</c>. For example, if
         /// <c>Key=Name</c> and <c>Value=link</c>, tables named <c>customer-link</c> and <c>xx-link-yy</c>
-        /// are returned, but <c>xxlinkyy</c> is not returned.</para>
+        /// are returned, but <c>xxlinkyy</c> is not returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Filters")]
         public Amazon.Glue.Model.PropertyPredicate[] Filter { get; set; }
+        #endregion
+        
+        #region Parameter IncludeStatusDetail
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to include status details related to a request to create or update
+        /// an Glue Data Catalog view.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("IncludeStatusDetails")]
+        public System.Boolean? IncludeStatusDetail { get; set; }
         #endregion
         
         #region Parameter ResourceShareType
@@ -109,7 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <summary>
         /// <para>
         /// <para>A list of criteria for sorting the results by a field name, in an ascending or descending
-        /// order.</para>
+        /// order.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,7 +163,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,9 +191,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -188,6 +215,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             {
                 context.Filter = new List<Amazon.Glue.Model.PropertyPredicate>(this.Filter);
             }
+            context.IncludeStatusDetail = this.IncludeStatusDetail;
             context.MaxResult = this.MaxResult;
             #if !MODULAR
             if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
@@ -231,6 +259,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
+            }
+            if (cmdletContext.IncludeStatusDetail != null)
+            {
+                request.IncludeStatusDetails = cmdletContext.IncludeStatusDetail.Value;
             }
             if (cmdletContext.MaxResult != null)
             {
@@ -311,6 +343,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             {
                 request.Filters = cmdletContext.Filter;
             }
+            if (cmdletContext.IncludeStatusDetail != null)
+            {
+                request.IncludeStatusDetails = cmdletContext.IncludeStatusDetail.Value;
+            }
             if (cmdletContext.ResourceShareType != null)
             {
                 request.ResourceShareType = cmdletContext.ResourceShareType;
@@ -370,7 +406,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.TableList.Count;
+                    int _receivedThisCall = response.TableList?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -419,13 +455,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "SearchTables");
             try
             {
-                #if DESKTOP
-                return client.SearchTables(request);
-                #elif CORECLR
-                return client.SearchTablesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SearchTablesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -444,6 +474,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         {
             public System.String CatalogId { get; set; }
             public List<Amazon.Glue.Model.PropertyPredicate> Filter { get; set; }
+            public System.Boolean? IncludeStatusDetail { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public Amazon.Glue.ResourceShareType ResourceShareType { get; set; }

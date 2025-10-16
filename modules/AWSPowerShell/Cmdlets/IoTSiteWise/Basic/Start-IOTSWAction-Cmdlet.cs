@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [AWSCmdlet("Calls the AWS IoT SiteWise ExecuteAction API operation.", Operation = new[] {"ExecuteAction"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.ExecuteActionResponse))]
     [AWSCmdletOutput("System.String or Amazon.IoTSiteWise.Model.ExecuteActionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.IoTSiteWise.Model.ExecuteActionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTSiteWise.Model.ExecuteActionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartIOTSWActionCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionDefinitionId
         /// <summary>
@@ -59,21 +62,34 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public System.String ActionDefinitionId { get; set; }
         #endregion
         
+        #region Parameter ResolveTo_AssetId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the asset that the resource resolves to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ResolveTo_AssetId { get; set; }
+        #endregion
+        
         #region Parameter TargetResource_AssetId
         /// <summary>
         /// <para>
         /// <para>The ID of the asset, in UUID format.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String TargetResource_AssetId { get; set; }
+        #endregion
+        
+        #region Parameter TargetResource_ComputationModelId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the computation model.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TargetResource_ComputationModelId { get; set; }
         #endregion
         
         #region Parameter ActionPayload_StringValue
@@ -115,16 +131,6 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public string Select { get; set; } = "ActionId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ActionDefinitionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ActionDefinitionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ActionDefinitionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -135,9 +141,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ActionDefinitionId), MyInvocation.BoundParameters);
@@ -151,21 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTSiteWise.Model.ExecuteActionResponse, StartIOTSWActionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ActionDefinitionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ActionDefinitionId = this.ActionDefinitionId;
             #if MODULAR
             if (this.ActionDefinitionId == null && ParameterWasBound(nameof(this.ActionDefinitionId)))
@@ -181,13 +181,9 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             }
             #endif
             context.ClientToken = this.ClientToken;
+            context.ResolveTo_AssetId = this.ResolveTo_AssetId;
             context.TargetResource_AssetId = this.TargetResource_AssetId;
-            #if MODULAR
-            if (this.TargetResource_AssetId == null && ParameterWasBound(nameof(this.TargetResource_AssetId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter TargetResource_AssetId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.TargetResource_ComputationModelId = this.TargetResource_ComputationModelId;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -232,6 +228,25 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
                 request.ClientToken = cmdletContext.ClientToken;
             }
             
+             // populate ResolveTo
+            var requestResolveToIsNull = true;
+            request.ResolveTo = new Amazon.IoTSiteWise.Model.ResolveTo();
+            System.String requestResolveTo_resolveTo_AssetId = null;
+            if (cmdletContext.ResolveTo_AssetId != null)
+            {
+                requestResolveTo_resolveTo_AssetId = cmdletContext.ResolveTo_AssetId;
+            }
+            if (requestResolveTo_resolveTo_AssetId != null)
+            {
+                request.ResolveTo.AssetId = requestResolveTo_resolveTo_AssetId;
+                requestResolveToIsNull = false;
+            }
+             // determine if request.ResolveTo should be set to null
+            if (requestResolveToIsNull)
+            {
+                request.ResolveTo = null;
+            }
+            
              // populate TargetResource
             var requestTargetResourceIsNull = true;
             request.TargetResource = new Amazon.IoTSiteWise.Model.TargetResource();
@@ -243,6 +258,16 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             if (requestTargetResource_targetResource_AssetId != null)
             {
                 request.TargetResource.AssetId = requestTargetResource_targetResource_AssetId;
+                requestTargetResourceIsNull = false;
+            }
+            System.String requestTargetResource_targetResource_ComputationModelId = null;
+            if (cmdletContext.TargetResource_ComputationModelId != null)
+            {
+                requestTargetResource_targetResource_ComputationModelId = cmdletContext.TargetResource_ComputationModelId;
+            }
+            if (requestTargetResource_targetResource_ComputationModelId != null)
+            {
+                request.TargetResource.ComputationModelId = requestTargetResource_targetResource_ComputationModelId;
                 requestTargetResourceIsNull = false;
             }
              // determine if request.TargetResource should be set to null
@@ -288,13 +313,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "ExecuteAction");
             try
             {
-                #if DESKTOP
-                return client.ExecuteAction(request);
-                #elif CORECLR
-                return client.ExecuteActionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExecuteActionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -314,7 +333,9 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             public System.String ActionDefinitionId { get; set; }
             public System.String ActionPayload_StringValue { get; set; }
             public System.String ClientToken { get; set; }
+            public System.String ResolveTo_AssetId { get; set; }
             public System.String TargetResource_AssetId { get; set; }
+            public System.String TargetResource_ComputationModelId { get; set; }
             public System.Func<Amazon.IoTSiteWise.Model.ExecuteActionResponse, StartIOTSWActionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ActionId;
         }

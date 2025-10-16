@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
@@ -32,12 +34,16 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// 
     ///  
     /// <para>
-    /// When <a>StopTask</a> is called on a task, the equivalent of <c>docker stop</c> is
-    /// issued to the containers running in the task. This results in a <c>SIGTERM</c> value
-    /// and a default 30-second timeout, after which the <c>SIGKILL</c> value is sent and
-    /// the containers are forcibly stopped. If the container handles the <c>SIGTERM</c> value
+    /// When you call <c>StopTask</c> on a task, the equivalent of <c>docker stop</c> is issued
+    /// to the containers running in the task. This results in a <c>SIGTERM</c> value and
+    /// a default 30-second timeout, after which the <c>SIGKILL</c> value is sent and the
+    /// containers are forcibly stopped. If the container handles the <c>SIGTERM</c> value
     /// gracefully and exits within 30 seconds from receiving it, no <c>SIGKILL</c> value
     /// is sent.
+    /// </para><para>
+    /// For Windows containers, POSIX signals do not work and runtime stops the container
+    /// by sending a <c>CTRL_SHUTDOWN_EVENT</c>. For more information, see <a href="https://github.com/moby/moby/issues/25982">Unable
+    /// to react to graceful shutdown of (Windows) container #25982</a> on GitHub.
     /// </para><note><para>
     /// The default 30-second timeout can be configured on the Amazon ECS container agent
     /// with the <c>ECS_CONTAINER_STOP_TIMEOUT</c> variable. For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html">Amazon
@@ -50,12 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     [AWSCmdlet("Calls the Amazon EC2 Container Service StopTask API operation.", Operation = new[] {"StopTask"}, SelectReturnType = typeof(Amazon.ECS.Model.StopTaskResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.Task or Amazon.ECS.Model.StopTaskResponse",
         "This cmdlet returns an Amazon.ECS.Model.Task object.",
-        "The service call response (type Amazon.ECS.Model.StopTaskResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECS.Model.StopTaskResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StopECSTaskCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Cluster
         /// <summary>
@@ -73,8 +80,8 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>An optional message specified when a task is stopped. For example, if you're using
         /// a custom scheduler, you can use this parameter to specify the reason for stopping
-        /// the task here, and the message appears in subsequent <a>DescribeTasks</a> API operations
-        /// on this task.</para>
+        /// the task here, and the message appears in subsequent <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_DescribeTasks.html">DescribeTasks</a>&gt;
+        /// API operations on this task.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,7 +91,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter Task
         /// <summary>
         /// <para>
-        /// <para>The task ID of the task to stop.</para>
+        /// <para>Thefull Amazon Resource Name (ARN) of the task.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,16 +116,6 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public string Select { get; set; } = "Task";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Cluster parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -129,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Cluster), MyInvocation.BoundParameters);
@@ -145,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECS.Model.StopTaskResponse, StopECSTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Cluster;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Cluster = this.Cluster;
             context.Reason = this.Reason;
             context.Task = this.Task;
@@ -235,13 +226,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "StopTask");
             try
             {
-                #if DESKTOP
-                return client.StopTask(request);
-                #elif CORECLR
-                return client.StopTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StopTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -44,7 +46,14 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// </para></li><li><para>
     /// ExecutionTime. The time the patch, association, or custom compliance item was applied
     /// to the managed node.
-    /// </para></li><li><para>
+    /// </para><important><para>
+    /// For State Manager associations, this represents the time when compliance status was
+    /// captured by the Systems Manager service during its internal compliance aggregation
+    /// workflow, not necessarily when the association was executed on the managed node. State
+    /// Manager updates compliance information for all associations on an instance whenever
+    /// any association executes, which may result in multiple associations showing the same
+    /// execution time.
+    /// </para></important></li><li><para>
     /// Id: The patch, association, or custom compliance ID.
     /// </para></li><li><para>
     /// Title: A title.
@@ -69,20 +78,20 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// PatchGroup: The name of a patch group.
     /// </para></li><li><para>
     /// InstalledTime: The time the association, patch, or custom compliance item was applied
-    /// to the resource. Specify the time by using the following format: yyyy-MM-dd'T'HH:mm:ss'Z'
-    /// </para></li></ul>
+    /// to the resource. Specify the time by using the following format: <c>yyyy-MM-dd'T'HH:mm:ss'Z'</c></para></li></ul>
     /// </summary>
     [Cmdlet("Write", "SSMComplianceItem", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Systems Manager PutComplianceItems API operation.", Operation = new[] {"PutComplianceItems"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.PutComplianceItemsResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleSystemsManagement.Model.PutComplianceItemsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleSystemsManagement.Model.PutComplianceItemsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleSystemsManagement.Model.PutComplianceItemsResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteSSMComplianceItemCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComplianceType
         /// <summary>
@@ -117,7 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>The time the execution ran as a datetime object that is saved in the following format:
-        /// yyyy-MM-dd'T'HH:mm:ss'Z'.</para>
+        /// <c>yyyy-MM-dd'T'HH:mm:ss'Z'</c></para><important><para>For State Manager associations, this timestamp represents when the compliance status
+        /// was captured and reported by the Systems Manager service, not when the underlying
+        /// association was actually executed on the managed node. To track actual association
+        /// execution times, use the <a>DescribeAssociationExecutionTargets</a> command or check
+        /// the association execution history in the Systems Manager console.</para></important>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -157,7 +170,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>Information about the compliance as defined by the resource type. For example, for
         /// a patch compliance type, <c>Items</c> includes information about the PatchSeverity,
-        /// Classification, and so on.</para>
+        /// Classification, and so on.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -233,16 +250,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -253,9 +260,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceId), MyInvocation.BoundParameters);
@@ -269,21 +280,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.PutComplianceItemsResponse, WriteSSMComplianceItemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ComplianceType = this.ComplianceType;
             #if MODULAR
             if (this.ComplianceType == null && ParameterWasBound(nameof(this.ComplianceType)))
@@ -443,13 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "PutComplianceItems");
             try
             {
-                #if DESKTOP
-                return client.PutComplianceItems(request);
-                #elif CORECLR
-                return client.PutComplianceItemsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutComplianceItemsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

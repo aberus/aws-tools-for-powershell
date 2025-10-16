@@ -80,24 +80,65 @@ $CRS_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.CleanRooms.AdditionalAnalyses
+        {
+            ($_ -eq "New-CRSConfiguredTableAnalysisRule/Aggregation_AdditionalAnalysis") -Or
+            ($_ -eq "Update-CRSConfiguredTableAnalysisRule/Aggregation_AdditionalAnalysis") -Or
+            ($_ -eq "New-CRSConfiguredTableAnalysisRule/Custom_AdditionalAnalysis") -Or
+            ($_ -eq "Update-CRSConfiguredTableAnalysisRule/Custom_AdditionalAnalysis") -Or
+            ($_ -eq "New-CRSConfiguredTableAnalysisRule/List_AdditionalAnalysis") -Or
+            ($_ -eq "Update-CRSConfiguredTableAnalysisRule/List_AdditionalAnalysis")
+        }
+        {
+            $v = "ALLOWED","NOT_ALLOWED","REQUIRED"
+            break
+        }
+
         # Amazon.CleanRooms.AnalysisFormat
         "New-CRSAnalysisTemplate/Format"
         {
-            $v = "SQL"
+            $v = "PYSPARK_1_0","SQL"
             break
         }
 
         # Amazon.CleanRooms.AnalysisMethod
-        "New-CRSConfiguredTable/AnalysisMethod"
         {
-            $v = "DIRECT_QUERY"
+            ($_ -eq "New-CRSConfiguredTable/AnalysisMethod") -Or
+            ($_ -eq "Update-CRSConfiguredTable/AnalysisMethod")
+        }
+        {
+            $v = "DIRECT_JOB","DIRECT_QUERY","MULTIPLE"
             break
         }
 
         # Amazon.CleanRooms.AnalysisRuleType
         "Get-CRSSchemaAnalysisRule/Type"
         {
-            $v = "AGGREGATION","CUSTOM","LIST"
+            $v = "AGGREGATION","CUSTOM","ID_MAPPING_TABLE","LIST"
+            break
+        }
+
+        # Amazon.CleanRooms.AnalyticsEngine
+        {
+            ($_ -eq "New-CRSCollaboration/AnalyticsEngine") -Or
+            ($_ -eq "Update-CRSCollaboration/AnalyticsEngine")
+        }
+        {
+            $v = "CLEAN_ROOMS_SQL","SPARK"
+            break
+        }
+
+        # Amazon.CleanRooms.ChangeRequestStatus
+        "Get-CRSCollaborationChangeRequestList/Status"
+        {
+            $v = "APPROVED","CANCELLED","COMMITTED","DENIED","PENDING"
+            break
+        }
+
+        # Amazon.CleanRooms.CollaborationJobLogStatus
+        "New-CRSCollaboration/JobLogStatus"
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -105,6 +146,18 @@ $CRS_Completers = {
         "New-CRSCollaboration/QueryLogStatus"
         {
             $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.CleanRooms.CommercialRegion
+        {
+            ($_ -eq "New-CRSConfiguredTable/Athena_Region") -Or
+            ($_ -eq "Update-CRSConfiguredTable/Athena_Region") -Or
+            ($_ -eq "New-CRSConfiguredTable/Glue_Region") -Or
+            ($_ -eq "Update-CRSConfiguredTable/Glue_Region")
+        }
+        {
+            $v = "af-south-1","ap-east-1","ap-east-2","ap-northeast-1","ap-northeast-2","ap-northeast-3","ap-south-1","ap-south-2","ap-southeast-1","ap-southeast-2","ap-southeast-3","ap-southeast-4","ap-southeast-5","ap-southeast-7","ca-central-1","ca-west-1","eu-central-1","eu-central-2","eu-north-1","eu-south-1","eu-south-2","eu-west-1","eu-west-2","eu-west-3","il-central-1","me-central-1","me-south-1","mx-central-1","sa-east-1","us-east-1","us-east-2","us-west-1","us-west-2"
             break
         }
 
@@ -120,6 +173,25 @@ $CRS_Completers = {
             break
         }
 
+        # Amazon.CleanRooms.ConfiguredTableAssociationAnalysisRuleType
+        {
+            ($_ -eq "Get-CRSConfiguredTableAssociationAnalysisRule/AnalysisRuleType") -Or
+            ($_ -eq "New-CRSConfiguredTableAssociationAnalysisRule/AnalysisRuleType") -Or
+            ($_ -eq "Remove-CRSConfiguredTableAssociationAnalysisRule/AnalysisRuleType") -Or
+            ($_ -eq "Update-CRSConfiguredTableAssociationAnalysisRule/AnalysisRuleType")
+        }
+        {
+            $v = "AGGREGATION","CUSTOM","LIST"
+            break
+        }
+
+        # Amazon.CleanRooms.ErrorMessageType
+        "New-CRSAnalysisTemplate/ErrorMessageConfiguration_Type"
+        {
+            $v = "DETAILED"
+            break
+        }
+
         # Amazon.CleanRooms.FilterableMemberStatus
         "Get-CRSCollaborationList/MemberStatus"
         {
@@ -127,13 +199,30 @@ $CRS_Completers = {
             break
         }
 
+        # Amazon.CleanRooms.JobType
+        "Invoke-CRSIdMappingTable/JobType"
+        {
+            $v = "BATCH","DELETE_ONLY","INCREMENTAL"
+            break
+        }
+
         # Amazon.CleanRooms.JoinRequiredOption
         {
-            ($_ -eq "New-CRSConfiguredTableAnalysisRule/AnalysisRulePolicy_V1_Aggregation_JoinRequired") -Or
-            ($_ -eq "Update-CRSConfiguredTableAnalysisRule/AnalysisRulePolicy_V1_Aggregation_JoinRequired")
+            ($_ -eq "New-CRSConfiguredTableAnalysisRule/Aggregation_JoinRequired") -Or
+            ($_ -eq "Update-CRSConfiguredTableAnalysisRule/Aggregation_JoinRequired")
         }
         {
             $v = "QUERY_RUNNER"
+            break
+        }
+
+        # Amazon.CleanRooms.MembershipJobLogStatus
+        {
+            ($_ -eq "New-CRSMembership/JobLogStatus") -Or
+            ($_ -eq "Update-CRSMembership/JobLogStatus")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -169,7 +258,28 @@ $CRS_Completers = {
             ($_ -eq "Update-CRSPrivacyBudgetTemplate/PrivacyBudgetType")
         }
         {
-            $v = "DIFFERENTIAL_PRIVACY"
+            $v = "ACCESS_BUDGET","DIFFERENTIAL_PRIVACY"
+            break
+        }
+
+        # Amazon.CleanRooms.ProtectedJobStatus
+        "Get-CRSProtectedJobList/Status"
+        {
+            $v = "CANCELLED","CANCELLING","FAILED","STARTED","SUBMITTED","SUCCESS"
+            break
+        }
+
+        # Amazon.CleanRooms.ProtectedJobType
+        "Start-CRSProtectedJob/Type"
+        {
+            $v = "PYSPARK"
+            break
+        }
+
+        # Amazon.CleanRooms.ProtectedJobWorkerComputeType
+        "Start-CRSProtectedJob/Worker_Type"
+        {
+            $v = "CR.1X","CR.4X"
             break
         }
 
@@ -189,9 +299,9 @@ $CRS_Completers = {
 
         # Amazon.CleanRooms.ResultFormat
         {
-            ($_ -eq "New-CRSMembership/DefaultResultConfiguration_OutputConfiguration_S3_ResultFormat") -Or
-            ($_ -eq "Update-CRSMembership/DefaultResultConfiguration_OutputConfiguration_S3_ResultFormat") -Or
-            ($_ -eq "Start-CRSProtectedQuery/ResultConfiguration_OutputConfiguration_S3_ResultFormat")
+            ($_ -eq "New-CRSMembership/S3_ResultFormat") -Or
+            ($_ -eq "Start-CRSProtectedQuery/S3_ResultFormat") -Or
+            ($_ -eq "Update-CRSMembership/S3_ResultFormat")
         }
         {
             $v = "CSV","PARQUET"
@@ -201,7 +311,14 @@ $CRS_Completers = {
         # Amazon.CleanRooms.SchemaType
         "Get-CRSSchemaList/SchemaType"
         {
-            $v = "TABLE"
+            $v = "ID_MAPPING_TABLE","TABLE"
+            break
+        }
+
+        # Amazon.CleanRooms.TargetProtectedJobStatus
+        "Update-CRSProtectedJob/TargetStatus"
+        {
+            $v = "CANCELLED"
             break
         }
 
@@ -209,6 +326,13 @@ $CRS_Completers = {
         "Update-CRSProtectedQuery/TargetStatus"
         {
             $v = "CANCELLED"
+            break
+        }
+
+        # Amazon.CleanRooms.WorkerComputeType
+        "Start-CRSProtectedQuery/Worker_Type"
+        {
+            $v = "CR.1X","CR.4X"
             break
         }
 
@@ -221,20 +345,29 @@ $CRS_Completers = {
 }
 
 $CRS_map = @{
-    "AnalysisMethod"=@("New-CRSConfiguredTable")
-    "AnalysisRulePolicy_V1_Aggregation_JoinRequired"=@("New-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAnalysisRule")
-    "AnalysisRuleType"=@("Get-CRSConfiguredTableAnalysisRule","New-CRSConfiguredTableAnalysisRule","Remove-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAnalysisRule")
+    "Aggregation_AdditionalAnalysis"=@("New-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAnalysisRule")
+    "Aggregation_JoinRequired"=@("New-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAnalysisRule")
+    "AnalysisMethod"=@("New-CRSConfiguredTable","Update-CRSConfiguredTable")
+    "AnalysisRuleType"=@("Get-CRSConfiguredTableAnalysisRule","Get-CRSConfiguredTableAssociationAnalysisRule","New-CRSConfiguredTableAnalysisRule","New-CRSConfiguredTableAssociationAnalysisRule","Remove-CRSConfiguredTableAnalysisRule","Remove-CRSConfiguredTableAssociationAnalysisRule","Update-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAssociationAnalysisRule")
+    "AnalyticsEngine"=@("New-CRSCollaboration","Update-CRSCollaboration")
+    "Athena_Region"=@("New-CRSConfiguredTable","Update-CRSConfiguredTable")
     "AutoRefresh"=@("New-CRSPrivacyBudgetTemplate")
-    "DefaultResultConfiguration_OutputConfiguration_S3_ResultFormat"=@("New-CRSMembership","Update-CRSMembership")
+    "Custom_AdditionalAnalysis"=@("New-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAnalysisRule")
+    "ErrorMessageConfiguration_Type"=@("New-CRSAnalysisTemplate")
     "Format"=@("New-CRSAnalysisTemplate")
+    "Glue_Region"=@("New-CRSConfiguredTable","Update-CRSConfiguredTable")
+    "JobLogStatus"=@("New-CRSCollaboration","New-CRSMembership","Update-CRSMembership")
+    "JobType"=@("Invoke-CRSIdMappingTable")
+    "List_AdditionalAnalysis"=@("New-CRSConfiguredTableAnalysisRule","Update-CRSConfiguredTableAnalysisRule")
     "MemberStatus"=@("Get-CRSCollaborationList")
     "PrivacyBudgetType"=@("Get-CRSCollaborationPrivacyBudgetList","Get-CRSPrivacyBudgetList","New-CRSPrivacyBudgetTemplate","Update-CRSPrivacyBudgetTemplate")
     "QueryLogStatus"=@("New-CRSCollaboration","New-CRSMembership","Update-CRSMembership")
-    "ResultConfiguration_OutputConfiguration_S3_ResultFormat"=@("Start-CRSProtectedQuery")
+    "S3_ResultFormat"=@("New-CRSMembership","Start-CRSProtectedQuery","Update-CRSMembership")
     "SchemaType"=@("Get-CRSSchemaList")
-    "Status"=@("Get-CRSMembershipList","Get-CRSProtectedQueryList")
-    "TargetStatus"=@("Update-CRSProtectedQuery")
-    "Type"=@("Get-CRSSchemaAnalysisRule","Start-CRSProtectedQuery")
+    "Status"=@("Get-CRSCollaborationChangeRequestList","Get-CRSMembershipList","Get-CRSProtectedJobList","Get-CRSProtectedQueryList")
+    "TargetStatus"=@("Update-CRSProtectedJob","Update-CRSProtectedQuery")
+    "Type"=@("Get-CRSSchemaAnalysisRule","Start-CRSProtectedJob","Start-CRSProtectedQuery")
+    "Worker_Type"=@("Start-CRSProtectedJob","Start-CRSProtectedQuery")
 }
 
 _awsArgumentCompleterRegistration $CRS_Completers $CRS_map
@@ -289,12 +422,17 @@ $CRS_SelectCompleters = {
 $CRS_SelectMap = @{
     "Select"=@("Get-CRSBatchCollaborationAnalysisTemplate",
                "Get-CRSBatchSchema",
+               "Get-CRSBatchGetSchemaAnalysisRule",
                "New-CRSAnalysisTemplate",
                "New-CRSCollaboration",
+               "New-CRSCollaborationChangeRequest",
                "New-CRSConfiguredAudienceModelAssociation",
                "New-CRSConfiguredTable",
                "New-CRSConfiguredTableAnalysisRule",
                "New-CRSConfiguredTableAssociation",
+               "New-CRSConfiguredTableAssociationAnalysisRule",
+               "New-CRSIdMappingTable",
+               "New-CRSIdNamespaceAssociation",
                "New-CRSMembership",
                "New-CRSPrivacyBudgetTemplate",
                "Remove-CRSAnalysisTemplate",
@@ -303,40 +441,56 @@ $CRS_SelectMap = @{
                "Remove-CRSConfiguredTable",
                "Remove-CRSConfiguredTableAnalysisRule",
                "Remove-CRSConfiguredTableAssociation",
+               "Remove-CRSConfiguredTableAssociationAnalysisRule",
+               "Remove-CRSIdMappingTable",
+               "Remove-CRSIdNamespaceAssociation",
                "Remove-CRSMember",
                "Remove-CRSMembership",
                "Remove-CRSPrivacyBudgetTemplate",
                "Get-CRSAnalysisTemplate",
                "Get-CRSCollaboration",
                "Get-CRSCollaborationAnalysisTemplate",
+               "Get-CRSCollaborationChangeRequest",
                "Get-CRSCollaborationConfiguredAudienceModelAssociation",
+               "Get-CRSCollaborationIdNamespaceAssociation",
                "Get-CRSCollaborationPrivacyBudgetTemplate",
                "Get-CRSConfiguredAudienceModelAssociation",
                "Get-CRSConfiguredTable",
                "Get-CRSConfiguredTableAnalysisRule",
                "Get-CRSConfiguredTableAssociation",
+               "Get-CRSConfiguredTableAssociationAnalysisRule",
+               "Get-CRSIdMappingTable",
+               "Get-CRSIdNamespaceAssociation",
                "Get-CRSMembership",
                "Get-CRSPrivacyBudgetTemplate",
+               "Get-CRSProtectedJob",
                "Get-CRSProtectedQuery",
                "Get-CRSSchema",
                "Get-CRSSchemaAnalysisRule",
                "Get-CRSAnalysisTemplateList",
                "Get-CRSCollaborationAnalysisTemplateList",
+               "Get-CRSCollaborationChangeRequestList",
                "Get-CRSCollaborationConfiguredAudienceModelAssociationList",
+               "Get-CRSCollaborationIdNamespaceAssociationList",
                "Get-CRSCollaborationPrivacyBudgetList",
                "Get-CRSCollaborationPrivacyBudgetTemplateList",
                "Get-CRSCollaborationList",
                "Get-CRSConfiguredAudienceModelAssociationList",
                "Get-CRSConfiguredTableAssociationList",
                "Get-CRSConfiguredTableList",
+               "Get-CRSIdMappingTableList",
+               "Get-CRSIdNamespaceAssociationList",
                "Get-CRSMemberList",
                "Get-CRSMembershipList",
                "Get-CRSPrivacyBudgetList",
                "Get-CRSPrivacyBudgetTemplateList",
+               "Get-CRSProtectedJobList",
                "Get-CRSProtectedQueryList",
                "Get-CRSSchemaList",
                "Get-CRSResourceTag",
+               "Invoke-CRSIdMappingTable",
                "Test-CRSPrivacyImpact",
+               "Start-CRSProtectedJob",
                "Start-CRSProtectedQuery",
                "Add-CRSResourceTag",
                "Remove-CRSResourceTag",
@@ -346,8 +500,12 @@ $CRS_SelectMap = @{
                "Update-CRSConfiguredTable",
                "Update-CRSConfiguredTableAnalysisRule",
                "Update-CRSConfiguredTableAssociation",
+               "Update-CRSConfiguredTableAssociationAnalysisRule",
+               "Update-CRSIdMappingTable",
+               "Update-CRSIdNamespaceAssociation",
                "Update-CRSMembership",
                "Update-CRSPrivacyBudgetTemplate",
+               "Update-CRSProtectedJob",
                "Update-CRSProtectedQuery")
 }
 

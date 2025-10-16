@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -56,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
     [OutputType("Amazon.Rekognition.Model.DetectFacesResponse")]
     [AWSCmdlet("Calls the Amazon Rekognition DetectFaces API operation.", Operation = new[] {"DetectFaces"}, SelectReturnType = typeof(Amazon.Rekognition.Model.DetectFacesResponse))]
     [AWSCmdletOutput("Amazon.Rekognition.Model.DetectFacesResponse",
-        "This cmdlet returns an Amazon.Rekognition.Model.DetectFacesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Rekognition.Model.DetectFacesResponse object containing multiple properties."
     )]
     public partial class FindREKFaceCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
@@ -74,7 +77,11 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// [<c>"ALL"]</c>. Requesting more attributes may increase response time.</para><para>If you provide both, <c>["ALL", "DEFAULT"]</c>, the service uses a logical "AND" operator
         /// to determine which attributes to return (in this case, all attributes). </para><para>Note that while the FaceOccluded and EyeDirection attributes are supported when using
         /// <c>DetectFaces</c>, they aren't supported when analyzing videos with <c>StartFaceDetection</c>
-        /// and <c>GetFaceDetection</c>.</para>
+        /// and <c>GetFaceDetection</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,9 +143,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -294,13 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "DetectFaces");
             try
             {
-                #if DESKTOP
-                return client.DetectFaces(request);
-                #elif CORECLR
-                return client.DetectFacesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DetectFacesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
     /// Creates a definition for a job that monitors model quality and drift. For information
     /// about model monitor, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html">Amazon
-    /// SageMaker Model Monitor</a>.
+    /// SageMaker AI Model Monitor</a>.
     /// </summary>
     [Cmdlet("New", "SMModelQualityJobDefinition", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateModelQualityJobDefinition API operation.", Operation = new[] {"CreateModelQualityJobDefinition"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateModelQualityJobDefinitionResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateModelQualityJobDefinitionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateModelQualityJobDefinitionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateModelQualityJobDefinitionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMModelQualityJobDefinitionCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ModelQualityBaselineConfig_BaseliningJobName
         /// <summary>
@@ -57,7 +60,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ModelQualityAppSpecification_ContainerArgument
         /// <summary>
         /// <para>
-        /// <para>An array of arguments for the container used to run the monitoring job.</para>
+        /// <para>An array of arguments for the container used to run the monitoring job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ModelQualityAppSpecification_ContainerEntrypoint
         /// <summary>
         /// <para>
-        /// <para>Specifies the entrypoint for a container that the monitoring job runs.</para>
+        /// <para>Specifies the entrypoint for a container that the monitoring job runs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,7 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ModelQualityAppSpecification_Environment
         /// <summary>
         /// <para>
-        /// <para>Sets the environment variables in the container that the monitoring job runs.</para>
+        /// <para>Sets the environment variables in the container that the monitoring job runs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -306,8 +321,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ModelQualityJobOutputConfig_KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The Key Management Service (KMS) key that Amazon SageMaker uses to encrypt the model
-        /// artifacts at rest using Amazon S3 server-side encryption.</para>
+        /// <para>The Key Management Service (KMS) key that Amazon SageMaker AI uses to encrypt the
+        /// model artifacts at rest using Amazon S3 server-side encryption.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -364,7 +379,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>Monitoring outputs for monitoring jobs. This is where the output of the periodic monitoring
-        /// jobs is uploaded.</para>
+        /// jobs is uploaded.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -472,8 +491,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter RoleArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of an IAM role that Amazon SageMaker can assume to
-        /// perform tasks on your behalf.</para>
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that Amazon SageMaker AI can assume
+        /// to perform tasks on your behalf.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -567,7 +586,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs, in the form <c>sg-xxxxxxxx</c>. Specify the security groups
-        /// for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -606,7 +629,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The ID of the subnets in the VPC to which you want to connect your training job or
         /// model. For information about the availability of specific instance types, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/instance-types-az.html">Supported
-        /// Instance Types and Availability Zones</a>.</para>
+        /// Instance Types and Availability Zones</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -619,7 +646,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>(Optional) An array of key-value pairs. For more information, see <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html#allocation-whatURL">
         /// Using Cost Allocation Tags</a> in the <i>Amazon Web Services Billing and Cost Management
-        /// User Guide</i>.</para>
+        /// User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -630,8 +661,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter ClusterConfig_VolumeKmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The Key Management Service (KMS) key that Amazon SageMaker uses to encrypt data on
-        /// the storage volume attached to the ML compute instance(s) that run the model monitoring
+        /// <para>The Key Management Service (KMS) key that Amazon SageMaker AI uses to encrypt data
+        /// on the storage volume attached to the ML compute instance(s) that run the model monitoring
         /// job.</para>
         /// </para>
         /// </summary>
@@ -669,16 +700,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "JobDefinitionArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobDefinitionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobDefinitionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobDefinitionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -689,9 +710,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.JobDefinitionName), MyInvocation.BoundParameters);
@@ -705,21 +730,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateModelQualityJobDefinitionResponse, NewSMModelQualityJobDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobDefinitionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.JobDefinitionName = this.JobDefinitionName;
             #if MODULAR
             if (this.JobDefinitionName == null && ParameterWasBound(nameof(this.JobDefinitionName)))
@@ -1560,13 +1575,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateModelQualityJobDefinition");
             try
             {
-                #if DESKTOP
-                return client.CreateModelQualityJobDefinition(request);
-                #elif CORECLR
-                return client.CreateModelQualityJobDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateModelQualityJobDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

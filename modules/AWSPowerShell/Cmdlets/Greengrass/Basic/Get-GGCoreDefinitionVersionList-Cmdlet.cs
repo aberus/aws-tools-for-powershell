@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Greengrass;
 using Amazon.Greengrass.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GG
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.GG
     [AWSCmdlet("Calls the AWS Greengrass ListCoreDefinitionVersions API operation.", Operation = new[] {"ListCoreDefinitionVersions"}, SelectReturnType = typeof(Amazon.Greengrass.Model.ListCoreDefinitionVersionsResponse))]
     [AWSCmdletOutput("Amazon.Greengrass.Model.VersionInformation or Amazon.Greengrass.Model.ListCoreDefinitionVersionsResponse",
         "This cmdlet returns a collection of Amazon.Greengrass.Model.VersionInformation objects.",
-        "The service call response (type Amazon.Greengrass.Model.ListCoreDefinitionVersionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Greengrass.Model.ListCoreDefinitionVersionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGGCoreDefinitionVersionListCmdlet : AmazonGreengrassClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CoreDefinitionId
         /// <summary>
@@ -84,7 +87,7 @@ namespace Amazon.PowerShell.Cmdlets.GG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,16 +105,6 @@ namespace Amazon.PowerShell.Cmdlets.GG
         public string Select { get; set; } = "Versions";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CoreDefinitionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CoreDefinitionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CoreDefinitionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -122,9 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.GG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -132,21 +129,11 @@ namespace Amazon.PowerShell.Cmdlets.GG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Greengrass.Model.ListCoreDefinitionVersionsResponse, GetGGCoreDefinitionVersionListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CoreDefinitionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CoreDefinitionId = this.CoreDefinitionId;
             #if MODULAR
             if (this.CoreDefinitionId == null && ParameterWasBound(nameof(this.CoreDefinitionId)))
@@ -179,9 +166,7 @@ namespace Amazon.PowerShell.Cmdlets.GG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Greengrass.Model.ListCoreDefinitionVersionsRequest();
@@ -245,7 +230,7 @@ namespace Amazon.PowerShell.Cmdlets.GG
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Greengrass.Model.ListCoreDefinitionVersionsRequest();
@@ -293,7 +278,7 @@ namespace Amazon.PowerShell.Cmdlets.GG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Versions.Count;
+                    int _receivedThisCall = response.Versions?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -342,13 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.GG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Greengrass", "ListCoreDefinitionVersions");
             try
             {
-                #if DESKTOP
-                return client.ListCoreDefinitionVersions(request);
-                #elif CORECLR
-                return client.ListCoreDefinitionVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListCoreDefinitionVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

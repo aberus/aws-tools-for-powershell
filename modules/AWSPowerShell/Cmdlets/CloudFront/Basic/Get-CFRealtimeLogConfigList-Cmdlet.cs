@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
     [AWSCmdlet("Calls the Amazon CloudFront ListRealtimeLogConfigs API operation.", Operation = new[] {"ListRealtimeLogConfigs"}, SelectReturnType = typeof(Amazon.CloudFront.Model.ListRealtimeLogConfigsResponse))]
     [AWSCmdletOutput("Amazon.CloudFront.Model.RealtimeLogConfigs or Amazon.CloudFront.Model.ListRealtimeLogConfigsResponse",
         "This cmdlet returns an Amazon.CloudFront.Model.RealtimeLogConfigs object.",
-        "The service call response (type Amazon.CloudFront.Model.ListRealtimeLogConfigsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFront.Model.ListRealtimeLogConfigsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCFRealtimeLogConfigListCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Marker
         /// <summary>
@@ -86,9 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public string Select { get; set; } = "RealtimeLogConfigs";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -165,13 +172,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "ListRealtimeLogConfigs");
             try
             {
-                #if DESKTOP
-                return client.ListRealtimeLogConfigs(request);
-                #elif CORECLR
-                return client.ListRealtimeLogConfigsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRealtimeLogConfigsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

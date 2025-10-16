@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Elasticsearch;
 using Amazon.Elasticsearch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ES
 {
     /// <summary>
@@ -36,14 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.ES
     [AWSCmdlet("Calls the Amazon Elasticsearch CreateElasticsearchDomain API operation.", Operation = new[] {"CreateElasticsearchDomain"}, SelectReturnType = typeof(Amazon.Elasticsearch.Model.CreateElasticsearchDomainResponse))]
     [AWSCmdletOutput("Amazon.Elasticsearch.Model.ElasticsearchDomainStatus or Amazon.Elasticsearch.Model.CreateElasticsearchDomainResponse",
         "This cmdlet returns an Amazon.Elasticsearch.Model.ElasticsearchDomainStatus object.",
-        "The service call response (type Amazon.Elasticsearch.Model.CreateElasticsearchDomainResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Elasticsearch.Model.CreateElasticsearchDomainResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewESDomainCmdlet : AmazonElasticsearchClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessPolicy
         /// <summary>
@@ -61,7 +62,11 @@ namespace Amazon.PowerShell.Cmdlets.ES
         /// <para>
         /// <para> Option to allow references to indices in an HTTP request body. Must be <c>false</c>
         /// when configuring access to individual sub-resources. By default, the value is <c>true</c>.
-        /// See <a href="http://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-createupdatedomains.html#es-createdomain-configure-advanced-options" target="_blank">Configuration Advanced Options</a> for more information.</para>
+        /// See <a href="http://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/es-createupdatedomains.html#es-createdomain-configure-advanced-options" target="_blank">Configuration Advanced Options</a> for more information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -358,7 +363,11 @@ namespace Amazon.PowerShell.Cmdlets.ES
         /// <summary>
         /// <para>
         /// <para>Map of <c>LogType</c> and <c>LogPublishingOption</c>, each containing options to publish
-        /// a given type of Elasticsearch log.</para>
+        /// a given type of Elasticsearch log.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -369,7 +378,11 @@ namespace Amazon.PowerShell.Cmdlets.ES
         #region Parameter AutoTuneOptions_MaintenanceSchedule
         /// <summary>
         /// <para>
-        /// <para>Specifies list of maitenance schedules. See the <a href="https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/auto-tune.html" target="_blank">Developer Guide</a> for more information.</para>
+        /// <para>Specifies list of maitenance schedules. See the <a href="https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/auto-tune.html" target="_blank">Developer Guide</a> for more information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -471,7 +484,11 @@ namespace Amazon.PowerShell.Cmdlets.ES
         #region Parameter VPCOptions_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>Specifies the security groups for VPC endpoint.</para>
+        /// <para>Specifies the security groups for VPC endpoint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -505,7 +522,11 @@ namespace Amazon.PowerShell.Cmdlets.ES
         #region Parameter VPCOptions_SubnetId
         /// <summary>
         /// <para>
-        /// <para>Specifies the subnets for VPC endpoint.</para>
+        /// <para>Specifies the subnets for VPC endpoint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -516,7 +537,11 @@ namespace Amazon.PowerShell.Cmdlets.ES
         #region Parameter TagList
         /// <summary>
         /// <para>
-        /// <para>A list of <c>Tag</c> added during domain creation.</para>
+        /// <para>A list of <c>Tag</c> added during domain creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -642,9 +667,13 @@ namespace Amazon.PowerShell.Cmdlets.ES
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainName), MyInvocation.BoundParameters);
@@ -1435,13 +1464,7 @@ namespace Amazon.PowerShell.Cmdlets.ES
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elasticsearch", "CreateElasticsearchDomain");
             try
             {
-                #if DESKTOP
-                return client.CreateElasticsearchDomain(request);
-                #elif CORECLR
-                return client.CreateElasticsearchDomainAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateElasticsearchDomainAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

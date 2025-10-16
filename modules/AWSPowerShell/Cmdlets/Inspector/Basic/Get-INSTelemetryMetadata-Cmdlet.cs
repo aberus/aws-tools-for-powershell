@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector;
 using Amazon.Inspector.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.INS
     [AWSCmdlet("Calls the Amazon Inspector GetTelemetryMetadata API operation.", Operation = new[] {"GetTelemetryMetadata"}, SelectReturnType = typeof(Amazon.Inspector.Model.GetTelemetryMetadataResponse))]
     [AWSCmdletOutput("Amazon.Inspector.Model.TelemetryMetadata or Amazon.Inspector.Model.GetTelemetryMetadataResponse",
         "This cmdlet returns a collection of Amazon.Inspector.Model.TelemetryMetadata objects.",
-        "The service call response (type Amazon.Inspector.Model.GetTelemetryMetadataResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Inspector.Model.GetTelemetryMetadataResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetINSTelemetryMetadataCmdlet : AmazonInspectorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssessmentRunArn
         /// <summary>
@@ -71,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.INS
         public string Select { get; set; } = "TelemetryMetadata";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AssessmentRunArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AssessmentRunArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AssessmentRunArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -91,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.INS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Inspector.Model.GetTelemetryMetadataResponse, GetINSTelemetryMetadataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AssessmentRunArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssessmentRunArn = this.AssessmentRunArn;
             #if MODULAR
             if (this.AssessmentRunArn == null && ParameterWasBound(nameof(this.AssessmentRunArn)))
@@ -171,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.INS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Inspector", "GetTelemetryMetadata");
             try
             {
-                #if DESKTOP
-                return client.GetTelemetryMetadata(request);
-                #elif CORECLR
-                return client.GetTelemetryMetadataAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTelemetryMetadataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

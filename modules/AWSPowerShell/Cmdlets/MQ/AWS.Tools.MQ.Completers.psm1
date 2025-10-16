@@ -87,7 +87,7 @@ $MQ_Completers = {
             ($_ -eq "Update-MQBroker/AuthenticationStrategy")
         }
         {
-            $v = "LDAP","SIMPLE"
+            $v = "CONFIG_MANAGED","LDAP","SIMPLE"
             break
         }
 
@@ -204,6 +204,7 @@ $MQ_SelectMap = @{
                "New-MQTag",
                "New-MQUser",
                "Remove-MQBroker",
+               "Remove-MQConfiguration",
                "Remove-MQTag",
                "Remove-MQUser",
                "Get-MQBroker",

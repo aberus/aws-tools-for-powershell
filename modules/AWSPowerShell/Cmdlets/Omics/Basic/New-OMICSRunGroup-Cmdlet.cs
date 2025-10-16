@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
-    /// Creates a run group.
+    /// Creates a run group to limit the compute resources for the runs that are added to
+    /// the group. Returns an ARN, ID, and tags for the run group.
     /// </summary>
     [Cmdlet("New", "OMICSRunGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Omics.Model.CreateRunGroupResponse")]
     [AWSCmdlet("Calls the Amazon Omics CreateRunGroup API operation.", Operation = new[] {"CreateRunGroup"}, SelectReturnType = typeof(Amazon.Omics.Model.CreateRunGroupResponse))]
     [AWSCmdletOutput("Amazon.Omics.Model.CreateRunGroupResponse",
-        "This cmdlet returns an Amazon.Omics.Model.CreateRunGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Omics.Model.CreateRunGroupResponse object containing multiple properties."
     )]
     public partial class NewOMICSRunGroupCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxCpu
         /// <summary>
         /// <para>
-        /// <para>The maximum number of CPUs to use in the group.</para>
+        /// <para>The maximum number of CPUs that can run concurrently across all active runs in the
+        /// run group.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -55,7 +60,8 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter MaxDuration
         /// <summary>
         /// <para>
-        /// <para>A maximum run time for the group in minutes.</para>
+        /// <para>The maximum time for each run (in minutes). If a run exceeds the maximum run time,
+        /// the run fails automatically.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -65,7 +71,8 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter MaxGpus
         /// <summary>
         /// <para>
-        /// <para> The maximum GPUs that can be used by a run group. </para>
+        /// <para>The maximum number of GPUs that can run concurrently across all active runs in the
+        /// run group.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,7 +82,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter MaxRun
         /// <summary>
         /// <para>
-        /// <para>The maximum number of concurrent runs for the group.</para>
+        /// <para>The maximum number of runs that can be running at the same time.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags for the group.</para>
+        /// <para>Tags for the group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -252,13 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "CreateRunGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateRunGroup(request);
-                #elif CORECLR
-                return client.CreateRunGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRunGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

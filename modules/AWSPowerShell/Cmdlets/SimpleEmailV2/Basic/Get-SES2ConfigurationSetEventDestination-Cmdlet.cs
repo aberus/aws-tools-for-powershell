@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES2
 {
     /// <summary>
@@ -33,9 +35,8 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     ///  
     /// <para><i>Events</i> include message sends, deliveries, opens, clicks, bounces, and complaints.
     /// <i>Event destinations</i> are places that you can send information about these events
-    /// to. For example, you can send event data to Amazon SNS to receive notifications when
-    /// you receive bounces or complaints, or you can use Amazon Kinesis Data Firehose to
-    /// stream data to Amazon S3 for long-term storage.
+    /// to. For example, you can send event data to Amazon EventBridge and associate a rule
+    /// to send the event to the specified target.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "SES2ConfigurationSetEventDestination")]
@@ -43,12 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     [AWSCmdlet("Calls the Amazon Simple Email Service V2 (SES V2) GetConfigurationSetEventDestinations API operation.", Operation = new[] {"GetConfigurationSetEventDestinations"}, SelectReturnType = typeof(Amazon.SimpleEmailV2.Model.GetConfigurationSetEventDestinationsResponse))]
     [AWSCmdletOutput("Amazon.SimpleEmailV2.Model.EventDestination or Amazon.SimpleEmailV2.Model.GetConfigurationSetEventDestinationsResponse",
         "This cmdlet returns a collection of Amazon.SimpleEmailV2.Model.EventDestination objects.",
-        "The service call response (type Amazon.SimpleEmailV2.Model.GetConfigurationSetEventDestinationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleEmailV2.Model.GetConfigurationSetEventDestinationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSES2ConfigurationSetEventDestinationCmdlet : AmazonSimpleEmailServiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigurationSetName
         /// <summary>
@@ -78,19 +80,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public string Select { get; set; } = "EventDestinations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigurationSetName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigurationSetName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigurationSetName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -98,21 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleEmailV2.Model.GetConfigurationSetEventDestinationsResponse, GetSES2ConfigurationSetEventDestinationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigurationSetName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConfigurationSetName = this.ConfigurationSetName;
             #if MODULAR
             if (this.ConfigurationSetName == null && ParameterWasBound(nameof(this.ConfigurationSetName)))
@@ -178,13 +164,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service V2 (SES V2)", "GetConfigurationSetEventDestinations");
             try
             {
-                #if DESKTOP
-                return client.GetConfigurationSetEventDestinations(request);
-                #elif CORECLR
-                return client.GetConfigurationSetEventDestinationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetConfigurationSetEventDestinationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

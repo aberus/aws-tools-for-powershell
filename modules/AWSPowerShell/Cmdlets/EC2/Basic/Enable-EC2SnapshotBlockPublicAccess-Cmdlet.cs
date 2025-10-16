@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -34,15 +36,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// in that Region. Snapshots that are already publicly shared are either treated as private
     /// or they remain publicly shared, depending on the <b>State</b> that you specify.
     /// 
-    ///  
-    /// <para>
-    /// If block public access is enabled in <c>block-all-sharing</c> mode, and you change
-    /// the mode to <c>block-new-sharing</c>, all snapshots that were previously publicly
-    /// shared are no longer treated as private and they become publicly accessible again.
+    ///  <important><para>
+    /// Enabling block public access for snapshots in <i>block all sharing</i> mode does not
+    /// change the permissions for snapshots that are already publicly shared. Instead, it
+    /// prevents these snapshots from be publicly visible and publicly accessible. Therefore,
+    /// the attributes for these snapshots still indicate that they are publicly shared, even
+    /// though they are not publicly available.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-public-access-snapshots.html">
-    /// Block public access for snapshots</a> in the <i>Amazon Elastic Compute Cloud User
-    /// Guide</i>.
+    /// If you later disable block public access or change the mode to <i>block new sharing</i>,
+    /// these snapshots will become publicly available again.
+    /// </para></important><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/block-public-access-snapshots.html">
+    /// Block public access for snapshots</a> in the <i>Amazon EBS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Enable", "EC2SnapshotBlockPublicAccess", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -50,12 +55,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) EnableSnapshotBlockPublicAccess API operation.", Operation = new[] {"EnableSnapshotBlockPublicAccess"}, SelectReturnType = typeof(Amazon.EC2.Model.EnableSnapshotBlockPublicAccessResponse))]
     [AWSCmdletOutput("Amazon.EC2.SnapshotBlockPublicAccessState or Amazon.EC2.Model.EnableSnapshotBlockPublicAccessResponse",
         "This cmdlet returns an Amazon.EC2.SnapshotBlockPublicAccessState object.",
-        "The service call response (type Amazon.EC2.Model.EnableSnapshotBlockPublicAccessResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.EnableSnapshotBlockPublicAccessResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EnableEC2SnapshotBlockPublicAccessCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter State
         /// <summary>
@@ -64,11 +82,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// one of the following values:</para><ul><li><para><c>block-all-sharing</c> - Prevents all public sharing of snapshots in the Region.
         /// Users in the account will no longer be able to request new public sharing. Additionally,
         /// snapshots that are already publicly shared are treated as private and they are no
-        /// longer publicly available.</para><note><para>If you enable block public access for snapshots in <c>block-all-sharing</c> mode,
-        /// it does not change the permissions for snapshots that are already publicly shared.
-        /// Instead, it prevents these snapshots from be publicly visible and publicly accessible.
-        /// Therefore, the attributes for these snapshots still indicate that they are publicly
-        /// shared, even though they are not publicly available.</para></note></li><li><para><c>block-new-sharing</c> - Prevents only new public sharing of snapshots in the Region.
+        /// longer publicly available.</para></li><li><para><c>block-new-sharing</c> - Prevents only new public sharing of snapshots in the Region.
         /// Users in the account will no longer be able to request new public sharing. However,
         /// snapshots that are already publicly shared, remain publicly available.</para></li></ul><para><c>unblocked</c> is not a valid value for <b>EnableSnapshotBlockPublicAccess</b>.</para>
         /// </para>
@@ -95,16 +109,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "State";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the State parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^State' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^State' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -115,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.State), MyInvocation.BoundParameters);
@@ -131,21 +139,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.EnableSnapshotBlockPublicAccessResponse, EnableEC2SnapshotBlockPublicAccessCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.State;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             context.State = this.State;
             #if MODULAR
             if (this.State == null && ParameterWasBound(nameof(this.State)))
@@ -169,6 +168,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.EnableSnapshotBlockPublicAccessRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.State != null)
             {
                 request.State = cmdletContext.State;
@@ -211,13 +214,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "EnableSnapshotBlockPublicAccess");
             try
             {
-                #if DESKTOP
-                return client.EnableSnapshotBlockPublicAccess(request);
-                #elif CORECLR
-                return client.EnableSnapshotBlockPublicAccessAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.EnableSnapshotBlockPublicAccessAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -234,6 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public Amazon.EC2.SnapshotBlockPublicAccessState State { get; set; }
             public System.Func<Amazon.EC2.Model.EnableSnapshotBlockPublicAccessResponse, EnableEC2SnapshotBlockPublicAccessCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.State;

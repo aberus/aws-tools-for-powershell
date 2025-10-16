@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KafkaConnect;
 using Amazon.KafkaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MSKC
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
     [OutputType("Amazon.KafkaConnect.Model.UpdateConnectorResponse")]
     [AWSCmdlet("Calls the Managed Streaming for Kafka Connect UpdateConnector API operation.", Operation = new[] {"UpdateConnector"}, SelectReturnType = typeof(Amazon.KafkaConnect.Model.UpdateConnectorResponse))]
     [AWSCmdletOutput("Amazon.KafkaConnect.Model.UpdateConnectorResponse",
-        "This cmdlet returns an Amazon.KafkaConnect.Model.UpdateConnectorResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KafkaConnect.Model.UpdateConnectorResponse object containing multiple properties."
     )]
     public partial class UpdateMSKCConnectorCmdlet : AmazonKafkaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConnectorArn
         /// <summary>
@@ -56,6 +59,20 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ConnectorArn { get; set; }
+        #endregion
+        
+        #region Parameter ConnectorConfiguration
+        /// <summary>
+        /// <para>
+        /// <para>A map of keys to values that represent the configuration for the connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Collections.Hashtable ConnectorConfiguration { get; set; }
         #endregion
         
         #region Parameter ScaleInPolicy_CpuUtilizationPercentage
@@ -167,16 +184,6 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectorArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectorArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectorArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -187,9 +194,13 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConnectorArn), MyInvocation.BoundParameters);
@@ -203,21 +214,11 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KafkaConnect.Model.UpdateConnectorResponse, UpdateMSKCConnectorCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectorArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScaling_MaxWorkerCount = this.AutoScaling_MaxWorkerCount;
             context.AutoScaling_McuCount = this.AutoScaling_McuCount;
             context.AutoScaling_MinWorkerCount = this.AutoScaling_MinWorkerCount;
@@ -232,6 +233,14 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
                 WriteWarning("You are passing $null as a value for parameter ConnectorArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.ConnectorConfiguration != null)
+            {
+                context.ConnectorConfiguration = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.ConnectorConfiguration.Keys)
+                {
+                    context.ConnectorConfiguration.Add((String)hashKey, (System.String)(this.ConnectorConfiguration[hashKey]));
+                }
+            }
             context.CurrentVersion = this.CurrentVersion;
             #if MODULAR
             if (this.CurrentVersion == null && ParameterWasBound(nameof(this.CurrentVersion)))
@@ -398,6 +407,10 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             {
                 request.ConnectorArn = cmdletContext.ConnectorArn;
             }
+            if (cmdletContext.ConnectorConfiguration != null)
+            {
+                request.ConnectorConfiguration = cmdletContext.ConnectorConfiguration;
+            }
             if (cmdletContext.CurrentVersion != null)
             {
                 request.CurrentVersion = cmdletContext.CurrentVersion;
@@ -440,13 +453,7 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Managed Streaming for Kafka Connect", "UpdateConnector");
             try
             {
-                #if DESKTOP
-                return client.UpdateConnector(request);
-                #elif CORECLR
-                return client.UpdateConnectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateConnectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -471,6 +478,7 @@ namespace Amazon.PowerShell.Cmdlets.MSKC
             public System.Int32? ProvisionedCapacity_McuCount { get; set; }
             public System.Int32? ProvisionedCapacity_WorkerCount { get; set; }
             public System.String ConnectorArn { get; set; }
+            public Dictionary<System.String, System.String> ConnectorConfiguration { get; set; }
             public System.String CurrentVersion { get; set; }
             public System.Func<Amazon.KafkaConnect.Model.UpdateConnectorResponse, UpdateMSKCConnectorCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

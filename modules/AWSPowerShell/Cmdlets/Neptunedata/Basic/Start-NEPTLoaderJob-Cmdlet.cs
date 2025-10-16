@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Neptunedata;
 using Amazon.Neptunedata.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NEPT
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.NEPT
     [OutputType("Amazon.Neptunedata.Model.StartLoaderJobResponse")]
     [AWSCmdlet("Calls the Amazon NeptuneData StartLoaderJob API operation.", Operation = new[] {"StartLoaderJob"}, SelectReturnType = typeof(Amazon.Neptunedata.Model.StartLoaderJobResponse))]
     [AWSCmdletOutput("Amazon.Neptunedata.Model.StartLoaderJobResponse",
-        "This cmdlet returns an Amazon.Neptunedata.Model.StartLoaderJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Neptunedata.Model.StartLoaderJobResponse object containing multiple properties."
     )]
     public partial class StartNEPTLoaderJobCmdlet : AmazonNeptunedataClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Dependency
         /// <summary>
@@ -66,7 +69,11 @@ namespace Amazon.PowerShell.Cmdlets.NEPT
         /// until <c>Job-A</c> and <c>Job-B</c> have completed successfully. If either one of
         /// them fails, Job-C will not be executed, and its status will be set to <c>LOAD_FAILED_BECAUSE_DEPENDENCY_NOT_SATISFIED</c>.</para><para>You can set up multiple levels of dependency in this way, so that the failure of one
         /// job will cause all requests that are directly or indirectly dependent on it to be
-        /// cancelled.</para>
+        /// cancelled.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,7 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.NEPT
         /// string values("") as node and edge properties when loading CSV data. If <c>allowEmptyStrings</c>
         /// is set to <c>false</c> (the default), such empty strings are treated as nulls and
         /// are not loaded.</para><para>If <c>allowEmptyStrings</c> is set to <c>true</c>, the loader treats empty strings
-        /// as valid property values and loads them accordingly.</para></li></ul>
+        /// as valid property values and loads them accordingly.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -305,9 +316,13 @@ namespace Amazon.PowerShell.Cmdlets.NEPT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -474,13 +489,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon NeptuneData", "StartLoaderJob");
             try
             {
-                #if DESKTOP
-                return client.StartLoaderJob(request);
-                #elif CORECLR
-                return client.StartLoaderJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartLoaderJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

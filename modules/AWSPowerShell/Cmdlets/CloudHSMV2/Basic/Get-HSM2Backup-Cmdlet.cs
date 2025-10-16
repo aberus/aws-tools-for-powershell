@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudHSMV2;
 using Amazon.CloudHSMV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.HSM2
 {
     /// <summary>
-    /// Gets information about backups of AWS CloudHSM clusters.
+    /// Gets information about backups of CloudHSM clusters. Lists either the backups you
+    /// own or the backups shared with you when the Shared parameter is true.
     /// 
     ///  
     /// <para>
@@ -37,6 +40,8 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
     /// includes a <c>NextToken</c> value. Use this value in a subsequent <c>DescribeBackups</c>
     /// request to get more backups. When you receive a response with no <c>NextToken</c>
     /// (or an empty or null value), that means there are no more backups to get.
+    /// </para><para><b>Cross-account use:</b> Yes. Customers can describe backups in other Amazon Web
+    /// Services accounts that are shared with them.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "HSM2Backup")]
@@ -44,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
     [AWSCmdlet("Calls the AWS CloudHSM V2 DescribeBackups API operation.", Operation = new[] {"DescribeBackups"}, SelectReturnType = typeof(Amazon.CloudHSMV2.Model.DescribeBackupsResponse))]
     [AWSCmdletOutput("Amazon.CloudHSMV2.Model.Backup or Amazon.CloudHSMV2.Model.DescribeBackupsResponse",
         "This cmdlet returns a collection of Amazon.CloudHSMV2.Model.Backup objects.",
-        "The service call response (type Amazon.CloudHSMV2.Model.DescribeBackupsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudHSMV2.Model.DescribeBackupsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetHSM2BackupCmdlet : AmazonCloudHSMV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -61,12 +67,31 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         /// Specify clusters by their cluster identifier (ID).</para><para>Use the <c>states</c> filter to return only backups that match the specified state.</para><para>Use the <c>neverExpires</c> filter to return backups filtered by the value in the
         /// <c>neverExpires</c> parameter. <c>True</c> returns all backups exempt from the backup
         /// retention policy. <c>False</c> returns all backups with a backup retention policy
-        /// defined at the cluster.</para>
+        /// defined at the cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Filters")]
         public System.Collections.Hashtable Filter { get; set; }
+        #endregion
+        
+        #region Parameter Shared
+        /// <summary>
+        /// <para>
+        /// <para>Describe backups that are shared with you.</para><note><para>By default when using this option, the command returns backups that have been shared
+        /// using a standard Resource Access Manager resource share. In order for a backup that
+        /// was shared using the PutResourcePolicy command to be returned, the share must be promoted
+        /// to a standard resource share using the RAM <a href="https://docs.aws.amazon.com/cli/latest/reference/ram/promote-resource-share-created-from-policy.html">PromoteResourceShareCreatedFromPolicy</a>
+        /// API operation. For more information about sharing backups, see <a href="https://docs.aws.amazon.com/cloudhsm/latest/userguide/sharing.html">
+        /// Working with shared backups</a> in the CloudHSM User Guide.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Shared { get; set; }
         #endregion
         
         #region Parameter SortAscending
@@ -105,7 +130,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,9 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -179,6 +208,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             }
             #endif
             context.NextToken = this.NextToken;
+            context.Shared = this.Shared;
             context.SortAscending = this.SortAscending;
             
             // allow further manipulation of loaded context prior to processing
@@ -206,6 +236,10 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
+            }
+            if (cmdletContext.Shared != null)
+            {
+                request.Shared = cmdletContext.Shared.Value;
             }
             if (cmdletContext.SortAscending != null)
             {
@@ -270,6 +304,10 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             {
                 request.Filters = cmdletContext.Filter;
             }
+            if (cmdletContext.Shared != null)
+            {
+                request.Shared = cmdletContext.Shared.Value;
+            }
             if (cmdletContext.SortAscending != null)
             {
                 request.SortAscending = cmdletContext.SortAscending.Value;
@@ -321,7 +359,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Backups.Count;
+                    int _receivedThisCall = response.Backups?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -370,13 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudHSM V2", "DescribeBackups");
             try
             {
-                #if DESKTOP
-                return client.DescribeBackups(request);
-                #elif CORECLR
-                return client.DescribeBackupsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeBackupsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -396,6 +428,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             public Dictionary<System.String, List<System.String>> Filter { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
+            public System.Boolean? Shared { get; set; }
             public System.Boolean? SortAscending { get; set; }
             public System.Func<Amazon.CloudHSMV2.Model.DescribeBackupsResponse, GetHSM2BackupCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Backups;

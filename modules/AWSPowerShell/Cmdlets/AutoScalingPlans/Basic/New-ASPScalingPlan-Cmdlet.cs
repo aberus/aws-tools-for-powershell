@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScalingPlans;
 using Amazon.AutoScalingPlans.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ASP
 {
     /// <summary>
@@ -34,13 +36,14 @@ namespace Amazon.PowerShell.Cmdlets.ASP
     [OutputType("System.Int64")]
     [AWSCmdlet("Calls the AWS Auto Scaling Plans CreateScalingPlan API operation.", Operation = new[] {"CreateScalingPlan"}, SelectReturnType = typeof(Amazon.AutoScalingPlans.Model.CreateScalingPlanResponse))]
     [AWSCmdletOutput("System.Int64 or Amazon.AutoScalingPlans.Model.CreateScalingPlanResponse",
-        "This cmdlet returns a System.Int64 object.",
-        "The service call response (type Amazon.AutoScalingPlans.Model.CreateScalingPlanResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Int64 objects.",
+        "The service call response (type Amazon.AutoScalingPlans.Model.CreateScalingPlanResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewASPScalingPlanCmdlet : AmazonAutoScalingPlansClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationSource_CloudFormationStackARN
         /// <summary>
@@ -56,7 +59,11 @@ namespace Amazon.PowerShell.Cmdlets.ASP
         /// <summary>
         /// <para>
         /// <para>The scaling instructions.</para><para>For more information, see <a href="https://docs.aws.amazon.com/autoscaling/plans/APIReference/API_ScalingInstruction.html">ScalingInstruction</a>
-        /// in the <i>AWS Auto Scaling API Reference</i>.</para>
+        /// in the <i>AWS Auto Scaling API Reference</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -92,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.ASP
         #region Parameter ApplicationSource_TagFilter
         /// <summary>
         /// <para>
-        /// <para>A set of tags (up to 50).</para>
+        /// <para>A set of tags (up to 50).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,16 +122,6 @@ namespace Amazon.PowerShell.Cmdlets.ASP
         public string Select { get; set; } = "ScalingPlanVersion";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ScalingPlanName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ScalingPlanName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ScalingPlanName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -131,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.ASP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ScalingPlanName), MyInvocation.BoundParameters);
@@ -147,21 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.ASP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScalingPlans.Model.CreateScalingPlanResponse, NewASPScalingPlanCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ScalingPlanName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationSource_CloudFormationStackARN = this.ApplicationSource_CloudFormationStackARN;
             if (this.ApplicationSource_TagFilter != null)
             {
@@ -275,13 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.ASP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling Plans", "CreateScalingPlan");
             try
             {
-                #if DESKTOP
-                return client.CreateScalingPlan(request);
-                #elif CORECLR
-                return client.CreateScalingPlanAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateScalingPlanAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,15 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IAMRolesAnywhere;
 using Amazon.IAMRolesAnywhere.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAMRA
 {
     /// <summary>
     /// Imports the certificate revocation list (CRL). A CRL is a list of certificates that
-    /// have been revoked by the issuing certificate Authority (CA). IAM Roles Anywhere validates
-    /// against the CRL before issuing credentials. 
+    /// have been revoked by the issuing certificate Authority (CA).In order to be properly
+    /// imported, a CRL must be in PEM format. IAM Roles Anywhere validates against the CRL
+    /// before issuing credentials. 
     /// 
     ///  
     /// <para><b>Required permissions: </b><c>rolesanywhere:ImportCrl</c>. 
@@ -41,14 +44,13 @@ namespace Amazon.PowerShell.Cmdlets.IAMRA
     [AWSCmdlet("Calls the IAM Roles Anywhere ImportCrl API operation.", Operation = new[] {"ImportCrl"}, SelectReturnType = typeof(Amazon.IAMRolesAnywhere.Model.ImportCrlResponse))]
     [AWSCmdletOutput("Amazon.IAMRolesAnywhere.Model.CrlDetail or Amazon.IAMRolesAnywhere.Model.ImportCrlResponse",
         "This cmdlet returns an Amazon.IAMRolesAnywhere.Model.CrlDetail object.",
-        "The service call response (type Amazon.IAMRolesAnywhere.Model.ImportCrlResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IAMRolesAnywhere.Model.ImportCrlResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportIAMRACrlCmdlet : AmazonIAMRolesAnywhereClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CrlData
         /// <summary>
@@ -98,7 +100,11 @@ namespace Amazon.PowerShell.Cmdlets.IAMRA
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of tags to attach to the certificate revocation list (CRL).</para>
+        /// <para>A list of tags to attach to the certificate revocation list (CRL).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.IAMRA
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -279,13 +289,7 @@ namespace Amazon.PowerShell.Cmdlets.IAMRA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "IAM Roles Anywhere", "ImportCrl");
             try
             {
-                #if DESKTOP
-                return client.ImportCrl(request);
-                #elif CORECLR
-                return client.ImportCrlAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ImportCrlAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

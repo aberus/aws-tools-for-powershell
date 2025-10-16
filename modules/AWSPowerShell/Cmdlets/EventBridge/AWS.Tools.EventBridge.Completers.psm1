@@ -109,8 +109,8 @@ $EVB_Completers = {
 
         # Amazon.EventBridge.ConnectionOAuthHttpMethod
         {
-            ($_ -eq "New-EVBConnection/AuthParameters_OAuthParameters_HttpMethod") -Or
-            ($_ -eq "Update-EVBConnection/AuthParameters_OAuthParameters_HttpMethod")
+            ($_ -eq "New-EVBConnection/OAuthParameters_HttpMethod") -Or
+            ($_ -eq "Update-EVBConnection/OAuthParameters_HttpMethod")
         }
         {
             $v = "GET","POST","PUT"
@@ -120,7 +120,27 @@ $EVB_Completers = {
         # Amazon.EventBridge.ConnectionState
         "Get-EVBConnectionList/ConnectionState"
         {
-            $v = "AUTHORIZED","AUTHORIZING","CREATING","DEAUTHORIZED","DEAUTHORIZING","DELETING","UPDATING"
+            $v = "ACTIVE","AUTHORIZED","AUTHORIZING","CREATING","DEAUTHORIZED","DEAUTHORIZING","DELETING","FAILED_CONNECTIVITY","UPDATING"
+            break
+        }
+
+        # Amazon.EventBridge.IncludeDetail
+        {
+            ($_ -eq "New-EVBEventBus/LogConfig_IncludeDetail") -Or
+            ($_ -eq "Update-EVBEventBus/LogConfig_IncludeDetail")
+        }
+        {
+            $v = "FULL","NONE"
+            break
+        }
+
+        # Amazon.EventBridge.Level
+        {
+            ($_ -eq "New-EVBEventBus/LogConfig_Level") -Or
+            ($_ -eq "Update-EVBEventBus/LogConfig_Level")
+        }
+        {
+            $v = "ERROR","INFO","OFF","TRACE"
             break
         }
 
@@ -158,9 +178,11 @@ $EVB_Completers = {
 
 $EVB_map = @{
     "AuthorizationType"=@("New-EVBConnection","Update-EVBConnection")
-    "AuthParameters_OAuthParameters_HttpMethod"=@("New-EVBConnection","Update-EVBConnection")
     "ConnectionState"=@("Get-EVBConnectionList")
     "HttpMethod"=@("New-EVBApiDestination","Update-EVBApiDestination")
+    "LogConfig_IncludeDetail"=@("New-EVBEventBus","Update-EVBEventBus")
+    "LogConfig_Level"=@("New-EVBEventBus","Update-EVBEventBus")
+    "OAuthParameters_HttpMethod"=@("New-EVBConnection","Update-EVBConnection")
     "ReplicationConfig_State"=@("New-EVBEndpoint","Update-EVBEndpoint")
     "State"=@("Get-EVBArchiveList","Get-EVBReplayList","Write-EVBRule")
 }
@@ -270,7 +292,8 @@ $EVB_SelectMap = @{
                "Update-EVBApiDestination",
                "Update-EVBArchive",
                "Update-EVBConnection",
-               "Update-EVBEndpoint")
+               "Update-EVBEndpoint",
+               "Update-EVBEventBus")
 }
 
 _awsArgumentCompleterRegistration $EVB_SelectCompleters $EVB_SelectMap

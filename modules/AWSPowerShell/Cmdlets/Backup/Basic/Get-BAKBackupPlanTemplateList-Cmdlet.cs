@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
-    /// Returns metadata of your saved backup plan templates, including the template ID, name,
-    /// and the creation and deletion dates.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Lists the backup plan templates.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "BAKBackupPlanTemplateList")]
     [OutputType("Amazon.Backup.Model.BackupPlanTemplatesListMember")]
     [AWSCmdlet("Calls the AWS Backup ListBackupPlanTemplates API operation.", Operation = new[] {"ListBackupPlanTemplates"}, SelectReturnType = typeof(Amazon.Backup.Model.ListBackupPlanTemplatesResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.BackupPlanTemplatesListMember or Amazon.Backup.Model.ListBackupPlanTemplatesResponse",
         "This cmdlet returns a collection of Amazon.Backup.Model.BackupPlanTemplatesListMember objects.",
-        "The service call response (type Amazon.Backup.Model.ListBackupPlanTemplatesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Backup.Model.ListBackupPlanTemplatesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBAKBackupPlanTemplateListCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>The maximum number of items to be returned.</para>
+        /// <para>The maximum number of items to return.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
@@ -68,7 +70,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,9 +98,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -247,7 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.BackupPlanTemplatesList.Count;
+                    int _receivedThisCall = response.BackupPlanTemplatesList?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -296,13 +302,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "ListBackupPlanTemplates");
             try
             {
-                #if DESKTOP
-                return client.ListBackupPlanTemplates(request);
-                #elif CORECLR
-                return client.ListBackupPlanTemplatesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListBackupPlanTemplatesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ManagedGrafana;
 using Amazon.ManagedGrafana.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MGRF
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.MGRF
     [AWSCmdlet("Calls the Amazon Managed Grafana DescribeWorkspaceConfiguration API operation.", Operation = new[] {"DescribeWorkspaceConfiguration"}, SelectReturnType = typeof(Amazon.ManagedGrafana.Model.DescribeWorkspaceConfigurationResponse))]
     [AWSCmdletOutput("System.String or Amazon.ManagedGrafana.Model.DescribeWorkspaceConfigurationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ManagedGrafana.Model.DescribeWorkspaceConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ManagedGrafana.Model.DescribeWorkspaceConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMGRFWorkspaceConfigurationCmdlet : AmazonManagedGrafanaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter WorkspaceId
         /// <summary>
@@ -70,19 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.MGRF
         public string Select { get; set; } = "Configuration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WorkspaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WorkspaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WorkspaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.MGRF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ManagedGrafana.Model.DescribeWorkspaceConfigurationResponse, GetMGRFWorkspaceConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WorkspaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.WorkspaceId = this.WorkspaceId;
             #if MODULAR
             if (this.WorkspaceId == null && ParameterWasBound(nameof(this.WorkspaceId)))
@@ -170,13 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.MGRF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Managed Grafana", "DescribeWorkspaceConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DescribeWorkspaceConfiguration(request);
-                #elif CORECLR
-                return client.DescribeWorkspaceConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeWorkspaceConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,59 +22,59 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Enables server-side encryption (SSE) for the delivery stream. 
+    /// Enables server-side encryption (SSE) for the Firehose stream. 
     /// 
     ///  
     /// <para>
-    /// This operation is asynchronous. It returns immediately. When you invoke it, Kinesis
-    /// Data Firehose first sets the encryption status of the stream to <c>ENABLING</c>, and
-    /// then to <c>ENABLED</c>. The encryption status of a delivery stream is the <c>Status</c>
-    /// property in <a>DeliveryStreamEncryptionConfiguration</a>. If the operation fails,
-    /// the encryption status changes to <c>ENABLING_FAILED</c>. You can continue to read
-    /// and write data to your delivery stream while the encryption status is <c>ENABLING</c>,
-    /// but the data is not encrypted. It can take up to 5 seconds after the encryption status
-    /// changes to <c>ENABLED</c> before all records written to the delivery stream are encrypted.
-    /// To find out whether a record or a batch of records was encrypted, check the response
-    /// elements <a>PutRecordOutput$Encrypted</a> and <a>PutRecordBatchOutput$Encrypted</a>,
+    /// This operation is asynchronous. It returns immediately. When you invoke it, Firehose
+    /// first sets the encryption status of the stream to <c>ENABLING</c>, and then to <c>ENABLED</c>.
+    /// The encryption status of a Firehose stream is the <c>Status</c> property in <a>DeliveryStreamEncryptionConfiguration</a>.
+    /// If the operation fails, the encryption status changes to <c>ENABLING_FAILED</c>. You
+    /// can continue to read and write data to your Firehose stream while the encryption status
+    /// is <c>ENABLING</c>, but the data is not encrypted. It can take up to 5 seconds after
+    /// the encryption status changes to <c>ENABLED</c> before all records written to the
+    /// Firehose stream are encrypted. To find out whether a record or a batch of records
+    /// was encrypted, check the response elements <a>PutRecordOutput$Encrypted</a> and <a>PutRecordBatchOutput$Encrypted</a>,
     /// respectively.
     /// </para><para>
-    /// To check the encryption status of a delivery stream, use <a>DescribeDeliveryStream</a>.
+    /// To check the encryption status of a Firehose stream, use <a>DescribeDeliveryStream</a>.
     /// </para><para>
-    /// Even if encryption is currently enabled for a delivery stream, you can still invoke
+    /// Even if encryption is currently enabled for a Firehose stream, you can still invoke
     /// this operation on it to change the ARN of the CMK or both its type and ARN. If you
     /// invoke this method to change the CMK, and the old CMK is of type <c>CUSTOMER_MANAGED_CMK</c>,
-    /// Kinesis Data Firehose schedules the grant it had on the old CMK for retirement. If
-    /// the new CMK is of type <c>CUSTOMER_MANAGED_CMK</c>, Kinesis Data Firehose creates
-    /// a grant that enables it to use the new CMK to encrypt and decrypt data and to manage
-    /// the grant.
+    /// Firehose schedules the grant it had on the old CMK for retirement. If the new CMK
+    /// is of type <c>CUSTOMER_MANAGED_CMK</c>, Firehose creates a grant that enables it to
+    /// use the new CMK to encrypt and decrypt data and to manage the grant.
     /// </para><para>
-    /// For the KMS grant creation to be successful, Kinesis Data Firehose APIs <c>StartDeliveryStreamEncryption</c>
+    /// For the KMS grant creation to be successful, the Firehose API operations <c>StartDeliveryStreamEncryption</c>
     /// and <c>CreateDeliveryStream</c> should not be called with session credentials that
     /// are more than 6 hours old.
     /// </para><para>
-    /// If a delivery stream already has encryption enabled and then you invoke this operation
+    /// If a Firehose stream already has encryption enabled and then you invoke this operation
     /// to change the ARN of the CMK or both its type and ARN and you get <c>ENABLING_FAILED</c>,
     /// this only means that the attempt to change the CMK failed. In this case, encryption
     /// remains enabled with the old CMK.
     /// </para><para>
-    /// If the encryption status of your delivery stream is <c>ENABLING_FAILED</c>, you can
+    /// If the encryption status of your Firehose stream is <c>ENABLING_FAILED</c>, you can
     /// invoke this operation again with a valid CMK. The CMK must be enabled and the key
-    /// policy mustn't explicitly deny the permission for Kinesis Data Firehose to invoke
-    /// KMS encrypt and decrypt operations.
+    /// policy mustn't explicitly deny the permission for Firehose to invoke KMS encrypt and
+    /// decrypt operations.
     /// </para><para>
-    /// You can enable SSE for a delivery stream only if it's a delivery stream that uses
+    /// You can enable SSE for a Firehose stream only if it's a Firehose stream that uses
     /// <c>DirectPut</c> as its source. 
     /// </para><para>
     /// The <c>StartDeliveryStreamEncryption</c> and <c>StopDeliveryStreamEncryption</c> operations
-    /// have a combined limit of 25 calls per delivery stream per 24 hours. For example, you
+    /// have a combined limit of 25 calls per Firehose stream per 24 hours. For example, you
     /// reach the limit if you call <c>StartDeliveryStreamEncryption</c> 13 times and <c>StopDeliveryStreamEncryption</c>
-    /// 12 times for the same delivery stream in a 24-hour period.
+    /// 12 times for the same Firehose stream in a 24-hour period.
     /// </para>
     /// </summary>
     [Cmdlet("Start", "KINFDeliveryStreamEncryption", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -82,17 +82,18 @@ namespace Amazon.PowerShell.Cmdlets.KINF
     [AWSCmdlet("Calls the Amazon Kinesis Firehose StartDeliveryStreamEncryption API operation.", Operation = new[] {"StartDeliveryStreamEncryption"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.StartDeliveryStreamEncryptionResponse))]
     [AWSCmdletOutput("None or Amazon.KinesisFirehose.Model.StartDeliveryStreamEncryptionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.KinesisFirehose.Model.StartDeliveryStreamEncryptionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.KinesisFirehose.Model.StartDeliveryStreamEncryptionResponse) be returned by specifying '-Select *'."
     )]
     public partial class StartKINFDeliveryStreamEncryptionCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The name of the delivery stream for which you want to enable server-side encryption
+        /// <para>The name of the Firehose stream for which you want to enable server-side encryption
         /// (SSE).</para>
         /// </para>
         /// </summary>
@@ -112,7 +113,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <para>
         /// <para>If you set <c>KeyType</c> to <c>CUSTOMER_MANAGED_CMK</c>, you must specify the Amazon
         /// Resource Name (ARN) of the CMK. If you set <c>KeyType</c> to <c>Amazon Web Services_OWNED_CMK</c>,
-        /// Kinesis Data Firehose uses a service-account CMK.</para>
+        /// Firehose uses a service-account CMK.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,18 +127,15 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// setting is <c>Amazon Web Services_OWNED_CMK</c>. For more information about CMKs,
         /// see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#master_keys">Customer
         /// Master Keys (CMKs)</a>. When you invoke <a>CreateDeliveryStream</a> or <a>StartDeliveryStreamEncryption</a>
-        /// with <c>KeyType</c> set to CUSTOMER_MANAGED_CMK, Kinesis Data Firehose invokes the
-        /// Amazon KMS operation <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateGrant.html">CreateGrant</a>
-        /// to create a grant that allows the Kinesis Data Firehose service to use the customer
-        /// managed CMK to perform encryption and decryption. Kinesis Data Firehose manages that
-        /// grant. </para><para>When you invoke <a>StartDeliveryStreamEncryption</a> to change the CMK for a delivery
-        /// stream that is encrypted with a customer managed CMK, Kinesis Data Firehose schedules
-        /// the grant it had on the old CMK for retirement.</para><para>You can use a CMK of type CUSTOMER_MANAGED_CMK to encrypt up to 500 delivery streams.
+        /// with <c>KeyType</c> set to CUSTOMER_MANAGED_CMK, Firehose invokes the Amazon KMS operation
+        /// <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_CreateGrant.html">CreateGrant</a>
+        /// to create a grant that allows the Firehose service to use the customer managed CMK
+        /// to perform encryption and decryption. Firehose manages that grant. </para><para>When you invoke <a>StartDeliveryStreamEncryption</a> to change the CMK for a Firehose
+        /// stream that is encrypted with a customer managed CMK, Firehose schedules the grant
+        /// it had on the old CMK for retirement.</para><para>You can use a CMK of type CUSTOMER_MANAGED_CMK to encrypt up to 500 Firehose streams.
         /// If a <a>CreateDeliveryStream</a> or <a>StartDeliveryStreamEncryption</a> operation
-        /// exceeds this limit, Kinesis Data Firehose throws a <c>LimitExceededException</c>.
-        /// </para><important><para>To encrypt your delivery stream, use symmetric CMKs. Kinesis Data Firehose doesn't
-        /// support asymmetric CMKs. For information about symmetric and asymmetric CMKs, see
-        /// <a href="https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-concepts.html">About
+        /// exceeds this limit, Firehose throws a <c>LimitExceededException</c>. </para><important><para>To encrypt your Firehose stream, use symmetric CMKs. Firehose doesn't support asymmetric
+        /// CMKs. For information about symmetric and asymmetric CMKs, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/symm-asymm-concepts.html">About
         /// Symmetric and Asymmetric CMKs</a> in the Amazon Web Services Key Management Service
         /// developer guide.</para></important>
         /// </para>
@@ -157,16 +155,6 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeliveryStreamName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeliveryStreamName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeliveryStreamName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -177,9 +165,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeliveryStreamName), MyInvocation.BoundParameters);
@@ -193,21 +185,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KinesisFirehose.Model.StartDeliveryStreamEncryptionResponse, StartKINFDeliveryStreamEncryptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeliveryStreamName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeliveryStreamEncryptionConfigurationInput_KeyARN = this.DeliveryStreamEncryptionConfigurationInput_KeyARN;
             context.DeliveryStreamEncryptionConfigurationInput_KeyType = this.DeliveryStreamEncryptionConfigurationInput_KeyType;
             context.DeliveryStreamName = this.DeliveryStreamName;
@@ -304,13 +286,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "StartDeliveryStreamEncryption");
             try
             {
-                #if DESKTOP
-                return client.StartDeliveryStreamEncryption(request);
-                #elif CORECLR
-                return client.StartDeliveryStreamEncryptionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartDeliveryStreamEncryptionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

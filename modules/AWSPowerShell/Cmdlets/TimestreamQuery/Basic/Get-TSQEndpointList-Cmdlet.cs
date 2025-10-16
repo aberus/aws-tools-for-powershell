@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TimestreamQuery;
 using Amazon.TimestreamQuery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TSQ
 {
     /// <summary>
@@ -53,12 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
     [AWSCmdlet("Calls the Amazon Timestream Query DescribeEndpoints API operation.", Operation = new[] {"DescribeEndpoints"}, SelectReturnType = typeof(Amazon.TimestreamQuery.Model.DescribeEndpointsResponse))]
     [AWSCmdletOutput("Amazon.TimestreamQuery.Model.Endpoint or Amazon.TimestreamQuery.Model.DescribeEndpointsResponse",
         "This cmdlet returns a collection of Amazon.TimestreamQuery.Model.Endpoint objects.",
-        "The service call response (type Amazon.TimestreamQuery.Model.DescribeEndpointsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.TimestreamQuery.Model.DescribeEndpointsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetTSQEndpointListCmdlet : AmazonTimestreamQueryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -71,9 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
         public string Select { get; set; } = "Endpoints";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -140,13 +147,7 @@ namespace Amazon.PowerShell.Cmdlets.TSQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Timestream Query", "DescribeEndpoints");
             try
             {
-                #if DESKTOP
-                return client.DescribeEndpoints(request);
-                #elif CORECLR
-                return client.DescribeEndpointsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeEndpointsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

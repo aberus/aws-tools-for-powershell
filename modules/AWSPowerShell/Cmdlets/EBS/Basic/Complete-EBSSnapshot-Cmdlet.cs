@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EBS;
 using Amazon.EBS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EBS
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.EBS
     [AWSCmdlet("Calls the Amazon EBS CompleteSnapshot API operation.", Operation = new[] {"CompleteSnapshot"}, SelectReturnType = typeof(Amazon.EBS.Model.CompleteSnapshotResponse))]
     [AWSCmdletOutput("Amazon.EBS.Status or Amazon.EBS.Model.CompleteSnapshotResponse",
         "This cmdlet returns an Amazon.EBS.Status object.",
-        "The service call response (type Amazon.EBS.Model.CompleteSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EBS.Model.CompleteSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class CompleteEBSSnapshotCmdlet : AmazonEBSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChangedBlocksCount
         /// <summary>
@@ -132,16 +135,6 @@ namespace Amazon.PowerShell.Cmdlets.EBS
         public string Select { get; set; } = "Status";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.EBS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SnapshotId), MyInvocation.BoundParameters);
@@ -168,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.EBS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EBS.Model.CompleteSnapshotResponse, CompleteEBSSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ChangedBlocksCount = this.ChangedBlocksCount;
             #if MODULAR
             if (this.ChangedBlocksCount == null && ParameterWasBound(nameof(this.ChangedBlocksCount)))
@@ -274,13 +261,7 @@ namespace Amazon.PowerShell.Cmdlets.EBS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EBS", "CompleteSnapshot");
             try
             {
-                #if DESKTOP
-                return client.CompleteSnapshot(request);
-                #elif CORECLR
-                return client.CompleteSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CompleteSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

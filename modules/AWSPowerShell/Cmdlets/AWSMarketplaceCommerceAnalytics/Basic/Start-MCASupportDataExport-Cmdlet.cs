@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AWSMarketplaceCommerceAnalytics;
 using Amazon.AWSMarketplaceCommerceAnalytics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MCA
 {
     /// <summary>
@@ -43,13 +45,14 @@ namespace Amazon.PowerShell.Cmdlets.MCA
     [AWSCmdlet("Calls the AWS Marketplace Commerce Analytics StartSupportDataExport API operation.", Operation = new[] {"StartSupportDataExport"}, SelectReturnType = typeof(Amazon.AWSMarketplaceCommerceAnalytics.Model.StartSupportDataExportResponse))]
     [AWSCmdletOutput("System.String or Amazon.AWSMarketplaceCommerceAnalytics.Model.StartSupportDataExportResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.AWSMarketplaceCommerceAnalytics.Model.StartSupportDataExportResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AWSMarketplaceCommerceAnalytics.Model.StartSupportDataExportResponse) can be returned by specifying '-Select *'."
     )]
     [System.ObsoleteAttribute("This target has been deprecated. As of December 2022 Product Support Connection is no longer supported.")]
     public partial class StartMCASupportDataExportCmdlet : AmazonAWSMarketplaceCommerceAnalyticsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CustomerDefinedValue
         /// <summary>
@@ -57,6 +60,11 @@ namespace Amazon.PowerShell.Cmdlets.MCA
         /// <i>This target has been deprecated.</i>
         /// (Optional) Key-value pairs which will be returned, unmodified, in the Amazon SNS notification
         /// message and the data set metadata file.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -190,9 +198,13 @@ namespace Amazon.PowerShell.Cmdlets.MCA
         public string Select { get; set; } = "DataSetRequestId";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -331,13 +343,7 @@ namespace Amazon.PowerShell.Cmdlets.MCA
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Commerce Analytics", "StartSupportDataExport");
             try
             {
-                #if DESKTOP
-                return client.StartSupportDataExport(request);
-                #elif CORECLR
-                return client.StartSupportDataExportAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartSupportDataExportAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

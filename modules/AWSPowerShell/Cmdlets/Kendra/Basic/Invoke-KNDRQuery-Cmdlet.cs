@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kendra;
 using Amazon.Kendra.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KNDR
 {
     /// <summary>
@@ -56,18 +58,25 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
     /// parameter. Each query returns the 100 most relevant results. If you filter result
     /// type to only question-answers, a maximum of four results are returned. If you filter
     /// result type to only answers, a maximum of three results are returned.
-    /// </para>
+    /// </para><important><para>
+    /// If you're using an Amazon Kendra Gen AI Enterprise Edition index, you can only use
+    /// <c>ATTRIBUTE_FILTER</c> to filter search results by user context. If you're using
+    /// an Amazon Kendra Gen AI Enterprise Edition index and you try to use <c>USER_TOKEN</c>
+    /// to configure user context policy, Amazon Kendra returns a <c>ValidationException</c>
+    /// error.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Invoke", "KNDRQuery", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Kendra.Model.QueryResponse")]
     [AWSCmdlet("Calls the Amazon Kendra Query API operation.", Operation = new[] {"Query"}, SelectReturnType = typeof(Amazon.Kendra.Model.QueryResponse))]
     [AWSCmdletOutput("Amazon.Kendra.Model.QueryResponse",
-        "This cmdlet returns an Amazon.Kendra.Model.QueryResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Kendra.Model.QueryResponse object containing multiple properties."
     )]
     public partial class InvokeKNDRQueryCmdlet : AmazonKendraClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeFilter
         /// <summary>
@@ -75,7 +84,9 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>Filters search results by document fields/attributes. You can only provide one attribute
         /// filter; however, the <c>AndAllFilters</c>, <c>NotFilter</c>, and <c>OrAllFilters</c>
         /// parameters contain a list of other filters.</para><para>The <c>AttributeFilter</c> parameter means you can create a set of filtering rules
-        /// that a document must satisfy to be included in the query results.</para>
+        /// that a document must satisfy to be included in the query results.</para><note><para>For Amazon Kendra Gen AI Enterprise Edition indices use <c>AttributeFilter</c> to
+        /// enable document filtering for end users using <c>_email_id</c> or include public documents
+        /// (<c>_email_id=null</c>).</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,7 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>The list of data source groups you want to filter search results based on groups'
-        /// access to documents in that data source.</para>
+        /// access to documents in that data source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// but there is no relevance tuning configured at the index level, then Amazon Kendra
         /// does not apply any relevance tuning.</para><para>If there is relevance tuning configured for fields at the index level, and you use
         /// this API to override only some of these fields, then for the fields you did not override,
-        /// the importance is set to 1.</para>
+        /// the importance is set to 1.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -146,7 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>An array of documents fields/attributes for faceted search. Amazon Kendra returns
-        /// a count for each field key specified. This helps your users narrow their search.</para>
+        /// a count for each field key specified. This helps your users narrow their search.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,7 +181,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>The list of groups you want to filter search results based on the groups' access to
-        /// documents.</para>
+        /// documents.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -262,7 +289,10 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>
         /// <para>The input query text for the search. Amazon Kendra truncates queries at 30 token words,
         /// which excludes punctuation and stop words. Truncation still applies if you use Boolean
-        /// or more advanced, complex queries. </para>
+        /// or more advanced, complex queries. For example, <c>Timeoff AND October AND Category:HR</c>
+        /// is counted as 3 tokens: <c>timeoff</c>, <c>october</c>, <c>hr</c>. For more information,
+        /// see <a href="https://docs.aws.amazon.com/kendra/latest/dg/searching-example.html#searching-index-query-syntax">Searching
+        /// with advanced query syntax</a> in the Amazon Kendra Developer Guide. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -274,7 +304,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>
         /// <para>An array of document fields/attributes to include in the response. You can limit the
         /// response to include certain document fields. By default, all document attributes are
-        /// included in the response.</para>
+        /// included in the response.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -286,7 +320,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <summary>
         /// <para>
         /// <para>A prioritized list of document attributes/fields that determine the primary document
-        /// among those in a collapsed group.</para>
+        /// among those in a collapsed group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -301,7 +339,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// whether the results should be sorted in ascending or descending order. The sort field
         /// quota can be increased.</para><para>If you don't provide a sorting configuration, the results are sorted by the relevance
         /// that Amazon Kendra determines for the result. In the case of ties in sorting the results,
-        /// the results are sorted by relevance. </para>
+        /// the results are sorted by relevance. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -378,16 +420,6 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueryText parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueryText' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueryText' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -398,9 +430,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IndexId), MyInvocation.BoundParameters);
@@ -414,21 +450,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kendra.Model.QueryResponse, InvokeKNDRQueryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueryText;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AttributeFilter = this.AttributeFilter;
             context.CollapseConfiguration_DocumentAttributeKey = this.CollapseConfiguration_DocumentAttributeKey;
             context.CollapseConfiguration_Expand = this.CollapseConfiguration_Expand;
@@ -759,13 +785,7 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kendra", "Query");
             try
             {
-                #if DESKTOP
-                return client.Query(request);
-                #elif CORECLR
-                return client.QueryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.QueryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

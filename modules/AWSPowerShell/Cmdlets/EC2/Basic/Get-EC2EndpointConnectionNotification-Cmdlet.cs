@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeVpcEndpointConnectionNotifications API operation.", Operation = new[] {"DescribeVpcEndpointConnectionNotifications"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeVpcEndpointConnectionNotificationsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.ConnectionNotification or Amazon.EC2.Model.DescribeVpcEndpointConnectionNotificationsResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.ConnectionNotification objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeVpcEndpointConnectionNotificationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeVpcEndpointConnectionNotificationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2EndpointConnectionNotificationCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConnectionNotificationId
         /// <summary>
@@ -52,11 +55,27 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String ConnectionNotificationId { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter Filter
         /// <summary>
         /// <para>
         /// <para>The filters.</para><ul><li><para><c>connection-notification-arn</c> - The ARN of the SNS topic for the notification.</para></li><li><para><c>connection-notification-id</c> - The ID of the notification.</para></li><li><para><c>connection-notification-state</c> - The state of the notification (<c>Enabled</c>
-        /// | <c>Disabled</c>).</para></li><li><para><c>connection-notification-type</c> - The type of notification (<c>Topic</c>).</para></li><li><para><c>service-id</c> - The ID of the endpoint service.</para></li><li><para><c>vpc-endpoint-id</c> - The ID of the VPC endpoint.</para></li></ul>
+        /// | <c>Disabled</c>).</para></li><li><para><c>connection-notification-type</c> - The type of notification (<c>Topic</c>).</para></li><li><para><c>service-id</c> - The ID of the endpoint service.</para></li><li><para><c>vpc-endpoint-id</c> - The ID of the VPC endpoint.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +107,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -132,6 +155,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.ConnectionNotificationId = this.ConnectionNotificationId;
+            context.DryRun = this.DryRun;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -169,6 +193,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ConnectionNotificationId != null)
             {
                 request.ConnectionNotificationId = cmdletContext.ConnectionNotificationId;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Filter != null)
             {
@@ -237,6 +265,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.ConnectionNotificationId = cmdletContext.ConnectionNotificationId;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Filter != null)
             {
                 request.Filters = cmdletContext.Filter;
@@ -281,7 +313,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ConnectionNotificationSet.Count;
+                    int _receivedThisCall = response.ConnectionNotificationSet?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -330,13 +362,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeVpcEndpointConnectionNotifications");
             try
             {
-                #if DESKTOP
-                return client.DescribeVpcEndpointConnectionNotifications(request);
-                #elif CORECLR
-                return client.DescribeVpcEndpointConnectionNotificationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeVpcEndpointConnectionNotificationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -354,6 +380,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ConnectionNotificationId { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }

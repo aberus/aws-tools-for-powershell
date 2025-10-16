@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkManager;
 using Amazon.NetworkManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NMGR
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
     [AWSCmdlet("Calls the AWS Network Manager StartRouteAnalysis API operation.", Operation = new[] {"StartRouteAnalysis"}, SelectReturnType = typeof(Amazon.NetworkManager.Model.StartRouteAnalysisResponse))]
     [AWSCmdletOutput("Amazon.NetworkManager.Model.RouteAnalysis or Amazon.NetworkManager.Model.StartRouteAnalysisResponse",
         "This cmdlet returns an Amazon.NetworkManager.Model.RouteAnalysis object.",
-        "The service call response (type Amazon.NetworkManager.Model.StartRouteAnalysisResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.NetworkManager.Model.StartRouteAnalysisResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartNMGRRouteAnalysisCmdlet : AmazonNetworkManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GlobalNetworkId
         /// <summary>
@@ -134,16 +137,6 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public string Select { get; set; } = "RouteAnalysis";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GlobalNetworkId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GlobalNetworkId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GlobalNetworkId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -154,9 +147,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GlobalNetworkId), MyInvocation.BoundParameters);
@@ -170,21 +167,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkManager.Model.StartRouteAnalysisResponse, StartNMGRRouteAnalysisCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GlobalNetworkId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Destination_IpAddress = this.Destination_IpAddress;
             context.Destination_TransitGatewayAttachmentArn = this.Destination_TransitGatewayAttachmentArn;
             context.GlobalNetworkId = this.GlobalNetworkId;
@@ -322,13 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Manager", "StartRouteAnalysis");
             try
             {
-                #if DESKTOP
-                return client.StartRouteAnalysis(request);
-                #elif CORECLR
-                return client.StartRouteAnalysisAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartRouteAnalysisAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

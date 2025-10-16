@@ -80,6 +80,17 @@ $SFN_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.StepFunctions.EncryptionType
+        {
+            ($_ -eq "New-SFNActivity/EncryptionConfiguration_Type") -Or
+            ($_ -eq "New-SFNStateMachine/EncryptionConfiguration_Type") -Or
+            ($_ -eq "Update-SFNStateMachine/EncryptionConfiguration_Type")
+        }
+        {
+            $v = "AWS_OWNED_KEY","CUSTOMER_MANAGED_KMS_KEY"
+            break
+        }
+
         # Amazon.StepFunctions.ExecutionRedriveFilter
         "Get-SFNExecutionList/RedriveFilter"
         {
@@ -91,6 +102,18 @@ $SFN_Completers = {
         "Get-SFNExecutionList/StatusFilter"
         {
             $v = "ABORTED","FAILED","PENDING_REDRIVE","RUNNING","SUCCEEDED","TIMED_OUT"
+            break
+        }
+
+        # Amazon.StepFunctions.IncludedData
+        {
+            ($_ -eq "Get-SFNExecution/IncludedData") -Or
+            ($_ -eq "Get-SFNStateMachine/IncludedData") -Or
+            ($_ -eq "Get-SFNStateMachineForExecution/IncludedData") -Or
+            ($_ -eq "Start-SFNSyncExecution/IncludedData")
+        }
+        {
+            $v = "ALL_DATA","METADATA_ONLY"
             break
         }
 
@@ -112,9 +135,19 @@ $SFN_Completers = {
         }
 
         # Amazon.StepFunctions.StateMachineType
-        "New-SFNStateMachine/Type"
+        {
+            ($_ -eq "New-SFNStateMachine/Type") -Or
+            ($_ -eq "Test-SFNStateMachineDefinitionValidation/Type")
+        }
         {
             $v = "EXPRESS","STANDARD"
+            break
+        }
+
+        # Amazon.StepFunctions.ValidateStateMachineDefinitionSeverity
+        "Test-SFNStateMachineDefinitionValidation/Severity"
+        {
+            $v = "ERROR","WARNING"
             break
         }
 
@@ -127,11 +160,14 @@ $SFN_Completers = {
 }
 
 $SFN_map = @{
+    "EncryptionConfiguration_Type"=@("New-SFNActivity","New-SFNStateMachine","Update-SFNStateMachine")
+    "IncludedData"=@("Get-SFNExecution","Get-SFNStateMachine","Get-SFNStateMachineForExecution","Start-SFNSyncExecution")
     "InspectionLevel"=@("Test-SFNState")
     "LoggingConfiguration_Level"=@("New-SFNStateMachine","Update-SFNStateMachine")
     "RedriveFilter"=@("Get-SFNExecutionList")
+    "Severity"=@("Test-SFNStateMachineDefinitionValidation")
     "StatusFilter"=@("Get-SFNExecutionList")
-    "Type"=@("New-SFNStateMachine")
+    "Type"=@("New-SFNStateMachine","Test-SFNStateMachineDefinitionValidation")
 }
 
 _awsArgumentCompleterRegistration $SFN_Completers $SFN_map
@@ -219,7 +255,8 @@ $SFN_SelectMap = @{
                "Remove-SFNResourceTag",
                "Update-SFNMapRun",
                "Update-SFNStateMachine",
-               "Update-SFNStateMachineAlias")
+               "Update-SFNStateMachineAlias",
+               "Test-SFNStateMachineDefinitionValidation")
 }
 
 _awsArgumentCompleterRegistration $SFN_SelectCompleters $SFN_SelectMap

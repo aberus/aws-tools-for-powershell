@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EKS;
 using Amazon.EKS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EKS
 {
     /// <summary>
@@ -35,7 +37,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     /// <para>
     /// The Fargate profile allows an administrator to declare which pods run on Fargate and
     /// specify which pods run on which Fargate profile. This declaration is done through
-    /// the profile’s selectors. Each profile can have up to five selectors that contain a
+    /// the profile's selectors. Each profile can have up to five selectors that contain a
     /// namespace and labels. A namespace is required for every selector. The label field
     /// consists of multiple optional key-value pairs. Pods that match the selectors are scheduled
     /// on Fargate. If a to-be-scheduled pod matches any of the selectors in the Fargate profile,
@@ -68,12 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
     [AWSCmdlet("Calls the Amazon Elastic Container Service for Kubernetes CreateFargateProfile API operation.", Operation = new[] {"CreateFargateProfile"}, SelectReturnType = typeof(Amazon.EKS.Model.CreateFargateProfileResponse))]
     [AWSCmdletOutput("Amazon.EKS.Model.FargateProfile or Amazon.EKS.Model.CreateFargateProfileResponse",
         "This cmdlet returns an Amazon.EKS.Model.FargateProfile object.",
-        "The service call response (type Amazon.EKS.Model.CreateFargateProfileResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EKS.Model.CreateFargateProfileResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEKSFargateProfileCmdlet : AmazonEKSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -146,7 +149,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>The selectors to match for a <c>Pod</c> to use this Fargate profile. Each selector
         /// must have an associated Kubernetes <c>namespace</c>. Optionally, you can also specify
         /// <c>labels</c> for a <c>namespace</c>. You may specify up to five selectors in a Fargate
-        /// profile.</para>
+        /// profile.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,7 +166,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>
         /// <para>The IDs of subnets to launch a <c>Pod</c> into. A <c>Pod</c> running on Fargate isn't
         /// assigned a public IP address, so only private subnets (with no direct route to an
-        /// Internet Gateway) are accepted for this parameter.</para>
+        /// Internet Gateway) are accepted for this parameter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,7 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         /// <para>
         /// <para>Metadata that assists with categorization and organization. Each tag consists of a
         /// key and an optional value. You define both. Tags don't propagate to any other cluster
-        /// or Amazon Web Services resources.</para>
+        /// or Amazon Web Services resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,16 +206,6 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public string Select { get; set; } = "FargateProfile";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FargateProfileName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FargateProfileName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FargateProfileName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -211,9 +216,13 @@ namespace Amazon.PowerShell.Cmdlets.EKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FargateProfileName), MyInvocation.BoundParameters);
@@ -227,21 +236,11 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EKS.Model.CreateFargateProfileResponse, NewEKSFargateProfileCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FargateProfileName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.ClusterName = this.ClusterName;
             #if MODULAR
@@ -362,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.EKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Container Service for Kubernetes", "CreateFargateProfile");
             try
             {
-                #if DESKTOP
-                return client.CreateFargateProfile(request);
-                #elif CORECLR
-                return client.CreateFargateProfileAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFargateProfileAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

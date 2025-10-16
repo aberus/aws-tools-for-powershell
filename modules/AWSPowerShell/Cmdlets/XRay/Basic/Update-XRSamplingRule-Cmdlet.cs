@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.XRay;
 using Amazon.XRay.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.XR
 {
     /// <summary>
@@ -35,22 +37,39 @@ namespace Amazon.PowerShell.Cmdlets.XR
     [AWSCmdlet("Calls the AWS X-Ray UpdateSamplingRule API operation.", Operation = new[] {"UpdateSamplingRule"}, SelectReturnType = typeof(Amazon.XRay.Model.UpdateSamplingRuleResponse))]
     [AWSCmdletOutput("Amazon.XRay.Model.SamplingRuleRecord or Amazon.XRay.Model.UpdateSamplingRuleResponse",
         "This cmdlet returns an Amazon.XRay.Model.SamplingRuleRecord object.",
-        "The service call response (type Amazon.XRay.Model.UpdateSamplingRuleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.XRay.Model.UpdateSamplingRuleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateXRSamplingRuleCmdlet : AmazonXRayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SamplingRuleUpdate_Attribute
         /// <summary>
         /// <para>
-        /// <para>Matches attributes derived from the request.</para>
+        /// <para>Matches attributes derived from the request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("SamplingRuleUpdate_Attributes")]
         public System.Collections.Hashtable SamplingRuleUpdate_Attribute { get; set; }
+        #endregion
+        
+        #region Parameter SamplingRateBoost_CooldownWindowMinute
+        /// <summary>
+        /// <para>
+        /// <para>Sets the time window (in minutes) in which only one sampling rate boost can be triggered.
+        /// After a boost occurs, no further boosts are allowed until the next window.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SamplingRuleUpdate_SamplingRateBoost_CooldownWindowMinutes")]
+        public System.Int32? SamplingRateBoost_CooldownWindowMinute { get; set; }
         #endregion
         
         #region Parameter SamplingRuleUpdate_FixedRate
@@ -81,6 +100,18 @@ namespace Amazon.PowerShell.Cmdlets.XR
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SamplingRuleUpdate_HTTPMethod { get; set; }
+        #endregion
+        
+        #region Parameter SamplingRateBoost_MaxRate
+        /// <summary>
+        /// <para>
+        /// <para>Defines max temporary sampling rate to apply when a boost is triggered. Calculated
+        /// boost rate by X-Ray will be less than or equal to this max rate.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SamplingRuleUpdate_SamplingRateBoost_MaxRate")]
+        public System.Double? SamplingRateBoost_MaxRate { get; set; }
         #endregion
         
         #region Parameter SamplingRuleUpdate_Priority
@@ -186,9 +217,13 @@ namespace Amazon.PowerShell.Cmdlets.XR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -223,6 +258,8 @@ namespace Amazon.PowerShell.Cmdlets.XR
             context.SamplingRuleUpdate_ResourceARN = this.SamplingRuleUpdate_ResourceARN;
             context.SamplingRuleUpdate_RuleARN = this.SamplingRuleUpdate_RuleARN;
             context.SamplingRuleUpdate_RuleName = this.SamplingRuleUpdate_RuleName;
+            context.SamplingRateBoost_CooldownWindowMinute = this.SamplingRateBoost_CooldownWindowMinute;
+            context.SamplingRateBoost_MaxRate = this.SamplingRateBoost_MaxRate;
             context.SamplingRuleUpdate_ServiceName = this.SamplingRuleUpdate_ServiceName;
             context.SamplingRuleUpdate_ServiceType = this.SamplingRuleUpdate_ServiceType;
             context.SamplingRuleUpdate_URLPath = this.SamplingRuleUpdate_URLPath;
@@ -366,6 +403,41 @@ namespace Amazon.PowerShell.Cmdlets.XR
                 request.SamplingRuleUpdate.URLPath = requestSamplingRuleUpdate_samplingRuleUpdate_URLPath;
                 requestSamplingRuleUpdateIsNull = false;
             }
+            Amazon.XRay.Model.SamplingRateBoost requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost = null;
+            
+             // populate SamplingRateBoost
+            var requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoostIsNull = true;
+            requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost = new Amazon.XRay.Model.SamplingRateBoost();
+            System.Int32? requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_CooldownWindowMinute = null;
+            if (cmdletContext.SamplingRateBoost_CooldownWindowMinute != null)
+            {
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_CooldownWindowMinute = cmdletContext.SamplingRateBoost_CooldownWindowMinute.Value;
+            }
+            if (requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_CooldownWindowMinute != null)
+            {
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost.CooldownWindowMinutes = requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_CooldownWindowMinute.Value;
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoostIsNull = false;
+            }
+            System.Double? requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_MaxRate = null;
+            if (cmdletContext.SamplingRateBoost_MaxRate != null)
+            {
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_MaxRate = cmdletContext.SamplingRateBoost_MaxRate.Value;
+            }
+            if (requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_MaxRate != null)
+            {
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost.MaxRate = requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost_samplingRateBoost_MaxRate.Value;
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoostIsNull = false;
+            }
+             // determine if requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost should be set to null
+            if (requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoostIsNull)
+            {
+                requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost = null;
+            }
+            if (requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost != null)
+            {
+                request.SamplingRuleUpdate.SamplingRateBoost = requestSamplingRuleUpdate_samplingRuleUpdate_SamplingRateBoost;
+                requestSamplingRuleUpdateIsNull = false;
+            }
              // determine if request.SamplingRuleUpdate should be set to null
             if (requestSamplingRuleUpdateIsNull)
             {
@@ -409,13 +481,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS X-Ray", "UpdateSamplingRule");
             try
             {
-                #if DESKTOP
-                return client.UpdateSamplingRule(request);
-                #elif CORECLR
-                return client.UpdateSamplingRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSamplingRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -441,6 +507,8 @@ namespace Amazon.PowerShell.Cmdlets.XR
             public System.String SamplingRuleUpdate_ResourceARN { get; set; }
             public System.String SamplingRuleUpdate_RuleARN { get; set; }
             public System.String SamplingRuleUpdate_RuleName { get; set; }
+            public System.Int32? SamplingRateBoost_CooldownWindowMinute { get; set; }
+            public System.Double? SamplingRateBoost_MaxRate { get; set; }
             public System.String SamplingRuleUpdate_ServiceName { get; set; }
             public System.String SamplingRuleUpdate_ServiceType { get; set; }
             public System.String SamplingRuleUpdate_URLPath { get; set; }

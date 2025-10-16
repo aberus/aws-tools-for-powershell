@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -35,21 +37,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// 
     ///  
     /// <para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modifying.html">Modifying
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ri-modifying.html">Modify
     /// Reserved Instances</a> in the <i>Amazon EC2 User Guide</i>.
-    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// </para><note><para>
+    /// The order of the elements in the response, including those within nested structures,
+    /// might vary. Applications should not assume the elements appear in a particular order.
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2ReservedInstancesModification")]
     [OutputType("Amazon.EC2.Model.ReservedInstancesModification")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeReservedInstancesModifications API operation.", Operation = new[] {"DescribeReservedInstancesModifications"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeReservedInstancesModificationsResponse), LegacyAlias="Get-EC2ReservedInstancesModifications")]
     [AWSCmdletOutput("Amazon.EC2.Model.ReservedInstancesModification or Amazon.EC2.Model.DescribeReservedInstancesModificationsResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.ReservedInstancesModification objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeReservedInstancesModificationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeReservedInstancesModificationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2ReservedInstancesModificationCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -57,10 +63,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>One or more filters.</para><ul><li><para><c>client-token</c> - The idempotency token for the modification request.</para></li><li><para><c>create-date</c> - The time when the modification request was created.</para></li><li><para><c>effective-date</c> - The time when the modification becomes effective.</para></li><li><para><c>modification-result.reserved-instances-id</c> - The ID for the Reserved Instances
         /// created as part of the modification request. This ID is only available when the status
         /// of the modification is <c>fulfilled</c>.</para></li><li><para><c>modification-result.target-configuration.availability-zone</c> - The Availability
-        /// Zone for the new Reserved Instances.</para></li><li><para><c>modification-result.target-configuration.instance-count </c> - The number of new
+        /// Zone for the new Reserved Instances.</para></li><li><para><c>modification-result.target-configuration.availability-zone-id</c> - The ID of
+        /// the Availability Zone for the new Reserved Instances.</para></li><li><para><c>modification-result.target-configuration.instance-count </c> - The number of new
         /// Reserved Instances.</para></li><li><para><c>modification-result.target-configuration.instance-type</c> - The instance type
         /// of the new Reserved Instances.</para></li><li><para><c>reserved-instances-id</c> - The ID of the Reserved Instances modified.</para></li><li><para><c>reserved-instances-modification-id</c> - The ID of the modification request.</para></li><li><para><c>status</c> - The status of the Reserved Instances modification request (<c>processing</c>
-        /// | <c>fulfilled</c> | <c>failed</c>).</para></li><li><para><c>status-message</c> - The reason for the status.</para></li><li><para><c>update-date</c> - The time when the modification request was last updated.</para></li></ul>
+        /// | <c>fulfilled</c> | <c>failed</c>).</para></li><li><para><c>status-message</c> - The reason for the status.</para></li><li><para><c>update-date</c> - The time when the modification request was last updated.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,7 +82,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ReservedInstancesModificationId
         /// <summary>
         /// <para>
-        /// <para>IDs for the submitted modification request.</para>
+        /// <para>IDs for the submitted modification request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,7 +101,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,9 +129,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -226,13 +245,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeReservedInstancesModifications");
             try
             {
-                #if DESKTOP
-                return client.DescribeReservedInstancesModifications(request);
-                #elif CORECLR
-                return client.DescribeReservedInstancesModificationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeReservedInstancesModificationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

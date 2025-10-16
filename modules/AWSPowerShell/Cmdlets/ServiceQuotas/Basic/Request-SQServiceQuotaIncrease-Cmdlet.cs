@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceQuotas;
 using Amazon.ServiceQuotas.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SQ
 {
     /// <summary>
-    /// Submits a quota increase request for the specified quota.
+    /// Submits a quota increase request for the specified quota at the account or resource
+    /// level.
     /// </summary>
     [Cmdlet("Request", "SQServiceQuotaIncrease", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ServiceQuotas.Model.RequestedServiceQuotaChange")]
     [AWSCmdlet("Calls the AWS Service Quotas RequestServiceQuotaIncrease API operation.", Operation = new[] {"RequestServiceQuotaIncrease"}, SelectReturnType = typeof(Amazon.ServiceQuotas.Model.RequestServiceQuotaIncreaseResponse))]
     [AWSCmdletOutput("Amazon.ServiceQuotas.Model.RequestedServiceQuotaChange or Amazon.ServiceQuotas.Model.RequestServiceQuotaIncreaseResponse",
         "This cmdlet returns an Amazon.ServiceQuotas.Model.RequestedServiceQuotaChange object.",
-        "The service call response (type Amazon.ServiceQuotas.Model.RequestServiceQuotaIncreaseResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceQuotas.Model.RequestServiceQuotaIncreaseResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RequestSQServiceQuotaIncreaseCmdlet : AmazonServiceQuotasClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContextId
         /// <summary>
         /// <para>
-        /// <para>Specifies the Amazon Web Services account or resource to which the quota applies.
-        /// The value in this field depends on the context scope associated with the specified
-        /// service quota.</para>
+        /// <para>Specifies the resource with an Amazon Resource Name (ARN).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,6 +109,21 @@ namespace Amazon.PowerShell.Cmdlets.SQ
         public System.String ServiceCode { get; set; }
         #endregion
         
+        #region Parameter SupportCaseAllowed
+        /// <summary>
+        /// <para>
+        /// <para>Specifies if an Amazon Web Services Support case can be opened for the quota increase
+        /// request. This parameter is optional. </para><para>By default, this flag is set to <c>True</c> and Amazon Web Services may create a support
+        /// case for some quota increase requests. You can set this flag to <c>False</c> if you
+        /// do not want a support case created when you request a quota increase. If you set the
+        /// flag to <c>False</c>, Amazon Web Services does not open a support case and updates
+        /// the request status to <c>Not approved</c>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? SupportCaseAllowed { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'RequestedQuota'.
@@ -116,16 +133,6 @@ namespace Amazon.PowerShell.Cmdlets.SQ
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "RequestedQuota";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QuotaCode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QuotaCode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QuotaCode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -138,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.SQ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.QuotaCode), MyInvocation.BoundParameters);
@@ -154,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.SQ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceQuotas.Model.RequestServiceQuotaIncreaseResponse, RequestSQServiceQuotaIncreaseCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QuotaCode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContextId = this.ContextId;
             context.DesiredValue = this.DesiredValue;
             #if MODULAR
@@ -191,6 +192,7 @@ namespace Amazon.PowerShell.Cmdlets.SQ
                 WriteWarning("You are passing $null as a value for parameter ServiceCode which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SupportCaseAllowed = this.SupportCaseAllowed;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -222,6 +224,10 @@ namespace Amazon.PowerShell.Cmdlets.SQ
             if (cmdletContext.ServiceCode != null)
             {
                 request.ServiceCode = cmdletContext.ServiceCode;
+            }
+            if (cmdletContext.SupportCaseAllowed != null)
+            {
+                request.SupportCaseAllowed = cmdletContext.SupportCaseAllowed.Value;
             }
             
             CmdletOutput output;
@@ -261,13 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.SQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Service Quotas", "RequestServiceQuotaIncrease");
             try
             {
-                #if DESKTOP
-                return client.RequestServiceQuotaIncrease(request);
-                #elif CORECLR
-                return client.RequestServiceQuotaIncreaseAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RequestServiceQuotaIncreaseAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -288,6 +288,7 @@ namespace Amazon.PowerShell.Cmdlets.SQ
             public System.Double? DesiredValue { get; set; }
             public System.String QuotaCode { get; set; }
             public System.String ServiceCode { get; set; }
+            public System.Boolean? SupportCaseAllowed { get; set; }
             public System.Func<Amazon.ServiceQuotas.Model.RequestServiceQuotaIncreaseResponse, RequestSQServiceQuotaIncreaseCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.RequestedQuota;
         }

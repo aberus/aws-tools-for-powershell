@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -76,22 +78,23 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateLabelingJob API operation.", Operation = new[] {"CreateLabelingJob"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateLabelingJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateLabelingJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateLabelingJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateLabelingJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMLabelingJobCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of a Lambda function implements the logic for <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sms-annotation-consolidation.html">annotation
-        /// consolidation</a> and to process output data.</para><para>This parameter is required for all labeling jobs. For <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sms-task-types.html">built-in
+        /// consolidation</a> and to process output data.</para><para>For <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sms-task-types.html">built-in
         /// task types</a>, use one of the following Amazon SageMaker Ground Truth Lambda function
         /// ARNs for <c>AnnotationConsolidationLambdaArn</c>. For custom labeling workflows, see
         /// <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sms-custom-templates-step3.html#sms-custom-templates-step3-postlambda">Post-annotation
-        /// Lambda</a>. </para><para><b>Bounding box</b> - Finds the most similar boxes from different workers based on
+        /// Lambda</a>.</para><para><b>Bounding box</b> - Finds the most similar boxes from different workers based on
         /// the Jaccard index of the boxes.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:ACS-BoundingBox</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:ACS-BoundingBox</c></para></li></ul><para><b>Image classification</b> - Uses a variant of the Expectation Maximization approach
         /// to estimate the true class of an image based on annotations from individual workers.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:ACS-ImageMultiClass</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:ACS-ImageMultiClass</c></para></li></ul><para><b>Multi-label image classification</b> - Uses a variant of the Expectation Maximization
         /// approach to estimate the true classes of an image based on annotations from individual
@@ -135,17 +138,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// workers to adjust 3D cuboids around objects that appear in a sequence of 3D point
         /// cloud frames.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:ACS-Adjustment3DPointCloudObjectTracking</c></para></li></ul><para><b>3D Point Cloud Semantic Segmentation Adjustment</b> - Use this task type when
         /// you want workers to adjust a point-level semantic segmentation masks using a paint
-        /// tool.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li></ul>
+        /// tool.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:ACS-Adjustment3DPointCloudSemanticSegmentation</c></para></li></ul><para><b>Generative AI/Custom</b> - Direct passthrough of output data without any transformation.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:ACS-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:ACS-PassThrough</c></para></li></ul>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("HumanTaskConfig_AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn")]
         public System.String AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn { get; set; }
         #endregion
@@ -166,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>Declares that your content is free of personally identifiable information or adult
         /// content. SageMaker may restrict the Amazon Mechanical Turk workers that can view your
-        /// task based on this information.</para>
+        /// task based on this information.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -241,11 +241,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The attribute name to use for the label in the output manifest file. This is the key
         /// for the key/value pair formed with the label that a worker assigns to the object.
-        /// The <c>LabelAttributeName</c> must meet the following requirements.</para><ul><li><para>The name can't end with "-metadata". </para></li><li><para>If you are using one of the following <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sms-task-types.html">built-in
-        /// task types</a>, the attribute name <i>must</i> end with "-ref". If the task type you
-        /// are using is not listed below, the attribute name <i>must not</i> end with "-ref".</para><ul><li><para>Image semantic segmentation (<c>SemanticSegmentation)</c>, and adjustment (<c>AdjustmentSemanticSegmentation</c>)
-        /// and verification (<c>VerificationSemanticSegmentation</c>) labeling jobs for this
-        /// task type.</para></li><li><para>Video frame object detection (<c>VideoObjectDetection</c>), and adjustment and verification
+        /// The <c>LabelAttributeName</c> must meet the following requirements.</para><ul><li><para>The name can't end with "-metadata". </para></li><li><para>If you are using one of the <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/sms-task-types.html">built-in
+        /// task types</a> or one of the following, the attribute name <i>must</i> end with "-ref".</para><ul><li><para>Image semantic segmentation (<c>SemanticSegmentation)</c> and adjustment (<c>AdjustmentSemanticSegmentation</c>)
+        /// labeling jobs for this task type. One exception is that verification (<c>VerificationSemanticSegmentation</c>)
+        /// <i>must not</i> end with -"ref".</para></li><li><para>Video frame object detection (<c>VideoObjectDetection</c>), and adjustment and verification
         /// (<c>AdjustmentVideoObjectDetection</c>) labeling jobs for this task type.</para></li><li><para>Video frame object tracking (<c>VideoObjectTracking</c>), and adjustment and verification
         /// (<c>AdjustmentVideoObjectTracking</c>) labeling jobs for this task type.</para></li><li><para>3D point cloud semantic segmentation (<c>3DPointCloudSemanticSegmentation</c>), and
         /// adjustment and verification (<c>Adjustment3DPointCloudSemanticSegmentation</c>) labeling
@@ -447,17 +446,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// object movement across a sequence of video frames.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:PRE-AdjustmentVideoObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:PRE-AdjustmentVideoObjectTracking</c></para></li></ul><para><b>3D point cloud object detection adjustment</b> - Adjust 3D cuboids in a point
         /// cloud frame. </para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:PRE-Adjustment3DPointCloudObjectDetection</c></para></li></ul><para><b>3D point cloud object tracking adjustment</b> - Adjust 3D cuboids across a sequence
         /// of point cloud frames. </para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:PRE-Adjustment3DPointCloudObjectTracking</c></para></li></ul><para><b>3D point cloud semantic segmentation adjustment</b> - Adjust semantic segmentation
-        /// masks in a 3D point cloud. </para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li></ul>
+        /// masks in a 3D point cloud. </para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:PRE-Adjustment3DPointCloudSemanticSegmentation</c></para></li></ul><para><b>Generative AI/Custom</b> - Direct passthrough of input data without any transformation.</para><ul><li><para><c>arn:aws:lambda:us-east-1:432418664414:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:us-east-2:266458841044:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:us-west-2:081040173940:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ca-central-1:918755190332:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:eu-west-1:568282634449:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:eu-west-2:487402164563:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:eu-central-1:203001061592:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-1:477331159723:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-northeast-2:845288260483:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-south-1:565803892007:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-1:377565633583:function:PRE-PassThrough</c></para></li><li><para><c>arn:aws:lambda:ap-southeast-2:454466003867:function:PRE-PassThrough</c></para></li></ul>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String HumanTaskConfig_PreHumanTaskLambdaArn { get; set; }
         #endregion
         
@@ -501,7 +493,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The VPC security group IDs, in the form <c>sg-xxxxxxxx</c>. Specify the security groups
-        /// for the VPC that is specified in the <c>Subnets</c> field.</para>
+        /// for the VPC that is specified in the <c>Subnets</c> field.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -541,7 +537,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>The ID of the subnets in the VPC to which you want to connect your training job or
         /// model. For information about the availability of specific instance types, see <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/instance-types-az.html">Supported
-        /// Instance Types and Availability Zones</a>.</para>
+        /// Instance Types and Availability Zones</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -554,7 +554,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>An array of key/value pairs. For more information, see <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/cost-alloc-tags.html#allocation-what">Using
         /// Cost Allocation Tags</a> in the <i>Amazon Web Services Billing and Cost Management
-        /// User Guide</i>.</para>
+        /// User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -598,7 +602,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>Keywords used to describe the task so that workers on Amazon Mechanical Turk can discover
-        /// the task.</para>
+        /// the task.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -719,16 +727,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "LabelingJobArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LabelingJobName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LabelingJobName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LabelingJobName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -739,9 +737,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LabelingJobName), MyInvocation.BoundParameters);
@@ -755,28 +757,12 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateLabelingJobResponse, NewSMLabelingJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LabelingJobName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn = this.AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn;
-            #if MODULAR
-            if (this.AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn == null && ParameterWasBound(nameof(this.AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn)))
-            {
-                WriteWarning("You are passing $null as a value for parameter AnnotationConsolidationConfig_AnnotationConsolidationLambdaArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.HumanTaskConfig_MaxConcurrentTaskCount = this.HumanTaskConfig_MaxConcurrentTaskCount;
             context.HumanTaskConfig_NumberOfHumanWorkersPerDataObject = this.HumanTaskConfig_NumberOfHumanWorkersPerDataObject;
             #if MODULAR
@@ -786,12 +772,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
             }
             #endif
             context.HumanTaskConfig_PreHumanTaskLambdaArn = this.HumanTaskConfig_PreHumanTaskLambdaArn;
-            #if MODULAR
-            if (this.HumanTaskConfig_PreHumanTaskLambdaArn == null && ParameterWasBound(nameof(this.HumanTaskConfig_PreHumanTaskLambdaArn)))
-            {
-                WriteWarning("You are passing $null as a value for parameter HumanTaskConfig_PreHumanTaskLambdaArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.AmountInUsd_Cent = this.AmountInUsd_Cent;
             context.AmountInUsd_Dollar = this.AmountInUsd_Dollar;
             context.AmountInUsd_TenthFractionsOfACent = this.AmountInUsd_TenthFractionsOfACent;
@@ -1433,13 +1413,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateLabelingJob");
             try
             {
-                #if DESKTOP
-                return client.CreateLabelingJob(request);
-                #elif CORECLR
-                return client.CreateLabelingJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLabelingJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

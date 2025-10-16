@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexModelBuildingService;
 using Amazon.LexModelBuildingService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LMB
 {
     /// <summary>
@@ -80,12 +82,13 @@ namespace Amazon.PowerShell.Cmdlets.LMB
     [OutputType("Amazon.LexModelBuildingService.Model.PutIntentResponse")]
     [AWSCmdlet("Calls the Amazon Lex Model Building Service PutIntent API operation.", Operation = new[] {"PutIntent"}, SelectReturnType = typeof(Amazon.LexModelBuildingService.Model.PutIntentResponse))]
     [AWSCmdletOutput("Amazon.LexModelBuildingService.Model.PutIntentResponse",
-        "This cmdlet returns an Amazon.LexModelBuildingService.Model.PutIntentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexModelBuildingService.Model.PutIntentResponse object containing multiple properties."
     )]
     public partial class WriteLMBIntentCmdlet : AmazonLexModelBuildingServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Checksum
         /// <summary>
@@ -140,7 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <summary>
         /// <para>
         /// <para>An array of <c>InputContext</c> objects that lists the contexts that must be active
-        /// for Amazon Lex to choose the intent in a conversation with the user.</para>
+        /// for Amazon Lex to choose the intent in a conversation with the user.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -187,7 +194,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <summary>
         /// <para>
         /// <para>An array of objects, each of which provides a message string and its type. You can
-        /// specify the message string in plain text or in Speech Synthesis Markup Language (SSML).</para>
+        /// specify the message string in plain text or in Speech Synthesis Markup Language (SSML).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -199,7 +210,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <summary>
         /// <para>
         /// <para>An array of objects, each of which provides a message string and its type. You can
-        /// specify the message string in plain text or in Speech Synthesis Markup Language (SSML).</para>
+        /// specify the message string in plain text or in Speech Synthesis Markup Language (SSML).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -254,7 +269,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <summary>
         /// <para>
         /// <para>An array of <c>OutputContext</c> objects that lists the contexts that the intent activates
-        /// when the intent is fulfilled.</para>
+        /// when the intent is fulfilled.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -352,7 +371,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <summary>
         /// <para>
         /// <para>An array of utterances (strings) that a user might say to signal the intent. For example,
-        /// "I want {PizzaSize} pizza", "Order {Quantity} {PizzaSize} pizzas". </para><para>In each utterance, a slot name is enclosed in curly braces. </para>
+        /// "I want {PizzaSize} pizza", "Order {Quantity} {PizzaSize} pizzas". </para><para>In each utterance, a slot name is enclosed in curly braces. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -365,7 +388,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         /// <para>
         /// <para>An array of intent slots. At runtime, Amazon Lex elicits required slot values from
         /// the user using prompts defined in the slots. For more information, see <a>how-it-works</a>.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -417,16 +444,6 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -437,9 +454,13 @@ namespace Amazon.PowerShell.Cmdlets.LMB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -453,21 +474,11 @@ namespace Amazon.PowerShell.Cmdlets.LMB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LexModelBuildingService.Model.PutIntentResponse, WriteLMBIntentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Checksum = this.Checksum;
             context.ConclusionStatement = this.ConclusionStatement;
             context.ConfirmationPrompt_MaxAttempt = this.ConfirmationPrompt_MaxAttempt;
@@ -841,13 +852,7 @@ namespace Amazon.PowerShell.Cmdlets.LMB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Model Building Service", "PutIntent");
             try
             {
-                #if DESKTOP
-                return client.PutIntent(request);
-                #elif CORECLR
-                return client.PutIntentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutIntentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

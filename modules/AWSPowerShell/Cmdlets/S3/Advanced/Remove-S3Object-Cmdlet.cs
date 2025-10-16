@@ -22,6 +22,7 @@ using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.S3.Model;
 using Amazon.S3;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.S3
 {
@@ -55,6 +56,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         private const string ParamSet_WithKeyVersionCollection = "WithKeyVersionCollection";
         private const string ParamSet_WithS3ObjectCollection = "WithS3ObjectCollection";
         private const string ParamSet_WithKeyCollection = "WithKeyCollection";
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
 
         #region Parameter BucketName
         /// <summary>
@@ -63,21 +66,38 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// </para>
         ///  
         /// <para>
-        /// When using this action with an access point, you must direct requests to the access
-        /// point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
+        ///  <b>Directory buckets</b> - When you use this operation with a directory bucket, you
+        /// must use virtual-hosted-style requests in the format <c> <i>Bucket_name</i>.s3express-<i>az_id</i>.<i>region</i>.amazonaws.com</c>.
+        /// Path-style requests are not supported. Directory bucket names must be unique in the
+        /// chosen Availability Zone. Bucket names must follow the format <c> <i>bucket_base_name</i>--<i>az-id</i>--x-s3</c>
+        /// (for example, <c> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</c>). For information
+        /// about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.
+        /// </para>
+        ///  
+        /// <para>
+        ///  <b>Access points</b> - When you use this action with an access point, you must provide
+        /// the alias of the access point in place of the bucket name or specify the access point
+        /// ARN. When using the access point ARN, you must direct requests to the access point
+        /// hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
         /// When using this action with an access point through the Amazon Web Services SDKs,
         /// you provide the access point ARN in place of the bucket name. For more information
         /// about access point ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using
         /// access points</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
-        ///  
+        ///  <note> 
         /// <para>
-        /// When you use this action with Amazon S3 on Outposts, you must direct requests to the
-        /// S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>.
+        /// Access points and Object Lambda access points are not supported by directory buckets.
+        /// </para>
+        ///  </note> 
+        /// <para>
+        ///  <b>S3 on Outposts</b> - When you use this action with Amazon S3 on Outposts, you
+        /// must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes
+        /// the form <c> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</c>.
         /// When you use this action with S3 on Outposts through the Amazon Web Services SDKs,
         /// you provide the Outposts access point ARN in place of the bucket name. For more information
         /// about S3 on Outposts ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html">What
-        /// is S3 on Outposts</a> in the <i>Amazon S3 User Guide</i>.
+        /// is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.
         /// </para>
         /// </summary>
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true, ParameterSetName = ParamSet_WithKey)]
@@ -168,6 +188,18 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public ChecksumAlgorithm ChecksumAlgorithm { get; set; }
         #endregion
 
+        #region Parameter RequestPayer
+        /// <summary>
+        /// <para>
+        /// <para>Confirms that the requester knows that they will be charged for the request. 
+        /// Bucket owners need not specify this parameter in their requests.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.S3.RequestPayer")]
+        public Amazon.S3.RequestPayer RequestPayer { get; set; }
+        #endregion
+
         #region Shared Parameters
 
         #region Parameter SerialNumber
@@ -216,6 +248,23 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
         #endregion
 
+        #region Parameter EnableLegacyKeyCleaning
+        /// <summary>
+        /// Specifies whether to use legacy key cleaning behavior for S3 key names. When this switch is present,
+        /// the cmdlet will clean key names by removing leading spaces, forward slashes (/), and backslashes (\),
+        /// converting all backslashes to forward slashes, and removing trailing spaces. When not specified,
+        /// the legacy key cleaning is disabled.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter EnableLegacyKeyCleaning { get; set; }
+        #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
+
         protected override void ProcessRecord()
         {
             base.ProcessRecord();
@@ -232,7 +281,14 @@ namespace Amazon.PowerShell.Cmdlets.S3
             {
                 resourceIdentifiersText = context.Key;
 
-                context.Key = AmazonS3Helper.CleanKey(this.Key);
+                context.Key = this.Key;
+
+                if (this.EnableLegacyKeyCleaning.IsPresent)
+                {
+                    context.Key = AmazonS3Helper.CleanKey(this.Key);
+                    base.UserAgentAddition = AmazonS3Helper.GetCleanKeyUserAgentAdditionString(this.Key, context.Key);
+                }
+
                 context.VersionId = this.VersionId;
             }
             else
@@ -258,6 +314,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             context.SerialNumber = this.SerialNumber;
             context.AuthenticationValue = this.AuthenticationValue;
+            context.RequestPayer = this.RequestPayer;
 
             var output = Execute(context) as CmdletOutput;
             ProcessOutput(output);
@@ -295,6 +352,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     SerialNumber = cmdletContext.SerialNumber,
                     AuthenticationValue = cmdletContext.AuthenticationValue
                 };
+            }
+
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
             }
 
             using (var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint))
@@ -367,6 +429,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
                 };
             }
 
+            if (cmdletContext.RequestPayer != null)
+            {
+                request.RequestPayer = cmdletContext.RequestPayer;
+            }
+
             using (var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint))
             {
                 CmdletOutput output;
@@ -403,13 +470,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             try
             {
-#if DESKTOP
-                return client.DeleteObject(request);
-#elif CORECLR
-                return client.DeleteObjectAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.DeleteObjectAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -429,13 +490,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             try
             {
-#if DESKTOP
-                return client.DeleteObjects(request);
-#elif CORECLR
-                return client.DeleteObjectsAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+
+                return client.DeleteObjectsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -467,6 +523,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
             public String AuthenticationValue { get; set; }
 
             public ChecksumAlgorithm ChecksumAlgorithm { get; set; }
+
+            public RequestPayer RequestPayer { get; set; }
         }
     }
 }

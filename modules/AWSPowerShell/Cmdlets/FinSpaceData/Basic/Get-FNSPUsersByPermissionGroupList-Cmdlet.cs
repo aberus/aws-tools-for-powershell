@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FinSpaceData;
 using Amazon.FinSpaceData.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FNSP
 {
     /// <summary>
@@ -35,15 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
     [AWSCmdlet("Calls the FinSpace Public API ListUsersByPermissionGroup API operation.", Operation = new[] {"ListUsersByPermissionGroup"}, SelectReturnType = typeof(Amazon.FinSpaceData.Model.ListUsersByPermissionGroupResponse))]
     [AWSCmdletOutput("Amazon.FinSpaceData.Model.UserByPermissionGroup or Amazon.FinSpaceData.Model.ListUsersByPermissionGroupResponse",
         "This cmdlet returns a collection of Amazon.FinSpaceData.Model.UserByPermissionGroup objects.",
-        "The service call response (type Amazon.FinSpaceData.Model.ListUsersByPermissionGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FinSpaceData.Model.ListUsersByPermissionGroupResponse) can be returned by specifying '-Select *'."
     )]
     [System.ObsoleteAttribute("This method will be discontinued.")]
     public partial class GetFNSPUsersByPermissionGroupListCmdlet : AmazonFinSpaceDataClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PermissionGroupId
         /// <summary>
@@ -100,19 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
         public string Select { get; set; } = "Users";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PermissionGroupId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PermissionGroupId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PermissionGroupId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -120,21 +115,11 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.FinSpaceData.Model.ListUsersByPermissionGroupResponse, GetFNSPUsersByPermissionGroupListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PermissionGroupId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MaxResult = this.MaxResult;
             #if MODULAR
             if (this.MaxResult == null && ParameterWasBound(nameof(this.MaxResult)))
@@ -216,13 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.FNSP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "FinSpace Public API", "ListUsersByPermissionGroup");
             try
             {
-                #if DESKTOP
-                return client.ListUsersByPermissionGroup(request);
-                #elif CORECLR
-                return client.ListUsersByPermissionGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListUsersByPermissionGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

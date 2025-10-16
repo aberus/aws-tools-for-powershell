@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppIntegrationsService;
 using Amazon.AppIntegrationsService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AIS
 {
     /// <summary>
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.AIS
     [AWSCmdlet("Calls the Amazon AppIntegrations Service CreateDataIntegration API operation.", Operation = new[] {"CreateDataIntegration"}, SelectReturnType = typeof(Amazon.AppIntegrationsService.Model.CreateDataIntegrationResponse))]
     [AWSCmdletOutput("System.String or Amazon.AppIntegrationsService.Model.CreateDataIntegrationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.AppIntegrationsService.Model.CreateDataIntegrationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppIntegrationsService.Model.CreateDataIntegrationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewAISDataIntegrationCmdlet : AmazonAppIntegrationsServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -61,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter FileConfiguration_Filter
         /// <summary>
         /// <para>
-        /// <para>Restrictions for what files should be pulled from the source.</para>
+        /// <para>Restrictions for what files should be pulled from the source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,7 +90,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter FileConfiguration_Folder
         /// <summary>
         /// <para>
-        /// <para>Identifiers for the source folders to pull all files from recursively.</para>
+        /// <para>Identifiers for the source folders to pull all files from recursively.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter KmsKey
         /// <summary>
         /// <para>
-        /// <para>The KMS key for the DataIntegration.</para>
+        /// <para>The KMS key ARN for the DataIntegration.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -138,7 +149,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter ObjectConfiguration
         /// <summary>
         /// <para>
-        /// <para>The configuration for what data should be pulled from the source.</para>
+        /// <para>The configuration for what data should be pulled from the source.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,14 +176,7 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         /// <para>The URI of the data source.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String SourceURI { get; set; }
         #endregion
         
@@ -176,7 +184,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         /// <summary>
         /// <para>
         /// <para>The tags used to organize, track, or control access for this resource. For example,
-        /// { "tags": {"key1":"value1", "key2":"value2"} }.</para>
+        /// { "tags": {"key1":"value1", "key2":"value2"} }.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -208,16 +220,6 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         public string Select { get; set; } = "Arn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -228,9 +230,13 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -244,21 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppIntegrationsService.Model.CreateDataIntegrationResponse, NewAISDataIntegrationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             if (this.FileConfiguration_Filter != null)
@@ -311,12 +307,6 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             context.ScheduleConfig_Object = this.ScheduleConfig_Object;
             context.ScheduleConfig_ScheduleExpression = this.ScheduleConfig_ScheduleExpression;
             context.SourceURI = this.SourceURI;
-            #if MODULAR
-            if (this.SourceURI == null && ParameterWasBound(nameof(this.SourceURI)))
-            {
-                WriteWarning("You are passing $null as a value for parameter SourceURI which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             if (this.Tag != null)
             {
                 context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -475,13 +465,7 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon AppIntegrations Service", "CreateDataIntegration");
             try
             {
-                #if DESKTOP
-                return client.CreateDataIntegration(request);
-                #elif CORECLR
-                return client.CreateDataIntegrationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDataIntegrationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

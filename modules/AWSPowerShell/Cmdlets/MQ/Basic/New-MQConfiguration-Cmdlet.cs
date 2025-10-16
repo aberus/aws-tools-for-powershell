@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MQ;
 using Amazon.MQ.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MQ
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
     [OutputType("Amazon.MQ.Model.CreateConfigurationResponse")]
     [AWSCmdlet("Calls the Amazon MQ CreateConfiguration API operation.", Operation = new[] {"CreateConfiguration"}, SelectReturnType = typeof(Amazon.MQ.Model.CreateConfigurationResponse))]
     [AWSCmdletOutput("Amazon.MQ.Model.CreateConfigurationResponse",
-        "This cmdlet returns an Amazon.MQ.Model.CreateConfigurationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MQ.Model.CreateConfigurationResponse object containing multiple properties."
     )]
     public partial class NewMQConfigurationCmdlet : AmazonMQClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AuthenticationStrategy
         /// <summary>
@@ -74,19 +77,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         #region Parameter EngineVersion
         /// <summary>
         /// <para>
-        /// <para>Required. The broker engine's version. For a list of supported engine versions, see
-        /// <a href="https://docs.aws.amazon.com//amazon-mq/latest/developer-guide/broker-engine.html">Supported
-        /// engines</a>.</para>
+        /// <para>The broker engine version. Defaults to the latest available version for the specified
+        /// broker engine type. For more information, see the <a href="https://docs.aws.amazon.com//amazon-mq/latest/developer-guide/activemq-version-management.html">ActiveMQ
+        /// version management</a> and the <a href="https://docs.aws.amazon.com//amazon-mq/latest/developer-guide/rabbitmq-version-management.html">RabbitMQ
+        /// version management</a> sections in the Amazon MQ Developer Guide.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String EngineVersion { get; set; }
         #endregion
         
@@ -112,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Create tags when creating the configuration.</para>
+        /// <para>Create tags when creating the configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,16 +132,6 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -151,9 +142,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -167,21 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MQ.Model.CreateConfigurationResponse, NewMQConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuthenticationStrategy = this.AuthenticationStrategy;
             context.EngineType = this.EngineType;
             #if MODULAR
@@ -191,12 +176,6 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             }
             #endif
             context.EngineVersion = this.EngineVersion;
-            #if MODULAR
-            if (this.EngineVersion == null && ParameterWasBound(nameof(this.EngineVersion)))
-            {
-                WriteWarning("You are passing $null as a value for parameter EngineVersion which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -286,13 +265,7 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon MQ", "CreateConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateConfiguration(request);
-                #elif CORECLR
-                return client.CreateConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

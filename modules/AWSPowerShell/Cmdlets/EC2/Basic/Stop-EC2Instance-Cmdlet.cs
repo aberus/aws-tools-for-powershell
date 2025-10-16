@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,51 +22,51 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Stops an Amazon EBS-backed instance. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html">Stop
-    /// and start your instance</a> in the <i>Amazon EC2 User Guide</i>.
+    /// Stops an Amazon EBS-backed instance. You can restart your instance at any time using
+    /// the <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_StartInstances.html">StartInstances</a>
+    /// API. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html">Stop
+    /// and start Amazon EC2 instances</a> in the <i>Amazon EC2 User Guide</i>.
     /// 
     ///  
     /// <para>
-    /// You can use the Stop action to hibernate an instance if the instance is <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enabling-hibernation.html">enabled
-    /// for hibernation</a> and it meets the <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html">hibernation
-    /// prerequisites</a>. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html">Hibernate
-    /// your instance</a> in the <i>Amazon EC2 User Guide</i>.
+    /// When you stop or hibernate an instance, we shut it down. By default, this includes
+    /// a graceful operating system (OS) shutdown. To bypass the graceful shutdown, use the
+    /// <c>skipOsShutdown</c> parameter; however, this might risk data integrity.
     /// </para><para>
-    /// We don't charge usage for a stopped instance, or data transfer fees; however, your
-    /// root partition Amazon EBS volume remains and continues to persist your data, and you
-    /// are charged for Amazon EBS volume usage. Every time you start your instance, Amazon
-    /// EC2 charges a one-minute minimum for instance usage, and thereafter charges per second
-    /// for instance usage.
+    /// You can use the StopInstances operation together with the <c>Hibernate</c> parameter
+    /// to hibernate an instance if the instance is <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/enabling-hibernation.html">enabled
+    /// for hibernation</a> and meets the <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/hibernating-prerequisites.html">hibernation
+    /// prerequisites</a>. Stopping an instance doesn't preserve data stored in RAM, while
+    /// hibernation does. If hibernation fails, a normal shutdown occurs. For more information,
+    /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html">Hibernate
+    /// your Amazon EC2 instance</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
-    /// You can't stop or hibernate instance store-backed instances. You can't use the Stop
-    /// action to hibernate Spot Instances, but you can specify that Amazon EC2 should hibernate
-    /// Spot Instances when they are interrupted. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-interruptions.html#hibernate-spot-instances">Hibernating
-    /// interrupted Spot Instances</a> in the <i>Amazon EC2 User Guide</i>.
+    /// If your instance appears stuck in the <c>stopping</c> state, there might be an issue
+    /// with the underlying host computer. You can use the StopInstances operation together
+    /// with the Force parameter to force stop your instance. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstancesStopping.html">Troubleshoot
+    /// Amazon EC2 instance stop issues</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
-    /// When you stop or hibernate an instance, we shut it down. You can restart your instance
-    /// at any time. Before stopping or hibernating an instance, make sure it is in a state
-    /// from which it can be restarted. Stopping an instance does not preserve data stored
-    /// in RAM, but hibernating an instance does preserve data stored in RAM. If an instance
-    /// cannot hibernate successfully, a normal shutdown occurs.
+    /// Stopping and hibernating an instance differs from rebooting or terminating it. For
+    /// example, a stopped or hibernated instance retains its root volume and any data volumes,
+    /// unlike terminated instances where these volumes are automatically deleted. For more
+    /// information about the differences between stopping, hibernating, rebooting, and terminating
+    /// instances, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html">Amazon
+    /// EC2 instance state changes</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
-    /// Stopping and hibernating an instance is different to rebooting or terminating it.
-    /// For example, when you stop or hibernate an instance, the root device and any other
-    /// devices attached to the instance persist. When you terminate an instance, the root
-    /// device and any other devices attached during the instance launch are automatically
-    /// deleted. For more information about the differences between rebooting, stopping, hibernating,
-    /// and terminating instances, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html">Instance
-    /// lifecycle</a> in the <i>Amazon EC2 User Guide</i>.
+    /// We don't charge for instance usage or data transfer fees when an instance is stopped.
+    /// However, the root volume and any data volumes remain and continue to persist your
+    /// data, and you're charged for volume usage. Every time you start your instance, Amazon
+    /// EC2 charges a one-minute minimum for instance usage, followed by per-second billing.
     /// </para><para>
-    /// When you stop an instance, we attempt to shut it down forcibly after a short while.
-    /// If your instance appears stuck in the stopping state after a period of time, there
-    /// may be an issue with the underlying host computer. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstancesStopping.html">Troubleshoot
-    /// stopping your instance</a> in the <i>Amazon EC2 User Guide</i>.
+    /// You can't stop or hibernate instance store-backed instances.
     /// </para>
     /// </summary>
     [Cmdlet("Stop", "EC2Instance", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -74,19 +74,35 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) StopInstances API operation.", Operation = new[] {"StopInstances"}, SelectReturnType = typeof(Amazon.EC2.Model.StopInstancesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.InstanceStateChange or Amazon.EC2.Model.StopInstancesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.InstanceStateChange objects.",
-        "The service call response (type Amazon.EC2.Model.StopInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.StopInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StopEC2InstanceCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the operation, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter Enforce
         /// <summary>
         /// <para>
-        /// <para>Forces the instances to stop. The instances do not have an opportunity to flush file
-        /// system caches or file system metadata. If you use this option, you must perform file
-        /// system check and repair procedures. This option is not recommended for Windows instances.</para><para>Default: <c>false</c></para>
+        /// <para>Forces the instance to stop. The instance will first attempt a graceful shutdown,
+        /// which includes flushing file system caches and metadata. If the graceful shutdown
+        /// fails to complete within the timeout period, the instance shuts down forcibly without
+        /// flushing the file system caches and metadata.</para><para>After using this option, you must perform file system check and repair procedures.
+        /// This option is not recommended for Windows instances. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/TroubleshootingInstancesStopping.html">Troubleshoot
+        /// Amazon EC2 instance stop issues</a> in the <i>Amazon EC2 User Guide</i>.</para><para>Default: <c>false</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,7 +115,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>Hibernates the instance if the instance was enabled for hibernation at launch. If
         /// the instance cannot hibernate successfully, a normal shutdown occurs. For more information,
         /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Hibernate.html">Hibernate
-        /// your instance</a> in the <i>Amazon EC2 User Guide</i>.</para><para> Default: <c>false</c></para>
+        /// your Amazon EC2 instance</a> in the <i>Amazon EC2 User Guide</i>.</para><para> Default: <c>false</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,7 +125,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the instances.</para>
+        /// <para>The IDs of the instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -124,6 +144,19 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object[] InstanceId { get; set; }
         #endregion
         
+        #region Parameter SkipOsShutdown
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to bypass the graceful OS shutdown process when the instance is
+        /// stopped.</para><important><para>Bypassing the graceful OS shutdown might result in data loss or corruption (for example,
+        /// memory contents not flushed to disk or loss of in-flight IOs) or skipped shutdown
+        /// scripts.</para></important><para>Default: <c>false</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? SkipOsShutdown { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'StoppingInstances'.
@@ -133,16 +166,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "StoppingInstances";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -155,9 +178,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -171,21 +198,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.StopInstancesResponse, StopEC2InstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             context.Enforce = this.Enforce;
             context.Hibernate = this.Hibernate;
             if (this.InstanceId != null)
@@ -193,6 +211,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.InstanceId = AmazonEC2Helper.InstanceParamToIDs(this.InstanceId);
             }
             
+            context.SkipOsShutdown = this.SkipOsShutdown;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -209,6 +228,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.StopInstancesRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.Enforce != null)
             {
                 request.Force = cmdletContext.Enforce.Value;
@@ -220,6 +243,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.InstanceId != null)
             {
                 request.InstanceIds = cmdletContext.InstanceId;
+            }
+            if (cmdletContext.SkipOsShutdown != null)
+            {
+                request.SkipOsShutdown = cmdletContext.SkipOsShutdown.Value;
             }
             
             CmdletOutput output;
@@ -259,13 +286,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "StopInstances");
             try
             {
-                #if DESKTOP
-                return client.StopInstances(request);
-                #elif CORECLR
-                return client.StopInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StopInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -282,9 +303,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? Enforce { get; set; }
             public System.Boolean? Hibernate { get; set; }
             public List<System.String> InstanceId { get; set; }
+            public System.Boolean? SkipOsShutdown { get; set; }
             public System.Func<Amazon.EC2.Model.StopInstancesResponse, StopEC2InstanceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.StoppingInstances;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LookoutMetrics;
 using Amazon.LookoutMetrics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.LOM
     [AWSCmdlet("Calls the Amazon Lookout for Metrics GetAnomalyGroup API operation.", Operation = new[] {"GetAnomalyGroup"}, SelectReturnType = typeof(Amazon.LookoutMetrics.Model.GetAnomalyGroupResponse))]
     [AWSCmdletOutput("Amazon.LookoutMetrics.Model.AnomalyGroup or Amazon.LookoutMetrics.Model.GetAnomalyGroupResponse",
         "This cmdlet returns an Amazon.LookoutMetrics.Model.AnomalyGroup object.",
-        "The service call response (type Amazon.LookoutMetrics.Model.GetAnomalyGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.LookoutMetrics.Model.GetAnomalyGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetLOMAnomalyGroupCmdlet : AmazonLookoutMetricsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnomalyDetectorArn
         /// <summary>
@@ -87,19 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         public string Select { get; set; } = "AnomalyGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AnomalyGroupId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AnomalyGroupId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AnomalyGroupId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,21 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LookoutMetrics.Model.GetAnomalyGroupResponse, GetLOMAnomalyGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AnomalyGroupId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnomalyDetectorArn = this.AnomalyDetectorArn;
             #if MODULAR
             if (this.AnomalyDetectorArn == null && ParameterWasBound(nameof(this.AnomalyDetectorArn)))
@@ -198,13 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.LOM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lookout for Metrics", "GetAnomalyGroup");
             try
             {
-                #if DESKTOP
-                return client.GetAnomalyGroup(request);
-                #elif CORECLR
-                return client.GetAnomalyGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAnomalyGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

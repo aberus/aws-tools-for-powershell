@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.TranscribeService;
 using Amazon.TranscribeService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.TRS
 {
     /// <summary>
@@ -57,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
     [AWSCmdlet("Calls the Amazon Transcribe Service CreateCallAnalyticsCategory API operation.", Operation = new[] {"CreateCallAnalyticsCategory"}, SelectReturnType = typeof(Amazon.TranscribeService.Model.CreateCallAnalyticsCategoryResponse))]
     [AWSCmdletOutput("Amazon.TranscribeService.Model.CategoryProperties or Amazon.TranscribeService.Model.CreateCallAnalyticsCategoryResponse",
         "This cmdlet returns an Amazon.TranscribeService.Model.CategoryProperties object.",
-        "The service call response (type Amazon.TranscribeService.Model.CreateCallAnalyticsCategoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.TranscribeService.Model.CreateCallAnalyticsCategoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewTRSCallAnalyticsCategoryCmdlet : AmazonTranscribeServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CategoryName
         /// <summary>
@@ -106,7 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// between 1 and 20 rules for that category. For each rule, you specify a filter you
         /// want applied to the attributes of a call. For example, you can choose a sentiment
         /// filter that detects if a customer's sentiment was positive during the last 30 seconds
-        /// of the call.</para>
+        /// of the call.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -121,6 +128,23 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public Amazon.TranscribeService.Model.Rule[] Rule { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>Adds one or more custom tags, each in the form of a key:value pair, to a new call
+        /// analytics category at the time you start this new job.</para><para>To learn more about using tags with Amazon Transcribe, refer to <a href="https://docs.aws.amazon.com/transcribe/latest/dg/tagging.html">Tagging
+        /// resources</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.TranscribeService.Model.Tag[] Tag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'CategoryProperties'.
@@ -130,16 +154,6 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "CategoryProperties";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CategoryName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CategoryName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CategoryName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -152,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.TRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CategoryName), MyInvocation.BoundParameters);
@@ -168,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.TranscribeService.Model.CreateCallAnalyticsCategoryResponse, NewTRSCallAnalyticsCategoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CategoryName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CategoryName = this.CategoryName;
             #if MODULAR
             if (this.CategoryName == null && ParameterWasBound(nameof(this.CategoryName)))
@@ -201,6 +209,10 @@ namespace Amazon.PowerShell.Cmdlets.TRS
                 WriteWarning("You are passing $null as a value for parameter Rule which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.TranscribeService.Model.Tag>(this.Tag);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -228,6 +240,10 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             if (cmdletContext.Rule != null)
             {
                 request.Rules = cmdletContext.Rule;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             
             CmdletOutput output;
@@ -267,13 +283,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Transcribe Service", "CreateCallAnalyticsCategory");
             try
             {
-                #if DESKTOP
-                return client.CreateCallAnalyticsCategory(request);
-                #elif CORECLR
-                return client.CreateCallAnalyticsCategoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCallAnalyticsCategoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -293,6 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.TRS
             public System.String CategoryName { get; set; }
             public Amazon.TranscribeService.InputType InputType { get; set; }
             public List<Amazon.TranscribeService.Model.Rule> Rule { get; set; }
+            public List<Amazon.TranscribeService.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.TranscribeService.Model.CreateCallAnalyticsCategoryResponse, NewTRSCallAnalyticsCategoryCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.CategoryProperties;
         }

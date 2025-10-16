@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DocDBElastic;
 using Amazon.DocDBElastic.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DOCE
 {
     /// <summary>
-    /// Restores a Elastic DocumentDB cluster from a snapshot.
+    /// Restores an elastic cluster from a snapshot.
     /// </summary>
     [Cmdlet("Restore", "DOCEClusterFromSnapshot", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DocDBElastic.Model.Cluster")]
     [AWSCmdlet("Calls the Amazon DocumentDB Elastic Clusters RestoreClusterFromSnapshot API operation.", Operation = new[] {"RestoreClusterFromSnapshot"}, SelectReturnType = typeof(Amazon.DocDBElastic.Model.RestoreClusterFromSnapshotResponse))]
     [AWSCmdletOutput("Amazon.DocDBElastic.Model.Cluster or Amazon.DocDBElastic.Model.RestoreClusterFromSnapshotResponse",
         "This cmdlet returns an Amazon.DocDBElastic.Model.Cluster object.",
-        "The service call response (type Amazon.DocDBElastic.Model.RestoreClusterFromSnapshotResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DocDBElastic.Model.RestoreClusterFromSnapshotResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreDOCEClusterFromSnapshotCmdlet : AmazonDocDBElasticClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterName
         /// <summary>
         /// <para>
-        /// <para>The name of the Elastic DocumentDB cluster.</para>
+        /// <para>The name of the elastic cluster.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,9 +65,10 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The KMS key identifier to use to encrypt the new Elastic DocumentDB cluster.</para><para>The KMS key identifier is the Amazon Resource Name (ARN) for the KMS encryption key.
+        /// <para>The KMS key identifier to use to encrypt the new Amazon DocumentDB elastic clusters
+        /// cluster.</para><para>The KMS key identifier is the Amazon Resource Name (ARN) for the KMS encryption key.
         /// If you are creating a cluster using the same Amazon account that owns this KMS encryption
-        /// key, you can use the KMS key alias instead of the ARN as the KMS encryption key.</para><para>If an encryption key is not specified here, Elastic DocumentDB uses the default encryption
+        /// key, you can use the KMS key alias instead of the ARN as the KMS encryption key.</para><para>If an encryption key is not specified here, Amazon DocumentDB uses the default encryption
         /// key that KMS creates for your account. Your account has a different default encryption
         /// key for each Amazon Region.</para>
         /// </para>
@@ -73,10 +77,32 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public System.String KmsKeyId { get; set; }
         #endregion
         
+        #region Parameter ShardCapacity
+        /// <summary>
+        /// <para>
+        /// <para>The capacity of each shard in the new restored elastic cluster.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ShardCapacity { get; set; }
+        #endregion
+        
+        #region Parameter ShardInstanceCount
+        /// <summary>
+        /// <para>
+        /// <para>The number of replica instances applying to all shards in the elastic cluster. A <c>shardInstanceCount</c>
+        /// value of 1 means there is one writer instance, and any additional instances are replicas
+        /// that can be used for reads and to improve availability.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? ShardInstanceCount { get; set; }
+        #endregion
+        
         #region Parameter SnapshotArn
         /// <summary>
         /// <para>
-        /// <para>The arn of the Elastic DocumentDB snapshot.</para>
+        /// <para>The ARN identifier of the elastic cluster snapshot.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,7 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter SubnetId
         /// <summary>
         /// <para>
-        /// <para>The Amazon EC2 subnet IDs for the Elastic DocumentDB cluster.</para>
+        /// <para>The Amazon EC2 subnet IDs for the elastic cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,9 +134,13 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of the tag names to be assigned to the restored DB cluster, in the form of
-        /// an array of key-value pairs in which the key is the tag name and the value is the
-        /// key value.</para>
+        /// <para>A list of the tag names to be assigned to the restored elastic cluster, in the form
+        /// of an array of key-value pairs in which the key is the tag name and the value is the
+        /// key value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,7 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         #region Parameter VpcSecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of EC2 VPC security groups to associate with the Elastic DocumentDB cluster.</para>
+        /// <para>A list of EC2 VPC security groups to associate with the elastic cluster.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,16 +174,6 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public string Select { get; set; } = "Cluster";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -156,9 +184,13 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterName), MyInvocation.BoundParameters);
@@ -172,21 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DocDBElastic.Model.RestoreClusterFromSnapshotResponse, RestoreDOCEClusterFromSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClusterName = this.ClusterName;
             #if MODULAR
             if (this.ClusterName == null && ParameterWasBound(nameof(this.ClusterName)))
@@ -195,6 +217,8 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             }
             #endif
             context.KmsKeyId = this.KmsKeyId;
+            context.ShardCapacity = this.ShardCapacity;
+            context.ShardInstanceCount = this.ShardInstanceCount;
             context.SnapshotArn = this.SnapshotArn;
             #if MODULAR
             if (this.SnapshotArn == null && ParameterWasBound(nameof(this.SnapshotArn)))
@@ -241,6 +265,14 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             if (cmdletContext.KmsKeyId != null)
             {
                 request.KmsKeyId = cmdletContext.KmsKeyId;
+            }
+            if (cmdletContext.ShardCapacity != null)
+            {
+                request.ShardCapacity = cmdletContext.ShardCapacity.Value;
+            }
+            if (cmdletContext.ShardInstanceCount != null)
+            {
+                request.ShardInstanceCount = cmdletContext.ShardInstanceCount.Value;
             }
             if (cmdletContext.SnapshotArn != null)
             {
@@ -296,13 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DocumentDB Elastic Clusters", "RestoreClusterFromSnapshot");
             try
             {
-                #if DESKTOP
-                return client.RestoreClusterFromSnapshot(request);
-                #elif CORECLR
-                return client.RestoreClusterFromSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreClusterFromSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -321,6 +347,8 @@ namespace Amazon.PowerShell.Cmdlets.DOCE
         {
             public System.String ClusterName { get; set; }
             public System.String KmsKeyId { get; set; }
+            public System.Int32? ShardCapacity { get; set; }
+            public System.Int32? ShardInstanceCount { get; set; }
             public System.String SnapshotArn { get; set; }
             public List<System.String> SubnetId { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }

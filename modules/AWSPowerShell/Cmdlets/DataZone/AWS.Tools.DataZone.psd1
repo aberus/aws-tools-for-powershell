@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The DataZone module of AWS Tools for PowerShell lets developers and administrators manage Amazon DataZone from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.DataZone.dll'
     )
@@ -86,14 +87,26 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Cmdlets to export from this module
     CmdletsToExport = @(
+        'Add-DZEntityOwner', 
+        'Add-DZGovernedTerm', 
+        'Add-DZPolicyGrant', 
         'Add-DZResourceTag', 
         'Approve-DZPrediction', 
         'Approve-DZSubscriptionRequest', 
         'Deny-DZPrediction', 
         'Deny-DZSubscriptionRequest', 
+        'Get-DZAccountPool', 
+        'Get-DZAccountPoolList', 
+        'Get-DZAccountsInAccountPoolList', 
         'Get-DZAsset', 
+        'Get-DZAssetFilter', 
+        'Get-DZAssetFilterList', 
         'Get-DZAssetRevisionList', 
         'Get-DZAssetType', 
+        'Get-DZConnection', 
+        'Get-DZConnectionList', 
+        'Get-DZDataProduct', 
+        'Get-DZDataProductRevisionList', 
         'Get-DZDataSource', 
         'Get-DZDataSourceList', 
         'Get-DZDataSourceRun', 
@@ -101,11 +114,17 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-DZDataSourceRunList', 
         'Get-DZDomain', 
         'Get-DZDomainList', 
+        'Get-DZDomainUnit', 
+        'Get-DZDomainUnitsForParentList', 
+        'Get-DZEntityOwnerList', 
         'Get-DZEnvironment', 
+        'Get-DZEnvironmentAction', 
+        'Get-DZEnvironmentActionList', 
         'Get-DZEnvironmentBlueprint', 
         'Get-DZEnvironmentBlueprintConfiguration', 
         'Get-DZEnvironmentBlueprintConfigurationList', 
         'Get-DZEnvironmentBlueprintList', 
+        'Get-DZEnvironmentCredential', 
         'Get-DZEnvironmentList', 
         'Get-DZEnvironmentProfile', 
         'Get-DZEnvironmentProfileList', 
@@ -114,12 +133,25 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-DZGlossaryTerm', 
         'Get-DZGroupProfile', 
         'Get-DZIamPortalLoginUrl', 
+        'Get-DZJobRun', 
+        'Get-DZJobRunList', 
+        'Get-DZLineageEvent', 
+        'Get-DZLineageEventList', 
+        'Get-DZLineageNode', 
+        'Get-DZLineageNodeHistoryList', 
         'Get-DZListing', 
+        'Get-DZMetadataGenerationRun', 
+        'Get-DZMetadataGenerationRunList', 
         'Get-DZNotificationList', 
+        'Get-DZPolicyGrantList', 
         'Get-DZProject', 
         'Get-DZProjectList', 
         'Get-DZProjectMembershipList', 
+        'Get-DZProjectProfile', 
+        'Get-DZProjectProfileList', 
         'Get-DZResourceTag', 
+        'Get-DZRule', 
+        'Get-DZRuleList', 
         'Get-DZSubscription', 
         'Get-DZSubscriptionGrant', 
         'Get-DZSubscriptionGrantList', 
@@ -128,13 +160,23 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-DZSubscriptionRequestList', 
         'Get-DZSubscriptionTarget', 
         'Get-DZSubscriptionTargetList', 
+        'Get-DZTimeSeriesDataPoint', 
+        'Get-DZTimeSeriesDataPointList', 
         'Get-DZUserProfile', 
+        'New-DZAccountPool', 
         'New-DZAsset', 
+        'New-DZAssetFilter', 
         'New-DZAssetRevision', 
         'New-DZAssetType', 
+        'New-DZConnection', 
+        'New-DZDataProduct', 
+        'New-DZDataProductRevision', 
         'New-DZDataSource', 
         'New-DZDomain', 
+        'New-DZDomainUnit', 
         'New-DZEnvironment', 
+        'New-DZEnvironmentAction', 
+        'New-DZEnvironmentBlueprint', 
         'New-DZEnvironmentProfile', 
         'New-DZFormType', 
         'New-DZGlossary', 
@@ -143,43 +185,72 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-DZListingChangeSet', 
         'New-DZProject', 
         'New-DZProjectMembership', 
+        'New-DZProjectProfile', 
+        'New-DZRule', 
         'New-DZSubscriptionGrant', 
         'New-DZSubscriptionRequest', 
         'New-DZSubscriptionTarget', 
+        'New-DZTimeSeriesDataPoint', 
         'New-DZUserProfile', 
+        'Remove-DZAccountPool', 
         'Remove-DZAsset', 
+        'Remove-DZAssetFilter', 
         'Remove-DZAssetType', 
+        'Remove-DZConnection', 
+        'Remove-DZDataProduct', 
         'Remove-DZDataSource', 
         'Remove-DZDomain', 
+        'Remove-DZDomainUnit', 
+        'Remove-DZEntityOwner', 
         'Remove-DZEnvironment', 
+        'Remove-DZEnvironmentAction', 
+        'Remove-DZEnvironmentBlueprint', 
         'Remove-DZEnvironmentBlueprintConfiguration', 
         'Remove-DZEnvironmentProfile', 
         'Remove-DZFormType', 
         'Remove-DZGlossary', 
         'Remove-DZGlossaryTerm', 
+        'Remove-DZGovernedTerm', 
         'Remove-DZListing', 
+        'Remove-DZPolicyGrant', 
         'Remove-DZProject', 
         'Remove-DZProjectMembership', 
+        'Remove-DZProjectProfile', 
         'Remove-DZResourceTag', 
+        'Remove-DZRule', 
         'Remove-DZSubscriptionGrant', 
         'Remove-DZSubscriptionRequest', 
         'Remove-DZSubscriptionTarget', 
+        'Remove-DZTimeSeriesDataPoint', 
+        'Reset-DZEnvironmentRole', 
         'Revoke-DZSubscription', 
         'Search-DZGroupProfile', 
         'Search-DZListing', 
         'Search-DZResource', 
         'Search-DZType', 
         'Search-DZUserProfile', 
+        'Set-DZEnvironmentRole', 
         'Start-DZDataSourceRun', 
+        'Start-DZMetadataGenerationRun', 
+        'Stop-DZMetadataGenerationRun', 
         'Stop-DZSubscription', 
+        'Submit-DZLineageEvent', 
+        'Update-DZAccountPool', 
+        'Update-DZAssetFilter', 
+        'Update-DZConnection', 
         'Update-DZDataSource', 
         'Update-DZDomain', 
+        'Update-DZDomainUnit', 
         'Update-DZEnvironment', 
+        'Update-DZEnvironmentAction', 
+        'Update-DZEnvironmentBlueprint', 
         'Update-DZEnvironmentProfile', 
         'Update-DZGlossary', 
         'Update-DZGlossaryTerm', 
         'Update-DZGroupProfile', 
         'Update-DZProject', 
+        'Update-DZProjectProfile', 
+        'Update-DZRule', 
         'Update-DZSubscriptionGrantStatus', 
         'Update-DZSubscriptionRequest', 
         'Update-DZSubscriptionTarget', 
@@ -208,7 +279,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

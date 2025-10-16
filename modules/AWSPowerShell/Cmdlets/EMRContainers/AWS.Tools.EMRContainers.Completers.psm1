@@ -80,8 +80,26 @@ $EMRC_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.EMRContainers.AllowAWSToRetainLogs
+        {
+            ($_ -eq "New-EMRCManagedEndpoint/ManagedLogs_AllowAWSToRetainLog") -Or
+            ($_ -eq "Start-EMRCJobRun/ManagedLogs_AllowAWSToRetainLog")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.EMRContainers.CertificateProviderType
+        "New-EMRCSecurityConfiguration/TlsCertificateConfiguration_CertificateProviderType"
+        {
+            $v = "PEM"
+            break
+        }
+
         # Amazon.EMRContainers.ContainerProviderType
         {
+            ($_ -eq "New-EMRCSecurityConfiguration/ContainerProvider_Type") -Or
             ($_ -eq "New-EMRCVirtualCluster/ContainerProvider_Type") -Or
             ($_ -eq "Get-EMRCVirtualClusterList/ContainerProviderType")
         }
@@ -92,8 +110,8 @@ $EMRC_Completers = {
 
         # Amazon.EMRContainers.PersistentAppUI
         {
-            ($_ -eq "New-EMRCManagedEndpoint/ConfigurationOverrides_MonitoringConfiguration_PersistentAppUI") -Or
-            ($_ -eq "Start-EMRCJobRun/ConfigurationOverrides_MonitoringConfiguration_PersistentAppUI")
+            ($_ -eq "New-EMRCManagedEndpoint/MonitoringConfiguration_PersistentAppUI") -Or
+            ($_ -eq "Start-EMRCJobRun/MonitoringConfiguration_PersistentAppUI")
         }
         {
             $v = "DISABLED","ENABLED"
@@ -109,9 +127,11 @@ $EMRC_Completers = {
 }
 
 $EMRC_map = @{
-    "ConfigurationOverrides_MonitoringConfiguration_PersistentAppUI"=@("New-EMRCManagedEndpoint","Start-EMRCJobRun")
-    "ContainerProvider_Type"=@("New-EMRCVirtualCluster")
+    "ContainerProvider_Type"=@("New-EMRCSecurityConfiguration","New-EMRCVirtualCluster")
     "ContainerProviderType"=@("Get-EMRCVirtualClusterList")
+    "ManagedLogs_AllowAWSToRetainLog"=@("New-EMRCManagedEndpoint","Start-EMRCJobRun")
+    "MonitoringConfiguration_PersistentAppUI"=@("New-EMRCManagedEndpoint","Start-EMRCJobRun")
+    "TlsCertificateConfiguration_CertificateProviderType"=@("New-EMRCSecurityConfiguration")
 }
 
 _awsArgumentCompleterRegistration $EMRC_Completers $EMRC_map
@@ -167,6 +187,7 @@ $EMRC_SelectMap = @{
     "Select"=@("Stop-EMRCJobRun",
                "New-EMRCJobTemplate",
                "New-EMRCManagedEndpoint",
+               "New-EMRCSecurityConfiguration",
                "New-EMRCVirtualCluster",
                "Remove-EMRCJobTemplate",
                "Remove-EMRCManagedEndpoint",
@@ -174,11 +195,13 @@ $EMRC_SelectMap = @{
                "Get-EMRCJobRun",
                "Get-EMRCJobTemplate",
                "Get-EMRCManagedEndpoint",
+               "Get-EMRCSecurityConfiguration",
                "Get-EMRCVirtualCluster",
                "Get-EMRCManagedEndpointSessionCredential",
                "Get-EMRCJobRunList",
                "Get-EMRCJobTemplateList",
                "Get-EMRCManagedEndpointList",
+               "Get-EMRCSecurityConfigurationList",
                "Get-EMRCResourceTag",
                "Get-EMRCVirtualClusterList",
                "Start-EMRCJobRun",

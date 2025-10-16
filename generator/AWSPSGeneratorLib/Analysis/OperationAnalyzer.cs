@@ -42,13 +42,17 @@ namespace AWSPowerShellGenerator.Analysis
                 //From AnonymousServiceCmdlet
                 "EndpointUrl",
                 //Common Powershell parameters
-                "PassThru", "Force",
+                "Force",
                 //https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
                 "Debug", "db", "ErrorAction", "ea", "ErrorVariable", "ev", "InformationAction", "infa", "InformationVariable", "iv", "OutVariable", "ov", "OutBuffer", "ob",
                 "PipelineVariable", "pv", "Verbose", "vb", "WarningAction", "wa", "WarningVariable", "wv", "WhatIf", "wi", "Confirm", "cf",
                 //Custom parameters added to every service cmdlet
                 "Select"},
             StringComparer.OrdinalIgnoreCase);
+
+        // Static cache to store paginator attributes per service assembly
+        private static readonly Dictionary<Assembly, Dictionary<string, AutoIteration>> PaginatorAttributesCache =
+            new Dictionary<Assembly, Dictionary<string, AutoIteration>>();
 
         #region Construction-time properties
 
@@ -65,7 +69,7 @@ namespace AWSPowerShellGenerator.Analysis
         /// The set of properties to be emitted as cmdlet parameters. Members of complex
         /// properties are flattened to individual parameters.
         /// </summary>
-        public List<SimplePropertyInfo> AnalyzedParameters { get; private set; }
+        public List<SimplePropertyInfo> AnalyzedParameters { get; protected set; }
 
         /// <summary>
         /// The set of actual properties the cmdlet needs to deal with to populate
@@ -128,33 +132,40 @@ namespace AWSPowerShellGenerator.Analysis
         /// <summary>
         /// Returns any autoiteration settings that apply, as a combination
         /// of settings defined at the global service level, overridden at the 
-        /// operation level if needed.
+        /// operation level if needed or pagination attributes retrieved from .NET SDK.
         /// </summary>
-        public AutoIteration AutoIterateSettings
+        public virtual AutoIteration AutoIterateSettings
         {
             get
             {
-                var autoIteration = AutoIteration.Combine(CurrentModel.AutoIterate, CurrentOperation.AutoIterate);
-
-                //If autoiteration has configured field names for at least Start (input parameter idicating the pagination token) and Next
-                //(output value idicating the next pagination token) and the Start parameter is actually present in the input type
-                //and the Next value is present in the returned type
-                if (autoIteration != null &&
-                    !string.IsNullOrEmpty(autoIteration.Start) &&
-                    !string.IsNullOrEmpty(autoIteration.Next) &&
-                    AnalyzedParameters.Select(s => s.Name).Contains(autoIteration.Start) &&
-                    AreResultFieldsPresent(ReturnType, autoIteration.Next))
+                AutoIteration autoIteration;
+                // If LegacyV4Pagination is false, try to use the .NET SDK's pagination attributes if available
+                if (!CurrentOperation.LegacyV4Pagination)
                 {
-                    //If autoiteration also has configured a field name for EmitLimit (input parameter idicating the max number of items
-                    //to be returned by the service) and the EmitLimit parameter is actually present in the input type
-                    if (String.IsNullOrEmpty(autoIteration.EmitLimit) ||
-                        CurrentOperation.LegacyPagination != ServiceOperation.LegacyPaginationType.UseEmitLimit ||
-                        !AnalyzedParameters.Select(s => s.Name).Contains(autoIteration.EmitLimit))
+                    autoIteration = GetPaginatorAttributes();
+                    if (IsValidAutoIteration(autoIteration))
                     {
-                        autoIteration.EmitLimit = null;
+                        return autoIteration;
                     }
+                }
 
-                    return autoIteration;
+                // Use the legacy approach with existing configuration
+                autoIteration = AutoIteration.Combine(CurrentModel.AutoIterate, CurrentOperation.AutoIterate);
+
+                if (IsValidAutoIteration(autoIteration))
+                {
+                    return ConfigureEmitLimit(autoIteration);
+                }
+                else
+                {
+                    // if legacy configuration is invalid then retrieve pagination attributes from .NET SDK if available
+                    autoIteration = GetPaginatorAttributes();
+                    if (IsValidAutoIteration(autoIteration))
+                    {
+                        // if paginators are valid then set support for legacy autoiteration mode
+                        autoIteration.SupportLegacyAutoIterationMode = true;
+                        return autoIteration;
+                    }
                 }
 
                 return null;
@@ -197,18 +208,6 @@ namespace AWSPowerShellGenerator.Analysis
         /// The results of the analysis of the output type for the cmdlet
         /// </summary>
         public AnalyzedResult AnalyzedResult { get; private set; }
-
-        /// <summary>
-        /// True if the cmdlet has no output but has a parameter that can be piped in; this
-        /// can be echoed to the pipeline if the user supplies the -PassThru switch.
-        /// </summary>
-        public bool RequiresPassThruGeneration
-        {
-            get
-            {
-                return CurrentOperation.PassThru != null || AcceptsValueFromPipelineParameter != null;
-            }                
-        }
 
         public static string FormatTypeName(Type type)
         {
@@ -329,10 +328,7 @@ namespace AWSPowerShellGenerator.Analysis
         /// multiple parameters exhibit more than one suffix, an error will be logged
         /// requiring the user to specify manual configuration using ShouldProcessTarget.
         /// </summary>
-        private readonly List<string> _supportsShouldProcessParameterSuffixes = new List<string>
-        {
-            "Id", "Name", "Arn", "Identifier"
-        };
+        private readonly List<string> _supportsShouldProcessParameterSuffixes = ["Id", "Name", "Arn", "Identifier"];
 
         /// <summary>
         /// Collection of verbs for which the cmdlet's ConfirmImpact setting should be 'high'
@@ -371,7 +367,7 @@ namespace AWSPowerShellGenerator.Analysis
             AllModels = allModels;
             CurrentModel = currentModel;
             CurrentOperation = currentOperation;
-            AssemblyDocumentation = assemblyDocumentation;
+            AssemblyDocumentation = assemblyDocumentation ?? new XmlDocument();
         }
 
         /// <summary>
@@ -421,8 +417,6 @@ namespace AWSPowerShellGenerator.Analysis
             DeterminePipelineParameter(generator);
             DetermineSupportsShouldProcessRequirement(generator);
             DetermineResult(generator);
-            DeterminePassThruRequirement(generator);
-
             if (!string.IsNullOrEmpty(CurrentOperation.LegacyAlias))
             {
                 generator.AddLegacyAlias($"{CurrentOperation.SelectedVerb}-{CurrentOperation.SelectedNoun}", CurrentOperation.LegacyAlias);
@@ -430,9 +424,7 @@ namespace AWSPowerShellGenerator.Analysis
         }
 
         /// <summary>
-        /// Creates a simplified property for the specified request or response field. If the field's 
-        /// type is derived from the SDK's ConstantClass 'enum' type, we will also register to emit
-        /// an argument completer unless the field is a member of the result type.
+        /// Creates a simplified property for the specified request or response field.
         /// If the parameter type is a MemoryStream the parameter name is registered for replacement
         /// with a byte[] during cmdlet generation.
         /// </summary>
@@ -537,22 +529,6 @@ namespace AWSPowerShellGenerator.Analysis
             if (isCmdletParameter && simpleProperty.IsStreamType)
             {
                 StreamParameters.Add(simpleProperty);
-            }
-
-            if (simpleProperty.IsConstrainedToSet && isCmdletParameter)
-            {
-                // push the set members and a reference from the current cmdlet into the service 
-                // model so that argument completers can be generated later
-                if (!CurrentModel.ArgumentCompleters.IsConstantClassRegistered(propertyTypeName))
-                {
-                    var setMembers = SimplePropertyInfo.GetConstantClassMembers(property.PropertyType);
-                    CurrentModel.ArgumentCompleters.AddConstantClass(propertyTypeName, setMembers);
-                }
-                CurrentModel.ArgumentCompleters.AddConstantClassReference(propertyTypeName, 
-                                                                          simpleProperty.CmdletParameterName, 
-                                                                          string.Format("{0}-{1}", 
-                                                                                        CurrentOperation.SelectedVerb, 
-                                                                                        CurrentOperation.SelectedNoun));
             }
 
             if (shouldFlatten)
@@ -768,7 +744,7 @@ namespace AWSPowerShellGenerator.Analysis
         /// Returns the true number of parameters for an operation, disregarding any that
         /// have been declared as part of auto-iteration support.
         /// </summary>
-        public IEnumerable<SimplePropertyInfo> NonIterationParameters
+        public virtual IEnumerable<SimplePropertyInfo> NonIterationParameters
         {
             get
             {
@@ -932,6 +908,8 @@ namespace AWSPowerShellGenerator.Analysis
 
             FinalizeParameterNames();
 
+            RegisterConstantClassReferences();
+
             ValidateParameterNamesDuplications();
 
             // also gather the internal root (non-flattened) properties -- these are what the
@@ -1044,7 +1022,7 @@ namespace AWSPowerShellGenerator.Analysis
         /// acceptable to be piped in.
         /// </summary>
         /// <param name="generator"></param>
-        private void DeterminePipelineParameter(CmdletGenerator generator)
+        protected virtual void DeterminePipelineParameter(CmdletGenerator generator)
         {
             if (CurrentOperation.NoPipelineParameter && !string.IsNullOrEmpty(CurrentOperation.PipelineParameter))
             {
@@ -1075,12 +1053,18 @@ namespace AWSPowerShellGenerator.Analysis
                     switch (candidateParameters.Count)
                     {
                         case 0:
+                            // For new cmdlets with no candidate parameters, set NoPipelineParameter=true
+                            CurrentOperation.NoPipelineParameter = true;
+                            InfoMessage.NoPipelineParameterCandidates(CurrentModel, CurrentOperation);
                             return;
                         case 1:
                             pipelineParam = candidateParameters.First().AnalyzedName;
+                            InfoMessage.SinglePipelineParameterCandidate(CurrentModel, CurrentOperation, candidateParameters.First());
                             break;
                         default:
-                            AnalysisError.MissingPipelineConfiguration(CurrentModel, CurrentOperation, candidateParameters);
+                            // For new cmdlets with multiple candidate parameters, set NoPipelineParameter=true
+                            CurrentOperation.NoPipelineParameter = true;
+                            InfoMessage.MultiplePipelineParameterCandidates(CurrentModel, CurrentOperation, candidateParameters);
                             return;
                     }
                 }
@@ -1096,14 +1080,9 @@ namespace AWSPowerShellGenerator.Analysis
             }
         }
 
-        public bool RequiresShouldProcessPromt
-        {
-            get
-            {
-                return !_supportsShouldProcessVerbSuppressions.Contains(CurrentOperation.SelectedVerb) &&
-                       !CurrentOperation.IgnoreSupportsShouldProcess;
-            }
-        }
+        public bool RequiresShouldProcessPrompt =>
+            !_supportsShouldProcessVerbSuppressions.Contains(CurrentOperation.SelectedVerb) &&
+            !CurrentOperation.IgnoreSupportsShouldProcess;
 
         /// <summary>
         /// If the cmdlet changes system state, indicate that it must be attributed with 
@@ -1116,7 +1095,7 @@ namespace AWSPowerShellGenerator.Analysis
         /// <param name="generator"></param>
         private void DetermineSupportsShouldProcessRequirement(CmdletGenerator generator)
         {
-            if (!RequiresShouldProcessPromt ||
+            if (!RequiresShouldProcessPrompt ||
                 CurrentOperation.AnonymousShouldProcessTarget)
             {
                 if (!string.IsNullOrEmpty(CurrentOperation.ShouldProcessTarget))
@@ -1129,82 +1108,345 @@ namespace AWSPowerShellGenerator.Analysis
 
             if (!string.IsNullOrEmpty(CurrentOperation.ShouldProcessTarget))
             {
-                // the config specifies the parameter to use as the target then obey
-                var target = NonIterationParameters.SingleOrDefault(parameter => parameter.AnalyzedName == CurrentOperation.ShouldProcessTarget);
-                if (target == null)
+                // the config specifies the parameter(s) to use as the target then obey
+                var targetParameterNames = CurrentOperation.ShouldProcessTarget.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(name => name.Trim())
+                    .ToArray();
+
+                // Validate that all specified parameters exist
+                var missingParameters = new List<string>();
+                foreach (var paramName in targetParameterNames)
+                {
+                    var target = NonIterationParameters.SingleOrDefault(parameter => parameter.AnalyzedName == paramName);
+                    if (target == null)
+                    {
+                        missingParameters.Add(paramName);
+                    }
+                }
+
+                if (missingParameters.Any())
                 {
                     AnalysisError.InvalidShouldProcessTargetConfiguration(CurrentModel, CurrentOperation, NonIterationParameters);
                 }
             }
+            else if (!CurrentOperation.IsAutoConfiguring && AcceptsValueFromPipelineParameter != null && NonIterationParameters.Any())
+            {
+                // if this is an existing operation and ShouldProcessTarget is not set. Use the PipeLineParameter
+                var existingPipelineParameter = NonIterationParameters
+                    .SingleOrDefault(parameter => parameter.AnalyzedName == AcceptsValueFromPipelineParameter.AnalyzedName);
+                CurrentOperation.ShouldProcessTarget = existingPipelineParameter?.AnalyzedName;
+
+            }
+            else if(CurrentOperation.IsAutoConfiguring)
+            {
+                // new operations
+                DetermineSupportsShouldProcessParameter();
+            }
             else if (NonIterationParameters.Any())
             {
-                //we are supposed to have a target parameter but it is not configured
-                DetermineSupportsShouldProcessParameter();
+                // if this is reached, this would be an error and the existing config was changed and is invalid.
+                var suggestedParameters = SelectShouldProcessTargetCandidateParameters(NonIterationParameters, isRequiredParameter: false, isRootLevelParameter: false, excludeCollections: false);
+
+                var targetParameterName = suggestedParameters.Count == 1 
+                    ? suggestedParameters.First().AnalyzedName 
+                    : string.Join(",", suggestedParameters.Select(p => p.AnalyzedName));
+                AnalysisError.OutdatedShouldProcessTargetConfiguration(CurrentModel, CurrentOperation, targetParameterName);
             }
         }
 
-        private void DetermineSupportsShouldProcessParameter()
+        protected virtual void DetermineSupportsShouldProcessParameter()
         {
-            // otherwise attempt auto-discovery based on parameter name suffixes - note
-            // that we use the finalized names of the parameters here, since PowerShell
-            // will introspect on them.
-            var potentialTargets = SelectPreferredCandidateParameters(
-                _supportsShouldProcessParameterSuffixes.SelectMany(suffix =>
-                    NonIterationParameters.Where(parameter => parameter.CmdletParameterName.EndsWith(suffix)))); ;
-
-             SimplePropertyInfo targetParameter = null;
-
-            if (NonIterationParameters.Count() == 1) //Single parameter, auto-selected as target
-            {
-                targetParameter = NonIterationParameters.First();
-            }
-            else
-            {
-                switch (potentialTargets.Count)
+            // Apply enhanced parameter selection hierarchy to all parameters
+            var targetParameters = SelectShouldProcessTarget();
+                
+                switch (targetParameters.Count)
                 {
-                    case 0: //auto-assigned from pipeline parameter
-                        targetParameter = AcceptsValueFromPipelineParameter;
-                        if (targetParameter == null)
-                        {
-                            var suggestedParameters = SelectPreferredCandidateParameters(NonIterationParameters);
-                            AnalysisError.MultipleTargetsForShouldProcessParameter(CurrentModel, CurrentOperation, suggestedParameters);
-                        }
+                    case 0:
+                    case > 3:
+                        // When no suitable target is found or too many candidates, set AnonymousShouldProcessTarget=true
+                        CurrentOperation.AnonymousShouldProcessTarget = true;
+                        CurrentOperation.ShouldProcessTarget = string.Empty;
+                        InfoMessage.ShouldProcessTargetSetToAnonymous(CurrentModel, CurrentOperation);
                         break;
-                    case 1: //single parameter with recognized suffix
-                        targetParameter = potentialTargets[0];
+                        
+                    case 1:
+                        CurrentOperation.ShouldProcessTarget = targetParameters.First().AnalyzedName;
                         break;
-                    default: //potentialTargets.Count > 1
-                        // When multiple targets exist, if one of them is the value-from-pipeline 
-                        // parameter we can (probably) safely assume it should be the target (if this
-                        // is wrong it can be safely rectified by adding a manual entry to the config
-                        // for the operation).
-                        var pipelineParameter = AcceptsValueFromPipelineParameter;
-                        if (pipelineParameter != null)
-                        {
-                            targetParameter = potentialTargets.Where(potentialTarget => potentialTarget.AnalyzedName == pipelineParameter.AnalyzedName).SingleOrDefault();
-                        }
-                        else
-                        {
-                            AnalysisError.MultipleTargetsForShouldProcessParameter(CurrentModel, CurrentOperation, potentialTargets);
-                        }
+                        
+                    case >= 2 and <= 3:
+                        // Multiple parameters - create comma-separated string
+                        var parameterNames = string.Join(",", targetParameters.Select(param => param.AnalyzedName));
+                        CurrentOperation.ShouldProcessTarget = parameterNames;
                         break;
+                }
+        }
+
+        /// <summary>
+        /// Selects ShouldProcessTarget using a priority-based parameter selection hierarchy.
+        /// Uses a systematic approach to find the most appropriate parameter(s) for PowerShell confirmation messages.
+        /// The hierarchy prioritizes exact matches first, then falls back to pattern-based matching and candidate filtering.
+        /// </summary>
+        /// <returns>List of selected parameters, empty list if no suitable parameters found</returns>
+        protected virtual List<SimplePropertyInfo> SelectShouldProcessTarget()
+        {
+            // Get filtered parameter sets for different priority levels
+            // Allow collections of primitive types since FormatParameterValuesForConfirmationMsg handles them well
+            var allParameters = SelectShouldProcessTargetCandidateParameters(NonIterationParameters, isRequiredParameter: false, isRootLevelParameter: false, excludeCollections: false);
+            var requiredParameters = SelectShouldProcessTargetCandidateParameters(NonIterationParameters, isRequiredParameter: true, isRootLevelParameter: false, excludeCollections: false);
+            var requiredRootLevelParameters = requiredParameters.Where(p => p.Parent is null).ToList();
+
+            // Early exit if no candidate parameters found
+            if (allParameters.Count == 0)
+            {
+                InfoMessage.NoShouldProcessTargetParameters(CurrentModel, CurrentOperation, NonIterationParameters.Select(p => p.AnalyzedName));
+                return [];
+            }
+
+            // Try single parameter selection first - handle the simplest cases
+            var singleParameterResult = TrySelectIfSingleParameter(requiredRootLevelParameters, requiredParameters, allParameters);
+            if (singleParameterResult.Any())
+                return singleParameterResult;
+
+            // Try exact noun matching - look for parameters that exactly match the method noun
+            var exactNounMatchResult = TrySelectByExactNounMatch(allParameters);
+            if (exactNounMatchResult.Any())
+                return exactNounMatchResult;
+
+            // Try single parameter with suffix selection
+            var singleSuffixResult = TrySelectIfSingleParameter(requiredRootLevelParameters, requiredParameters, allParameters, requireSuffix: true);
+            if (singleSuffixResult.Any())
+                return singleSuffixResult;
+
+            // Try noun prefix matching - parameters that start with noun and end with suffix
+            var nounPrefixResult = TrySelectStartsWithNounEndsWithSuffix(requiredRootLevelParameters, requiredParameters, allParameters);
+            if (nounPrefixResult.Any())
+                return nounPrefixResult;
+
+            // Handle multiple parameters with suffix - check for reasonable count for combination
+            // For suffix-based filtering, exclude collections to focus on simple identifier parameters
+            var suffixCandidates = GetParametersWithSuffixExcludingCollections(requiredRootLevelParameters);
+            if (suffixCandidates.Count is >= 2 and <= 3)
+            {
+                InfoMessage.ShouldProcessTargetSelectedMultipleParameters(CurrentModel, CurrentOperation, suffixCandidates);
+                return suffixCandidates;
+            }
+
+            // Fallback: Too many candidate parameters (>3)
+            if (suffixCandidates.Count > 3)
+            {
+                InfoMessage.ShouldProcessTargetMultipleCandidatesFound(CurrentModel, CurrentOperation, suffixCandidates);
+                return [];
+            }
+
+            return [];
+        }
+
+        /// <summary>
+        /// Selects if there's exactly one parameter in a category.
+        /// Can optionally filter by suffix for more specific matching.
+        /// </summary>
+        private List<SimplePropertyInfo> TrySelectIfSingleParameter(
+            List<SimplePropertyInfo> requiredRootLevelParameters,
+            List<SimplePropertyInfo> requiredParameters,
+            List<SimplePropertyInfo> allParameters,
+            bool requireSuffix = false)
+        {
+            var (rootLevelCandidates, requiredCandidates, allCandidates) = requireSuffix
+                ? (GetParametersWithSuffix(requiredRootLevelParameters), GetParametersWithSuffix(requiredParameters), GetParametersWithSuffix(allParameters))
+                : (requiredRootLevelParameters, requiredParameters, allParameters);
+
+            // Only a single root level required parameter (with/without suffix)
+            if (rootLevelCandidates.Count == 1)
+            {
+                var candidate = rootLevelCandidates.First();
+                if (requireSuffix)
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSuffixMatch(CurrentModel, CurrentOperation, candidate);
+                }
+                else
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSingleParameter(CurrentModel, CurrentOperation, candidate);
+                }
+                return rootLevelCandidates;
+            }
+
+            // Only a single required parameter (with/without suffix)
+            if (requiredCandidates.Count == 1)
+            {
+                var candidate = requiredCandidates.First();
+                if (requireSuffix)
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSuffixMatch(CurrentModel, CurrentOperation, candidate);
+                }
+                else
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSingleParameter(CurrentModel, CurrentOperation, candidate);
+                }
+                return requiredCandidates;
+            }
+
+            // Only a single parameter (with/without suffix)
+            if (allCandidates.Count == 1)
+            {
+                var candidate = allCandidates.First();
+                if (requireSuffix)
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSuffixMatch(CurrentModel, CurrentOperation, candidate);
+                }
+                else
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSingleParameter(CurrentModel, CurrentOperation, candidate);
+                }
+                return allCandidates;
+            }
+
+            return [];
+        }
+
+        /// <summary>
+        /// Handles Exact noun matching - find parameters that exactly match the method noun.
+        /// </summary>
+        private List<SimplePropertyInfo> TrySelectByExactNounMatch(List<SimplePropertyInfo> allParameters)
+        {
+            var methodNoun = CurrentOperation.OriginalNoun;
+
+            // Look for exact match with method noun name. e.g. CreateResources method matches Resources parameter
+            // AnalyzedName has the original parameter name
+            var exactNounMatch = allParameters.FirstOrDefault(p => 
+                string.Equals(p.AnalyzedName, methodNoun, StringComparison.OrdinalIgnoreCase));
+            if (exactNounMatch != null)
+            {
+                InfoMessage.ShouldProcessTargetSelectedExactNounMatch(CurrentModel, CurrentOperation, exactNounMatch);
+                return new List<SimplePropertyInfo> { exactNounMatch };
+            }
+
+            // Look for exact match with singularized method noun name.
+            // e.g. CreateResources method matches Resource parameter
+            // e.g. CreateResource method matches Resources parameter
+            // CmdletParameterName has singular parameter name.
+            
+            var singularizedMethodNoun = SingularizeTerm(methodNoun);
+            if (!string.Equals(methodNoun, singularizedMethodNoun, StringComparison.OrdinalIgnoreCase))
+            {
+                var singularizedNounMatch = allParameters.FirstOrDefault(p => 
+                    string.Equals(p.CmdletParameterName, singularizedMethodNoun, StringComparison.OrdinalIgnoreCase));
+                if (singularizedNounMatch != null)
+                {
+                    InfoMessage.ShouldProcessTargetSelectedSingularizedNounMatch(CurrentModel, CurrentOperation, singularizedNounMatch);
+                    return [singularizedNounMatch];
                 }
             }
 
-            if (CurrentOperation.IsAutoConfiguring)
-            {
-                //Setting the value to string.Empty instead of null makes the attribute appear in the configuration file so that it is easy to fill the value in.
-                CurrentOperation.ShouldProcessTarget = targetParameter?.AnalyzedName ?? string.Empty;
-            }
-            else if (targetParameter != null)
-            {
-                AnalysisError.OutdatedShouldProcessTargetConfiguration(CurrentModel, CurrentOperation, targetParameter?.AnalyzedName);
-            }
+            return [];
         }
+
+
+        /// <summary>
+        /// Noun prefix matching - returns parameters that start with noun (or singular noun) and end with suffix.
+        /// </summary>
+        private List<SimplePropertyInfo> TrySelectStartsWithNounEndsWithSuffix(
+            List<SimplePropertyInfo> requiredRootLevelParameters,
+            List<SimplePropertyInfo> requiredParameters,
+            List<SimplePropertyInfo> allParameters)
+        {
+            var methodNoun = CurrentOperation.OriginalNoun;
+
+            // Try root-level required parameters first
+            var nounPrefixMatch = TryFindNounPrefixWithSuffix(requiredRootLevelParameters, methodNoun);
+            if (nounPrefixMatch.HasValue)
+            {
+                InfoMessage.ShouldProcessTargetSelectedNounPrefixMatch(CurrentModel, CurrentOperation, nounPrefixMatch.Value.parameter);
+                return [nounPrefixMatch.Value.parameter];
+            }
+
+            // Try required parameters
+            nounPrefixMatch = TryFindNounPrefixWithSuffix(requiredParameters, methodNoun);
+            if (nounPrefixMatch.HasValue)
+            {
+                InfoMessage.ShouldProcessTargetSelectedNounPrefixMatch(CurrentModel, CurrentOperation, nounPrefixMatch.Value.parameter);
+                return [nounPrefixMatch.Value.parameter];
+            }
+
+            // Try all parameters
+            nounPrefixMatch = TryFindNounPrefixWithSuffix(allParameters, methodNoun);
+            if (nounPrefixMatch.HasValue)
+            {
+                InfoMessage.ShouldProcessTargetSelectedNounPrefixMatch(CurrentModel, CurrentOperation, nounPrefixMatch.Value.parameter);
+                return [nounPrefixMatch.Value.parameter];
+            }
+
+            return [];
+        }
+
+        /// <summary>
+        /// Helper method to find a parameter that starts with noun (or singular noun) and ends with suffix.
+        /// </summary>
+        private (SimplePropertyInfo parameter, string suffix)? TryFindNounPrefixWithSuffix(List<SimplePropertyInfo> parameters, string methodNoun)
+        {
+            if (string.IsNullOrEmpty(methodNoun))
+                return null;
+
+            // Try original method noun first
+            foreach (var suffix in _supportsShouldProcessParameterSuffixes)
+            {
+                var nounPrefixMatch = parameters.FirstOrDefault(p =>
+                    p.AnalyzedName.StartsWith(methodNoun, StringComparison.OrdinalIgnoreCase) &&
+                    p.AnalyzedName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+                if (nounPrefixMatch != null)
+                {
+                    return (nounPrefixMatch, suffix);
+                }
+            }
+
+            // Try singularized method noun
+            var singularizedMethodNoun = SingularizeTerm(methodNoun);
+            if (!string.Equals(methodNoun, singularizedMethodNoun, StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var suffix in _supportsShouldProcessParameterSuffixes)
+                {
+                    var nounPrefixSingularizedMatch = parameters.FirstOrDefault(p =>
+                        p.AnalyzedName.StartsWith(singularizedMethodNoun, StringComparison.OrdinalIgnoreCase) &&
+                        p.AnalyzedName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+                    if (nounPrefixSingularizedMatch != null)
+                    {
+                        return (nounPrefixSingularizedMatch, suffix);
+                    }
+                }
+            }
+
+            return null;
+        }
+
+
+
+        /// <summary>
+        /// Gets parameters that end with any of the meaningful identifier suffixes.
+        /// </summary>
+        private List<SimplePropertyInfo> GetParametersWithSuffix(List<SimplePropertyInfo> parameters)
+        {
+            return _supportsShouldProcessParameterSuffixes.SelectMany(suffix =>
+                parameters.Where(parameter => parameter.CmdletParameterName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+        }
+
+
+        /// <summary>
+        /// Gets parameters that end with any of the meaningful identifier suffixes, excluding collections.
+        /// Used for suffix-based filtering where we want to focus on simple identifier parameters.
+        /// </summary>
+        private List<SimplePropertyInfo> GetParametersWithSuffixExcludingCollections(List<SimplePropertyInfo> parameters)
+        {
+            return _supportsShouldProcessParameterSuffixes.SelectMany(suffix =>
+                parameters.Where(parameter => 
+                    parameter.CmdletParameterName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) &&
+                    (parameter.PropertyType == typeof(string) || !typeof(System.Collections.IEnumerable).IsAssignableFrom(parameter.PropertyType))))
+                .ToList();
+        }
+
 
         //If there are multiple candidates, try further restricting the list by only using required root parameters
 
-        private List<SimplePropertyInfo> SelectPreferredCandidateParameters(IEnumerable<SimplePropertyInfo> parameters)
+        protected virtual List<SimplePropertyInfo> SelectPreferredCandidateParameters(IEnumerable<SimplePropertyInfo> parameters)
         {
             var autoIterateSettings = AutoIterateSettings;
             var result = parameters
@@ -1237,6 +1479,127 @@ namespace AWSPowerShellGenerator.Analysis
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Selects preferred candidate parameters for ShouldProcessTarget with support for primitive collections.
+        /// This method allows collections of primitive types since FormatParameterValuesForConfirmationMsg handles them well.
+        /// </summary>
+        /// <param name="parameters">Parameters to filter</param>
+        /// <param name="isRequiredParameter">Whether to prioritize required parameters</param>
+        /// <param name="isRootLevelParameter">Whether to prioritize root-level parameters</param>
+        /// <param name="excludeCollections">Whether to exclude collections (true for suffix-based filtering, false for general filtering)</param>
+        /// <returns>Filtered list of candidate parameters</returns>
+        protected virtual List<SimplePropertyInfo> SelectShouldProcessTargetCandidateParameters(IEnumerable<SimplePropertyInfo> parameters, bool isRequiredParameter = true, bool isRootLevelParameter = true, bool excludeCollections = false)
+        {
+            var autoIterateSettings = AutoIterateSettings;
+            var result = parameters
+                //Excluding collections based on excludeCollections parameter
+                .Where(param => {
+                    if (param.PropertyType == typeof(string))
+                        return true; // Always include strings
+                    
+                    if (!typeof(System.Collections.IEnumerable).IsAssignableFrom(param.PropertyType))
+                        return true; // Include non-collections
+                    
+                    if (excludeCollections)
+                        return false; // Exclude all collections when excludeCollections is true
+                    
+                    // When excludeCollections is false, include collections of primitive types
+                    return IsCollectionOfPrimitiveType(param.PropertyType);
+                })
+                //Excluding metadata and deprecated properties
+                .Where(param => !(AllModels.MetadataParameterNames.Contains(param.AnalyzedName) ||
+                                 CurrentModel.MetadataPropertyNames.Contains(param.AnalyzedName) ||
+                                 param.IsDeprecated ||
+                                 (autoIterateSettings?.IsIterationParameter(param.AnalyzedName) ?? false)))
+                .ToList();
+
+            if (result.Count > 1 && isRequiredParameter)
+            {
+                var requiredParameters = result.Where(parameter => parameter.IsRecursivelyRequired).ToList();
+                if (requiredParameters.Any())
+                {
+                    result = requiredParameters;
+                }
+            }
+
+            if (result.Count > 1 && isRootLevelParameter)
+            {
+                var rootParameters = result.Where(parameter => parameter.Parent == null).ToList();
+                if (rootParameters.Any())
+                {
+                    result = rootParameters;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Determines if a type is a collection of primitive types that can be formatted well by FormatParameterValuesForConfirmationMsg.
+        /// </summary>
+        /// <param name="type">The type to check</param>
+        /// <returns>True if it's a collection of primitive types, false otherwise</returns>
+        private bool IsCollectionOfPrimitiveType(Type type)
+        {
+            if (type == typeof(string))
+                return false; // String is not considered a collection here
+            
+            if (!typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                return false; // Not a collection
+            
+            // Handle arrays
+            if (type.IsArray)
+            {
+                var elementType = type.GetElementType();
+                return IsPrimitiveOrFormattableType(elementType);
+            }
+            
+            // Handle generic collections (List<T>, IEnumerable<T>, etc.)
+            if (type.IsGenericType)
+            {
+                var genericArguments = type.GetGenericArguments();
+                if (genericArguments.Length == 1)
+                {
+                    return IsPrimitiveOrFormattableType(genericArguments[0]);
+                }
+            }
+            
+            return false; // Unknown collection type, exclude to be safe
+        }
+
+        /// <summary>
+        /// Determines if a type is primitive or has a meaningful ToString() implementation for confirmation messages.
+        /// </summary>
+        /// <param name="type">The type to check</param>
+        /// <returns>True if the type can be formatted meaningfully, false otherwise</returns>
+        private bool IsPrimitiveOrFormattableType(Type type)
+        {
+            // Handle nullable types
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                type = Nullable.GetUnderlyingType(type);
+            }
+            
+            // Primitive types
+            if (type.IsPrimitive)
+                return true;
+            
+            // Common value types that format well
+            if (type == typeof(string) || 
+                type == typeof(decimal) || 
+                type == typeof(DateTime) || 
+                type == typeof(DateTimeOffset) ||
+                type == typeof(TimeSpan) ||
+                type == typeof(Guid))
+                return true;
+            
+            // Enums format well (show enum name)
+            if (type.IsEnum)
+                return true;
+            
+            return false; // Complex types don't format well
         }
 
         /// <summary>
@@ -1395,24 +1758,6 @@ namespace AWSPowerShellGenerator.Analysis
             }
 
             return singleResultProperty;
-        }
-
-        /// <summary>
-        /// Phase 4 of the analysis: if the output from the cmdlet is void but an object can 
-        /// be piped in, record that we should add the -PassThru switch parameter and if set
-        /// by the user, echo the input object to the pipeline.
-        /// </summary>
-        /// <remarks>This inspection must be performed after the result has been analyzed.</remarks>
-        /// <param name="generator"></param>
-        private void DeterminePassThruRequirement(CmdletGenerator generator)
-        {
-            if (CurrentOperation.PassThru != null)
-            {
-                if (string.IsNullOrEmpty(CurrentOperation.PassThru.Expression) || string.IsNullOrEmpty(CurrentOperation.PassThru.Documentation))
-                {
-                    AnalysisError.NonConfiguredPassThru(CurrentModel, CurrentOperation);
-                }
-            }
         }
 
         private string AssignVerb(string verb)
@@ -1615,6 +1960,31 @@ namespace AWSPowerShellGenerator.Analysis
             }
         }
 
+
+        /// <summary>
+        /// Register fields derived from the SDK's ConstantClass 'enum' type
+        /// used to emit an argument completer unless the field is a member of the result type.
+        /// </summary>
+        private void RegisterConstantClassReferences()
+        {
+            foreach (var property in AnalyzedParameters)
+            {
+                if (!property.IsConstrainedToSet) continue;
+
+                if (!CurrentModel.ArgumentCompleters.IsConstantClassRegistered(property.PropertyTypeName))
+                {
+                    var setMembers = SimplePropertyInfo.GetConstantClassMembers(property.PropertyType);
+                    CurrentModel.ArgumentCompleters.AddConstantClass(property.PropertyTypeName, setMembers);
+                }
+
+                CurrentModel.ArgumentCompleters.AddConstantClassReference(property.PropertyTypeName,
+                    property.CmdletParameterName,
+                    string.Format("{0}-{1}",
+                        CurrentOperation.SelectedVerb,
+                        CurrentOperation.SelectedNoun));
+            }
+        }
+
         /// <summary>
         /// Attempts to convert the supplied term to singular form provided
         /// it exceeds minimum length limits, it not a term marked as needing
@@ -1798,6 +2168,118 @@ namespace AWSPowerShellGenerator.Analysis
 
             var props = inspectedType.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance);
             return fieldNames.Intersect(props.Select(p => p.Name)).Count() == fieldNames.Count();
+        }
+
+        /// <summary>
+        /// Gets pagination attributes from the .NET SDK Paginators attribute with caching.
+        /// </summary>
+        /// <returns>AutoIteration settings based on SDK pagination attributes</returns>
+        private AutoIteration GetPaginatorAttributes()
+        {
+            try
+            {
+                // Check if paginator attributes are already cached for this assembly
+                if (!PaginatorAttributesCache.TryGetValue(CurrentModel.Assembly, out var serviceCache))
+                {
+                    // If not, load and cache all paginator attributes for this service
+                    serviceCache = LoadPaginatorAttributes();
+                    PaginatorAttributesCache[CurrentModel.Assembly] = serviceCache;
+                }
+
+                // Look for the current operation in the cache
+                if (serviceCache.TryGetValue(CurrentOperation.MethodName, out var autoIteration))
+                {
+                    return autoIteration;
+                }
+            }
+            catch (Exception e)
+            {
+                // Add error to the analysis errors collection
+                AnalysisError.ExceptionWhileGettingPaginatorAttributes(CurrentModel, CurrentOperation, e);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Loads all paginator attributes for the current service assembly.
+        /// </summary>
+        /// <returns>Dictionary mapping operation names to their paginator attributes</returns>
+        private Dictionary<string, AutoIteration> LoadPaginatorAttributes()
+        {
+            var paginatorAttributes = new Dictionary<string, AutoIteration>(StringComparer.OrdinalIgnoreCase);
+
+            try
+            {
+                // Format the paginator factory interface type name
+                var pageFactoryInterfaceTypeName = string.Format("{0}.Model.I{1}PaginatorFactory",
+                    CurrentModel.ServiceNamespace, CurrentModel.AssemblyName);
+
+                // Get the paginator factory interface type
+                var pageFactoryInterfaceType = CurrentModel.Assembly.GetType(pageFactoryInterfaceTypeName);
+
+                if (pageFactoryInterfaceType != null)
+                {
+                    // Get all methods of the paginator factory interface
+                    var pageFactoryInterfaceMethods = pageFactoryInterfaceType.GetMethods()
+                        .OrderBy(m => m.Name).ToList();
+
+                    // Process each method in the interface
+                    foreach (var pageFactoryMethod in pageFactoryInterfaceMethods)
+                    {
+                        // Find the paginator attribute
+                        dynamic awsPaginatorFactoryAttribute = pageFactoryMethod
+                            .GetCustomAttributes()
+                            .SingleOrDefault(attribute =>
+                                attribute.GetType().FullName == "Amazon.Runtime.Internal.AWSPaginatorAttribute");
+
+                        if (awsPaginatorFactoryAttribute != null)
+                        {
+                            string methodName = pageFactoryMethod.Name;
+
+                            var autoIteration = new AutoIteration
+                            {
+                                Start = awsPaginatorFactoryAttribute.InputToken[0],
+                                Next = awsPaginatorFactoryAttribute.OutputToken[0],
+                                EmitLimit = awsPaginatorFactoryAttribute.LimitKey
+                            };
+
+                            // Add to cache
+                            paginatorAttributes[methodName] = autoIteration;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // Add error to the analysis errors collection
+                AnalysisError.ExceptionWhileLoadingPaginatorAttributes(CurrentModel, e);
+            }
+
+            return paginatorAttributes;
+        }
+
+        /// <summary>
+        /// Check if AutoIteration is valid by checking the request and response fields.
+        /// </summary>
+        private bool IsValidAutoIteration(AutoIteration iteration)
+        {
+            return iteration != null &&
+                   !string.IsNullOrEmpty(iteration.Start) &&
+                   !string.IsNullOrEmpty(iteration.Next) &&
+                   AnalyzedParameters.Select(s => s.Name).Contains(iteration.Start) &&
+                   AreResultFieldsPresent(ReturnType, iteration.Next);
+        }
+
+        private AutoIteration ConfigureEmitLimit(AutoIteration iteration)
+        {
+            if (string.IsNullOrEmpty(iteration.EmitLimit) ||
+                CurrentOperation.LegacyPagination != ServiceOperation.LegacyPaginationType.UseEmitLimit ||
+                !AnalyzedParameters.Select(s => s.Name).Contains(iteration.EmitLimit))
+            {
+                iteration.EmitLimit = null;
+            }
+            return iteration;
         }
     }
 }

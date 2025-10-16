@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,21 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.XRay;
 using Amazon.XRay.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.XR
 {
     /// <summary>
-    /// Uploads segment documents to Amazon Web Services X-Ray. The <a href="https://docs.aws.amazon.com/xray/index.html">X-Ray
-    /// SDK</a> generates segment documents and sends them to the X-Ray daemon, which uploads
-    /// them in batches. A segment document can be a completed segment, an in-progress segment,
-    /// or an array of subsegments.
+    /// Uploads segment documents to Amazon Web Services X-Ray. A segment document can be
+    /// a completed segment, an in-progress segment, or an array of subsegments.
     /// 
     ///  
     /// <para>
     /// Segments must include the following fields. For the full segment document schema,
-    /// see <a href="https://docs.aws.amazon.com/xray/latest/devguide/xray-api-segmentdocuments.html">Amazon
+    /// see <a href="https://docs.aws.amazon.com/xray/latest/devguide/aws-xray-interface-api.html#xray-api-segmentdocuments.html">Amazon
     /// Web Services X-Ray Segment Documents</a> in the <i>Amazon Web Services X-Ray Developer
     /// Guide</i>.
     /// </para><para><b>Required segment document fields</b></para><ul><li><para><c>name</c> - The name of the service that handled the request.
@@ -56,7 +56,8 @@ namespace Amazon.PowerShell.Cmdlets.XR
     /// segment to overwrite the in-progress segment.
     /// </para></li></ul><para>
     /// A <c>trace_id</c> consists of three numbers separated by hyphens. For example, 1-58406520-a006649127e371903a2de979.
-    /// This includes:
+    /// For trace IDs created by an X-Ray SDK, or by Amazon Web Services services integrated
+    /// with X-Ray, a trace ID includes:
     /// </para><para><b>Trace ID Format</b></para><ul><li><para>
     /// The version number, for instance, <c>1</c>.
     /// </para></li><li><para>
@@ -65,24 +66,36 @@ namespace Amazon.PowerShell.Cmdlets.XR
     /// or <c>58406520</c> in hexadecimal.
     /// </para></li><li><para>
     /// A 96-bit identifier for the trace, globally unique, in 24 hexadecimal digits.
-    /// </para></li></ul>
+    /// </para></li></ul><note><para>
+    /// Trace IDs created via OpenTelemetry have a different format based on the <a href="https://www.w3.org/TR/trace-context/">W3C
+    /// Trace Context specification</a>. A W3C trace ID must be formatted in the X-Ray trace
+    /// ID format when sending to X-Ray. For example, a W3C trace ID <c>4efaaf4d1e8720b39541901950019ee5</c>
+    /// should be formatted as <c>1-4efaaf4d-1e8720b39541901950019ee5</c> when sending to
+    /// X-Ray. While X-Ray trace IDs include the original request timestamp in Unix epoch
+    /// time, this is not required or validated. 
+    /// </para></note>
     /// </summary>
     [Cmdlet("Write", "XRTraceSegment", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.XRay.Model.UnprocessedTraceSegment")]
     [AWSCmdlet("Calls the AWS X-Ray PutTraceSegments API operation.", Operation = new[] {"PutTraceSegments"}, SelectReturnType = typeof(Amazon.XRay.Model.PutTraceSegmentsResponse))]
     [AWSCmdletOutput("Amazon.XRay.Model.UnprocessedTraceSegment or Amazon.XRay.Model.PutTraceSegmentsResponse",
         "This cmdlet returns a collection of Amazon.XRay.Model.UnprocessedTraceSegment objects.",
-        "The service call response (type Amazon.XRay.Model.PutTraceSegmentsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.XRay.Model.PutTraceSegmentsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteXRTraceSegmentCmdlet : AmazonXRayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TraceSegmentDocument
         /// <summary>
         /// <para>
-        /// <para>A string containing a JSON document defining one or more segments or subsegments.</para>
+        /// <para>A string containing a JSON document defining one or more segments or subsegments.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,16 +121,6 @@ namespace Amazon.PowerShell.Cmdlets.XR
         public string Select { get; set; } = "UnprocessedTraceSegments";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TraceSegmentDocument parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TraceSegmentDocument' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TraceSegmentDocument' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -128,9 +131,13 @@ namespace Amazon.PowerShell.Cmdlets.XR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TraceSegmentDocument), MyInvocation.BoundParameters);
@@ -144,21 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.XR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.XRay.Model.PutTraceSegmentsResponse, WriteXRTraceSegmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TraceSegmentDocument;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.TraceSegmentDocument != null)
             {
                 context.TraceSegmentDocument = new List<System.String>(this.TraceSegmentDocument);
@@ -227,13 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.XR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS X-Ray", "PutTraceSegments");
             try
             {
-                #if DESKTOP
-                return client.PutTraceSegments(request);
-                #elif CORECLR
-                return client.PutTraceSegmentsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutTraceSegmentsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

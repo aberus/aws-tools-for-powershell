@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkManager;
 using Amazon.NetworkManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NMGR
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
     [AWSCmdlet("Calls the AWS Network Manager CreateVpcAttachment API operation.", Operation = new[] {"CreateVpcAttachment"}, SelectReturnType = typeof(Amazon.NetworkManager.Model.CreateVpcAttachmentResponse))]
     [AWSCmdletOutput("Amazon.NetworkManager.Model.VpcAttachment or Amazon.NetworkManager.Model.CreateVpcAttachmentResponse",
         "This cmdlet returns an Amazon.NetworkManager.Model.VpcAttachment object.",
-        "The service call response (type Amazon.NetworkManager.Model.CreateVpcAttachmentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.NetworkManager.Model.CreateVpcAttachmentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewNMGRVpcAttachmentCmdlet : AmazonNetworkManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Options_ApplianceModeSupport
         /// <summary>
@@ -71,6 +74,16 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public System.String CoreNetworkId { get; set; }
         #endregion
         
+        #region Parameter Options_DnsSupport
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether DNS is supported.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Options_DnsSupport { get; set; }
+        #endregion
+        
         #region Parameter Options_Ipv6Support
         /// <summary>
         /// <para>
@@ -81,10 +94,26 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public System.Boolean? Options_Ipv6Support { get; set; }
         #endregion
         
+        #region Parameter Options_SecurityGroupReferencingSupport
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether security group referencing is enabled for this VPC attachment. The
+        /// default is <c>true</c>. However, at the core network policy-level the default is set
+        /// to <c>false</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Options_SecurityGroupReferencingSupport { get; set; }
+        #endregion
+        
         #region Parameter SubnetArn
         /// <summary>
         /// <para>
-        /// <para>The subnet ARN of the VPC attachment.</para>
+        /// <para>The subnet ARN of the VPC attachment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,7 +131,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The key-value tags associated with the request.</para>
+        /// <para>The key-value tags associated with the request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -148,16 +181,6 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public string Select { get; set; } = "VpcAttachment";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CoreNetworkId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CoreNetworkId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CoreNetworkId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -168,9 +191,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CoreNetworkId), MyInvocation.BoundParameters);
@@ -184,21 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkManager.Model.CreateVpcAttachmentResponse, NewNMGRVpcAttachmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CoreNetworkId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.CoreNetworkId = this.CoreNetworkId;
             #if MODULAR
@@ -208,7 +225,9 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             }
             #endif
             context.Options_ApplianceModeSupport = this.Options_ApplianceModeSupport;
+            context.Options_DnsSupport = this.Options_DnsSupport;
             context.Options_Ipv6Support = this.Options_Ipv6Support;
+            context.Options_SecurityGroupReferencingSupport = this.Options_SecurityGroupReferencingSupport;
             if (this.SubnetArn != null)
             {
                 context.SubnetArn = new List<System.String>(this.SubnetArn);
@@ -268,6 +287,16 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
                 request.Options.ApplianceModeSupport = requestOptions_options_ApplianceModeSupport.Value;
                 requestOptionsIsNull = false;
             }
+            System.Boolean? requestOptions_options_DnsSupport = null;
+            if (cmdletContext.Options_DnsSupport != null)
+            {
+                requestOptions_options_DnsSupport = cmdletContext.Options_DnsSupport.Value;
+            }
+            if (requestOptions_options_DnsSupport != null)
+            {
+                request.Options.DnsSupport = requestOptions_options_DnsSupport.Value;
+                requestOptionsIsNull = false;
+            }
             System.Boolean? requestOptions_options_Ipv6Support = null;
             if (cmdletContext.Options_Ipv6Support != null)
             {
@@ -276,6 +305,16 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             if (requestOptions_options_Ipv6Support != null)
             {
                 request.Options.Ipv6Support = requestOptions_options_Ipv6Support.Value;
+                requestOptionsIsNull = false;
+            }
+            System.Boolean? requestOptions_options_SecurityGroupReferencingSupport = null;
+            if (cmdletContext.Options_SecurityGroupReferencingSupport != null)
+            {
+                requestOptions_options_SecurityGroupReferencingSupport = cmdletContext.Options_SecurityGroupReferencingSupport.Value;
+            }
+            if (requestOptions_options_SecurityGroupReferencingSupport != null)
+            {
+                request.Options.SecurityGroupReferencingSupport = requestOptions_options_SecurityGroupReferencingSupport.Value;
                 requestOptionsIsNull = false;
             }
              // determine if request.Options should be set to null
@@ -333,13 +372,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Manager", "CreateVpcAttachment");
             try
             {
-                #if DESKTOP
-                return client.CreateVpcAttachment(request);
-                #elif CORECLR
-                return client.CreateVpcAttachmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVpcAttachmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -359,7 +392,9 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             public System.String ClientToken { get; set; }
             public System.String CoreNetworkId { get; set; }
             public System.Boolean? Options_ApplianceModeSupport { get; set; }
+            public System.Boolean? Options_DnsSupport { get; set; }
             public System.Boolean? Options_Ipv6Support { get; set; }
+            public System.Boolean? Options_SecurityGroupReferencingSupport { get; set; }
             public List<System.String> SubnetArn { get; set; }
             public List<Amazon.NetworkManager.Model.Tag> Tag { get; set; }
             public System.String VpcArn { get; set; }

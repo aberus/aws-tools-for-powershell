@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatch;
 using Amazon.CloudWatch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CW
 {
     /// <summary>
@@ -45,9 +47,16 @@ namespace Amazon.PowerShell.Cmdlets.CW
     /// For example, you could create a composite alarm that goes into ALARM state only when
     /// more than one of the underlying metric alarms are in ALARM state.
     /// </para><para>
-    /// Currently, the only alarm actions that can be taken by composite alarms are notifying
-    /// SNS topics.
-    /// </para><note><para>
+    /// Composite alarms can take the following actions:
+    /// </para><ul><li><para>
+    /// Notify Amazon SNS topics.
+    /// </para></li><li><para>
+    /// Invoke Lambda functions.
+    /// </para></li><li><para>
+    /// Create OpsItems in Systems Manager Ops Center.
+    /// </para></li><li><para>
+    /// Create incidents in Systems Manager Incident Manager.
+    /// </para></li></ul><note><para>
     /// It is possible to create a loop or cycle of composite alarms, where composite alarm
     /// A depends on composite alarm B, and composite alarm B also depends on composite alarm
     /// A. In this scenario, you can't delete any composite alarm that is part of the cycle
@@ -83,12 +92,13 @@ namespace Amazon.PowerShell.Cmdlets.CW
     [AWSCmdlet("Calls the Amazon CloudWatch PutCompositeAlarm API operation.", Operation = new[] {"PutCompositeAlarm"}, SelectReturnType = typeof(Amazon.CloudWatch.Model.PutCompositeAlarmResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatch.Model.PutCompositeAlarmResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatch.Model.PutCompositeAlarmResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatch.Model.PutCompositeAlarmResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCWCompositeAlarmCmdlet : AmazonCloudWatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionsEnabled
         /// <summary>
@@ -142,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// <summary>
         /// <para>
         /// <para>The actions to execute when this alarm transitions to the <c>ALARM</c> state from
-        /// any other state. Each action is specified as an Amazon Resource Name (ARN).</para><para>Valid Values: <c>arn:aws:sns:<i>region</i>:<i>account-id</i>:<i>sns-topic-name</i></c> | <c>arn:aws:ssm:<i>region</i>:<i>account-id</i>:opsitem:<i>severity</i></c></para>
+        /// any other state. Each action is specified as an Amazon Resource Name (ARN).</para><para>Valid Values: ]</para><para><b>Amazon SNS actions:</b></para><para><c>arn:aws:sns:<i>region</i>:<i>account-id</i>:<i>sns-topic-name</i></c></para><para><b>Lambda actions:</b></para><ul><li><para>Invoke the latest version of a Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i></c></para></li><li><para>Invoke a specific version of a Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i>:<i>version-number</i></c></para></li><li><para>Invoke a function by using an alias Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i>:<i>alias-name</i></c></para></li></ul><para><b>Systems Manager actions:</b></para><para><c>arn:aws:ssm:<i>region</i>:<i>account-id</i>:opsitem:<i>severity</i></c></para><para><b>Start a Amazon Q Developer operational investigation</b></para><para><c>arn:aws:aiops:<i>region</i>:<i>account-id</i>:investigation-group:<i>investigation-group-id</i></c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -220,7 +234,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// <summary>
         /// <para>
         /// <para>The actions to execute when this alarm transitions to the <c>INSUFFICIENT_DATA</c>
-        /// state from any other state. Each action is specified as an Amazon Resource Name (ARN).</para><para>Valid Values: <c>arn:aws:sns:<i>region</i>:<i>account-id</i>:<i>sns-topic-name</i></c></para>
+        /// state from any other state. Each action is specified as an Amazon Resource Name (ARN).</para><para>Valid Values: ]</para><para><b>Amazon SNS actions:</b></para><para><c>arn:aws:sns:<i>region</i>:<i>account-id</i>:<i>sns-topic-name</i></c></para><para><b>Lambda actions:</b></para><ul><li><para>Invoke the latest version of a Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i></c></para></li><li><para>Invoke a specific version of a Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i>:<i>version-number</i></c></para></li><li><para>Invoke a function by using an alias Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i>:<i>alias-name</i></c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,7 +250,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
         /// <summary>
         /// <para>
         /// <para>The actions to execute when this alarm transitions to an <c>OK</c> state from any
-        /// other state. Each action is specified as an Amazon Resource Name (ARN).</para><para>Valid Values: <c>arn:aws:sns:<i>region</i>:<i>account-id</i>:<i>sns-topic-name</i></c></para>
+        /// other state. Each action is specified as an Amazon Resource Name (ARN).</para><para>Valid Values: ]</para><para><b>Amazon SNS actions:</b></para><para><c>arn:aws:sns:<i>region</i>:<i>account-id</i>:<i>sns-topic-name</i></c></para><para><b>Lambda actions:</b></para><ul><li><para>Invoke the latest version of a Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i></c></para></li><li><para>Invoke a specific version of a Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i>:<i>version-number</i></c></para></li><li><para>Invoke a function by using an alias Lambda function: <c>arn:aws:lambda:<i>region</i>:<i>account-id</i>:function:<i>function-name</i>:<i>alias-name</i></c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -243,10 +265,17 @@ namespace Amazon.PowerShell.Cmdlets.CW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of key-value pairs to associate with the composite alarm. You can associate
-        /// as many as 50 tags with an alarm.</para><para>Tags can help you organize and categorize your resources. You can also use them to
-        /// scope user permissions, by granting a user permission to access or change only resources
-        /// with certain tag values.</para>
+        /// <para>A list of key-value pairs to associate with the alarm. You can associate as many as
+        /// 50 tags with an alarm. To be able to associate tags with the alarm when you create
+        /// the alarm, you must have the <c>cloudwatch:TagResource</c> permission.</para><para>Tags can help you organize and categorize your resources. You can also use them to
+        /// scope user permissions by granting a user permission to access or change only resources
+        /// with certain tag values.</para><para>If you are using this operation to update an existing alarm, any tags you specify
+        /// in this parameter are ignored. To change the tags of an existing alarm, use <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_TagResource.html">TagResource</a>
+        /// or <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_UntagResource.html">UntagResource</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -264,16 +293,6 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AlarmName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AlarmName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AlarmName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -284,9 +303,13 @@ namespace Amazon.PowerShell.Cmdlets.CW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AlarmName), MyInvocation.BoundParameters);
@@ -300,21 +323,11 @@ namespace Amazon.PowerShell.Cmdlets.CW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatch.Model.PutCompositeAlarmResponse, WriteCWCompositeAlarmCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AlarmName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ActionsEnabled = this.ActionsEnabled;
             context.ActionsSuppressor = this.ActionsSuppressor;
             context.ActionsSuppressorExtensionPeriod = this.ActionsSuppressorExtensionPeriod;
@@ -448,13 +461,7 @@ namespace Amazon.PowerShell.Cmdlets.CW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch", "PutCompositeAlarm");
             try
             {
-                #if DESKTOP
-                return client.PutCompositeAlarm(request);
-                #elif CORECLR
-                return client.PutCompositeAlarmAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutCompositeAlarmAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

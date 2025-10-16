@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Deletes a delivery stream and its data.
+    /// Deletes a Firehose stream and its data.
     /// 
     ///  
     /// <para>
-    /// To check the state of a delivery stream, use <a>DescribeDeliveryStream</a>. You can
-    /// delete a delivery stream only if it is in one of the following states: <c>ACTIVE</c>,
+    /// You can delete a Firehose stream only if it is in one of the following states: <c>ACTIVE</c>,
     /// <c>DELETING</c>, <c>CREATING_FAILED</c>, or <c>DELETING_FAILED</c>. You can't delete
-    /// a delivery stream that is in the <c>CREATING</c> state. While the deletion request
-    /// is in process, the delivery stream is in the <c>DELETING</c> state.
+    /// a Firehose stream that is in the <c>CREATING</c> state. To check the state of a Firehose
+    /// stream, use <a>DescribeDeliveryStream</a>. 
     /// </para><para>
-    /// While the delivery stream is in the <c>DELETING</c> state, the service might continue
-    /// to accept records, but it doesn't make any guarantees with respect to delivering the
-    /// data. Therefore, as a best practice, first stop any applications that are sending
-    /// records before you delete a delivery stream.
+    /// DeleteDeliveryStream is an asynchronous API. When an API request to DeleteDeliveryStream
+    /// succeeds, the Firehose stream is marked for deletion, and it goes into the <c>DELETING</c>
+    /// state.While the Firehose stream is in the <c>DELETING</c> state, the service might
+    /// continue to accept records, but it doesn't make any guarantees with respect to delivering
+    /// the data. Therefore, as a best practice, first stop any applications that are sending
+    /// records before you delete a Firehose stream.
+    /// </para><para>
+    /// Removal of a Firehose stream that is in the <c>DELETING</c> state is a low priority
+    /// operation for the service. A stream may remain in the <c>DELETING</c> state for several
+    /// minutes. Therefore, as a best practice, applications should not wait for streams in
+    /// the <c>DELETING</c> state to be removed. 
     /// </para>
     /// </summary>
     [Cmdlet("Remove", "KINFDeliveryStream", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
@@ -49,23 +57,24 @@ namespace Amazon.PowerShell.Cmdlets.KINF
     [AWSCmdlet("Calls the Amazon Kinesis Firehose DeleteDeliveryStream API operation.", Operation = new[] {"DeleteDeliveryStream"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.DeleteDeliveryStreamResponse))]
     [AWSCmdletOutput("None or Amazon.KinesisFirehose.Model.DeleteDeliveryStreamResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.KinesisFirehose.Model.DeleteDeliveryStreamResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.KinesisFirehose.Model.DeleteDeliveryStreamResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveKINFDeliveryStreamCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowForceDelete
         /// <summary>
         /// <para>
-        /// <para>Set this to true if you want to delete the delivery stream even if Kinesis Data Firehose
-        /// is unable to retire the grant for the CMK. Kinesis Data Firehose might be unable to
-        /// retire the grant due to a customer error, such as when the CMK or the grant are in
-        /// an invalid state. If you force deletion, you can then use the <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_RevokeGrant.html">RevokeGrant</a>
-        /// operation to revoke the grant you gave to Kinesis Data Firehose. If a failure to retire
-        /// the grant happens due to an Amazon Web Services KMS issue, Kinesis Data Firehose keeps
-        /// retrying the delete operation.</para><para>The default value is false.</para>
+        /// <para>Set this to true if you want to delete the Firehose stream even if Firehose is unable
+        /// to retire the grant for the CMK. Firehose might be unable to retire the grant due
+        /// to a customer error, such as when the CMK or the grant are in an invalid state. If
+        /// you force deletion, you can then use the <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_RevokeGrant.html">RevokeGrant</a>
+        /// operation to revoke the grant you gave to Firehose. If a failure to retire the grant
+        /// happens due to an Amazon Web Services KMS issue, Firehose keeps retrying the delete
+        /// operation.</para><para>The default value is false.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter DeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The name of the delivery stream.</para>
+        /// <para>The name of the Firehose stream.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,16 +108,6 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeliveryStreamName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeliveryStreamName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeliveryStreamName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -119,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeliveryStreamName), MyInvocation.BoundParameters);
@@ -135,21 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KinesisFirehose.Model.DeleteDeliveryStreamResponse, RemoveKINFDeliveryStreamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeliveryStreamName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllowForceDelete = this.AllowForceDelete;
             context.DeliveryStreamName = this.DeliveryStreamName;
             #if MODULAR
@@ -220,13 +213,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "DeleteDeliveryStream");
             try
             {
-                #if DESKTOP
-                return client.DeleteDeliveryStream(request);
-                #elif CORECLR
-                return client.DeleteDeliveryStreamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteDeliveryStreamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

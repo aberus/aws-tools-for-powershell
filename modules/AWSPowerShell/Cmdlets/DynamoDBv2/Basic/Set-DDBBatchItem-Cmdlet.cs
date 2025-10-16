@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
@@ -50,8 +52,12 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     /// items and submit a new <c>BatchWriteItem</c> request with those unprocessed items
     /// until all items have been processed.
     /// </para><para>
-    /// If <i>none</i> of the items can be processed due to insufficient provisioned throughput
-    /// on all of the tables in the request, then <c>BatchWriteItem</c> returns a <c>ProvisionedThroughputExceededException</c>.
+    /// For tables and indexes with provisioned capacity, if none of the items can be processed
+    /// due to insufficient provisioned throughput on all of the tables in the request, then
+    /// <c>BatchWriteItem</c> returns a <c>ProvisionedThroughputExceededException</c>. For
+    /// all tables and indexes, if none of the items can be processed due to other throttling
+    /// scenarios (such as exceeding partition level limits), then <c>BatchWriteItem</c> returns
+    /// a <c>ThrottlingException</c>.
     /// </para><important><para>
     /// If DynamoDB returns any unprocessed items, you should retry the batch operation on
     /// those items. However, <i>we strongly recommend that you use an exponential backoff
@@ -100,6 +106,9 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     /// Any individual item in a batch exceeds 400 KB.
     /// </para></li><li><para>
     /// The total request size exceeds 16 MB.
+    /// </para></li><li><para>
+    /// Any individual items with keys exceeding the key length limits. For a partition key,
+    /// the limit is 2048 bytes and for a sort key, the limit is 1024 bytes.
     /// </para></li></ul>
     /// </summary>
     [Cmdlet("Set", "DDBBatchItem", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -107,19 +116,20 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB BatchWriteItem API operation.", Operation = new[] {"BatchWriteItem"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.BatchWriteItemResponse))]
     [AWSCmdletOutput("System.String or Amazon.DynamoDBv2.Model.BatchWriteItemResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.DynamoDBv2.Model.BatchWriteItemResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.BatchWriteItemResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SetDDBBatchItemCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RequestItem
         /// <summary>
         /// <para>
-        /// <para>A map of one or more table names and, for each table, a list of operations to be performed
-        /// (<c>DeleteRequest</c> or <c>PutRequest</c>). Each element in the map consists of the
-        /// following:</para><ul><li><para><c>DeleteRequest</c> - Perform a <c>DeleteItem</c> operation on the specified item.
+        /// <para>A map of one or more table names or table ARNs and, for each table, a list of operations
+        /// to be performed (<c>DeleteRequest</c> or <c>PutRequest</c>). Each element in the map
+        /// consists of the following:</para><ul><li><para><c>DeleteRequest</c> - Perform a <c>DeleteItem</c> operation on the specified item.
         /// The item to be deleted is identified by a <c>Key</c> subelement:</para><ul><li><para><c>Key</c> - A map of primary key attribute values that uniquely identify the item.
         /// Each entry in this map consists of an attribute name and an attribute value. For each
         /// primary key, you must provide <i>all</i> of the key attributes. For example, with
@@ -131,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// and binary type attributes must have lengths greater than zero; and set type attributes
         /// must not be empty. Requests that contain empty values are rejected with a <c>ValidationException</c>
         /// exception.</para><para>If you specify any attributes that are part of an index key, then the data types for
-        /// those attributes must match those of the schema in the table's attribute definition.</para></li></ul></li></ul>
+        /// those attributes must match those of the schema in the table's attribute definition.</para></li></ul></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -183,16 +197,6 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "UnprocessedItems";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RequestItem parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RequestItem' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RequestItem' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -203,9 +207,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RequestItem), MyInvocation.BoundParameters);
@@ -219,21 +227,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.BatchWriteItemResponse, SetDDBBatchItemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RequestItem;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.RequestItem != null)
             {
                 context.RequestItem = new Dictionary<System.String, List<Amazon.DynamoDBv2.Model.WriteRequest>>(StringComparer.Ordinal);
@@ -328,13 +326,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "BatchWriteItem");
             try
             {
-                #if DESKTOP
-                return client.BatchWriteItem(request);
-                #elif CORECLR
-                return client.BatchWriteItemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchWriteItemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

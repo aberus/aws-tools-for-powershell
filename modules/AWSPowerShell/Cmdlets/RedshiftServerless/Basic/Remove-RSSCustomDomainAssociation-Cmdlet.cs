@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RedshiftServerless;
 using Amazon.RedshiftServerless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RSS
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.RSS
     [AWSCmdlet("Calls the Redshift Serverless DeleteCustomDomainAssociation API operation.", Operation = new[] {"DeleteCustomDomainAssociation"}, SelectReturnType = typeof(Amazon.RedshiftServerless.Model.DeleteCustomDomainAssociationResponse))]
     [AWSCmdletOutput("None or Amazon.RedshiftServerless.Model.DeleteCustomDomainAssociationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.RedshiftServerless.Model.DeleteCustomDomainAssociationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.RedshiftServerless.Model.DeleteCustomDomainAssociationResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveRSSCustomDomainAssociationCmdlet : AmazonRedshiftServerlessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CustomDomainName
         /// <summary>
@@ -96,9 +99,13 @@ namespace Amazon.PowerShell.Cmdlets.RSS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.WorkgroupName), MyInvocation.BoundParameters);
@@ -193,13 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.RSS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Redshift Serverless", "DeleteCustomDomainAssociation");
             try
             {
-                #if DESKTOP
-                return client.DeleteCustomDomainAssociation(request);
-                #elif CORECLR
-                return client.DeleteCustomDomainAssociationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteCustomDomainAssociationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

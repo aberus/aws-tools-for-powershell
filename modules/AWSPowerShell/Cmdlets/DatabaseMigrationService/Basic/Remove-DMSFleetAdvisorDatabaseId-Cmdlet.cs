@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,45 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
+    /// <important><para>
+    ///  End of support notice: On May 20, 2026, Amazon Web Services will end support for
+    /// Amazon Web Services DMS Fleet Advisor;. After May 20, 2026, you will no longer be
+    /// able to access the Amazon Web Services DMS Fleet Advisor; console or Amazon Web Services
+    /// DMS Fleet Advisor; resources. For more information, see <a href="https://docs.aws.amazon.com/dms/latest/userguide/dms_fleet.advisor-end-of-support.html">Amazon
+    /// Web Services DMS Fleet Advisor end of support</a>. 
+    /// </para></important><para>
     /// Deletes the specified Fleet Advisor collector databases.
+    /// </para>
     /// </summary>
     [Cmdlet("Remove", "DMSFleetAdvisorDatabaseId", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Database Migration Service DeleteFleetAdvisorDatabases API operation.", Operation = new[] {"DeleteFleetAdvisorDatabases"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorDatabasesResponse))]
     [AWSCmdletOutput("System.String or Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorDatabasesResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorDatabasesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.DeleteFleetAdvisorDatabasesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveDMSFleetAdvisorDatabaseIdCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DatabaseId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the Fleet Advisor collector databases to delete.</para>
+        /// <para>The IDs of the Fleet Advisor collector databases to delete.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -81,9 +96,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatabaseId), MyInvocation.BoundParameters);
@@ -170,13 +189,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "DeleteFleetAdvisorDatabases");
             try
             {
-                #if DESKTOP
-                return client.DeleteFleetAdvisorDatabases(request);
-                #elif CORECLR
-                return client.DeleteFleetAdvisorDatabasesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteFleetAdvisorDatabasesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

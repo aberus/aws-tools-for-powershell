@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppStream;
 using Amazon.AppStream.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.APS
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.APS
     [AWSCmdlet("Calls the Amazon AppStream DescribeAppBlocks API operation.", Operation = new[] {"DescribeAppBlocks"}, SelectReturnType = typeof(Amazon.AppStream.Model.DescribeAppBlocksResponse))]
     [AWSCmdletOutput("Amazon.AppStream.Model.AppBlock or Amazon.AppStream.Model.DescribeAppBlocksResponse",
         "This cmdlet returns a collection of Amazon.AppStream.Model.AppBlock objects.",
-        "The service call response (type Amazon.AppStream.Model.DescribeAppBlocksResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppStream.Model.DescribeAppBlocksResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAPSAppBlockCmdlet : AmazonAppStreamClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Arn
         /// <summary>
         /// <para>
-        /// <para>The ARNs of the app blocks.</para>
+        /// <para>The ARNs of the app blocks.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,7 +78,7 @@ namespace Amazon.PowerShell.Cmdlets.APS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,9 +106,13 @@ namespace Amazon.PowerShell.Cmdlets.APS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -208,13 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.APS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon AppStream", "DescribeAppBlocks");
             try
             {
-                #if DESKTOP
-                return client.DescribeAppBlocks(request);
-                #elif CORECLR
-                return client.DescribeAppBlocksAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAppBlocksAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

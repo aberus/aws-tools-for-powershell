@@ -1,0 +1,20 @@
+---
+codedeploy_RegisterOnPremisesInstance:
+  title: Use Register-CDOnPremiseInstance
+  title_abbrev: Register-CDOnPremiseInstance
+  synopsis: use Register-CDOnPremiseInstance
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Register-CDOnPremiseInstance
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: This example registers an on-premises instance with the specified name and IAM user.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/codedeploy_Register-CDOnPremiseInstance.1.1.ps1
+  services:
+    codedeploy:
+      RegisterOnPremisesInstance:
+

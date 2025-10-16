@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,41 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Lists your delivery streams in alphabetical order of their names.
+    /// Lists your Firehose streams in alphabetical order of their names.
     /// 
     ///  
     /// <para>
-    /// The number of delivery streams might be too large to return using a single call to
-    /// <c>ListDeliveryStreams</c>. You can limit the number of delivery streams returned,
+    /// The number of Firehose streams might be too large to return using a single call to
+    /// <c>ListDeliveryStreams</c>. You can limit the number of Firehose streams returned,
     /// using the <c>Limit</c> parameter. To determine whether there are more delivery streams
     /// to list, check the value of <c>HasMoreDeliveryStreams</c> in the output. If there
-    /// are more delivery streams to list, you can request them by calling this operation
+    /// are more Firehose streams to list, you can request them by calling this operation
     /// again and setting the <c>ExclusiveStartDeliveryStreamName</c> parameter to the name
-    /// of the last delivery stream returned in the last call.
+    /// of the last Firehose stream returned in the last call.
     /// </para>
     /// </summary>
     [Cmdlet("Get", "KINFDeliveryStreamList")]
     [OutputType("Amazon.KinesisFirehose.Model.ListDeliveryStreamsResponse")]
     [AWSCmdlet("Calls the Amazon Kinesis Firehose ListDeliveryStreams API operation.", Operation = new[] {"ListDeliveryStreams"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.ListDeliveryStreamsResponse))]
     [AWSCmdletOutput("Amazon.KinesisFirehose.Model.ListDeliveryStreamsResponse",
-        "This cmdlet returns an Amazon.KinesisFirehose.Model.ListDeliveryStreamsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KinesisFirehose.Model.ListDeliveryStreamsResponse object containing multiple properties."
     )]
     public partial class GetKINFDeliveryStreamListCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeliveryStreamType
         /// <summary>
         /// <para>
-        /// <para>The delivery stream type. This can be one of the following values:</para><ul><li><para><c>DirectPut</c>: Provider applications access the delivery stream directly.</para></li><li><para><c>KinesisStreamAsSource</c>: The delivery stream uses a Kinesis data stream as a
-        /// source.</para></li></ul><para>This parameter is optional. If this parameter is omitted, delivery streams of all
+        /// <para>The Firehose stream type. This can be one of the following values:</para><ul><li><para><c>DirectPut</c>: Provider applications access the Firehose stream directly.</para></li><li><para><c>KinesisStreamAsSource</c>: The Firehose stream uses a Kinesis data stream as a
+        /// source.</para></li></ul><para>This parameter is optional. If this parameter is omitted, Firehose streams of all
         /// types are returned.</para>
         /// </para>
         /// </summary>
@@ -68,8 +71,8 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter ExclusiveStartDeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The list of delivery streams returned by this call to <c>ListDeliveryStreams</c> will
-        /// start with the delivery stream whose name comes alphabetically immediately after the
+        /// <para>The list of Firehose streams returned by this call to <c>ListDeliveryStreams</c> will
+        /// start with the Firehose stream whose name comes alphabetically immediately after the
         /// name you specify in <c>ExclusiveStartDeliveryStreamName</c>.</para>
         /// </para>
         /// </summary>
@@ -80,7 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter Limit
         /// <summary>
         /// <para>
-        /// <para>The maximum number of delivery streams to list. The default value is 10.</para>
+        /// <para>The maximum number of Firehose streams to list. The default value is 10.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,9 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -182,13 +189,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "ListDeliveryStreams");
             try
             {
-                #if DESKTOP
-                return client.ListDeliveryStreams(request);
-                #elif CORECLR
-                return client.ListDeliveryStreamsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListDeliveryStreamsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

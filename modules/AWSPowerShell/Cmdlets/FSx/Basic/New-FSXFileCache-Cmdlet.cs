@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FSx;
 using Amazon.FSx.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FSX
 {
     /// <summary>
@@ -40,7 +42,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     /// If a file cache with the specified client request token doesn't exist, <c>CreateFileCache</c>
     /// does the following: 
     /// </para><ul><li><para>
-    /// Creates a new, empty Amazon File Cache resourcewith an assigned ID, and an initial
+    /// Creates a new, empty Amazon File Cache resource with an assigned ID, and an initial
     /// lifecycle state of <c>CREATING</c>.
     /// </para></li><li><para>
     /// Returns the description of the cache in JSON format.
@@ -55,12 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
     [AWSCmdlet("Calls the Amazon FSx CreateFileCache API operation.", Operation = new[] {"CreateFileCache"}, SelectReturnType = typeof(Amazon.FSx.Model.CreateFileCacheResponse))]
     [AWSCmdletOutput("Amazon.FSx.Model.FileCacheCreating or Amazon.FSx.Model.CreateFileCacheResponse",
         "This cmdlet returns an Amazon.FSx.Model.FileCacheCreating object.",
-        "The service call response (type Amazon.FSx.Model.CreateFileCacheResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FSx.Model.CreateFileCacheResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewFSXFileCacheCmdlet : AmazonFSxClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -97,7 +100,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>A list of up to 8 configurations for data repository associations (DRAs) to be created
         /// during the cache creation. The DRAs link the cache to either an Amazon S3 data repository
         /// or a Network File System (NFS) data repository that supports the NFSv3 protocol.</para><para>The DRA configurations must meet the following requirements:</para><ul><li><para>All configurations on the list must be of the same data repository type, either all
-        /// S3 or all NFS. A cache can't link to different data repository types at the same time.</para></li><li><para>An NFS DRA must link to an NFS file system that supports the NFSv3 protocol.</para></li></ul><para>DRA automatic import and automatic export is not supported.</para>
+        /// S3 or all NFS. A cache can't link to different data repository types at the same time.</para></li><li><para>An NFS DRA must link to an NFS file system that supports the NFSv3 protocol.</para></li></ul><para>DRA automatic import and automatic export is not supported.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,7 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         /// <para>
         /// <para>A list of IDs specifying the security groups to apply to all network interfaces created
         /// for Amazon File Cache access. This list isn't returned in later requests to describe
-        /// the cache.</para>
+        /// the cache.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -219,7 +230,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter SubnetId
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -237,7 +252,11 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -276,9 +295,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KmsKeyId), MyInvocation.BoundParameters);
@@ -505,13 +528,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon FSx", "CreateFileCache");
             try
             {
-                #if DESKTOP
-                return client.CreateFileCache(request);
-                #elif CORECLR
-                return client.CreateFileCacheAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFileCacheAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

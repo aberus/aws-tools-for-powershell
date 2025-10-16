@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
-    /// Allows you to send a request that sends a voice message through Amazon Pinpoint. This
-    /// operation uses <a href="http://aws.amazon.com/polly/">Amazon Polly</a> to convert
-    /// a text script into a voice message.
+    /// Allows you to send a request that sends a voice message. This operation uses <a href="http://aws.amazon.com/polly/">Amazon
+    /// Polly</a> to convert a text script into a voice message.
     /// </summary>
     [Cmdlet("Send", "SMSVVoiceMessage", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.SendVoiceMessageResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 SendVoiceMessage API operation.", Operation = new[] {"SendVoiceMessage"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.SendVoiceMessageResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.SendVoiceMessageResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.SendVoiceMessageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.SendVoiceMessageResponse object containing multiple properties."
     )]
     public partial class SendSMSVVoiceMessageCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigurationSetName
         /// <summary>
@@ -58,7 +60,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         /// <summary>
         /// <para>
         /// <para>You can specify custom data in this field. If you do, that data is logged to the event
-        /// destination.</para>
+        /// destination.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,11 +131,23 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public Amazon.PinpointSMSVoiceV2.VoiceMessageBodyTextType MessageBodyTextType { get; set; }
         #endregion
         
+        #region Parameter MessageFeedbackEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Set to true to enable message feedback for the message. When a user receives the message
+        /// you need to update the message status using <a>PutMessageFeedback</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? MessageFeedbackEnabled { get; set; }
+        #endregion
+        
         #region Parameter OriginationIdentity
         /// <summary>
         /// <para>
         /// <para>The origination identity to use for the voice call. This can be the PhoneNumber, PhoneNumberId,
-        /// PhoneNumberArn, PoolId, or PoolArn.</para>
+        /// PhoneNumberArn, PoolId, or PoolArn.</para><important><para>If you are using a shared AWS End User Messaging SMS and Voice resource then you must
+        /// use the full Amazon Resource Name(ARN).</para></important>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -141,6 +159,16 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String OriginationIdentity { get; set; }
+        #endregion
+        
+        #region Parameter ProtectConfigurationId
+        /// <summary>
+        /// <para>
+        /// <para>The unique identifier for the protect configuration.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ProtectConfigurationId { get; set; }
         #endregion
         
         #region Parameter TimeToLive
@@ -186,9 +214,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DestinationPhoneNumber), MyInvocation.BoundParameters);
@@ -227,6 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             context.MaxPricePerMinute = this.MaxPricePerMinute;
             context.MessageBody = this.MessageBody;
             context.MessageBodyTextType = this.MessageBodyTextType;
+            context.MessageFeedbackEnabled = this.MessageFeedbackEnabled;
             context.OriginationIdentity = this.OriginationIdentity;
             #if MODULAR
             if (this.OriginationIdentity == null && ParameterWasBound(nameof(this.OriginationIdentity)))
@@ -234,6 +267,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
                 WriteWarning("You are passing $null as a value for parameter OriginationIdentity which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ProtectConfigurationId = this.ProtectConfigurationId;
             context.TimeToLive = this.TimeToLive;
             context.VoiceId = this.VoiceId;
             
@@ -280,9 +314,17 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             {
                 request.MessageBodyTextType = cmdletContext.MessageBodyTextType;
             }
+            if (cmdletContext.MessageFeedbackEnabled != null)
+            {
+                request.MessageFeedbackEnabled = cmdletContext.MessageFeedbackEnabled.Value;
+            }
             if (cmdletContext.OriginationIdentity != null)
             {
                 request.OriginationIdentity = cmdletContext.OriginationIdentity;
+            }
+            if (cmdletContext.ProtectConfigurationId != null)
+            {
+                request.ProtectConfigurationId = cmdletContext.ProtectConfigurationId;
             }
             if (cmdletContext.TimeToLive != null)
             {
@@ -330,13 +372,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "SendVoiceMessage");
             try
             {
-                #if DESKTOP
-                return client.SendVoiceMessage(request);
-                #elif CORECLR
-                return client.SendVoiceMessageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SendVoiceMessageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -360,7 +396,9 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             public System.String MaxPricePerMinute { get; set; }
             public System.String MessageBody { get; set; }
             public Amazon.PinpointSMSVoiceV2.VoiceMessageBodyTextType MessageBodyTextType { get; set; }
+            public System.Boolean? MessageFeedbackEnabled { get; set; }
             public System.String OriginationIdentity { get; set; }
+            public System.String ProtectConfigurationId { get; set; }
             public System.Int32? TimeToLive { get; set; }
             public Amazon.PinpointSMSVoiceV2.VoiceId VoiceId { get; set; }
             public System.Func<Amazon.PinpointSMSVoiceV2.Model.SendVoiceMessageResponse, SendSMSVVoiceMessageCmdlet, object> Select { get; set; } =

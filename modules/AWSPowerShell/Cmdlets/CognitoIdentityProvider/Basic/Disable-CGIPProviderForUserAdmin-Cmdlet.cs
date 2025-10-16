@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
@@ -34,17 +36,15 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// user to deactivate is a linked external IdP user, any link between that user and an
     /// existing user is removed. When the external user signs in again, and the user is no
     /// longer attached to the previously linked <c>DestinationUser</c>, the user must create
-    /// a new user account. See <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminLinkProviderForUser.html">AdminLinkProviderForUser</a>.
+    /// a new user account.
     /// 
     ///  
     /// <para>
-    /// The <c>ProviderName</c> must match the value specified when creating an IdP for the
-    /// pool. 
+    /// The value of <c>ProviderName</c> must match the name of a user pool IdP.
     /// </para><para>
-    /// To deactivate a native username + password user, the <c>ProviderName</c> value must
-    /// be <c>Cognito</c> and the <c>ProviderAttributeName</c> must be <c>Cognito_Subject</c>.
-    /// The <c>ProviderAttributeValue</c> must be the name that is used in the user pool for
-    /// the user.
+    /// To deactivate a local user, set <c>ProviderName</c> to <c>Cognito</c> and the <c>ProviderAttributeName</c>
+    /// to <c>Cognito_Subject</c>. The <c>ProviderAttributeValue</c> must be user's local
+    /// username.
     /// </para><para>
     /// The <c>ProviderAttributeName</c> must always be <c>Cognito_Subject</c> for social
     /// IdPs. The <c>ProviderAttributeValue</c> must always be the exact subject that was
@@ -53,11 +53,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// For de-linking a SAML identity, there are two scenarios. If the linked identity has
     /// not yet been used to sign in, the <c>ProviderAttributeName</c> and <c>ProviderAttributeValue</c>
     /// must be the same values that were used for the <c>SourceUser</c> when the identities
-    /// were originally linked using <c> AdminLinkProviderForUser</c> call. (If the linking
-    /// was done with <c>ProviderAttributeName</c> set to <c>Cognito_Subject</c>, the same
-    /// applies here). However, if the user has already signed in, the <c>ProviderAttributeName</c>
-    /// must be <c>Cognito_Subject</c> and <c>ProviderAttributeValue</c> must be the subject
-    /// of the SAML assertion.
+    /// were originally linked using <c> AdminLinkProviderForUser</c> call. This is also true
+    /// if the linking was done with <c>ProviderAttributeName</c> set to <c>Cognito_Subject</c>.
+    /// If the user has already signed in, the <c>ProviderAttributeName</c> must be <c>Cognito_Subject</c>
+    /// and <c>ProviderAttributeValue</c> must be the <c>NameID</c> from their SAML assertion.
     /// </para><note><para>
     /// Amazon Cognito evaluates Identity and Access Management (IAM) policies in requests
     /// for this API operation. For this operation, you must use IAM credentials to authorize
@@ -71,12 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider AdminDisableProviderForUser API operation.", Operation = new[] {"AdminDisableProviderForUser"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.AdminDisableProviderForUserResponse))]
     [AWSCmdletOutput("None or Amazon.CognitoIdentityProvider.Model.AdminDisableProviderForUserResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CognitoIdentityProvider.Model.AdminDisableProviderForUserResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CognitoIdentityProvider.Model.AdminDisableProviderForUserResponse) be returned by specifying '-Select *'."
     )]
     public partial class DisableCGIPProviderForUserAdminCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter User_ProviderAttributeName
         /// <summary>
@@ -111,7 +111,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool.</para>
+        /// <para>The ID of the user pool where you want to delete the user's linked identities.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -135,16 +135,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserPoolId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -155,9 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserPoolId), MyInvocation.BoundParameters);
@@ -171,21 +165,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.AdminDisableProviderForUserResponse, DisableCGIPProviderForUserAdminCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserPoolId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.User_ProviderAttributeName = this.User_ProviderAttributeName;
             context.User_ProviderAttributeValue = this.User_ProviderAttributeValue;
             context.User_ProviderName = this.User_ProviderName;
@@ -293,13 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "AdminDisableProviderForUser");
             try
             {
-                #if DESKTOP
-                return client.AdminDisableProviderForUser(request);
-                #elif CORECLR
-                return client.AdminDisableProviderForUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AdminDisableProviderForUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

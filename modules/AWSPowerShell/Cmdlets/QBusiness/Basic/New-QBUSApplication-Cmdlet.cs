@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,45 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QBusiness;
 using Amazon.QBusiness.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QBUS
 {
     /// <summary>
-    /// Creates an Amazon Q application.
+    /// Creates an Amazon Q Business application.
+    /// 
+    ///  <note><para>
+    /// There are new tiers for Amazon Q Business. Not all features in Amazon Q Business Pro
+    /// are also available in Amazon Q Business Lite. For information on what's included in
+    /// Amazon Q Business Lite and what's included in Amazon Q Business Pro, see <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/tiers.html#user-sub-tiers">Amazon
+    /// Q Business tiers</a>. You must use the Amazon Q Business console to assign subscription
+    /// tiers to users. 
+    /// </para><para>
+    /// An Amazon Q Apps service linked role will be created if it's absent in the Amazon
+    /// Web Services account when <c>QAppsConfiguration</c> is enabled in the request. For
+    /// more information, see <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/using-service-linked-roles-qapps.html">
+    /// Using service-linked roles for Q Apps</a>.
+    /// </para><para>
+    /// When you create an application, Amazon Q Business may securely transmit data for processing
+    /// from your selected Amazon Web Services region, but within your geography. For more
+    /// information, see <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/cross-region-inference.html">Cross
+    /// region inference in Amazon Q Business</a>.
+    /// </para></note>
     /// </summary>
     [Cmdlet("New", "QBUSApplication", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QBusiness.Model.CreateApplicationResponse")]
     [AWSCmdlet("Calls the Amazon QBusiness CreateApplication API operation.", Operation = new[] {"CreateApplication"}, SelectReturnType = typeof(Amazon.QBusiness.Model.CreateApplicationResponse))]
     [AWSCmdletOutput("Amazon.QBusiness.Model.CreateApplicationResponse",
-        "This cmdlet returns an Amazon.QBusiness.Model.CreateApplicationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QBusiness.Model.CreateApplicationResponse object containing multiple properties."
     )]
     public partial class NewQBUSApplicationCmdlet : AmazonQBusinessClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttachmentsConfiguration_AttachmentsControlMode
         /// <summary>
@@ -55,10 +74,36 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public Amazon.QBusiness.AttachmentsControlMode AttachmentsConfiguration_AttachmentsControlMode { get; set; }
         #endregion
         
+        #region Parameter ClientIdsForOIDC
+        /// <summary>
+        /// <para>
+        /// <para>The OIDC client ID for a Amazon Q Business application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] ClientIdsForOIDC { get; set; }
+        #endregion
+        
+        #region Parameter QuickSightConfiguration_ClientNamespace
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon QuickSight namespace that is used as the identity provider. For more information
+        /// about QuickSight namespaces, see <a href="https://docs.aws.amazon.com/quicksight/latest/developerguide/namespace-operations.html">Namespace
+        /// operations</a>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String QuickSightConfiguration_ClientNamespace { get; set; }
+        #endregion
+        
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// <para>A description for the Amazon Q application. </para>
+        /// <para>A description for the Amazon Q Business application. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +113,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter DisplayName
         /// <summary>
         /// <para>
-        /// <para>A name for the Amazon Q application. </para>
+        /// <para>A name for the Amazon Q Business application. </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -82,41 +127,97 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public System.String DisplayName { get; set; }
         #endregion
         
+        #region Parameter IamIdentityProviderArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of an identity provider being used by an Amazon Q Business
+        /// application.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IamIdentityProviderArn { get; set; }
+        #endregion
+        
+        #region Parameter IdentityCenterInstanceArn
+        /// <summary>
+        /// <para>
+        /// <para> The Amazon Resource Name (ARN) of the IAM Identity Center instance you are either
+        /// creating for—or connecting to—your Amazon Q Business application.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String IdentityCenterInstanceArn { get; set; }
+        #endregion
+        
+        #region Parameter IdentityType
+        /// <summary>
+        /// <para>
+        /// <para>The authentication type being used by a Amazon Q Business application.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.QBusiness.IdentityType")]
+        public Amazon.QBusiness.IdentityType IdentityType { get; set; }
+        #endregion
+        
         #region Parameter EncryptionConfiguration_KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the KMS key. Amazon Q doesn't support asymmetric keys.</para>
+        /// <para>The identifier of the KMS key. Amazon Q Business doesn't support asymmetric keys.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String EncryptionConfiguration_KmsKeyId { get; set; }
         #endregion
         
+        #region Parameter PersonalizationConfiguration_PersonalizationControlMode
+        /// <summary>
+        /// <para>
+        /// <para>An option to allow Amazon Q Business to customize chat responses using user specific
+        /// metadata—specifically, location and job information—in your IAM Identity Center instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.QBusiness.PersonalizationControlMode")]
+        public Amazon.QBusiness.PersonalizationControlMode PersonalizationConfiguration_PersonalizationControlMode { get; set; }
+        #endregion
+        
+        #region Parameter QAppsConfiguration_QAppsControlMode
+        /// <summary>
+        /// <para>
+        /// <para>Status information about whether end users can create and use Amazon Q Apps in the
+        /// web experience.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.QBusiness.QAppsControlMode")]
+        public Amazon.QBusiness.QAppsControlMode QAppsConfiguration_QAppsControlMode { get; set; }
+        #endregion
+        
         #region Parameter RoleArn
         /// <summary>
         /// <para>
         /// <para> The Amazon Resource Name (ARN) of an IAM role with permissions to access your Amazon
-        /// CloudWatch logs and metrics.</para>
+        /// CloudWatch logs and metrics. If this property is not specified, Amazon Q Business
+        /// will create a <a href="https://docs.aws.amazon.com/amazonq/latest/qbusiness-ug/using-service-linked-roles.html#slr-permissions">service
+        /// linked role (SLR)</a> and use it as the application's role.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String RoleArn { get; set; }
         #endregion
         
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A list of key-value pairs that identify or categorize your Amazon Q application. You
-        /// can also use tags to help control access to the application. Tag keys and values can
-        /// consist of Unicode letters, digits, white space, and any of the following symbols:
-        /// _ . : / = + - @.</para>
+        /// <para>A list of key-value pairs that identify or categorize your Amazon Q Business application.
+        /// You can also use tags to help control access to the application. Tag keys and values
+        /// can consist of Unicode letters, digits, white space, and any of the following symbols:
+        /// _ . : / = + - @.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,7 +228,8 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         #region Parameter ClientToken
         /// <summary>
         /// <para>
-        /// <para>A token that you provide to identify the request to create your Amazon Q application.</para>
+        /// <para>A token that you provide to identify the request to create your Amazon Q Business
+        /// application.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,16 +247,6 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DisplayName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DisplayName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DisplayName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -165,9 +257,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DisplayName), MyInvocation.BoundParameters);
@@ -181,22 +277,16 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QBusiness.Model.CreateApplicationResponse, NewQBUSApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DisplayName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AttachmentsConfiguration_AttachmentsControlMode = this.AttachmentsConfiguration_AttachmentsControlMode;
+            if (this.ClientIdsForOIDC != null)
+            {
+                context.ClientIdsForOIDC = new List<System.String>(this.ClientIdsForOIDC);
+            }
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.DisplayName = this.DisplayName;
@@ -207,13 +297,13 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             }
             #endif
             context.EncryptionConfiguration_KmsKeyId = this.EncryptionConfiguration_KmsKeyId;
+            context.IamIdentityProviderArn = this.IamIdentityProviderArn;
+            context.IdentityCenterInstanceArn = this.IdentityCenterInstanceArn;
+            context.IdentityType = this.IdentityType;
+            context.PersonalizationConfiguration_PersonalizationControlMode = this.PersonalizationConfiguration_PersonalizationControlMode;
+            context.QAppsConfiguration_QAppsControlMode = this.QAppsConfiguration_QAppsControlMode;
+            context.QuickSightConfiguration_ClientNamespace = this.QuickSightConfiguration_ClientNamespace;
             context.RoleArn = this.RoleArn;
-            #if MODULAR
-            if (this.RoleArn == null && ParameterWasBound(nameof(this.RoleArn)))
-            {
-                WriteWarning("You are passing $null as a value for parameter RoleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.QBusiness.Model.Tag>(this.Tag);
@@ -253,6 +343,10 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             {
                 request.AttachmentsConfiguration = null;
             }
+            if (cmdletContext.ClientIdsForOIDC != null)
+            {
+                request.ClientIdsForOIDC = cmdletContext.ClientIdsForOIDC;
+            }
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
@@ -283,6 +377,75 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             if (requestEncryptionConfigurationIsNull)
             {
                 request.EncryptionConfiguration = null;
+            }
+            if (cmdletContext.IamIdentityProviderArn != null)
+            {
+                request.IamIdentityProviderArn = cmdletContext.IamIdentityProviderArn;
+            }
+            if (cmdletContext.IdentityCenterInstanceArn != null)
+            {
+                request.IdentityCenterInstanceArn = cmdletContext.IdentityCenterInstanceArn;
+            }
+            if (cmdletContext.IdentityType != null)
+            {
+                request.IdentityType = cmdletContext.IdentityType;
+            }
+            
+             // populate PersonalizationConfiguration
+            var requestPersonalizationConfigurationIsNull = true;
+            request.PersonalizationConfiguration = new Amazon.QBusiness.Model.PersonalizationConfiguration();
+            Amazon.QBusiness.PersonalizationControlMode requestPersonalizationConfiguration_personalizationConfiguration_PersonalizationControlMode = null;
+            if (cmdletContext.PersonalizationConfiguration_PersonalizationControlMode != null)
+            {
+                requestPersonalizationConfiguration_personalizationConfiguration_PersonalizationControlMode = cmdletContext.PersonalizationConfiguration_PersonalizationControlMode;
+            }
+            if (requestPersonalizationConfiguration_personalizationConfiguration_PersonalizationControlMode != null)
+            {
+                request.PersonalizationConfiguration.PersonalizationControlMode = requestPersonalizationConfiguration_personalizationConfiguration_PersonalizationControlMode;
+                requestPersonalizationConfigurationIsNull = false;
+            }
+             // determine if request.PersonalizationConfiguration should be set to null
+            if (requestPersonalizationConfigurationIsNull)
+            {
+                request.PersonalizationConfiguration = null;
+            }
+            
+             // populate QAppsConfiguration
+            var requestQAppsConfigurationIsNull = true;
+            request.QAppsConfiguration = new Amazon.QBusiness.Model.QAppsConfiguration();
+            Amazon.QBusiness.QAppsControlMode requestQAppsConfiguration_qAppsConfiguration_QAppsControlMode = null;
+            if (cmdletContext.QAppsConfiguration_QAppsControlMode != null)
+            {
+                requestQAppsConfiguration_qAppsConfiguration_QAppsControlMode = cmdletContext.QAppsConfiguration_QAppsControlMode;
+            }
+            if (requestQAppsConfiguration_qAppsConfiguration_QAppsControlMode != null)
+            {
+                request.QAppsConfiguration.QAppsControlMode = requestQAppsConfiguration_qAppsConfiguration_QAppsControlMode;
+                requestQAppsConfigurationIsNull = false;
+            }
+             // determine if request.QAppsConfiguration should be set to null
+            if (requestQAppsConfigurationIsNull)
+            {
+                request.QAppsConfiguration = null;
+            }
+            
+             // populate QuickSightConfiguration
+            var requestQuickSightConfigurationIsNull = true;
+            request.QuickSightConfiguration = new Amazon.QBusiness.Model.QuickSightConfiguration();
+            System.String requestQuickSightConfiguration_quickSightConfiguration_ClientNamespace = null;
+            if (cmdletContext.QuickSightConfiguration_ClientNamespace != null)
+            {
+                requestQuickSightConfiguration_quickSightConfiguration_ClientNamespace = cmdletContext.QuickSightConfiguration_ClientNamespace;
+            }
+            if (requestQuickSightConfiguration_quickSightConfiguration_ClientNamespace != null)
+            {
+                request.QuickSightConfiguration.ClientNamespace = requestQuickSightConfiguration_quickSightConfiguration_ClientNamespace;
+                requestQuickSightConfigurationIsNull = false;
+            }
+             // determine if request.QuickSightConfiguration should be set to null
+            if (requestQuickSightConfigurationIsNull)
+            {
+                request.QuickSightConfiguration = null;
             }
             if (cmdletContext.RoleArn != null)
             {
@@ -330,13 +493,7 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QBusiness", "CreateApplication");
             try
             {
-                #if DESKTOP
-                return client.CreateApplication(request);
-                #elif CORECLR
-                return client.CreateApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -354,10 +511,17 @@ namespace Amazon.PowerShell.Cmdlets.QBUS
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.QBusiness.AttachmentsControlMode AttachmentsConfiguration_AttachmentsControlMode { get; set; }
+            public List<System.String> ClientIdsForOIDC { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
             public System.String DisplayName { get; set; }
             public System.String EncryptionConfiguration_KmsKeyId { get; set; }
+            public System.String IamIdentityProviderArn { get; set; }
+            public System.String IdentityCenterInstanceArn { get; set; }
+            public Amazon.QBusiness.IdentityType IdentityType { get; set; }
+            public Amazon.QBusiness.PersonalizationControlMode PersonalizationConfiguration_PersonalizationControlMode { get; set; }
+            public Amazon.QBusiness.QAppsControlMode QAppsConfiguration_QAppsControlMode { get; set; }
+            public System.String QuickSightConfiguration_ClientNamespace { get; set; }
             public System.String RoleArn { get; set; }
             public List<Amazon.QBusiness.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.QBusiness.Model.CreateApplicationResponse, NewQBUSApplicationCmdlet, object> Select { get; set; } =

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Confirms tracking of the device. This API call is the call that begins device tracking.
-    /// For more information about device authentication, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-device-tracking.html">Working
+    /// Confirms a device that a user wants to remember. A remembered device is a "Remember
+    /// me on this device" option for user pools that perform authentication with the device
+    /// key of a trusted device in the back end, instead of a user-provided MFA code. For
+    /// more information about device authentication, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-device-tracking.html">Working
     /// with user devices in your user pool</a>.
     /// 
     ///  
@@ -48,21 +52,20 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [OutputType("System.Boolean")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider ConfirmDevice API operation.", Operation = new[] {"ConfirmDevice"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.ConfirmDeviceResponse))]
     [AWSCmdletOutput("System.Boolean or Amazon.CognitoIdentityProvider.Model.ConfirmDeviceResponse",
-        "This cmdlet returns a System.Boolean object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.ConfirmDeviceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Boolean objects.",
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.ConfirmDeviceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ApproveCGIPDeviceCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessToken
         /// <summary>
         /// <para>
-        /// <para>A valid access token that Amazon Cognito issued to the user whose device you want
-        /// to confirm.</para>
+        /// <para>A valid access token that Amazon Cognito issued to the currently signed-in user. Must
+        /// include a scope claim for <c>aws.cognito.signin.user.admin</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -79,7 +82,8 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter DeviceKey
         /// <summary>
         /// <para>
-        /// <para>The device key.</para>
+        /// <para>The unique identifier, or device key, of the device that you want to update the status
+        /// for.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -96,7 +100,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter DeviceName
         /// <summary>
         /// <para>
-        /// <para>The device name.</para>
+        /// <para>A friendly name for the device, for example <c>MyMobilePhone</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +110,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter DeviceSecretVerifierConfig_PasswordVerifier
         /// <summary>
         /// <para>
-        /// <para>The password verifier.</para>
+        /// <para>A password verifier for a user's device. Used in SRP authentication.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,7 +120,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter DeviceSecretVerifierConfig_Salt
         /// <summary>
         /// <para>
-        /// <para>The <a href="https://en.wikipedia.org/wiki/Salt_(cryptography)">salt</a></para>
+        /// <para>The salt that you want to use in SRP authentication with the user's device.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,16 +138,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "UserConfirmationNecessary";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeviceKey parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeviceKey' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeviceKey' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -154,9 +148,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeviceName), MyInvocation.BoundParameters);
@@ -170,21 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.ConfirmDeviceResponse, ApproveCGIPDeviceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeviceKey;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccessToken = this.AccessToken;
             #if MODULAR
             if (this.AccessToken == null && ParameterWasBound(nameof(this.AccessToken)))
@@ -297,13 +285,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "ConfirmDevice");
             try
             {
-                #if DESKTOP
-                return client.ConfirmDevice(request);
-                #elif CORECLR
-                return client.ConfirmDeviceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ConfirmDeviceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

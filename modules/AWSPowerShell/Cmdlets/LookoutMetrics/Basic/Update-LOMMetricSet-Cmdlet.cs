@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LookoutMetrics;
 using Amazon.LookoutMetrics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.LOM
     [AWSCmdlet("Calls the Amazon Lookout for Metrics UpdateMetricSet API operation.", Operation = new[] {"UpdateMetricSet"}, SelectReturnType = typeof(Amazon.LookoutMetrics.Model.UpdateMetricSetResponse))]
     [AWSCmdletOutput("System.String or Amazon.LookoutMetrics.Model.UpdateMetricSetResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.LookoutMetrics.Model.UpdateMetricSetResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.LookoutMetrics.Model.UpdateMetricSetResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateLOMMetricSetCmdlet : AmazonLookoutMetricsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CsvFormatDescriptor_Charset
         /// <summary>
@@ -222,7 +225,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         /// <para>Describes a list of filters for choosing specific dimensions and specific values.
         /// Each filter consists of the dimension and one of its values that you want to include.
         /// When multiple dimensions or values are specified, the dimensions are joined with an
-        /// AND operation and the values are joined with an OR operation.</para>
+        /// AND operation and the values are joined with an OR operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,7 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter DimensionList
         /// <summary>
         /// <para>
-        /// <para>The dimension list.</para>
+        /// <para>The dimension list.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -277,7 +288,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter CsvFormatDescriptor_HeaderList
         /// <summary>
         /// <para>
-        /// <para>A list of the source CSV file's headers, if any.</para>
+        /// <para>A list of the source CSV file's headers, if any.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -288,7 +303,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter S3SourceConfig_HistoricalDataPathList
         /// <summary>
         /// <para>
-        /// <para>A list of paths to the historical data files.</para>
+        /// <para>A list of paths to the historical data files.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -299,7 +318,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter MetricList
         /// <summary>
         /// <para>
-        /// <para>The metric list.</para>
+        /// <para>The metric list.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -492,7 +515,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter MetricSource_RDSSourceConfig_VpcConfiguration_SecurityGroupIdList
         /// <summary>
         /// <para>
-        /// <para>An array of strings containing the list of security groups.</para>
+        /// <para>An array of strings containing the list of security groups.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -503,7 +530,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter MetricSource_RedshiftSourceConfig_VpcConfiguration_SecurityGroupIdList
         /// <summary>
         /// <para>
-        /// <para>An array of strings containing the list of security groups.</para>
+        /// <para>An array of strings containing the list of security groups.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -513,7 +544,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter MetricSource_RDSSourceConfig_VpcConfiguration_SubnetIdList
         /// <summary>
         /// <para>
-        /// <para>An array of strings containing the Amazon VPC subnet IDs (e.g., <c>subnet-0bb1c79de3EXAMPLE</c>.</para>
+        /// <para>An array of strings containing the Amazon VPC subnet IDs (e.g., <c>subnet-0bb1c79de3EXAMPLE</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -524,7 +559,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter MetricSource_RedshiftSourceConfig_VpcConfiguration_SubnetIdList
         /// <summary>
         /// <para>
-        /// <para>An array of strings containing the Amazon VPC subnet IDs (e.g., <c>subnet-0bb1c79de3EXAMPLE</c>.</para>
+        /// <para>An array of strings containing the Amazon VPC subnet IDs (e.g., <c>subnet-0bb1c79de3EXAMPLE</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -567,7 +606,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         #region Parameter S3SourceConfig_TemplatedPathList
         /// <summary>
         /// <para>
-        /// <para>A list of templated paths to the source files.</para>
+        /// <para>A list of templated paths to the source files.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -597,16 +640,6 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         public string Select { get; set; } = "MetricSetArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MetricSetArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MetricSetArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MetricSetArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -617,9 +650,13 @@ namespace Amazon.PowerShell.Cmdlets.LOM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MetricSetArn), MyInvocation.BoundParameters);
@@ -633,21 +670,11 @@ namespace Amazon.PowerShell.Cmdlets.LOM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LookoutMetrics.Model.UpdateMetricSetResponse, UpdateLOMMetricSetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MetricSetArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.DimensionFilterList != null)
             {
                 context.DimensionFilterList = new List<Amazon.LookoutMetrics.Model.MetricSetDimensionFilter>(this.DimensionFilterList);
@@ -1448,13 +1475,7 @@ namespace Amazon.PowerShell.Cmdlets.LOM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lookout for Metrics", "UpdateMetricSet");
             try
             {
-                #if DESKTOP
-                return client.UpdateMetricSet(request);
-                #elif CORECLR
-                return client.UpdateMetricSetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateMetricSetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

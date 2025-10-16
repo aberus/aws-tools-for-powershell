@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTWireless;
 using Amazon.IoTWireless.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTW
 {
     /// <summary>
-    /// Fetches the log-level override, if any, for a given resource-ID and resource-type.
-    /// It can be used for a wireless device or a wireless gateway.
+    /// Fetches the log-level override, if any, for a given resource ID and resource type..
     /// </summary>
     [Cmdlet("Get", "IOTWResourceLogLevel")]
     [OutputType("Amazon.IoTWireless.LogLevel")]
     [AWSCmdlet("Calls the AWS IoT Wireless GetResourceLogLevel API operation.", Operation = new[] {"GetResourceLogLevel"}, SelectReturnType = typeof(Amazon.IoTWireless.Model.GetResourceLogLevelResponse))]
     [AWSCmdletOutput("Amazon.IoTWireless.LogLevel or Amazon.IoTWireless.Model.GetResourceLogLevelResponse",
         "This cmdlet returns an Amazon.IoTWireless.LogLevel object.",
-        "The service call response (type Amazon.IoTWireless.Model.GetResourceLogLevelResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTWireless.Model.GetResourceLogLevelResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTWResourceLogLevelCmdlet : AmazonIoTWirelessClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceIdentifier
         /// <summary>
@@ -63,7 +65,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>The type of the resource, which can be <c>WirelessDevice</c> or <c>WirelessGateway</c>.</para>
+        /// <para>The type of resource, which can be <c>WirelessDevice</c>, <c>WirelessGateway</c>,
+        /// or <c>FuotaTask</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -88,9 +91,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
         public string Select { get; set; } = "LogLevel";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -179,13 +186,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Wireless", "GetResourceLogLevel");
             try
             {
-                #if DESKTOP
-                return client.GetResourceLogLevel(request);
-                #elif CORECLR
-                return client.GetResourceLogLevelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetResourceLogLevelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

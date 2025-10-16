@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
     /// Modifies the configuration of Bring Your Own License (BYOL) for the specified account.
     /// </summary>
     [Cmdlet("Edit", "WKSAccount", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
-    [OutputType("None")]
+    [OutputType("Amazon.WorkSpaces.Model.ModifyAccountResponse")]
     [AWSCmdlet("Calls the Amazon WorkSpaces ModifyAccount API operation.", Operation = new[] {"ModifyAccount"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.ModifyAccountResponse))]
-    [AWSCmdletOutput("None or Amazon.WorkSpaces.Model.ModifyAccountResponse",
-        "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkSpaces.Model.ModifyAccountResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+    [AWSCmdletOutput("Amazon.WorkSpaces.Model.ModifyAccountResponse",
+        "This cmdlet returns an Amazon.WorkSpaces.Model.ModifyAccountResponse object containing multiple properties."
     )]
     public partial class EditWKSAccountCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DedicatedTenancyManagementCidrRange
         /// <summary>
@@ -69,8 +71,9 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         
         #region Parameter Select
         /// <summary>
-        /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
+        /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
         /// Specifying -Select '*' will result in the cmdlet returning the whole service response (Amazon.WorkSpaces.Model.ModifyAccountResponse).
+        /// Specifying the name of a property of type Amazon.WorkSpaces.Model.ModifyAccountResponse will result in that property being returned.
         /// Specifying -Select '^ParameterName' will result in the cmdlet returning the selected cmdlet parameter value.
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -87,9 +90,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -172,13 +179,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "ModifyAccount");
             try
             {
-                #if DESKTOP
-                return client.ModifyAccount(request);
-                #elif CORECLR
-                return client.ModifyAccountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyAccountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -198,7 +199,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             public System.String DedicatedTenancyManagementCidrRange { get; set; }
             public Amazon.WorkSpaces.DedicatedTenancySupportEnum DedicatedTenancySupport { get; set; }
             public System.Func<Amazon.WorkSpaces.Model.ModifyAccountResponse, EditWKSAccountCmdlet, object> Select { get; set; } =
-                (response, cmdlet) => null;
+                (response, cmdlet) => response;
         }
         
     }

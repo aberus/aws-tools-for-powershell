@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectoryService;
 using Amazon.DirectoryService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DS
 {
     /// <summary>
@@ -43,32 +45,41 @@ namespace Amazon.PowerShell.Cmdlets.DS
     [AWSCmdlet("Calls the AWS Directory Service ConnectDirectory API operation.", Operation = new[] {"ConnectDirectory"}, SelectReturnType = typeof(Amazon.DirectoryService.Model.ConnectDirectoryResponse))]
     [AWSCmdletOutput("System.String or Amazon.DirectoryService.Model.ConnectDirectoryResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DirectoryService.Model.ConnectDirectoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DirectoryService.Model.ConnectDirectoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ConnectDSDirectoryCmdlet : AmazonDirectoryServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConnectSettings_CustomerDnsIp
         /// <summary>
         /// <para>
-        /// <para>A list of one or more IP addresses of DNS servers or domain controllers in your self-managed
-        /// directory.</para>
+        /// <para>The IP addresses of DNS servers or domain controllers in your self-managed directory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("ConnectSettings_CustomerDnsIps")]
         public System.String[] ConnectSettings_CustomerDnsIp { get; set; }
+        #endregion
+        
+        #region Parameter ConnectSettings_CustomerDnsIpsV6
+        /// <summary>
+        /// <para>
+        /// <para>The IPv6 addresses of DNS servers or domain controllers in your self-managed directory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] ConnectSettings_CustomerDnsIpsV6 { get; set; }
         #endregion
         
         #region Parameter ConnectSettings_CustomerUserName
@@ -114,6 +125,18 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The network type for your directory. The default value is <c>IPv4</c> or <c>IPv6</c>
+        /// based on the provided subnet capabilities.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DirectoryService.NetworkType")]
+        public Amazon.DirectoryService.NetworkType NetworkType { get; set; }
         #endregion
         
         #region Parameter Password
@@ -163,7 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter ConnectSettings_SubnetId
         /// <summary>
         /// <para>
-        /// <para>A list of subnet identifiers in the VPC in which the AD Connector is created.</para>
+        /// <para>A list of subnet identifiers in the VPC in which the AD Connector is created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -181,7 +208,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be assigned to AD Connector.</para>
+        /// <para>The tags to be assigned to AD Connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -217,16 +248,6 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public string Select { get; set; } = "DirectoryId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -237,9 +258,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -253,31 +278,19 @@ namespace Amazon.PowerShell.Cmdlets.DS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectoryService.Model.ConnectDirectoryResponse, ConnectDSDirectoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ConnectSettings_CustomerDnsIp != null)
             {
                 context.ConnectSettings_CustomerDnsIp = new List<System.String>(this.ConnectSettings_CustomerDnsIp);
             }
-            #if MODULAR
-            if (this.ConnectSettings_CustomerDnsIp == null && ParameterWasBound(nameof(this.ConnectSettings_CustomerDnsIp)))
+            if (this.ConnectSettings_CustomerDnsIpsV6 != null)
             {
-                WriteWarning("You are passing $null as a value for parameter ConnectSettings_CustomerDnsIp which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+                context.ConnectSettings_CustomerDnsIpsV6 = new List<System.String>(this.ConnectSettings_CustomerDnsIpsV6);
             }
-            #endif
             context.ConnectSettings_CustomerUserName = this.ConnectSettings_CustomerUserName;
             #if MODULAR
             if (this.ConnectSettings_CustomerUserName == null && ParameterWasBound(nameof(this.ConnectSettings_CustomerUserName)))
@@ -310,6 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.NetworkType = this.NetworkType;
             context.Password = this.Password;
             #if MODULAR
             if (this.Password == null && ParameterWasBound(nameof(this.Password)))
@@ -359,6 +373,16 @@ namespace Amazon.PowerShell.Cmdlets.DS
                 request.ConnectSettings.CustomerDnsIps = requestConnectSettings_connectSettings_CustomerDnsIp;
                 requestConnectSettingsIsNull = false;
             }
+            List<System.String> requestConnectSettings_connectSettings_CustomerDnsIpsV6 = null;
+            if (cmdletContext.ConnectSettings_CustomerDnsIpsV6 != null)
+            {
+                requestConnectSettings_connectSettings_CustomerDnsIpsV6 = cmdletContext.ConnectSettings_CustomerDnsIpsV6;
+            }
+            if (requestConnectSettings_connectSettings_CustomerDnsIpsV6 != null)
+            {
+                request.ConnectSettings.CustomerDnsIpsV6 = requestConnectSettings_connectSettings_CustomerDnsIpsV6;
+                requestConnectSettingsIsNull = false;
+            }
             System.String requestConnectSettings_connectSettings_CustomerUserName = null;
             if (cmdletContext.ConnectSettings_CustomerUserName != null)
             {
@@ -401,6 +425,10 @@ namespace Amazon.PowerShell.Cmdlets.DS
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
             }
             if (cmdletContext.Password != null)
             {
@@ -456,13 +484,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Directory Service", "ConnectDirectory");
             try
             {
-                #if DESKTOP
-                return client.ConnectDirectory(request);
-                #elif CORECLR
-                return client.ConnectDirectoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ConnectDirectoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -480,11 +502,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> ConnectSettings_CustomerDnsIp { get; set; }
+            public List<System.String> ConnectSettings_CustomerDnsIpsV6 { get; set; }
             public System.String ConnectSettings_CustomerUserName { get; set; }
             public List<System.String> ConnectSettings_SubnetId { get; set; }
             public System.String ConnectSettings_VpcId { get; set; }
             public System.String Description { get; set; }
             public System.String Name { get; set; }
+            public Amazon.DirectoryService.NetworkType NetworkType { get; set; }
             public System.String Password { get; set; }
             public System.String ShortName { get; set; }
             public Amazon.DirectoryService.DirectorySize Size { get; set; }

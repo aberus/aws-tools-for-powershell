@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.APIGateway;
 using Amazon.APIGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AG
 {
     /// <summary>
@@ -34,18 +36,20 @@ namespace Amazon.PowerShell.Cmdlets.AG
     [OutputType("Amazon.APIGateway.Model.CreateDomainNameResponse")]
     [AWSCmdlet("Calls the Amazon API Gateway CreateDomainName API operation.", Operation = new[] {"CreateDomainName"}, SelectReturnType = typeof(Amazon.APIGateway.Model.CreateDomainNameResponse))]
     [AWSCmdletOutput("Amazon.APIGateway.Model.CreateDomainNameResponse",
-        "This cmdlet returns an Amazon.APIGateway.Model.CreateDomainNameResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.APIGateway.Model.CreateDomainNameResponse object containing multiple properties."
     )]
     public partial class NewAGDomainNameCmdlet : AmazonAPIGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CertificateArn
         /// <summary>
         /// <para>
         /// <para>The reference to an Amazon Web Services-managed certificate that will be used by edge-optimized
-        /// endpoint for this domain name. Certificate Manager is the only supported source.</para>
+        /// endpoint or private endpoint for this domain name. Certificate Manager is the only
+        /// supported source.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +60,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <summary>
         /// <para>
         /// <para>[Deprecated] The body of the server certificate that will be used by edge-optimized
-        /// endpoint for this domain name provided by your certificate authority.</para>
+        /// endpoint or private endpoint for this domain name provided by your certificate authority.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +86,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <summary>
         /// <para>
         /// <para>The user-friendly name of the certificate that will be used by edge-optimized endpoint
-        /// for this domain name.</para>
+        /// or private endpoint for this domain name.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,6 +120,20 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public System.String DomainName { get; set; }
         #endregion
         
+        #region Parameter EndpointConfiguration_IpAddressType
+        /// <summary>
+        /// <para>
+        /// <para>The IP address types that can invoke an API (RestApi) or a DomainName. Use <c>ipv4</c>
+        /// to allow only IPv4 addresses to invoke an API or DomainName, or use <c>dualstack</c>
+        /// to allow both IPv4 and IPv6 addresses to invoke an API or a DomainName. For the <c>PRIVATE</c>
+        /// endpoint type, only <c>dualstack</c> is supported.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.APIGateway.IpAddressType")]
+        public Amazon.APIGateway.IpAddressType EndpointConfiguration_IpAddressType { get; set; }
+        #endregion
+        
         #region Parameter OwnershipVerificationCertificateArn
         /// <summary>
         /// <para>
@@ -126,6 +144,18 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OwnershipVerificationCertificateArn { get; set; }
+        #endregion
+        
+        #region Parameter Policy
+        /// <summary>
+        /// <para>
+        /// <para>A stringified JSON policy document that applies to the <c>execute-api</c> service
+        /// for this DomainName regardless of the caller and Method configuration. Supported only
+        /// for private custom domain names.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Policy { get; set; }
         #endregion
         
         #region Parameter RegionalCertificateArn
@@ -150,6 +180,18 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public System.String RegionalCertificateName { get; set; }
         #endregion
         
+        #region Parameter RoutingMode
+        /// <summary>
+        /// <para>
+        /// <para> The routing mode for this domain name. The routing mode determines how API Gateway
+        /// sends traffic from your custom domain name to your private APIs. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.APIGateway.RoutingMode")]
+        public Amazon.APIGateway.RoutingMode RoutingMode { get; set; }
+        #endregion
+        
         #region Parameter SecurityPolicy
         /// <summary>
         /// <para>
@@ -167,7 +209,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <para>
         /// <para>The key-value map of strings. The valid character set is [a-zA-Z+-=._:/]. The tag
         /// key can be up to 128 characters and must not start with <c>aws:</c>. The tag value
-        /// can be up to 256 characters.</para>
+        /// can be up to 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,7 +252,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <para>A list of endpoint types of an API (RestApi) or its custom domain name (DomainName).
         /// For an edge-optimized API and its custom domain name, the endpoint type is <c>"EDGE"</c>.
         /// For a regional API and its custom domain name, the endpoint type is <c>REGIONAL</c>.
-        /// For a private API, the endpoint type is <c>PRIVATE</c>.</para>
+        /// For a private API, the endpoint type is <c>PRIVATE</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -218,7 +268,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
         /// <summary>
         /// <para>
         /// <para>A list of VpcEndpointIds of an API (RestApi) against which to create Route53 ALIASes.
-        /// It is only supported for <c>PRIVATE</c> endpoint type.</para>
+        /// It is only supported for <c>PRIVATE</c> endpoint type.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -237,16 +291,6 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -257,9 +301,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainName), MyInvocation.BoundParameters);
@@ -273,21 +321,11 @@ namespace Amazon.PowerShell.Cmdlets.AG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.APIGateway.Model.CreateDomainNameResponse, NewAGDomainNameCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CertificateArn = this.CertificateArn;
             context.CertificateBody = this.CertificateBody;
             context.CertificateChain = this.CertificateChain;
@@ -300,6 +338,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
                 WriteWarning("You are passing $null as a value for parameter DomainName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.EndpointConfiguration_IpAddressType = this.EndpointConfiguration_IpAddressType;
             if (this.EndpointConfiguration_Type != null)
             {
                 context.EndpointConfiguration_Type = new List<System.String>(this.EndpointConfiguration_Type);
@@ -311,8 +350,10 @@ namespace Amazon.PowerShell.Cmdlets.AG
             context.MutualTlsAuthentication_TruststoreUri = this.MutualTlsAuthentication_TruststoreUri;
             context.MutualTlsAuthentication_TruststoreVersion = this.MutualTlsAuthentication_TruststoreVersion;
             context.OwnershipVerificationCertificateArn = this.OwnershipVerificationCertificateArn;
+            context.Policy = this.Policy;
             context.RegionalCertificateArn = this.RegionalCertificateArn;
             context.RegionalCertificateName = this.RegionalCertificateName;
+            context.RoutingMode = this.RoutingMode;
             context.SecurityPolicy = this.SecurityPolicy;
             if (this.Tag != null)
             {
@@ -366,6 +407,16 @@ namespace Amazon.PowerShell.Cmdlets.AG
              // populate EndpointConfiguration
             var requestEndpointConfigurationIsNull = true;
             request.EndpointConfiguration = new Amazon.APIGateway.Model.EndpointConfiguration();
+            Amazon.APIGateway.IpAddressType requestEndpointConfiguration_endpointConfiguration_IpAddressType = null;
+            if (cmdletContext.EndpointConfiguration_IpAddressType != null)
+            {
+                requestEndpointConfiguration_endpointConfiguration_IpAddressType = cmdletContext.EndpointConfiguration_IpAddressType;
+            }
+            if (requestEndpointConfiguration_endpointConfiguration_IpAddressType != null)
+            {
+                request.EndpointConfiguration.IpAddressType = requestEndpointConfiguration_endpointConfiguration_IpAddressType;
+                requestEndpointConfigurationIsNull = false;
+            }
             List<System.String> requestEndpointConfiguration_endpointConfiguration_Type = null;
             if (cmdletContext.EndpointConfiguration_Type != null)
             {
@@ -424,6 +475,10 @@ namespace Amazon.PowerShell.Cmdlets.AG
             {
                 request.OwnershipVerificationCertificateArn = cmdletContext.OwnershipVerificationCertificateArn;
             }
+            if (cmdletContext.Policy != null)
+            {
+                request.Policy = cmdletContext.Policy;
+            }
             if (cmdletContext.RegionalCertificateArn != null)
             {
                 request.RegionalCertificateArn = cmdletContext.RegionalCertificateArn;
@@ -431,6 +486,10 @@ namespace Amazon.PowerShell.Cmdlets.AG
             if (cmdletContext.RegionalCertificateName != null)
             {
                 request.RegionalCertificateName = cmdletContext.RegionalCertificateName;
+            }
+            if (cmdletContext.RoutingMode != null)
+            {
+                request.RoutingMode = cmdletContext.RoutingMode;
             }
             if (cmdletContext.SecurityPolicy != null)
             {
@@ -478,13 +537,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon API Gateway", "CreateDomainName");
             try
             {
-                #if DESKTOP
-                return client.CreateDomainName(request);
-                #elif CORECLR
-                return client.CreateDomainNameAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDomainNameAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -507,13 +560,16 @@ namespace Amazon.PowerShell.Cmdlets.AG
             public System.String CertificateName { get; set; }
             public System.String CertificatePrivateKey { get; set; }
             public System.String DomainName { get; set; }
+            public Amazon.APIGateway.IpAddressType EndpointConfiguration_IpAddressType { get; set; }
             public List<System.String> EndpointConfiguration_Type { get; set; }
             public List<System.String> EndpointConfiguration_VpcEndpointId { get; set; }
             public System.String MutualTlsAuthentication_TruststoreUri { get; set; }
             public System.String MutualTlsAuthentication_TruststoreVersion { get; set; }
             public System.String OwnershipVerificationCertificateArn { get; set; }
+            public System.String Policy { get; set; }
             public System.String RegionalCertificateArn { get; set; }
             public System.String RegionalCertificateName { get; set; }
+            public Amazon.APIGateway.RoutingMode RoutingMode { get; set; }
             public Amazon.APIGateway.SecurityPolicy SecurityPolicy { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.APIGateway.Model.CreateDomainNameResponse, NewAGDomainNameCmdlet, object> Select { get; set; } =

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
@@ -53,30 +55,32 @@ namespace Amazon.PowerShell.Cmdlets.S3
     /// Controlling object ownership and disabling ACLs</a> in the <i>Amazon S3 User Guide</i>.
     /// </para></note><para>
     /// The following operations are related to <c>GetBucketAcl</c>:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">ListObjects</a></para></li></ul>
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjects.html">ListObjects</a></para></li></ul><br/><br/>This operation is deprecated.
     /// </summary>
     [Cmdlet("Get", "S3ACL")]
     [OutputType("Amazon.S3.Model.S3AccessControlList")]
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) GetACL API operation.", Operation = new[] {"GetACL"}, SelectReturnType = typeof(Amazon.S3.Model.GetACLResponse))]
     [AWSCmdletOutput("Amazon.S3.Model.S3AccessControlList or Amazon.S3.Model.GetACLResponse",
         "This cmdlet returns an Amazon.S3.Model.S3AccessControlList object.",
-        "The service call response (type Amazon.S3.Model.GetACLResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3.Model.GetACLResponse) can be returned by specifying '-Select *'."
     )]
+    [System.ObsoleteAttribute("This cmdlet is deprecated, use Get-S3BucketACL or Get-S3ObjectACL instead.")]
     public partial class GetS3ACLCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
         /// <para>
-        /// <para>Specifies the S3 bucket whose ACL is being requested.</para><para>When you use this API operation with an access point, provide the alias of the access
-        /// point in place of the bucket name.</para><para>When you use this API operation with an Object Lambda access point, provide the alias
-        /// of the Object Lambda access point in place of the bucket name. If the Object Lambda
-        /// access point alias in a request is not valid, the error code <code>InvalidAccessPointAliasError</code>
-        /// is returned. For more information about <code>InvalidAccessPointAliasError</code>,
-        /// see <a href="https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html#ErrorCodeList">List
-        /// of Error Codes</a>.</para>
+        /// <para>The bucket name that contains the object for which to get the ACL information. </para><para><b>Access points</b> - When you use this action with an access point for general purpose buckets, you must provide the alias of the 
+        /// access point in place of the bucket name or specify the access point ARN. When you use this action with an access point for directory 
+        /// buckets, you must provide the access point name in place of the bucket name. When using the access point ARN, you must direct requests 
+        /// to the access point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When 
+        /// using this action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the bucket 
+        /// name. For more information about access point ARNs, see 
+        /// <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using access points</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -126,19 +130,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "AccessControlList";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -146,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.GetACLResponse, GetS3ACLCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
             context.ExpectedBucketOwner = this.ExpectedBucketOwner;
             context.Key = this.Key;
@@ -235,13 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "GetACL");
             try
             {
-                #if DESKTOP
-                return client.GetACL(request);
-                #elif CORECLR
-                return client.GetACLAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetACLAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

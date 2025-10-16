@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.HealthLake;
 using Amazon.HealthLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AHL
 {
     /// <summary>
@@ -35,17 +37,18 @@ namespace Amazon.PowerShell.Cmdlets.AHL
     [AWSCmdlet("Calls the Amazon HealthLake ListTagsForResource API operation.", Operation = new[] {"ListTagsForResource"}, SelectReturnType = typeof(Amazon.HealthLake.Model.ListTagsForResourceResponse))]
     [AWSCmdletOutput("Amazon.HealthLake.Model.Tag or Amazon.HealthLake.Model.ListTagsForResourceResponse",
         "This cmdlet returns a collection of Amazon.HealthLake.Model.Tag objects.",
-        "The service call response (type Amazon.HealthLake.Model.ListTagsForResourceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.HealthLake.Model.ListTagsForResourceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAHLResourceTagCmdlet : AmazonHealthLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceARN
         /// <summary>
         /// <para>
-        /// <para> The Amazon Resource Name(ARN) of the data store for which tags are being added. </para>
+        /// <para>The Amazon Resource Name (ARN) of the data store to which tags are being added.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -70,19 +73,13 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public string Select { get; set; } = "Tags";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +87,11 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.HealthLake.Model.ListTagsForResourceResponse, GetAHLResourceTagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceARN = this.ResourceARN;
             #if MODULAR
             if (this.ResourceARN == null && ParameterWasBound(nameof(this.ResourceARN)))
@@ -170,13 +157,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon HealthLake", "ListTagsForResource");
             try
             {
-                #if DESKTOP
-                return client.ListTagsForResource(request);
-                #elif CORECLR
-                return client.ListTagsForResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTagsForResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

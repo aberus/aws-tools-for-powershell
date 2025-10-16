@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
-    /// Provides information about an DataSync transfer task.
+    /// Provides information about a <i>task</i>, which defines where and how DataSync transfers
+    /// your data.
     /// </summary>
     [Cmdlet("Get", "DSYNTask")]
     [OutputType("Amazon.DataSync.Model.DescribeTaskResponse")]
     [AWSCmdlet("Calls the AWS DataSync DescribeTask API operation.", Operation = new[] {"DescribeTask"}, SelectReturnType = typeof(Amazon.DataSync.Model.DescribeTaskResponse))]
     [AWSCmdletOutput("Amazon.DataSync.Model.DescribeTaskResponse",
-        "This cmdlet returns an Amazon.DataSync.Model.DescribeTaskResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataSync.Model.DescribeTaskResponse object containing multiple properties."
     )]
     public partial class GetDSYNTaskCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TaskArn
         /// <summary>
         /// <para>
-        /// <para>Specifies the Amazon Resource Name (ARN) of the transfer task.</para>
+        /// <para>Specifies the Amazon Resource Name (ARN) of the transfer task that you want information
+        /// about.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -69,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TaskArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TaskArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TaskArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -89,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataSync.Model.DescribeTaskResponse, GetDSYNTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TaskArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.TaskArn = this.TaskArn;
             #if MODULAR
             if (this.TaskArn == null && ParameterWasBound(nameof(this.TaskArn)))
@@ -169,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "DescribeTask");
             try
             {
-                #if DESKTOP
-                return client.DescribeTask(request);
-                #elif CORECLR
-                return client.DescribeTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

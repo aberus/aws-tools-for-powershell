@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ConfigModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <FileVersion>0</FileVersion>
+    <SkipCmdletGeneration>false</SkipCmdletGeneration>
+    <C2jFilename>application-signals</C2jFilename>
+    <AssemblyName>ApplicationSignals</AssemblyName>
+    <ServiceNounPrefix>CWAS</ServiceNounPrefix>
+    <ServiceName>Amazon CloudWatch Application Signals</ServiceName>
+    <ServiceClientInterface>IAmazonApplicationSignals</ServiceClientInterface>
+    <ServiceClient>AmazonApplicationSignalsClient</ServiceClient>
+    <ServiceModuleGuid>10c671d6-9570-40b8-b87d-ff9be495b4f6</ServiceModuleGuid>
+    <PipelineParameter />
+    <AutoIterate Start="NextToken" Next="NextToken" EmitLimit="MaxResults" />
+    <VerbMappings />
+    <NounMappings />
+    <Params />
+    <CustomAliases />
+    <LegacyAliases />
+    <ParamEmitters />
+    <MetadataProperties />
+    <ServiceOperations>
+        <ServiceOperation MethodName="BatchGetServiceLevelObjectiveBudgetReport" OutputProperty="*" Verb="Get" Noun="BatchServiceLevelObjectiveBudgetReport" PipelineParameter="Timestamp" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="BatchUpdateExclusionWindows" OutputProperty="*" Verb="Update" Noun="UpdateExclusionWindow" ShouldProcessTarget="SloIds" PipelineParameter="" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="CreateServiceLevelObjective" OutputProperty="Slo" Verb="New" Noun="ServiceLevelObjective" ShouldProcessTarget="Name" PipelineParameter="Name" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params>
+                <Param Name="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyKeyAttributes" NewName="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyKeyAttributes" />
+                <Param Name="SliConfig_SliMetricConfig_DependencyConfig_DependencyKeyAttributes" NewName="SliConfig_SliMetricConfig_DependencyConfig_DependencyKeyAttributes" />
+                <Param Name="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyOperationName" NewName="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyOperationName" />
+                <Param Name="SliConfig_SliMetricConfig_DependencyConfig_DependencyOperationName" NewName="SliConfig_SliMetricConfig_DependencyConfig_DependencyOperationName" />
+            </Params>
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="DeleteGroupingConfiguration" Verb="Remove" Noun="GroupingConfiguration" ShouldProcessTarget="" AnonymousShouldProcessTarget="true" PipelineParameter="" NoPipelineParameter="false">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="DeleteServiceLevelObjective" Verb="Remove" Noun="ServiceLevelObjective" ShouldProcessTarget="Id" PipelineParameter="Id" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetService" OutputProperty="*" Verb="Get" Noun="Service" PipelineParameter="StartTime" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetServiceLevelObjective" OutputProperty="Slo" Verb="Get" Noun="ServiceLevelObjective" PipelineParameter="Id" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListAuditFindings" OutputProperty="AuditFindings" Verb="Get" Noun="AuditFindingList" PipelineParameter="" NoPipelineParameter="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListGroupingAttributeDefinitions" OutputProperty="*" Verb="Get" Noun="GroupingAttributeDefinitionList" PipelineParameter="" NoPipelineParameter="false">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServiceDependencies" OutputProperty="*" Verb="Get" Noun="ServiceDependencyList" PipelineParameter="StartTime" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServiceDependents" OutputProperty="*" Verb="Get" Noun="ServiceDependentList" PipelineParameter="StartTime" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServiceLevelObjectiveExclusionWindows" OutputProperty="ExclusionWindows" Verb="Get" Noun="ServiceLevelObjectiveExclusionWindowList" PipelineParameter="Id" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServiceLevelObjectives" OutputProperty="SloSummaries" Verb="Get" Noun="ServiceLevelObjectiveList" PipelineParameter="OperationName" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServiceOperations" OutputProperty="*" Verb="Get" Noun="ServiceOperationList" PipelineParameter="StartTime" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServices" OutputProperty="*" Verb="Get" Noun="ServiceList" PipelineParameter="StartTime" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListServiceStates" OutputProperty="*" Verb="Get" Noun="ServiceStateList" PipelineParameter="" NoPipelineParameter="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListTagsForResource" OutputProperty="Tags" Verb="Get" Noun="ResourceTag" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="PutGroupingConfiguration" OutputProperty="GroupingConfiguration" Verb="Write" Noun="GroupingConfiguration" ShouldProcessTarget="" AnonymousShouldProcessTarget="true" PipelineParameter="" NoPipelineParameter="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="StartDiscovery" Verb="Start" Noun="Discovery" PipelineParameter="" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="TagResource" Verb="Add" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="UntagResource" Verb="Remove" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="UpdateServiceLevelObjective" OutputProperty="Slo" Verb="Update" Noun="ServiceLevelObjective" ShouldProcessTarget="Id" PipelineParameter="Id" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params>
+                <Param Name="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyKeyAttributes" NewName="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyKeyAttributes" />
+                <Param Name="SliConfig_SliMetricConfig_DependencyConfig_DependencyKeyAttributes" NewName="SliConfig_SliMetricConfig_DependencyConfig_DependencyKeyAttributes" />
+                <Param Name="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyOperationName" NewName="RequestBasedSliConfig_RequestBasedSliMetricConfig_DependencyConfig_DependencyOperationName" />
+                <Param Name="SliConfig_SliMetricConfig_DependencyConfig_DependencyOperationName" NewName="SliConfig_SliMetricConfig_DependencyConfig_DependencyOperationName" />
+            </Params>
+            <TypesNotToFlatten />
+        </ServiceOperation>
+    </ServiceOperations>
+    <TypesNotToFlatten />
+</ConfigModel>

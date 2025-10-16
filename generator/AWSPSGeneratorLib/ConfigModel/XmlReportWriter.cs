@@ -14,7 +14,7 @@ namespace AWSPowerShellGenerator.ServiceConfig
 {
     class XmlReportWriter
     {
-        public static void SerializeReport(string folderPath, IEnumerable<ConfigModel> models)
+        public static void SerializeReport(string folderPath, IEnumerable<ConfigModel> models, bool generateReportOnly)
         {
             if (!Directory.Exists(folderPath))
             {
@@ -40,6 +40,19 @@ namespace AWSPowerShellGenerator.ServiceConfig
                         configModel.ServiceOperationsList.Where(op => op.IsAutoConfiguring || op.AnalysisErrors.Any()).Any())
                     .ToArray();
 
+                bool hasErrors = models.Any(configModel =>
+                    configModel.AnalysisErrors.Any() ||
+                    configModel.ServiceOperationsList.Any(op => op.AnalysisErrors.Any()));
+
+                // This creates a file named 'buildConfigErrors'. It is used as a flag file 
+                // for CDK to send trebuchet an approval for build config failures
+                if (hasErrors)
+                {
+                    File.WriteAllText(Path.Combine(folderPath, "buildConfigErrors"), string.Empty);
+                }
+
+                bool hasNewOperations = models.Any(model => model.ServiceOperationsList.Any(op => op.IsAutoConfiguring));
+
                 var doc = new XDocument();
 
                 using (var writer = doc.CreateWriter())
@@ -47,7 +60,7 @@ namespace AWSPowerShellGenerator.ServiceConfig
                     writer.WriteStartElement("Overrides");
                     writer.WriteAttributeString("xmlns", "xsd", null, "http://www.w3.org/2001/XMLSchema");
                     writer.WriteAttributeString("xmlns", "xsi", null, "http://www.w3.org/2001/XMLSchema-instance");
-                    writer.WriteAttributeString("xsi", "noNamespaceSchemaLocation", null, "https://raw.githubusercontent.com/aws/aws-tools-for-powershell/master/XmlSchemas/ConfigurationOverrides/overrides.xsd");
+                    writer.WriteAttributeString("xsi", "noNamespaceSchemaLocation", null, "https://raw.githubusercontent.com/aws/aws-tools-for-powershell/main/XmlSchemas/ConfigurationOverrides/overrides.xsd");
 
                     if (errorMessage != null)
                     {
@@ -76,7 +89,7 @@ namespace AWSPowerShellGenerator.ServiceConfig
                         modelOverrides = null;
                     }
 
-                    serviceComments.Add(new XComment($"The current full configuration for this service is available at https://raw.githubusercontent.com/aws/aws-tools-for-powershell/master/generator/AWSPSGeneratorLib/Config/ServiceConfig/{configModel.model.C2jFilename}.xml."));
+                    serviceComments.Add(new XComment($"The current full configuration for this service is available at https://raw.githubusercontent.com/aws/aws-tools-for-powershell/main/generator/AWSPSGeneratorLib/Config/ServiceConfig/{configModel.model.C2jFilename}.xml."));
 
                     foreach (var error in configModel.model.AnalysisErrors)
                     {
@@ -148,6 +161,10 @@ namespace AWSPowerShellGenerator.ServiceConfig
                             {
                                 operation.element.AddFirst(new XComment($"ERROR - {error.Message}"));
                             }
+                            foreach (var info in operation.operation.InfoMessages)
+                            {
+                                operation.element.AddFirst(new XComment($"INFO - {info.Message}"));
+                            }
 
                             try
                             {
@@ -179,7 +196,19 @@ namespace AWSPowerShellGenerator.ServiceConfig
                     }
                 }
 
-                doc.Save(filename);
+                if (!generateReportOnly)
+                {
+                    doc.Save(filename);
+                }
+                else if (hasNewOperations && !hasErrors)
+                {
+                    Console.WriteLine("New operations were auto-configured without errors and saved in report.xml");
+                    doc.Save(filename);
+                }
+                else
+                {
+                    Console.WriteLine($"Skipping saving report: hasNewOperations:{hasNewOperations}, hasErrors: {hasErrors} ");
+                }
             }
             catch (Exception e)
             {

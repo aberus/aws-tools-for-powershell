@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PaymentCryptography;
 using Amazon.PaymentCryptography.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PAYCC
 {
     /// <summary>
@@ -42,30 +44,46 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
     /// The immutable data contains key attributes that define the scope and cryptographic
     /// operations that you can perform using the key, for example key class (example: <c>SYMMETRIC_KEY</c>),
     /// key algorithm (example: <c>TDES_2KEY</c>), key usage (example: <c>TR31_P0_PIN_ENCRYPTION_KEY</c>)
-    /// and key modes of use (example: <c>Encrypt</c>). For information about valid combinations
-    /// of key attributes, see <a href="https://docs.aws.amazon.com/payment-cryptography/latest/userguide/keys-validattributes.html">Understanding
+    /// and key modes of use (example: <c>Encrypt</c>). Amazon Web Services Payment Cryptography
+    /// binds key attributes to keys using key blocks when you store or export them. Amazon
+    /// Web Services Payment Cryptography stores the key contents wrapped and never stores
+    /// or transmits them in the clear.
+    /// </para><para>
+    /// For information about valid combinations of key attributes, see <a href="https://docs.aws.amazon.com/payment-cryptography/latest/userguide/keys-validattributes.html">Understanding
     /// key attributes</a> in the <i>Amazon Web Services Payment Cryptography User Guide</i>.
     /// The mutable data contained within a key includes usage timestamp and key deletion
     /// timestamp and can be modified after creation.
     /// </para><para>
-    /// Amazon Web Services Payment Cryptography binds key attributes to keys using key blocks
-    /// when you store or export them. Amazon Web Services Payment Cryptography stores the
-    /// key contents wrapped and never stores or transmits them in the clear. 
+    /// You can use the <c>CreateKey</c> operation to generate an ECC (Elliptic Curve Cryptography)
+    /// key pair used for establishing an ECDH (Elliptic Curve Diffie-Hellman) key agreement
+    /// between two parties. In the ECDH key agreement process, both parties generate their
+    /// own ECC key pair with key usage K3 and exchange the public keys. Each party then use
+    /// their private key, the received public key from the other party, and the key derivation
+    /// parameters including key derivation function, hash algorithm, derivation data, and
+    /// key algorithm to derive a shared key.
+    /// </para><para>
+    /// To maintain the single-use principle of cryptographic keys in payments, ECDH derived
+    /// keys should not be used for multiple purposes, such as a <c>TR31_P0_PIN_ENCRYPTION_KEY</c>
+    /// and <c>TR31_K1_KEY_BLOCK_PROTECTION_KEY</c>. When creating ECC key pairs in Amazon
+    /// Web Services Payment Cryptography you can optionally set the <c>DeriveKeyUsage</c>
+    /// parameter, which defines the key usage bound to the symmetric key that will be derived
+    /// using the ECC key pair.
     /// </para><para><b>Cross-account use</b>: This operation can't be used across different Amazon Web
     /// Services accounts.
-    /// </para><para><b>Related operations:</b></para><ul><li><para><a>DeleteKey</a></para></li><li><para><a>GetKey</a></para></li><li><para><a>ListKeys</a></para></li></ul>
+    /// </para><para><b>Related operations:</b></para><ul><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_DeleteKey.html">DeleteKey</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_GetKey.html">GetKey</a></para></li><li><para><a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_ListKeys.html">ListKeys</a></para></li></ul>
     /// </summary>
     [Cmdlet("New", "PAYCCKey", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PaymentCryptography.Model.Key")]
     [AWSCmdlet("Calls the Payment Cryptography Control Plane CreateKey API operation.", Operation = new[] {"CreateKey"}, SelectReturnType = typeof(Amazon.PaymentCryptography.Model.CreateKeyResponse))]
     [AWSCmdletOutput("Amazon.PaymentCryptography.Model.Key or Amazon.PaymentCryptography.Model.CreateKeyResponse",
         "This cmdlet returns an Amazon.PaymentCryptography.Model.Key object.",
-        "The service call response (type Amazon.PaymentCryptography.Model.CreateKeyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.PaymentCryptography.Model.CreateKeyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewPAYCCKeyCmdlet : AmazonPaymentCryptographyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyModesOfUse_Decrypt
         /// <summary>
@@ -89,6 +107,18 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("KeyAttributes_KeyModesOfUse_DeriveKey")]
         public System.Boolean? KeyModesOfUse_DeriveKey { get; set; }
+        #endregion
+        
+        #region Parameter DeriveKeyUsage
+        /// <summary>
+        /// <para>
+        /// <para>The intended cryptographic usage of keys derived from the ECC key pair to be created.</para><para>After creating an ECC key pair, you cannot change the intended cryptographic usage
+        /// of keys derived from it using ECDH.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.PaymentCryptography.DeriveKeyUsage")]
+        public Amazon.PaymentCryptography.DeriveKeyUsage DeriveKeyUsage { get; set; }
         #endregion
         
         #region Parameter Enabled
@@ -227,6 +257,21 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public System.Boolean? KeyModesOfUse_NoRestriction { get; set; }
         #endregion
         
+        #region Parameter ReplicationRegion
+        /// <summary>
+        /// <para>
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ReplicationRegions")]
+        public System.String[] ReplicationRegion { get; set; }
+        #endregion
+        
         #region Parameter KeyModesOfUse_Sign
         /// <summary>
         /// <para>
@@ -243,12 +288,17 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         /// <para>
         /// <para>Assigns one or more tags to the Amazon Web Services Payment Cryptography key. Use
         /// this parameter to tag a key when it is created. To tag an existing Amazon Web Services
-        /// Payment Cryptography key, use the <a>TagResource</a> operation.</para><para>Each tag consists of a tag key and a tag value. Both the tag key and the tag value
+        /// Payment Cryptography key, use the <a href="https://docs.aws.amazon.com/payment-cryptography/latest/APIReference/API_TagResource.html">TagResource</a>
+        /// operation.</para><para>Each tag consists of a tag key and a tag value. Both the tag key and the tag value
         /// are required, but the tag value can be an empty (null) string. You can't have more
         /// than one tag on an Amazon Web Services Payment Cryptography key with the same tag
         /// key. </para><important><para>Don't include personal, confidential or sensitive information in this field. This
         /// field may be displayed in plaintext in CloudTrail logs and other output.</para></important><note><para>Tagging or untagging an Amazon Web Services Payment Cryptography key can allow or
-        /// deny permission to the key.</para></note>
+        /// deny permission to the key.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -303,16 +353,6 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public string Select { get; set; } = "Key";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Exportable parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Exportable' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Exportable' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -323,9 +363,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Exportable), MyInvocation.BoundParameters);
@@ -339,21 +383,12 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PaymentCryptography.Model.CreateKeyResponse, NewPAYCCKeyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Exportable;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DeriveKeyUsage = this.DeriveKeyUsage;
             context.Enabled = this.Enabled;
             context.Exportable = this.Exportable;
             #if MODULAR
@@ -393,6 +428,10 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             }
             #endif
             context.KeyCheckValueAlgorithm = this.KeyCheckValueAlgorithm;
+            if (this.ReplicationRegion != null)
+            {
+                context.ReplicationRegion = new List<System.String>(this.ReplicationRegion);
+            }
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.PaymentCryptography.Model.Tag>(this.Tag);
@@ -413,6 +452,10 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             // create request
             var request = new Amazon.PaymentCryptography.Model.CreateKeyRequest();
             
+            if (cmdletContext.DeriveKeyUsage != null)
+            {
+                request.DeriveKeyUsage = cmdletContext.DeriveKeyUsage;
+            }
             if (cmdletContext.Enabled != null)
             {
                 request.Enabled = cmdletContext.Enabled.Value;
@@ -569,6 +612,10 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             {
                 request.KeyCheckValueAlgorithm = cmdletContext.KeyCheckValueAlgorithm;
             }
+            if (cmdletContext.ReplicationRegion != null)
+            {
+                request.ReplicationRegions = cmdletContext.ReplicationRegion;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
@@ -611,13 +658,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Payment Cryptography Control Plane", "CreateKey");
             try
             {
-                #if DESKTOP
-                return client.CreateKey(request);
-                #elif CORECLR
-                return client.CreateKeyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateKeyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -634,6 +675,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.PaymentCryptography.DeriveKeyUsage DeriveKeyUsage { get; set; }
             public System.Boolean? Enabled { get; set; }
             public System.Boolean? Exportable { get; set; }
             public Amazon.PaymentCryptography.KeyAlgorithm KeyAttributes_KeyAlgorithm { get; set; }
@@ -649,6 +691,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCC
             public System.Boolean? KeyModesOfUse_Wrap { get; set; }
             public Amazon.PaymentCryptography.KeyUsage KeyAttributes_KeyUsage { get; set; }
             public Amazon.PaymentCryptography.KeyCheckValueAlgorithm KeyCheckValueAlgorithm { get; set; }
+            public List<System.String> ReplicationRegion { get; set; }
             public List<Amazon.PaymentCryptography.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.PaymentCryptography.Model.CreateKeyResponse, NewPAYCCKeyCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Key;

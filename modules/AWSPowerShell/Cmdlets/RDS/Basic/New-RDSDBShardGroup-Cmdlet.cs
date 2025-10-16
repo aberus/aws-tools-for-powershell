@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -40,21 +42,22 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [OutputType("Amazon.RDS.Model.CreateDBShardGroupResponse")]
     [AWSCmdlet("Calls the Amazon Relational Database Service CreateDBShardGroup API operation.", Operation = new[] {"CreateDBShardGroup"}, SelectReturnType = typeof(Amazon.RDS.Model.CreateDBShardGroupResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.CreateDBShardGroupResponse",
-        "This cmdlet returns an Amazon.RDS.Model.CreateDBShardGroupResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RDS.Model.CreateDBShardGroupResponse object containing multiple properties."
     )]
     public partial class NewRDSDBShardGroupCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComputeRedundancy
         /// <summary>
         /// <para>
-        /// <para>Specifies whether to create standby instances for the DB shard group. Valid values
-        /// are the following:</para><ul><li><para>0 - Creates a single, primary DB instance for each physical shard. This is the default
-        /// value, and the only one supported for the preview.</para></li><li><para>1 - Creates a primary DB instance and a standby instance in a different Availability
-        /// Zone (AZ) for each physical shard.</para></li><li><para>2 - Creates a primary DB instance and two standby instances in different AZs for each
-        /// physical shard.</para></li></ul>
+        /// <para>Specifies whether to create standby standby DB data access shard for the DB shard
+        /// group. Valid values are the following:</para><ul><li><para>0 - Creates a DB shard group without a standby DB data access shard. This is the default
+        /// value.</para></li><li><para>1 - Creates a DB shard group with a standby DB data access shard in a different Availability
+        /// Zone (AZ).</para></li><li><para>2 - Creates a DB shard group with two standby DB data access shard in two different
+        /// AZs.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,6 +114,16 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Double? MaxACU { get; set; }
         #endregion
         
+        #region Parameter MinACU
+        /// <summary>
+        /// <para>
+        /// <para>The minimum capacity of the DB shard group in Aurora capacity units (ACUs).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Double? MinACU { get; set; }
+        #endregion
+        
         #region Parameter PubliclyAccessible
         /// <summary>
         /// <para>
@@ -134,6 +147,21 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public System.Boolean? PubliclyAccessible { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.RDS.Model.Tag[] Tag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -143,16 +171,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBShardGroupIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBShardGroupIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBShardGroupIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -165,9 +183,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBShardGroupIdentifier), MyInvocation.BoundParameters);
@@ -181,21 +203,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.CreateDBShardGroupResponse, NewRDSDBShardGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBShardGroupIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ComputeRedundancy = this.ComputeRedundancy;
             context.DBClusterIdentifier = this.DBClusterIdentifier;
             #if MODULAR
@@ -218,7 +230,12 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 WriteWarning("You are passing $null as a value for parameter MaxACU which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.MinACU = this.MinACU;
             context.PubliclyAccessible = this.PubliclyAccessible;
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.RDS.Model.Tag>(this.Tag);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -251,9 +268,17 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.MaxACU = cmdletContext.MaxACU.Value;
             }
+            if (cmdletContext.MinACU != null)
+            {
+                request.MinACU = cmdletContext.MinACU.Value;
+            }
             if (cmdletContext.PubliclyAccessible != null)
             {
                 request.PubliclyAccessible = cmdletContext.PubliclyAccessible.Value;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             
             CmdletOutput output;
@@ -293,13 +318,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "CreateDBShardGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateDBShardGroup(request);
-                #elif CORECLR
-                return client.CreateDBShardGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDBShardGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -320,7 +339,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.String DBClusterIdentifier { get; set; }
             public System.String DBShardGroupIdentifier { get; set; }
             public System.Double? MaxACU { get; set; }
+            public System.Double? MinACU { get; set; }
             public System.Boolean? PubliclyAccessible { get; set; }
+            public List<Amazon.RDS.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.RDS.Model.CreateDBShardGroupResponse, NewRDSDBShardGroupCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

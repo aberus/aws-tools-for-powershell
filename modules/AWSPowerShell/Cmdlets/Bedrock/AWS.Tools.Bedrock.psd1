@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The Bedrock module of AWS Tools for PowerShell lets developers and administrators manage Amazon Bedrock from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.Bedrock.dll'
     )
@@ -87,25 +88,99 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
     # Cmdlets to export from this module
     CmdletsToExport = @(
         'Add-BDRResourceTag', 
+        'Export-BDRAutomatedReasoningPolicyVersion', 
+        'Get-BDRAutomatedReasoningPolicy', 
+        'Get-BDRAutomatedReasoningPolicyAnnotation', 
+        'Get-BDRAutomatedReasoningPolicyBuildWorkflow', 
+        'Get-BDRAutomatedReasoningPolicyBuildWorkflowList', 
+        'Get-BDRAutomatedReasoningPolicyBuildWorkflowResultAsset', 
+        'Get-BDRAutomatedReasoningPolicyList', 
+        'Get-BDRAutomatedReasoningPolicyNextScenario', 
+        'Get-BDRAutomatedReasoningPolicyTestCase', 
+        'Get-BDRAutomatedReasoningPolicyTestCaseList', 
+        'Get-BDRAutomatedReasoningPolicyTestResult', 
+        'Get-BDRAutomatedReasoningPolicyTestResultList', 
         'Get-BDRCustomModel', 
+        'Get-BDRCustomModelDeployment', 
+        'Get-BDRCustomModelDeploymentList', 
         'Get-BDRCustomModelList', 
+        'Get-BDREvaluationJob', 
+        'Get-BDREvaluationJobList', 
         'Get-BDRFoundationModel', 
+        'Get-BDRFoundationModelAgreementOfferList', 
+        'Get-BDRFoundationModelAvailability', 
         'Get-BDRFoundationModelList', 
+        'Get-BDRGuardrail', 
+        'Get-BDRGuardrailList', 
+        'Get-BDRImportedModel', 
+        'Get-BDRImportedModelList', 
+        'Get-BDRInferenceProfile', 
+        'Get-BDRInferenceProfileList', 
+        'Get-BDRMarketplaceModelEndpoint', 
+        'Get-BDRMarketplaceModelEndpointList', 
+        'Get-BDRModelCopyJob', 
+        'Get-BDRModelCopyJobList', 
         'Get-BDRModelCustomizationJob', 
         'Get-BDRModelCustomizationJobList', 
+        'Get-BDRModelImportJob', 
+        'Get-BDRModelImportJobList', 
+        'Get-BDRModelInvocationJob', 
+        'Get-BDRModelInvocationJobList', 
         'Get-BDRModelInvocationLoggingConfiguration', 
+        'Get-BDRPromptRouter', 
+        'Get-BDRPromptRouterList', 
         'Get-BDRProvisionedModelThroughput', 
         'Get-BDRProvisionedModelThroughputList', 
         'Get-BDRResourceTag', 
+        'Get-BDRUseCaseForModelAccess', 
+        'New-BDRAutomatedReasoningPolicy', 
+        'New-BDRAutomatedReasoningPolicyTestCase', 
+        'New-BDRAutomatedReasoningPolicyVersion', 
+        'New-BDRCustomModel', 
+        'New-BDRCustomModelDeployment', 
+        'New-BDREvaluationJob', 
+        'New-BDRFoundationModelAgreement', 
+        'New-BDRGuardrail', 
+        'New-BDRGuardrailVersion', 
+        'New-BDRInferenceProfile', 
+        'New-BDRMarketplaceModelEndpoint', 
+        'New-BDRModelCopyJob', 
         'New-BDRModelCustomizationJob', 
+        'New-BDRModelImportJob', 
+        'New-BDRModelInvocationJob', 
+        'New-BDRPromptRouter', 
         'New-BDRProvisionedModelThroughput', 
+        'Register-BDRMarketplaceModelEndpoint', 
+        'Remove-BDRAutomatedReasoningPolicy', 
+        'Remove-BDRAutomatedReasoningPolicyBuildWorkflow', 
+        'Remove-BDRAutomatedReasoningPolicyTestCase', 
         'Remove-BDRCustomModel', 
+        'Remove-BDRCustomModelDeployment', 
+        'Remove-BDRFoundationModelAgreement', 
+        'Remove-BDRGuardrail', 
+        'Remove-BDRImportedModel', 
+        'Remove-BDRInferenceProfile', 
+        'Remove-BDRMarketplaceModelEndpoint', 
         'Remove-BDRModelInvocationLoggingConfiguration', 
+        'Remove-BDRPromptRouter', 
         'Remove-BDRProvisionedModelThroughput', 
         'Remove-BDRResourceTag', 
+        'Set-BDRBatchDeleteEvaluationJob', 
+        'Start-BDRAutomatedReasoningPolicyBuildWorkflow', 
+        'Start-BDRAutomatedReasoningPolicyTestWorkflow', 
+        'Stop-BDRAutomatedReasoningPolicyBuildWorkflow', 
+        'Stop-BDREvaluationJob', 
         'Stop-BDRModelCustomizationJob', 
+        'Stop-BDRModelInvocationJob', 
+        'Unregister-BDRMarketplaceModelEndpoint', 
+        'Update-BDRAutomatedReasoningPolicy', 
+        'Update-BDRAutomatedReasoningPolicyAnnotation', 
+        'Update-BDRAutomatedReasoningPolicyTestCase', 
+        'Update-BDRGuardrail', 
+        'Update-BDRMarketplaceModelEndpoint', 
         'Update-BDRProvisionedModelThroughput', 
-        'Write-BDRModelInvocationLoggingConfiguration')
+        'Write-BDRModelInvocationLoggingConfiguration', 
+        'Write-BDRUseCaseForModelAccess')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -129,7 +204,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

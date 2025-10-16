@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SagemakerEdgeManager;
 using Amazon.SagemakerEdgeManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SME
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SME
     [AWSCmdlet("Calls the Amazon Sagemaker Edge Manager GetDeployments API operation.", Operation = new[] {"GetDeployments"}, SelectReturnType = typeof(Amazon.SagemakerEdgeManager.Model.GetDeploymentsResponse))]
     [AWSCmdletOutput("Amazon.SagemakerEdgeManager.Model.EdgeDeployment or Amazon.SagemakerEdgeManager.Model.GetDeploymentsResponse",
         "This cmdlet returns a collection of Amazon.SagemakerEdgeManager.Model.EdgeDeployment objects.",
-        "The service call response (type Amazon.SagemakerEdgeManager.Model.GetDeploymentsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SagemakerEdgeManager.Model.GetDeploymentsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSMEDeploymentCmdlet : AmazonSagemakerEdgeManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeviceFleetName
         /// <summary>
@@ -88,9 +91,13 @@ namespace Amazon.PowerShell.Cmdlets.SME
         public string Select { get; set; } = "Deployments";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -179,13 +186,7 @@ namespace Amazon.PowerShell.Cmdlets.SME
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Sagemaker Edge Manager", "GetDeployments");
             try
             {
-                #if DESKTOP
-                return client.GetDeployments(request);
-                #elif CORECLR
-                return client.GetDeploymentsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDeploymentsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

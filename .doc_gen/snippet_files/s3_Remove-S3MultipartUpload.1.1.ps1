@@ -1,0 +1,1 @@
+Remove-S3MultipartUpload -BucketName amzn-s3-demo-bucket -DaysBefore 5

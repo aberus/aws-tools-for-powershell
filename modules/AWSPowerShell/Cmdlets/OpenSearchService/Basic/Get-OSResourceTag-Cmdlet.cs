@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OpenSearchService;
 using Amazon.OpenSearchService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OS
 {
     /// <summary>
-    /// Returns all resource tags for an Amazon OpenSearch Service domain. For more information,
-    /// see <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-awsresourcetagging.html">Tagging
-    /// Amazon OpenSearch Service domains</a>.
+    /// Returns all resource tags for an Amazon OpenSearch Service domain, data source, or
+    /// application. For more information, see <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-awsresourcetagging.html">Tagging
+    /// Amazon OpenSearch Service resources</a>.
     /// </summary>
     [Cmdlet("Get", "OSResourceTag")]
     [OutputType("Amazon.OpenSearchService.Model.Tag")]
     [AWSCmdlet("Calls the Amazon OpenSearch Service ListTags API operation.", Operation = new[] {"ListTags"}, SelectReturnType = typeof(Amazon.OpenSearchService.Model.ListTagsResponse), LegacyAlias="Get-ESTag")]
     [AWSCmdletOutput("Amazon.OpenSearchService.Model.Tag or Amazon.OpenSearchService.Model.ListTagsResponse",
         "This cmdlet returns a collection of Amazon.OpenSearchService.Model.Tag objects.",
-        "The service call response (type Amazon.OpenSearchService.Model.ListTagsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OpenSearchService.Model.ListTagsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetOSResourceTagCmdlet : AmazonOpenSearchServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ARN
         /// <summary>
         /// <para>
-        /// <para>Amazon Resource Name (ARN) for the domain to view tags for.</para>
+        /// <para>Amazon Resource Name (ARN) for the domain, data source, or application to view tags
+        /// for.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -72,19 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public string Select { get; set; } = "TagList";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ARN parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ARN' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ARN' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -92,21 +90,11 @@ namespace Amazon.PowerShell.Cmdlets.OS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.OpenSearchService.Model.ListTagsResponse, GetOSResourceTagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ARN;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ARN = this.ARN;
             #if MODULAR
             if (this.ARN == null && ParameterWasBound(nameof(this.ARN)))
@@ -172,13 +160,7 @@ namespace Amazon.PowerShell.Cmdlets.OS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon OpenSearch Service", "ListTags");
             try
             {
-                #if DESKTOP
-                return client.ListTags(request);
-                #elif CORECLR
-                return client.ListTagsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListTagsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

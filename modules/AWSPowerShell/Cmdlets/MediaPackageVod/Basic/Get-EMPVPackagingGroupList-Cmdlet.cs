@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaPackageVod;
 using Amazon.MediaPackageVod.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMPV
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EMPV
     [AWSCmdlet("Calls the AWS Elemental MediaPackage VOD ListPackagingGroups API operation.", Operation = new[] {"ListPackagingGroups"}, SelectReturnType = typeof(Amazon.MediaPackageVod.Model.ListPackagingGroupsResponse))]
     [AWSCmdletOutput("Amazon.MediaPackageVod.Model.PackagingGroup or Amazon.MediaPackageVod.Model.ListPackagingGroupsResponse",
         "This cmdlet returns a collection of Amazon.MediaPackageVod.Model.PackagingGroup objects.",
-        "The service call response (type Amazon.MediaPackageVod.Model.ListPackagingGroupsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaPackageVod.Model.ListPackagingGroupsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEMPVPackagingGroupListCmdlet : AmazonMediaPackageVodClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -66,7 +69,7 @@ namespace Amazon.PowerShell.Cmdlets.EMPV
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,9 +97,13 @@ namespace Amazon.PowerShell.Cmdlets.EMPV
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -245,7 +252,7 @@ namespace Amazon.PowerShell.Cmdlets.EMPV
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.PackagingGroups.Count;
+                    int _receivedThisCall = response.PackagingGroups?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -294,13 +301,7 @@ namespace Amazon.PowerShell.Cmdlets.EMPV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaPackage VOD", "ListPackagingGroups");
             try
             {
-                #if DESKTOP
-                return client.ListPackagingGroups(request);
-                #elif CORECLR
-                return client.ListPackagingGroupsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListPackagingGroupsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -39,9 +41,9 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// nodes. If you specify a node ID that isn't valid or a node that you don't own, you
     /// receive an error.
     /// </para><note><para>
-    /// The <c>IamRole</c> field returned for this API operation is the Identity and Access
-    /// Management (IAM) role assigned to on-premises managed nodes. This operation does not
-    /// return the IAM role for EC2 instances.
+    /// The <c>IamRole</c> field returned for this API operation is the role assigned to an
+    /// Amazon EC2 instance configured with a Systems Manager Quick Setup host management
+    /// configuration or the role assigned to an on-premises managed node.
     /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "SSMInstanceInformation")]
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager DescribeInstanceInformation API operation.", Operation = new[] {"DescribeInstanceInformation"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.DescribeInstanceInformationResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.InstanceInformation or Amazon.SimpleSystemsManagement.Model.DescribeInstanceInformationResponse",
         "This cmdlet returns a collection of Amazon.SimpleSystemsManagement.Model.InstanceInformation objects.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.DescribeInstanceInformationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.DescribeInstanceInformationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSSMInstanceInformationCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
@@ -62,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>One or more filters. Use a filter to return a more specific list of managed nodes.
         /// You can filter based on tags applied to your managed nodes. Tag filters can't be combined
         /// with other filter types. Use this <c>Filters</c> data type instead of <c>InstanceInformationFilterList</c>,
-        /// which is deprecated.</para>
+        /// which is deprecated.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>This is a legacy method. We recommend that you don't use this method. Instead, use
         /// the <c>Filters</c> data type. <c>Filters</c> enables you to return node information
         /// by filtering based on tags applied to managed nodes.</para><note><para>Attempting to use <c>InstanceInformationFilterList</c> and <c>Filters</c> leads to
-        /// an exception error. </para></note>
+        /// an exception error. </para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,7 +121,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,9 +149,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -324,7 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.InstanceInformationList.Count;
+                    int _receivedThisCall = response.InstanceInformationList?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -373,13 +388,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "DescribeInstanceInformation");
             try
             {
-                #if DESKTOP
-                return client.DescribeInstanceInformation(request);
-                #elif CORECLR
-                return client.DescribeInstanceInformationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeInstanceInformationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

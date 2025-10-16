@@ -80,6 +80,13 @@ $MAC2_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.Macie2.AutoEnableMode
+        "Update-MAC2AutomatedDiscoveryConfiguration/AutoEnableOrganizationMember"
+        {
+            $v = "ALL","NEW","NONE"
+            break
+        }
+
         # Amazon.Macie2.AutomatedDiscoveryStatus
         "Update-MAC2AutomatedDiscoveryConfiguration/Status"
         {
@@ -88,14 +95,14 @@ $MAC2_Completers = {
         }
 
         # Amazon.Macie2.ClassificationScopeUpdateOperation
-        "Update-MAC2ClassificationScope/S3_Excludes_Operation"
+        "Update-MAC2ClassificationScope/Excludes_Operation"
         {
             $v = "ADD","REMOVE","REPLACE"
             break
         }
 
         # Amazon.Macie2.DayOfWeek
-        "New-MAC2ClassificationJob/ScheduleFrequency_WeeklySchedule_DayOfWeek"
+        "New-MAC2ClassificationJob/WeeklySchedule_DayOfWeek"
         {
             $v = "FRIDAY","MONDAY","SATURDAY","SUNDAY","THURSDAY","TUESDAY","WEDNESDAY"
             break
@@ -234,21 +241,22 @@ $MAC2_Completers = {
 
 $MAC2_map = @{
     "Action"=@("New-MAC2FindingsFilter","Update-MAC2FindingsFilter")
+    "AutoEnableOrganizationMember"=@("Update-MAC2AutomatedDiscoveryConfiguration")
     "Configuration_Status"=@("Update-MAC2RevealConfiguration")
+    "Excludes_Operation"=@("Update-MAC2ClassificationScope")
     "FindingPublishingFrequency"=@("Enable-MAC2Macie","Update-MAC2MacieSession")
     "GroupBy"=@("Get-MAC2FindingStatistic")
     "JobStatus"=@("Update-MAC2ClassificationJob")
     "JobType"=@("New-MAC2ClassificationJob")
     "ManagedDataIdentifierSelector"=@("New-MAC2ClassificationJob")
     "RetrievalConfiguration_RetrievalMode"=@("Update-MAC2RevealConfiguration")
-    "S3_Excludes_Operation"=@("Update-MAC2ClassificationScope")
-    "ScheduleFrequency_WeeklySchedule_DayOfWeek"=@("New-MAC2ClassificationJob")
     "SortBy_Key"=@("Get-MAC2UsageStatistic")
     "SortBy_OrderBy"=@("Get-MAC2UsageStatistic")
     "SortCriteria_AttributeName"=@("Get-MAC2ClassificationJobList","Get-MAC2FindingStatistic","Search-MAC2Resource")
     "SortCriteria_OrderBy"=@("Get-MAC2Bucket","Get-MAC2ClassificationJobList","Get-MAC2Finding","Get-MAC2FindingList","Get-MAC2FindingStatistic","Search-MAC2Resource")
     "Status"=@("Enable-MAC2Macie","Update-MAC2AutomatedDiscoveryConfiguration","Update-MAC2MacieSession","Update-MAC2MemberSession")
     "TimeRange"=@("Get-MAC2UsageStatistic")
+    "WeeklySchedule_DayOfWeek"=@("New-MAC2ClassificationJob")
 }
 
 _awsArgumentCompleterRegistration $MAC2_Completers $MAC2_map
@@ -303,6 +311,7 @@ $MAC2_SelectCompleters = {
 $MAC2_SelectMap = @{
     "Select"=@("Approve-MAC2Invitation",
                "Get-MAC2GetCustomDataIdentifier",
+               "Update-MAC2UpdateAutomatedDiscoveryAccount",
                "New-MAC2AllowList",
                "New-MAC2ClassificationJob",
                "New-MAC2CustomDataIdentifier",
@@ -349,6 +358,7 @@ $MAC2_SelectMap = @{
                "Get-MAC2UsageStatistic",
                "Get-MAC2UsageTotal",
                "Get-MAC2AllowListList",
+               "Get-MAC2AutomatedDiscoveryAccountList",
                "Get-MAC2ClassificationJobList",
                "Get-MAC2ClassificationScopeList",
                "Get-MAC2CustomDataIdentifierList",

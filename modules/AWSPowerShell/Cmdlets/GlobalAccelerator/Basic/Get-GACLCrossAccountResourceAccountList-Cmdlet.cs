@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GlobalAccelerator;
 using Amazon.GlobalAccelerator.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GACL
 {
     /// <summary>
-    /// List the accounts that have cross-account endpoints.
+    /// List the accounts that have cross-account resources.
+    /// 
+    ///  
+    /// <para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/global-accelerator/latest/dg/cross-account-resources.html">
+    /// Working with cross-account attachments and resources in Global Accelerator</a> in
+    /// the <i> Global Accelerator Developer Guide</i>.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "GACLCrossAccountResourceAccountList")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS Global Accelerator ListCrossAccountResourceAccounts API operation.", Operation = new[] {"ListCrossAccountResourceAccounts"}, SelectReturnType = typeof(Amazon.GlobalAccelerator.Model.ListCrossAccountResourceAccountsResponse))]
     [AWSCmdletOutput("System.String or Amazon.GlobalAccelerator.Model.ListCrossAccountResourceAccountsResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.GlobalAccelerator.Model.ListCrossAccountResourceAccountsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GlobalAccelerator.Model.ListCrossAccountResourceAccountsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGACLCrossAccountResourceAccountListCmdlet : AmazonGlobalAcceleratorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +63,13 @@ namespace Amazon.PowerShell.Cmdlets.GACL
         public string Select { get; set; } = "ResourceOwnerAwsAccountIds";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +136,7 @@ namespace Amazon.PowerShell.Cmdlets.GACL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Global Accelerator", "ListCrossAccountResourceAccounts");
             try
             {
-                #if DESKTOP
-                return client.ListCrossAccountResourceAccounts(request);
-                #elif CORECLR
-                return client.ListCrossAccountResourceAccountsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListCrossAccountResourceAccountsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

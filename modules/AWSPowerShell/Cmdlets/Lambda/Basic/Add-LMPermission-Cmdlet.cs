@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LM
 {
     /// <summary>
-    /// Grants an Amazon Web Service, Amazon Web Services account, or Amazon Web Services
-    /// organization permission to use a function. You can apply the policy at the function
-    /// level, or specify a qualifier to restrict access to a single version or alias. If
-    /// you use a qualifier, the invoker must use the full Amazon Resource Name (ARN) of that
-    /// version or alias to invoke the function. Note: Lambda does not support adding policies
-    /// to version $LATEST.
+    /// Grants a <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html#Principal_specifying">principal</a>
+    /// permission to use a function. You can apply the policy at the function level, or specify
+    /// a qualifier to restrict access to a single version or alias. If you use a qualifier,
+    /// the invoker must use the full Amazon Resource Name (ARN) of that version or alias
+    /// to invoke the function. Note: Lambda does not support adding policies to version $LATEST.
     /// 
     ///  
     /// <para>
     /// To grant permission to another account, specify the account ID as the <c>Principal</c>.
     /// To grant permission to an organization defined in Organizations, specify the organization
-    /// ID as the <c>PrincipalOrgID</c>. For Amazon Web Services, the principal is a domain-style
-    /// identifier that the service defines, such as <c>s3.amazonaws.com</c> or <c>sns.amazonaws.com</c>.
-    /// For Amazon Web Services, you can also specify the ARN of the associated resource as
-    /// the <c>SourceArn</c>. If you grant permission to a service principal without specifying
-    /// the source, other accounts could potentially configure resources in their account
-    /// to invoke your Lambda function.
+    /// ID as the <c>PrincipalOrgID</c>. For Amazon Web Services services, the principal is
+    /// a domain-style identifier that the service defines, such as <c>s3.amazonaws.com</c>
+    /// or <c>sns.amazonaws.com</c>. For Amazon Web Services services, you can also specify
+    /// the ARN of the associated resource as the <c>SourceArn</c>. If you grant permission
+    /// to a service principal without specifying the source, other accounts could potentially
+    /// configure resources in their account to invoke your Lambda function.
     /// </para><para>
     /// This operation adds a statement to a resource-based permissions policy for the function.
     /// For more information about function policies, see <a href="https://docs.aws.amazon.com/lambda/latest/dg/access-control-resource-based.html">Using
@@ -56,12 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
     [AWSCmdlet("Calls the AWS Lambda AddPermission API operation.", Operation = new[] {"AddPermission"}, SelectReturnType = typeof(Amazon.Lambda.Model.AddPermissionResponse))]
     [AWSCmdletOutput("System.String or Amazon.Lambda.Model.AddPermissionResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Lambda.Model.AddPermissionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lambda.Model.AddPermissionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class AddLMPermissionCmdlet : AmazonLambdaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
@@ -94,7 +96,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter FunctionName
         /// <summary>
         /// <para>
-        /// <para>The name of the Lambda function, version, or alias.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> – <c>my-function</c> (name-only), <c>my-function:v1</c> (with
+        /// <para>The name or ARN of the Lambda function, version, or alias.</para><para><b>Name formats</b></para><ul><li><para><b>Function name</b> – <c>my-function</c> (name-only), <c>my-function:v1</c> (with
         /// alias).</para></li><li><para><b>Function ARN</b> – <c>arn:aws:lambda:us-west-2:123456789012:function:my-function</c>.</para></li><li><para><b>Partial ARN</b> – <c>123456789012:function:my-function</c>.</para></li></ul><para>You can append a version number or alias to any of the formats. The length constraint
         /// applies only to the full ARN. If you specify only the function name, it is limited
         /// to 64 characters in length.</para>
@@ -126,12 +128,25 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public Amazon.Lambda.FunctionUrlAuthType FunctionUrlAuthType { get; set; }
         #endregion
         
+        #region Parameter InvokedViaFunctionUrl
+        /// <summary>
+        /// <para>
+        /// <para>Restricts the <c>lambda:InvokeFunction</c> action to calls coming from a function
+        /// URL. When set to <c>true</c>, this prevents the principal from invoking the function
+        /// by any means other than the function URL. For more information, see <a href="https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html">Security
+        /// and auth model for Lambda function URLs</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? InvokedViaFunctionUrl { get; set; }
+        #endregion
+        
         #region Parameter Principal
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Service or Amazon Web Services account that invokes the function. If
-        /// you specify a service, use <c>SourceArn</c> or <c>SourceAccount</c> to limit who can
-        /// invoke the function through that service.</para>
+        /// <para>The Amazon Web Services service, Amazon Web Services account, IAM user, or IAM role
+        /// that invokes the function. If you specify a service, use <c>SourceArn</c> or <c>SourceAccount</c>
+        /// to limit who can invoke the function through that service.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -180,10 +195,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter SourceAccount
         /// <summary>
         /// <para>
-        /// <para>For Amazon Web Service, the ID of the Amazon Web Services account that owns the resource.
-        /// Use this together with <c>SourceArn</c> to ensure that the specified account owns
-        /// the resource. It is possible for an Amazon S3 bucket to be deleted by its owner and
-        /// recreated by another account.</para>
+        /// <para>For Amazon Web Services service, the ID of the Amazon Web Services account that owns
+        /// the resource. Use this together with <c>SourceArn</c> to ensure that the specified
+        /// account owns the resource. It is possible for an Amazon S3 bucket to be deleted by
+        /// its owner and recreated by another account.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -193,8 +208,8 @@ namespace Amazon.PowerShell.Cmdlets.LM
         #region Parameter SourceArn
         /// <summary>
         /// <para>
-        /// <para>For Amazon Web Services, the ARN of the Amazon Web Services resource that invokes
-        /// the function. For example, an Amazon S3 bucket or Amazon SNS topic.</para><para>Note that Lambda configures the comparison using the <c>StringLike</c> operator.</para>
+        /// <para>For Amazon Web Services services, the ARN of the Amazon Web Services resource that
+        /// invokes the function. For example, an Amazon S3 bucket or Amazon SNS topic.</para><para>Note that Lambda configures the comparison using the <c>StringLike</c> operator.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,16 +244,6 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public string Select { get; set; } = "Statement";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FunctionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FunctionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -249,9 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.LM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FunctionName), MyInvocation.BoundParameters);
@@ -265,21 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.LM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lambda.Model.AddPermissionResponse, AddLMPermissionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FunctionName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Action = this.Action;
             #if MODULAR
             if (this.Action == null && ParameterWasBound(nameof(this.Action)))
@@ -296,6 +295,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             }
             #endif
             context.FunctionUrlAuthType = this.FunctionUrlAuthType;
+            context.InvokedViaFunctionUrl = this.InvokedViaFunctionUrl;
             context.Principal = this.Principal;
             #if MODULAR
             if (this.Principal == null && ParameterWasBound(nameof(this.Principal)))
@@ -346,6 +346,10 @@ namespace Amazon.PowerShell.Cmdlets.LM
             if (cmdletContext.FunctionUrlAuthType != null)
             {
                 request.FunctionUrlAuthType = cmdletContext.FunctionUrlAuthType;
+            }
+            if (cmdletContext.InvokedViaFunctionUrl != null)
+            {
+                request.InvokedViaFunctionUrl = cmdletContext.InvokedViaFunctionUrl.Value;
             }
             if (cmdletContext.Principal != null)
             {
@@ -413,13 +417,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Lambda", "AddPermission");
             try
             {
-                #if DESKTOP
-                return client.AddPermission(request);
-                #elif CORECLR
-                return client.AddPermissionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AddPermissionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -440,6 +438,7 @@ namespace Amazon.PowerShell.Cmdlets.LM
             public System.String EventSourceToken { get; set; }
             public System.String FunctionName { get; set; }
             public Amazon.Lambda.FunctionUrlAuthType FunctionUrlAuthType { get; set; }
+            public System.Boolean? InvokedViaFunctionUrl { get; set; }
             public System.String Principal { get; set; }
             public System.String PrincipalOrgID { get; set; }
             public System.String Qualifier { get; set; }

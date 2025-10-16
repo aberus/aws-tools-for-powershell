@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -40,12 +40,10 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [OutputType("System.String")]
     [AWSCmdlet("Generates a pre-signed URL to an object in an Amazon S3 bucket.", Operation = new[] {"GetPreSignedURL"})]
     [AWSCmdletOutput("System.String",
-        "This cmdlet returns a System.String object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a System.String object containing multiple properties. The object can be returned by specifying '-Select *'."
     )]
     public class GetS3PreSignedURLCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
-        protected override bool IsSensitiveRequest { get; set; } = true;
-
         #region Parameter BucketName
         /// <summary>
         /// <para>

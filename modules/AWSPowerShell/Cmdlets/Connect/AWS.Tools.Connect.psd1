@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The Connect module of AWS Tools for PowerShell lets developers and administrators manage Amazon Connect Service from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.Connect.dll'
     )
@@ -100,6 +101,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-CONNSecurityKey', 
         'Add-CONNTrafficDistributionGroupUser', 
         'Add-CONNUserProficiency', 
+        'Complete-CONNAttachedFileUpload', 
         'Copy-CONNInstance', 
         'Disable-CONNEvaluationForm', 
         'Disconnect-CONNRoutingProfileQueue', 
@@ -107,7 +109,13 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CONNAgentStatus', 
         'Get-CONNAgentStatusList', 
         'Get-CONNAnalyticsDataAssociationList', 
+        'Get-CONNAnalyticsDataLakeDataSetList', 
         'Get-CONNApprovedOriginList', 
+        'Get-CONNAssociatedContactList', 
+        'Get-CONNAttachedFile', 
+        'Get-CONNAuthenticationProfile', 
+        'Get-CONNAuthenticationProfileList', 
+        'Get-CONNBatchAttachedFileMetadata', 
         'Get-CONNBotList', 
         'Get-CONNContact', 
         'Get-CONNContactAttribute', 
@@ -117,10 +125,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CONNContactFlowList', 
         'Get-CONNContactFlowModule', 
         'Get-CONNContactFlowModuleList', 
+        'Get-CONNContactFlowVersionList', 
+        'Get-CONNContactMetric', 
         'Get-CONNContactReferenceList', 
         'Get-CONNCurrentMetricData', 
         'Get-CONNCurrentUserData', 
         'Get-CONNDefaultVocabularyList', 
+        'Get-CONNEffectiveHoursOfOperation', 
+        'Get-CONNEmailAddress', 
         'Get-CONNEvaluationForm', 
         'Get-CONNEvaluationFormList', 
         'Get-CONNEvaluationFormVersionList', 
@@ -130,6 +142,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CONNFlowAssociationList', 
         'Get-CONNHoursOfOperation', 
         'Get-CONNHoursOfOperationList', 
+        'Get-CONNHoursOfOperationOverride', 
+        'Get-CONNHoursOfOperationOverrideList', 
         'Get-CONNInstance', 
         'Get-CONNInstanceAttribute', 
         'Get-CONNInstanceAttributeList', 
@@ -158,6 +172,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CONNResourceTag', 
         'Get-CONNRoutingProfile', 
         'Get-CONNRoutingProfileList', 
+        'Get-CONNRoutingProfileManualAssignmentQueueList', 
         'Get-CONNRoutingProfileQueueList', 
         'Get-CONNRule', 
         'Get-CONNRuleList', 
@@ -186,19 +201,25 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Import-CONNPhoneNumber', 
         'Invoke-CONNPauseContact', 
         'Invoke-CONNResumeContact', 
+        'Join-CONNContactWithUser', 
         'Join-CONNRoutingProfileQueue', 
         'Move-CONNContact', 
         'New-CONNAgentStatus', 
+        'New-CONNContact', 
         'New-CONNContactFlow', 
         'New-CONNContactFlowModule', 
+        'New-CONNContactFlowVersion', 
+        'New-CONNEmailAddress', 
         'New-CONNEvaluationForm', 
         'New-CONNHoursOfOperation', 
+        'New-CONNHoursOfOperationOverride', 
         'New-CONNInstance', 
         'New-CONNIntegrationAssociation', 
         'New-CONNParticipant', 
         'New-CONNPersistentContactAssociation', 
         'New-CONNPredefinedAttribute', 
         'New-CONNPrompt', 
+        'New-CONNPushNotificationRegistration', 
         'New-CONNQueue', 
         'New-CONNQuickConnect', 
         'New-CONNRoutingProfile', 
@@ -215,14 +236,18 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Register-CONNAnalyticsDataSet', 
         'Register-CONNBatchAnalyticsDataSet', 
         'Remove-CONNApprovedOrigin', 
+        'Remove-CONNAttachedFile', 
         'Remove-CONNBot', 
         'Remove-CONNContactEvaluation', 
         'Remove-CONNContactFlow', 
         'Remove-CONNContactFlowModule', 
+        'Remove-CONNContactFlowVersion', 
         'Remove-CONNContactTag', 
+        'Remove-CONNEmailAddress', 
         'Remove-CONNEvaluationForm', 
         'Remove-CONNFlow', 
         'Remove-CONNHoursOfOperation', 
+        'Remove-CONNHoursOfOperationOverride', 
         'Remove-CONNInstance', 
         'Remove-CONNInstanceStorageConfig', 
         'Remove-CONNIntegrationAssociation', 
@@ -232,6 +257,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CONNPhoneNumberContactFlow', 
         'Remove-CONNPredefinedAttribute', 
         'Remove-CONNPrompt', 
+        'Remove-CONNPushNotificationRegistration', 
         'Remove-CONNQueue', 
         'Remove-CONNQueueQuickConnect', 
         'Remove-CONNQuickConnect', 
@@ -252,9 +278,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CONNVocabulary', 
         'Request-CONNPhoneNumber', 
         'Resume-CONNContactRecording', 
+        'Search-CONNAgentStatus', 
         'Search-CONNAvailablePhoneNumber', 
         'Search-CONNContact', 
+        'Search-CONNContactFlow', 
+        'Search-CONNContactFlowModule', 
+        'Search-CONNEmailAddress', 
         'Search-CONNHoursOfOperation', 
+        'Search-CONNHoursOfOperationOverride', 
         'Search-CONNPredefinedAttribute', 
         'Search-CONNPrompt', 
         'Search-CONNQueue', 
@@ -263,15 +294,22 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Search-CONNRoutingProfile', 
         'Search-CONNSecurityProfile', 
         'Search-CONNUser', 
+        'Search-CONNUserHierarchyGroup', 
         'Search-CONNVocabulary', 
         'Send-CONNChatIntegrationEvent', 
+        'Send-CONNOutboundEmail', 
         'Set-CONNBatchPutContact', 
+        'Start-CONNAttachedFileUpload', 
         'Start-CONNChatContact', 
         'Start-CONNContactEvaluation', 
         'Start-CONNContactMonitoring', 
         'Start-CONNContactRecording', 
         'Start-CONNContactStreaming', 
+        'Start-CONNEmailContact', 
+        'Start-CONNOutboundChatContact', 
+        'Start-CONNOutboundEmailContact', 
         'Start-CONNOutboundVoiceContact', 
+        'Start-CONNScreenSharing', 
         'Start-CONNTaskContact', 
         'Start-CONNWebRTCContact', 
         'Stop-CONNContact', 
@@ -282,6 +320,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Unregister-CONNAnalyticsDataSet', 
         'Unregister-CONNBatchAnalyticsDataSet', 
         'Update-CONNAgentStatus', 
+        'Update-CONNAuthenticationProfile', 
         'Update-CONNContact', 
         'Update-CONNContactAttribute', 
         'Update-CONNContactEvaluation', 
@@ -292,10 +331,13 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-CONNContactFlowName', 
         'Update-CONNContactRoutingData', 
         'Update-CONNContactSchedule', 
+        'Update-CONNEmailAddressMetadata', 
         'Update-CONNEvaluationForm', 
         'Update-CONNHoursOfOperation', 
+        'Update-CONNHoursOfOperationOverride', 
         'Update-CONNInstanceAttribute', 
         'Update-CONNInstanceStorageConfig', 
+        'Update-CONNParticipantAuthentication', 
         'Update-CONNParticipantRoleConfig', 
         'Update-CONNPhoneNumber', 
         'Update-CONNPhoneNumberMetadata', 
@@ -305,6 +347,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-CONNQueueMaxContact', 
         'Update-CONNQueueName', 
         'Update-CONNQueueOutboundCallerConfig', 
+        'Update-CONNQueueOutboundEmailConfig', 
         'Update-CONNQueueStatus', 
         'Update-CONNQuickConnectConfig', 
         'Update-CONNQuickConnectName', 
@@ -352,7 +395,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

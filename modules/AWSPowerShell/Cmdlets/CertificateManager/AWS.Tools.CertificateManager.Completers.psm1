@@ -80,6 +80,27 @@ $ACM_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.CertificateManager.CertificateExport
+        {
+            ($_ -eq "Get-ACMCertificateList/Includes_ExportOption") -Or
+            ($_ -eq "New-ACMCertificate/Options_Export") -Or
+            ($_ -eq "Update-ACMCertificateOption/Options_Export")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.CertificateManager.CertificateManagedBy
+        {
+            ($_ -eq "Get-ACMCertificateList/Includes_ManagedBy") -Or
+            ($_ -eq "New-ACMCertificate/ManagedBy")
+        }
+        {
+            $v = "CLOUDFRONT"
+            break
+        }
+
         # Amazon.CertificateManager.CertificateTransparencyLoggingPreference
         {
             ($_ -eq "New-ACMCertificate/Options_CertificateTransparencyLoggingPreference") -Or
@@ -94,6 +115,13 @@ $ACM_Completers = {
         "New-ACMCertificate/KeyAlgorithm"
         {
             $v = "EC_prime256v1","EC_secp384r1","EC_secp521r1","RSA_1024","RSA_2048","RSA_3072","RSA_4096"
+            break
+        }
+
+        # Amazon.CertificateManager.RevocationReason
+        "Revoke-ACMCertificate/RevocationReason"
+        {
+            $v = "AFFILIATION_CHANGED","A_A_COMPROMISE","CA_COMPROMISE","CERTIFICATE_HOLD","CESSATION_OF_OPERATION","KEY_COMPROMISE","PRIVILEGE_WITHDRAWN","REMOVE_FROM_CRL","SUPERCEDED","SUPERSEDED","UNSPECIFIED"
             break
         }
 
@@ -114,7 +142,7 @@ $ACM_Completers = {
         # Amazon.CertificateManager.ValidationMethod
         "New-ACMCertificate/ValidationMethod"
         {
-            $v = "DNS","EMAIL"
+            $v = "DNS","EMAIL","HTTP"
             break
         }
 
@@ -127,8 +155,13 @@ $ACM_Completers = {
 }
 
 $ACM_map = @{
+    "Includes_ExportOption"=@("Get-ACMCertificateList")
+    "Includes_ManagedBy"=@("Get-ACMCertificateList")
     "KeyAlgorithm"=@("New-ACMCertificate")
+    "ManagedBy"=@("New-ACMCertificate")
     "Options_CertificateTransparencyLoggingPreference"=@("New-ACMCertificate","Update-ACMCertificateOption")
+    "Options_Export"=@("New-ACMCertificate","Update-ACMCertificateOption")
+    "RevocationReason"=@("Revoke-ACMCertificate")
     "SortBy"=@("Get-ACMCertificateList")
     "SortOrder"=@("Get-ACMCertificateList")
     "ValidationMethod"=@("New-ACMCertificate")
@@ -198,6 +231,7 @@ $ACM_SelectMap = @{
                "Invoke-ACMCertificateRenewal",
                "New-ACMCertificate",
                "Send-ACMValidationEmail",
+               "Revoke-ACMCertificate",
                "Update-ACMCertificateOption")
 }
 

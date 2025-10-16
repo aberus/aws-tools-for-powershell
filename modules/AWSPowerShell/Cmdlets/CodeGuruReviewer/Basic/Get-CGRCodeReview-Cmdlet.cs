@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeGuruReviewer;
 using Amazon.CodeGuruReviewer.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGR
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CGR
     [AWSCmdlet("Calls the Amazon CodeGuru Reviewer DescribeCodeReview API operation.", Operation = new[] {"DescribeCodeReview"}, SelectReturnType = typeof(Amazon.CodeGuruReviewer.Model.DescribeCodeReviewResponse))]
     [AWSCmdletOutput("Amazon.CodeGuruReviewer.Model.CodeReview or Amazon.CodeGuruReviewer.Model.DescribeCodeReviewResponse",
         "This cmdlet returns an Amazon.CodeGuruReviewer.Model.CodeReview object.",
-        "The service call response (type Amazon.CodeGuruReviewer.Model.DescribeCodeReviewResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeGuruReviewer.Model.DescribeCodeReviewResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGRCodeReviewCmdlet : AmazonCodeGuruReviewerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CodeReviewArn
         /// <summary>
@@ -71,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.CGR
         public string Select { get; set; } = "CodeReview";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CodeReviewArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CodeReviewArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CodeReviewArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -91,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.CGR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodeGuruReviewer.Model.DescribeCodeReviewResponse, GetCGRCodeReviewCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CodeReviewArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CodeReviewArn = this.CodeReviewArn;
             #if MODULAR
             if (this.CodeReviewArn == null && ParameterWasBound(nameof(this.CodeReviewArn)))
@@ -171,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.CGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CodeGuru Reviewer", "DescribeCodeReview");
             try
             {
-                #if DESKTOP
-                return client.DescribeCodeReview(request);
-                #elif CORECLR
-                return client.DescribeCodeReviewAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeCodeReviewAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

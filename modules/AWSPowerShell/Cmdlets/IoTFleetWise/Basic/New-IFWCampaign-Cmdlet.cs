@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTFleetWise;
 using Amazon.IoTFleetWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IFW
 {
     /// <summary>
@@ -39,23 +41,29 @@ namespace Amazon.PowerShell.Cmdlets.IFW
     /// For more information, see <a href="https://docs.aws.amazon.com/iot-fleetwise/latest/developerguide/campaigns.html">Collect
     /// and transfer data with campaigns</a> in the <i>Amazon Web Services IoT FleetWise Developer
     /// Guide</i>.
-    /// </para>
+    /// </para><important><para>
+    /// Access to certain Amazon Web Services IoT FleetWise features is currently gated. For
+    /// more information, see <a href="https://docs.aws.amazon.com/iot-fleetwise/latest/developerguide/fleetwise-regions.html">Amazon
+    /// Web Services Region and feature availability</a> in the <i>Amazon Web Services IoT
+    /// FleetWise Developer Guide</i>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("New", "IFWCampaign", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.IoTFleetWise.Model.CreateCampaignResponse")]
     [AWSCmdlet("Calls the AWS IoT FleetWise CreateCampaign API operation.", Operation = new[] {"CreateCampaign"}, SelectReturnType = typeof(Amazon.IoTFleetWise.Model.CreateCampaignResponse))]
     [AWSCmdletOutput("Amazon.IoTFleetWise.Model.CreateCampaignResponse",
-        "This cmdlet returns an Amazon.IoTFleetWise.Model.CreateCampaignResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTFleetWise.Model.CreateCampaignResponse object containing multiple properties."
     )]
     public partial class NewIFWCampaignCmdlet : AmazonIoTFleetWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Compression
         /// <summary>
         /// <para>
-        /// <para> (Optional) Whether to compress signals before transmitting data to Amazon Web Services
+        /// <para>Determines whether to compress signals before transmitting data to Amazon Web Services
         /// IoT FleetWise. If you don't want to compress the signals, use <c>OFF</c>. If it's
         /// not specified, <c>SNAPPY</c> is used. </para><para>Default: <c>SNAPPY</c></para>
         /// </para>
@@ -79,13 +87,18 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter DataDestinationConfig
         /// <summary>
         /// <para>
-        /// <para>The destination where the campaign sends data. You can choose to send data to be stored
-        /// in Amazon S3 or Amazon Timestream.</para><para>Amazon S3 optimizes the cost of data storage and provides additional mechanisms to
+        /// <para>The destination where the campaign sends data. You can send data to an MQTT topic,
+        /// or store it in Amazon S3 or Amazon Timestream.</para><para>MQTT is the publish/subscribe messaging protocol used by Amazon Web Services IoT to
+        /// communicate with your devices.</para><para>Amazon S3 optimizes the cost of data storage and provides additional mechanisms to
         /// use vehicle data, such as data lakes, centralized data storage, data processing pipelines,
         /// and analytics. Amazon Web Services IoT FleetWise supports at-least-once file delivery
         /// to S3. Your vehicle data is stored on multiple Amazon Web Services IoT FleetWise servers
         /// for redundancy and high availability.</para><para>You can use Amazon Timestream to access and analyze time series data, and Timestream
-        /// to query vehicle data so that you can identify trends and patterns.</para>
+        /// to query vehicle data so that you can identify trends and patterns.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,15 +109,34 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter DataExtraDimension
         /// <summary>
         /// <para>
-        /// <para> (Optional) A list of vehicle attributes to associate with a campaign. </para><para>Enrich the data with specified vehicle attributes. For example, add <c>make</c> and
+        /// <para>A list of vehicle attributes to associate with a campaign. </para><para>Enrich the data with specified vehicle attributes. For example, add <c>make</c> and
         /// <c>model</c> to the campaign, and Amazon Web Services IoT FleetWise will associate
         /// the data with those attributes as dimensions in Amazon Timestream. You can then query
-        /// the data against <c>make</c> and <c>model</c>.</para><para>Default: An empty array</para>
+        /// the data against <c>make</c> and <c>model</c>.</para><para>Default: An empty array</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DataExtraDimensions")]
         public System.String[] DataExtraDimension { get; set; }
+        #endregion
+        
+        #region Parameter DataPartition
+        /// <summary>
+        /// <para>
+        /// <para>The data partitions associated with the signals collected from the vehicle.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DataPartitions")]
+        public Amazon.IoTFleetWise.Model.DataPartition[] DataPartition { get; set; }
         #endregion
         
         #region Parameter Description
@@ -120,9 +152,9 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter DiagnosticsMode
         /// <summary>
         /// <para>
-        /// <para> (Optional) Option for a vehicle to send diagnostic trouble codes to Amazon Web Services
-        /// IoT FleetWise. If you want to send diagnostic trouble codes, use <c>SEND_ACTIVE_DTCS</c>.
-        /// If it's not specified, <c>OFF</c> is used.</para><para>Default: <c>OFF</c></para>
+        /// <para>Option for a vehicle to send diagnostic trouble codes to Amazon Web Services IoT FleetWise.
+        /// If you want to send diagnostic trouble codes, use <c>SEND_ACTIVE_DTCS</c>. If it's
+        /// not specified, <c>OFF</c> is used.</para><para>Default: <c>OFF</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,8 +165,8 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter ExpiryTime
         /// <summary>
         /// <para>
-        /// <para> (Optional) The time the campaign expires, in seconds since epoch (January 1, 1970
-        /// at midnight UTC time). Vehicle data isn't collected after the campaign expires. </para><para>Default: 253402214400 (December 31, 9999, 00:00:00 UTC)</para>
+        /// <para>The time the campaign expires, in seconds since epoch (January 1, 1970 at midnight
+        /// UTC time). Vehicle data isn't collected after the campaign expires. </para><para>Default: 253402214400 (December 31, 9999, 00:00:00 UTC)</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -197,31 +229,19 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter PostTriggerCollectionDuration
         /// <summary>
         /// <para>
-        /// <para> (Optional) How long (in milliseconds) to collect raw data after a triggering event
-        /// initiates the collection. If it's not specified, <c>0</c> is used.</para><para>Default: <c>0</c></para>
+        /// <para>How long (in milliseconds) to collect raw data after a triggering event initiates
+        /// the collection. If it's not specified, <c>0</c> is used.</para><para>Default: <c>0</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int64? PostTriggerCollectionDuration { get; set; }
         #endregion
         
-        #region Parameter Priority
-        /// <summary>
-        /// <para>
-        /// <para>(Optional) A number indicating the priority of one campaign over another campaign
-        /// for a certain vehicle or fleet. A campaign with the lowest value is deployed to vehicles
-        /// before any other campaigns. If it's not specified, <c>0</c> is used. </para><para>Default: <c>0</c></para>
-        /// </para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.Int32? Priority { get; set; }
-        #endregion
-        
         #region Parameter SignalCatalogArn
         /// <summary>
         /// <para>
-        /// <para>(Optional) The Amazon Resource Name (ARN) of the signal catalog to associate with
-        /// the campaign. </para>
+        /// <para>The Amazon Resource Name (ARN) of the signal catalog to associate with the campaign.
+        /// </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -238,17 +258,36 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter SignalsToCollect
         /// <summary>
         /// <para>
-        /// <para>(Optional) A list of information about signals to collect. </para>
+        /// <para>A list of information about signals to collect. </para><note><para>If you upload a signal as a condition in a data partition for a campaign, then those
+        /// same signals must be included in <c>signalsToCollect</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public Amazon.IoTFleetWise.Model.SignalInformation[] SignalsToCollect { get; set; }
         #endregion
         
+        #region Parameter SignalsToFetch
+        /// <summary>
+        /// <para>
+        /// <para>A list of information about signals to fetch.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.IoTFleetWise.Model.SignalFetchInformation[] SignalsToFetch { get; set; }
+        #endregion
+        
         #region Parameter SpoolingMode
         /// <summary>
         /// <para>
-        /// <para>(Optional) Whether to store collected data after a vehicle lost a connection with
+        /// <para>Determines whether to store collected data after a vehicle lost a connection with
         /// the cloud. After a connection is re-established, the data is automatically forwarded
         /// to Amazon Web Services IoT FleetWise. If you want to store collected data when a vehicle
         /// loses connection with the cloud, use <c>TO_DISK</c>. If it's not specified, <c>OFF</c>
@@ -263,8 +302,8 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter StartTime
         /// <summary>
         /// <para>
-        /// <para>(Optional) The time, in milliseconds, to deliver a campaign after it was approved.
-        /// If it's not specified, <c>0</c> is used.</para><para>Default: <c>0</c></para>
+        /// <para>The time, in milliseconds, to deliver a campaign after it was approved. If it's not
+        /// specified, <c>0</c> is used.</para><para>Default: <c>0</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -274,7 +313,11 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata that can be used to manage the campaign.</para>
+        /// <para>Metadata that can be used to manage the campaign.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -314,6 +357,20 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public Amazon.IoTFleetWise.TriggerMode ConditionBasedCollectionScheme_TriggerMode { get; set; }
         #endregion
         
+        #region Parameter Priority
+        /// <summary>
+        /// <para>
+        /// <para>A number indicating the priority of one campaign over another campaign for a certain
+        /// vehicle or fleet. A campaign with the lowest value is deployed to vehicles before
+        /// any other campaigns. If it's not specified, <c>0</c> is used. </para><para>Default: <c>0</c></para>
+        /// </para>
+        /// <para>This parameter is deprecated.</para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [System.ObsoleteAttribute("priority is no longer used or needed as input")]
+        public System.Int32? Priority { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -323,16 +380,6 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -345,9 +392,13 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -361,21 +412,11 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTFleetWise.Model.CreateCampaignResponse, NewIFWCampaignCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConditionBasedCollectionScheme_ConditionLanguageVersion = this.ConditionBasedCollectionScheme_ConditionLanguageVersion;
             context.ConditionBasedCollectionScheme_Expression = this.ConditionBasedCollectionScheme_Expression;
             context.ConditionBasedCollectionScheme_MinimumTriggerIntervalMs = this.ConditionBasedCollectionScheme_MinimumTriggerIntervalMs;
@@ -390,6 +431,10 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             {
                 context.DataExtraDimension = new List<System.String>(this.DataExtraDimension);
             }
+            if (this.DataPartition != null)
+            {
+                context.DataPartition = new List<Amazon.IoTFleetWise.Model.DataPartition>(this.DataPartition);
+            }
             context.Description = this.Description;
             context.DiagnosticsMode = this.DiagnosticsMode;
             context.ExpiryTime = this.ExpiryTime;
@@ -401,7 +446,9 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             }
             #endif
             context.PostTriggerCollectionDuration = this.PostTriggerCollectionDuration;
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Priority = this.Priority;
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.SignalCatalogArn = this.SignalCatalogArn;
             #if MODULAR
             if (this.SignalCatalogArn == null && ParameterWasBound(nameof(this.SignalCatalogArn)))
@@ -412,6 +459,10 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             if (this.SignalsToCollect != null)
             {
                 context.SignalsToCollect = new List<Amazon.IoTFleetWise.Model.SignalInformation>(this.SignalsToCollect);
+            }
+            if (this.SignalsToFetch != null)
+            {
+                context.SignalsToFetch = new List<Amazon.IoTFleetWise.Model.SignalFetchInformation>(this.SignalsToFetch);
             }
             context.SpoolingMode = this.SpoolingMode;
             context.StartTime = this.StartTime;
@@ -543,6 +594,10 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             {
                 request.DataExtraDimensions = cmdletContext.DataExtraDimension;
             }
+            if (cmdletContext.DataPartition != null)
+            {
+                request.DataPartitions = cmdletContext.DataPartition;
+            }
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
@@ -563,10 +618,12 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             {
                 request.PostTriggerCollectionDuration = cmdletContext.PostTriggerCollectionDuration.Value;
             }
+            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.Priority != null)
             {
                 request.Priority = cmdletContext.Priority.Value;
             }
+            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.SignalCatalogArn != null)
             {
                 request.SignalCatalogArn = cmdletContext.SignalCatalogArn;
@@ -574,6 +631,10 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             if (cmdletContext.SignalsToCollect != null)
             {
                 request.SignalsToCollect = cmdletContext.SignalsToCollect;
+            }
+            if (cmdletContext.SignalsToFetch != null)
+            {
+                request.SignalsToFetch = cmdletContext.SignalsToFetch;
             }
             if (cmdletContext.SpoolingMode != null)
             {
@@ -629,13 +690,7 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT FleetWise", "CreateCampaign");
             try
             {
-                #if DESKTOP
-                return client.CreateCampaign(request);
-                #elif CORECLR
-                return client.CreateCampaignAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCampaignAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -660,14 +715,17 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             public Amazon.IoTFleetWise.Compression Compression { get; set; }
             public List<Amazon.IoTFleetWise.Model.DataDestinationConfig> DataDestinationConfig { get; set; }
             public List<System.String> DataExtraDimension { get; set; }
+            public List<Amazon.IoTFleetWise.Model.DataPartition> DataPartition { get; set; }
             public System.String Description { get; set; }
             public Amazon.IoTFleetWise.DiagnosticsMode DiagnosticsMode { get; set; }
             public System.DateTime? ExpiryTime { get; set; }
             public System.String Name { get; set; }
             public System.Int64? PostTriggerCollectionDuration { get; set; }
+            [System.ObsoleteAttribute]
             public System.Int32? Priority { get; set; }
             public System.String SignalCatalogArn { get; set; }
             public List<Amazon.IoTFleetWise.Model.SignalInformation> SignalsToCollect { get; set; }
+            public List<Amazon.IoTFleetWise.Model.SignalFetchInformation> SignalsToFetch { get; set; }
             public Amazon.IoTFleetWise.SpoolingMode SpoolingMode { get; set; }
             public System.DateTime? StartTime { get; set; }
             public List<Amazon.IoTFleetWise.Model.Tag> Tag { get; set; }

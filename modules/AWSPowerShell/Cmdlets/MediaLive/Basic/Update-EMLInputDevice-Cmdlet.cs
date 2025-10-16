@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaLive;
 using Amazon.MediaLive.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EML
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
     [OutputType("Amazon.MediaLive.Model.UpdateInputDeviceResponse")]
     [AWSCmdlet("Calls the AWS Elemental MediaLive UpdateInputDevice API operation.", Operation = new[] {"UpdateInputDevice"}, SelectReturnType = typeof(Amazon.MediaLive.Model.UpdateInputDeviceResponse))]
     [AWSCmdletOutput("Amazon.MediaLive.Model.UpdateInputDeviceResponse",
-        "This cmdlet returns an Amazon.MediaLive.Model.UpdateInputDeviceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MediaLive.Model.UpdateInputDeviceResponse object containing multiple properties."
     )]
     public partial class UpdateEMLInputDeviceCmdlet : AmazonMediaLiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HdDeviceSettings_AudioChannelPair
         /// <summary>
@@ -50,6 +53,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// applies only to UHD devices, and only when the device is configured as the source
         /// for a MediaConnect flow. For an HD device, you configure the audio by setting up audio
         /// selectors in the channel configuration.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -66,6 +74,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
         /// applies only to UHD devices, and only when the device is configured as the source
         /// for a MediaConnect flow. For an HD device, you configure the audio by setting up audio
         /// selectors in the channel configuration.
+        /// <para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -174,6 +187,32 @@ namespace Amazon.PowerShell.Cmdlets.EML
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String InputDeviceId { get; set; }
+        #endregion
+        
+        #region Parameter HdDeviceSettings_InputResolution
+        /// <summary>
+        /// <para>
+        /// Choose the resolution of the Link device's
+        /// source (HD or UHD). Make sure the resolution matches the current source from the device.
+        /// This value determines MediaLive resource allocation and billing for this input. Only
+        /// UHD devices can specify this parameter.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String HdDeviceSettings_InputResolution { get; set; }
+        #endregion
+        
+        #region Parameter UhdDeviceSettings_InputResolution
+        /// <summary>
+        /// <para>
+        /// Choose the resolution of the Link device's
+        /// source (HD or UHD). Make sure the resolution matches the current source from the device.
+        /// This value determines MediaLive resource allocation and billing for this input. Only
+        /// UHD devices can specify this parameter.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String UhdDeviceSettings_InputResolution { get; set; }
         #endregion
         
         #region Parameter HdDeviceSettings_LatencyMs
@@ -310,16 +349,6 @@ namespace Amazon.PowerShell.Cmdlets.EML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InputDeviceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InputDeviceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InputDeviceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -330,9 +359,13 @@ namespace Amazon.PowerShell.Cmdlets.EML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InputDeviceId), MyInvocation.BoundParameters);
@@ -346,21 +379,11 @@ namespace Amazon.PowerShell.Cmdlets.EML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaLive.Model.UpdateInputDeviceResponse, UpdateEMLInputDeviceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InputDeviceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AvailabilityZone = this.AvailabilityZone;
             if (this.HdDeviceSettings_AudioChannelPair != null)
             {
@@ -368,6 +391,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             }
             context.HdDeviceSettings_Codec = this.HdDeviceSettings_Codec;
             context.HdDeviceSettings_ConfiguredInput = this.HdDeviceSettings_ConfiguredInput;
+            context.HdDeviceSettings_InputResolution = this.HdDeviceSettings_InputResolution;
             context.HdDeviceSettings_LatencyMs = this.HdDeviceSettings_LatencyMs;
             context.HdDeviceSettings_MaxBitrate = this.HdDeviceSettings_MaxBitrate;
             context.HdDeviceSettings_MediaconnectSettings_FlowArn = this.HdDeviceSettings_MediaconnectSettings_FlowArn;
@@ -388,6 +412,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             }
             context.UhdDeviceSettings_Codec = this.UhdDeviceSettings_Codec;
             context.UhdDeviceSettings_ConfiguredInput = this.UhdDeviceSettings_ConfiguredInput;
+            context.UhdDeviceSettings_InputResolution = this.UhdDeviceSettings_InputResolution;
             context.UhdDeviceSettings_LatencyMs = this.UhdDeviceSettings_LatencyMs;
             context.UhdDeviceSettings_MaxBitrate = this.UhdDeviceSettings_MaxBitrate;
             context.UhdDeviceSettings_MediaconnectSettings_FlowArn = this.UhdDeviceSettings_MediaconnectSettings_FlowArn;
@@ -446,6 +471,16 @@ namespace Amazon.PowerShell.Cmdlets.EML
             if (requestHdDeviceSettings_hdDeviceSettings_ConfiguredInput != null)
             {
                 request.HdDeviceSettings.ConfiguredInput = requestHdDeviceSettings_hdDeviceSettings_ConfiguredInput;
+                requestHdDeviceSettingsIsNull = false;
+            }
+            System.String requestHdDeviceSettings_hdDeviceSettings_InputResolution = null;
+            if (cmdletContext.HdDeviceSettings_InputResolution != null)
+            {
+                requestHdDeviceSettings_hdDeviceSettings_InputResolution = cmdletContext.HdDeviceSettings_InputResolution;
+            }
+            if (requestHdDeviceSettings_hdDeviceSettings_InputResolution != null)
+            {
+                request.HdDeviceSettings.InputResolution = requestHdDeviceSettings_hdDeviceSettings_InputResolution;
                 requestHdDeviceSettingsIsNull = false;
             }
             System.Int32? requestHdDeviceSettings_hdDeviceSettings_LatencyMs = null;
@@ -570,6 +605,16 @@ namespace Amazon.PowerShell.Cmdlets.EML
                 request.UhdDeviceSettings.ConfiguredInput = requestUhdDeviceSettings_uhdDeviceSettings_ConfiguredInput;
                 requestUhdDeviceSettingsIsNull = false;
             }
+            System.String requestUhdDeviceSettings_uhdDeviceSettings_InputResolution = null;
+            if (cmdletContext.UhdDeviceSettings_InputResolution != null)
+            {
+                requestUhdDeviceSettings_uhdDeviceSettings_InputResolution = cmdletContext.UhdDeviceSettings_InputResolution;
+            }
+            if (requestUhdDeviceSettings_uhdDeviceSettings_InputResolution != null)
+            {
+                request.UhdDeviceSettings.InputResolution = requestUhdDeviceSettings_uhdDeviceSettings_InputResolution;
+                requestUhdDeviceSettingsIsNull = false;
+            }
             System.Int32? requestUhdDeviceSettings_uhdDeviceSettings_LatencyMs = null;
             if (cmdletContext.UhdDeviceSettings_LatencyMs != null)
             {
@@ -688,13 +733,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaLive", "UpdateInputDevice");
             try
             {
-                #if DESKTOP
-                return client.UpdateInputDevice(request);
-                #elif CORECLR
-                return client.UpdateInputDeviceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateInputDeviceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -715,6 +754,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             public List<Amazon.MediaLive.Model.InputDeviceConfigurableAudioChannelPairConfig> HdDeviceSettings_AudioChannelPair { get; set; }
             public Amazon.MediaLive.InputDeviceCodec HdDeviceSettings_Codec { get; set; }
             public Amazon.MediaLive.InputDeviceConfiguredInput HdDeviceSettings_ConfiguredInput { get; set; }
+            public System.String HdDeviceSettings_InputResolution { get; set; }
             public System.Int32? HdDeviceSettings_LatencyMs { get; set; }
             public System.Int32? HdDeviceSettings_MaxBitrate { get; set; }
             public System.String HdDeviceSettings_MediaconnectSettings_FlowArn { get; set; }
@@ -726,6 +766,7 @@ namespace Amazon.PowerShell.Cmdlets.EML
             public List<Amazon.MediaLive.Model.InputDeviceConfigurableAudioChannelPairConfig> UhdDeviceSettings_AudioChannelPair { get; set; }
             public Amazon.MediaLive.InputDeviceCodec UhdDeviceSettings_Codec { get; set; }
             public Amazon.MediaLive.InputDeviceConfiguredInput UhdDeviceSettings_ConfiguredInput { get; set; }
+            public System.String UhdDeviceSettings_InputResolution { get; set; }
             public System.Int32? UhdDeviceSettings_LatencyMs { get; set; }
             public System.Int32? UhdDeviceSettings_MaxBitrate { get; set; }
             public System.String UhdDeviceSettings_MediaconnectSettings_FlowArn { get; set; }

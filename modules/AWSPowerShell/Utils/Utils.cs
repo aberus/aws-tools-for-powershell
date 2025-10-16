@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -57,8 +57,8 @@ namespace Amazon.PowerShell.Utils
 #endif
 
             InternalSDKUtils.SetUserAgent(moduleName,
-                                          TypeFactory.GetTypeInfo(typeof(BaseCmdlet)).Assembly.GetName().Version.ToString(),
-                                          string.Format("{0}/{1}.{2}", platform, hostVersion.Major, hostVersion.MajorRevision));
+                                          typeof(BaseCmdlet).Assembly.GetName().Version.ToString(),
+                                          string.Format("md/{0}/{1}.{2}", platform, hostVersion.Major, hostVersion.MajorRevision));
         }
 
         public static void CopyStream(Stream source, Stream destination, int bufferSize = 8192)

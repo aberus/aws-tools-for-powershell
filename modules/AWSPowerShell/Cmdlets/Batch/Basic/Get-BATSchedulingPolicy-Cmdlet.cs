@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Batch;
 using Amazon.Batch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAT
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.BAT
     [AWSCmdlet("Calls the AWS Batch DescribeSchedulingPolicies API operation.", Operation = new[] {"DescribeSchedulingPolicies"}, SelectReturnType = typeof(Amazon.Batch.Model.DescribeSchedulingPoliciesResponse))]
     [AWSCmdletOutput("Amazon.Batch.Model.SchedulingPolicyDetail or Amazon.Batch.Model.DescribeSchedulingPoliciesResponse",
         "This cmdlet returns a collection of Amazon.Batch.Model.SchedulingPolicyDetail objects.",
-        "The service call response (type Amazon.Batch.Model.DescribeSchedulingPoliciesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Batch.Model.DescribeSchedulingPoliciesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBATSchedulingPolicyCmdlet : AmazonBatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Arn
         /// <summary>
         /// <para>
-        /// <para>A list of up to 100 scheduling policy Amazon Resource Name (ARN) entries.</para>
+        /// <para>A list of up to 100 scheduling policy Amazon Resource Name (ARN) entries.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -71,9 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public string Select { get; set; } = "SchedulingPolicies";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -154,13 +165,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Batch", "DescribeSchedulingPolicies");
             try
             {
-                #if DESKTOP
-                return client.DescribeSchedulingPolicies(request);
-                #elif CORECLR
-                return client.DescribeSchedulingPoliciesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeSchedulingPoliciesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OAM;
 using Amazon.OAM.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWOAM
 {
     /// <summary>
@@ -34,9 +36,11 @@ namespace Amazon.PowerShell.Cmdlets.CWOAM
     /// 
     ///  
     /// <para>
-    /// You can also use a sink policy to limit the types of data that is shared. The three
-    /// types that you can allow or deny are:
-    /// </para><ul><li><para><b>Metrics</b> - Specify with <c>AWS::CloudWatch::Metric</c></para></li><li><para><b>Log groups</b> - Specify with <c>AWS::Logs::LogGroup</c></para></li><li><para><b>Traces</b> - Specify with <c>AWS::XRay::Trace</c></para></li><li><para><b>Application Insights - Applications</b> - Specify with <c>AWS::ApplicationInsights::Application</c></para></li></ul><para>
+    /// You can also use a sink policy to limit the types of data that is shared. The six
+    /// types of services with their respective resource types that you can allow or deny
+    /// are:
+    /// </para><ul><li><para><b>Metrics</b> - Specify with <c>AWS::CloudWatch::Metric</c></para></li><li><para><b>Log groups</b> - Specify with <c>AWS::Logs::LogGroup</c></para></li><li><para><b>Traces</b> - Specify with <c>AWS::XRay::Trace</c></para></li><li><para><b>Application Insights - Applications</b> - Specify with <c>AWS::ApplicationInsights::Application</c></para></li><li><para><b>Internet Monitor</b> - Specify with <c>AWS::InternetMonitor::Monitor</c></para></li><li><para><b>Application Signals</b> - Specify with <c>AWS::ApplicationSignals::Service</c>
+    /// and <c>AWS::ApplicationSignals::ServiceLevelObjective</c></para></li></ul><para>
     /// See the examples in this section to see how to specify permitted source accounts and
     /// data types.
     /// </para>
@@ -45,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.CWOAM
     [OutputType("Amazon.OAM.Model.PutSinkPolicyResponse")]
     [AWSCmdlet("Calls the CloudWatch Observability Access Manager PutSinkPolicy API operation.", Operation = new[] {"PutSinkPolicy"}, SelectReturnType = typeof(Amazon.OAM.Model.PutSinkPolicyResponse))]
     [AWSCmdletOutput("Amazon.OAM.Model.PutSinkPolicyResponse",
-        "This cmdlet returns an Amazon.OAM.Model.PutSinkPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.OAM.Model.PutSinkPolicyResponse object containing multiple properties."
     )]
     public partial class WriteCWOAMSinkPolicyCmdlet : AmazonOAMClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Policy
         /// <summary>
@@ -99,16 +104,6 @@ namespace Amazon.PowerShell.Cmdlets.CWOAM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SinkIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SinkIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SinkIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -119,9 +114,13 @@ namespace Amazon.PowerShell.Cmdlets.CWOAM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SinkIdentifier), MyInvocation.BoundParameters);
@@ -135,21 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.CWOAM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.OAM.Model.PutSinkPolicyResponse, WriteCWOAMSinkPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SinkIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Policy = this.Policy;
             #if MODULAR
             if (this.Policy == null && ParameterWasBound(nameof(this.Policy)))
@@ -226,13 +215,7 @@ namespace Amazon.PowerShell.Cmdlets.CWOAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "CloudWatch Observability Access Manager", "PutSinkPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutSinkPolicy(request);
-                #elif CORECLR
-                return client.PutSinkPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutSinkPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

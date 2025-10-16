@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,45 +22,61 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Retrieves properties for a compute resource in an Amazon GameLift fleet. Call <a>ListCompute</a>
-    /// to get a list of compute resources in a fleet. You can request information for computes
-    /// in either managed EC2 fleets or Anywhere fleets. 
+    /// Retrieves properties for a specific compute resource in an Amazon GameLift Servers
+    /// fleet. You can list all computes in a fleet by calling <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_ListCompute.html">ListCompute</a>.
+    /// 
     /// 
     ///  
-    /// <para>
-    /// To request compute properties, specify the compute name and fleet ID.
-    /// </para><para>
+    /// <para><b>Request options</b></para><para>
+    /// Provide the fleet ID and compute name. The compute name varies depending on the type
+    /// of fleet.
+    /// </para><ul><li><para>
+    /// For a compute in a managed EC2 fleet, provide an instance ID. Each instance in the
+    /// fleet is a compute.
+    /// </para></li><li><para>
+    /// For a compute in a managed container fleet, provide a compute name. In a container
+    /// fleet, each game server container group on a fleet instance is assigned a compute
+    /// name.
+    /// </para></li><li><para>
+    /// For a compute in an Anywhere fleet, provide a registered compute name. Anywhere fleet
+    /// computes are created when you register a hosting resource with the fleet.
+    /// </para></li></ul><para><b>Results</b></para><para>
     /// If successful, this operation returns details for the requested compute resource.
-    /// For managed EC2 fleets, this operation returns the fleet's EC2 instances. For Anywhere
-    /// fleets, this operation returns the fleet's registered computes. 
-    /// </para>
+    /// Depending on the fleet's compute type, the result includes the following information:
+    /// 
+    /// </para><ul><li><para>
+    /// For a managed EC2 fleet, this operation returns information about the EC2 instance.
+    /// </para></li><li><para>
+    /// For an Anywhere fleet, this operation returns information about the registered compute.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Get", "GMLCompute")]
     [OutputType("Amazon.GameLift.Model.Compute")]
     [AWSCmdlet("Calls the Amazon GameLift Service DescribeCompute API operation.", Operation = new[] {"DescribeCompute"}, SelectReturnType = typeof(Amazon.GameLift.Model.DescribeComputeResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.Compute or Amazon.GameLift.Model.DescribeComputeResponse",
         "This cmdlet returns an Amazon.GameLift.Model.Compute object.",
-        "The service call response (type Amazon.GameLift.Model.DescribeComputeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.DescribeComputeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGMLComputeCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComputeName
         /// <summary>
         /// <para>
-        /// <para>The unique identifier of the compute resource to retrieve properties for. For an Anywhere
-        /// fleet compute, use the registered compute name. For a managed EC2 fleet instance,
-        /// use the instance ID.</para>
+        /// <para>The unique identifier of the compute resource to retrieve properties for. For a managed
+        /// container fleet or Anywhere fleet, use a compute name. For an EC2 fleet, use an instance
+        /// ID. To retrieve a fleet's compute identifiers, call <a href="https://docs.aws.amazon.com/gamelift/latest/apireference/API_ListCompute.html">ListCompute</a>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -77,7 +93,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter FleetId
         /// <summary>
         /// <para>
-        /// <para>A unique identifier for the fleet that the compute is registered to. You can use either
+        /// <para>A unique identifier for the fleet that the compute belongs to. You can use either
         /// the fleet ID or ARN value.</para>
         /// </para>
         /// </summary>
@@ -103,19 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "Compute";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ComputeName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ComputeName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ComputeName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,21 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.DescribeComputeResponse, GetGMLComputeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ComputeName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ComputeName = this.ComputeName;
             #if MODULAR
             if (this.ComputeName == null && ParameterWasBound(nameof(this.ComputeName)))
@@ -214,13 +214,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DescribeCompute");
             try
             {
-                #if DESKTOP
-                return client.DescribeCompute(request);
-                #elif CORECLR
-                return client.DescribeComputeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeComputeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

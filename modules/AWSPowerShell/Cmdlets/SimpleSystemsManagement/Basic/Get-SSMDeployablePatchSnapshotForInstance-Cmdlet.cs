@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -36,9 +38,9 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// If you run the command locally, such as with the Command Line Interface (CLI), the
     /// system attempts to use your local Amazon Web Services credentials and the operation
     /// fails. To avoid this, you can run the command in the Amazon Web Services Systems Manager
-    /// console. Use Run Command, a capability of Amazon Web Services Systems Manager, with
-    /// an SSM document that enables you to target a managed node with a script or command.
-    /// For example, run the command using the <c>AWS-RunShellScript</c> document or the <c>AWS-RunPowerShellScript</c>
+    /// console. Use Run Command, a tool in Amazon Web Services Systems Manager, with an SSM
+    /// document that enables you to target a managed node with a script or command. For example,
+    /// run the command using the <c>AWS-RunShellScript</c> document or the <c>AWS-RunPowerShellScript</c>
     /// document.
     /// </para></note>
     /// </summary>
@@ -46,22 +48,25 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [OutputType("Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse")]
     [AWSCmdlet("Calls the AWS Systems Manager GetDeployablePatchSnapshotForInstance API operation.", Operation = new[] {"GetDeployablePatchSnapshotForInstance"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse",
-        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse object containing multiple properties."
     )]
     public partial class GetSSMDeployablePatchSnapshotForInstanceCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BaselineOverride_ApprovedPatch
         /// <summary>
         /// <para>
         /// <para>A list of explicitly approved patches for the baseline.</para><para>For information about accepted formats for lists of approved patches and rejected
-        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">About
-        /// package name formats for approved and rejected patch lists</a> in the <i>Amazon Web
-        /// Services Systems Manager User Guide</i>.</para>
+        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">Package
+        /// name formats for approved and rejected patch lists</a> in the <i>Amazon Web Services
+        /// Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,6 +96,20 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? BaselineOverride_ApprovedPatchesEnableNonSecurity { get; set; }
+        #endregion
+        
+        #region Parameter BaselineOverride_AvailableSecurityUpdatesComplianceStatus
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether managed nodes for which there are available security-related patches
+        /// that have not been approved by the baseline are being defined as <c>COMPLIANT</c>
+        /// or <c>NON_COMPLIANT</c>. This option is specified when the <c>CreatePatchBaseline</c>
+        /// or <c>UpdatePatchBaseline</c> commands are run.</para><para>Applies to Windows Server managed nodes only.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SimpleSystemsManagement.PatchComplianceStatus")]
+        public Amazon.SimpleSystemsManagement.PatchComplianceStatus BaselineOverride_AvailableSecurityUpdatesComplianceStatus { get; set; }
         #endregion
         
         #region Parameter InstanceId
@@ -124,7 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter GlobalFilters_PatchFilter
         /// <summary>
         /// <para>
-        /// <para>The set of patch filters that make up the group.</para>
+        /// <para>The set of patch filters that make up the group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,7 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter ApprovalRules_PatchRule
         /// <summary>
         /// <para>
-        /// <para>The rules that make up the rule group.</para>
+        /// <para>The rules that make up the rule group.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -147,9 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>A list of explicitly rejected patches for the baseline.</para><para>For information about accepted formats for lists of approved patches and rejected
-        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">About
-        /// package name formats for approved and rejected patch lists</a> in the <i>Amazon Web
-        /// Services Systems Manager User Guide</i>.</para>
+        /// patches, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/patch-manager-approved-rejected-package-name-formats.html">Package
+        /// name formats for approved and rejected patch lists</a> in the <i>Amazon Web Services
+        /// Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,12 +222,29 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <summary>
         /// <para>
         /// <para>Information about the patches to use to update the managed nodes, including target
-        /// operating systems and source repositories. Applies to Linux managed nodes only.</para>
+        /// operating systems and source repositories. Applies to Linux managed nodes only.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("BaselineOverride_Sources")]
         public Amazon.SimpleSystemsManagement.Model.PatchSource[] BaselineOverride_Source { get; set; }
+        #endregion
+        
+        #region Parameter UseS3DualStackEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether to use S3 dualstack endpoints for the patch snapshot download URL.
+        /// Set to <c>true</c> to receive a presigned URL that supports both IPv4 and IPv6 connectivity.
+        /// Set to <c>false</c> to use standard IPv4-only endpoints. Default is <c>false</c>.
+        /// This parameter is required for managed nodes in IPv6-only environments. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? UseS3DualStackEndpoint { get; set; }
         #endregion
         
         #region Parameter Select
@@ -210,19 +258,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -230,21 +272,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse, GetSSMDeployablePatchSnapshotForInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ApprovalRules_PatchRule != null)
             {
                 context.ApprovalRules_PatchRule = new List<Amazon.SimpleSystemsManagement.Model.PatchRule>(this.ApprovalRules_PatchRule);
@@ -255,6 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             }
             context.BaselineOverride_ApprovedPatchesComplianceLevel = this.BaselineOverride_ApprovedPatchesComplianceLevel;
             context.BaselineOverride_ApprovedPatchesEnableNonSecurity = this.BaselineOverride_ApprovedPatchesEnableNonSecurity;
+            context.BaselineOverride_AvailableSecurityUpdatesComplianceStatus = this.BaselineOverride_AvailableSecurityUpdatesComplianceStatus;
             if (this.GlobalFilters_PatchFilter != null)
             {
                 context.GlobalFilters_PatchFilter = new List<Amazon.SimpleSystemsManagement.Model.PatchFilter>(this.GlobalFilters_PatchFilter);
@@ -283,6 +316,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                 WriteWarning("You are passing $null as a value for parameter SnapshotId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.UseS3DualStackEndpoint = this.UseS3DualStackEndpoint;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -331,6 +365,16 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             if (requestBaselineOverride_baselineOverride_ApprovedPatchesEnableNonSecurity != null)
             {
                 request.BaselineOverride.ApprovedPatchesEnableNonSecurity = requestBaselineOverride_baselineOverride_ApprovedPatchesEnableNonSecurity.Value;
+                requestBaselineOverrideIsNull = false;
+            }
+            Amazon.SimpleSystemsManagement.PatchComplianceStatus requestBaselineOverride_baselineOverride_AvailableSecurityUpdatesComplianceStatus = null;
+            if (cmdletContext.BaselineOverride_AvailableSecurityUpdatesComplianceStatus != null)
+            {
+                requestBaselineOverride_baselineOverride_AvailableSecurityUpdatesComplianceStatus = cmdletContext.BaselineOverride_AvailableSecurityUpdatesComplianceStatus;
+            }
+            if (requestBaselineOverride_baselineOverride_AvailableSecurityUpdatesComplianceStatus != null)
+            {
+                request.BaselineOverride.AvailableSecurityUpdatesComplianceStatus = requestBaselineOverride_baselineOverride_AvailableSecurityUpdatesComplianceStatus;
                 requestBaselineOverrideIsNull = false;
             }
             Amazon.SimpleSystemsManagement.OperatingSystem requestBaselineOverride_baselineOverride_OperatingSystem = null;
@@ -436,6 +480,10 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             {
                 request.SnapshotId = cmdletContext.SnapshotId;
             }
+            if (cmdletContext.UseS3DualStackEndpoint != null)
+            {
+                request.UseS3DualStackEndpoint = cmdletContext.UseS3DualStackEndpoint.Value;
+            }
             
             CmdletOutput output;
             
@@ -474,13 +522,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "GetDeployablePatchSnapshotForInstance");
             try
             {
-                #if DESKTOP
-                return client.GetDeployablePatchSnapshotForInstance(request);
-                #elif CORECLR
-                return client.GetDeployablePatchSnapshotForInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetDeployablePatchSnapshotForInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -501,6 +543,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             public List<System.String> BaselineOverride_ApprovedPatch { get; set; }
             public Amazon.SimpleSystemsManagement.PatchComplianceLevel BaselineOverride_ApprovedPatchesComplianceLevel { get; set; }
             public System.Boolean? BaselineOverride_ApprovedPatchesEnableNonSecurity { get; set; }
+            public Amazon.SimpleSystemsManagement.PatchComplianceStatus BaselineOverride_AvailableSecurityUpdatesComplianceStatus { get; set; }
             public List<Amazon.SimpleSystemsManagement.Model.PatchFilter> GlobalFilters_PatchFilter { get; set; }
             public Amazon.SimpleSystemsManagement.OperatingSystem BaselineOverride_OperatingSystem { get; set; }
             public List<System.String> BaselineOverride_RejectedPatch { get; set; }
@@ -508,6 +551,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             public List<Amazon.SimpleSystemsManagement.Model.PatchSource> BaselineOverride_Source { get; set; }
             public System.String InstanceId { get; set; }
             public System.String SnapshotId { get; set; }
+            public System.Boolean? UseS3DualStackEndpoint { get; set; }
             public System.Func<Amazon.SimpleSystemsManagement.Model.GetDeployablePatchSnapshotForInstanceResponse, GetSSMDeployablePatchSnapshotForInstanceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

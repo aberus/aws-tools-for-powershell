@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,41 +22,58 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DirectoryService;
 using Amazon.DirectoryService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DS
 {
     /// <summary>
-    /// Updates the directory for a particular update type.
+    /// Updates directory configuration for the specified update type.
     /// </summary>
     [Cmdlet("Update", "DSDirectorySetup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS Directory Service UpdateDirectorySetup API operation.", Operation = new[] {"UpdateDirectorySetup"}, SelectReturnType = typeof(Amazon.DirectoryService.Model.UpdateDirectorySetupResponse))]
     [AWSCmdletOutput("None or Amazon.DirectoryService.Model.UpdateDirectorySetupResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DirectoryService.Model.UpdateDirectorySetupResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DirectoryService.Model.UpdateDirectorySetupResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateDSDirectorySetupCmdlet : AmazonDirectoryServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CreateSnapshotBeforeUpdate
         /// <summary>
         /// <para>
-        /// <para> The boolean that specifies if a snapshot for the directory needs to be taken before
-        /// updating the directory. </para>
+        /// <para>Specifies whether to create a directory snapshot before performing the update.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? CreateSnapshotBeforeUpdate { get; set; }
         #endregion
         
+        #region Parameter NetworkUpdateSettings_CustomerDnsIpsV6
+        /// <summary>
+        /// <para>
+        /// <para>IPv6 addresses of DNS servers or domain controllers in the self-managed directory.
+        /// Required only when updating an AD Connector directory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] NetworkUpdateSettings_CustomerDnsIpsV6 { get; set; }
+        #endregion
+        
         #region Parameter DirectoryId
         /// <summary>
         /// <para>
-        /// <para> The identifier of the directory on which you want to perform the update. </para>
+        /// <para>The identifier of the directory to update.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -70,10 +87,32 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public System.String DirectoryId { get; set; }
         #endregion
         
+        #region Parameter DirectorySizeUpdateSettings_DirectorySize
+        /// <summary>
+        /// <para>
+        /// <para>The target directory size for the update operation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DirectoryService.DirectorySize")]
+        public Amazon.DirectoryService.DirectorySize DirectorySizeUpdateSettings_DirectorySize { get; set; }
+        #endregion
+        
+        #region Parameter NetworkUpdateSettings_NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The target network type for the directory update.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.DirectoryService.NetworkType")]
+        public Amazon.DirectoryService.NetworkType NetworkUpdateSettings_NetworkType { get; set; }
+        #endregion
+        
         #region Parameter OSUpdateSettings_OSVersion
         /// <summary>
         /// <para>
-        /// <para> OS version that the directory needs to be updated to. </para>
+        /// <para>OS version that the directory needs to be updated to.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,8 +123,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
         #region Parameter UpdateType
         /// <summary>
         /// <para>
-        /// <para> The type of update that needs to be performed on the directory. For example, OS.
-        /// </para>
+        /// <para>The type of update to perform on the directory.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,16 +147,6 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DirectoryId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -129,9 +157,13 @@ namespace Amazon.PowerShell.Cmdlets.DS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DirectoryId), MyInvocation.BoundParameters);
@@ -145,21 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.DS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DirectoryService.Model.UpdateDirectorySetupResponse, UpdateDSDirectorySetupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DirectoryId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CreateSnapshotBeforeUpdate = this.CreateSnapshotBeforeUpdate;
             context.DirectoryId = this.DirectoryId;
             #if MODULAR
@@ -168,6 +190,12 @@ namespace Amazon.PowerShell.Cmdlets.DS
                 WriteWarning("You are passing $null as a value for parameter DirectoryId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DirectorySizeUpdateSettings_DirectorySize = this.DirectorySizeUpdateSettings_DirectorySize;
+            if (this.NetworkUpdateSettings_CustomerDnsIpsV6 != null)
+            {
+                context.NetworkUpdateSettings_CustomerDnsIpsV6 = new List<System.String>(this.NetworkUpdateSettings_CustomerDnsIpsV6);
+            }
+            context.NetworkUpdateSettings_NetworkType = this.NetworkUpdateSettings_NetworkType;
             context.OSUpdateSettings_OSVersion = this.OSUpdateSettings_OSVersion;
             context.UpdateType = this.UpdateType;
             #if MODULAR
@@ -199,6 +227,54 @@ namespace Amazon.PowerShell.Cmdlets.DS
             if (cmdletContext.DirectoryId != null)
             {
                 request.DirectoryId = cmdletContext.DirectoryId;
+            }
+            
+             // populate DirectorySizeUpdateSettings
+            var requestDirectorySizeUpdateSettingsIsNull = true;
+            request.DirectorySizeUpdateSettings = new Amazon.DirectoryService.Model.DirectorySizeUpdateSettings();
+            Amazon.DirectoryService.DirectorySize requestDirectorySizeUpdateSettings_directorySizeUpdateSettings_DirectorySize = null;
+            if (cmdletContext.DirectorySizeUpdateSettings_DirectorySize != null)
+            {
+                requestDirectorySizeUpdateSettings_directorySizeUpdateSettings_DirectorySize = cmdletContext.DirectorySizeUpdateSettings_DirectorySize;
+            }
+            if (requestDirectorySizeUpdateSettings_directorySizeUpdateSettings_DirectorySize != null)
+            {
+                request.DirectorySizeUpdateSettings.DirectorySize = requestDirectorySizeUpdateSettings_directorySizeUpdateSettings_DirectorySize;
+                requestDirectorySizeUpdateSettingsIsNull = false;
+            }
+             // determine if request.DirectorySizeUpdateSettings should be set to null
+            if (requestDirectorySizeUpdateSettingsIsNull)
+            {
+                request.DirectorySizeUpdateSettings = null;
+            }
+            
+             // populate NetworkUpdateSettings
+            var requestNetworkUpdateSettingsIsNull = true;
+            request.NetworkUpdateSettings = new Amazon.DirectoryService.Model.NetworkUpdateSettings();
+            List<System.String> requestNetworkUpdateSettings_networkUpdateSettings_CustomerDnsIpsV6 = null;
+            if (cmdletContext.NetworkUpdateSettings_CustomerDnsIpsV6 != null)
+            {
+                requestNetworkUpdateSettings_networkUpdateSettings_CustomerDnsIpsV6 = cmdletContext.NetworkUpdateSettings_CustomerDnsIpsV6;
+            }
+            if (requestNetworkUpdateSettings_networkUpdateSettings_CustomerDnsIpsV6 != null)
+            {
+                request.NetworkUpdateSettings.CustomerDnsIpsV6 = requestNetworkUpdateSettings_networkUpdateSettings_CustomerDnsIpsV6;
+                requestNetworkUpdateSettingsIsNull = false;
+            }
+            Amazon.DirectoryService.NetworkType requestNetworkUpdateSettings_networkUpdateSettings_NetworkType = null;
+            if (cmdletContext.NetworkUpdateSettings_NetworkType != null)
+            {
+                requestNetworkUpdateSettings_networkUpdateSettings_NetworkType = cmdletContext.NetworkUpdateSettings_NetworkType;
+            }
+            if (requestNetworkUpdateSettings_networkUpdateSettings_NetworkType != null)
+            {
+                request.NetworkUpdateSettings.NetworkType = requestNetworkUpdateSettings_networkUpdateSettings_NetworkType;
+                requestNetworkUpdateSettingsIsNull = false;
+            }
+             // determine if request.NetworkUpdateSettings should be set to null
+            if (requestNetworkUpdateSettingsIsNull)
+            {
+                request.NetworkUpdateSettings = null;
             }
             
              // populate OSUpdateSettings
@@ -261,13 +337,7 @@ namespace Amazon.PowerShell.Cmdlets.DS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Directory Service", "UpdateDirectorySetup");
             try
             {
-                #if DESKTOP
-                return client.UpdateDirectorySetup(request);
-                #elif CORECLR
-                return client.UpdateDirectorySetupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDirectorySetupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -286,6 +356,9 @@ namespace Amazon.PowerShell.Cmdlets.DS
         {
             public System.Boolean? CreateSnapshotBeforeUpdate { get; set; }
             public System.String DirectoryId { get; set; }
+            public Amazon.DirectoryService.DirectorySize DirectorySizeUpdateSettings_DirectorySize { get; set; }
+            public List<System.String> NetworkUpdateSettings_CustomerDnsIpsV6 { get; set; }
+            public Amazon.DirectoryService.NetworkType NetworkUpdateSettings_NetworkType { get; set; }
             public Amazon.DirectoryService.OSVersion OSUpdateSettings_OSVersion { get; set; }
             public Amazon.DirectoryService.UpdateType UpdateType { get; set; }
             public System.Func<Amazon.DirectoryService.Model.UpdateDirectorySetupResponse, UpdateDSDirectorySetupCmdlet, object> Select { get; set; } =

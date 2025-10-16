@@ -93,7 +93,7 @@ $TFR_Completers = {
         # Amazon.Transfer.CertificateUsageType
         "Import-TFRCertificate/Usage"
         {
-            $v = "ENCRYPTION","SIGNING"
+            $v = "ENCRYPTION","SIGNING","TLS"
             break
         }
 
@@ -137,7 +137,7 @@ $TFR_Completers = {
             ($_ -eq "Update-TFRConnector/As2Config_EncryptionAlgorithm")
         }
         {
-            $v = "AES128_CBC","AES192_CBC","AES256_CBC","NONE"
+            $v = "AES128_CBC","AES192_CBC","AES256_CBC","DES_EDE3_CBC","NONE"
             break
         }
 
@@ -148,6 +148,16 @@ $TFR_Completers = {
         }
         {
             $v = "PUBLIC","VPC","VPC_ENDPOINT"
+            break
+        }
+
+        # Amazon.Transfer.EnforceMessageSigningType
+        {
+            ($_ -eq "New-TFRAgreement/EnforceMessageSigning") -Or
+            ($_ -eq "Update-TFRAgreement/EnforceMessageSigning")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -164,9 +174,22 @@ $TFR_Completers = {
         }
 
         # Amazon.Transfer.IdentityProviderType
-        "New-TFRServer/IdentityProviderType"
+        {
+            ($_ -eq "New-TFRServer/IdentityProviderType") -Or
+            ($_ -eq "Update-TFRServer/IdentityProviderType")
+        }
         {
             $v = "API_GATEWAY","AWS_DIRECTORY_SERVICE","AWS_LAMBDA","SERVICE_MANAGED"
+            break
+        }
+
+        # Amazon.Transfer.IpAddressType
+        {
+            ($_ -eq "New-TFRServer/IpAddressType") -Or
+            ($_ -eq "Update-TFRServer/IpAddressType")
+        }
+        {
+            $v = "DUALSTACK","IPV4"
             break
         }
 
@@ -187,6 +210,26 @@ $TFR_Completers = {
         }
         {
             $v = "DEFAULT","NONE","SHA1","SHA256","SHA384","SHA512"
+            break
+        }
+
+        # Amazon.Transfer.PreserveContentType
+        {
+            ($_ -eq "New-TFRConnector/As2Config_PreserveContentType") -Or
+            ($_ -eq "Update-TFRConnector/As2Config_PreserveContentType")
+        }
+        {
+            $v = "DISABLED","ENABLED"
+            break
+        }
+
+        # Amazon.Transfer.PreserveFilenameType
+        {
+            ($_ -eq "New-TFRAgreement/PreserveFilename") -Or
+            ($_ -eq "Update-TFRAgreement/PreserveFilename")
+        }
+        {
+            $v = "DISABLED","ENABLED"
             break
         }
 
@@ -219,8 +262,8 @@ $TFR_Completers = {
 
         # Amazon.Transfer.SftpAuthenticationMethods
         {
-            ($_ -eq "New-TFRServer/IdentityProviderDetails_SftpAuthenticationMethods") -Or
-            ($_ -eq "Update-TFRServer/IdentityProviderDetails_SftpAuthenticationMethods")
+            ($_ -eq "New-TFRServer/IdentityProviderDetails_SftpAuthenticationMethod") -Or
+            ($_ -eq "Update-TFRServer/IdentityProviderDetails_SftpAuthenticationMethod")
         }
         {
             $v = "PASSWORD","PUBLIC_KEY","PUBLIC_KEY_AND_PASSWORD","PUBLIC_KEY_OR_PASSWORD"
@@ -247,6 +290,13 @@ $TFR_Completers = {
             break
         }
 
+        # Amazon.Transfer.WebAppEndpointPolicy
+        "New-TFRWebApp/WebAppEndpointPolicy"
+        {
+            $v = "FIPS","STANDARD"
+            break
+        }
+
 
     }
 
@@ -260,12 +310,16 @@ $TFR_map = @{
     "As2Config_EncryptionAlgorithm"=@("New-TFRConnector","Update-TFRConnector")
     "As2Config_MdnResponse"=@("New-TFRConnector","Update-TFRConnector")
     "As2Config_MdnSigningAlgorithm"=@("New-TFRConnector","Update-TFRConnector")
+    "As2Config_PreserveContentType"=@("New-TFRConnector","Update-TFRConnector")
     "As2Config_SigningAlgorithm"=@("New-TFRConnector","Update-TFRConnector")
     "Domain"=@("New-TFRServer")
     "EndpointType"=@("New-TFRServer","Update-TFRServer")
+    "EnforceMessageSigning"=@("New-TFRAgreement","Update-TFRAgreement")
     "HomeDirectoryType"=@("New-TFRAccess","New-TFRUser","Update-TFRAccess","Update-TFRUser")
-    "IdentityProviderDetails_SftpAuthenticationMethods"=@("New-TFRServer","Update-TFRServer")
-    "IdentityProviderType"=@("New-TFRServer")
+    "IdentityProviderDetails_SftpAuthenticationMethod"=@("New-TFRServer","Update-TFRServer")
+    "IdentityProviderType"=@("New-TFRServer","Update-TFRServer")
+    "IpAddressType"=@("New-TFRServer","Update-TFRServer")
+    "PreserveFilename"=@("New-TFRAgreement","Update-TFRAgreement")
     "ProfileType"=@("Get-TFRProfileList","New-TFRProfile")
     "ProtocolDetails_SetStatOption"=@("New-TFRServer","Update-TFRServer")
     "ProtocolDetails_TlsSessionResumptionMode"=@("New-TFRServer","Update-TFRServer")
@@ -273,6 +327,7 @@ $TFR_map = @{
     "ServerProtocol"=@("Test-TFRIdentityProvider")
     "Status"=@("New-TFRAgreement","Send-TFRWorkflowStepState","Update-TFRAgreement")
     "Usage"=@("Import-TFRCertificate")
+    "WebAppEndpointPolicy"=@("New-TFRWebApp")
 }
 
 _awsArgumentCompleterRegistration $TFR_Completers $TFR_map
@@ -331,6 +386,7 @@ $TFR_SelectMap = @{
                "New-TFRProfile",
                "New-TFRServer",
                "New-TFRUser",
+               "New-TFRWebApp",
                "New-TFRWorkflow",
                "Remove-TFRAccess",
                "Remove-TFRAgreement",
@@ -341,6 +397,8 @@ $TFR_SelectMap = @{
                "Remove-TFRServer",
                "Remove-TFRSshPublicKey",
                "Remove-TFRUser",
+               "Remove-TFRWebApp",
+               "Remove-TFRWebAppCustomization",
                "Remove-TFRWorkflow",
                "Get-TFRAccess",
                "Get-TFRAgreement",
@@ -352,6 +410,8 @@ $TFR_SelectMap = @{
                "Get-TFRSecurityPolicy",
                "Get-TFRServer",
                "Get-TFRUser",
+               "Get-TFRWebApp",
+               "Get-TFRWebAppCustomization",
                "Get-TFRWorkflow",
                "Import-TFRCertificate",
                "Import-TFRHostKey",
@@ -361,15 +421,20 @@ $TFR_SelectMap = @{
                "Get-TFRCertificateList",
                "Get-TFRConnectorList",
                "Get-TFRExecutionList",
+               "Get-TFRFileTransferResultList",
                "Get-TFRHostKeyList",
                "Get-TFRProfileList",
                "Get-TFRSecurityPolicyList",
                "Get-TFRServerList",
                "Get-TFRResourceTagList",
                "Get-TFRUserList",
+               "Get-TFRWebAppList",
                "Get-TFRWorkflowList",
                "Send-TFRWorkflowStepState",
+               "Start-TFRDirectoryListing",
                "Start-TFRFileTransfer",
+               "Start-TFRRemoteDelete",
+               "Start-TFRRemoteMove",
                "Start-TFRServer",
                "Stop-TFRServer",
                "Add-TFRResourceTag",
@@ -383,7 +448,9 @@ $TFR_SelectMap = @{
                "Update-TFRHostKey",
                "Update-TFRProfile",
                "Update-TFRServer",
-               "Update-TFRUser")
+               "Update-TFRUser",
+               "Update-TFRWebApp",
+               "Update-TFRWebAppCustomization")
 }
 
 _awsArgumentCompleterRegistration $TFR_SelectCompleters $TFR_SelectMap

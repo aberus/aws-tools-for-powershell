@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -36,8 +38,9 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     /// <para>
     /// Operations engineers and IT professionals use Amazon Web Services Systems Manager
     /// OpsCenter to view, investigate, and remediate operational issues impacting the performance
-    /// and health of their Amazon Web Services resources. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter.html">OpsCenter</a>
-    /// in the <i>Amazon Web Services Systems Manager User Guide</i>. 
+    /// and health of their Amazon Web Services resources. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/OpsCenter.html">Amazon
+    /// Web Services Systems Manager OpsCenter</a> in the <i>Amazon Web Services Systems Manager
+    /// User Guide</i>. 
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "SSMOpsItemSummary")]
@@ -45,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager DescribeOpsItems API operation.", Operation = new[] {"DescribeOpsItems"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.OpsItemSummary or Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsResponse",
         "This cmdlet returns a collection of Amazon.SimpleSystemsManagement.Model.OpsItemSummary objects.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSSMOpsItemSummaryCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OpsItemFilter
         /// <summary>
@@ -58,7 +62,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>One or more filters to limit the response.</para><ul><li><para>Key: CreatedTime</para><para>Operations: GreaterThan, LessThan</para></li><li><para>Key: LastModifiedBy</para><para>Operations: Contains, Equals</para></li><li><para>Key: LastModifiedTime</para><para>Operations: GreaterThan, LessThan</para></li><li><para>Key: Priority</para><para>Operations: Equals</para></li><li><para>Key: Source</para><para>Operations: Contains, Equals</para></li><li><para>Key: Status</para><para>Operations: Equals</para></li><li><para>Key: Title*</para><para>Operations: Equals,Contains</para></li><li><para>Key: OperationalData**</para><para>Operations: Equals</para></li><li><para>Key: OperationalDataKey</para><para>Operations: Equals</para></li><li><para>Key: OperationalDataValue</para><para>Operations: Equals, Contains</para></li><li><para>Key: OpsItemId</para><para>Operations: Equals</para></li><li><para>Key: ResourceId</para><para>Operations: Contains</para></li><li><para>Key: AutomationId</para><para>Operations: Equals</para></li><li><para>Key: AccountId</para><para>Operations: Equals</para></li></ul><para>*The Equals operator for Title matches the first 100 characters. If you specify more
         /// than 100 characters, they system returns an error that the filter value exceeds the
         /// length limit.</para><para>**If you filter the response by using the OperationalData operator, specify a key-value
-        /// pair by using the following JSON format: {"key":"key_name","value":"a_value"}</para>
+        /// pair by using the following JSON format: {"key":"key_name","value":"a_value"}</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -91,7 +99,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,16 +117,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "OpsItemSummaries";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OpsItemFilter parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OpsItemFilter' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OpsItemFilter' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -129,9 +127,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -139,21 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsResponse, GetSSMOpsItemSummaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OpsItemFilter;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MaxResult = this.MaxResult;
             #if MODULAR
             if (!ParameterWasBound(nameof(this.MaxResult)))
@@ -190,9 +182,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsRequest();
@@ -256,7 +246,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.SimpleSystemsManagement.Model.DescribeOpsItemsRequest();
@@ -315,7 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.OpsItemSummaries.Count;
+                    int _receivedThisCall = response.OpsItemSummaries?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -364,13 +354,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "DescribeOpsItems");
             try
             {
-                #if DESKTOP
-                return client.DescribeOpsItems(request);
-                #elif CORECLR
-                return client.DescribeOpsItemsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeOpsItemsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

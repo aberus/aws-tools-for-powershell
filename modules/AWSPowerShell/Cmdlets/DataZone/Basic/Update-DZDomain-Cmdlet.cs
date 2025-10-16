@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
     [OutputType("Amazon.DataZone.Model.UpdateDomainResponse")]
     [AWSCmdlet("Calls the Amazon DataZone UpdateDomain API operation.", Operation = new[] {"UpdateDomain"}, SelectReturnType = typeof(Amazon.DataZone.Model.UpdateDomainResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.UpdateDomainResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.UpdateDomainResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.UpdateDomainResponse object containing multiple properties."
     )]
     public partial class UpdateDZDomainCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -59,6 +62,16 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DomainExecutionRole { get; set; }
+        #endregion
+        
+        #region Parameter SingleSignOn_IdcInstanceArn
+        /// <summary>
+        /// <para>
+        /// <para>The ARN of the IDC instance.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SingleSignOn_IdcInstanceArn { get; set; }
         #endregion
         
         #region Parameter Identifier
@@ -86,6 +99,16 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter ServiceRole
+        /// <summary>
+        /// <para>
+        /// <para>The service role of the domain.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ServiceRole { get; set; }
         #endregion
         
         #region Parameter SingleSignOn_Type
@@ -132,16 +155,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Identifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -152,9 +165,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Identifier), MyInvocation.BoundParameters);
@@ -168,21 +185,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.UpdateDomainResponse, UpdateDZDomainCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Identifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.DomainExecutionRole = this.DomainExecutionRole;
@@ -194,6 +201,8 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             }
             #endif
             context.Name = this.Name;
+            context.ServiceRole = this.ServiceRole;
+            context.SingleSignOn_IdcInstanceArn = this.SingleSignOn_IdcInstanceArn;
             context.SingleSignOn_Type = this.SingleSignOn_Type;
             context.SingleSignOn_UserAssignment = this.SingleSignOn_UserAssignment;
             
@@ -232,10 +241,24 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.ServiceRole != null)
+            {
+                request.ServiceRole = cmdletContext.ServiceRole;
+            }
             
              // populate SingleSignOn
             var requestSingleSignOnIsNull = true;
             request.SingleSignOn = new Amazon.DataZone.Model.SingleSignOn();
+            System.String requestSingleSignOn_singleSignOn_IdcInstanceArn = null;
+            if (cmdletContext.SingleSignOn_IdcInstanceArn != null)
+            {
+                requestSingleSignOn_singleSignOn_IdcInstanceArn = cmdletContext.SingleSignOn_IdcInstanceArn;
+            }
+            if (requestSingleSignOn_singleSignOn_IdcInstanceArn != null)
+            {
+                request.SingleSignOn.IdcInstanceArn = requestSingleSignOn_singleSignOn_IdcInstanceArn;
+                requestSingleSignOnIsNull = false;
+            }
             Amazon.DataZone.AuthType requestSingleSignOn_singleSignOn_Type = null;
             if (cmdletContext.SingleSignOn_Type != null)
             {
@@ -299,13 +322,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "UpdateDomain");
             try
             {
-                #if DESKTOP
-                return client.UpdateDomain(request);
-                #elif CORECLR
-                return client.UpdateDomainAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDomainAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -327,6 +344,8 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             public System.String DomainExecutionRole { get; set; }
             public System.String Identifier { get; set; }
             public System.String Name { get; set; }
+            public System.String ServiceRole { get; set; }
+            public System.String SingleSignOn_IdcInstanceArn { get; set; }
             public Amazon.DataZone.AuthType SingleSignOn_Type { get; set; }
             public Amazon.DataZone.UserAssignment SingleSignOn_UserAssignment { get; set; }
             public System.Func<Amazon.DataZone.Model.UpdateDomainResponse, UpdateDZDomainCmdlet, object> Select { get; set; } =

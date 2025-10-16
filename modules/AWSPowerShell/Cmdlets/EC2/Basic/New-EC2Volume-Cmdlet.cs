@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -38,14 +40,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// </para><para>
     /// You can create encrypted volumes. Encrypted volumes must be attached to instances
     /// that support Amazon EBS encryption. Volumes that are created from encrypted snapshots
-    /// are also automatically encrypted. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html">Amazon
-    /// EBS encryption</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// are also automatically encrypted. For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-encryption.html">Amazon
+    /// EBS encryption</a> in the <i>Amazon EBS User Guide</i>.
     /// </para><para>
     /// You can tag your volumes during creation. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html">Tag
-    /// your Amazon EC2 resources</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// your Amazon EC2 resources</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-volume.html">Create
-    /// an Amazon EBS volume</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-creating-volume.html">Create
+    /// an Amazon EBS volume</a> in the <i>Amazon EBS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EC2Volume", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -53,28 +55,46 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateVolume API operation.", Operation = new[] {"CreateVolume"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateVolumeResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Volume or Amazon.EC2.Model.CreateVolumeResponse",
         "This cmdlet returns an Amazon.EC2.Model.Volume object.",
-        "The service call response (type Amazon.EC2.Model.CreateVolumeResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateVolumeResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2VolumeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AvailabilityZone
         /// <summary>
         /// <para>
-        /// <para>The ID of the Availability Zone in which to create the volume. For example, <c>us-east-1a</c>.</para>
+        /// <para>The ID of the Availability Zone in which to create the volume. For example, <c>us-east-1a</c>.</para><para>Either <c>AvailabilityZone</c> or <c>AvailabilityZoneId</c> must be specified, but
+        /// not both.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String AvailabilityZone { get; set; }
+        #endregion
+        
+        #region Parameter AvailabilityZoneId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the Availability Zone in which to create the volume. For example, <c>use1-az1</c>.</para><para>Either <c>AvailabilityZone</c> or <c>AvailabilityZoneId</c> must be specified, but
+        /// not both.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AvailabilityZoneId { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter Encrypted
@@ -83,9 +103,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>Indicates whether the volume should be encrypted. The effect of setting the encryption
         /// state to <c>true</c> depends on the volume origin (new or from a snapshot), starting
         /// encryption state, ownership, and whether encryption by default is enabled. For more
-        /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html#encryption-by-default">Encryption
-        /// by default</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.</para><para>Encrypted Amazon EBS volumes must be attached to instances that support Amazon EBS
-        /// encryption. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html#EBSEncryption_supported_instances">Supported
+        /// information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/work-with-ebs-encr.html#encryption-by-default">Encryption
+        /// by default</a> in the <i>Amazon EBS User Guide</i>.</para><para>Encrypted Amazon EBS volumes must be attached to instances that support Amazon EBS
+        /// encryption. For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-encryption-requirements.html#ebs-encryption_supported_instances">Supported
         /// instance types</a>.</para>
         /// </para>
         /// </summary>
@@ -96,14 +116,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Iops
         /// <summary>
         /// <para>
-        /// <para>The number of I/O operations per second (IOPS). For <c>gp3</c>, <c>io1</c>, and <c>io2</c>
-        /// volumes, this represents the number of IOPS that are provisioned for the volume. For
-        /// <c>gp2</c> volumes, this represents the baseline performance of the volume and the
-        /// rate at which the volume accumulates I/O credits for bursting.</para><para>The following are the supported values for each volume type:</para><ul><li><para><c>gp3</c>: 3,000 - 16,000 IOPS</para></li><li><para><c>io1</c>: 100 - 64,000 IOPS</para></li><li><para><c>io2</c>: 100 - 256,000 IOPS</para></li></ul><para>For <c>io2</c> volumes, you can achieve up to 256,000 IOPS on <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances">instances
-        /// built on the Nitro System</a>. On other instances, you can achieve performance up
-        /// to 32,000 IOPS.</para><para>This parameter is required for <c>io1</c> and <c>io2</c> volumes. The default for
-        /// <c>gp3</c> volumes is 3,000 IOPS. This parameter is not supported for <c>gp2</c>,
-        /// <c>st1</c>, <c>sc1</c>, or <c>standard</c> volumes.</para>
+        /// <para>The number of I/O operations per second (IOPS) to provision for the volume. Required
+        /// for <c>io1</c> and <c>io2</c> volumes. Optional for <c>gp3</c> volumes. Omit for all
+        /// other volume types. </para><para>Valid ranges:</para><ul><li><para>gp3: <c>3,000 </c>(<i>default</i>)<c> - 80,000</c> IOPS</para></li><li><para>io1: <c>100 - 64,000</c> IOPS</para></li><li><para>io2: <c>100 - 256,000</c> IOPS</para></li></ul><note><para><a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-nitro-instances.html">
+        /// Instances built on the Nitro System</a> can support up to 256,000 IOPS. Other instances
+        /// can support up to 32,000 IOPS.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -113,9 +130,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter KmsKeyId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the Key Management Service (KMS) KMS key to use for Amazon EBS encryption.
-        /// If this parameter is not specified, your KMS key for Amazon EBS is used. If <c>KmsKeyId</c>
-        /// is specified, the encrypted state must be <c>true</c>.</para><para>You can specify the KMS key using any of the following:</para><ul><li><para>Key ID. For example, 1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Key alias. For example, alias/ExampleAlias.</para></li><li><para>Key ARN. For example, arn:aws:kms:us-east-1:012345678910:key/1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Alias ARN. For example, arn:aws:kms:us-east-1:012345678910:alias/ExampleAlias.</para></li></ul><para>Amazon Web Services authenticates the KMS key asynchronously. Therefore, if you specify
+        /// <para>The identifier of the KMS key to use for Amazon EBS encryption. If this parameter
+        /// is not specified, your KMS key for Amazon EBS is used. If <c>KmsKeyId</c> is specified,
+        /// the encrypted state must be <c>true</c>.</para><para>You can specify the KMS key using any of the following:</para><ul><li><para>Key ID. For example, 1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Key alias. For example, alias/ExampleAlias.</para></li><li><para>Key ARN. For example, arn:aws:kms:us-east-1:012345678910:key/1234abcd-12ab-34cd-56ef-1234567890ab.</para></li><li><para>Alias ARN. For example, arn:aws:kms:us-east-1:012345678910:alias/ExampleAlias.</para></li></ul><para>Amazon Web Services authenticates the KMS key asynchronously. Therefore, if you specify
         /// an ID, alias, or ARN that is not valid, the action can appear to complete, but eventually
         /// fails.</para>
         /// </para>
@@ -128,10 +145,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Indicates whether to enable Amazon EBS Multi-Attach. If you enable Multi-Attach, you
-        /// can attach the volume to up to 16 <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html#ec2-nitro-instances">Instances
+        /// can attach the volume to up to 16 <a href="https://docs.aws.amazon.com/ec2/latest/instancetypes/ec2-nitro-instances.html">Instances
         /// built on the Nitro System</a> in the same Availability Zone. This parameter is supported
-        /// with <c>io1</c> and <c>io2</c> volumes only. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-volumes-multi.html">
-        /// Amazon EBS Multi-Attach</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.</para>
+        /// with <c>io1</c> and <c>io2</c> volumes only. For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volumes-multi.html">
+        /// Amazon EBS Multi-Attach</a> in the <i>Amazon EBS User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -141,19 +158,32 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter OutpostArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Outpost.</para>
+        /// <para>The Amazon Resource Name (ARN) of the Outpost on which to create the volume.</para><para>If you intend to use a volume with an instance running on an outpost, then you must
+        /// create the volume on the same outpost as the instance. You can't use a volume created
+        /// in an Amazon Web Services Region with an instance on an Amazon Web Services outpost,
+        /// or the other way around.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OutpostArn { get; set; }
         #endregion
         
+        #region Parameter Operator_Principal
+        /// <summary>
+        /// <para>
+        /// <para>The service provider that manages the resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Operator_Principal { get; set; }
+        #endregion
+        
         #region Parameter Size
         /// <summary>
         /// <para>
         /// <para>The size of the volume, in GiBs. You must specify either a snapshot ID or a volume
-        /// size. If you specify a snapshot, the default is the snapshot size. You can specify
-        /// a volume size that is equal to or larger than the snapshot size.</para><para>The following are the supported volumes sizes for each volume type:</para><ul><li><para><c>gp2</c> and <c>gp3</c>: 1 - 16,384 GiB</para></li><li><para><c>io1</c>: 4 - 16,384 GiB</para></li><li><para><c>io2</c>: 4 - 65,536 GiB</para></li><li><para><c>st1</c> and <c>sc1</c>: 125 - 16,384 GiB</para></li><li><para><c>standard</c>: 1 - 1024 GiB</para></li></ul>
+        /// size. If you specify a snapshot, the default is the snapshot size, and you can specify
+        /// a volume size that is equal to or larger than the snapshot size.</para><para>Valid sizes:</para><ul><li><para>gp2: <c>1 - 16,384</c> GiB</para></li><li><para>gp3: <c>1 - 65,536</c> GiB</para></li><li><para>io1: <c>4 - 16,384</c> GiB</para></li><li><para>io2: <c>4 - 65,536</c> GiB</para></li><li><para>st1 and sc1: <c>125 - 16,384</c> GiB</para></li><li><para>standard: <c>1 - 1024</c> GiB</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -174,7 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the volume during creation.</para>
+        /// <para>The tags to apply to the volume during creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -185,19 +219,40 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Throughput
         /// <summary>
         /// <para>
-        /// <para>The throughput to provision for a volume, with a maximum of 1,000 MiB/s.</para><para>This parameter is valid only for <c>gp3</c> volumes.</para><para>Valid Range: Minimum value of 125. Maximum value of 1000.</para>
+        /// <para>The throughput to provision for the volume, in MiB/s. Supported for <c>gp3</c> volumes
+        /// only. Omit for all other volume types.</para><para>Valid Range: <c>125 - 2000</c> MiB/s</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Int32? Throughput { get; set; }
         #endregion
         
+        #region Parameter VolumeInitializationRate
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the Amazon EBS Provisioned Rate for Volume Initialization (volume initialization
+        /// rate), in MiB/s, at which to download the snapshot blocks from Amazon S3 to the volume.
+        /// This is also known as <i>volume initialization</i>. Specifying a volume initialization
+        /// rate ensures that the volume is initialized at a predictable and consistent rate after
+        /// creation.</para><para>This parameter is supported only for volumes created from snapshots. Omit this parameter
+        /// if:</para><ul><li><para>You want to create the volume using fast snapshot restore. You must specify a snapshot
+        /// that is enabled for fast snapshot restore. In this case, the volume is fully initialized
+        /// at creation.</para><note><para>If you specify a snapshot that is enabled for fast snapshot restore and a volume initialization
+        /// rate, the volume will be initialized at the specified rate instead of fast snapshot
+        /// restore.</para></note></li><li><para>You want to create a volume that is initialized at the default rate.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/initalize-volume.html">
+        /// Initialize Amazon EBS volumes</a> in the <i>Amazon EC2 User Guide</i>.</para><para>Valid range: 100 - 300 MiB/s</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? VolumeInitializationRate { get; set; }
+        #endregion
+        
         #region Parameter VolumeType
         /// <summary>
         /// <para>
         /// <para>The volume type. This parameter can be one of the following values:</para><ul><li><para>General Purpose SSD: <c>gp2</c> | <c>gp3</c></para></li><li><para>Provisioned IOPS SSD: <c>io1</c> | <c>io2</c></para></li><li><para>Throughput Optimized HDD: <c>st1</c></para></li><li><para>Cold HDD: <c>sc1</c></para></li><li><para>Magnetic: <c>standard</c></para></li></ul><important><para>Throughput Optimized HDD (<c>st1</c>) and Cold HDD (<c>sc1</c>) volumes can't be used
-        /// as boot volumes.</para></important><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSVolumeTypes.html">Amazon
-        /// EBS volume types</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.</para><para>Default: <c>gp2</c></para>
+        /// as boot volumes.</para></important><para>For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-volume-types.html">Amazon
+        /// EBS volume types</a> in the <i>Amazon EBS User Guide</i>.</para><para>Default: <c>gp2</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
@@ -209,7 +264,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Unique, case-sensitive identifier that you provide to ensure the idempotency of the
-        /// request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensure
+        /// request. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensure
         /// Idempotency</a>.</para>
         /// </para>
         /// </summary>
@@ -228,16 +283,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Volume";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -248,9 +293,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SnapshotId), MyInvocation.BoundParameters);
@@ -264,33 +313,20 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateVolumeResponse, NewEC2VolumeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AvailabilityZone = this.AvailabilityZone;
-            #if MODULAR
-            if (this.AvailabilityZone == null && ParameterWasBound(nameof(this.AvailabilityZone)))
-            {
-                WriteWarning("You are passing $null as a value for parameter AvailabilityZone which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.AvailabilityZoneId = this.AvailabilityZoneId;
             context.ClientToken = this.ClientToken;
+            context.DryRun = this.DryRun;
             context.Encrypted = this.Encrypted;
             context.Iops = this.Iops;
             context.KmsKeyId = this.KmsKeyId;
             context.MultiAttachEnabled = this.MultiAttachEnabled;
+            context.Operator_Principal = this.Operator_Principal;
             context.OutpostArn = this.OutpostArn;
             context.Size = this.Size;
             context.SnapshotId = this.SnapshotId;
@@ -299,6 +335,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
             }
             context.Throughput = this.Throughput;
+            context.VolumeInitializationRate = this.VolumeInitializationRate;
             context.VolumeType = this.VolumeType;
             
             // allow further manipulation of loaded context prior to processing
@@ -320,9 +357,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.AvailabilityZone = cmdletContext.AvailabilityZone;
             }
+            if (cmdletContext.AvailabilityZoneId != null)
+            {
+                request.AvailabilityZoneId = cmdletContext.AvailabilityZoneId;
+            }
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Encrypted != null)
             {
@@ -339,6 +384,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.MultiAttachEnabled != null)
             {
                 request.MultiAttachEnabled = cmdletContext.MultiAttachEnabled.Value;
+            }
+            
+             // populate Operator
+            var requestOperatorIsNull = true;
+            request.Operator = new Amazon.EC2.Model.OperatorRequest();
+            System.String requestOperator_operator_Principal = null;
+            if (cmdletContext.Operator_Principal != null)
+            {
+                requestOperator_operator_Principal = cmdletContext.Operator_Principal;
+            }
+            if (requestOperator_operator_Principal != null)
+            {
+                request.Operator.Principal = requestOperator_operator_Principal;
+                requestOperatorIsNull = false;
+            }
+             // determine if request.Operator should be set to null
+            if (requestOperatorIsNull)
+            {
+                request.Operator = null;
             }
             if (cmdletContext.OutpostArn != null)
             {
@@ -359,6 +423,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Throughput != null)
             {
                 request.Throughput = cmdletContext.Throughput.Value;
+            }
+            if (cmdletContext.VolumeInitializationRate != null)
+            {
+                request.VolumeInitializationRate = cmdletContext.VolumeInitializationRate.Value;
             }
             if (cmdletContext.VolumeType != null)
             {
@@ -402,13 +470,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateVolume");
             try
             {
-                #if DESKTOP
-                return client.CreateVolume(request);
-                #elif CORECLR
-                return client.CreateVolumeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVolumeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -426,16 +488,20 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AvailabilityZone { get; set; }
+            public System.String AvailabilityZoneId { get; set; }
             public System.String ClientToken { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? Encrypted { get; set; }
             public System.Int32? Iops { get; set; }
             public System.String KmsKeyId { get; set; }
             public System.Boolean? MultiAttachEnabled { get; set; }
+            public System.String Operator_Principal { get; set; }
             public System.String OutpostArn { get; set; }
             public System.Int32? Size { get; set; }
             public System.String SnapshotId { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public System.Int32? Throughput { get; set; }
+            public System.Int32? VolumeInitializationRate { get; set; }
             public Amazon.EC2.VolumeType VolumeType { get; set; }
             public System.Func<Amazon.EC2.Model.CreateVolumeResponse, NewEC2VolumeCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Volume;

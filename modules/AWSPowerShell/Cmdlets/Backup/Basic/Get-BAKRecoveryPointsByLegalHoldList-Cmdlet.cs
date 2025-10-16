@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -36,17 +38,18 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [AWSCmdlet("Calls the AWS Backup ListRecoveryPointsByLegalHold API operation.", Operation = new[] {"ListRecoveryPointsByLegalHold"}, SelectReturnType = typeof(Amazon.Backup.Model.ListRecoveryPointsByLegalHoldResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.RecoveryPointMember or Amazon.Backup.Model.ListRecoveryPointsByLegalHoldResponse",
         "This cmdlet returns a collection of Amazon.Backup.Model.RecoveryPointMember objects.",
-        "The service call response (type Amazon.Backup.Model.ListRecoveryPointsByLegalHoldResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Backup.Model.ListRecoveryPointsByLegalHoldResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBAKRecoveryPointsByLegalHoldListCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LegalHoldId
         /// <summary>
         /// <para>
-        /// <para>This is the ID of the legal hold.</para>
+        /// <para>The ID of the legal hold.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -63,7 +66,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>This is the maximum number of resource list items to be returned.</para>
+        /// <para>The maximum number of resource list items to be returned.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -74,14 +77,14 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// <para>This is the next item following a partial list of returned resources. For example,
-        /// if a request is made to return <c>MaxResults</c> number of resources, <c>NextToken</c>
-        /// allows you to return more items in your list starting at the location pointed to by
-        /// the next token.</para>
+        /// <para>The next item following a partial list of returned resources. For example, if a request
+        /// is made to return <c>MaxResults</c> number of resources, <c>NextToken</c> allows you
+        /// to return more items in your list starting at the location pointed to by the next
+        /// token.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,16 +102,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "RecoveryPoints";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LegalHoldId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LegalHoldId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LegalHoldId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -119,9 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -129,21 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.ListRecoveryPointsByLegalHoldResponse, GetBAKRecoveryPointsByLegalHoldListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LegalHoldId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LegalHoldId = this.LegalHoldId;
             #if MODULAR
             if (this.LegalHoldId == null && ParameterWasBound(nameof(this.LegalHoldId)))
@@ -166,9 +153,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Backup.Model.ListRecoveryPointsByLegalHoldRequest();
@@ -243,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "ListRecoveryPointsByLegalHold");
             try
             {
-                #if DESKTOP
-                return client.ListRecoveryPointsByLegalHold(request);
-                #elif CORECLR
-                return client.ListRecoveryPointsByLegalHoldAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRecoveryPointsByLegalHoldAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

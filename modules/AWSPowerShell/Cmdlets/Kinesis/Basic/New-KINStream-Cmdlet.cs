@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kinesis;
 using Amazon.Kinesis.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KIN
 {
     /// <summary>
@@ -70,6 +72,14 @@ namespace Amazon.PowerShell.Cmdlets.KIN
     /// You can use <a>DescribeStreamSummary</a> to check the stream status, which is returned
     /// in <c>StreamStatus</c>.
     /// </para><para><a>CreateStream</a> has a limit of five transactions per second per account.
+    /// </para><para>
+    /// You can add tags to the stream when making a <c>CreateStream</c> request by setting
+    /// the <c>Tags</c> parameter. If you pass the <c>Tags</c> parameter, in addition to having
+    /// the <c>kinesis:CreateStream</c> permission, you must also have the <c>kinesis:AddTagsToStream</c>
+    /// permission for the stream that will be created. The <c>kinesis:TagResource</c> permission
+    /// won’t work to tag streams on creation. Tags will take effect from the <c>CREATING</c>
+    /// status of the stream, but you can't make any updates to the tags until the stream
+    /// is in <c>ACTIVE</c> state.
     /// </para>
     /// </summary>
     [Cmdlet("New", "KINStream", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -77,12 +87,13 @@ namespace Amazon.PowerShell.Cmdlets.KIN
     [AWSCmdlet("Calls the Amazon Kinesis CreateStream API operation.", Operation = new[] {"CreateStream"}, SelectReturnType = typeof(Amazon.Kinesis.Model.CreateStreamResponse))]
     [AWSCmdletOutput("None or Amazon.Kinesis.Model.CreateStreamResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Kinesis.Model.CreateStreamResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Kinesis.Model.CreateStreamResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewKINStreamCmdlet : AmazonKinesisClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ShardCount
         /// <summary>
@@ -129,6 +140,22 @@ namespace Amazon.PowerShell.Cmdlets.KIN
         public System.String StreamName { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>A set of up to 50 key-value pairs to use to create the tags. A tag consists of a required
+        /// key and an optional value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
@@ -137,16 +164,6 @@ namespace Amazon.PowerShell.Cmdlets.KIN
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StreamName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StreamName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StreamName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -159,9 +176,13 @@ namespace Amazon.PowerShell.Cmdlets.KIN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.StreamName), MyInvocation.BoundParameters);
@@ -175,21 +196,11 @@ namespace Amazon.PowerShell.Cmdlets.KIN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kinesis.Model.CreateStreamResponse, NewKINStreamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StreamName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ShardCount = this.ShardCount;
             context.StreamModeDetails_StreamMode = this.StreamModeDetails_StreamMode;
             context.StreamName = this.StreamName;
@@ -199,6 +210,14 @@ namespace Amazon.PowerShell.Cmdlets.KIN
                 WriteWarning("You are passing $null as a value for parameter StreamName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -242,6 +261,10 @@ namespace Amazon.PowerShell.Cmdlets.KIN
             {
                 request.StreamName = cmdletContext.StreamName;
             }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
             
             CmdletOutput output;
             
@@ -280,13 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.KIN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis", "CreateStream");
             try
             {
-                #if DESKTOP
-                return client.CreateStream(request);
-                #elif CORECLR
-                return client.CreateStreamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateStreamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -306,6 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.KIN
             public System.Int32? ShardCount { get; set; }
             public Amazon.Kinesis.StreamMode StreamModeDetails_StreamMode { get; set; }
             public System.String StreamName { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public System.Func<Amazon.Kinesis.Model.CreateStreamResponse, NewKINStreamCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

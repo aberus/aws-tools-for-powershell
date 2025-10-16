@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Comprehend;
 using Amazon.Comprehend.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.COMP
 {
     /// <summary>
@@ -36,21 +38,24 @@ namespace Amazon.PowerShell.Cmdlets.COMP
     [OutputType("Amazon.Comprehend.Model.BatchDetectDominantLanguageResponse")]
     [AWSCmdlet("Calls the Amazon Comprehend BatchDetectDominantLanguage API operation.", Operation = new[] {"BatchDetectDominantLanguage"}, SelectReturnType = typeof(Amazon.Comprehend.Model.BatchDetectDominantLanguageResponse))]
     [AWSCmdletOutput("Amazon.Comprehend.Model.BatchDetectDominantLanguageResponse",
-        "This cmdlet returns an Amazon.Comprehend.Model.BatchDetectDominantLanguageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Comprehend.Model.BatchDetectDominantLanguageResponse object containing multiple properties."
     )]
     public partial class FindCOMPDominantLanguageBatchCmdlet : AmazonComprehendClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TextList
         /// <summary>
         /// <para>
         /// <para>A list containing the UTF-8 encoded text of the input documents. The list can contain
         /// a maximum of 25 documents. Each document should contain at least 20 characters. The
-        /// maximum size of each document is 5 KB.</para>
+        /// maximum size of each document is 5 KB.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -75,9 +80,13 @@ namespace Amazon.PowerShell.Cmdlets.COMP
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -158,13 +167,7 @@ namespace Amazon.PowerShell.Cmdlets.COMP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Comprehend", "BatchDetectDominantLanguage");
             try
             {
-                #if DESKTOP
-                return client.BatchDetectDominantLanguage(request);
-                #elif CORECLR
-                return client.BatchDetectDominantLanguageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchDetectDominantLanguageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
     /// Creates an Amazon DataZone business glossary.
+    /// 
+    ///  
+    /// <para>
+    /// Specifies that this is a create glossary policy.
+    /// </para><para>
+    /// A glossary serves as the central repository for business terminology and definitions
+    /// within an organization. It helps establish and maintain a common language across different
+    /// departments and teams, reducing miscommunication and ensuring consistent interpretation
+    /// of business concepts. Glossaries can include hierarchical relationships between terms,
+    /// cross-references, and links to actual data assets, making them invaluable for both
+    /// business users and technical teams trying to understand and use data correctly.
+    /// </para><para>
+    /// Prerequisites:
+    /// </para><ul><li><para>
+    /// Domain must exist and be in an active state. 
+    /// </para></li><li><para>
+    /// Owning project must exist and be accessible by the caller.
+    /// </para></li><li><para>
+    /// The glossary name must be unique within the domain.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("New", "DZGlossary", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DataZone.Model.CreateGlossaryResponse")]
     [AWSCmdlet("Calls the Amazon DataZone CreateGlossary API operation.", Operation = new[] {"CreateGlossary"}, SelectReturnType = typeof(Amazon.DataZone.Model.CreateGlossaryResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.CreateGlossaryResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.CreateGlossaryResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.CreateGlossaryResponse object containing multiple properties."
     )]
     public partial class NewDZGlossaryCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -117,6 +136,21 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public Amazon.DataZone.GlossaryStatus Status { get; set; }
         #endregion
         
+        #region Parameter UsageRestriction
+        /// <summary>
+        /// <para>
+        /// <para>The usage restriction of the restricted glossary.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UsageRestrictions")]
+        public System.String[] UsageRestriction { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
@@ -139,16 +173,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OwningProjectIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OwningProjectIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OwningProjectIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -159,9 +183,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.OwningProjectIdentifier), MyInvocation.BoundParameters);
@@ -175,21 +203,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.CreateGlossaryResponse, NewDZGlossaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OwningProjectIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.DomainIdentifier = this.DomainIdentifier;
@@ -214,6 +232,10 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             }
             #endif
             context.Status = this.Status;
+            if (this.UsageRestriction != null)
+            {
+                context.UsageRestriction = new List<System.String>(this.UsageRestriction);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -254,6 +276,10 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             {
                 request.Status = cmdletContext.Status;
             }
+            if (cmdletContext.UsageRestriction != null)
+            {
+                request.UsageRestrictions = cmdletContext.UsageRestriction;
+            }
             
             CmdletOutput output;
             
@@ -292,13 +318,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "CreateGlossary");
             try
             {
-                #if DESKTOP
-                return client.CreateGlossary(request);
-                #elif CORECLR
-                return client.CreateGlossaryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGlossaryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -321,6 +341,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             public System.String Name { get; set; }
             public System.String OwningProjectIdentifier { get; set; }
             public Amazon.DataZone.GlossaryStatus Status { get; set; }
+            public List<System.String> UsageRestriction { get; set; }
             public System.Func<Amazon.DataZone.Model.CreateGlossaryResponse, NewDZGlossaryCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

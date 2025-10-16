@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Connect;
 using Amazon.Connect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONN
 {
     /// <summary>
@@ -49,20 +51,23 @@ namespace Amazon.PowerShell.Cmdlets.CONN
     /// account may not support the ability to configure custom chat durations. For more information,
     /// contact Amazon Web Services Support. 
     /// </para><para>
-    /// For more information about chat, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/chat.html">Chat</a>
-    /// in the <i>Amazon Connect Administrator Guide</i>.
-    /// </para>
+    /// For more information about chat, see the following topics in the <i>Amazon Connect
+    /// Administrator Guide</i>: 
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/connect/latest/adminguide/web-and-mobile-chat.html">Concepts:
+    /// Web and mobile messaging capabilities in Amazon Connect</a></para></li><li><para><a href="https://docs.aws.amazon.com/connect/latest/adminguide/security-best-practices.html#bp-security-chat">Amazon
+    /// Connect Chat security best practices</a></para></li></ul>
     /// </summary>
     [Cmdlet("Start", "CONNChatContact", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Connect.Model.StartChatContactResponse")]
     [AWSCmdlet("Calls the Amazon Connect Service StartChatContact API operation.", Operation = new[] {"StartChatContact"}, SelectReturnType = typeof(Amazon.Connect.Model.StartChatContactResponse))]
     [AWSCmdletOutput("Amazon.Connect.Model.StartChatContactResponse",
-        "This cmdlet returns an Amazon.Connect.Model.StartChatContactResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Connect.Model.StartChatContactResponse object containing multiple properties."
     )]
     public partial class StartCONNChatContactCmdlet : AmazonConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
@@ -70,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <para>A custom key-value pair using an attribute map. The attributes are standard Amazon
         /// Connect attributes. They can be accessed in flows just like any other contact attributes.
         /// </para><para>There can be up to 32,768 UTF-8 bytes across all key-value pairs per contact. Attribute
-        /// keys can include only alphanumeric, dash, and underscore characters.</para>
+        /// keys can include only alphanumeric, dash, and underscore characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,10 +104,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// <summary>
         /// <para>
         /// <para>The identifier of the flow for initiating the chat. To see the ContactFlowId in the
-        /// Amazon Connect admin website, on the navigation menu go to <b>Routing</b>, <b>Contact
-        /// Flows</b>. Choose the flow. On the flow page, under the name of the flow, choose <b>Show
-        /// additional flow information</b>. The ContactFlowId is the last part of the ARN, shown
-        /// here in bold: </para><para>arn:aws:connect:us-west-2:xxxxxxxxxxxx:instance/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/contact-flow/<b>846ec553-a005-41c0-8341-xxxxxxxxxxxx</b></para>
+        /// Amazon Connect admin website, on the navigation menu go to <b>Routing</b>, <b>Flows</b>.
+        /// Choose the flow. On the flow page, under the name of the flow, choose <b>Show additional
+        /// flow information</b>. The ContactFlowId is the last part of the ARN, shown here in
+        /// bold: </para><para>arn:aws:connect:us-west-2:xxxxxxxxxxxx:instance/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/contact-flow/<b>846ec553-a005-41c0-8341-xxxxxxxxxxxx</b></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -134,6 +143,17 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String InitialMessage_ContentType { get; set; }
+        #endregion
+        
+        #region Parameter CustomerId
+        /// <summary>
+        /// <para>
+        /// <para>The customer's identification number. For example, the <c>CustomerId</c> may be a
+        /// customer number from your CRM.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomerId { get; set; }
         #endregion
         
         #region Parameter ParticipantDetails_DisplayName
@@ -208,7 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// be accessed in flows.</para><para>Attribute keys can include only alphanumeric, -, and _.</para><para>This field can be used to show channel subtype, such as <c>connect:Guide</c>.</para><note><para>The types <c>application/vnd.amazonaws.connect.message.interactive</c> and <c>application/vnd.amazonaws.connect.message.interactive.response</c>
         /// must be present in the SupportedMessagingContentTypes field of this API in order to
         /// set <c>SegmentAttributes</c> as {<c> "connect:Subtype": {"valueString" : "connect:Guide"
-        /// }}</c>.</para></note>
+        /// }}</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -237,7 +261,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         /// text/plain]</c>, <c>[text/plain, application/json, application/vnd.amazonaws.connect.message.interactive.response]</c>.
         /// </para><note><para>The type <c>application/vnd.amazonaws.connect.message.interactive</c> is required
         /// to use the <a href="https://docs.aws.amazon.com/connect/latest/adminguide/show-view-block.html">Show
-        /// view</a> flow block.</para></note>
+        /// view</a> flow block.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -269,16 +297,6 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ContactFlowId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ContactFlowId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ContactFlowId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -289,9 +307,13 @@ namespace Amazon.PowerShell.Cmdlets.CONN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ContactFlowId), MyInvocation.BoundParameters);
@@ -305,21 +327,11 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Connect.Model.StartChatContactResponse, StartCONNChatContactCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ContactFlowId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -337,6 +349,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
                 WriteWarning("You are passing $null as a value for parameter ContactFlowId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.CustomerId = this.CustomerId;
             context.InitialMessage_Content = this.InitialMessage_Content;
             context.InitialMessage_ContentType = this.InitialMessage_ContentType;
             context.InstanceId = this.InstanceId;
@@ -399,6 +412,10 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             if (cmdletContext.ContactFlowId != null)
             {
                 request.ContactFlowId = cmdletContext.ContactFlowId;
+            }
+            if (cmdletContext.CustomerId != null)
+            {
+                request.CustomerId = cmdletContext.CustomerId;
             }
             
              // populate InitialMessage
@@ -531,13 +548,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Service", "StartChatContact");
             try
             {
-                #if DESKTOP
-                return client.StartChatContact(request);
-                #elif CORECLR
-                return client.StartChatContactAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartChatContactAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -558,6 +569,7 @@ namespace Amazon.PowerShell.Cmdlets.CONN
             public System.Int32? ChatDurationInMinute { get; set; }
             public System.String ClientToken { get; set; }
             public System.String ContactFlowId { get; set; }
+            public System.String CustomerId { get; set; }
             public System.String InitialMessage_Content { get; set; }
             public System.String InitialMessage_ContentType { get; set; }
             public System.String InstanceId { get; set; }

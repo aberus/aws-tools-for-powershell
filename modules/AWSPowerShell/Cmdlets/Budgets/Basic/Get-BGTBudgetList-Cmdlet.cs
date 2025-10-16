@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Budgets;
 using Amazon.Budgets.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BGT
 {
     /// <summary>
@@ -33,7 +35,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
     ///  <important><para>
     /// The Request Syntax section shows the <c>BudgetLimit</c> syntax. For <c>PlannedBudgetLimits</c>,
     /// see the <a href="https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_budgets_DescribeBudgets.html#API_DescribeBudgets_Examples">Examples</a>
-    /// section. 
+    /// section.
     /// </para></important><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "BGTBudgetList")]
@@ -41,12 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.BGT
     [AWSCmdlet("Calls the AWS Budgets DescribeBudgets API operation.", Operation = new[] {"DescribeBudgets"}, SelectReturnType = typeof(Amazon.Budgets.Model.DescribeBudgetsResponse))]
     [AWSCmdletOutput("Amazon.Budgets.Model.Budget or Amazon.Budgets.Model.DescribeBudgetsResponse",
         "This cmdlet returns a collection of Amazon.Budgets.Model.Budget objects.",
-        "The service call response (type Amazon.Budgets.Model.DescribeBudgetsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Budgets.Model.DescribeBudgetsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBGTBudgetListCmdlet : AmazonBudgetsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -63,6 +66,18 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String AccountId { get; set; }
+        #endregion
+        
+        #region Parameter ShowFilterExpression
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether the response includes the filter expression associated with the
+        /// budgets. By showing the filter expression, you can see detailed filtering logic applied
+        /// to the budgets, such as Amazon Web Services services or tags that are being tracked.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ShowFilterExpression { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -90,7 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,16 +123,6 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         public string Select { get; set; } = "Budgets";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AccountId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AccountId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AccountId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -128,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -138,21 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Budgets.Model.DescribeBudgetsResponse, GetBGTBudgetListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AccountId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             #if MODULAR
             if (this.AccountId == null && ParameterWasBound(nameof(this.AccountId)))
@@ -171,6 +170,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             }
             #endif
             context.NextToken = this.NextToken;
+            context.ShowFilterExpression = this.ShowFilterExpression;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -185,9 +185,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Budgets.Model.DescribeBudgetsRequest();
@@ -199,6 +197,10 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             if (cmdletContext.MaxResult != null)
             {
                 request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
+            }
+            if (cmdletContext.ShowFilterExpression != null)
+            {
+                request.ShowFilterExpression = cmdletContext.ShowFilterExpression.Value;
             }
             
             // Initialize loop variant and commence piping
@@ -251,13 +253,17 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Budgets.Model.DescribeBudgetsRequest();
             if (cmdletContext.AccountId != null)
             {
                 request.AccountId = cmdletContext.AccountId;
+            }
+            if (cmdletContext.ShowFilterExpression != null)
+            {
+                request.ShowFilterExpression = cmdletContext.ShowFilterExpression.Value;
             }
             
             // Initialize loop variants and commence piping
@@ -306,7 +312,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Budgets.Count;
+                    int _receivedThisCall = response.Budgets?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -355,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Budgets", "DescribeBudgets");
             try
             {
-                #if DESKTOP
-                return client.DescribeBudgets(request);
-                #elif CORECLR
-                return client.DescribeBudgetsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeBudgetsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -381,6 +381,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             public System.String AccountId { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
+            public System.Boolean? ShowFilterExpression { get; set; }
             public System.Func<Amazon.Budgets.Model.DescribeBudgetsResponse, GetBGTBudgetListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Budgets;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NeptuneGraph;
 using Amazon.NeptuneGraph.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NEPTG
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
     [OutputType("Amazon.NeptuneGraph.Model.RestoreGraphFromSnapshotResponse")]
     [AWSCmdlet("Calls the Amazon Neptune Graph RestoreGraphFromSnapshot API operation.", Operation = new[] {"RestoreGraphFromSnapshot"}, SelectReturnType = typeof(Amazon.NeptuneGraph.Model.RestoreGraphFromSnapshotResponse))]
     [AWSCmdletOutput("Amazon.NeptuneGraph.Model.RestoreGraphFromSnapshotResponse",
-        "This cmdlet returns an Amazon.NeptuneGraph.Model.RestoreGraphFromSnapshotResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NeptuneGraph.Model.RestoreGraphFromSnapshotResponse object containing multiple properties."
     )]
     public partial class RestoreNEPTGGraphFromSnapshotCmdlet : AmazonNeptuneGraphClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeletionProtection
         /// <summary>
@@ -57,7 +60,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <para>
         /// <para>A name for the new Neptune Analytics graph to be created from the snapshot.</para><para>The name must contain from 1 to 63 letters, numbers, or hyphens, and its first character
         /// must be a letter. It cannot end with a hyphen or contain two consecutive hyphens.
-        /// </para>
+        /// Only lowercase letters are allowed.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -74,8 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         #region Parameter ProvisionedMemory
         /// <summary>
         /// <para>
-        /// <para>The provisioned memory-optimized Neptune Capacity Units (m-NCUs) to use for the graph.
-        /// Min = 128</para>
+        /// <para>The provisioned memory-optimized Neptune Capacity Units (m-NCUs) to use for the graph.</para><para>Min = 16</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -86,7 +88,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>Specifies whether or not the graph can be reachable over the internet. All access
-        /// to graphs IAM authenticated. (<c>true</c> to enable, or <c>false</c> to disable).</para>
+        /// to graphs is IAM authenticated. (<c>true</c> to enable, or <c>false</c> to disable).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +98,8 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         #region Parameter ReplicaCount
         /// <summary>
         /// <para>
-        /// <para>The number of replicas in other AZs. Min =0, Max = 2, Default =1</para>
+        /// <para>The number of replicas in other AZs. Min =0, Max = 2, Default =1</para><important><para> Additional charges equivalent to the m-NCUs selected for the graph apply for each
+        /// replica. </para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         /// <summary>
         /// <para>
         /// <para>Adds metadata tags to the snapshot. These tags can also be used with cost allocation
-        /// reporting, or used in a Condition statement in an IAM policy.</para>
+        /// reporting, or used in a Condition statement in an IAM policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,16 +150,6 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -163,9 +160,13 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SnapshotIdentifier), MyInvocation.BoundParameters);
@@ -179,21 +180,11 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NeptuneGraph.Model.RestoreGraphFromSnapshotResponse, RestoreNEPTGGraphFromSnapshotCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeletionProtection = this.DeletionProtection;
             context.GraphName = this.GraphName;
             #if MODULAR
@@ -302,13 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.NEPTG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Neptune Graph", "RestoreGraphFromSnapshot");
             try
             {
-                #if DESKTOP
-                return client.RestoreGraphFromSnapshot(request);
-                #elif CORECLR
-                return client.RestoreGraphFromSnapshotAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreGraphFromSnapshotAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

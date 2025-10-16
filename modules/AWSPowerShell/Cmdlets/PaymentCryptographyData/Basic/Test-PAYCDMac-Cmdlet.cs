@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PaymentCryptographyData;
 using Amazon.PaymentCryptographyData.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PAYCD
 {
     /// <summary>
@@ -32,12 +34,11 @@ namespace Amazon.PowerShell.Cmdlets.PAYCD
     /// 
     ///  
     /// <para>
-    /// You can use this operation when keys won't be shared but mutual data is present on
-    /// both ends for validation. In this case, known data values are used to generate a MAC
-    /// on both ends for verification without sending or receiving data in ciphertext or plaintext.
-    /// You can use this operation to verify a DUPKT, HMAC or EMV MAC by setting generation
-    /// attributes and algorithm to the associated values. Use the same encryption key for
-    /// MAC verification as you use for <a>GenerateMac</a>. 
+    /// You can use this operation to verify MAC for message data authentication such as .
+    /// In this operation, you must use the same message data, secret encryption key and MAC
+    /// algorithm that was used to generate MAC. You can use this operation to verify a DUPKT,
+    /// CMAC, HMAC or EMV MAC by setting generation attributes and algorithm to the associated
+    /// values. 
     /// </para><para>
     /// For information about valid keys for this operation, see <a href="https://docs.aws.amazon.com/payment-cryptography/latest/userguide/keys-validattributes.html">Understanding
     /// key attributes</a> and <a href="https://docs.aws.amazon.com/payment-cryptography/latest/userguide/crypto-ops-validkeys-ops.html">Key
@@ -51,14 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCD
     [OutputType("Amazon.PaymentCryptographyData.Model.VerifyMacResponse")]
     [AWSCmdlet("Calls the Payment Cryptography Data VerifyMac API operation.", Operation = new[] {"VerifyMac"}, SelectReturnType = typeof(Amazon.PaymentCryptographyData.Model.VerifyMacResponse))]
     [AWSCmdletOutput("Amazon.PaymentCryptographyData.Model.VerifyMacResponse",
-        "This cmdlet returns an Amazon.PaymentCryptographyData.Model.VerifyMacResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PaymentCryptographyData.Model.VerifyMacResponse object containing multiple properties."
     )]
     public partial class TestPAYCDMacCmdlet : AmazonPaymentCryptographyDataClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter VerificationAttributes_Algorithm
         /// <summary>
@@ -270,7 +270,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCD
         #region Parameter MessageData
         /// <summary>
         /// <para>
-        /// <para>The data on for which MAC is under verification.</para>
+        /// <para>The data on for which MAC is under verification. This value must be hexBinary.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -331,19 +331,13 @@ namespace Amazon.PowerShell.Cmdlets.PAYCD
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -351,21 +345,11 @@ namespace Amazon.PowerShell.Cmdlets.PAYCD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PaymentCryptographyData.Model.VerifyMacResponse, TestPAYCDMacCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KeyIdentifier = this.KeyIdentifier;
             #if MODULAR
             if (this.KeyIdentifier == null && ParameterWasBound(nameof(this.KeyIdentifier)))
@@ -718,13 +702,7 @@ namespace Amazon.PowerShell.Cmdlets.PAYCD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Payment Cryptography Data", "VerifyMac");
             try
             {
-                #if DESKTOP
-                return client.VerifyMac(request);
-                #elif CORECLR
-                return client.VerifyMacAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.VerifyMacAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

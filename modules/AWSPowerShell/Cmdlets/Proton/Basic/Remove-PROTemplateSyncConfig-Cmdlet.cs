@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Proton;
 using Amazon.Proton.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PRO
 {
     /// <summary>
-    /// Delete a template sync configuration.
+    /// Delete a template sync configuration.<br/><br/>This operation is deprecated.
     /// </summary>
     [Cmdlet("Remove", "PROTemplateSyncConfig", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.Proton.Model.TemplateSyncConfig")]
     [AWSCmdlet("Calls the AWS Proton DeleteTemplateSyncConfig API operation.", Operation = new[] {"DeleteTemplateSyncConfig"}, SelectReturnType = typeof(Amazon.Proton.Model.DeleteTemplateSyncConfigResponse))]
     [AWSCmdletOutput("Amazon.Proton.Model.TemplateSyncConfig or Amazon.Proton.Model.DeleteTemplateSyncConfigResponse",
         "This cmdlet returns an Amazon.Proton.Model.TemplateSyncConfig object.",
-        "The service call response (type Amazon.Proton.Model.DeleteTemplateSyncConfigResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Proton.Model.DeleteTemplateSyncConfigResponse) can be returned by specifying '-Select *'."
     )]
+    [System.ObsoleteAttribute("AWS Proton is not accepting new customers.")]
     public partial class RemovePROTemplateSyncConfigCmdlet : AmazonProtonClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TemplateName
         /// <summary>
@@ -97,9 +101,13 @@ namespace Amazon.PowerShell.Cmdlets.PRO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -194,13 +202,7 @@ namespace Amazon.PowerShell.Cmdlets.PRO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Proton", "DeleteTemplateSyncConfig");
             try
             {
-                #if DESKTOP
-                return client.DeleteTemplateSyncConfig(request);
-                #elif CORECLR
-                return client.DeleteTemplateSyncConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteTemplateSyncConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

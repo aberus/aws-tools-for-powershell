@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -36,7 +38,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// You can add one email address and one mobile phone number contact method in each Amazon
     /// Web Services Region. However, SMS text messaging is not supported in some Amazon Web
     /// Services Regions, and SMS text messages cannot be sent to some countries/regions.
-    /// For more information, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-notifications">Notifications
+    /// For more information, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-notifications">Notifications
     /// in Amazon Lightsail</a>.
     /// </para>
     /// </summary>
@@ -45,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [AWSCmdlet("Calls the Amazon Lightsail CreateContactMethod API operation.", Operation = new[] {"CreateContactMethod"}, SelectReturnType = typeof(Amazon.Lightsail.Model.CreateContactMethodResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.Operation or Amazon.Lightsail.Model.CreateContactMethodResponse",
         "This cmdlet returns a collection of Amazon.Lightsail.Model.Operation objects.",
-        "The service call response (type Amazon.Lightsail.Model.CreateContactMethodResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Lightsail.Model.CreateContactMethodResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewLSContactMethodCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContactEndpoint
         /// <summary>
@@ -80,7 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <para>
         /// <para>The protocol of the contact method, such as <c>Email</c> or <c>SMS</c> (text messaging).</para><para>The <c>SMS</c> protocol is supported only in the following Amazon Web Services Regions.</para><ul><li><para>US East (N. Virginia) (<c>us-east-1</c>)</para></li><li><para>US West (Oregon) (<c>us-west-2</c>)</para></li><li><para>Europe (Ireland) (<c>eu-west-1</c>)</para></li><li><para>Asia Pacific (Tokyo) (<c>ap-northeast-1</c>)</para></li><li><para>Asia Pacific (Singapore) (<c>ap-southeast-1</c>)</para></li><li><para>Asia Pacific (Sydney) (<c>ap-southeast-2</c>)</para></li></ul><para>For a list of countries/regions where SMS text messages can be sent, and the latest
         /// Amazon Web Services Regions where SMS text messaging is supported, see <a href="https://docs.aws.amazon.com/sns/latest/dg/sns-supported-regions-countries.html">Supported
-        /// Regions and Countries</a> in the <i>Amazon SNS Developer Guide</i>.</para><para>For more information about notifications in Amazon Lightsail, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-notifications">Notifications
+        /// Regions and Countries</a> in the <i>Amazon SNS Developer Guide</i>.</para><para>For more information about notifications in Amazon Lightsail, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-notifications">Notifications
         /// in Amazon Lightsail</a>.</para>
         /// </para>
         /// </summary>
@@ -106,16 +109,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "Operations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ContactEndpoint parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ContactEndpoint' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ContactEndpoint' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -126,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ContactEndpoint), MyInvocation.BoundParameters);
@@ -142,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.CreateContactMethodResponse, NewLSContactMethodCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ContactEndpoint;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ContactEndpoint = this.ContactEndpoint;
             #if MODULAR
             if (this.ContactEndpoint == null && ParameterWasBound(nameof(this.ContactEndpoint)))
@@ -233,13 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "CreateContactMethod");
             try
             {
-                #if DESKTOP
-                return client.CreateContactMethod(request);
-                #elif CORECLR
-                return client.CreateContactMethodAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateContactMethodAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

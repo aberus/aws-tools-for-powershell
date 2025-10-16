@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OpenSearchService;
 using Amazon.OpenSearchService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OS
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.OS
     [AWSCmdlet("Calls the Amazon OpenSearch Service UpdateDataSource API operation.", Operation = new[] {"UpdateDataSource"}, SelectReturnType = typeof(Amazon.OpenSearchService.Model.UpdateDataSourceResponse))]
     [AWSCmdletOutput("System.String or Amazon.OpenSearchService.Model.UpdateDataSourceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.OpenSearchService.Model.UpdateDataSourceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OpenSearchService.Model.UpdateDataSourceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateOSDataSourceCmdlet : AmazonOpenSearchServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -98,6 +101,17 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public System.String S3GlueDataCatalog_RoleArn { get; set; }
         #endregion
         
+        #region Parameter Status
+        /// <summary>
+        /// <para>
+        /// <para>The status of the data source update.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.OpenSearchService.DataSourceStatus")]
+        public Amazon.OpenSearchService.DataSourceStatus Status { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Message'.
@@ -119,9 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.OS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -156,6 +174,7 @@ namespace Amazon.PowerShell.Cmdlets.OS
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Status = this.Status;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -218,6 +237,10 @@ namespace Amazon.PowerShell.Cmdlets.OS
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.Status != null)
+            {
+                request.Status = cmdletContext.Status;
+            }
             
             CmdletOutput output;
             
@@ -256,13 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.OS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon OpenSearch Service", "UpdateDataSource");
             try
             {
-                #if DESKTOP
-                return client.UpdateDataSource(request);
-                #elif CORECLR
-                return client.UpdateDataSourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDataSourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -283,6 +300,7 @@ namespace Amazon.PowerShell.Cmdlets.OS
             public System.String Description { get; set; }
             public System.String DomainName { get; set; }
             public System.String Name { get; set; }
+            public Amazon.OpenSearchService.DataSourceStatus Status { get; set; }
             public System.Func<Amazon.OpenSearchService.Model.UpdateDataSourceResponse, UpdateOSDataSourceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Message;
         }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -24,6 +24,7 @@ using Amazon.Runtime;
 using System.Collections.Generic;
 using Amazon.Glacier;
 using System.IO;
+using System.Xml.Linq;
 
 namespace Amazon.PowerShell.Cmdlets.GLC
 {
@@ -285,14 +286,8 @@ namespace Amazon.PowerShell.Cmdlets.GLC
                 var output = new CmdletOutput();
                 runner.SafeRun(() =>
                 {
-#if DESKTOP
-                    var result = transferManager.Upload(vaultName, description, filePath, uploadOptions);
-#else
                     var result = transferManager.UploadAsync(vaultName, description, filePath, uploadOptions).GetAwaiter().GetResult();
-#endif
-
                     output.PipelineOutput = new FileUploadResult(filePath, result);
-
                 }, tracker, output);
 
                 // write as we go so that any subsequent error doesn't cause the user to lose

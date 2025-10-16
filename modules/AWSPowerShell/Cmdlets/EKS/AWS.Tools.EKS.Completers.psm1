@@ -90,7 +90,7 @@ $EKS_Completers = {
         # Amazon.EKS.AMITypes
         "New-EKSNodegroup/AmiType"
         {
-            $v = "AL2_ARM_64","AL2_x86_64","AL2_x86_64_GPU","BOTTLEROCKET_ARM_64","BOTTLEROCKET_ARM_64_NVIDIA","BOTTLEROCKET_x86_64","BOTTLEROCKET_x86_64_NVIDIA","CUSTOM","WINDOWS_CORE_2019_x86_64","WINDOWS_CORE_2022_x86_64","WINDOWS_FULL_2019_x86_64","WINDOWS_FULL_2022_x86_64"
+            $v = "AL2023_ARM_64_NVIDIA","AL2023_ARM_64_STANDARD","AL2023_x86_64_NEURON","AL2023_x86_64_NVIDIA","AL2023_x86_64_STANDARD","AL2_ARM_64","AL2_x86_64","AL2_x86_64_GPU","BOTTLEROCKET_ARM_64","BOTTLEROCKET_ARM_64_FIPS","BOTTLEROCKET_ARM_64_NVIDIA","BOTTLEROCKET_x86_64","BOTTLEROCKET_x86_64_FIPS","BOTTLEROCKET_x86_64_NVIDIA","CUSTOM","WINDOWS_CORE_2019_x86_64","WINDOWS_CORE_2022_x86_64","WINDOWS_FULL_2019_x86_64","WINDOWS_FULL_2022_x86_64"
             break
         }
 
@@ -107,7 +107,14 @@ $EKS_Completers = {
         # Amazon.EKS.CapacityTypes
         "New-EKSNodegroup/CapacityType"
         {
-            $v = "ON_DEMAND","SPOT"
+            $v = "CAPACITY_BLOCK","ON_DEMAND","SPOT"
+            break
+        }
+
+        # Amazon.EKS.ClusterVersionStatus
+        "Get-EKSClusterVersion/Status"
+        {
+            $v = "extended-support","standard-support","unsupported"
             break
         }
 
@@ -133,19 +140,49 @@ $EKS_Completers = {
         }
 
         # Amazon.EKS.IpFamily
-        "New-EKSCluster/KubernetesNetworkConfig_IpFamily"
+        {
+            ($_ -eq "New-EKSCluster/KubernetesNetworkConfig_IpFamily") -Or
+            ($_ -eq "Update-EKSClusterConfig/KubernetesNetworkConfig_IpFamily")
+        }
         {
             $v = "ipv4","ipv6"
             break
         }
 
+        # Amazon.EKS.NodegroupUpdateStrategies
+        {
+            ($_ -eq "New-EKSNodegroup/UpdateConfig_UpdateStrategy") -Or
+            ($_ -eq "Update-EKSNodegroupConfig/UpdateConfig_UpdateStrategy")
+        }
+        {
+            $v = "DEFAULT","MINIMAL"
+            break
+        }
+
         # Amazon.EKS.ResolveConflicts
         {
-            ($_ -eq "New-EKSAddon/ResolveConflicts") -Or
-            ($_ -eq "Update-EKSAddon/ResolveConflicts")
+            ($_ -eq "New-EKSAddon/ResolveConflict") -Or
+            ($_ -eq "Update-EKSAddon/ResolveConflict")
         }
         {
             $v = "NONE","OVERWRITE","PRESERVE"
+            break
+        }
+
+        # Amazon.EKS.SupportType
+        {
+            ($_ -eq "New-EKSCluster/UpgradePolicy_SupportType") -Or
+            ($_ -eq "Update-EKSClusterConfig/UpgradePolicy_SupportType")
+        }
+        {
+            $v = "EXTENDED","STANDARD"
+            break
+        }
+
+        # Amazon.EKS.VersionStatus
+        "Get-EKSClusterVersion/VersionStatus"
+        {
+            $v = "EXTENDED_SUPPORT","STANDARD_SUPPORT","UNSUPPORTED"
             break
         }
 
@@ -163,10 +200,14 @@ $EKS_map = @{
     "AmiType"=@("New-EKSNodegroup")
     "CapacityType"=@("New-EKSNodegroup")
     "ConnectorConfig_Provider"=@("Register-EKSCluster")
-    "KubernetesNetworkConfig_IpFamily"=@("New-EKSCluster")
+    "KubernetesNetworkConfig_IpFamily"=@("New-EKSCluster","Update-EKSClusterConfig")
     "LicenseType"=@("New-EKSEksAnywhereSubscription")
-    "ResolveConflicts"=@("New-EKSAddon","Update-EKSAddon")
+    "ResolveConflict"=@("New-EKSAddon","Update-EKSAddon")
+    "Status"=@("Get-EKSClusterVersion")
     "Term_Unit"=@("New-EKSEksAnywhereSubscription")
+    "UpdateConfig_UpdateStrategy"=@("New-EKSNodegroup","Update-EKSNodegroupConfig")
+    "UpgradePolicy_SupportType"=@("New-EKSCluster","Update-EKSClusterConfig")
+    "VersionStatus"=@("Get-EKSClusterVersion")
 }
 
 _awsArgumentCompleterRegistration $EKS_Completers $EKS_map
@@ -242,10 +283,12 @@ $EKS_SelectMap = @{
                "Get-EKSAddonConfiguration",
                "Get-EKSAddonVersion",
                "Get-EKSCluster",
+               "Get-EKSClusterVersion",
                "Get-EKSEksAnywhereSubscription",
                "Get-EKSFargateProfile",
                "Get-EKSIdentityProviderConfig",
                "Get-EKSInsight",
+               "Get-EKSInsightsRefresh",
                "Get-EKSNodegroup",
                "Get-EKSPodIdentityAssociation",
                "Get-EKSUpdate",
@@ -265,6 +308,7 @@ $EKS_SelectMap = @{
                "Get-EKSResourceTag",
                "Get-EKSUpdateList",
                "Register-EKSCluster",
+               "Start-EKSInsightsRefresh",
                "Add-EKSResourceTag",
                "Remove-EKSResourceTag",
                "Update-EKSAccessEntry",

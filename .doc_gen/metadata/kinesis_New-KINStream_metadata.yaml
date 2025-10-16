@@ -1,0 +1,20 @@
+---
+kinesis_CreateStream:
+  title: Use New-KINStream
+  title_abbrev: New-KINStream
+  synopsis: use New-KINStream
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: New-KINStream
+        excerpts:
+        - snippet_files: []
+          description: '<emphasis role="bold">Example 1: Creates a new stream.</emphasis>'
+        - snippet_files:
+          - .doc_gen/snippet_files/kinesis_New-KINStream.1.1.ps1
+          description:
+  services:
+    kinesis:
+      CreateStream:
+

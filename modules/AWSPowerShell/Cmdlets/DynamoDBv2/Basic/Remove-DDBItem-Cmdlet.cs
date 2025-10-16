@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
     /// <summary>
@@ -50,12 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB DeleteItem API operation.", Operation = new[] {"DeleteItem"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.DeleteItemResponse))]
     [AWSCmdletOutput("System.String or Amazon.DynamoDBv2.Model.DeleteItemResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.DynamoDBv2.Model.DeleteItemResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.DeleteItemResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveDDBItemCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConditionalOperator
         /// <summary>
@@ -89,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// <para>
         /// <para>This is a legacy parameter. Use <c>ConditionExpression</c> instead. For more information,
         /// see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.Expected.html">Expected</a>
-        /// in the <i>Amazon DynamoDB Developer Guide</i>.</para>
+        /// in the <i>Amazon DynamoDB Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,7 +114,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// Words</a> in the <i>Amazon DynamoDB Developer Guide</i>). To work around this, you
         /// could specify the following for <c>ExpressionAttributeNames</c>:</para><ul><li><para><c>{"#P":"Percentile"}</c></para></li></ul><para>You could then use this substitution in an expression, as in this example:</para><ul><li><para><c>#P = :val</c></para></li></ul><note><para>Tokens that begin with the <b>:</b> character are <i>expression attribute values</i>,
         /// which are placeholders for the actual value at runtime.</para></note><para>For more information on expression attribute names, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.AccessingItemAttributes.html">Specifying
-        /// Item Attributes</a> in the <i>Amazon DynamoDB Developer Guide</i>.</para>
+        /// Item Attributes</a> in the <i>Amazon DynamoDB Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,7 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// For example, suppose that you wanted to check whether the value of the <i>ProductStatus</i>
         /// attribute was one of the following: </para><para><c>Available | Backordered | Discontinued</c></para><para>You would first need to specify <c>ExpressionAttributeValues</c> as follows:</para><para><c>{ ":avail":{"S":"Available"}, ":back":{"S":"Backordered"}, ":disc":{"S":"Discontinued"}
         /// }</c></para><para>You could then use these values in an expression, such as this:</para><para><c>ProductStatus IN (:avail, :back, :disc)</c></para><para>For more information on expression attribute values, see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.SpecifyingConditions.html">Condition
-        /// Expressions</a> in the <i>Amazon DynamoDB Developer Guide</i>.</para>
+        /// Expressions</a> in the <i>Amazon DynamoDB Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -137,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         /// key of the item to delete.</para><para>For the primary key, you must provide all of the key attributes. For example, with
         /// a simple primary key, you only need to provide a value for the partition key. For
         /// a composite primary key, you must provide values for both the partition key and the
-        /// sort key.</para>
+        /// sort key.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -211,7 +230,8 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         #region Parameter TableName
         /// <summary>
         /// <para>
-        /// <para>The name of the table from which to delete the item.</para>
+        /// <para>The name of the table from which to delete the item. You can also provide the Amazon
+        /// Resource Name (ARN) of the table in this parameter.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -236,16 +256,6 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public string Select { get; set; } = "Attributes";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Key parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Key' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Key' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -256,9 +266,13 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TableName), MyInvocation.BoundParameters);
@@ -272,21 +286,11 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DynamoDBv2.Model.DeleteItemResponse, RemoveDDBItemCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Key;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConditionalOperator = this.ConditionalOperator;
             context.ConditionExpression = this.ConditionExpression;
             if (this.Expected != null)
@@ -436,13 +440,7 @@ namespace Amazon.PowerShell.Cmdlets.DDB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "DeleteItem");
             try
             {
-                #if DESKTOP
-                return client.DeleteItem(request);
-                #elif CORECLR
-                return client.DeleteItemAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteItemAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

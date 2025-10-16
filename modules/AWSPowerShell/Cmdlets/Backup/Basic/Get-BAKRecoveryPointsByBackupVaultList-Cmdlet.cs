@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [AWSCmdlet("Calls the AWS Backup ListRecoveryPointsByBackupVault API operation.", Operation = new[] {"ListRecoveryPointsByBackupVault"}, SelectReturnType = typeof(Amazon.Backup.Model.ListRecoveryPointsByBackupVaultResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.RecoveryPointByBackupVault or Amazon.Backup.Model.ListRecoveryPointsByBackupVaultResponse",
         "This cmdlet returns a collection of Amazon.Backup.Model.RecoveryPointByBackupVault objects.",
-        "The service call response (type Amazon.Backup.Model.ListRecoveryPointsByBackupVaultResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Backup.Model.ListRecoveryPointsByBackupVaultResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBAKRecoveryPointsByBackupVaultListCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupVaultAccountId
         /// <summary>
@@ -57,7 +60,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <para>
         /// <para>The name of a logical container where backups are stored. Backup vaults are identified
         /// by names that are unique to the account used to create them and the Amazon Web Services
-        /// Region where they are created. They consist of lowercase letters, numbers, and hyphens.</para><note><para>Backup vault name might not be available when a supported service creates the backup.</para></note>
+        /// Region where they are created.</para><note><para>Backup vault name might not be available when a supported service creates the backup.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -126,7 +129,8 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter ByResourceType
         /// <summary>
         /// <para>
-        /// <para>Returns only recovery points that match the specified resource type(s):</para><ul><li><para><c>Aurora</c> for Amazon Aurora</para></li><li><para><c>CloudFormation</c> for CloudFormation</para></li><li><para><c>DocumentDB</c> for Amazon DocumentDB (with MongoDB compatibility)</para></li><li><para><c>DynamoDB</c> for Amazon DynamoDB</para></li><li><para><c>EBS</c> for Amazon Elastic Block Store</para></li><li><para><c>EC2</c> for Amazon Elastic Compute Cloud</para></li><li><para><c>EFS</c> for Amazon Elastic File System</para></li><li><para><c>FSx</c> for Amazon FSx</para></li><li><para><c>Neptune</c> for Amazon Neptune</para></li><li><para><c>Redshift</c> for Amazon Redshift</para></li><li><para><c>RDS</c> for Amazon Relational Database Service</para></li><li><para><c>SAP HANA on Amazon EC2</c> for SAP HANA databases</para></li><li><para><c>Storage Gateway</c> for Storage Gateway</para></li><li><para><c>S3</c> for Amazon S3</para></li><li><para><c>Timestream</c> for Amazon Timestream</para></li><li><para><c>VirtualMachine</c> for virtual machines</para></li></ul>
+        /// <para>Returns only recovery points that match the specified resource type(s):</para><ul><li><para><c>Aurora</c> for Amazon Aurora</para></li><li><para><c>CloudFormation</c> for CloudFormation</para></li><li><para><c>DocumentDB</c> for Amazon DocumentDB (with MongoDB compatibility)</para></li><li><para><c>DynamoDB</c> for Amazon DynamoDB</para></li><li><para><c>EBS</c> for Amazon Elastic Block Store</para></li><li><para><c>EC2</c> for Amazon Elastic Compute Cloud</para></li><li><para><c>EFS</c> for Amazon Elastic File System</para></li><li><para><c>FSx</c> for Amazon FSx</para></li><li><para><c>Neptune</c> for Amazon Neptune</para></li><li><para><c>RDS</c> for Amazon Relational Database Service</para></li><li><para><c>Redshift</c> for Amazon Redshift</para></li><li><para><c>S3</c> for Amazon Simple Storage Service (Amazon S3)</para></li><li><para><c>SAP HANA on Amazon EC2</c> for SAP HANA databases on Amazon Elastic Compute Cloud
+        /// instances</para></li><li><para><c>Storage Gateway</c> for Storage Gateway</para></li><li><para><c>Timestream</c> for Amazon Timestream</para></li><li><para><c>VirtualMachine</c> for VMware virtual machines</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,7 +162,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -176,16 +180,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "RecoveryPoints";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BackupVaultName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -196,9 +190,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -206,21 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.ListRecoveryPointsByBackupVaultResponse, GetBAKRecoveryPointsByBackupVaultListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BackupVaultName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BackupVaultAccountId = this.BackupVaultAccountId;
             context.BackupVaultName = this.BackupVaultName;
             #if MODULAR
@@ -260,9 +248,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Backup.Model.ListRecoveryPointsByBackupVaultRequest();
@@ -354,7 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Backup.Model.ListRecoveryPointsByBackupVaultRequest();
@@ -437,7 +423,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.RecoveryPoints.Count;
+                    int _receivedThisCall = response.RecoveryPoints?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -486,13 +472,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "ListRecoveryPointsByBackupVault");
             try
             {
-                #if DESKTOP
-                return client.ListRecoveryPointsByBackupVault(request);
-                #elif CORECLR
-                return client.ListRecoveryPointsByBackupVaultAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRecoveryPointsByBackupVaultAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

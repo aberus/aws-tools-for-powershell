@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AmplifyUIBuilder;
 using Amazon.AmplifyUIBuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMPUI
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
     [AWSCmdlet("Calls the AWS Amplify UI Builder DeleteForm API operation.", Operation = new[] {"DeleteForm"}, SelectReturnType = typeof(Amazon.AmplifyUIBuilder.Model.DeleteFormResponse))]
     [AWSCmdletOutput("None or Amazon.AmplifyUIBuilder.Model.DeleteFormResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.AmplifyUIBuilder.Model.DeleteFormResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.AmplifyUIBuilder.Model.DeleteFormResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveAMPUIFormCmdlet : AmazonAmplifyUIBuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppId
         /// <summary>
@@ -113,9 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -221,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify UI Builder", "DeleteForm");
             try
             {
-                #if DESKTOP
-                return client.DeleteForm(request);
-                #elif CORECLR
-                return client.DeleteFormAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteFormAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

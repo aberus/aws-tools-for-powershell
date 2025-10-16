@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Kendra;
 using Amazon.Kendra.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KNDR
 {
     /// <summary>
@@ -50,14 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
     [AWSCmdlet("Calls the Amazon Kendra CreateIndex API operation.", Operation = new[] {"CreateIndex"}, SelectReturnType = typeof(Amazon.Kendra.Model.CreateIndexResponse))]
     [AWSCmdletOutput("System.String or Amazon.Kendra.Model.CreateIndexResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Kendra.Model.CreateIndexResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Kendra.Model.CreateIndexResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewKNDRIndexCmdlet : AmazonKendraClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -74,8 +75,10 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>
         /// <para>The Amazon Kendra edition to use for the index. Choose <c>DEVELOPER_EDITION</c> for
         /// indexes intended for development, testing, or proof of concept. Use <c>ENTERPRISE_EDITION</c>
-        /// for production. Once you set the edition for an index, it can't be changed.</para><para>The <c>Edition</c> parameter is optional. If you don't supply a value, the default
-        /// is <c>ENTERPRISE_EDITION</c>.</para><para>For more information on quota limits for Enterprise and Developer editions, see <a href="https://docs.aws.amazon.com/kendra/latest/dg/quotas.html">Quotas</a>.</para>
+        /// for production. Use <c>GEN_AI_ENTERPRISE_EDITION</c> for creating generative AI applications.
+        /// Once you set the edition for an index, it can't be changed. </para><para>The <c>Edition</c> parameter is optional. If you don't supply a value, the default
+        /// is <c>ENTERPRISE_EDITION</c>.</para><para>For more information on quota limits for Gen AI Enterprise Edition, Enterprise Edition,
+        /// and Developer Edition indices, see <a href="https://docs.aws.amazon.com/kendra/latest/dg/quotas.html">Quotas</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,7 +137,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         /// <para>
         /// <para>A list of key-value pairs that identify or categorize the index. You can also use
         /// tags to help control access to the index. Tag keys and values can consist of Unicode
-        /// letters, digits, white space, and any of the following symbols: _ . : / = + - @.</para>
+        /// letters, digits, white space, and any of the following symbols: _ . : / = + - @.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -145,7 +152,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         #region Parameter UserContextPolicy
         /// <summary>
         /// <para>
-        /// <para>The user context policy.</para><dl><dt>ATTRIBUTE_FILTER</dt><dd><para>All indexed content is searchable and displayable for all users. If you want to filter
+        /// <para>The user context policy.</para><important><para>If you're using an Amazon Kendra Gen AI Enterprise Edition index, you can only use
+        /// <c>ATTRIBUTE_FILTER</c> to filter search results by user context. If you're using
+        /// an Amazon Kendra Gen AI Enterprise Edition index and you try to use <c>USER_TOKEN</c>
+        /// to configure user context policy, Amazon Kendra returns a <c>ValidationException</c>
+        /// error.</para></important><dl><dt>ATTRIBUTE_FILTER</dt><dd><para>All indexed content is searchable and displayable for all users. If you want to filter
         /// search results on user context, you can use the attribute filters of <c>_user_id</c>
         /// and <c>_group_ids</c> or you can provide user and group information in <c>UserContext</c>.
         /// </para></dd><dt>USER_TOKEN</dt><dd><para>Enables token-based user access control to filter search results on user context.
@@ -174,7 +185,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         #region Parameter UserTokenConfiguration
         /// <summary>
         /// <para>
-        /// <para>The user token configuration.</para>
+        /// <para>The user token configuration.</para><important><para>If you're using an Amazon Kendra Gen AI Enterprise Edition index and you try to use
+        /// <c>UserTokenConfigurations</c> to configure user context policy, Amazon Kendra returns
+        /// a <c>ValidationException</c> error.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -204,16 +221,6 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public string Select { get; set; } = "Id";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -224,9 +231,13 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -240,21 +251,11 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Kendra.Model.CreateIndexResponse, NewKNDRIndexCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.Edition = this.Edition;
@@ -407,13 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.KNDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kendra", "CreateIndex");
             try
             {
-                #if DESKTOP
-                return client.CreateIndex(request);
-                #elif CORECLR
-                return client.CreateIndexAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateIndexAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexRuntimeV2;
 using Amazon.LexRuntimeV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LRSV2
 {
     /// <summary>
@@ -78,14 +80,13 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
     [OutputType("Amazon.LexRuntimeV2.Model.RecognizeUtteranceResponse")]
     [AWSCmdlet("Calls the Amazon Lex Runtime V2 RecognizeUtterance API operation.", Operation = new[] {"RecognizeUtterance"}, SelectReturnType = typeof(Amazon.LexRuntimeV2.Model.RecognizeUtteranceResponse))]
     [AWSCmdletOutput("Amazon.LexRuntimeV2.Model.RecognizeUtteranceResponse",
-        "This cmdlet returns an Amazon.LexRuntimeV2.Model.RecognizeUtteranceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexRuntimeV2.Model.RecognizeUtteranceResponse object containing multiple properties."
     )]
     public partial class SendLRSV2UtteranceCmdlet : AmazonLexRuntimeV2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BotAliasId
         /// <summary>
@@ -249,9 +250,13 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -412,13 +417,7 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Runtime V2", "RecognizeUtterance");
             try
             {
-                #if DESKTOP
-                return client.RecognizeUtterance(request);
-                #elif CORECLR
-                return client.RecognizeUtteranceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RecognizeUtteranceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

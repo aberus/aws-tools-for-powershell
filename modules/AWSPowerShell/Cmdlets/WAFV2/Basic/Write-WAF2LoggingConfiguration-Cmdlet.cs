@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAFV2;
 using Amazon.WAFV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAF2
 {
     /// <summary>
     /// Enables the specified <a>LoggingConfiguration</a>, to start logging from a web ACL,
     /// according to the configuration provided. 
     /// 
-    ///  <note><para>
+    ///  
+    /// <para>
+    /// If you configure data protection for the web ACL, the protection applies to the data
+    /// that WAF sends to the logs. 
+    /// </para><note><para>
     /// This operation completely replaces any mutable specifications that you already have
     /// for a logging configuration with the ones that you provide to this call. 
     /// </para><para>
@@ -77,12 +83,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
     [AWSCmdlet("Calls the AWS WAF V2 PutLoggingConfiguration API operation.", Operation = new[] {"PutLoggingConfiguration"}, SelectReturnType = typeof(Amazon.WAFV2.Model.PutLoggingConfigurationResponse))]
     [AWSCmdletOutput("Amazon.WAFV2.Model.LoggingConfiguration or Amazon.WAFV2.Model.PutLoggingConfigurationResponse",
         "This cmdlet returns an Amazon.WAFV2.Model.LoggingConfiguration object.",
-        "The service call response (type Amazon.WAFV2.Model.PutLoggingConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WAFV2.Model.PutLoggingConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteWAF2LoggingConfigurationCmdlet : AmazonWAFV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LoggingFilter_DefaultBehavior
         /// <summary>
@@ -100,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         #region Parameter LoggingFilter_Filter
         /// <summary>
         /// <para>
-        /// <para>The filters that you want to apply to the logs. </para>
+        /// <para>The filters that you want to apply to the logs. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +122,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         #region Parameter LoggingConfiguration_LogDestinationConfig
         /// <summary>
         /// <para>
-        /// <para>The logging destination configuration that you want to associate with the web ACL.</para><note><para>You can associate one logging destination to a web ACL.</para></note>
+        /// <para>The logging destination configuration that you want to associate with the web ACL.</para><note><para>You can associate one logging destination to a web ACL.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -126,12 +141,46 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public System.String[] LoggingConfiguration_LogDestinationConfig { get; set; }
         #endregion
         
+        #region Parameter LoggingConfiguration_LogScope
+        /// <summary>
+        /// <para>
+        /// <para>The owner of the logging configuration, which must be set to <c>CUSTOMER</c> for the
+        /// configurations that you manage. </para><para>The log scope <c>SECURITY_LAKE</c> indicates a configuration that is managed through
+        /// Amazon Security Lake. You can use Security Lake to collect log and event data from
+        /// various sources for normalization, analysis, and management. For information, see
+        /// <a href="https://docs.aws.amazon.com/security-lake/latest/userguide/internal-sources.html">Collecting
+        /// data from Amazon Web Services services</a> in the <i>Amazon Security Lake user guide</i>.
+        /// </para><para>Default: <c>CUSTOMER</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WAFV2.LogScope")]
+        public Amazon.WAFV2.LogScope LoggingConfiguration_LogScope { get; set; }
+        #endregion
+        
+        #region Parameter LoggingConfiguration_LogType
+        /// <summary>
+        /// <para>
+        /// <para>Used to distinguish between various logging options. Currently, there is one option.</para><para>Default: <c>WAF_LOGS</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WAFV2.LogType")]
+        public Amazon.WAFV2.LogType LoggingConfiguration_LogType { get; set; }
+        #endregion
+        
         #region Parameter LoggingConfiguration_ManagedByFirewallManager
         /// <summary>
         /// <para>
         /// <para>Indicates whether the logging configuration was created by Firewall Manager, as part
         /// of an WAF policy configuration. If true, only Firewall Manager can modify or delete
-        /// the configuration. </para>
+        /// the configuration. </para><para>The logging configuration can be created by Firewall Manager for use with any web
+        /// ACL that Firewall Manager is using for an WAF policy. Web ACLs that Firewall Manager
+        /// creates and uses have their <c>ManagedByFirewallManager</c> property set to true.
+        /// Web ACLs that were created by a customer account and then retrofitted by Firewall
+        /// Manager for use by a policy have their <c>RetrofittedByFirewallManager</c> property
+        /// set to true. For either case, any corresponding logging configuration will indicate
+        /// <c>ManagedByFirewallManager</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,10 +191,17 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         /// <summary>
         /// <para>
         /// <para>The parts of the request that you want to keep out of the logs.</para><para>For example, if you redact the <c>SingleHeader</c> field, the <c>HEADER</c> field
-        /// in the logs will be <c>REDACTED</c> for all rules that use the <c>SingleHeader</c><c>FieldToMatch</c> setting. </para><para>Redaction applies only to the component that's specified in the rule's <c>FieldToMatch</c>
+        /// in the logs will be <c>REDACTED</c> for all rules that use the <c>SingleHeader</c><c>FieldToMatch</c> setting. </para><para>If you configure data protection for the web ACL, the protection applies to the data
+        /// that WAF sends to the logs. </para><para>Redaction applies only to the component that's specified in the rule's <c>FieldToMatch</c>
         /// setting, so the <c>SingleHeader</c> redaction doesn't apply to rules that use the
         /// <c>Headers</c><c>FieldToMatch</c>.</para><note><para>You can specify only the following fields for redaction: <c>UriPath</c>, <c>QueryString</c>,
-        /// <c>SingleHeader</c>, and <c>Method</c>.</para></note>
+        /// <c>SingleHeader</c>, and <c>Method</c>.</para></note><note><para>This setting has no impact on request sampling. You can only exclude fields from request
+        /// sampling by disabling sampling in the web ACL visibility configuration or by configuring
+        /// data protection for the web ACL.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,16 +237,6 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public string Select { get; set; } = "LoggingConfiguration";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LoggingConfiguration_ResourceArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LoggingConfiguration_ResourceArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LoggingConfiguration_ResourceArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -201,9 +247,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LoggingConfiguration_ResourceArn), MyInvocation.BoundParameters);
@@ -217,21 +267,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WAFV2.Model.PutLoggingConfigurationResponse, WriteWAF2LoggingConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LoggingConfiguration_ResourceArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.LoggingConfiguration_LogDestinationConfig != null)
             {
                 context.LoggingConfiguration_LogDestinationConfig = new List<System.String>(this.LoggingConfiguration_LogDestinationConfig);
@@ -247,6 +287,8 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             {
                 context.LoggingFilter_Filter = new List<Amazon.WAFV2.Model.Filter>(this.LoggingFilter_Filter);
             }
+            context.LoggingConfiguration_LogScope = this.LoggingConfiguration_LogScope;
+            context.LoggingConfiguration_LogType = this.LoggingConfiguration_LogType;
             context.LoggingConfiguration_ManagedByFirewallManager = this.LoggingConfiguration_ManagedByFirewallManager;
             if (this.LoggingConfiguration_RedactedField != null)
             {
@@ -287,6 +329,26 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             if (requestLoggingConfiguration_loggingConfiguration_LogDestinationConfig != null)
             {
                 request.LoggingConfiguration.LogDestinationConfigs = requestLoggingConfiguration_loggingConfiguration_LogDestinationConfig;
+                requestLoggingConfigurationIsNull = false;
+            }
+            Amazon.WAFV2.LogScope requestLoggingConfiguration_loggingConfiguration_LogScope = null;
+            if (cmdletContext.LoggingConfiguration_LogScope != null)
+            {
+                requestLoggingConfiguration_loggingConfiguration_LogScope = cmdletContext.LoggingConfiguration_LogScope;
+            }
+            if (requestLoggingConfiguration_loggingConfiguration_LogScope != null)
+            {
+                request.LoggingConfiguration.LogScope = requestLoggingConfiguration_loggingConfiguration_LogScope;
+                requestLoggingConfigurationIsNull = false;
+            }
+            Amazon.WAFV2.LogType requestLoggingConfiguration_loggingConfiguration_LogType = null;
+            if (cmdletContext.LoggingConfiguration_LogType != null)
+            {
+                requestLoggingConfiguration_loggingConfiguration_LogType = cmdletContext.LoggingConfiguration_LogType;
+            }
+            if (requestLoggingConfiguration_loggingConfiguration_LogType != null)
+            {
+                request.LoggingConfiguration.LogType = requestLoggingConfiguration_loggingConfiguration_LogType;
                 requestLoggingConfigurationIsNull = false;
             }
             System.Boolean? requestLoggingConfiguration_loggingConfiguration_ManagedByFirewallManager = null;
@@ -397,13 +459,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF V2", "PutLoggingConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutLoggingConfiguration(request);
-                #elif CORECLR
-                return client.PutLoggingConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutLoggingConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -423,6 +479,8 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             public List<System.String> LoggingConfiguration_LogDestinationConfig { get; set; }
             public Amazon.WAFV2.FilterBehavior LoggingFilter_DefaultBehavior { get; set; }
             public List<Amazon.WAFV2.Model.Filter> LoggingFilter_Filter { get; set; }
+            public Amazon.WAFV2.LogScope LoggingConfiguration_LogScope { get; set; }
+            public Amazon.WAFV2.LogType LoggingConfiguration_LogType { get; set; }
             public System.Boolean? LoggingConfiguration_ManagedByFirewallManager { get; set; }
             public List<Amazon.WAFV2.Model.FieldToMatch> LoggingConfiguration_RedactedField { get; set; }
             public System.String LoggingConfiguration_ResourceArn { get; set; }

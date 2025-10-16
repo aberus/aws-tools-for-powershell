@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElastiCache;
 using Amazon.ElastiCache.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
     [AWSCmdlet("Calls the Amazon ElastiCache DescribeReservedCacheNodesOfferings API operation.", Operation = new[] {"DescribeReservedCacheNodesOfferings"}, SelectReturnType = typeof(Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsResponse))]
     [AWSCmdletOutput("Amazon.ElastiCache.Model.ReservedCacheNodesOffering or Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsResponse",
         "This cmdlet returns a collection of Amazon.ElastiCache.Model.ReservedCacheNodesOffering objects.",
-        "The service call response (type Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetECReservedCacheNodesOfferingCmdlet : AmazonElastiCacheClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CacheNodeType
         /// <summary>
@@ -49,28 +52,29 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// matching the specified cache node type.</para><para>The following node types are supported by ElastiCache. Generally speaking, the current
         /// generation types provide more memory and computational power at lower cost when compared
         /// to their equivalent previous generation counterparts.</para><ul><li><para>General purpose:</para><ul><li><para>Current generation: </para><para><b>M7g node types</b>: <c>cache.m7g.large</c>, <c>cache.m7g.xlarge</c>, <c>cache.m7g.2xlarge</c>,
-        /// <c>cache.m7g.4xlarge</c>, <c>cache.m7g.8xlarge</c>, <c>cache.m7g.12xlarge</c>, <c>cache.m7g.16xlarge</c></para><note><para>For region availability, see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html#CacheNodes.SupportedTypesByRegion">Supported
-        /// Node Types</a></para></note><para><b>M6g node types</b> (available only for Redis engine version 5.0.6 onward and for
-        /// Memcached engine version 1.5.16 onward): <c>cache.m6g.large</c>, <c>cache.m6g.xlarge</c>,
+        /// <c>cache.m7g.4xlarge</c>, <c>cache.m7g.8xlarge</c>, <c>cache.m7g.12xlarge</c>, <c>cache.m7g.16xlarge</c></para><note><para>For region availability, see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/CacheNodes.SupportedTypes.html#CacheNodes.SupportedTypesByRegion">Supported
+        /// Node Types</a></para></note><para><b>M6g node types</b> (available only for Redis OSS engine version 5.0.6 onward and
+        /// for Memcached engine version 1.5.16 onward): <c>cache.m6g.large</c>, <c>cache.m6g.xlarge</c>,
         /// <c>cache.m6g.2xlarge</c>, <c>cache.m6g.4xlarge</c>, <c>cache.m6g.8xlarge</c>, <c>cache.m6g.12xlarge</c>,
         /// <c>cache.m6g.16xlarge</c></para><para><b>M5 node types:</b><c>cache.m5.large</c>, <c>cache.m5.xlarge</c>, <c>cache.m5.2xlarge</c>,
         /// <c>cache.m5.4xlarge</c>, <c>cache.m5.12xlarge</c>, <c>cache.m5.24xlarge</c></para><para><b>M4 node types:</b><c>cache.m4.large</c>, <c>cache.m4.xlarge</c>, <c>cache.m4.2xlarge</c>,
-        /// <c>cache.m4.4xlarge</c>, <c>cache.m4.10xlarge</c></para><para><b>T4g node types</b> (available only for Redis engine version 5.0.6 onward and Memcached
-        /// engine version 1.5.16 onward): <c>cache.t4g.micro</c>, <c>cache.t4g.small</c>, <c>cache.t4g.medium</c></para><para><b>T3 node types:</b><c>cache.t3.micro</c>, <c>cache.t3.small</c>, <c>cache.t3.medium</c></para><para><b>T2 node types:</b><c>cache.t2.micro</c>, <c>cache.t2.small</c>, <c>cache.t2.medium</c></para></li><li><para>Previous generation: (not recommended. Existing clusters are still supported but creation
+        /// <c>cache.m4.4xlarge</c>, <c>cache.m4.10xlarge</c></para><para><b>T4g node types</b> (available only for Redis OSS engine version 5.0.6 onward and
+        /// Memcached engine version 1.5.16 onward): <c>cache.t4g.micro</c>, <c>cache.t4g.small</c>,
+        /// <c>cache.t4g.medium</c></para><para><b>T3 node types:</b><c>cache.t3.micro</c>, <c>cache.t3.small</c>, <c>cache.t3.medium</c></para><para><b>T2 node types:</b><c>cache.t2.micro</c>, <c>cache.t2.small</c>, <c>cache.t2.medium</c></para></li><li><para>Previous generation: (not recommended. Existing clusters are still supported but creation
         /// of new clusters is not supported for these types.)</para><para><b>T1 node types:</b><c>cache.t1.micro</c></para><para><b>M1 node types:</b><c>cache.m1.small</c>, <c>cache.m1.medium</c>, <c>cache.m1.large</c>,
         /// <c>cache.m1.xlarge</c></para><para><b>M3 node types:</b><c>cache.m3.medium</c>, <c>cache.m3.large</c>, <c>cache.m3.xlarge</c>,
         /// <c>cache.m3.2xlarge</c></para></li></ul></li><li><para>Compute optimized:</para><ul><li><para>Previous generation: (not recommended. Existing clusters are still supported but creation
         /// of new clusters is not supported for these types.)</para><para><b>C1 node types:</b><c>cache.c1.xlarge</c></para></li></ul></li><li><para>Memory optimized:</para><ul><li><para>Current generation: </para><para><b>R7g node types</b>: <c>cache.r7g.large</c>, <c>cache.r7g.xlarge</c>, <c>cache.r7g.2xlarge</c>,
-        /// <c>cache.r7g.4xlarge</c>, <c>cache.r7g.8xlarge</c>, <c>cache.r7g.12xlarge</c>, <c>cache.r7g.16xlarge</c></para><note><para>For region availability, see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/CacheNodes.SupportedTypes.html#CacheNodes.SupportedTypesByRegion">Supported
-        /// Node Types</a></para></note><para><b>R6g node types</b> (available only for Redis engine version 5.0.6 onward and for
-        /// Memcached engine version 1.5.16 onward): <c>cache.r6g.large</c>, <c>cache.r6g.xlarge</c>,
+        /// <c>cache.r7g.4xlarge</c>, <c>cache.r7g.8xlarge</c>, <c>cache.r7g.12xlarge</c>, <c>cache.r7g.16xlarge</c></para><note><para>For region availability, see <a href="https://docs.aws.amazon.com/AmazonElastiCache/latest/dg/CacheNodes.SupportedTypes.html#CacheNodes.SupportedTypesByRegion">Supported
+        /// Node Types</a></para></note><para><b>R6g node types</b> (available only for Redis OSS engine version 5.0.6 onward and
+        /// for Memcached engine version 1.5.16 onward): <c>cache.r6g.large</c>, <c>cache.r6g.xlarge</c>,
         /// <c>cache.r6g.2xlarge</c>, <c>cache.r6g.4xlarge</c>, <c>cache.r6g.8xlarge</c>, <c>cache.r6g.12xlarge</c>,
         /// <c>cache.r6g.16xlarge</c></para><para><b>R5 node types:</b><c>cache.r5.large</c>, <c>cache.r5.xlarge</c>, <c>cache.r5.2xlarge</c>,
         /// <c>cache.r5.4xlarge</c>, <c>cache.r5.12xlarge</c>, <c>cache.r5.24xlarge</c></para><para><b>R4 node types:</b><c>cache.r4.large</c>, <c>cache.r4.xlarge</c>, <c>cache.r4.2xlarge</c>,
         /// <c>cache.r4.4xlarge</c>, <c>cache.r4.8xlarge</c>, <c>cache.r4.16xlarge</c></para></li><li><para>Previous generation: (not recommended. Existing clusters are still supported but creation
         /// of new clusters is not supported for these types.)</para><para><b>M2 node types:</b><c>cache.m2.xlarge</c>, <c>cache.m2.2xlarge</c>, <c>cache.m2.4xlarge</c></para><para><b>R3 node types:</b><c>cache.r3.large</c>, <c>cache.r3.xlarge</c>, <c>cache.r3.2xlarge</c>,
-        /// <c>cache.r3.4xlarge</c>, <c>cache.r3.8xlarge</c></para></li></ul></li></ul><para><b>Additional node type info</b></para><ul><li><para>All current generation instance types are created in Amazon VPC by default.</para></li><li><para>Redis append-only files (AOF) are not supported for T1 or T2 instances.</para></li><li><para>Redis Multi-AZ with automatic failover is not supported on T1 instances.</para></li><li><para>Redis configuration variables <c>appendonly</c> and <c>appendfsync</c> are not supported
-        /// on Redis version 2.8.22 and later.</para></li></ul>
+        /// <c>cache.r3.4xlarge</c>, <c>cache.r3.8xlarge</c></para></li></ul></li></ul><para><b>Additional node type info</b></para><ul><li><para>All current generation instance types are created in Amazon VPC by default.</para></li><li><para>Valkey or Redis OSS append-only files (AOF) are not supported for T1 or T2 instances.</para></li><li><para>Valkey or Redis OSS Multi-AZ with automatic failover is not supported on T1 instances.</para></li><li><para>The configuration variables <c>appendonly</c> and <c>appendfsync</c> are not supported
+        /// on Valkey, or on Redis OSS version 2.8.22 and later.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -131,7 +135,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,16 +172,6 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public string Select { get; set; } = "ReservedCacheNodesOfferings";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ReservedCacheNodesOfferingId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ReservedCacheNodesOfferingId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ReservedCacheNodesOfferingId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -188,9 +182,13 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -198,21 +196,11 @@ namespace Amazon.PowerShell.Cmdlets.EC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsResponse, GetECReservedCacheNodesOfferingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ReservedCacheNodesOfferingId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CacheNodeType = this.CacheNodeType;
             context.Duration = this.Duration;
             context.Marker = this.Marker;
@@ -243,9 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsRequest();
@@ -325,7 +311,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.ElastiCache.Model.DescribeReservedCacheNodesOfferingsRequest();
@@ -389,7 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ReservedCacheNodesOfferings.Count;
+                    int _receivedThisCall = response.ReservedCacheNodesOfferings?.Count ?? 0;
                     
                     _nextToken = response.Marker;
                     _retrievedSoFar += _receivedThisCall;
@@ -438,13 +424,7 @@ namespace Amazon.PowerShell.Cmdlets.EC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon ElastiCache", "DescribeReservedCacheNodesOfferings");
             try
             {
-                #if DESKTOP
-                return client.DescribeReservedCacheNodesOfferings(request);
-                #elif CORECLR
-                return client.DescribeReservedCacheNodesOfferingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeReservedCacheNodesOfferingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CostOptimizationHub;
 using Amazon.CostOptimizationHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.COH
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.COH
     [OutputType("Amazon.CostOptimizationHub.Model.UpdatePreferencesResponse")]
     [AWSCmdlet("Calls the Cost Optimization Hub UpdatePreferences API operation.", Operation = new[] {"UpdatePreferences"}, SelectReturnType = typeof(Amazon.CostOptimizationHub.Model.UpdatePreferencesResponse))]
     [AWSCmdletOutput("Amazon.CostOptimizationHub.Model.UpdatePreferencesResponse",
-        "This cmdlet returns an Amazon.CostOptimizationHub.Model.UpdatePreferencesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CostOptimizationHub.Model.UpdatePreferencesResponse object containing multiple properties."
     )]
     public partial class UpdateCOHPreferenceCmdlet : AmazonCostOptimizationHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MemberAccountDiscountVisibility
         /// <summary>
@@ -54,6 +57,18 @@ namespace Amazon.PowerShell.Cmdlets.COH
         public Amazon.CostOptimizationHub.MemberAccountDiscountVisibility MemberAccountDiscountVisibility { get; set; }
         #endregion
         
+        #region Parameter PreferredCommitment_PaymentOption
+        /// <summary>
+        /// <para>
+        /// <para>The preferred upfront payment structure for commitments. If the value is null, it
+        /// will default to <c>AllUpfront</c> (highest savings) where applicable.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CostOptimizationHub.PaymentOption")]
+        public Amazon.CostOptimizationHub.PaymentOption PreferredCommitment_PaymentOption { get; set; }
+        #endregion
+        
         #region Parameter SavingsEstimationMode
         /// <summary>
         /// <para>
@@ -63,6 +78,18 @@ namespace Amazon.PowerShell.Cmdlets.COH
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.CostOptimizationHub.SavingsEstimationMode")]
         public Amazon.CostOptimizationHub.SavingsEstimationMode SavingsEstimationMode { get; set; }
+        #endregion
+        
+        #region Parameter PreferredCommitment_Term
+        /// <summary>
+        /// <para>
+        /// <para>The preferred length of the commitment period. If the value is null, it will default
+        /// to <c>ThreeYears</c> (highest savings) where applicable.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CostOptimizationHub.Term")]
+        public Amazon.CostOptimizationHub.Term PreferredCommitment_Term { get; set; }
         #endregion
         
         #region Parameter Select
@@ -86,9 +113,13 @@ namespace Amazon.PowerShell.Cmdlets.COH
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -108,6 +139,8 @@ namespace Amazon.PowerShell.Cmdlets.COH
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.MemberAccountDiscountVisibility = this.MemberAccountDiscountVisibility;
+            context.PreferredCommitment_PaymentOption = this.PreferredCommitment_PaymentOption;
+            context.PreferredCommitment_Term = this.PreferredCommitment_Term;
             context.SavingsEstimationMode = this.SavingsEstimationMode;
             
             // allow further manipulation of loaded context prior to processing
@@ -128,6 +161,35 @@ namespace Amazon.PowerShell.Cmdlets.COH
             if (cmdletContext.MemberAccountDiscountVisibility != null)
             {
                 request.MemberAccountDiscountVisibility = cmdletContext.MemberAccountDiscountVisibility;
+            }
+            
+             // populate PreferredCommitment
+            var requestPreferredCommitmentIsNull = true;
+            request.PreferredCommitment = new Amazon.CostOptimizationHub.Model.PreferredCommitment();
+            Amazon.CostOptimizationHub.PaymentOption requestPreferredCommitment_preferredCommitment_PaymentOption = null;
+            if (cmdletContext.PreferredCommitment_PaymentOption != null)
+            {
+                requestPreferredCommitment_preferredCommitment_PaymentOption = cmdletContext.PreferredCommitment_PaymentOption;
+            }
+            if (requestPreferredCommitment_preferredCommitment_PaymentOption != null)
+            {
+                request.PreferredCommitment.PaymentOption = requestPreferredCommitment_preferredCommitment_PaymentOption;
+                requestPreferredCommitmentIsNull = false;
+            }
+            Amazon.CostOptimizationHub.Term requestPreferredCommitment_preferredCommitment_Term = null;
+            if (cmdletContext.PreferredCommitment_Term != null)
+            {
+                requestPreferredCommitment_preferredCommitment_Term = cmdletContext.PreferredCommitment_Term;
+            }
+            if (requestPreferredCommitment_preferredCommitment_Term != null)
+            {
+                request.PreferredCommitment.Term = requestPreferredCommitment_preferredCommitment_Term;
+                requestPreferredCommitmentIsNull = false;
+            }
+             // determine if request.PreferredCommitment should be set to null
+            if (requestPreferredCommitmentIsNull)
+            {
+                request.PreferredCommitment = null;
             }
             if (cmdletContext.SavingsEstimationMode != null)
             {
@@ -171,13 +233,7 @@ namespace Amazon.PowerShell.Cmdlets.COH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Cost Optimization Hub", "UpdatePreferences");
             try
             {
-                #if DESKTOP
-                return client.UpdatePreferences(request);
-                #elif CORECLR
-                return client.UpdatePreferencesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePreferencesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -195,6 +251,8 @@ namespace Amazon.PowerShell.Cmdlets.COH
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.CostOptimizationHub.MemberAccountDiscountVisibility MemberAccountDiscountVisibility { get; set; }
+            public Amazon.CostOptimizationHub.PaymentOption PreferredCommitment_PaymentOption { get; set; }
+            public Amazon.CostOptimizationHub.Term PreferredCommitment_Term { get; set; }
             public Amazon.CostOptimizationHub.SavingsEstimationMode SavingsEstimationMode { get; set; }
             public System.Func<Amazon.CostOptimizationHub.Model.UpdatePreferencesResponse, UpdateCOHPreferenceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

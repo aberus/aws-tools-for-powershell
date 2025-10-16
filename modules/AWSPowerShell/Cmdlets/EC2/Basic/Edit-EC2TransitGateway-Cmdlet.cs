@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -37,18 +39,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyTransitGateway API operation.", Operation = new[] {"ModifyTransitGateway"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyTransitGatewayResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.TransitGateway or Amazon.EC2.Model.ModifyTransitGatewayResponse",
         "This cmdlet returns an Amazon.EC2.Model.TransitGateway object.",
-        "The service call response (type Amazon.EC2.Model.ModifyTransitGatewayResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.ModifyTransitGatewayResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2TransitGatewayCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Options_AddTransitGatewayCidrBlock
         /// <summary>
         /// <para>
         /// <para>Adds IPv4 or IPv6 CIDR blocks for the transit gateway. Must be a size /24 CIDR block
-        /// or larger for IPv4, or a size /64 CIDR block or larger for IPv6.</para>
+        /// or larger for IPv4, or a size /64 CIDR block or larger for IPv6.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -60,9 +67,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>A private Autonomous System Number (ASN) for the Amazon side of a BGP session. The
-        /// range is 64512 to 65534 for 16-bit ASNs and 4200000000 to 4294967294 for 32-bit ASNs.</para><para>The modify ASN operation is not allowed on a transit gateway with active BGP sessions.
-        /// You must first delete all transit gateway attachments that have BGP configured prior
-        /// to modifying the ASN on the transit gateway.</para>
+        /// range is 64512 to 65534 for 16-bit ASNs and 4200000000 to 4294967294 for 32-bit ASNs.</para><para>The modify ASN operation is not allowed on a transit gateway if it has the following
+        /// attachments:</para><ul><li><para>Dynamic VPN</para></li><li><para>Static VPN</para></li><li><para>Direct Connect Gateway</para></li><li><para>Connect</para></li></ul><para>You must first delete all transit gateway attachments configured prior to modifying
+        /// the ASN on the transit gateway.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,8 +112,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Options_DefaultRouteTablePropagation
         /// <summary>
         /// <para>
-        /// <para>Enable or disable automatic propagation of routes to the default propagation route
-        /// table.</para>
+        /// <para>Indicates whether resource attachments automatically propagate routes to the default
+        /// propagation route table. Enabled by default. If <c>defaultRouteTablePropagation</c>
+        /// is set to <c>enable</c>, Amazon Web Services Transit Gateway will create the default
+        /// transit gateway route table.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,6 +144,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public Amazon.EC2.DnsSupportValue Options_DnsSupport { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter Options_PropagationDefaultRouteTableId
         /// <summary>
         /// <para>
@@ -148,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Options_RemoveTransitGatewayCidrBlock
         /// <summary>
         /// <para>
-        /// <para>Removes CIDR blocks for the transit gateway.</para>
+        /// <para>Removes CIDR blocks for the transit gateway.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -160,12 +185,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Enables you to reference a security group across VPCs attached to a transit gateway
-        /// (TGW). Use this option to simplify security group management and control of instance-to-instance
-        /// traffic across VPCs that are connected by transit gateway. You can also use this option
-        /// to migrate from VPC peering (which was the only option that supported security group
-        /// referencing) to transit gateways (which now also support security group referencing).
-        /// This option is disabled by default and there are no additional costs to use this feature.</para><para>For important information about this feature, see <a href="https://docs.aws.amazon.com/vpc/latest/tgw/tgw-transit-gateways.html#create-tgw">Create
-        /// a transit gateway</a> in the <i>Amazon Web Services Transit Gateway Guide</i>.</para>
+        /// to simplify security group management. </para><para>This option is disabled by default.</para><para>For more information about security group referencing, see <a href="https://docs.aws.amazon.com/vpc/latest/tgw/tgw-vpc-attachments.html#vpc-attachment-security">Security
+        /// group referencing</a> in the <i>Amazon Web Services Transit Gateways Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -212,16 +233,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "TransitGateway";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TransitGatewayId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TransitGatewayId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TransitGatewayId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -232,9 +243,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TransitGatewayId), MyInvocation.BoundParameters);
@@ -248,22 +263,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyTransitGatewayResponse, EditEC2TransitGatewayCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TransitGatewayId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
             if (this.Options_AddTransitGatewayCidrBlock != null)
             {
                 context.Options_AddTransitGatewayCidrBlock = new List<System.String>(this.Options_AddTransitGatewayCidrBlock);
@@ -307,6 +313,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             
              // populate Options
@@ -469,13 +479,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyTransitGateway");
             try
             {
-                #if DESKTOP
-                return client.ModifyTransitGateway(request);
-                #elif CORECLR
-                return client.ModifyTransitGatewayAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyTransitGatewayAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -493,6 +497,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<System.String> Options_AddTransitGatewayCidrBlock { get; set; }
             public System.Int64? Options_AmazonSideAsn { get; set; }
             public System.String Options_AssociationDefaultRouteTableId { get; set; }

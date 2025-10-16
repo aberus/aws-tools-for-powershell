@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
@@ -38,8 +40,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// If successful, a slot is reserved in the game session for each player, and new <c>PlayerSession</c>
     /// objects are returned with player session IDs. Each player references their player
     /// session ID when sending a connection request to the game session, and the game server
-    /// can use it to validate the player reservation with the Amazon GameLift service. Player
-    /// sessions cannot be updated.
+    /// can use it to validate the player reservation with the Amazon GameLift Servers service.
+    /// Player sessions cannot be updated.
     /// </para><para>
     /// The maximum number of players per game session is 200. It is not adjustable. 
     /// </para><para><b>Related actions</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/reference-awssdk.html#reference-awssdk-resources-fleets">All
@@ -50,16 +52,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service CreatePlayerSessions API operation.", Operation = new[] {"CreatePlayerSessions"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreatePlayerSessionsResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.PlayerSession or Amazon.GameLift.Model.CreatePlayerSessionsResponse",
         "This cmdlet returns a collection of Amazon.GameLift.Model.PlayerSession objects.",
-        "The service call response (type Amazon.GameLift.Model.CreatePlayerSessionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.CreatePlayerSessionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGMLPlayerSessionCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GameSessionId
         /// <summary>
@@ -82,9 +81,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>Map of string pairs, each specifying a player ID and a set of developer-defined information
-        /// related to the player. Amazon GameLift does not use this data, so it can be formatted
-        /// as needed for use in the game. Any player data strings for player IDs that are not
-        /// included in the <c>PlayerIds</c> parameter are ignored. </para>
+        /// related to the player. Amazon GameLift Servers does not use this data, so it can be
+        /// formatted as needed for use in the game. Any player data strings for player IDs that
+        /// are not included in the <c>PlayerIds</c> parameter are ignored. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,7 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         #region Parameter PlayerId
         /// <summary>
         /// <para>
-        /// <para>List of unique identifiers for the players to be added.</para>
+        /// <para>List of unique identifiers for the players to be added.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,16 +127,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "PlayerSessions";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GameSessionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GameSessionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GameSessionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -140,9 +137,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GameSessionId), MyInvocation.BoundParameters);
@@ -156,21 +157,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreatePlayerSessionsResponse, NewGMLPlayerSessionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GameSessionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.GameSessionId = this.GameSessionId;
             #if MODULAR
             if (this.GameSessionId == null && ParameterWasBound(nameof(this.GameSessionId)))
@@ -262,13 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreatePlayerSessions");
             try
             {
-                #if DESKTOP
-                return client.CreatePlayerSessions(request);
-                #elif CORECLR
-                return client.CreatePlayerSessionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePlayerSessionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

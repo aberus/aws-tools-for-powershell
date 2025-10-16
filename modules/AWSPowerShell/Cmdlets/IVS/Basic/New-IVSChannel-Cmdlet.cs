@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IVS;
 using Amazon.IVS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IVS
 {
     /// <summary>
@@ -34,14 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.IVS
     [OutputType("Amazon.IVS.Model.CreateChannelResponse")]
     [AWSCmdlet("Calls the Amazon Interactive Video Service CreateChannel API operation.", Operation = new[] {"CreateChannel"}, SelectReturnType = typeof(Amazon.IVS.Model.CreateChannelResponse))]
     [AWSCmdletOutput("Amazon.IVS.Model.CreateChannelResponse",
-        "This cmdlet returns an Amazon.IVS.Model.CreateChannelResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IVS.Model.CreateChannelResponse object containing multiple properties."
     )]
     public partial class NewIVSChannelCmdlet : AmazonIVSClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Authorized
         /// <summary>
@@ -53,10 +54,38 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public System.Boolean? Authorized { get; set; }
         #endregion
         
+        #region Parameter ContainerFormat
+        /// <summary>
+        /// <para>
+        /// <para>Indicates which content-packaging format is used (MPEG-TS or fMP4). If <c>multitrackInputConfiguration</c>
+        /// is specified and <c>enabled</c> is <c>true</c>, then <c>containerFormat</c> is required
+        /// and must be set to <c>FRAGMENTED_MP4</c>. Otherwise, <c>containerFormat</c> may be
+        /// set to <c>TS</c> or <c>FRAGMENTED_MP4</c>. Default: <c>TS</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IVS.ContainerFormat")]
+        public Amazon.IVS.ContainerFormat ContainerFormat { get; set; }
+        #endregion
+        
+        #region Parameter MultitrackInputConfiguration_Enabled
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether multitrack input is enabled. Can be set to <c>true</c> only if channel
+        /// type is <c>STANDARD</c>. Setting <c>enabled</c> to <c>true</c> with any other channel
+        /// type will cause an exception. If <c>true</c>, then <c>policy</c>, <c>maximumResolution</c>,
+        /// and <c>containerFormat</c> are required, and <c>containerFormat</c> must be set to
+        /// <c>FRAGMENTED_MP4</c>. Default: <c>false</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? MultitrackInputConfiguration_Enabled { get; set; }
+        #endregion
+        
         #region Parameter InsecureIngest
         /// <summary>
         /// <para>
-        /// <para>Whether the channel allows insecure RTMP ingest. Default: <c>false</c>.</para>
+        /// <para>Whether the channel allows insecure RTMP and SRT ingest. Default: <c>false</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -67,14 +96,23 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         /// <summary>
         /// <para>
         /// <para>Channel latency mode. Use <c>NORMAL</c> to broadcast and deliver live video up to
-        /// Full HD. Use <c>LOW</c> for near-real-time interaction with viewers. (Note: In the
-        /// Amazon IVS console, <c>LOW</c> and <c>NORMAL</c> correspond to Ultra-low and Standard,
-        /// respectively.) Default: <c>LOW</c>.</para>
+        /// Full HD. Use <c>LOW</c> for near-real-time interaction with viewers. Default: <c>LOW</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.IVS.ChannelLatencyMode")]
         public Amazon.IVS.ChannelLatencyMode LatencyMode { get; set; }
+        #endregion
+        
+        #region Parameter MultitrackInputConfiguration_MaximumResolution
+        /// <summary>
+        /// <para>
+        /// <para>Maximum resolution for multitrack input. Required if <c>enabled</c> is <c>true</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IVS.MultitrackMaximumResolution")]
+        public Amazon.IVS.MultitrackMaximumResolution MultitrackInputConfiguration_MaximumResolution { get; set; }
         #endregion
         
         #region Parameter Name
@@ -97,6 +135,18 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String PlaybackRestrictionPolicyArn { get; set; }
+        #endregion
+        
+        #region Parameter MultitrackInputConfiguration_Policy
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether multitrack input is allowed or required. Required if <c>enabled</c>
+        /// is <c>true</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.IVS.MultitrackPolicy")]
+        public Amazon.IVS.MultitrackPolicy MultitrackInputConfiguration_Policy { get; set; }
         #endregion
         
         #region Parameter Preset
@@ -127,10 +177,15 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Array of 1-50 maps, each of the form <c>string:string (key:value)</c>. See <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
-        /// Amazon Web Services Resources</a> for more information, including restrictions that
-        /// apply to tags and "Tag naming limits and requirements"; Amazon IVS has no service-specific
-        /// constraints beyond what is documented there.</para>
+        /// <para>Array of 1-50 maps, each of the form <c>string:string (key:value)</c>. See <a href="https://docs.aws.amazon.com/tag-editor/latest/userguide/best-practices-and-strats.html">Best
+        /// practices and strategies</a> in <i>Tagging Amazon Web Services Resources and Tag Editor</i>
+        /// for details, including restrictions that apply to tags and "Tag naming limits and
+        /// requirements"; Amazon IVS has no service-specific constraints beyond what is documented
+        /// there.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,16 +218,6 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -183,9 +228,13 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -199,24 +248,18 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IVS.Model.CreateChannelResponse, NewIVSChannelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Authorized = this.Authorized;
+            context.ContainerFormat = this.ContainerFormat;
             context.InsecureIngest = this.InsecureIngest;
             context.LatencyMode = this.LatencyMode;
+            context.MultitrackInputConfiguration_Enabled = this.MultitrackInputConfiguration_Enabled;
+            context.MultitrackInputConfiguration_MaximumResolution = this.MultitrackInputConfiguration_MaximumResolution;
+            context.MultitrackInputConfiguration_Policy = this.MultitrackInputConfiguration_Policy;
             context.Name = this.Name;
             context.PlaybackRestrictionPolicyArn = this.PlaybackRestrictionPolicyArn;
             context.Preset = this.Preset;
@@ -250,6 +293,10 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             {
                 request.Authorized = cmdletContext.Authorized.Value;
             }
+            if (cmdletContext.ContainerFormat != null)
+            {
+                request.ContainerFormat = cmdletContext.ContainerFormat;
+            }
             if (cmdletContext.InsecureIngest != null)
             {
                 request.InsecureIngest = cmdletContext.InsecureIngest.Value;
@@ -257,6 +304,45 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             if (cmdletContext.LatencyMode != null)
             {
                 request.LatencyMode = cmdletContext.LatencyMode;
+            }
+            
+             // populate MultitrackInputConfiguration
+            var requestMultitrackInputConfigurationIsNull = true;
+            request.MultitrackInputConfiguration = new Amazon.IVS.Model.MultitrackInputConfiguration();
+            System.Boolean? requestMultitrackInputConfiguration_multitrackInputConfiguration_Enabled = null;
+            if (cmdletContext.MultitrackInputConfiguration_Enabled != null)
+            {
+                requestMultitrackInputConfiguration_multitrackInputConfiguration_Enabled = cmdletContext.MultitrackInputConfiguration_Enabled.Value;
+            }
+            if (requestMultitrackInputConfiguration_multitrackInputConfiguration_Enabled != null)
+            {
+                request.MultitrackInputConfiguration.Enabled = requestMultitrackInputConfiguration_multitrackInputConfiguration_Enabled.Value;
+                requestMultitrackInputConfigurationIsNull = false;
+            }
+            Amazon.IVS.MultitrackMaximumResolution requestMultitrackInputConfiguration_multitrackInputConfiguration_MaximumResolution = null;
+            if (cmdletContext.MultitrackInputConfiguration_MaximumResolution != null)
+            {
+                requestMultitrackInputConfiguration_multitrackInputConfiguration_MaximumResolution = cmdletContext.MultitrackInputConfiguration_MaximumResolution;
+            }
+            if (requestMultitrackInputConfiguration_multitrackInputConfiguration_MaximumResolution != null)
+            {
+                request.MultitrackInputConfiguration.MaximumResolution = requestMultitrackInputConfiguration_multitrackInputConfiguration_MaximumResolution;
+                requestMultitrackInputConfigurationIsNull = false;
+            }
+            Amazon.IVS.MultitrackPolicy requestMultitrackInputConfiguration_multitrackInputConfiguration_Policy = null;
+            if (cmdletContext.MultitrackInputConfiguration_Policy != null)
+            {
+                requestMultitrackInputConfiguration_multitrackInputConfiguration_Policy = cmdletContext.MultitrackInputConfiguration_Policy;
+            }
+            if (requestMultitrackInputConfiguration_multitrackInputConfiguration_Policy != null)
+            {
+                request.MultitrackInputConfiguration.Policy = requestMultitrackInputConfiguration_multitrackInputConfiguration_Policy;
+                requestMultitrackInputConfigurationIsNull = false;
+            }
+             // determine if request.MultitrackInputConfiguration should be set to null
+            if (requestMultitrackInputConfigurationIsNull)
+            {
+                request.MultitrackInputConfiguration = null;
             }
             if (cmdletContext.Name != null)
             {
@@ -320,13 +406,7 @@ namespace Amazon.PowerShell.Cmdlets.IVS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Interactive Video Service", "CreateChannel");
             try
             {
-                #if DESKTOP
-                return client.CreateChannel(request);
-                #elif CORECLR
-                return client.CreateChannelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateChannelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -344,8 +424,12 @@ namespace Amazon.PowerShell.Cmdlets.IVS
         internal partial class CmdletContext : ExecutorContext
         {
             public System.Boolean? Authorized { get; set; }
+            public Amazon.IVS.ContainerFormat ContainerFormat { get; set; }
             public System.Boolean? InsecureIngest { get; set; }
             public Amazon.IVS.ChannelLatencyMode LatencyMode { get; set; }
+            public System.Boolean? MultitrackInputConfiguration_Enabled { get; set; }
+            public Amazon.IVS.MultitrackMaximumResolution MultitrackInputConfiguration_MaximumResolution { get; set; }
+            public Amazon.IVS.MultitrackPolicy MultitrackInputConfiguration_Policy { get; set; }
             public System.String Name { get; set; }
             public System.String PlaybackRestrictionPolicyArn { get; set; }
             public Amazon.IVS.TranscodePreset Preset { get; set; }

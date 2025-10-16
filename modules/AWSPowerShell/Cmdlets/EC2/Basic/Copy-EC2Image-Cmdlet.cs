@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,35 +22,70 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Initiates the copy of an AMI. You can copy an AMI from one Region to another, or from
-    /// a Region to an Outpost. You can't copy an AMI from an Outpost to a Region, from one
-    /// Outpost to another, or within the same Outpost. To copy an AMI to another partition,
-    /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateStoreImageTask.html">CreateStoreImageTask</a>.
+    /// Initiates an AMI copy operation. You must specify the source AMI ID and both the source
+    /// and destination locations. The copy operation must be initiated in the destination
+    /// Region.
     /// 
     ///  
-    /// <para>
-    /// To copy an AMI from one Region to another, specify the source Region using the <b>SourceRegion</b>
-    /// parameter, and specify the destination Region using its endpoint. Copies of encrypted
-    /// backing snapshots for the AMI are encrypted. Copies of unencrypted backing snapshots
-    /// remain unencrypted, unless you set <c>Encrypted</c> during the copy operation. You
-    /// cannot create an unencrypted copy of an encrypted backing snapshot.
-    /// </para><para>
-    /// To copy an AMI from a Region to an Outpost, specify the source Region using the <b>SourceRegion</b>
-    /// parameter, and specify the ARN of the destination Outpost using <b>DestinationOutpostArn</b>.
-    /// Backing snapshots copied to an Outpost are encrypted by default using the default
-    /// encryption key for the Region, or a different key that you specify in the request
-    /// using <b>KmsKeyId</b>. Outposts do not support unencrypted snapshots. For more information,
-    /// <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#ami">
-    /// Amazon EBS local snapshots on Outposts</a> in the <i>Amazon EC2 User Guide</i>.
-    /// </para><para>
-    /// For more information about the prerequisites and limits when copying an AMI, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/CopyingAMIs.html">Copy an
-    /// AMI</a> in the <i>Amazon EC2 User Guide</i>.
+    /// <para><b>CopyImage supports the following source to destination copies:</b></para><ul><li><para>
+    /// Region to Region
+    /// </para></li><li><para>
+    /// Region to Outpost
+    /// </para></li><li><para>
+    /// Parent Region to Local Zone
+    /// </para></li><li><para>
+    /// Local Zone to parent Region
+    /// </para></li><li><para>
+    /// Between Local Zones with the same parent Region (only supported for certain Local
+    /// Zones)
+    /// </para></li></ul><para><b>CopyImage does not support the following source to destination copies:</b></para><ul><li><para>
+    /// Local Zone to non-parent Regions
+    /// </para></li><li><para>
+    /// Between Local Zones with different parent Regions
+    /// </para></li><li><para>
+    /// Local Zone to Outpost
+    /// </para></li><li><para>
+    /// Outpost to Local Zone
+    /// </para></li><li><para>
+    /// Outpost to Region
+    /// </para></li><li><para>
+    /// Between Outposts
+    /// </para></li><li><para>
+    /// Within same Outpost
+    /// </para></li><li><para>
+    /// Cross-partition copies (use <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateStoreImageTask.html">CreateStoreImageTask</a>
+    /// instead)
+    /// </para></li></ul><para><b>Destination specification</b></para><ul><li><para>
+    /// Region to Region: The destination Region is the Region in which you initiate the copy
+    /// operation.
+    /// </para></li><li><para>
+    /// Region to Outpost: Specify the destination using the <c>DestinationOutpostArn</c>
+    /// parameter (the ARN of the Outpost)
+    /// </para></li><li><para>
+    /// Region to Local Zone, and Local Zone to Local Zone copies: Specify the destination
+    /// using the <c>DestinationAvailabilityZone</c> parameter (the name of the destination
+    /// Local Zone) or <c>DestinationAvailabilityZoneId</c> parameter (the ID of the destination
+    /// Local Zone).
+    /// </para></li></ul><para><b>Snapshot encryption</b></para><ul><li><para>
+    /// Region to Outpost: Backing snapshots copied to an Outpost are encrypted by default
+    /// using the default encryption key for the Region or the key that you specify. Outposts
+    /// do not support unencrypted snapshots.
+    /// </para></li><li><para>
+    /// Region to Local Zone, and Local Zone to Local Zone: Not all Local Zones require encrypted
+    /// snapshots. In Local Zones that require encrypted snapshots, backing snapshots are
+    /// automatically encrypted during copy. In Local Zones where encryption is not required,
+    /// snapshots retain their original encryption state (encrypted or unencrypted) by default.
+    /// </para></li></ul><para>
+    /// For more information, including the required permissions for copying an AMI, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/CopyingAMIs.html">Copy an
+    /// Amazon EC2 AMI</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Copy", "EC2Image", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -58,17 +93,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CopyImage API operation.", Operation = new[] {"CopyImage"}, SelectReturnType = typeof(Amazon.EC2.Model.CopyImageResponse))]
     [AWSCmdletOutput("System.String or Amazon.EC2.Model.CopyImageResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EC2.Model.CopyImageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CopyImageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class CopyEC2ImageCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CopyImageTag
         /// <summary>
         /// <para>
-        /// <para>Indicates whether to include your user-defined AMI tags when copying the AMI.</para><para>The following tags will not be copied:</para><ul><li><para>System tags (prefixed with <c>aws:</c>)</para></li><li><para>For public and shared AMIs, user-defined tags that are attached by other Amazon Web
+        /// <para>Specifies whether to copy your user-defined AMI tags to the new AMI.</para><para>The following tags are not be copied:</para><ul><li><para>System tags (prefixed with <c>aws:</c>)</para></li><li><para>For public and shared AMIs, user-defined tags that are attached by other Amazon Web
         /// Services accounts</para></li></ul><para>Default: Your user-defined AMI tags are not copied.</para>
         /// </para>
         /// </summary>
@@ -80,37 +116,71 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Description
         /// <summary>
         /// <para>
-        /// <para>A description for the new AMI in the destination Region.</para>
+        /// <para>A description for the new AMI.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DestinationAvailabilityZone
+        /// <summary>
+        /// <para>
+        /// <para>The Local Zone for the new AMI (for example, <c>cn-north-1-pkx-1a</c>).</para><para>Only one of <c>DestinationAvailabilityZone</c>, <c>DestinationAvailabilityZoneId</c>,
+        /// or <c>DestinationOutpostArn</c> can be specified.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DestinationAvailabilityZone { get; set; }
+        #endregion
+        
+        #region Parameter DestinationAvailabilityZoneId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the Local Zone for the new AMI (for example, <c>cnn1-pkx1-az1</c>).</para><para>Only one of <c>DestinationAvailabilityZone</c>, <c>DestinationAvailabilityZoneId</c>,
+        /// or <c>DestinationOutpostArn</c> can be specified.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DestinationAvailabilityZoneId { get; set; }
+        #endregion
+        
         #region Parameter DestinationOutpostArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Outpost to which to copy the AMI. Only specify
-        /// this parameter when copying an AMI from an Amazon Web Services Region to an Outpost.
-        /// The AMI must be in the Region of the destination Outpost. You cannot copy an AMI from
-        /// an Outpost to a Region, from one Outpost to another, or within the same Outpost.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#copy-amis">
-        /// Copy AMIs from an Amazon Web Services Region to an Outpost</a> in the <i>Amazon EC2
-        /// User Guide</i>.</para>
+        /// <para>The Amazon Resource Name (ARN) of the Outpost for the new AMI.</para><para>Only specify this parameter when copying an AMI from an Amazon Web Services Region
+        /// to an Outpost. The AMI must be in the Region of the destination Outpost. You can't
+        /// copy an AMI from an Outpost to a Region, from one Outpost to another, or within the
+        /// same Outpost.</para><para>For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/snapshots-outposts.html#copy-amis">Copy
+        /// AMIs from an Amazon Web Services Region to an Outpost</a> in the <i>Amazon EBS User
+        /// Guide</i>.</para><para>Only one of <c>DestinationAvailabilityZone</c>, <c>DestinationAvailabilityZoneId</c>,
+        /// or <c>DestinationOutpostArn</c> can be specified.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DestinationOutpostArn { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter Encrypted
         /// <summary>
         /// <para>
-        /// <para>Specifies whether the destination snapshots of the copied image should be encrypted.
-        /// You can encrypt a copy of an unencrypted snapshot, but you cannot create an unencrypted
+        /// <para>Specifies whether to encrypt the snapshots of the copied image.</para><para>You can encrypt a copy of an unencrypted snapshot, but you cannot create an unencrypted
         /// copy of an encrypted snapshot. The default KMS key for Amazon EBS is used unless you
         /// specify a non-default Key Management Service (KMS) KMS key using <c>KmsKeyId</c>.
-        /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html">Amazon
-        /// EBS encryption</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html">Use
+        /// encryption with EBS-backed AMIs</a> in the <i>Amazon EC2 User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,7 +205,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The name of the new AMI in the destination Region.</para>
+        /// <para>The name of the new AMI.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -147,6 +217,24 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter SnapshotCopyCompletionDurationMinute
+        /// <summary>
+        /// <para>
+        /// <para>Specify a completion duration, in 15 minute increments, to initiate a time-based AMI
+        /// copy. The specified completion duration applies to each of the snapshots associated
+        /// with the AMI. Each snapshot associated with the AMI will be completed within the specified
+        /// completion duration, with copy throughput automatically adjusted for each snapshot
+        /// based on its size to meet the timing target.</para><para>If you do not specify a value, the AMI copy operation is completed on a best-effort
+        /// basis.</para><note><para>This parameter is not supported when copying an AMI to or from a Local Zone, or to
+        /// an Outpost.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/time-based-copies.html">Time-based
+        /// copies for Amazon EBS snapshots and EBS-backed AMIs</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SnapshotCopyCompletionDurationMinutes")]
+        public System.Int64? SnapshotCopyCompletionDurationMinute { get; set; }
         #endregion
         
         #region Parameter SourceImageId
@@ -183,12 +271,29 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String SourceRegion { get; set; }
         #endregion
         
+        #region Parameter TagSpecification
+        /// <summary>
+        /// <para>
+        /// <para>The tags to apply to the new AMI and new snapshots. You can tag the AMI, the snapshots,
+        /// or both.</para><ul><li><para>To tag the new AMI, the value for <c>ResourceType</c> must be <c>image</c>.</para></li><li><para>To tag the new snapshots, the value for <c>ResourceType</c> must be <c>snapshot</c>.
+        /// The same tag is applied to all the new snapshots.</para></li></ul><para>If you specify other values for <c>ResourceType</c>, the request fails.</para><para>To tag an AMI or snapshot after it has been created, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html">CreateTags</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TagSpecifications")]
+        public Amazon.EC2.Model.TagSpecification[] TagSpecification { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
         /// <para>Unique, case-sensitive identifier you provide to ensure idempotency of the request.
         /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
-        /// idempotency</a> in the <i>Amazon EC2 API Reference</i>.</para>
+        /// idempotency in Amazon EC2 API requests</a> in the <i>Amazon EC2 API Reference</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 4, ValueFromPipelineByPropertyName = true)]
@@ -206,16 +311,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "ImageId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SourceImageId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SourceImageId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SourceImageId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -226,9 +321,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceImageId), MyInvocation.BoundParameters);
@@ -242,25 +341,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CopyImageResponse, CopyEC2ImageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SourceImageId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.CopyImageTag = this.CopyImageTag;
             context.Description = this.Description;
+            context.DestinationAvailabilityZone = this.DestinationAvailabilityZone;
+            context.DestinationAvailabilityZoneId = this.DestinationAvailabilityZoneId;
             context.DestinationOutpostArn = this.DestinationOutpostArn;
+            context.DryRun = this.DryRun;
             context.Encrypted = this.Encrypted;
             context.KmsKeyId = this.KmsKeyId;
             context.Name = this.Name;
@@ -270,6 +362,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.SnapshotCopyCompletionDurationMinute = this.SnapshotCopyCompletionDurationMinute;
             context.SourceImageId = this.SourceImageId;
             #if MODULAR
             if (this.SourceImageId == null && ParameterWasBound(nameof(this.SourceImageId)))
@@ -284,6 +377,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter SourceRegion which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.TagSpecification != null)
+            {
+                context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -312,9 +409,21 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DestinationAvailabilityZone != null)
+            {
+                request.DestinationAvailabilityZone = cmdletContext.DestinationAvailabilityZone;
+            }
+            if (cmdletContext.DestinationAvailabilityZoneId != null)
+            {
+                request.DestinationAvailabilityZoneId = cmdletContext.DestinationAvailabilityZoneId;
+            }
             if (cmdletContext.DestinationOutpostArn != null)
             {
                 request.DestinationOutpostArn = cmdletContext.DestinationOutpostArn;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Encrypted != null)
             {
@@ -328,6 +437,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Name = cmdletContext.Name;
             }
+            if (cmdletContext.SnapshotCopyCompletionDurationMinute != null)
+            {
+                request.SnapshotCopyCompletionDurationMinutes = cmdletContext.SnapshotCopyCompletionDurationMinute.Value;
+            }
             if (cmdletContext.SourceImageId != null)
             {
                 request.SourceImageId = cmdletContext.SourceImageId;
@@ -335,6 +448,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.SourceRegion != null)
             {
                 request.SourceRegion = cmdletContext.SourceRegion;
+            }
+            if (cmdletContext.TagSpecification != null)
+            {
+                request.TagSpecifications = cmdletContext.TagSpecification;
             }
             
             CmdletOutput output;
@@ -374,13 +491,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CopyImage");
             try
             {
-                #if DESKTOP
-                return client.CopyImage(request);
-                #elif CORECLR
-                return client.CopyImageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CopyImageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -400,12 +511,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String ClientToken { get; set; }
             public System.Boolean? CopyImageTag { get; set; }
             public System.String Description { get; set; }
+            public System.String DestinationAvailabilityZone { get; set; }
+            public System.String DestinationAvailabilityZoneId { get; set; }
             public System.String DestinationOutpostArn { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? Encrypted { get; set; }
             public System.String KmsKeyId { get; set; }
             public System.String Name { get; set; }
+            public System.Int64? SnapshotCopyCompletionDurationMinute { get; set; }
             public System.String SourceImageId { get; set; }
             public System.String SourceRegion { get; set; }
+            public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public System.Func<Amazon.EC2.Model.CopyImageResponse, CopyEC2ImageCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ImageId;
         }

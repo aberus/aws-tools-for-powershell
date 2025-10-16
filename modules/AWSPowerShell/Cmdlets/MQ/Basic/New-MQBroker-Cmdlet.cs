@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MQ;
 using Amazon.MQ.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MQ
 {
     /// <summary>
@@ -74,12 +76,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
     [OutputType("Amazon.MQ.Model.CreateBrokerResponse")]
     [AWSCmdlet("Calls the Amazon MQ CreateBroker API operation.", Operation = new[] {"CreateBroker"}, SelectReturnType = typeof(Amazon.MQ.Model.CreateBrokerResponse))]
     [AWSCmdletOutput("Amazon.MQ.Model.CreateBrokerResponse",
-        "This cmdlet returns an Amazon.MQ.Model.CreateBrokerResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MQ.Model.CreateBrokerResponse object containing multiple properties."
     )]
     public partial class NewMQBrokerCmdlet : AmazonMQClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Logs_Audit
         /// <summary>
@@ -106,19 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         #region Parameter AutoMinorVersionUpgrade
         /// <summary>
         /// <para>
-        /// <para>Enables automatic upgrades to new minor versions for brokers, as new versions are
-        /// released and supported by Amazon MQ. Automatic upgrades occur during the scheduled
-        /// maintenance window of the broker or after a manual broker reboot. Set to true by default,
-        /// if no value is specified.</para>
+        /// <para>Enables automatic upgrades to new patch versions for brokers as new versions are released
+        /// and supported by Amazon MQ. Automatic upgrades occur during the scheduled maintenance
+        /// window or after a manual broker reboot. Set to true by default, if no value is specified.</para><note><para>Must be set to true for ActiveMQ brokers version 5.18 and above and for RabbitMQ brokers
+        /// version 3.13 and above.</para></note>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.Boolean? AutoMinorVersionUpgrade { get; set; }
         #endregion
         
@@ -226,19 +223,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         #region Parameter EngineVersion
         /// <summary>
         /// <para>
-        /// <para>Required. The broker engine's version. For a list of supported engine versions, see
-        /// <a href="https://docs.aws.amazon.com//amazon-mq/latest/developer-guide/broker-engine.html">Supported
-        /// engines</a>.</para>
+        /// <para>The broker engine version. Defaults to the latest available version for the specified
+        /// broker engine type. For more information, see the <a href="https://docs.aws.amazon.com//amazon-mq/latest/developer-guide/activemq-version-management.html">ActiveMQ
+        /// version management</a> and the <a href="https://docs.aws.amazon.com//amazon-mq/latest/developer-guide/rabbitmq-version-management.html">RabbitMQ
+        /// version management</a> sections in the Amazon MQ Developer Guide.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String EngineVersion { get; set; }
         #endregion
         
@@ -273,7 +264,11 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         /// <summary>
         /// <para>
         /// <para>Specifies the location of the LDAP server such as Directory Service for Microsoft
-        /// Active Directory. Optional failover server.</para>
+        /// Active Directory. Optional failover server.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -373,7 +368,11 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         #region Parameter SecurityGroup
         /// <summary>
         /// <para>
-        /// <para>The list of rules (1 minimum, 125 maximum) that authorize connections to brokers.</para>
+        /// <para>The list of rules (1 minimum, 125 maximum) that authorize connections to brokers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -429,7 +428,11 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         /// Deployment without public accessibility requires at least one subnet.</para><important><para>If you specify subnets in a <a href="https://docs.aws.amazon.com/vpc/latest/userguide/vpc-sharing.html">shared
         /// VPC</a> for a RabbitMQ broker, the associated VPC to which the specified subnets belong
         /// must be owned by your Amazon Web Services account. Amazon MQ will not be able to create
-        /// VPC endpoints in VPCs that are not owned by your Amazon Web Services account.</para></important>
+        /// VPC endpoints in VPCs that are not owned by your Amazon Web Services account.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -440,7 +443,11 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Create tags when creating the broker.</para>
+        /// <para>Create tags when creating the broker.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -487,19 +494,18 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         /// <summary>
         /// <para>
         /// <para>The list of broker users (persons or applications) who can access queues and topics.
-        /// For Amazon MQ for RabbitMQ brokers, one and only one administrative user is accepted
-        /// and created when a broker is first provisioned. All subsequent broker users are created
-        /// by making RabbitMQ API calls directly to brokers or via the RabbitMQ web console.</para>
+        /// For Amazon MQ for RabbitMQ brokers, an administrative user is required if using simple
+        /// authentication and authorization. For brokers using OAuth2, this user is optional.
+        /// When provided, one and only one administrative user is accepted and created when a
+        /// broker is first provisioned. All subsequent broker users are created by making RabbitMQ
+        /// API calls directly to brokers or via the RabbitMQ web console.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("Users")]
         public Amazon.MQ.Model.User[] User { get; set; }
         #endregion
@@ -540,16 +546,6 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BrokerName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BrokerName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BrokerName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -560,9 +556,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BrokerName), MyInvocation.BoundParameters);
@@ -576,29 +576,13 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MQ.Model.CreateBrokerResponse, NewMQBrokerCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BrokerName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AuthenticationStrategy = this.AuthenticationStrategy;
             context.AutoMinorVersionUpgrade = this.AutoMinorVersionUpgrade;
-            #if MODULAR
-            if (this.AutoMinorVersionUpgrade == null && ParameterWasBound(nameof(this.AutoMinorVersionUpgrade)))
-            {
-                WriteWarning("You are passing $null as a value for parameter AutoMinorVersionUpgrade which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.BrokerName = this.BrokerName;
             #if MODULAR
             if (this.BrokerName == null && ParameterWasBound(nameof(this.BrokerName)))
@@ -627,12 +611,6 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             }
             #endif
             context.EngineVersion = this.EngineVersion;
-            #if MODULAR
-            if (this.EngineVersion == null && ParameterWasBound(nameof(this.EngineVersion)))
-            {
-                WriteWarning("You are passing $null as a value for parameter EngineVersion which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.HostInstanceType = this.HostInstanceType;
             #if MODULAR
             if (this.HostInstanceType == null && ParameterWasBound(nameof(this.HostInstanceType)))
@@ -685,12 +663,6 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             {
                 context.User = new List<Amazon.MQ.Model.User>(this.User);
             }
-            #if MODULAR
-            if (this.User == null && ParameterWasBound(nameof(this.User)))
-            {
-                WriteWarning("You are passing $null as a value for parameter User which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -994,13 +966,7 @@ namespace Amazon.PowerShell.Cmdlets.MQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon MQ", "CreateBroker");
             try
             {
-                #if DESKTOP
-                return client.CreateBroker(request);
-                #elif CORECLR
-                return client.CreateBrokerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBrokerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

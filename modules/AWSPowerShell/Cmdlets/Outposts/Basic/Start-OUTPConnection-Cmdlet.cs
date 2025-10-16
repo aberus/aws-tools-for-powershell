@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Outposts;
 using Amazon.Outposts.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OUTP
 {
     /// <summary>
@@ -44,17 +46,18 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
     [OutputType("Amazon.Outposts.Model.StartConnectionResponse")]
     [AWSCmdlet("Calls the AWS Outposts StartConnection API operation.", Operation = new[] {"StartConnection"}, SelectReturnType = typeof(Amazon.Outposts.Model.StartConnectionResponse))]
     [AWSCmdletOutput("Amazon.Outposts.Model.StartConnectionResponse",
-        "This cmdlet returns an Amazon.Outposts.Model.StartConnectionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Outposts.Model.StartConnectionResponse object containing multiple properties."
     )]
     public partial class StartOUTPConnectionCmdlet : AmazonOutpostsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetId
         /// <summary>
         /// <para>
-        /// <para> The ID of the Outpost server. </para>
+        /// <para> The ID of the Outpost server.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -132,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AssetId), MyInvocation.BoundParameters);
@@ -245,13 +252,7 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Outposts", "StartConnection");
             try
             {
-                #if DESKTOP
-                return client.StartConnection(request);
-                #elif CORECLR
-                return client.StartConnectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartConnectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

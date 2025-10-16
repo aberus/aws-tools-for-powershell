@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AWSHealth;
 using Amazon.AWSHealth.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.HLTH
 {
     /// <summary>
@@ -54,18 +56,23 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
     [AWSCmdlet("Calls the AWS Health DescribeEventsForOrganization API operation.", Operation = new[] {"DescribeEventsForOrganization"}, SelectReturnType = typeof(Amazon.AWSHealth.Model.DescribeEventsForOrganizationResponse))]
     [AWSCmdletOutput("Amazon.AWSHealth.Model.OrganizationEvent or Amazon.AWSHealth.Model.DescribeEventsForOrganizationResponse",
         "This cmdlet returns a collection of Amazon.AWSHealth.Model.OrganizationEvent objects.",
-        "The service call response (type Amazon.AWSHealth.Model.DescribeEventsForOrganizationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AWSHealth.Model.DescribeEventsForOrganizationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetHLTHEventsForOrganizationCmdlet : AmazonAWSHealthClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter_AwsAccountId
         /// <summary>
         /// <para>
         /// <para>A list of 12-digit Amazon Web Services account numbers that contains the affected
-        /// entities.</para>
+        /// entities.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,7 +83,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_EntityArn
         /// <summary>
         /// <para>
-        /// <para>A list of entity ARNs (unique identifiers).</para>
+        /// <para>A list of entity ARNs (unique identifiers).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         /// <summary>
         /// <para>
         /// <para>A list of entity identifiers, such as EC2 instance IDs (i-34ab692e) or EBS volumes
-        /// (vol-426ab23e).</para>
+        /// (vol-426ab23e).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,7 +114,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_EventStatusCode
         /// <summary>
         /// <para>
-        /// <para>A list of event status codes.</para>
+        /// <para>A list of event status codes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -112,7 +131,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         /// <para>
         /// <para>A list of event type category codes. Possible values are <c>issue</c>, <c>accountNotification</c>,
         /// or <c>scheduledChange</c>. Currently, the <c>investigation</c> value isn't supported
-        /// at this time.</para>
+        /// at this time.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_EventTypeCode
         /// <summary>
         /// <para>
-        /// <para>A list of unique identifiers for event types. For example, <c>"AWS_EC2_SYSTEM_MAINTENANCE_EVENT","AWS_RDS_MAINTENANCE_SCHEDULED".</c></para>
+        /// <para>A list of unique identifiers for event types. For example, <c>"AWS_EC2_SYSTEM_MAINTENANCE_EVENT","AWS_RDS_MAINTENANCE_SCHEDULED".</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -178,7 +205,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_Region
         /// <summary>
         /// <para>
-        /// <para>A list of Amazon Web Services Regions.</para>
+        /// <para>A list of Amazon Web Services Regions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -189,7 +220,12 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_Service
         /// <summary>
         /// <para>
-        /// <para>The Amazon Web Services associated with the event. For example, <c>EC2</c>, <c>RDS</c>.</para>
+        /// <para>The Amazon Web Services services associated with the event. For example, <c>EC2</c>,
+        /// <c>RDS</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -257,7 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -275,16 +311,6 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         public string Select { get; set; } = "Events";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Locale parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Locale' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Locale' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -295,9 +321,13 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -305,21 +335,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AWSHealth.Model.DescribeEventsForOrganizationResponse, GetHLTHEventsForOrganizationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Locale;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Filter_AwsAccountId != null)
             {
                 context.Filter_AwsAccountId = new List<System.String>(this.Filter_AwsAccountId);
@@ -384,9 +404,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.AWSHealth.Model.DescribeEventsForOrganizationRequest();
@@ -644,7 +662,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.AWSHealth.Model.DescribeEventsForOrganizationRequest();
@@ -893,7 +911,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Events.Count;
+                    int _receivedThisCall = response.Events?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -942,13 +960,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Health", "DescribeEventsForOrganization");
             try
             {
-                #if DESKTOP
-                return client.DescribeEventsForOrganization(request);
-                #elif CORECLR
-                return client.DescribeEventsForOrganizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeEventsForOrganizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

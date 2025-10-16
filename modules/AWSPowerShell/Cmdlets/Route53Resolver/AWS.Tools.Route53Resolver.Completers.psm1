@@ -118,10 +118,40 @@ $R53R_Completers = {
             break
         }
 
+        # Amazon.Route53Resolver.ConfidenceThreshold
+        {
+            ($_ -eq "Edit-R53RFirewallRule/ConfidenceThreshold") -Or
+            ($_ -eq "New-R53RFirewallRule/ConfidenceThreshold")
+        }
+        {
+            $v = "HIGH","LOW","MEDIUM"
+            break
+        }
+
+        # Amazon.Route53Resolver.DnsThreatProtection
+        {
+            ($_ -eq "Edit-R53RFirewallRule/DnsThreatProtection") -Or
+            ($_ -eq "New-R53RFirewallRule/DnsThreatProtection")
+        }
+        {
+            $v = "DGA","DNS_TUNNELING"
+            break
+        }
+
         # Amazon.Route53Resolver.FirewallDomainImportOperation
         "Import-R53RFirewallDomainList/Operation"
         {
             $v = "REPLACE"
+            break
+        }
+
+        # Amazon.Route53Resolver.FirewallDomainRedirectionAction
+        {
+            ($_ -eq "Edit-R53RFirewallRule/FirewallDomainRedirectionAction") -Or
+            ($_ -eq "New-R53RFirewallRule/FirewallDomainRedirectionAction")
+        }
+        {
+            $v = "INSPECT_REDIRECTION_DOMAIN","TRUST_REDIRECTION_DOMAIN"
             break
         }
 
@@ -159,7 +189,7 @@ $R53R_Completers = {
         # Amazon.Route53Resolver.ResolverEndpointDirection
         "New-R53RResolverEndpoint/Direction"
         {
-            $v = "INBOUND","OUTBOUND"
+            $v = "INBOUND","INBOUND_DELEGATION","OUTBOUND"
             break
         }
 
@@ -176,7 +206,7 @@ $R53R_Completers = {
         # Amazon.Route53Resolver.RuleTypeOption
         "New-R53RResolverRule/RuleType"
         {
-            $v = "FORWARD","RECURSIVE","SYSTEM"
+            $v = "DELEGATE","FORWARD","RECURSIVE","SYSTEM"
             break
         }
 
@@ -210,7 +240,10 @@ $R53R_map = @{
     "AutodefinedReverseFlag"=@("Update-R53RResolverConfig")
     "BlockOverrideDnsType"=@("Edit-R53RFirewallRule","New-R53RFirewallRule")
     "BlockResponse"=@("Edit-R53RFirewallRule","New-R53RFirewallRule")
+    "ConfidenceThreshold"=@("Edit-R53RFirewallRule","New-R53RFirewallRule")
     "Direction"=@("New-R53RResolverEndpoint")
+    "DnsThreatProtection"=@("Edit-R53RFirewallRule","New-R53RFirewallRule")
+    "FirewallDomainRedirectionAction"=@("Edit-R53RFirewallRule","New-R53RFirewallRule")
     "FirewallFailOpen"=@("Edit-R53RFirewallConfig")
     "MutationProtection"=@("Edit-R53RFirewallRuleGroupAssociation","New-R53RFirewallRuleGroupAssociation")
     "Operation"=@("Edit-R53RFirewallDomain","Import-R53RFirewallDomainList")

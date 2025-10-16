@@ -1,0 +1,1 @@
+Write-S3Object -BucketName amzn-s3-demo-bucket -File .\sample.txt

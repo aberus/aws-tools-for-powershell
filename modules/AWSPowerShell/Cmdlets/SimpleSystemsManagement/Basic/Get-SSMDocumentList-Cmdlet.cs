@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -37,17 +39,22 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [AWSCmdlet("Calls the AWS Systems Manager ListDocuments API operation.", Operation = new[] {"ListDocuments"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.ListDocumentsResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.DocumentIdentifier or Amazon.SimpleSystemsManagement.Model.ListDocumentsResponse",
         "This cmdlet returns a collection of Amazon.SimpleSystemsManagement.Model.DocumentIdentifier objects.",
-        "The service call response (type Amazon.SimpleSystemsManagement.Model.ListDocumentsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleSystemsManagement.Model.ListDocumentsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetSSMDocumentListCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DocumentFilterList
         /// <summary>
         /// <para>
-        /// <para>This data type is deprecated. Instead, use <c>Filters</c>.</para>
+        /// <para>This data type is deprecated. Instead, use <c>Filters</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,7 +70,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <c>PlatformTypes</c>, <c>DocumentType</c>, and <c>TargetType</c>. For example, to
         /// return documents you own use <c>Key=Owner,Values=Self</c>. To specify a custom key-value
         /// pair, use the format <c>Key=tag:tagName,Values=valueName</c>.</para><note><para>This API operation only supports filtering documents by using a single tag key and
-        /// one or more tag values. For example: <c>Key=tag:tagName,Values=valueName1,valueName2</c></para></note>
+        /// one or more tag values. For example: <c>Key=tag:tagName,Values=valueName1,valueName2</c></para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +108,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -311,7 +326,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.DocumentIdentifiers.Count;
+                    int _receivedThisCall = response.DocumentIdentifiers?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -360,13 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "ListDocuments");
             try
             {
-                #if DESKTOP
-                return client.ListDocuments(request);
-                #elif CORECLR
-                return client.ListDocumentsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListDocumentsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

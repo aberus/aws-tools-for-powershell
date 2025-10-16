@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -34,30 +36,28 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.GetMapGlyphsResponse")]
     [AWSCmdlet("Calls the Amazon Location Service GetMapGlyphs API operation.", Operation = new[] {"GetMapGlyphs"}, SelectReturnType = typeof(Amazon.LocationService.Model.GetMapGlyphsResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.GetMapGlyphsResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.GetMapGlyphsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.GetMapGlyphsResponse object containing multiple properties."
     )]
     public partial class GetLOCMapGlyphCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FontStack
         /// <summary>
         /// <para>
         /// <para>A comma-separated list of fonts to load glyphs from in order of preference. For example,
-        /// <c>Noto Sans Regular, Arial Unicode</c>.</para><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/latest/developerguide/esri.html">Esri</a>
+        /// <c>Noto Sans Regular, Arial Unicode</c>.</para><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/previous/developerguide/esri.html">Esri</a>
         /// styles: </para><ul><li><para>VectorEsriDarkGrayCanvas – <c>Ubuntu Medium Italic</c> | <c>Ubuntu Medium</c> | <c>Ubuntu
         /// Italic</c> | <c>Ubuntu Regular</c> | <c>Ubuntu Bold</c></para></li><li><para>VectorEsriLightGrayCanvas – <c>Ubuntu Italic</c> | <c>Ubuntu Regular</c> | <c>Ubuntu
         /// Light</c> | <c>Ubuntu Bold</c></para></li><li><para>VectorEsriTopographic – <c>Noto Sans Italic</c> | <c>Noto Sans Regular</c> | <c>Noto
-        /// Sans Bold</c> | <c>Noto Serif Regular</c> | <c>Roboto Condensed Light Italic</c></para></li><li><para>VectorEsriStreets – <c>Arial Regular</c> | <c>Arial Italic</c> | <c>Arial Bold</c></para></li><li><para>VectorEsriNavigation – <c>Arial Regular</c> | <c>Arial Italic</c> | <c>Arial Bold</c>
-        /// | <c>Arial Unicode MS Bold</c> | <c>Arial Unicode MS Regular</c></para></li></ul><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/latest/developerguide/HERE.html">HERE
+        /// Sans Bold</c> | <c>Noto Serif Regular</c> | <c>Roboto Condensed Light Italic</c></para></li><li><para>VectorEsriStreets – <c>Arial Regular</c> | <c>Arial Italic</c> | <c>Arial Bold</c></para></li><li><para>VectorEsriNavigation – <c>Arial Regular</c> | <c>Arial Italic</c> | <c>Arial Bold</c></para></li></ul><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/previous/developerguide/HERE.html">HERE
         /// Technologies</a> styles:</para><ul><li><para>VectorHereContrast – <c>Fira GO Regular</c> | <c>Fira GO Bold</c></para></li><li><para>VectorHereExplore, VectorHereExploreTruck, HybridHereExploreSatellite – <c>Fira GO
         /// Italic</c> | <c>Fira GO Map</c> | <c>Fira GO Map Bold</c> | <c>Noto Sans CJK JP Bold</c>
-        /// | <c>Noto Sans CJK JP Light</c> | <c>Noto Sans CJK JP Regular</c></para></li></ul><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/latest/developerguide/grab.html">GrabMaps</a>
+        /// | <c>Noto Sans CJK JP Light</c> | <c>Noto Sans CJK JP Regular</c></para></li></ul><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/previous/developerguide/grab.html">GrabMaps</a>
         /// styles:</para><ul><li><para>VectorGrabStandardLight, VectorGrabStandardDark – <c>Noto Sans Regular</c> | <c>Noto
-        /// Sans Medium</c> | <c>Noto Sans Bold</c></para></li></ul><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/latest/developerguide/open-data.html">Open
+        /// Sans Medium</c> | <c>Noto Sans Bold</c></para></li></ul><para>Valid font stacks for <a href="https://docs.aws.amazon.com/location/previous/developerguide/open-data.html">Open
         /// Data</a> styles:</para><ul><li><para>VectorOpenDataStandardLight, VectorOpenDataStandardDark, VectorOpenDataVisualizationLight,
         /// VectorOpenDataVisualizationDark – <c>Amazon Ember Regular,Noto Sans Regular</c> |
         /// <c>Amazon Ember Bold,Noto Sans Bold</c> | <c>Amazon Ember Medium,Noto Sans Medium</c>
@@ -105,7 +105,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         #region Parameter Key
         /// <summary>
         /// <para>
-        /// <para>The optional <a href="https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html">API
+        /// <para>The optional <a href="https://docs.aws.amazon.com/location/previous/developerguide/using-apikeys.html">API
         /// key</a> to authorize the request.</para>
         /// </para>
         /// </summary>
@@ -141,19 +141,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MapName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MapName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MapName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -161,21 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.GetMapGlyphsResponse, GetLOCMapGlyphCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MapName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FontStack = this.FontStack;
             #if MODULAR
             if (this.FontStack == null && ParameterWasBound(nameof(this.FontStack)))
@@ -268,13 +252,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "GetMapGlyphs");
             try
             {
-                #if DESKTOP
-                return client.GetMapGlyphs(request);
-                #elif CORECLR
-                return client.GetMapGlyphsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetMapGlyphsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

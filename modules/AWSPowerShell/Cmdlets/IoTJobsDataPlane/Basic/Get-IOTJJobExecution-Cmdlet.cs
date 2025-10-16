@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTJobsDataPlane;
 using Amazon.IoTJobsDataPlane.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTJ
 {
     /// <summary>
     /// Gets details of a job execution.
+    /// 
+    ///  
+    /// <para>
+    /// Requires permission to access the <a href="https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsiot.html#awsiot-actions-as-permissions">DescribeJobExecution</a>
+    /// action.
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "IOTJJobExecution")]
     [OutputType("Amazon.IoTJobsDataPlane.Model.JobExecution")]
     [AWSCmdlet("Calls the AWS IoT Jobs Data Plane DescribeJobExecution API operation.", Operation = new[] {"DescribeJobExecution"}, SelectReturnType = typeof(Amazon.IoTJobsDataPlane.Model.DescribeJobExecutionResponse))]
     [AWSCmdletOutput("Amazon.IoTJobsDataPlane.Model.JobExecution or Amazon.IoTJobsDataPlane.Model.DescribeJobExecutionResponse",
         "This cmdlet returns an Amazon.IoTJobsDataPlane.Model.JobExecution object.",
-        "The service call response (type Amazon.IoTJobsDataPlane.Model.DescribeJobExecutionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTJobsDataPlane.Model.DescribeJobExecutionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIOTJJobExecutionCmdlet : AmazonIoTJobsDataPlaneClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExecutionNumber
         /// <summary>
@@ -56,8 +65,8 @@ namespace Amazon.PowerShell.Cmdlets.IOTJ
         #region Parameter IncludeJobDocument
         /// <summary>
         /// <para>
-        /// <para>Optional. When set to true, the response contains the job document. The default is
-        /// false.</para>
+        /// <para>Optional. Unless set to false, the response contains the job document. The default
+        /// is true.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,19 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTJ
         public string Select { get; set; } = "Execution";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -129,21 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.IOTJ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTJobsDataPlane.Model.DescribeJobExecutionResponse, GetIOTJJobExecutionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.JobId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ExecutionNumber = this.ExecutionNumber;
             context.IncludeJobDocument = this.IncludeJobDocument;
             context.JobId = this.JobId;
@@ -230,13 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTJ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT Jobs Data Plane", "DescribeJobExecution");
             try
             {
-                #if DESKTOP
-                return client.DescribeJobExecution(request);
-                #elif CORECLR
-                return client.DescribeJobExecutionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeJobExecutionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

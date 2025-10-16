@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Macie2;
 using Amazon.Macie2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MAC2
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
     [OutputType("Amazon.Macie2.Model.CreateFindingsFilterResponse")]
     [AWSCmdlet("Calls the Amazon Macie 2 CreateFindingsFilter API operation.", Operation = new[] {"CreateFindingsFilter"}, SelectReturnType = typeof(Amazon.Macie2.Model.CreateFindingsFilterResponse))]
     [AWSCmdletOutput("Amazon.Macie2.Model.CreateFindingsFilterResponse",
-        "This cmdlet returns an Amazon.Macie2.Model.CreateFindingsFilterResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Macie2.Model.CreateFindingsFilterResponse object containing multiple properties."
     )]
     public partial class NewMAC2FindingsFilterCmdlet : AmazonMacie2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
@@ -64,7 +67,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <summary>
         /// <para>
         /// <para>A condition that specifies the property, operator, and one or more values to use to
-        /// filter the results.</para>
+        /// filter the results.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -120,7 +127,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>A map of key-value pairs that specifies the tags to associate with the filter.</para><para>A findings filter can have a maximum of 50 tags. Each tag consists of a tag key and
         /// an associated tag value. The maximum length of a tag key is 128 characters. The maximum
-        /// length of a tag value is 256 characters.</para>
+        /// length of a tag value is 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,9 +170,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -310,13 +325,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Macie 2", "CreateFindingsFilter");
             try
             {
-                #if DESKTOP
-                return client.CreateFindingsFilter(request);
-                #elif CORECLR
-                return client.CreateFindingsFilterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFindingsFilterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

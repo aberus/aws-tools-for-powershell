@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Mgn;
 using Amazon.Mgn.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MGN
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MGN
     [OutputType("Amazon.Mgn.Model.PutTemplateActionResponse")]
     [AWSCmdlet("Calls the Application Migration Service PutTemplateAction API operation.", Operation = new[] {"PutTemplateAction"}, SelectReturnType = typeof(Amazon.Mgn.Model.PutTemplateActionResponse))]
     [AWSCmdletOutput("Amazon.Mgn.Model.PutTemplateActionResponse",
-        "This cmdlet returns an Amazon.Mgn.Model.PutTemplateActionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Mgn.Model.PutTemplateActionResponse object containing multiple properties."
     )]
     public partial class WriteMGNTemplateActionCmdlet : AmazonMgnClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ActionID
         /// <summary>
@@ -136,7 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         #region Parameter ExternalParameter
         /// <summary>
         /// <para>
-        /// <para>Template post migration custom action external parameters.</para>
+        /// <para>Template post migration custom action external parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,7 +207,11 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         #region Parameter Parameter
         /// <summary>
         /// <para>
-        /// <para>Template post migration custom action parameters.</para>
+        /// <para>Template post migration custom action parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -230,16 +241,6 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ActionID parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ActionID' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ActionID' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -250,9 +251,13 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ActionName), MyInvocation.BoundParameters);
@@ -266,21 +271,11 @@ namespace Amazon.PowerShell.Cmdlets.MGN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Mgn.Model.PutTemplateActionResponse, WriteMGNTemplateActionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ActionID;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ActionID = this.ActionID;
             #if MODULAR
             if (this.ActionID == null && ParameterWasBound(nameof(this.ActionID)))
@@ -461,13 +456,7 @@ namespace Amazon.PowerShell.Cmdlets.MGN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Application Migration Service", "PutTemplateAction");
             try
             {
-                #if DESKTOP
-                return client.PutTemplateAction(request);
-                #elif CORECLR
-                return client.PutTemplateActionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutTemplateActionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

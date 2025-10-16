@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTFleetWise;
 using Amazon.IoTFleetWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IFW
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.IFW
     [OutputType("Amazon.IoTFleetWise.Model.CreateVehicleResponse")]
     [AWSCmdlet("Calls the AWS IoT FleetWise CreateVehicle API operation.", Operation = new[] {"CreateVehicle"}, SelectReturnType = typeof(Amazon.IoTFleetWise.Model.CreateVehicleResponse))]
     [AWSCmdletOutput("Amazon.IoTFleetWise.Model.CreateVehicleResponse",
-        "This cmdlet returns an Amazon.IoTFleetWise.Model.CreateVehicleResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTFleetWise.Model.CreateVehicleResponse object containing multiple properties."
     )]
     public partial class NewIFWVehicleCmdlet : AmazonIoTFleetWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssociationBehavior
         /// <summary>
@@ -67,8 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         /// <summary>
         /// <para>
         /// <para>Static information about a vehicle in a key-value pair. For example: <c>"engineType"</c>
-        /// : <c>"1.3 L R2"</c></para><para>A campaign must include the keys (attribute names) in <c>dataExtraDimensions</c> for
-        /// them to display in Amazon Timestream.</para>
+        /// : <c>"1.3 L R2"</c></para><para>To use attributes with Campaigns or State Templates, you must include them using the
+        /// request parameters <c>dataExtraDimensions</c> and/or <c>metadataExtraDimensions</c>
+        /// (for state templates only) when creating your campaign/state template. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,10 +118,30 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public System.String ModelManifestArn { get; set; }
         #endregion
         
+        #region Parameter StateTemplate
+        /// <summary>
+        /// <para>
+        /// <para>Associate state templates with the vehicle. You can monitor the last known state of
+        /// the vehicle in near real time.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("StateTemplates")]
+        public Amazon.IoTFleetWise.Model.StateTemplateAssociation[] StateTemplate { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Metadata that can be used to manage the vehicle.</para>
+        /// <para>Metadata that can be used to manage the vehicle.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,16 +177,6 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VehicleName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VehicleName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VehicleName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -169,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.IFW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VehicleName), MyInvocation.BoundParameters);
@@ -185,21 +207,11 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IoTFleetWise.Model.CreateVehicleResponse, NewIFWVehicleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VehicleName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AssociationBehavior = this.AssociationBehavior;
             if (this.Attribute != null)
             {
@@ -223,6 +235,10 @@ namespace Amazon.PowerShell.Cmdlets.IFW
                 WriteWarning("You are passing $null as a value for parameter ModelManifestArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.StateTemplate != null)
+            {
+                context.StateTemplate = new List<Amazon.IoTFleetWise.Model.StateTemplateAssociation>(this.StateTemplate);
+            }
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.IoTFleetWise.Model.Tag>(this.Tag);
@@ -265,6 +281,10 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             if (cmdletContext.ModelManifestArn != null)
             {
                 request.ModelManifestArn = cmdletContext.ModelManifestArn;
+            }
+            if (cmdletContext.StateTemplate != null)
+            {
+                request.StateTemplates = cmdletContext.StateTemplate;
             }
             if (cmdletContext.Tag != null)
             {
@@ -312,13 +332,7 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT FleetWise", "CreateVehicle");
             try
             {
-                #if DESKTOP
-                return client.CreateVehicle(request);
-                #elif CORECLR
-                return client.CreateVehicleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVehicleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -339,6 +353,7 @@ namespace Amazon.PowerShell.Cmdlets.IFW
             public Dictionary<System.String, System.String> Attribute { get; set; }
             public System.String DecoderManifestArn { get; set; }
             public System.String ModelManifestArn { get; set; }
+            public List<Amazon.IoTFleetWise.Model.StateTemplateAssociation> StateTemplate { get; set; }
             public List<Amazon.IoTFleetWise.Model.Tag> Tag { get; set; }
             public System.String VehicleName { get; set; }
             public System.Func<Amazon.IoTFleetWise.Model.CreateVehicleResponse, NewIFWVehicleCmdlet, object> Select { get; set; } =

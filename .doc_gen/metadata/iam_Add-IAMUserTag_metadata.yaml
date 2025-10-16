@@ -1,0 +1,20 @@
+---
+iam_TagUser:
+  title: Use Add-IAMUserTag
+  title_abbrev: Add-IAMUserTag
+  synopsis: use Add-IAMUserTag
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Add-IAMUserTag
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: This example adds tag to User in Identity Management Service</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/iam_Add-IAMUserTag.1.1.ps1
+  services:
+    iam:
+      TagUser:
+

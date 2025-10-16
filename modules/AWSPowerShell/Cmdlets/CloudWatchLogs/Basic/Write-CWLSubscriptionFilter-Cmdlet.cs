@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -43,7 +45,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// </para></li><li><para>
     /// A logical destination created with <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutDestination.html">PutDestination</a>
     /// that belongs to a different account, for cross-account delivery. We currently support
-    /// Kinesis Data Streams and Kinesis Data Firehose as logical destinations.
+    /// Kinesis Data Streams and Firehose as logical destinations.
     /// </para></li><li><para>
     /// An Amazon Kinesis Data Firehose delivery stream that belongs to the same account as
     /// the subscription filter, for same-account delivery.
@@ -55,6 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// are updating an existing filter, you must specify the correct name in <c>filterName</c>.
     /// 
     /// </para><para>
+    /// Using regular expressions in filter patterns is supported. For these filters, there
+    /// is a quotas of quota of two regular expression patterns within a single filter pattern.
+    /// There is also a quota of five regular expression patterns per log group. For more
+    /// information about using regular expressions in filter patterns, see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html">
+    /// Filter pattern syntax for metric filters, subscription filters, filter log events,
+    /// and Live Tail</a>.
+    /// </para><para>
     /// To perform a <c>PutSubscriptionFilter</c> operation for any destination except a Lambda
     /// function, you must also have the <c>iam:PassRole</c> permission.
     /// </para>
@@ -64,12 +73,27 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs PutSubscriptionFilter API operation.", Operation = new[] {"PutSubscriptionFilter"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.PutSubscriptionFilterResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchLogs.Model.PutSubscriptionFilterResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchLogs.Model.PutSubscriptionFilterResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchLogs.Model.PutSubscriptionFilterResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCWLSubscriptionFilterCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ApplyOnTransformedLog
+        /// <summary>
+        /// <para>
+        /// <para>This parameter is valid only for log groups that have an active log transformer. For
+        /// more information about log transformers, see <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutTransformer.html">PutTransformer</a>.</para><para>If the log group uses either a log-group level or account-level transformer, and you
+        /// specify <c>true</c>, the subscription filter will be applied on the transformed version
+        /// of the log events instead of the original ingested log events.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ApplyOnTransformedLogs")]
+        public System.Boolean? ApplyOnTransformedLog { get; set; }
+        #endregion
         
         #region Parameter DestinationArn
         /// <summary>
@@ -107,6 +131,38 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.CloudWatchLogs.Distribution")]
         public Amazon.CloudWatchLogs.Distribution Distribution { get; set; }
+        #endregion
+        
+        #region Parameter EmitSystemField
+        /// <summary>
+        /// <para>
+        /// <para>A list of system fields to include in the log events sent to the subscription destination.
+        /// Valid values are <c>@aws.account</c> and <c>@aws.region</c>. These fields provide
+        /// source information for centralized log data in the forwarded payload.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EmitSystemFields")]
+        public System.String[] EmitSystemField { get; set; }
+        #endregion
+        
+        #region Parameter FieldSelectionCriterion
+        /// <summary>
+        /// <para>
+        /// <para>A filter expression that specifies which log events should be processed by this subscription
+        /// filter based on system fields such as source account and source region. Uses selection
+        /// criteria syntax with operators like <c>=</c>, <c>!=</c>, <c>AND</c>, <c>OR</c>, <c>IN</c>,
+        /// <c>NOT IN</c>. Example: <c>@aws.region NOT IN ["cn-north-1"]</c> or <c>@aws.account
+        /// = "123456789012" AND @aws.region = "us-east-1"</c>. Maximum length: 2000 characters.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("FieldSelectionCriteria")]
+        public System.String FieldSelectionCriterion { get; set; }
         #endregion
         
         #region Parameter FilterName
@@ -184,16 +240,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -204,9 +250,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LogGroupName), MyInvocation.BoundParameters);
@@ -220,21 +270,12 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.PutSubscriptionFilterResponse, WriteCWLSubscriptionFilterCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LogGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ApplyOnTransformedLog = this.ApplyOnTransformedLog;
             context.DestinationArn = this.DestinationArn;
             #if MODULAR
             if (this.DestinationArn == null && ParameterWasBound(nameof(this.DestinationArn)))
@@ -243,6 +284,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             }
             #endif
             context.Distribution = this.Distribution;
+            if (this.EmitSystemField != null)
+            {
+                context.EmitSystemField = new List<System.String>(this.EmitSystemField);
+            }
+            context.FieldSelectionCriterion = this.FieldSelectionCriterion;
             context.FilterName = this.FilterName;
             #if MODULAR
             if (this.FilterName == null && ParameterWasBound(nameof(this.FilterName)))
@@ -281,6 +327,10 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // create request
             var request = new Amazon.CloudWatchLogs.Model.PutSubscriptionFilterRequest();
             
+            if (cmdletContext.ApplyOnTransformedLog != null)
+            {
+                request.ApplyOnTransformedLogs = cmdletContext.ApplyOnTransformedLog.Value;
+            }
             if (cmdletContext.DestinationArn != null)
             {
                 request.DestinationArn = cmdletContext.DestinationArn;
@@ -288,6 +338,14 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             if (cmdletContext.Distribution != null)
             {
                 request.Distribution = cmdletContext.Distribution;
+            }
+            if (cmdletContext.EmitSystemField != null)
+            {
+                request.EmitSystemFields = cmdletContext.EmitSystemField;
+            }
+            if (cmdletContext.FieldSelectionCriterion != null)
+            {
+                request.FieldSelectionCriteria = cmdletContext.FieldSelectionCriterion;
             }
             if (cmdletContext.FilterName != null)
             {
@@ -343,13 +401,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "PutSubscriptionFilter");
             try
             {
-                #if DESKTOP
-                return client.PutSubscriptionFilter(request);
-                #elif CORECLR
-                return client.PutSubscriptionFilterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutSubscriptionFilterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -366,8 +418,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? ApplyOnTransformedLog { get; set; }
             public System.String DestinationArn { get; set; }
             public Amazon.CloudWatchLogs.Distribution Distribution { get; set; }
+            public List<System.String> EmitSystemField { get; set; }
+            public System.String FieldSelectionCriterion { get; set; }
             public System.String FilterName { get; set; }
             public System.String FilterPattern { get; set; }
             public System.String LogGroupName { get; set; }

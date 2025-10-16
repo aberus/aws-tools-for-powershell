@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceDiscovery;
 using Amazon.ServiceDiscovery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SD
 {
     /// <summary>
@@ -39,12 +41,13 @@ namespace Amazon.PowerShell.Cmdlets.SD
     [AWSCmdlet("Calls the AWS Cloud Map DiscoverInstances API operation.", Operation = new[] {"DiscoverInstances"}, SelectReturnType = typeof(Amazon.ServiceDiscovery.Model.DiscoverInstancesResponse))]
     [AWSCmdletOutput("Amazon.ServiceDiscovery.Model.HttpInstanceSummary or Amazon.ServiceDiscovery.Model.DiscoverInstancesResponse",
         "This cmdlet returns a collection of Amazon.ServiceDiscovery.Model.HttpInstanceSummary objects.",
-        "The service call response (type Amazon.ServiceDiscovery.Model.DiscoverInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceDiscovery.Model.DiscoverInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class FindSDInstanceCmdlet : AmazonServiceDiscoveryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HealthStatus
         /// <summary>
@@ -62,8 +65,10 @@ namespace Amazon.PowerShell.Cmdlets.SD
         #region Parameter NamespaceName
         /// <summary>
         /// <para>
-        /// <para>The <c>HttpName</c> name of the namespace. It's found in the <c>HttpProperties</c>
-        /// member of the <c>Properties</c> member of the namespace.</para>
+        /// <para>The <c>HttpName</c> name of the namespace. The <c>HttpName</c> is found in the <c>HttpProperties</c>
+        /// member of the <c>Properties</c> member of the namespace. In most cases, <c>Name</c>
+        /// and <c>HttpName</c> match. However, if you reuse <c>Name</c> for namespace creation,
+        /// a generated hash is added to <c>HttpName</c> to distinguish the two.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -84,7 +89,11 @@ namespace Amazon.PowerShell.Cmdlets.SD
         /// instances that match both the filters specified in both the <c>QueryParameters</c>
         /// parameter and this parameter, all of these instances are returned. Otherwise, the
         /// filters are ignored, and only instances that match the filters that are specified
-        /// in the <c>QueryParameters</c> parameter are returned.</para>
+        /// in the <c>QueryParameters</c> parameter are returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,12 +101,29 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public System.Collections.Hashtable OptionalParameter { get; set; }
         #endregion
         
+        #region Parameter OwnerAccount
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the Amazon Web Services account that owns the namespace associated with
+        /// the instance, as specified in the namespace <c>ResourceOwner</c> field. For instances
+        /// associated with namespaces that are shared with your account, you must specify an
+        /// <c>OwnerAccount</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String OwnerAccount { get; set; }
+        #endregion
+        
         #region Parameter QueryParameter
         /// <summary>
         /// <para>
         /// <para>Filters to scope the results based on custom attributes for the instance (for example,
         /// <c>{version=v1, az=1a}</c>). Only instances that match all the specified key-value
-        /// pairs are returned.</para>
+        /// pairs are returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -146,19 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public string Select { get; set; } = "Instances";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServiceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServiceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServiceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -166,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.SD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceDiscovery.Model.DiscoverInstancesResponse, FindSDInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServiceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HealthStatus = this.HealthStatus;
             context.MaxResult = this.MaxResult;
             context.NamespaceName = this.NamespaceName;
@@ -198,6 +208,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
                     context.OptionalParameter.Add((String)hashKey, (System.String)(this.OptionalParameter[hashKey]));
                 }
             }
+            context.OwnerAccount = this.OwnerAccount;
             if (this.QueryParameter != null)
             {
                 context.QueryParameter = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -245,6 +256,10 @@ namespace Amazon.PowerShell.Cmdlets.SD
             {
                 request.OptionalParameters = cmdletContext.OptionalParameter;
             }
+            if (cmdletContext.OwnerAccount != null)
+            {
+                request.OwnerAccount = cmdletContext.OwnerAccount;
+            }
             if (cmdletContext.QueryParameter != null)
             {
                 request.QueryParameters = cmdletContext.QueryParameter;
@@ -291,13 +306,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cloud Map", "DiscoverInstances");
             try
             {
-                #if DESKTOP
-                return client.DiscoverInstances(request);
-                #elif CORECLR
-                return client.DiscoverInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DiscoverInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -318,6 +327,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
             public System.Int32? MaxResult { get; set; }
             public System.String NamespaceName { get; set; }
             public Dictionary<System.String, System.String> OptionalParameter { get; set; }
+            public System.String OwnerAccount { get; set; }
             public Dictionary<System.String, System.String> QueryParameter { get; set; }
             public System.String ServiceName { get; set; }
             public System.Func<Amazon.ServiceDiscovery.Model.DiscoverInstancesResponse, FindSDInstanceCmdlet, object> Select { get; set; } =

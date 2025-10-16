@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RoboMaker;
 using Amazon.RoboMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ROBO
 {
     /// <summary>
+    /// <important><para>
+    /// End of support notice: On September 10, 2025, Amazon Web Services will discontinue
+    /// support for Amazon Web Services RoboMaker. After September 10, 2025, you will no longer
+    /// be able to access the Amazon Web Services RoboMaker console or Amazon Web Services
+    /// RoboMaker resources. For more information on transitioning to Batch to help run containerized
+    /// simulations, visit <a href="https://aws.amazon.com/blogs/hpc/run-simulations-using-multiple-containers-in-a-single-aws-batch-job/">https://aws.amazon.com/blogs/hpc/run-simulations-using-multiple-containers-in-a-single-aws-batch-job/</a>.
+    /// 
+    /// </para></important><para>
     /// Updates a robot application.
+    /// </para>
     /// </summary>
     [Cmdlet("Update", "ROBORobotApplication", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.RoboMaker.Model.UpdateRobotApplicationResponse")]
     [AWSCmdlet("Calls the AWS RoboMaker UpdateRobotApplication API operation.", Operation = new[] {"UpdateRobotApplication"}, SelectReturnType = typeof(Amazon.RoboMaker.Model.UpdateRobotApplicationResponse))]
     [AWSCmdletOutput("Amazon.RoboMaker.Model.UpdateRobotApplicationResponse",
-        "This cmdlet returns an Amazon.RoboMaker.Model.UpdateRobotApplicationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.RoboMaker.Model.UpdateRobotApplicationResponse object containing multiple properties."
     )]
     public partial class UpdateROBORobotApplicationCmdlet : AmazonRoboMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Application
         /// <summary>
@@ -71,7 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         #region Parameter RobotSoftwareSuite
         /// <summary>
         /// <para>
-        /// <para>The robot software suite (ROS distribution) used by the robot application.</para>
+        /// <para>The robot software suite used by the robot application.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -87,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         #region Parameter Source
         /// <summary>
         /// <para>
-        /// <para>The sources of the robot application.</para>
+        /// <para>The sources of the robot application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,16 +132,6 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Application parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Application' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Application' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +142,13 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Application), MyInvocation.BoundParameters);
@@ -152,21 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RoboMaker.Model.UpdateRobotApplicationResponse, UpdateROBORobotApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Application;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Application = this.Application;
             #if MODULAR
             if (this.Application == null && ParameterWasBound(nameof(this.Application)))
@@ -276,13 +276,7 @@ namespace Amazon.PowerShell.Cmdlets.ROBO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS RoboMaker", "UpdateRobotApplication");
             try
             {
-                #if DESKTOP
-                return client.UpdateRobotApplication(request);
-                #elif CORECLR
-                return client.UpdateRobotApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateRobotApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

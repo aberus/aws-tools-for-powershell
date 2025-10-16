@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Imagebuilder;
 using Amazon.Imagebuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2IB
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
     [AWSCmdlet("Calls the EC2 Image Builder ListImageRecipes API operation.", Operation = new[] {"ListImageRecipes"}, SelectReturnType = typeof(Amazon.Imagebuilder.Model.ListImageRecipesResponse))]
     [AWSCmdletOutput("Amazon.Imagebuilder.Model.ImageRecipeSummary or Amazon.Imagebuilder.Model.ListImageRecipesResponse",
         "This cmdlet returns a collection of Amazon.Imagebuilder.Model.ImageRecipeSummary objects.",
-        "The service call response (type Amazon.Imagebuilder.Model.ListImageRecipesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Imagebuilder.Model.ListImageRecipesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2IBImageRecipeListCmdlet : AmazonImagebuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>Use the following filters to streamline results:</para><ul><li><para><c>name</c></para></li><li><para><c>parentImage</c></para></li><li><para><c>platform</c></para></li></ul>
+        /// <para>Use the following filters to streamline results:</para><ul><li><para><c>name</c></para></li><li><para><c>parentImage</c></para></li><li><para><c>platform</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -56,7 +63,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>The maximum items to return in a request.</para>
+        /// <para>Specify the maximum number of items to return in a request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,7 +79,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,10 +89,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         #region Parameter Owner
         /// <summary>
         /// <para>
-        /// <para>The owner defines which image recipes you want to list. By default, this request will
-        /// only show image recipes owned by your account. You can use this field to specify if
-        /// you want to view image recipes owned by yourself, by Amazon, or those image recipes
-        /// that have been shared with you by other customers.</para>
+        /// <para>You can specify the recipe owner to filter results by that owner. By default, this
+        /// request will only show image recipes owned by your account. To filter by a different
+        /// owner, specify one of the <c>Valid Values</c> that are listed for this parameter.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -228,13 +238,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2IB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "EC2 Image Builder", "ListImageRecipes");
             try
             {
-                #if DESKTOP
-                return client.ListImageRecipes(request);
-                #elif CORECLR
-                return client.ListImageRecipesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListImageRecipesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

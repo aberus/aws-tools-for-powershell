@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.OSIS;
 using Amazon.OSIS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OSIS
 {
     /// <summary>
@@ -36,12 +38,36 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
     [AWSCmdlet("Calls the Amazon OpenSearch Ingestion CreatePipeline API operation.", Operation = new[] {"CreatePipeline"}, SelectReturnType = typeof(Amazon.OSIS.Model.CreatePipelineResponse))]
     [AWSCmdletOutput("Amazon.OSIS.Model.Pipeline or Amazon.OSIS.Model.CreatePipelineResponse",
         "This cmdlet returns an Amazon.OSIS.Model.Pipeline object.",
-        "The service call response (type Amazon.OSIS.Model.CreatePipelineResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.OSIS.Model.CreatePipelineResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewOSISPipelineCmdlet : AmazonOSISClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter VpcAttachmentOptions_AttachToVpc
+        /// <summary>
+        /// <para>
+        /// <para>Whether a VPC is attached to the pipeline.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VpcOptions_VpcAttachmentOptions_AttachToVpc")]
+        public System.Boolean? VpcAttachmentOptions_AttachToVpc { get; set; }
+        #endregion
+        
+        #region Parameter VpcAttachmentOptions_CidrBlock
+        /// <summary>
+        /// <para>
+        /// <para>The CIDR block to be reserved for OpenSearch Ingestion to create elastic network interfaces
+        /// (ENIs).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VpcOptions_VpcAttachmentOptions_CidrBlock")]
+        public System.String VpcAttachmentOptions_CidrBlock { get; set; }
+        #endregion
         
         #region Parameter LogPublishingOptions_IsLoggingEnabled
         /// <summary>
@@ -56,8 +82,8 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         #region Parameter EncryptionAtRestOptions_KmsKeyArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the KMS key used to encrypt data-at-rest in OpenSearch Ingestion. By default,
-        /// data is encrypted using an AWS owned key.</para>
+        /// <para>The ARN of the KMS key used to encrypt buffer data. By default, data is encrypted
+        /// using an Amazon Web Services owned key.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +94,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         /// <summary>
         /// <para>
         /// <para>The name of the CloudWatch Logs group to send pipeline logs to. You can specify an
-        /// existing log group or create a new one. For example, <c>/aws/OpenSearchService/IngestionService/my-pipeline</c>.</para>
+        /// existing log group or create a new one. For example, <c>/aws/vendedlogs/OpenSearchService/pipelines</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,10 +183,25 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         public System.String PipelineName { get; set; }
         #endregion
         
+        #region Parameter PipelineRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM role that grants the pipeline permission
+        /// to access Amazon Web Services resources.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String PipelineRoleArn { get; set; }
+        #endregion
+        
         #region Parameter VpcOptions_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of security groups associated with the VPC endpoint.</para>
+        /// <para>A list of security groups associated with the VPC endpoint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -171,7 +212,11 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         #region Parameter VpcOptions_SubnetId
         /// <summary>
         /// <para>
-        /// <para>A list of subnet IDs associated with the VPC endpoint.</para>
+        /// <para>A list of subnet IDs associated with the VPC endpoint.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,12 +227,28 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>List of tags to add to the pipeline upon creation.</para>
+        /// <para>List of tags to add to the pipeline upon creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.OSIS.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter VpcOptions_VpcEndpointManagement
+        /// <summary>
+        /// <para>
+        /// <para>Defines whether you or Amazon OpenSearch Ingestion service create and manage the VPC
+        /// endpoint configured for the pipeline.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.OSIS.VpcEndpointManagement")]
+        public Amazon.OSIS.VpcEndpointManagement VpcOptions_VpcEndpointManagement { get; set; }
         #endregion
         
         #region Parameter Select
@@ -201,16 +262,6 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         public string Select { get; set; } = "Pipeline";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PipelineName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PipelineName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PipelineName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -221,9 +272,13 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PipelineName), MyInvocation.BoundParameters);
@@ -237,21 +292,11 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.OSIS.Model.CreatePipelineResponse, NewOSISPipelineCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PipelineName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BufferOptions_PersistentBufferEnabled = this.BufferOptions_PersistentBufferEnabled;
             context.EncryptionAtRestOptions_KmsKeyArn = this.EncryptionAtRestOptions_KmsKeyArn;
             context.CloudWatchLogDestination_LogGroup = this.CloudWatchLogDestination_LogGroup;
@@ -284,6 +329,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
                 WriteWarning("You are passing $null as a value for parameter PipelineName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.PipelineRoleArn = this.PipelineRoleArn;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.OSIS.Model.Tag>(this.Tag);
@@ -296,6 +342,9 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             {
                 context.VpcOptions_SubnetId = new List<System.String>(this.VpcOptions_SubnetId);
             }
+            context.VpcAttachmentOptions_AttachToVpc = this.VpcAttachmentOptions_AttachToVpc;
+            context.VpcAttachmentOptions_CidrBlock = this.VpcAttachmentOptions_CidrBlock;
+            context.VpcOptions_VpcEndpointManagement = this.VpcOptions_VpcEndpointManagement;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -410,6 +459,10 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             {
                 request.PipelineName = cmdletContext.PipelineName;
             }
+            if (cmdletContext.PipelineRoleArn != null)
+            {
+                request.PipelineRoleArn = cmdletContext.PipelineRoleArn;
+            }
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
@@ -436,6 +489,51 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             if (requestVpcOptions_vpcOptions_SubnetId != null)
             {
                 request.VpcOptions.SubnetIds = requestVpcOptions_vpcOptions_SubnetId;
+                requestVpcOptionsIsNull = false;
+            }
+            Amazon.OSIS.VpcEndpointManagement requestVpcOptions_vpcOptions_VpcEndpointManagement = null;
+            if (cmdletContext.VpcOptions_VpcEndpointManagement != null)
+            {
+                requestVpcOptions_vpcOptions_VpcEndpointManagement = cmdletContext.VpcOptions_VpcEndpointManagement;
+            }
+            if (requestVpcOptions_vpcOptions_VpcEndpointManagement != null)
+            {
+                request.VpcOptions.VpcEndpointManagement = requestVpcOptions_vpcOptions_VpcEndpointManagement;
+                requestVpcOptionsIsNull = false;
+            }
+            Amazon.OSIS.Model.VpcAttachmentOptions requestVpcOptions_vpcOptions_VpcAttachmentOptions = null;
+            
+             // populate VpcAttachmentOptions
+            var requestVpcOptions_vpcOptions_VpcAttachmentOptionsIsNull = true;
+            requestVpcOptions_vpcOptions_VpcAttachmentOptions = new Amazon.OSIS.Model.VpcAttachmentOptions();
+            System.Boolean? requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_AttachToVpc = null;
+            if (cmdletContext.VpcAttachmentOptions_AttachToVpc != null)
+            {
+                requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_AttachToVpc = cmdletContext.VpcAttachmentOptions_AttachToVpc.Value;
+            }
+            if (requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_AttachToVpc != null)
+            {
+                requestVpcOptions_vpcOptions_VpcAttachmentOptions.AttachToVpc = requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_AttachToVpc.Value;
+                requestVpcOptions_vpcOptions_VpcAttachmentOptionsIsNull = false;
+            }
+            System.String requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_CidrBlock = null;
+            if (cmdletContext.VpcAttachmentOptions_CidrBlock != null)
+            {
+                requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_CidrBlock = cmdletContext.VpcAttachmentOptions_CidrBlock;
+            }
+            if (requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_CidrBlock != null)
+            {
+                requestVpcOptions_vpcOptions_VpcAttachmentOptions.CidrBlock = requestVpcOptions_vpcOptions_VpcAttachmentOptions_vpcAttachmentOptions_CidrBlock;
+                requestVpcOptions_vpcOptions_VpcAttachmentOptionsIsNull = false;
+            }
+             // determine if requestVpcOptions_vpcOptions_VpcAttachmentOptions should be set to null
+            if (requestVpcOptions_vpcOptions_VpcAttachmentOptionsIsNull)
+            {
+                requestVpcOptions_vpcOptions_VpcAttachmentOptions = null;
+            }
+            if (requestVpcOptions_vpcOptions_VpcAttachmentOptions != null)
+            {
+                request.VpcOptions.VpcAttachmentOptions = requestVpcOptions_vpcOptions_VpcAttachmentOptions;
                 requestVpcOptionsIsNull = false;
             }
              // determine if request.VpcOptions should be set to null
@@ -481,13 +579,7 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon OpenSearch Ingestion", "CreatePipeline");
             try
             {
-                #if DESKTOP
-                return client.CreatePipeline(request);
-                #elif CORECLR
-                return client.CreatePipelineAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePipelineAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -512,9 +604,13 @@ namespace Amazon.PowerShell.Cmdlets.OSIS
             public System.Int32? MinUnit { get; set; }
             public System.String PipelineConfigurationBody { get; set; }
             public System.String PipelineName { get; set; }
+            public System.String PipelineRoleArn { get; set; }
             public List<Amazon.OSIS.Model.Tag> Tag { get; set; }
             public List<System.String> VpcOptions_SecurityGroupId { get; set; }
             public List<System.String> VpcOptions_SubnetId { get; set; }
+            public System.Boolean? VpcAttachmentOptions_AttachToVpc { get; set; }
+            public System.String VpcAttachmentOptions_CidrBlock { get; set; }
+            public Amazon.OSIS.VpcEndpointManagement VpcOptions_VpcEndpointManagement { get; set; }
             public System.Func<Amazon.OSIS.Model.CreatePipelineResponse, NewOSISPipelineCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Pipeline;
         }

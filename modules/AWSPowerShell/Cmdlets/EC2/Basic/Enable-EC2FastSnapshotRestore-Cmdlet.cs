@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -34,28 +36,32 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     ///  
     /// <para>
     /// You get the full benefit of fast snapshot restores after they enter the <c>enabled</c>
-    /// state. To get the current state of fast snapshot restores, use <a>DescribeFastSnapshotRestores</a>.
-    /// To disable fast snapshot restores, use <a>DisableFastSnapshotRestores</a>.
+    /// state.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-fast-snapshot-restore.html">Amazon
-    /// EBS fast snapshot restore</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/ebs/latest/userguide/ebs-fast-snapshot-restore.html">Amazon
+    /// EBS fast snapshot restore</a> in the <i>Amazon EBS User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Enable", "EC2FastSnapshotRestore", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EC2.Model.EnableFastSnapshotRestoresResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) EnableFastSnapshotRestores API operation.", Operation = new[] {"EnableFastSnapshotRestores"}, SelectReturnType = typeof(Amazon.EC2.Model.EnableFastSnapshotRestoresResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.EnableFastSnapshotRestoresResponse",
-        "This cmdlet returns an Amazon.EC2.Model.EnableFastSnapshotRestoresResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.EnableFastSnapshotRestoresResponse object containing multiple properties."
     )]
     public partial class EnableEC2FastSnapshotRestoreCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AvailabilityZone
         /// <summary>
         /// <para>
-        /// <para>One or more Availability Zones. For example, <c>us-east-2a</c>.</para>
+        /// <para>One or more Availability Zones. For example, <c>us-east-2a</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -70,11 +76,27 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String[] AvailabilityZone { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
         #region Parameter SourceSnapshotId
         /// <summary>
         /// <para>
         /// <para>The IDs of one or more snapshots. For example, <c>snap-1234567890abcdef0</c>. You
-        /// can specify a snapshot that was shared with you from another Amazon Web Services account.</para>
+        /// can specify a snapshot that was shared with you from another Amazon Web Services account.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -110,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SourceSnapshotId), MyInvocation.BoundParameters);
@@ -141,6 +167,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter AvailabilityZone which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DryRun = this.DryRun;
             if (this.SourceSnapshotId != null)
             {
                 context.SourceSnapshotId = new List<System.String>(this.SourceSnapshotId);
@@ -170,6 +197,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.AvailabilityZone != null)
             {
                 request.AvailabilityZones = cmdletContext.AvailabilityZone;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.SourceSnapshotId != null)
             {
@@ -213,13 +244,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "EnableFastSnapshotRestores");
             try
             {
-                #if DESKTOP
-                return client.EnableFastSnapshotRestores(request);
-                #elif CORECLR
-                return client.EnableFastSnapshotRestoresAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.EnableFastSnapshotRestoresAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -237,6 +262,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public List<System.String> AvailabilityZone { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<System.String> SourceSnapshotId { get; set; }
             public System.Func<Amazon.EC2.Model.EnableFastSnapshotRestoresResponse, EnableEC2FastSnapshotRestoreCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

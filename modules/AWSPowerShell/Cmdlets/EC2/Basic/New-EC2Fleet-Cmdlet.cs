@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [OutputType("Amazon.EC2.Model.CreateFleetResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateFleet API operation.", Operation = new[] {"CreateFleet"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateFleetResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.CreateFleetResponse",
-        "This cmdlet returns an Amazon.EC2.Model.CreateFleetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.CreateFleetResponse object containing multiple properties."
     )]
     public partial class NewEC2FleetCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OnDemandOptions_AllocationStrategy
         /// <summary>
@@ -83,7 +86,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// implements the priorities on a best-effort basis, but optimizes for capacity first.
         /// <c>capacity-optimized-prioritized</c> is supported only if your EC2 Fleet uses a launch
         /// template. Note that if the On-Demand <c>AllocationStrategy</c> is set to <c>prioritized</c>,
-        /// the same priority is applied when fulfilling On-Demand capacity.</para></dd><dt>diversified</dt><dd><para>EC2 Fleet requests instances from all of the Spot Instance pools that you specify.</para></dd><dt>lowest-price</dt><dd><para>EC2 Fleet requests instances from the lowest priced Spot Instance pool that has available
+        /// the same priority is applied when fulfilling On-Demand capacity.</para></dd><dt>diversified</dt><dd><para>EC2 Fleet requests instances from all of the Spot Instance pools that you specify.</para></dd><dt>lowest-price (not recommended)</dt><dd><important><para>We don't recommend the <c>lowest-price</c> allocation strategy because it has the
+        /// highest risk of interruption for your Spot Instances.</para></important><para>EC2 Fleet requests instances from the lowest priced Spot Instance pool that has available
         /// capacity. If the lowest priced pool doesn't have available capacity, the Spot Instances
         /// come from the next lowest priced pool that has available capacity. If a pool runs
         /// out of capacity before fulfilling your desired capacity, EC2 Fleet will continue to
@@ -117,6 +121,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.EC2.DefaultTargetCapacityType")]
         public Amazon.EC2.DefaultTargetCapacityType TargetCapacitySpecification_DefaultTargetCapacityType { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter ExcessCapacityTerminationPolicy
@@ -164,7 +180,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchTemplateConfig
         /// <summary>
         /// <para>
-        /// <para>The configuration for the EC2 Fleet.</para>
+        /// <para>The configuration for the EC2 Fleet.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -187,7 +207,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// for surplus credits. The <c>MaxTotalPrice</c> does not account for surplus credits,
         /// and, if you use surplus credits, your final cost might be higher than what you specified
         /// for <c>MaxTotalPrice</c>. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html#unlimited-mode-surplus-credits">Surplus
-        /// credits can incur charges</a> in the <i>EC2 User Guide</i>.</para></note>
+        /// credits can incur charges</a> in the <i>Amazon EC2 User Guide</i>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,7 +225,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// for surplus credits. The <c>MaxTotalPrice</c> does not account for surplus credits,
         /// and, if you use surplus credits, your final cost might be higher than what you specified
         /// for <c>MaxTotalPrice</c>. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/burstable-performance-instances-unlimited-mode-concepts.html#unlimited-mode-surplus-credits">Surplus
-        /// credits can incur charges</a> in the <i>EC2 User Guide</i>.</para></note>
+        /// credits can incur charges</a> in the <i>Amazon EC2 User Guide</i>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,8 +235,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter OnDemandOptions_MinTargetCapacity
         /// <summary>
         /// <para>
-        /// <para>The minimum target capacity for On-Demand Instances in the fleet. If the minimum target
-        /// capacity is not reached, the fleet launches no instances.</para><para>Supported only for fleets of type <c>instant</c>.</para><para>At least one of the following must be specified: <c>SingleAvailabilityZone</c> | <c>SingleInstanceType</c></para>
+        /// <para>The minimum target capacity for On-Demand Instances in the fleet. If this minimum
+        /// capacity isn't reached, no instances are launched.</para><para>Constraints: Maximum value of <c>1000</c>. Supported only for fleets of type <c>instant</c>.</para><para>At least one of the following must be specified: <c>SingleAvailabilityZone</c> | <c>SingleInstanceType</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -226,8 +246,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter SpotOptions_MinTargetCapacity
         /// <summary>
         /// <para>
-        /// <para>The minimum target capacity for Spot Instances in the fleet. If the minimum target
-        /// capacity is not reached, the fleet launches no instances.</para><para>Supported only for fleets of type <c>instant</c>.</para><para>At least one of the following must be specified: <c>SingleAvailabilityZone</c> | <c>SingleInstanceType</c></para>
+        /// <para>The minimum target capacity for Spot Instances in the fleet. If this minimum capacity
+        /// isn't reached, no instances are launched.</para><para>Constraints: Maximum value of <c>1000</c>. Supported only for fleets of type <c>instant</c>.</para><para>At least one of the following must be specified: <c>SingleAvailabilityZone</c> | <c>SingleInstanceType</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -338,7 +358,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// the fleet or <c>instance</c> to tag the instances at launch.</para><para>If the fleet type is <c>maintain</c> or <c>request</c>, specify a resource type of
         /// <c>fleet</c> to tag the fleet. You cannot specify a resource type of <c>instance</c>.
         /// To tag instances at launch, specify the tags in a <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html#create-launch-template">launch
-        /// template</a>.</para>
+        /// template</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -432,7 +456,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public Amazon.EC2.FleetCapacityReservationUsageStrategy CapacityReservationOptions_UsageStrategy { get; set; }
         #endregion
         
-        #region Parameter UtcValidFrom
+        #region Parameter ValidFrom
         /// <summary>
         /// <para>
         /// <para>The start date and time of the request, in UTC format (for example, <i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).
@@ -440,10 +464,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcValidFrom { get; set; }
+        public System.DateTime? ValidFrom { get; set; }
         #endregion
         
-        #region Parameter UtcValidUntil
+        #region Parameter ValidUntil
         /// <summary>
         /// <para>
         /// <para>The end date and time of the request, in UTC format (for example, <i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).
@@ -452,56 +476,20 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcValidUntil { get; set; }
+        public System.DateTime? ValidUntil { get; set; }
         #endregion
         
         #region Parameter ClientToken
         /// <summary>
         /// <para>
         /// <para>Unique, case-sensitive identifier that you provide to ensure the idempotency of the
-        /// request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
+        /// request. If you do not specify a client token, a randomly generated token is used
+        /// for the request to ensure idempotency.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
         /// idempotency</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ClientToken { get; set; }
-        #endregion
-        
-        #region Parameter ValidFrom
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use ValidFromUtc instead. Setting either ValidFrom or
-        /// ValidFromUtc results in both ValidFrom and ValidFromUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. ValidFrom
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The start date and time of the request, in UTC format (for example, <i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).
-        /// The default is to start fulfilling the request immediately.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcValidFrom instead.")]
-        public System.DateTime? ValidFrom { get; set; }
-        #endregion
-        
-        #region Parameter ValidUntil
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use ValidUntilUtc instead. Setting either ValidUntil or
-        /// ValidUntilUtc results in both ValidUntil and ValidUntilUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. ValidUntil
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The end date and time of the request, in UTC format (for example, <i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).
-        /// At this point, no new EC2 Fleet requests are placed or able to fulfill the request.
-        /// If no value is specified, the request remains until you cancel it.</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcValidUntil instead.")]
-        public System.DateTime? ValidUntil { get; set; }
         #endregion
         
         #region Parameter Select
@@ -515,16 +503,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LaunchTemplateConfig parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LaunchTemplateConfig' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LaunchTemplateConfig' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -535,9 +513,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LaunchTemplateConfig), MyInvocation.BoundParameters);
@@ -551,23 +533,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateFleetResponse, NewEC2FleetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LaunchTemplateConfig;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Context = this.Context;
+            context.DryRun = this.DryRun;
             context.ExcessCapacityTerminationPolicy = this.ExcessCapacityTerminationPolicy;
             if (this.LaunchTemplateConfig != null)
             {
@@ -612,14 +585,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             #endif
             context.TerminateInstancesWithExpiration = this.TerminateInstancesWithExpiration;
             context.Type = this.Type;
-            context.UtcValidFrom = this.UtcValidFrom;
-            context.UtcValidUntil = this.UtcValidUntil;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ValidFrom = this.ValidFrom;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ValidUntil = this.ValidUntil;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -643,6 +610,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Context != null)
             {
                 request.Context = cmdletContext.Context;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.ExcessCapacityTerminationPolicy != null)
             {
@@ -940,34 +911,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Type = cmdletContext.Type;
             }
-            if (cmdletContext.UtcValidFrom != null)
-            {
-                request.ValidFromUtc = cmdletContext.UtcValidFrom.Value;
-            }
-            if (cmdletContext.UtcValidUntil != null)
-            {
-                request.ValidUntilUtc = cmdletContext.UtcValidUntil.Value;
-            }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ValidFrom != null)
             {
-                if (cmdletContext.UtcValidFrom != null)
-                {
-                    throw new System.ArgumentException("Parameters ValidFrom and UtcValidFrom are mutually exclusive.", nameof(this.ValidFrom));
-                }
                 request.ValidFrom = cmdletContext.ValidFrom.Value;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.ValidUntil != null)
             {
-                if (cmdletContext.UtcValidUntil != null)
-                {
-                    throw new System.ArgumentException("Parameters ValidUntil and UtcValidUntil are mutually exclusive.", nameof(this.ValidUntil));
-                }
                 request.ValidUntil = cmdletContext.ValidUntil.Value;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             CmdletOutput output;
             
@@ -1006,13 +957,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateFleet");
             try
             {
-                #if DESKTOP
-                return client.CreateFleet(request);
-                #elif CORECLR
-                return client.CreateFleetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFleetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1031,6 +976,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         {
             public System.String ClientToken { get; set; }
             public System.String Context { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public Amazon.EC2.FleetExcessCapacityTerminationPolicy ExcessCapacityTerminationPolicy { get; set; }
             public List<Amazon.EC2.Model.FleetLaunchTemplateConfigRequest> LaunchTemplateConfig { get; set; }
             public Amazon.EC2.FleetOnDemandAllocationStrategy OnDemandOptions_AllocationStrategy { get; set; }
@@ -1057,11 +1003,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.Int32? TargetCapacitySpecification_TotalTargetCapacity { get; set; }
             public System.Boolean? TerminateInstancesWithExpiration { get; set; }
             public Amazon.EC2.FleetType Type { get; set; }
-            public System.DateTime? UtcValidFrom { get; set; }
-            public System.DateTime? UtcValidUntil { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? ValidFrom { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? ValidUntil { get; set; }
             public System.Func<Amazon.EC2.Model.CreateFleetResponse, NewEC2FleetCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

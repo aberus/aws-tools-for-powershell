@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The SageMaker module of AWS Tools for PowerShell lets developers and administrators manage Amazon SageMaker Service from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.SageMaker.dll'
     )
@@ -89,6 +90,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-SMAssociation', 
         'Add-SMResourceTag', 
         'Disable-SMSagemakerServicecatalogPortfolio', 
+        'Dismount-SMClusterNodeVolume', 
         'Enable-SMSagemakerServicecatalogPortfolio', 
         'Find-SMLineage', 
         'Get-SMAction', 
@@ -108,13 +110,19 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMAutoMLJobV2', 
         'Get-SMCandidatesForAutoMLJobList', 
         'Get-SMCluster', 
+        'Get-SMClusterEvent', 
+        'Get-SMClusterEventList', 
         'Get-SMClusterList', 
         'Get-SMClusterNode', 
         'Get-SMClusterNodeList', 
+        'Get-SMClusterSchedulerConfig', 
+        'Get-SMClusterSchedulerConfigList', 
         'Get-SMCodeRepository', 
         'Get-SMCodeRepositoryList', 
         'Get-SMCompilationJob', 
         'Get-SMCompilationJobList', 
+        'Get-SMComputeQuota', 
+        'Get-SMComputeQuotaList', 
         'Get-SMConfigList', 
         'Get-SMContext', 
         'Get-SMContextList', 
@@ -168,6 +176,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMLineageGroup', 
         'Get-SMLineageGroupList', 
         'Get-SMLineageGroupPolicy', 
+        'Get-SMMlflowTrackingServer', 
+        'Get-SMMlflowTrackingServerList', 
         'Get-SMModel', 
         'Get-SMModelBiasJobDefinition', 
         'Get-SMModelBiasJobDefinitionList', 
@@ -196,6 +206,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMNotebookInstanceLifecycleConfig', 
         'Get-SMNotebookInstanceLifecycleConfigList', 
         'Get-SMNotebookInstanceList', 
+        'Get-SMOptimizationJob', 
+        'Get-SMOptimizationJobList', 
+        'Get-SMPartnerApp', 
+        'Get-SMPartnerAppList', 
         'Get-SMPipeline', 
         'Get-SMPipelineDefinitionForExecution', 
         'Get-SMPipelineExecution', 
@@ -203,10 +217,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMPipelineExecutionStepList', 
         'Get-SMPipelineList', 
         'Get-SMPipelineParametersForExecutionList', 
+        'Get-SMPipelineVersionList', 
         'Get-SMProcessingJob', 
         'Get-SMProcessingJobList', 
         'Get-SMProject', 
         'Get-SMProjectList', 
+        'Get-SMReservedCapacity', 
         'Get-SMResourceCatalogList', 
         'Get-SMResourceTagList', 
         'Get-SMSagemakerServicecatalogPortfolioStatus', 
@@ -222,12 +238,15 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMTrainingJob', 
         'Get-SMTrainingJobList', 
         'Get-SMTrainingJobsForHyperParameterTuningJobList', 
+        'Get-SMTrainingPlan', 
+        'Get-SMTrainingPlanList', 
         'Get-SMTransformJob', 
         'Get-SMTransformJobList', 
         'Get-SMTrial', 
         'Get-SMTrialComponent', 
         'Get-SMTrialComponentList', 
         'Get-SMTrialList', 
+        'Get-SMUltraServersByReservedCapacityList', 
         'Get-SMUserProfile', 
         'Get-SMUserProfileList', 
         'Get-SMWorkforce', 
@@ -236,6 +255,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-SMWorkteamList', 
         'Import-SMHubContent', 
         'Invoke-SMUiTemplateRendering', 
+        'Mount-SMClusterNodeVolume', 
         'New-SMAction', 
         'New-SMAlgorithm', 
         'New-SMApp', 
@@ -244,8 +264,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-SMAutoMLJob', 
         'New-SMAutoMLJobV2', 
         'New-SMCluster', 
+        'New-SMClusterSchedulerConfig', 
         'New-SMCodeRepository', 
         'New-SMCompilationJob', 
+        'New-SMComputeQuota', 
         'New-SMContext', 
         'New-SMDataQualityJobDefinition', 
         'New-SMDeviceFleet', 
@@ -259,6 +281,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-SMFeatureGroup', 
         'New-SMFlowDefinition', 
         'New-SMHub', 
+        'New-SMHubContentPresignedUrl', 
+        'New-SMHubContentReference', 
         'New-SMHumanTaskUi', 
         'New-SMHyperParameterTuningJob', 
         'New-SMImage', 
@@ -267,6 +291,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-SMInferenceExperiment', 
         'New-SMInferenceRecommendationsJob', 
         'New-SMLabelingJob', 
+        'New-SMMlflowTrackingServer', 
         'New-SMModel', 
         'New-SMModelBiasJobDefinition', 
         'New-SMModelCard', 
@@ -278,14 +303,19 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-SMMonitoringSchedule', 
         'New-SMNotebookInstance', 
         'New-SMNotebookInstanceLifecycleConfig', 
+        'New-SMOptimizationJob', 
+        'New-SMPartnerApp', 
+        'New-SMPartnerAppPresignedUrl', 
         'New-SMPipeline', 
         'New-SMPresignedDomainUrl', 
+        'New-SMPresignedMlflowTrackingServerUrl', 
         'New-SMPresignedNotebookInstanceUrl', 
         'New-SMProcessingJob', 
         'New-SMProject', 
         'New-SMSpace', 
         'New-SMStudioLifecycleConfig', 
         'New-SMTrainingJob', 
+        'New-SMTrainingPlan', 
         'New-SMTransformJob', 
         'New-SMTrial', 
         'New-SMTrialComponent', 
@@ -301,8 +331,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-SMArtifact', 
         'Remove-SMAssociation', 
         'Remove-SMCluster', 
+        'Remove-SMClusterSchedulerConfig', 
         'Remove-SMCodeRepository', 
         'Remove-SMCompilationJob', 
+        'Remove-SMComputeQuota', 
         'Remove-SMContext', 
         'Remove-SMDataQualityJobDefinition', 
         'Remove-SMDevice', 
@@ -317,12 +349,14 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-SMFlowDefinition', 
         'Remove-SMHub', 
         'Remove-SMHubContent', 
+        'Remove-SMHubContentReference', 
         'Remove-SMHumanTaskUi', 
         'Remove-SMHyperParameterTuningJob', 
         'Remove-SMImage', 
         'Remove-SMImageVersion', 
         'Remove-SMInferenceComponent', 
         'Remove-SMInferenceExperiment', 
+        'Remove-SMMlflowTrackingServer', 
         'Remove-SMModel', 
         'Remove-SMModelBiasJobDefinition', 
         'Remove-SMModelCard', 
@@ -334,6 +368,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-SMMonitoringSchedule', 
         'Remove-SMNotebookInstance', 
         'Remove-SMNotebookInstanceLifecycleConfig', 
+        'Remove-SMOptimizationJob', 
+        'Remove-SMPartnerApp', 
         'Remove-SMPipeline', 
         'Remove-SMProject', 
         'Remove-SMResourceTag', 
@@ -346,13 +382,18 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-SMWorkteam', 
         'Restart-SMPipelineExecution', 
         'Search-SMResource', 
+        'Search-SMTrainingPlanOffering', 
         'Send-SMPipelineExecutionStepFailure', 
         'Send-SMPipelineExecutionStepSuccess', 
+        'Set-SMAddClusterNode', 
+        'Set-SMDeleteClusterNode', 
         'Start-SMEdgeDeploymentStage', 
         'Start-SMInferenceExperiment', 
+        'Start-SMMlflowTrackingServer', 
         'Start-SMMonitoringSchedule', 
         'Start-SMNotebookInstance', 
         'Start-SMPipelineExecution', 
+        'Start-SMSession', 
         'Stop-SMAutoMLJob', 
         'Stop-SMCompilationJob', 
         'Stop-SMEdgeDeploymentStage', 
@@ -361,8 +402,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Stop-SMInferenceExperiment', 
         'Stop-SMInferenceRecommendationsJob', 
         'Stop-SMLabelingJob', 
+        'Stop-SMMlflowTrackingServer', 
         'Stop-SMMonitoringSchedule', 
         'Stop-SMNotebookInstance', 
+        'Stop-SMOptimizationJob', 
         'Stop-SMPipelineExecution', 
         'Stop-SMProcessingJob', 
         'Stop-SMTrainingJob', 
@@ -372,7 +415,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-SMAppImageConfig', 
         'Update-SMArtifact', 
         'Update-SMCluster', 
+        'Update-SMClusterSchedulerConfig', 
+        'Update-SMClusterSoftware', 
         'Update-SMCodeRepository', 
+        'Update-SMComputeQuota', 
         'Update-SMContext', 
         'Update-SMDevice', 
         'Update-SMDeviceFleet', 
@@ -383,19 +429,24 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-SMFeatureGroup', 
         'Update-SMFeatureMetadata', 
         'Update-SMHub', 
+        'Update-SMHubContent', 
+        'Update-SMHubContentReference', 
         'Update-SMImage', 
         'Update-SMImageVersion', 
         'Update-SMInferenceComponent', 
         'Update-SMInferenceComponentRuntimeConfig', 
         'Update-SMInferenceExperiment', 
+        'Update-SMMlflowTrackingServer', 
         'Update-SMModelCard', 
         'Update-SMModelPackage', 
         'Update-SMMonitoringAlert', 
         'Update-SMMonitoringSchedule', 
         'Update-SMNotebookInstance', 
         'Update-SMNotebookInstanceLifecycleConfig', 
+        'Update-SMPartnerApp', 
         'Update-SMPipeline', 
         'Update-SMPipelineExecution', 
+        'Update-SMPipelineVersion', 
         'Update-SMProject', 
         'Update-SMSpace', 
         'Update-SMTrainingJob', 
@@ -428,7 +479,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

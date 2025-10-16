@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MainframeModernization;
 using Amazon.MainframeModernization.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMM
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.AMM
     [AWSCmdlet("Calls the M2 StartBatchJob API operation.", Operation = new[] {"StartBatchJob"}, SelectReturnType = typeof(Amazon.MainframeModernization.Model.StartBatchJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.MainframeModernization.Model.StartBatchJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.MainframeModernization.Model.StartBatchJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MainframeModernization.Model.StartBatchJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartAMMBatchJobCmdlet : AmazonMainframeModernizationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationId
         /// <summary>
@@ -60,6 +63,17 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         public System.String ApplicationId { get; set; }
         #endregion
         
+        #region Parameter AuthSecretsManagerArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Web Services Secrets Manager containing user's credentials for authentication
+        /// and authorization for Start Batch Job execution operation.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AuthSecretsManagerArn { get; set; }
+        #endregion
+        
         #region Parameter S3BatchJobIdentifier_Bucket
         /// <summary>
         /// <para>
@@ -69,6 +83,18 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("BatchJobIdentifier_S3BatchJobIdentifier_Bucket")]
         public System.String S3BatchJobIdentifier_Bucket { get; set; }
+        #endregion
+        
+        #region Parameter RestartBatchJobIdentifier_ExecutionId
+        /// <summary>
+        /// <para>
+        /// <para>The <c>executionId</c> from the <c>StartBatchJob</c> response when the job ran for
+        /// the first time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_ExecutionId")]
+        public System.String RestartBatchJobIdentifier_ExecutionId { get; set; }
         #endregion
         
         #region Parameter FileBatchJobIdentifier_FileName
@@ -104,12 +130,38 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         public System.String FileBatchJobIdentifier_FolderPath { get; set; }
         #endregion
         
+        #region Parameter JobStepRestartMarker_FromProcStep
+        /// <summary>
+        /// <para>
+        /// <para>The procedure step name that a batch job was restarted from.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_FromProcStep")]
+        public System.String JobStepRestartMarker_FromProcStep { get; set; }
+        #endregion
+        
+        #region Parameter JobStepRestartMarker_FromStep
+        /// <summary>
+        /// <para>
+        /// <para>The step name that a batch job was restarted from.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_FromStep")]
+        public System.String JobStepRestartMarker_FromStep { get; set; }
+        #endregion
+        
         #region Parameter JobParam
         /// <summary>
         /// <para>
         /// <para>The collection of batch job parameters. For details about limits for keys and values,
         /// see <a href="https://www.ibm.com/docs/en/workload-automation/9.3.0?topic=zos-coding-variables-in-jcl">Coding
-        /// variables in JCL</a>.</para>
+        /// variables in JCL</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,6 +203,52 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         public System.String ScriptBatchJobIdentifier_ScriptName { get; set; }
         #endregion
         
+        #region Parameter JobStepRestartMarker_Skip
+        /// <summary>
+        /// <para>
+        /// <para>The step-level checkpoint timestamp (creation or last modification) for an Amazon
+        /// Web Services Blu Age application batch job.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_Skip")]
+        public System.Boolean? JobStepRestartMarker_Skip { get; set; }
+        #endregion
+        
+        #region Parameter JobStepRestartMarker_StepCheckpoint
+        /// <summary>
+        /// <para>
+        /// <para>Skip selected step and issue a restart from immediate successor step for an Amazon
+        /// Web Services Blu Age application batch job.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_StepCheckpoint")]
+        public System.Int32? JobStepRestartMarker_StepCheckpoint { get; set; }
+        #endregion
+        
+        #region Parameter JobStepRestartMarker_ToProcStep
+        /// <summary>
+        /// <para>
+        /// <para>The procedure step name that a batch job was restarted to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_ToProcStep")]
+        public System.String JobStepRestartMarker_ToProcStep { get; set; }
+        #endregion
+        
+        #region Parameter JobStepRestartMarker_ToStep
+        /// <summary>
+        /// <para>
+        /// <para>The step name that a batch job was restarted to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BatchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_ToStep")]
+        public System.String JobStepRestartMarker_ToStep { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'ExecutionId'.
@@ -160,16 +258,6 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "ExecutionId";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ApplicationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ApplicationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -182,9 +270,13 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationId), MyInvocation.BoundParameters);
@@ -198,21 +290,11 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MainframeModernization.Model.StartBatchJobResponse, StartAMMBatchJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ApplicationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ApplicationId = this.ApplicationId;
             #if MODULAR
             if (this.ApplicationId == null && ParameterWasBound(nameof(this.ApplicationId)))
@@ -220,8 +302,16 @@ namespace Amazon.PowerShell.Cmdlets.AMM
                 WriteWarning("You are passing $null as a value for parameter ApplicationId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.AuthSecretsManagerArn = this.AuthSecretsManagerArn;
             context.FileBatchJobIdentifier_FileName = this.FileBatchJobIdentifier_FileName;
             context.FileBatchJobIdentifier_FolderPath = this.FileBatchJobIdentifier_FolderPath;
+            context.RestartBatchJobIdentifier_ExecutionId = this.RestartBatchJobIdentifier_ExecutionId;
+            context.JobStepRestartMarker_FromProcStep = this.JobStepRestartMarker_FromProcStep;
+            context.JobStepRestartMarker_FromStep = this.JobStepRestartMarker_FromStep;
+            context.JobStepRestartMarker_Skip = this.JobStepRestartMarker_Skip;
+            context.JobStepRestartMarker_StepCheckpoint = this.JobStepRestartMarker_StepCheckpoint;
+            context.JobStepRestartMarker_ToProcStep = this.JobStepRestartMarker_ToProcStep;
+            context.JobStepRestartMarker_ToStep = this.JobStepRestartMarker_ToStep;
             context.S3BatchJobIdentifier_Bucket = this.S3BatchJobIdentifier_Bucket;
             context.Identifier_FileName = this.Identifier_FileName;
             context.Identifier_ScriptName = this.Identifier_ScriptName;
@@ -254,6 +344,10 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             if (cmdletContext.ApplicationId != null)
             {
                 request.ApplicationId = cmdletContext.ApplicationId;
+            }
+            if (cmdletContext.AuthSecretsManagerArn != null)
+            {
+                request.AuthSecretsManagerArn = cmdletContext.AuthSecretsManagerArn;
             }
             
              // populate BatchJobIdentifier
@@ -317,6 +411,106 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             if (requestBatchJobIdentifier_batchJobIdentifier_FileBatchJobIdentifier != null)
             {
                 request.BatchJobIdentifier.FileBatchJobIdentifier = requestBatchJobIdentifier_batchJobIdentifier_FileBatchJobIdentifier;
+                requestBatchJobIdentifierIsNull = false;
+            }
+            Amazon.MainframeModernization.Model.RestartBatchJobIdentifier requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier = null;
+            
+             // populate RestartBatchJobIdentifier
+            var requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifierIsNull = true;
+            requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier = new Amazon.MainframeModernization.Model.RestartBatchJobIdentifier();
+            System.String requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_restartBatchJobIdentifier_ExecutionId = null;
+            if (cmdletContext.RestartBatchJobIdentifier_ExecutionId != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_restartBatchJobIdentifier_ExecutionId = cmdletContext.RestartBatchJobIdentifier_ExecutionId;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_restartBatchJobIdentifier_ExecutionId != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier.ExecutionId = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_restartBatchJobIdentifier_ExecutionId;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifierIsNull = false;
+            }
+            Amazon.MainframeModernization.Model.JobStepRestartMarker requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker = null;
+            
+             // populate JobStepRestartMarker
+            var requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = true;
+            requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker = new Amazon.MainframeModernization.Model.JobStepRestartMarker();
+            System.String requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromProcStep = null;
+            if (cmdletContext.JobStepRestartMarker_FromProcStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromProcStep = cmdletContext.JobStepRestartMarker_FromProcStep;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromProcStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker.FromProcStep = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromProcStep;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = false;
+            }
+            System.String requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromStep = null;
+            if (cmdletContext.JobStepRestartMarker_FromStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromStep = cmdletContext.JobStepRestartMarker_FromStep;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker.FromStep = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_FromStep;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = false;
+            }
+            System.Boolean? requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_Skip = null;
+            if (cmdletContext.JobStepRestartMarker_Skip != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_Skip = cmdletContext.JobStepRestartMarker_Skip.Value;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_Skip != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker.Skip = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_Skip.Value;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = false;
+            }
+            System.Int32? requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_StepCheckpoint = null;
+            if (cmdletContext.JobStepRestartMarker_StepCheckpoint != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_StepCheckpoint = cmdletContext.JobStepRestartMarker_StepCheckpoint.Value;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_StepCheckpoint != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker.StepCheckpoint = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_StepCheckpoint.Value;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = false;
+            }
+            System.String requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToProcStep = null;
+            if (cmdletContext.JobStepRestartMarker_ToProcStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToProcStep = cmdletContext.JobStepRestartMarker_ToProcStep;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToProcStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker.ToProcStep = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToProcStep;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = false;
+            }
+            System.String requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToStep = null;
+            if (cmdletContext.JobStepRestartMarker_ToStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToStep = cmdletContext.JobStepRestartMarker_ToStep;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToStep != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker.ToStep = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker_jobStepRestartMarker_ToStep;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull = false;
+            }
+             // determine if requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker should be set to null
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarkerIsNull)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker = null;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker != null)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier.JobStepRestartMarker = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier_JobStepRestartMarker;
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifierIsNull = false;
+            }
+             // determine if requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier should be set to null
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifierIsNull)
+            {
+                requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier = null;
+            }
+            if (requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier != null)
+            {
+                request.BatchJobIdentifier.RestartBatchJobIdentifier = requestBatchJobIdentifier_batchJobIdentifier_RestartBatchJobIdentifier;
                 requestBatchJobIdentifierIsNull = false;
             }
             Amazon.MainframeModernization.Model.S3BatchJobIdentifier requestBatchJobIdentifier_batchJobIdentifier_S3BatchJobIdentifier = null;
@@ -436,13 +630,7 @@ namespace Amazon.PowerShell.Cmdlets.AMM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "M2", "StartBatchJob");
             try
             {
-                #if DESKTOP
-                return client.StartBatchJob(request);
-                #elif CORECLR
-                return client.StartBatchJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartBatchJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -460,8 +648,16 @@ namespace Amazon.PowerShell.Cmdlets.AMM
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ApplicationId { get; set; }
+            public System.String AuthSecretsManagerArn { get; set; }
             public System.String FileBatchJobIdentifier_FileName { get; set; }
             public System.String FileBatchJobIdentifier_FolderPath { get; set; }
+            public System.String RestartBatchJobIdentifier_ExecutionId { get; set; }
+            public System.String JobStepRestartMarker_FromProcStep { get; set; }
+            public System.String JobStepRestartMarker_FromStep { get; set; }
+            public System.Boolean? JobStepRestartMarker_Skip { get; set; }
+            public System.Int32? JobStepRestartMarker_StepCheckpoint { get; set; }
+            public System.String JobStepRestartMarker_ToProcStep { get; set; }
+            public System.String JobStepRestartMarker_ToStep { get; set; }
             public System.String S3BatchJobIdentifier_Bucket { get; set; }
             public System.String Identifier_FileName { get; set; }
             public System.String Identifier_ScriptName { get; set; }

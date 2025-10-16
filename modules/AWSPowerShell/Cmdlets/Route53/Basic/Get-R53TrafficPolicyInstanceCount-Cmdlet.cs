@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -35,13 +37,14 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [OutputType("System.Int32")]
     [AWSCmdlet("Calls the Amazon Route 53 GetTrafficPolicyInstanceCount API operation.", Operation = new[] {"GetTrafficPolicyInstanceCount"}, SelectReturnType = typeof(Amazon.Route53.Model.GetTrafficPolicyInstanceCountResponse))]
     [AWSCmdletOutput("System.Int32 or Amazon.Route53.Model.GetTrafficPolicyInstanceCountResponse",
-        "This cmdlet returns a System.Int32 object.",
-        "The service call response (type Amazon.Route53.Model.GetTrafficPolicyInstanceCountResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Int32 objects.",
+        "The service call response (type Amazon.Route53.Model.GetTrafficPolicyInstanceCountResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetR53TrafficPolicyInstanceCountCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -54,9 +57,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public string Select { get; set; } = "TrafficPolicyInstanceCount";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,13 +130,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "GetTrafficPolicyInstanceCount");
             try
             {
-                #if DESKTOP
-                return client.GetTrafficPolicyInstanceCount(request);
-                #elif CORECLR
-                return client.GetTrafficPolicyInstanceCountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTrafficPolicyInstanceCountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

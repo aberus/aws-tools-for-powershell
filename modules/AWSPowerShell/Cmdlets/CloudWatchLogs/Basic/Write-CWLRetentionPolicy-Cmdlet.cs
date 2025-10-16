@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -32,12 +34,12 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// the number of days for which to retain log events in the specified log group.
     /// 
     ///  <note><para>
-    /// CloudWatch Logs doesn’t immediately delete log events when they reach their retention
+    /// CloudWatch Logs doesn't immediately delete log events when they reach their retention
     /// setting. It typically takes up to 72 hours after that before log events are deleted,
     /// but in rare situations might take longer.
     /// </para><para>
     /// To illustrate, imagine that you change a log group to have a longer retention setting
-    /// when it contains log events that are past the expiration date, but haven’t been deleted.
+    /// when it contains log events that are past the expiration date, but haven't been deleted.
     /// Those log events will take up to 72 hours to be deleted after the new retention date
     /// is reached. To make sure that log data is deleted permanently, keep a log group at
     /// its lower retention setting until 72 hours after the previous retention period ends.
@@ -56,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs PutRetentionPolicy API operation.", Operation = new[] {"PutRetentionPolicy"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.PutRetentionPolicyResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchLogs.Model.PutRetentionPolicyResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchLogs.Model.PutRetentionPolicyResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchLogs.Model.PutRetentionPolicyResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCWLRetentionPolicyCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LogGroupName
         /// <summary>
@@ -106,16 +109,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -126,9 +119,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LogGroupName), MyInvocation.BoundParameters);
@@ -142,21 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.PutRetentionPolicyResponse, WriteCWLRetentionPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LogGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LogGroupName = this.LogGroupName;
             #if MODULAR
             if (this.LogGroupName == null && ParameterWasBound(nameof(this.LogGroupName)))
@@ -233,13 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "PutRetentionPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutRetentionPolicy(request);
-                #elif CORECLR
-                return client.PutRetentionPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutRetentionPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

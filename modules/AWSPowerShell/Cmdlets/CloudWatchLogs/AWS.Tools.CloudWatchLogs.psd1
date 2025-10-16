@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The CloudWatchLogs module of AWS Tools for PowerShell lets developers and administrators manage Amazon CloudWatch Logs from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.CloudWatchLogs.dll'
     )
@@ -88,6 +89,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
     CmdletsToExport = @(
         'Add-CWLLogGroupTag', 
         'Add-CWLResourceTag', 
+        'Find-CWLConfigurationTemplate', 
         'Find-CWLDelivery', 
         'Find-CWLDeliveryDestination', 
         'Find-CWLDeliverySource', 
@@ -100,13 +102,20 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CWLDeliverySource', 
         'Get-CWLDestination', 
         'Get-CWLExportTask', 
+        'Get-CWLFieldIndex', 
         'Get-CWLFilteredLogEvent', 
+        'Get-CWLIndexPolicy', 
+        'Get-CWLIntegration', 
+        'Get-CWLIntegrationList', 
         'Get-CWLLogAnomalyDetector', 
         'Get-CWLLogAnomalyDetectorList', 
         'Get-CWLLogEvent', 
         'Get-CWLLogGroup', 
         'Get-CWLLogGroupField', 
+        'Get-CWLLogGroupList', 
+        'Get-CWLLogGroupsForQueryList', 
         'Get-CWLLogGroupTag', 
+        'Get-CWLLogObject', 
         'Get-CWLLogRecord', 
         'Get-CWLLogStream', 
         'Get-CWLMetricFilter', 
@@ -116,6 +125,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CWLResourcePolicy', 
         'Get-CWLResourceTag', 
         'Get-CWLSubscriptionFilter', 
+        'Get-CWLTransformer', 
         'New-CWLDelivery', 
         'New-CWLExportTask', 
         'New-CWLLogAnomalyDetector', 
@@ -129,6 +139,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CWLDeliveryDestinationPolicy', 
         'Remove-CWLDeliverySource', 
         'Remove-CWLDestination', 
+        'Remove-CWLIndexPolicy', 
+        'Remove-CWLIntegration', 
         'Remove-CWLLogAnomalyDetector', 
         'Remove-CWLLogGroup', 
         'Remove-CWLLogGroupTag', 
@@ -139,13 +151,16 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CWLResourceTag', 
         'Remove-CWLRetentionPolicy', 
         'Remove-CWLSubscriptionFilter', 
+        'Remove-CWLTransformer', 
         'Start-CWLLiveTail', 
         'Start-CWLQuery', 
         'Stop-CWLExportTask', 
         'Stop-CWLQuery', 
         'Test-CWLMetricFilter', 
+        'Test-CWLTransformer', 
         'Unregister-CWLKmsKey', 
         'Update-CWLAnomaly', 
+        'Update-CWLDeliveryConfiguration', 
         'Update-CWLLogAnomalyDetector', 
         'Write-CWLAccountPolicy', 
         'Write-CWLDataProtectionPolicy', 
@@ -154,12 +169,15 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Write-CWLDeliverySource', 
         'Write-CWLDestination', 
         'Write-CWLDestinationPolicy', 
+        'Write-CWLIndexPolicy', 
+        'Write-CWLIntegration', 
         'Write-CWLLogEvent', 
         'Write-CWLMetricFilter', 
         'Write-CWLQueryDefinition', 
         'Write-CWLResourcePolicy', 
         'Write-CWLRetentionPolicy', 
-        'Write-CWLSubscriptionFilter')
+        'Write-CWLSubscriptionFilter', 
+        'Write-CWLTransformer')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -190,7 +208,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,35 +22,42 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentity;
 using Amazon.CognitoIdentity.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGI
 {
     /// <summary>
     /// Creates a new identity pool. The identity pool is a store of user identity information
-    /// that is specific to your AWS account. The keys for <c>SupportedLoginProviders</c>
+    /// that is specific to your Amazon Web Services account. The keys for <c>SupportedLoginProviders</c>
     /// are as follows:
     /// 
     ///  <ul><li><para>
     /// Facebook: <c>graph.facebook.com</c></para></li><li><para>
     /// Google: <c>accounts.google.com</c></para></li><li><para>
+    /// Sign in With Apple: <c>appleid.apple.com</c></para></li><li><para>
     /// Amazon: <c>www.amazon.com</c></para></li><li><para>
     /// Twitter: <c>api.twitter.com</c></para></li><li><para>
-    /// Digits: <c>www.digits.com</c></para></li></ul><para>
-    /// You must use AWS Developer credentials to call this API.
+    /// Digits: <c>www.digits.com</c></para></li></ul><important><para>
+    /// If you don't provide a value for a parameter, Amazon Cognito sets it to its default
+    /// value. 
+    /// </para></important><para>
+    /// You must use Amazon Web Services developer credentials to call this operation.
     /// </para>
     /// </summary>
     [Cmdlet("New", "CGIIdentityPool", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CognitoIdentity.Model.CreateIdentityPoolResponse")]
     [AWSCmdlet("Calls the Amazon Cognito Identity CreateIdentityPool API operation.", Operation = new[] {"CreateIdentityPool"}, SelectReturnType = typeof(Amazon.CognitoIdentity.Model.CreateIdentityPoolResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentity.Model.CreateIdentityPoolResponse",
-        "This cmdlet returns an Amazon.CognitoIdentity.Model.CreateIdentityPoolResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CognitoIdentity.Model.CreateIdentityPoolResponse object containing multiple properties."
     )]
     public partial class NewCGIIdentityPoolCmdlet : AmazonCognitoIdentityClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowClassicFlow
         /// <summary>
@@ -85,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         #region Parameter CognitoIdentityProvider
         /// <summary>
         /// <para>
-        /// <para>An array of Amazon Cognito user pools and their client IDs.</para>
+        /// <para>An array of Amazon Cognito user pools and their client IDs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,7 +140,11 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         /// <para>
         /// <para>Tags to assign to the identity pool. A tag is a label that you can apply to identity
         /// pools to categorize and manage them in different ways, such as by purpose, owner,
-        /// environment, or other criteria.</para>
+        /// environment, or other criteria.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,7 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         #region Parameter OpenIdConnectProviderARNs
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARN) of the OpenID Connect providers.</para>
+        /// <para>The Amazon Resource Names (ARN) of the OpenID Connect providers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +169,11 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         #region Parameter SamlProviderARNs
         /// <summary>
         /// <para>
-        /// <para>An array of Amazon Resource Names (ARNs) of the SAML provider for your identity pool.</para>
+        /// <para>An array of Amazon Resource Names (ARNs) of the SAML provider for your identity pool.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -160,7 +183,11 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         #region Parameter SupportedLoginProvider
         /// <summary>
         /// <para>
-        /// <para>Optional key:value pairs mapping provider names to provider app IDs.</para>
+        /// <para>Optional key:value pairs mapping provider names to provider app IDs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,16 +206,6 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IdentityPoolName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IdentityPoolName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IdentityPoolName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -199,9 +216,13 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.IdentityPoolName), MyInvocation.BoundParameters);
@@ -215,21 +236,11 @@ namespace Amazon.PowerShell.Cmdlets.CGI
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentity.Model.CreateIdentityPoolResponse, NewCGIIdentityPoolCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IdentityPoolName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllowClassicFlow = this.AllowClassicFlow;
             context.AllowUnauthenticatedIdentity = this.AllowUnauthenticatedIdentity;
             #if MODULAR
@@ -364,13 +375,7 @@ namespace Amazon.PowerShell.Cmdlets.CGI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity", "CreateIdentityPool");
             try
             {
-                #if DESKTOP
-                return client.CreateIdentityPool(request);
-                #elif CORECLR
-                return client.CreateIdentityPoolAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateIdentityPoolAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Batch;
 using Amazon.Batch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAT
 {
     /// <summary>
@@ -34,12 +36,35 @@ namespace Amazon.PowerShell.Cmdlets.BAT
     [OutputType("Amazon.Batch.Model.RegisterJobDefinitionResponse")]
     [AWSCmdlet("Calls the AWS Batch RegisterJobDefinition API operation.", Operation = new[] {"RegisterJobDefinition"}, SelectReturnType = typeof(Amazon.Batch.Model.RegisterJobDefinitionResponse))]
     [AWSCmdletOutput("Amazon.Batch.Model.RegisterJobDefinitionResponse",
-        "This cmdlet returns an Amazon.Batch.Model.RegisterJobDefinitionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Batch.Model.RegisterJobDefinitionResponse object containing multiple properties."
     )]
     public partial class RegisterBATJobDefinitionCmdlet : AmazonBatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Metadata_Annotation
+        /// <summary>
+        /// <para>
+        /// <para>Key-value pairs used to attach arbitrary, non-identifying metadata to Kubernetes objects.
+        /// Valid annotation keys have two segments: an optional prefix and a name, separated
+        /// by a slash (/). </para><ul><li><para>The prefix is optional and must be 253 characters or less. If specified, the prefix
+        /// must be a DNS subdomain− a series of DNS labels separated by dots (.), and it must
+        /// end with a slash (/).</para></li><li><para>The name segment is required and must be 63 characters or less. It can include alphanumeric
+        /// characters ([a-z0-9A-Z]), dashes (-), underscores (_), and dots (.), but must begin
+        /// and end with an alphanumeric character.</para></li></ul><note><para>Annotation values must be 255 characters or less.</para></note><para>Annotations can be added or modified at any time. Each resource can have multiple
+        /// annotations. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EksProperties_PodProperties_Metadata_Annotations")]
+        public System.Collections.Hashtable Metadata_Annotation { get; set; }
+        #endregion
         
         #region Parameter NetworkConfiguration_AssignPublicIp
         /// <summary>
@@ -78,17 +103,39 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <a href="https://docs.docker.com/engine/api/v1.23/#create-a-container">Create a container</a>
         /// section of the <a href="https://docs.docker.com/engine/api/v1.23/">Docker Remote API</a>
         /// and the <c>COMMAND</c> parameter to <a href="https://docs.docker.com/engine/reference/run/">docker
-        /// run</a>. For more information, see <a href="https://docs.docker.com/engine/reference/builder/#cmd">https://docs.docker.com/engine/reference/builder/#cmd</a>.</para>
+        /// run</a>. For more information, see <a href="https://docs.docker.com/engine/reference/builder/#cmd">https://docs.docker.com/engine/reference/builder/#cmd</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String[] ContainerProperties_Command { get; set; }
         #endregion
         
+        #region Parameter ConsumableResourceProperties_ConsumableResourceList
+        /// <summary>
+        /// <para>
+        /// <para>The list of consumable resources required by a job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.Batch.Model.ConsumableResourceRequirement[] ConsumableResourceProperties_ConsumableResourceList { get; set; }
+        #endregion
+        
         #region Parameter PodProperties_Container
         /// <summary>
         /// <para>
-        /// <para>The properties of the container that's used on the Amazon EKS pod.</para>
+        /// <para>The properties of the container that's used on the Amazon EKS pod.</para><note><para>This object is limited to 10 elements.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -100,12 +147,26 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The vCPU architecture. The default value is <c>X86_64</c>. Valid values are <c>X86_64</c>
-        /// and <c>ARM64</c>.</para><note><para>This parameter must be set to <c>X86_64</c> for Windows containers.</para></note>
+        /// and <c>ARM64</c>.</para><note><para>This parameter must be set to <c>X86_64</c> for Windows containers.</para></note><note><para>Fargate Spot is not supported on Windows-based containers on Fargate. A job queue
+        /// will be blocked if a Windows job is submitted to a job queue with only Fargate Spot
+        /// compute environments. However, you can attach both <c>FARGATE</c> and <c>FARGATE_SPOT</c>
+        /// compute environments to the same job queue.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ContainerProperties_RuntimePlatform_CpuArchitecture")]
         public System.String RuntimePlatform_CpuArchitecture { get; set; }
+        #endregion
+        
+        #region Parameter RepositoryCredentials_CredentialsParameter
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the secret containing the private repository credentials.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ContainerProperties_RepositoryCredentials_CredentialsParameter")]
+        public System.String RepositoryCredentials_CredentialsParameter { get; set; }
         #endregion
         
         #region Parameter LinuxParameters_Device
@@ -116,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// a container</a> section of the <a href="https://docs.docker.com/engine/api/v1.23/">Docker
         /// Remote API</a> and the <c>--device</c> option to <a href="https://docs.docker.com/engine/reference/run/">docker
         /// run</a>.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
-        /// provide it for these jobs.</para></note>
+        /// provide it for these jobs.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -140,6 +205,17 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public System.String PodProperties_DnsPolicy { get; set; }
         #endregion
         
+        #region Parameter ContainerProperties_EnableExecuteCommand
+        /// <summary>
+        /// <para>
+        /// <para>Determines whether execute command functionality is turned on for this task. If <c>true</c>,
+        /// execute command functionality is turned on all the containers in the task.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ContainerProperties_EnableExecuteCommand { get; set; }
+        #endregion
+        
         #region Parameter ContainerProperties_Environment
         /// <summary>
         /// <para>
@@ -149,7 +225,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// Remote API</a> and the <c>--env</c> option to <a href="https://docs.docker.com/engine/reference/run/">docker
         /// run</a>.</para><important><para>We don't recommend using plaintext environment variables for sensitive information,
         /// such as credential data.</para></important><note><para>Environment variables cannot start with "<c>AWS_BATCH</c>". This naming convention
-        /// is reserved for variables that Batch sets.</para></note>
+        /// is reserved for variables that Batch sets.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,7 +241,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>Array of up to 5 objects that specify the conditions where jobs are retried or failed.
         /// If this parameter is specified, then the <c>attempts</c> parameter must also be specified.
-        /// If none of the listed conditions match, then the job is retried.</para>
+        /// If none of the listed conditions match, then the job is retried.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,8 +284,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter ContainerProperties_Image
         /// <summary>
         /// <para>
-        /// <para>The image used to start a container. This string is passed directly to the Docker
-        /// daemon. Images in the Docker Hub registry are available by default. Other repositories
+        /// <para>Required. The image used to start a container. This string is passed directly to the
+        /// Docker daemon. Images in the Docker Hub registry are available by default. Other repositories
         /// are specified with <c><i>repository-url</i>/<i>image</i>:<i>tag</i></c>. It can
         /// be 255 characters long. It can contain uppercase and lowercase letters, numbers, hyphens
         /// (-), underscores (_), colons (:), periods (.), forward slashes (/), and number signs
@@ -220,6 +304,41 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String ContainerProperties_Image { get; set; }
+        #endregion
+        
+        #region Parameter PodProperties_ImagePullSecret
+        /// <summary>
+        /// <para>
+        /// <para>References a Kubernetes secret resource. It holds a list of secrets. These secrets
+        /// help to gain access to pull an images from a private registry.</para><para><c>ImagePullSecret$name</c> is required when this object is used.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EksProperties_PodProperties_ImagePullSecrets")]
+        public Amazon.Batch.Model.ImagePullSecret[] PodProperties_ImagePullSecret { get; set; }
+        #endregion
+        
+        #region Parameter PodProperties_InitContainer
+        /// <summary>
+        /// <para>
+        /// <para>These containers run before application containers, always runs to completion, and
+        /// must complete successfully before the next container starts. These containers are
+        /// registered with the Amazon EKS Connector agent and persists the registration information
+        /// in the Kubernetes backend data store. For more information, see <a href="https://kubernetes.io/docs/concepts/workloads/pods/init-containers/">Init
+        /// Containers</a> in the <i>Kubernetes documentation</i>.</para><note><para>This object is limited to 10 elements.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EksProperties_PodProperties_InitContainers")]
+        public Amazon.Batch.Model.EksContainer[] PodProperties_InitContainer { get; set; }
         #endregion
         
         #region Parameter LinuxParameters_InitProcessEnabled
@@ -286,7 +405,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>Key-value pairs used to identify, sort, and organize cube resources. Can contain up
         /// to 63 uppercase letters, lowercase letters, numbers, hyphens (-), and underscores
         /// (_). Labels can be added or modified at any time. Each resource can have multiple
-        /// labels, but each key must be unique for a given object.</para>
+        /// labels, but each key must be unique for a given object.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -299,9 +422,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>The log driver to use for the container. The valid values that are listed for this
         /// parameter are log drivers that the Amazon ECS container agent can communicate with
-        /// by default.</para><para>The supported log drivers are <c>awslogs</c>, <c>fluentd</c>, <c>gelf</c>, <c>json-file</c>,
-        /// <c>journald</c>, <c>logentries</c>, <c>syslog</c>, and <c>splunk</c>.</para><note><para>Jobs that are running on Fargate resources are restricted to the <c>awslogs</c> and
-        /// <c>splunk</c> log drivers.</para></note><dl><dt>awslogs</dt><dd><para>Specifies the Amazon CloudWatch Logs logging driver. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/using_awslogs.html">Using
+        /// by default.</para><para>The supported log drivers are <c>awsfirelens</c>, <c>awslogs</c>, <c>fluentd</c>,
+        /// <c>gelf</c>, <c>json-file</c>, <c>journald</c>, <c>logentries</c>, <c>syslog</c>,
+        /// and <c>splunk</c>.</para><note><para>Jobs that are running on Fargate resources are restricted to the <c>awslogs</c> and
+        /// <c>splunk</c> log drivers.</para></note><dl><dt>awsfirelens</dt><dd><para>Specifies the firelens logging driver. For more information on configuring Firelens,
+        /// see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_firelens.html">Send
+        /// Amazon ECS logs to an Amazon Web Services service or Amazon Web Services Partner</a>
+        /// in the <i>Amazon Elastic Container Service Developer Guide</i>.</para></dd><dt>awslogs</dt><dd><para>Specifies the Amazon CloudWatch Logs logging driver. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/using_awslogs.html">Using
         /// the awslogs log driver</a> in the <i>Batch User Guide</i> and <a href="https://docs.docker.com/config/containers/logging/awslogs/">Amazon
         /// CloudWatch Logs logging driver</a> in the Docker documentation.</para></dd><dt>fluentd</dt><dd><para>Specifies the Fluentd logging driver. For more information including usage and options,
         /// see <a href="https://docs.docker.com/config/containers/logging/fluentd/">Fluentd logging
@@ -352,8 +479,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// value. For more information, see <a href="https://docs.docker.com/config/containers/resource_constraints/#--memory-swap-details"><c>--memory-swap</c> details</a> in the Docker documentation.</para><para>If a <c>maxSwap</c> value of <c>0</c> is specified, the container doesn't use swap.
         /// Accepted values are <c>0</c> or any positive integer. If the <c>maxSwap</c> parameter
         /// is omitted, the container doesn't use the swap configuration for the container instance
-        /// that it's running on. A <c>maxSwap</c> value must be set for the <c>swappiness</c>
-        /// parameter to be used.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
+        /// on which it runs. A <c>maxSwap</c> value must be set for the <c>swappiness</c> parameter
+        /// to be used.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
         /// provide it for these jobs.</para></note>
         /// </para>
         /// </summary>
@@ -369,7 +496,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// in the <a href="https://docs.docker.com/engine/api/v1.23/#create-a-container">Create
         /// a container</a> section of the <a href="https://docs.docker.com/engine/api/v1.23/">Docker
         /// Remote API</a> and the <c>--volume</c> option to <a href="https://docs.docker.com/engine/reference/run/">docker
-        /// run</a>.</para>
+        /// run</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -377,11 +508,35 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public Amazon.Batch.Model.MountPoint[] ContainerProperties_MountPoint { get; set; }
         #endregion
         
+        #region Parameter Metadata_Namespace
+        /// <summary>
+        /// <para>
+        /// <para>The namespace of the Amazon EKS cluster. In Kubernetes, namespaces provide a mechanism
+        /// for isolating groups of resources within a single cluster. Names of resources need
+        /// to be unique within a namespace, but not across namespaces. Batch places Batch Job
+        /// pods in this namespace. If this field is provided, the value can't be empty or null.
+        /// It must meet the following requirements:</para><ul><li><para>1-63 characters long</para></li><li><para>Can't be set to default</para></li><li><para>Can't start with <c>kube</c></para></li><li><para>Must match the following regular expression: <c>^[a-z0-9]([-a-z0-9]*[a-z0-9])?$</c></para></li></ul><para> For more information, see <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/">Namespaces</a>
+        /// in the <i>Kubernetes documentation</i>. This namespace can be different from the <c>kubernetesNamespace</c>
+        /// set in the compute environment's <c>EksConfiguration</c>, but must have identical
+        /// role-based access control (RBAC) roles as the compute environment's <c>kubernetesNamespace</c>.
+        /// For multi-node parallel jobs, the same value must be provided across all the node
+        /// ranges.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EksProperties_PodProperties_Metadata_Namespace")]
+        public System.String Metadata_Namespace { get; set; }
+        #endregion
+        
         #region Parameter NodeProperties_NodeRangeProperty
         /// <summary>
         /// <para>
         /// <para>A list of node ranges and their properties that are associated with a multi-node parallel
-        /// job.</para>
+        /// job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -407,12 +562,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <c>WINDOWS_SERVER_2019_CORE</c>, <c>WINDOWS_SERVER_2019_FULL</c>, <c>WINDOWS_SERVER_2022_CORE</c>,
         /// and <c>WINDOWS_SERVER_2022_FULL</c>.</para><note><para>The following parameters can’t be set for Windows containers: <c>linuxParameters</c>,
         /// <c>privileged</c>, <c>user</c>, <c>ulimits</c>, <c>readonlyRootFilesystem</c>, and
-        /// <c>efsVolumeConfiguration</c>.</para></note><note><para>The Batch Scheduler checks before registering a task definition with Fargate. If the
-        /// job requires a Windows container and the first compute environment is <c>LINUX</c>,
-        /// the compute environment is skipped and the next is checked until a Windows-based compute
-        /// environment is found.</para></note><note><para>Fargate Spot is not supported for Windows-based containers on Fargate. A job queue
-        /// will be blocked if a Fargate Windows job is submitted to a job queue with only Fargate
-        /// Spot compute environments. However, you can attach both <c>FARGATE</c> and <c>FARGATE_SPOT</c>
+        /// <c>efsVolumeConfiguration</c>.</para></note><note><para>The Batch Scheduler checks the compute environments that are attached to the job queue
+        /// before registering a task definition with Fargate. In this scenario, the job queue
+        /// is where the job is submitted. If the job requires a Windows container and the first
+        /// compute environment is <c>LINUX</c>, the compute environment is skipped and the next
+        /// compute environment is checked until a Windows-based compute environment is found.</para></note><note><para>Fargate Spot is not supported on Windows-based containers on Fargate. A job queue
+        /// will be blocked if a Windows job is submitted to a job queue with only Fargate Spot
+        /// compute environments. However, you can attach both <c>FARGATE</c> and <c>FARGATE_SPOT</c>
         /// compute environments to the same job queue.</para></note>
         /// </para>
         /// </summary>
@@ -427,7 +583,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>The configuration options to send to the log driver. This parameter requires version
         /// 1.19 of the Docker Remote API or greater on your container instance. To check the
         /// Docker Remote API version on your container instance, log in to your container instance
-        /// and run the following command: <c>sudo docker version | grep "Server API version"</c></para>
+        /// and run the following command: <c>sudo docker version | grep "Server API version"</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -440,7 +600,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>Default parameter substitution placeholders to set in the job definition. Parameters
         /// are specified as a key-value pair mapping. Parameters in a <c>SubmitJob</c> request
-        /// override any corresponding parameter defaults from the job definition.</para>
+        /// override any corresponding parameter defaults from the job definition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -452,7 +616,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The platform capabilities required by the job definition. If no value is specified,
-        /// it defaults to <c>EC2</c>. To run the job on Fargate resources, specify <c>FARGATE</c>.</para><note><para>If the job runs on Amazon EKS resources, then you must not specify <c>platformCapabilities</c>.</para></note>
+        /// it defaults to <c>EC2</c>. To run the job on Fargate resources, specify <c>FARGATE</c>.</para><note><para>If the job runs on Amazon EKS resources, then you must not specify <c>platformCapabilities</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -524,7 +692,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The type and amount of resources to assign to a container. The supported resources
-        /// include <c>GPU</c>, <c>MEMORY</c>, and <c>VCPU</c>.</para>
+        /// include <c>GPU</c>, <c>MEMORY</c>, and <c>VCPU</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -536,7 +708,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The scheduling priority for jobs that are submitted with this job definition. This
-        /// only affects jobs in job queues with a fair share policy. Jobs with a higher scheduling
+        /// only affects jobs in job queues with a fair-share policy. Jobs with a higher scheduling
         /// priority are scheduled before jobs with a lower scheduling priority.</para><para>The minimum supported value is 0 and the maximum supported value is 9999.</para>
         /// </para>
         /// </summary>
@@ -548,7 +720,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The secrets to pass to the log configuration. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/specifying-sensitive-data.html">Specifying
-        /// sensitive data</a> in the <i>Batch User Guide</i>.</para>
+        /// sensitive data</a> in the <i>Batch User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -560,7 +736,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The secrets for the container. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/specifying-sensitive-data.html">Specifying
-        /// sensitive data</a> in the <i>Batch User Guide</i>.</para>
+        /// sensitive data</a> in the <i>Batch User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -596,6 +776,19 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ContainerProperties_LinuxParameters_SharedMemorySize")]
         public System.Int32? LinuxParameters_SharedMemorySize { get; set; }
+        #endregion
+        
+        #region Parameter PodProperties_ShareProcessNamespace
+        /// <summary>
+        /// <para>
+        /// <para>Indicates if the processes in a container are shared, or visible, to other containers
+        /// in the same pod. For more information, see <a href="https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/">Share
+        /// Process Namespace between Containers in a Pod</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EksProperties_PodProperties_ShareProcessNamespace")]
+        public System.Boolean? PodProperties_ShareProcessNamespace { get; set; }
         #endregion
         
         #region Parameter EphemeralStorage_SizeInGiB
@@ -643,12 +836,32 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>The tags that you apply to the job definition to help you categorize and organize
         /// your resources. Each tag consists of a key and an optional value. For more information,
         /// see <a href="https://docs.aws.amazon.com/batch/latest/userguide/using-tags.html">Tagging
-        /// Amazon Web Services Resources</a> in <i>Batch User Guide</i>.</para>
+        /// Amazon Web Services Resources</a> in <i>Batch User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter EcsProperties_TaskProperty
+        /// <summary>
+        /// <para>
+        /// <para>An object that contains the properties for the Amazon ECS task definition of a job.</para><note><para>This object is currently limited to one task element. However, the task element can
+        /// run up to 10 containers.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EcsProperties_TaskProperties")]
+        public Amazon.Batch.Model.EcsTaskProperties[] EcsProperties_TaskProperty { get; set; }
         #endregion
         
         #region Parameter Timeout
@@ -672,7 +885,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>The container path, mount options, and size (in MiB) of the <c>tmpfs</c> mount. This
         /// parameter maps to the <c>--tmpfs</c> option to <a href="https://docs.docker.com/engine/reference/run/">docker
         /// run</a>.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
-        /// provide this parameter for this resource type.</para></note>
+        /// provide this parameter for this resource type.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -685,7 +902,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>The type of job definition. For more information about multi-node parallel jobs, see
         /// <a href="https://docs.aws.amazon.com/batch/latest/userguide/multi-node-job-def.html">Creating
-        /// a multi-node parallel job definition</a> in the <i>Batch User Guide</i>.</para><note><para>If the job is run on Fargate resources, then <c>multinode</c> isn't supported.</para></note>
+        /// a multi-node parallel job definition</a> in the <i>Batch User Guide</i>.</para><ul><li><para>If the value is <c>container</c>, then one of the following is required: <c>containerProperties</c>,
+        /// <c>ecsProperties</c>, or <c>eksProperties</c>.</para></li><li><para>If the value is <c>multinode</c>, then <c>nodeProperties</c> is required.</para></li></ul><note><para>If the job is run on Fargate resources, then <c>multinode</c> isn't supported.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -707,7 +925,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// a container</a> section of the <a href="https://docs.docker.com/engine/api/v1.23/">Docker
         /// Remote API</a> and the <c>--ulimit</c> option to <a href="https://docs.docker.com/engine/reference/run/">docker
         /// run</a>.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources and
-        /// shouldn't be provided.</para></note>
+        /// shouldn't be provided.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -732,7 +954,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter ContainerProperties_Volume
         /// <summary>
         /// <para>
-        /// <para>A list of data volumes used in a job.</para>
+        /// <para>A list of data volumes used in a job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -743,7 +969,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter PodProperties_Volume
         /// <summary>
         /// <para>
-        /// <para>Specifies the volumes for a job definition that uses Amazon EKS resources.</para>
+        /// <para>Specifies the volumes for a job definition that uses Amazon EKS resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -756,11 +986,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>This parameter is deprecated, use <c>resourceRequirements</c> to specify the memory
         /// requirements for the job definition. It's not supported for jobs running on Fargate
-        /// resources. For jobs that run on EC2 resources, it specifies the memory hard limit
-        /// (in MiB) for a container. If your container attempts to exceed the specified number,
-        /// it's terminated. You must specify at least 4 MiB of memory for a job using this parameter.
-        /// The memory hard limit can be specified in several places. It must be specified for
-        /// each node at least once.</para>
+        /// resources. For jobs that run on Amazon EC2 resources, it specifies the memory hard
+        /// limit (in MiB) for a container. If your container attempts to exceed the specified
+        /// number, it's terminated. You must specify at least 4 MiB of memory for a job using
+        /// this parameter. The memory hard limit can be specified in several places. It must
+        /// be specified for each node at least once.</para>
         /// </para>
         /// <para>This parameter is deprecated.</para>
         /// </summary>
@@ -774,8 +1004,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>This parameter is deprecated, use <c>resourceRequirements</c> to specify the vCPU
         /// requirements for the job definition. It's not supported for jobs running on Fargate
-        /// resources. For jobs running on EC2 resources, it specifies the number of vCPUs reserved
-        /// for the job.</para><para>Each vCPU is equivalent to 1,024 CPU shares. This parameter maps to <c>CpuShares</c>
+        /// resources. For jobs running on Amazon EC2 resources, it specifies the number of vCPUs
+        /// reserved for the job.</para><para>Each vCPU is equivalent to 1,024 CPU shares. This parameter maps to <c>CpuShares</c>
         /// in the <a href="https://docs.docker.com/engine/api/v1.23/#create-a-container">Create
         /// a container</a> section of the <a href="https://docs.docker.com/engine/api/v1.23/">Docker
         /// Remote API</a> and the <c>--cpu-shares</c> option to <a href="https://docs.docker.com/engine/reference/run/">docker
@@ -800,16 +1030,6 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the JobDefinitionName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^JobDefinitionName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^JobDefinitionName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -820,9 +1040,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.JobDefinitionName), MyInvocation.BoundParameters);
@@ -836,25 +1060,20 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Batch.Model.RegisterJobDefinitionResponse, RegisterBATJobDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            if (this.ConsumableResourceProperties_ConsumableResourceList != null)
             {
-                context.Select = (response, cmdlet) => this.JobDefinitionName;
+                context.ConsumableResourceProperties_ConsumableResourceList = new List<Amazon.Batch.Model.ConsumableResourceRequirement>(this.ConsumableResourceProperties_ConsumableResourceList);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ContainerProperties_Command != null)
             {
                 context.ContainerProperties_Command = new List<System.String>(this.ContainerProperties_Command);
             }
+            context.ContainerProperties_EnableExecuteCommand = this.ContainerProperties_EnableExecuteCommand;
             if (this.ContainerProperties_Environment != null)
             {
                 context.ContainerProperties_Environment = new List<Amazon.Batch.Model.KeyValuePair>(this.ContainerProperties_Environment);
@@ -900,6 +1119,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             context.NetworkConfiguration_AssignPublicIp = this.NetworkConfiguration_AssignPublicIp;
             context.ContainerProperties_Privileged = this.ContainerProperties_Privileged;
             context.ContainerProperties_ReadonlyRootFilesystem = this.ContainerProperties_ReadonlyRootFilesystem;
+            context.RepositoryCredentials_CredentialsParameter = this.RepositoryCredentials_CredentialsParameter;
             if (this.ContainerProperties_ResourceRequirement != null)
             {
                 context.ContainerProperties_ResourceRequirement = new List<Amazon.Batch.Model.ResourceRequirement>(this.ContainerProperties_ResourceRequirement);
@@ -922,12 +1142,32 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             {
                 context.ContainerProperties_Volume = new List<Amazon.Batch.Model.Volume>(this.ContainerProperties_Volume);
             }
+            if (this.EcsProperties_TaskProperty != null)
+            {
+                context.EcsProperties_TaskProperty = new List<Amazon.Batch.Model.EcsTaskProperties>(this.EcsProperties_TaskProperty);
+            }
             if (this.PodProperties_Container != null)
             {
                 context.PodProperties_Container = new List<Amazon.Batch.Model.EksContainer>(this.PodProperties_Container);
             }
             context.PodProperties_DnsPolicy = this.PodProperties_DnsPolicy;
             context.PodProperties_HostNetwork = this.PodProperties_HostNetwork;
+            if (this.PodProperties_ImagePullSecret != null)
+            {
+                context.PodProperties_ImagePullSecret = new List<Amazon.Batch.Model.ImagePullSecret>(this.PodProperties_ImagePullSecret);
+            }
+            if (this.PodProperties_InitContainer != null)
+            {
+                context.PodProperties_InitContainer = new List<Amazon.Batch.Model.EksContainer>(this.PodProperties_InitContainer);
+            }
+            if (this.Metadata_Annotation != null)
+            {
+                context.Metadata_Annotation = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Metadata_Annotation.Keys)
+                {
+                    context.Metadata_Annotation.Add((String)hashKey, (System.String)(this.Metadata_Annotation[hashKey]));
+                }
+            }
             if (this.Metadata_Label != null)
             {
                 context.Metadata_Label = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -936,7 +1176,9 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                     context.Metadata_Label.Add((String)hashKey, (System.String)(this.Metadata_Label[hashKey]));
                 }
             }
+            context.Metadata_Namespace = this.Metadata_Namespace;
             context.PodProperties_ServiceAccountName = this.PodProperties_ServiceAccountName;
+            context.PodProperties_ShareProcessNamespace = this.PodProperties_ShareProcessNamespace;
             if (this.PodProperties_Volume != null)
             {
                 context.PodProperties_Volume = new List<Amazon.Batch.Model.EksVolume>(this.PodProperties_Volume);
@@ -1006,6 +1248,25 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             var request = new Amazon.Batch.Model.RegisterJobDefinitionRequest();
             
             
+             // populate ConsumableResourceProperties
+            var requestConsumableResourcePropertiesIsNull = true;
+            request.ConsumableResourceProperties = new Amazon.Batch.Model.ConsumableResourceProperties();
+            List<Amazon.Batch.Model.ConsumableResourceRequirement> requestConsumableResourceProperties_consumableResourceProperties_ConsumableResourceList = null;
+            if (cmdletContext.ConsumableResourceProperties_ConsumableResourceList != null)
+            {
+                requestConsumableResourceProperties_consumableResourceProperties_ConsumableResourceList = cmdletContext.ConsumableResourceProperties_ConsumableResourceList;
+            }
+            if (requestConsumableResourceProperties_consumableResourceProperties_ConsumableResourceList != null)
+            {
+                request.ConsumableResourceProperties.ConsumableResourceList = requestConsumableResourceProperties_consumableResourceProperties_ConsumableResourceList;
+                requestConsumableResourcePropertiesIsNull = false;
+            }
+             // determine if request.ConsumableResourceProperties should be set to null
+            if (requestConsumableResourcePropertiesIsNull)
+            {
+                request.ConsumableResourceProperties = null;
+            }
+            
              // populate ContainerProperties
             var requestContainerPropertiesIsNull = true;
             request.ContainerProperties = new Amazon.Batch.Model.ContainerProperties();
@@ -1017,6 +1278,16 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             if (requestContainerProperties_containerProperties_Command != null)
             {
                 request.ContainerProperties.Command = requestContainerProperties_containerProperties_Command;
+                requestContainerPropertiesIsNull = false;
+            }
+            System.Boolean? requestContainerProperties_containerProperties_EnableExecuteCommand = null;
+            if (cmdletContext.ContainerProperties_EnableExecuteCommand != null)
+            {
+                requestContainerProperties_containerProperties_EnableExecuteCommand = cmdletContext.ContainerProperties_EnableExecuteCommand.Value;
+            }
+            if (requestContainerProperties_containerProperties_EnableExecuteCommand != null)
+            {
+                request.ContainerProperties.EnableExecuteCommand = requestContainerProperties_containerProperties_EnableExecuteCommand.Value;
                 requestContainerPropertiesIsNull = false;
             }
             List<Amazon.Batch.Model.KeyValuePair> requestContainerProperties_containerProperties_Environment = null;
@@ -1248,6 +1519,31 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                 request.ContainerProperties.NetworkConfiguration = requestContainerProperties_containerProperties_NetworkConfiguration;
                 requestContainerPropertiesIsNull = false;
             }
+            Amazon.Batch.Model.RepositoryCredentials requestContainerProperties_containerProperties_RepositoryCredentials = null;
+            
+             // populate RepositoryCredentials
+            var requestContainerProperties_containerProperties_RepositoryCredentialsIsNull = true;
+            requestContainerProperties_containerProperties_RepositoryCredentials = new Amazon.Batch.Model.RepositoryCredentials();
+            System.String requestContainerProperties_containerProperties_RepositoryCredentials_repositoryCredentials_CredentialsParameter = null;
+            if (cmdletContext.RepositoryCredentials_CredentialsParameter != null)
+            {
+                requestContainerProperties_containerProperties_RepositoryCredentials_repositoryCredentials_CredentialsParameter = cmdletContext.RepositoryCredentials_CredentialsParameter;
+            }
+            if (requestContainerProperties_containerProperties_RepositoryCredentials_repositoryCredentials_CredentialsParameter != null)
+            {
+                requestContainerProperties_containerProperties_RepositoryCredentials.CredentialsParameter = requestContainerProperties_containerProperties_RepositoryCredentials_repositoryCredentials_CredentialsParameter;
+                requestContainerProperties_containerProperties_RepositoryCredentialsIsNull = false;
+            }
+             // determine if requestContainerProperties_containerProperties_RepositoryCredentials should be set to null
+            if (requestContainerProperties_containerProperties_RepositoryCredentialsIsNull)
+            {
+                requestContainerProperties_containerProperties_RepositoryCredentials = null;
+            }
+            if (requestContainerProperties_containerProperties_RepositoryCredentials != null)
+            {
+                request.ContainerProperties.RepositoryCredentials = requestContainerProperties_containerProperties_RepositoryCredentials;
+                requestContainerPropertiesIsNull = false;
+            }
             Amazon.Batch.Model.RuntimePlatform requestContainerProperties_containerProperties_RuntimePlatform = null;
             
              // populate RuntimePlatform
@@ -1409,6 +1705,25 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                 request.ContainerProperties = null;
             }
             
+             // populate EcsProperties
+            var requestEcsPropertiesIsNull = true;
+            request.EcsProperties = new Amazon.Batch.Model.EcsProperties();
+            List<Amazon.Batch.Model.EcsTaskProperties> requestEcsProperties_ecsProperties_TaskProperty = null;
+            if (cmdletContext.EcsProperties_TaskProperty != null)
+            {
+                requestEcsProperties_ecsProperties_TaskProperty = cmdletContext.EcsProperties_TaskProperty;
+            }
+            if (requestEcsProperties_ecsProperties_TaskProperty != null)
+            {
+                request.EcsProperties.TaskProperties = requestEcsProperties_ecsProperties_TaskProperty;
+                requestEcsPropertiesIsNull = false;
+            }
+             // determine if request.EcsProperties should be set to null
+            if (requestEcsPropertiesIsNull)
+            {
+                request.EcsProperties = null;
+            }
+            
              // populate EksProperties
             var requestEksPropertiesIsNull = true;
             request.EksProperties = new Amazon.Batch.Model.EksProperties();
@@ -1447,6 +1762,26 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                 requestEksProperties_eksProperties_PodProperties.HostNetwork = requestEksProperties_eksProperties_PodProperties_podProperties_HostNetwork.Value;
                 requestEksProperties_eksProperties_PodPropertiesIsNull = false;
             }
+            List<Amazon.Batch.Model.ImagePullSecret> requestEksProperties_eksProperties_PodProperties_podProperties_ImagePullSecret = null;
+            if (cmdletContext.PodProperties_ImagePullSecret != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_podProperties_ImagePullSecret = cmdletContext.PodProperties_ImagePullSecret;
+            }
+            if (requestEksProperties_eksProperties_PodProperties_podProperties_ImagePullSecret != null)
+            {
+                requestEksProperties_eksProperties_PodProperties.ImagePullSecrets = requestEksProperties_eksProperties_PodProperties_podProperties_ImagePullSecret;
+                requestEksProperties_eksProperties_PodPropertiesIsNull = false;
+            }
+            List<Amazon.Batch.Model.EksContainer> requestEksProperties_eksProperties_PodProperties_podProperties_InitContainer = null;
+            if (cmdletContext.PodProperties_InitContainer != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_podProperties_InitContainer = cmdletContext.PodProperties_InitContainer;
+            }
+            if (requestEksProperties_eksProperties_PodProperties_podProperties_InitContainer != null)
+            {
+                requestEksProperties_eksProperties_PodProperties.InitContainers = requestEksProperties_eksProperties_PodProperties_podProperties_InitContainer;
+                requestEksProperties_eksProperties_PodPropertiesIsNull = false;
+            }
             System.String requestEksProperties_eksProperties_PodProperties_podProperties_ServiceAccountName = null;
             if (cmdletContext.PodProperties_ServiceAccountName != null)
             {
@@ -1455,6 +1790,16 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             if (requestEksProperties_eksProperties_PodProperties_podProperties_ServiceAccountName != null)
             {
                 requestEksProperties_eksProperties_PodProperties.ServiceAccountName = requestEksProperties_eksProperties_PodProperties_podProperties_ServiceAccountName;
+                requestEksProperties_eksProperties_PodPropertiesIsNull = false;
+            }
+            System.Boolean? requestEksProperties_eksProperties_PodProperties_podProperties_ShareProcessNamespace = null;
+            if (cmdletContext.PodProperties_ShareProcessNamespace != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_podProperties_ShareProcessNamespace = cmdletContext.PodProperties_ShareProcessNamespace.Value;
+            }
+            if (requestEksProperties_eksProperties_PodProperties_podProperties_ShareProcessNamespace != null)
+            {
+                requestEksProperties_eksProperties_PodProperties.ShareProcessNamespace = requestEksProperties_eksProperties_PodProperties_podProperties_ShareProcessNamespace.Value;
                 requestEksProperties_eksProperties_PodPropertiesIsNull = false;
             }
             List<Amazon.Batch.Model.EksVolume> requestEksProperties_eksProperties_PodProperties_podProperties_Volume = null;
@@ -1472,6 +1817,16 @@ namespace Amazon.PowerShell.Cmdlets.BAT
              // populate Metadata
             var requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_MetadataIsNull = true;
             requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata = new Amazon.Batch.Model.EksMetadata();
+            Dictionary<System.String, System.String> requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Annotation = null;
+            if (cmdletContext.Metadata_Annotation != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Annotation = cmdletContext.Metadata_Annotation;
+            }
+            if (requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Annotation != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata.Annotations = requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Annotation;
+                requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_MetadataIsNull = false;
+            }
             Dictionary<System.String, System.String> requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Label = null;
             if (cmdletContext.Metadata_Label != null)
             {
@@ -1480,6 +1835,16 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             if (requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Label != null)
             {
                 requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata.Labels = requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Label;
+                requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_MetadataIsNull = false;
+            }
+            System.String requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Namespace = null;
+            if (cmdletContext.Metadata_Namespace != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Namespace = cmdletContext.Metadata_Namespace;
+            }
+            if (requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Namespace != null)
+            {
+                requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata.Namespace = requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata_metadata_Namespace;
                 requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_MetadataIsNull = false;
             }
              // determine if requestEksProperties_eksProperties_PodProperties_eksProperties_PodProperties_Metadata should be set to null
@@ -1645,13 +2010,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Batch", "RegisterJobDefinition");
             try
             {
-                #if DESKTOP
-                return client.RegisterJobDefinition(request);
-                #elif CORECLR
-                return client.RegisterJobDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterJobDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1668,7 +2027,9 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public List<Amazon.Batch.Model.ConsumableResourceRequirement> ConsumableResourceProperties_ConsumableResourceList { get; set; }
             public List<System.String> ContainerProperties_Command { get; set; }
+            public System.Boolean? ContainerProperties_EnableExecuteCommand { get; set; }
             public List<Amazon.Batch.Model.KeyValuePair> ContainerProperties_Environment { get; set; }
             public System.Int32? EphemeralStorage_SizeInGiB { get; set; }
             public System.String ContainerProperties_ExecutionRoleArn { get; set; }
@@ -1691,6 +2052,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             public Amazon.Batch.AssignPublicIp NetworkConfiguration_AssignPublicIp { get; set; }
             public System.Boolean? ContainerProperties_Privileged { get; set; }
             public System.Boolean? ContainerProperties_ReadonlyRootFilesystem { get; set; }
+            public System.String RepositoryCredentials_CredentialsParameter { get; set; }
             public List<Amazon.Batch.Model.ResourceRequirement> ContainerProperties_ResourceRequirement { get; set; }
             public System.String RuntimePlatform_CpuArchitecture { get; set; }
             public System.String RuntimePlatform_OperatingSystemFamily { get; set; }
@@ -1700,11 +2062,17 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             [System.ObsoleteAttribute]
             public System.Int32? ContainerProperties_Vcpus { get; set; }
             public List<Amazon.Batch.Model.Volume> ContainerProperties_Volume { get; set; }
+            public List<Amazon.Batch.Model.EcsTaskProperties> EcsProperties_TaskProperty { get; set; }
             public List<Amazon.Batch.Model.EksContainer> PodProperties_Container { get; set; }
             public System.String PodProperties_DnsPolicy { get; set; }
             public System.Boolean? PodProperties_HostNetwork { get; set; }
+            public List<Amazon.Batch.Model.ImagePullSecret> PodProperties_ImagePullSecret { get; set; }
+            public List<Amazon.Batch.Model.EksContainer> PodProperties_InitContainer { get; set; }
+            public Dictionary<System.String, System.String> Metadata_Annotation { get; set; }
             public Dictionary<System.String, System.String> Metadata_Label { get; set; }
+            public System.String Metadata_Namespace { get; set; }
             public System.String PodProperties_ServiceAccountName { get; set; }
+            public System.Boolean? PodProperties_ShareProcessNamespace { get; set; }
             public List<Amazon.Batch.Model.EksVolume> PodProperties_Volume { get; set; }
             public System.String JobDefinitionName { get; set; }
             public System.Int32? NodeProperties_MainNode { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Organizations;
 using Amazon.Organizations.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ORG
 {
     /// <summary>
@@ -38,7 +40,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     /// parameter value is <c>null</c><i>only</i> when there are no more results to display.
     /// </para></note><para>
     /// This operation can be called only from the organization's management account or by
-    /// a member account that is a delegated administrator for an Amazon Web Services service.
+    /// a member account that is a delegated administrator.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "ORGAccountList")]
@@ -46,14 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     [AWSCmdlet("Calls the AWS Organizations ListAccounts API operation.", Operation = new[] {"ListAccounts"}, SelectReturnType = typeof(Amazon.Organizations.Model.ListAccountsResponse))]
     [AWSCmdletOutput("Amazon.Organizations.Model.Account or Amazon.Organizations.Model.ListAccountsResponse",
         "This cmdlet returns a collection of Amazon.Organizations.Model.Account objects.",
-        "The service call response (type Amazon.Organizations.Model.ListAccountsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Organizations.Model.ListAccountsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetORGAccountListCmdlet : AmazonOrganizationsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -88,7 +89,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,9 +117,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -267,7 +272,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Accounts.Count;
+                    int _receivedThisCall = response.Accounts?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -316,13 +321,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Organizations", "ListAccounts");
             try
             {
-                #if DESKTOP
-                return client.ListAccounts(request);
-                #elif CORECLR
-                return client.ListAccountsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListAccountsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

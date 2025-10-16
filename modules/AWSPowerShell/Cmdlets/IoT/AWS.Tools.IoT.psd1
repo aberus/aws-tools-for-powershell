@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The IoT module of AWS Tools for PowerShell lets developers and administrators manage AWS IoT from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.IoT.dll'
     )
@@ -89,6 +90,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-IOTPolicy', 
         'Add-IOTPrincipalPolicy', 
         'Add-IOTResourceTag', 
+        'Add-IOTSbomWithPackageVersion', 
         'Add-IOTTargetsWithJob', 
         'Add-IOTThingPrincipal', 
         'Add-IOTThingToBillingGroup', 
@@ -126,6 +128,10 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTCertificateListByCA', 
         'Get-IOTCertificateProvider', 
         'Get-IOTCertificateProviderList', 
+        'Get-IOTCommand', 
+        'Get-IOTCommandExecution', 
+        'Get-IOTCommandExecutionList', 
+        'Get-IOTCommandList', 
         'Get-IOTCustomMetric', 
         'Get-IOTCustomMetricList', 
         'Get-IOTDefaultAuthorizer', 
@@ -137,6 +143,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTDomainConfiguration', 
         'Get-IOTDomainConfigurationList', 
         'Get-IOTEffectivePolicy', 
+        'Get-IOTEncryptionConfiguration', 
         'Get-IOTEndpoint', 
         'Get-IOTEventConfiguration', 
         'Get-IOTFleetMetric', 
@@ -174,6 +181,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTPolicyVersionList', 
         'Get-IOTPrincipalPolicyList', 
         'Get-IOTPrincipalThingList', 
+        'Get-IOTPrincipalThingsV2List', 
         'Get-IOTProvisioningTemplate', 
         'Get-IOTProvisioningTemplateList', 
         'Get-IOTProvisioningTemplateVersion', 
@@ -182,6 +190,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTRelatedResourcesForAuditFindingList', 
         'Get-IOTRoleAlias', 
         'Get-IOTRoleAliasList', 
+        'Get-IOTSbomValidationResultList', 
         'Get-IOTScheduledAudit', 
         'Get-IOTScheduledAuditList', 
         'Get-IOTSecurityProfile', 
@@ -195,11 +204,13 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-IOTTargetsForSecurityProfileList', 
         'Get-IOTTaskList', 
         'Get-IOTThing', 
+        'Get-IOTThingConnectivityData', 
         'Get-IOTThingGroup', 
         'Get-IOTThingGroupList', 
         'Get-IOTThingGroupsForThingList', 
         'Get-IOTThingList', 
         'Get-IOTThingPrincipalList', 
+        'Get-IOTThingPrincipalsV2List', 
         'Get-IOTThingRegistrationTask', 
         'Get-IOTThingRegistrationTaskList', 
         'Get-IOTThingRegistrationTaskReportList', 
@@ -220,6 +231,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-IOTBillingGroup', 
         'New-IOTCertificateFromCsr', 
         'New-IOTCertificateProvider', 
+        'New-IOTCommand', 
         'New-IOTCustomMetric', 
         'New-IOTDimension', 
         'New-IOTDomainConfiguration', 
@@ -257,6 +269,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-IOTCACertificate', 
         'Remove-IOTCertificate', 
         'Remove-IOTCertificateProvider', 
+        'Remove-IOTCommand', 
+        'Remove-IOTCommandExecution', 
         'Remove-IOTCustomMetric', 
         'Remove-IOTDimension', 
         'Remove-IOTDomainConfiguration', 
@@ -277,6 +291,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-IOTRegistrationCode', 
         'Remove-IOTResourceTag', 
         'Remove-IOTRoleAlias', 
+        'Remove-IOTSbomFromPackageVersion', 
         'Remove-IOTScheduledAudit', 
         'Remove-IOTSecurityProfile', 
         'Remove-IOTStream', 
@@ -319,10 +334,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-IOTCACertificate', 
         'Update-IOTCertificate', 
         'Update-IOTCertificateProvider', 
+        'Update-IOTCommand', 
         'Update-IOTCustomMetric', 
         'Update-IOTDimension', 
         'Update-IOTDomainConfiguration', 
         'Update-IOTDynamicThingGroup', 
+        'Update-IOTEncryptionConfiguration', 
         'Update-IOTEventConfiguration', 
         'Update-IOTFleetMetric', 
         'Update-IOTIndexingConfiguration', 
@@ -339,6 +356,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-IOTThing', 
         'Update-IOTThingGroup', 
         'Update-IOTThingGroupsForThing', 
+        'Update-IOTThingType', 
         'Update-IOTTopicRuleDestination', 
         'Write-IOTVerificationStateOnViolation')
 
@@ -378,7 +396,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

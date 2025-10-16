@@ -87,10 +87,20 @@ $KINA2_Completers = {
             break
         }
 
-        # Amazon.KinesisAnalyticsV2.RuntimeEnvironment
-        "New-KINA2Application/RuntimeEnvironment"
+        # Amazon.KinesisAnalyticsV2.OperationStatus
+        "Get-KINA2ApplicationOperationList/OperationStatus"
         {
-            $v = "FLINK-1_11","FLINK-1_13","FLINK-1_15","FLINK-1_6","FLINK-1_8","SQL-1_0","ZEPPELIN-FLINK-1_0","ZEPPELIN-FLINK-2_0","ZEPPELIN-FLINK-3_0"
+            $v = "CANCELLED","FAILED","IN_PROGRESS","SUCCESSFUL"
+            break
+        }
+
+        # Amazon.KinesisAnalyticsV2.RuntimeEnvironment
+        {
+            ($_ -eq "New-KINA2Application/RuntimeEnvironment") -Or
+            ($_ -eq "Update-KINA2Application/RuntimeEnvironmentUpdate")
+        }
+        {
+            $v = "FLINK-1_11","FLINK-1_13","FLINK-1_15","FLINK-1_18","FLINK-1_19","FLINK-1_20","FLINK-1_6","FLINK-1_8","SQL-1_0","ZEPPELIN-FLINK-1_0","ZEPPELIN-FLINK-2_0","ZEPPELIN-FLINK-3_0"
             break
         }
 
@@ -111,7 +121,9 @@ $KINA2_Completers = {
 
 $KINA2_map = @{
     "ApplicationMode"=@("New-KINA2Application")
+    "OperationStatus"=@("Get-KINA2ApplicationOperationList")
     "RuntimeEnvironment"=@("New-KINA2Application")
+    "RuntimeEnvironmentUpdate"=@("Update-KINA2Application")
     "UrlType"=@("New-KINA2ApplicationPresignedUrl")
 }
 
@@ -182,9 +194,11 @@ $KINA2_SelectMap = @{
                "Remove-KINA2ApplicationSnapshot",
                "Remove-KINA2ApplicationVpcConfiguration",
                "Get-KINA2Application",
+               "Get-KINA2ApplicationOperation",
                "Get-KINA2ApplicationSnapshot",
                "Get-KINA2ApplicationVersion",
                "Find-KINA2InputSchema",
+               "Get-KINA2ApplicationOperationList",
                "Get-KINA2ApplicationList",
                "Get-KINA2ApplicationSnapshotList",
                "Get-KINA2ApplicationVersionList",

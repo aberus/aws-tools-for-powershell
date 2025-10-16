@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -34,22 +36,31 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     [OutputType("Amazon.LocationService.Model.UpdateKeyResponse")]
     [AWSCmdlet("Calls the Amazon Location Service UpdateKey API operation.", Operation = new[] {"UpdateKey"}, SelectReturnType = typeof(Amazon.LocationService.Model.UpdateKeyResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.UpdateKeyResponse",
-        "This cmdlet returns an Amazon.LocationService.Model.UpdateKeyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LocationService.Model.UpdateKeyResponse object containing multiple properties."
     )]
     public partial class UpdateLOCKeyCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Restrictions_AllowAction
         /// <summary>
         /// <para>
         /// <para>A list of allowed actions that an API key resource grants permissions to perform.
         /// You must have at least one action for each type of resource. For example, if you have
-        /// a place resource, you must include at least one place action.</para><para>The following are valid values for the actions.</para><ul><li><para><b>Map actions</b></para><ul><li><para><c>geo:GetMap*</c> - Allows all actions needed for map rendering.</para></li></ul></li><li><para><b>Place actions</b></para><ul><li><para><c>geo:SearchPlaceIndexForText</c> - Allows geocoding.</para></li><li><para><c>geo:SearchPlaceIndexForPosition</c> - Allows reverse geocoding.</para></li><li><para><c>geo:SearchPlaceIndexForSuggestions</c> - Allows generating suggestions from text.</para></li><li><para><c>GetPlace</c> - Allows finding a place by place ID.</para></li></ul></li><li><para><b>Route actions</b></para><ul><li><para><c>geo:CalculateRoute</c> - Allows point to point routing.</para></li><li><para><c>geo:CalculateRouteMatrix</c> - Allows calculating a matrix of routes.</para></li></ul></li></ul><note><para>You must use these strings exactly. For example, to provide access to map rendering,
+        /// a place resource, you must include at least one place action.</para><para>The following are valid values for the actions.</para><ul><li><para><b>Map actions</b></para><ul><li><para><c>geo:GetMap*</c> - Allows all actions needed for map rendering.</para></li><li><para><c>geo-maps:GetTile</c> - Allows retrieving map tiles.</para></li><li><para><c>geo-maps:GetStaticMap</c> - Allows retrieving static map images.</para></li><li><para><c>geo-maps:*</c> - Allows all actions related to map functionalities.</para></li></ul></li><li><para><b>Place actions</b></para><ul><li><para><c>geo:SearchPlaceIndexForText</c> - Allows geocoding.</para></li><li><para><c>geo:SearchPlaceIndexForPosition</c> - Allows reverse geocoding.</para></li><li><para><c>geo:SearchPlaceIndexForSuggestions</c> - Allows generating suggestions from text.</para></li><li><para><c>GetPlace</c> - Allows finding a place by place ID.</para></li><li><para><c>geo-places:Geocode</c> - Allows geocoding using place information.</para></li><li><para><c>geo-places:ReverseGeocode</c> - Allows reverse geocoding from location coordinates.</para></li><li><para><c>geo-places:SearchNearby</c> - Allows searching for places near a location.</para></li><li><para><c>geo-places:SearchText</c> - Allows searching for places based on text input.</para></li><li><para><c>geo-places:Autocomplete</c> - Allows auto-completion of place names based on text
+        /// input.</para></li><li><para><c>geo-places:Suggest</c> - Allows generating suggestions for places based on partial
+        /// input.</para></li><li><para><c>geo-places:GetPlace</c> - Allows finding a place by its ID.</para></li><li><para><c>geo-places:*</c> - Allows all actions related to place services.</para></li></ul></li><li><para><b>Route actions</b></para><ul><li><para><c>geo:CalculateRoute</c> - Allows point to point routing.</para></li><li><para><c>geo:CalculateRouteMatrix</c> - Allows calculating a matrix of routes.</para></li><li><para><c>geo-routes:CalculateRoutes</c> - Allows calculating multiple routes between points.</para></li><li><para><c>geo-routes:CalculateRouteMatrix</c> - Allows calculating a matrix of routes between
+        /// points.</para></li><li><para><c>geo-routes:CalculateIsolines</c> - Allows calculating isolines for a given area.</para></li><li><para><c>geo-routes:OptimizeWaypoints</c> - Allows optimizing the order of waypoints in
+        /// a route.</para></li><li><para><c>geo-routes:SnapToRoads</c> - Allows snapping a route to the nearest roads.</para></li><li><para><c>geo-routes:*</c> - Allows all actions related to routing functionalities.</para></li></ul></li></ul><note><para>You must use these strings exactly. For example, to provide access to map rendering,
         /// the only valid action is <c>geo:GetMap*</c> as an input to the list. <c>["geo:GetMap*"]</c>
         /// is valid but <c>["geo:GetMapTile"]</c> is not. Similarly, you cannot use <c>["geo:SearchPlaceIndexFor*"]</c>
-        /// - you must list each of the Place actions separately.</para></note>
+        /// - you must list each of the Place actions separately.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,7 +74,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// <para>An optional list of allowed HTTP referers for which requests must originate from.
         /// Requests using this API key from other domains will not be allowed.</para><para>Requirements:</para><ul><li><para>Contain only alphanumeric characters (A–Z, a–z, 0–9) or any symbols in this list <c>$\-._+!*`(),;/?:@=&amp;</c></para></li><li><para>May contain a percent (%) if followed by 2 hexadecimal digits (A-F, a-f, 0-9); this
         /// is used for URL encoding purposes.</para></li><li><para>May contain wildcard characters question mark (?) and asterisk (*).</para><para>Question mark (?) will replace any single character (including hexadecimal digits).</para><para>Asterisk (*) will replace any multiple characters (including multiple hexadecimal
-        /// digits).</para></li><li><para>No spaces allowed. For example, <c>https://example.com</c>.</para></li></ul>
+        /// digits).</para></li><li><para>No spaces allowed. For example, <c>https://example.com</c>.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -79,7 +94,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         /// as the key that is being created.</para></li><li><para>Other than wildcards, you must include the full ARN, including the <c>arn</c>, <c>partition</c>,
         /// <c>service</c>, <c>region</c>, <c>account-id</c> and <c>resource-id</c> delimited
         /// by colons (:).</para></li><li><para>No spaces allowed, even with wildcards. For example, <c>arn:aws:geo:region:<i>account-id</i>:map/ExampleMap*</c>.</para></li></ul><para>For more information about ARN format, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html">Amazon
-        /// Resource Names (ARNs)</a>.</para>
+        /// Resource Names (ARNs)</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,16 +178,6 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -179,9 +188,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KeyName), MyInvocation.BoundParameters);
@@ -195,21 +208,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.UpdateKeyResponse, UpdateLOCKeyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.ExpireTime = this.ExpireTime;
             context.ForceUpdate = this.ForceUpdate;
@@ -346,13 +349,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "UpdateKey");
             try
             {
-                #if DESKTOP
-                return client.UpdateKey(request);
-                #elif CORECLR
-                return client.UpdateKeyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateKeyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

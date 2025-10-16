@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Mgn;
 using Amazon.Mgn.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MGN
 {
     /// <summary>
@@ -34,16 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MGN
     [OutputType("Amazon.Mgn.Model.CreateReplicationConfigurationTemplateResponse")]
     [AWSCmdlet("Calls the Application Migration Service CreateReplicationConfigurationTemplate API operation.", Operation = new[] {"CreateReplicationConfigurationTemplate"}, SelectReturnType = typeof(Amazon.Mgn.Model.CreateReplicationConfigurationTemplateResponse))]
     [AWSCmdletOutput("Amazon.Mgn.Model.CreateReplicationConfigurationTemplateResponse",
-        "This cmdlet returns an Amazon.Mgn.Model.CreateReplicationConfigurationTemplateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Mgn.Model.CreateReplicationConfigurationTemplateResponse object containing multiple properties."
     )]
     public partial class NewMGNReplicationConfigurationTemplateCmdlet : AmazonMgnClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssociateDefaultSecurityGroup
         /// <summary>
@@ -178,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         /// <summary>
         /// <para>
         /// <para>Request to configure the Replication Server Security group ID during Replication Settings
-        /// template creation.</para>
+        /// template creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -213,7 +216,11 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         #region Parameter StagingAreaTag
         /// <summary>
         /// <para>
-        /// <para>Request to configure Staging Area tags during Replication Settings template creation.</para>
+        /// <para>Request to configure Staging Area tags during Replication Settings template creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -231,7 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Request to configure tags during Replication Settings template creation.</para>
+        /// <para>Request to configure tags during Replication Settings template creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -287,9 +298,13 @@ namespace Amazon.PowerShell.Cmdlets.MGN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -515,13 +530,7 @@ namespace Amazon.PowerShell.Cmdlets.MGN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Application Migration Service", "CreateReplicationConfigurationTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreateReplicationConfigurationTemplate(request);
-                #elif CORECLR
-                return client.CreateReplicationConfigurationTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateReplicationConfigurationTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

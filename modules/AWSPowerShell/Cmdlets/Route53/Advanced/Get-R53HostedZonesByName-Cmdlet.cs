@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -24,6 +24,7 @@ using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.Route53;
 using Amazon.Route53.Model;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.R53
 {
@@ -41,7 +42,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
     /// If the domain name includes escape characters or Punycode, <code>ListHostedZonesByName</code>
     /// alphabetizes the domain name using the escaped or Punycoded value, which is the format
     /// that Amazon Route 53 saves in its database. For example, to create a hosted zone for
-    /// exämple.com, you specify ex\344mple.com for the domain name. <code>ListHostedZonesByName</code>
+    /// exï¿½mple.com, you specify ex\344mple.com for the domain name. <code>ListHostedZonesByName</code>
     /// alphabetizes it as:
     /// </para><para><code>com.ex\344mple.</code></para><para>
     /// The labels are reversed and alphabetized using the escaped value. For more information
@@ -81,10 +82,12 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [AWSCmdlet("Calls the Amazon Route 53 ListHostedZonesByName API operation.", Operation = new[] { "ListHostedZonesByName" }, SelectReturnType = typeof(Amazon.Route53.Model.ListHostedZonesByNameResponse))]
     [AWSCmdletOutput("Amazon.Route53.Model.HostedZone or Amazon.Route53.Model.ListHostedZonesByNameResponse",
         "This cmdlet returns a collection of Amazon.Route53.Model.HostedZone objects.",
-        "The service call response (type Amazon.Route53.Model.ListHostedZonesByNameResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Route53.Model.ListHostedZonesByNameResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetR53HostedZonesByNameCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
 
         #region Parameter HostedZoneId
         /// <summary>
@@ -99,7 +102,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-HostedZoneId $null' for the first call and '-HostedZoneId $AWSHistory.LastServiceResponse.NextHostedZoneId' for subsequent calls.
+        /// <br/>HostedZoneId is only output from the cmdlet when <code>-Select *</code> is specified. In order to manually control output pagination, set '-HostedZoneId' to null for the first call then input the 'NextHostedZoneId' output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,6 +170,12 @@ namespace Amazon.PowerShell.Cmdlets.R53
         [System.Management.Automation.Parameter]
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
 
         protected override void ProcessRecord()
         {
@@ -396,13 +405,8 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "ListHostedZonesByName");
             try
             {
-#if DESKTOP
-                return client.ListHostedZonesByName(request);
-#elif CORECLR
-                return client.ListHostedZonesByNameAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.ListHostedZonesByNameAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
+
             }
             catch (AmazonServiceException exc)
             {

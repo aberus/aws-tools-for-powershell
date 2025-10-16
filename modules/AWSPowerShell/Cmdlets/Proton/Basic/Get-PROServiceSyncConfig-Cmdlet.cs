@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Proton;
 using Amazon.Proton.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.PRO
 {
     /// <summary>
-    /// Get detailed information for the service sync configuration.
+    /// Get detailed information for the service sync configuration.<br/><br/>This operation is deprecated.
     /// </summary>
     [Cmdlet("Get", "PROServiceSyncConfig")]
     [OutputType("Amazon.Proton.Model.ServiceSyncConfig")]
     [AWSCmdlet("Calls the AWS Proton GetServiceSyncConfig API operation.", Operation = new[] {"GetServiceSyncConfig"}, SelectReturnType = typeof(Amazon.Proton.Model.GetServiceSyncConfigResponse))]
     [AWSCmdletOutput("Amazon.Proton.Model.ServiceSyncConfig or Amazon.Proton.Model.GetServiceSyncConfigResponse",
         "This cmdlet returns an Amazon.Proton.Model.ServiceSyncConfig object.",
-        "The service call response (type Amazon.Proton.Model.GetServiceSyncConfigResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Proton.Model.GetServiceSyncConfigResponse) can be returned by specifying '-Select *'."
     )]
+    [System.ObsoleteAttribute("AWS Proton is not accepting new customers.")]
     public partial class GetPROServiceSyncConfigCmdlet : AmazonProtonClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ServiceName
         /// <summary>
@@ -70,19 +74,13 @@ namespace Amazon.PowerShell.Cmdlets.PRO
         public string Select { get; set; } = "ServiceSyncConfig";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ServiceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ServiceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ServiceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -90,21 +88,11 @@ namespace Amazon.PowerShell.Cmdlets.PRO
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Proton.Model.GetServiceSyncConfigResponse, GetPROServiceSyncConfigCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ServiceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ServiceName = this.ServiceName;
             #if MODULAR
             if (this.ServiceName == null && ParameterWasBound(nameof(this.ServiceName)))
@@ -170,13 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.PRO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Proton", "GetServiceSyncConfig");
             try
             {
-                #if DESKTOP
-                return client.GetServiceSyncConfig(request);
-                #elif CORECLR
-                return client.GetServiceSyncConfigAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetServiceSyncConfigAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

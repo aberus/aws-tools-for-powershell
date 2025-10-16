@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
@@ -35,28 +37,31 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
     /// <para>
     /// Before you begin, make sure that you understand how DataSync <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-nfs-location.html#accessing-nfs">accesses
     /// NFS file servers</a>.
-    /// </para><note><para>
-    /// If you're copying data to or from an Snowcone device, you can also use <c>CreateLocationNfs</c>
-    /// to create your transfer location. For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/nfs-on-snowcone.html">Configuring
-    /// transfers with Snowcone</a>.
-    /// </para></note>
+    /// </para>
     /// </summary>
     [Cmdlet("New", "DSYNLocationNfs", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the AWS DataSync CreateLocationNfs API operation.", Operation = new[] {"CreateLocationNfs"}, SelectReturnType = typeof(Amazon.DataSync.Model.CreateLocationNfsResponse))]
     [AWSCmdletOutput("System.String or Amazon.DataSync.Model.CreateLocationNfsResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.DataSync.Model.CreateLocationNfsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DataSync.Model.CreateLocationNfsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewDSYNLocationNfsCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter OnPremConfig_AgentArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Names (ARNs) of the agents connecting to a transfer location.</para>
+        /// <para>The Amazon Resource Names (ARNs) of the DataSync agents that can connect to your NFS
+        /// file server.</para><para>You can specify more than one agent. For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/do-i-need-datasync-agent.html#multiple-agents">Using
+        /// multiple DataSync agents</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -74,8 +79,8 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter ServerHostname
         /// <summary>
         /// <para>
-        /// <para>Specifies the Domain Name System (DNS) name or IP version 4 address of the NFS file
-        /// server that your DataSync agent connects to.</para>
+        /// <para>Specifies the DNS name or IP address (IPv4 or IPv6) of the NFS file server that your
+        /// DataSync agent connects to.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -112,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         /// <summary>
         /// <para>
         /// <para>Specifies labels that help you categorize, filter, and search for your Amazon Web
-        /// Services resources. We recommend creating at least a name tag for your location.</para>
+        /// Services resources. We recommend creating at least a name tag for your location.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -311,13 +324,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "CreateLocationNfs");
             try
             {
-                #if DESKTOP
-                return client.CreateLocationNfs(request);
-                #elif CORECLR
-                return client.CreateLocationNfsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLocationNfsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

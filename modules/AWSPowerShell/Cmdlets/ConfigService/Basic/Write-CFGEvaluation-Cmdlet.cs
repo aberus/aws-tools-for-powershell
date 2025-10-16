@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
-    /// Used by an Lambda function to deliver evaluation results to Config. This action is
-    /// required in every Lambda function that is invoked by an Config rule.
+    /// Used by an Lambda function to deliver evaluation results to Config. This operation
+    /// is required in every Lambda function that is invoked by an Config rule.
     /// </summary>
     [Cmdlet("Write", "CFGEvaluation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ConfigService.Model.Evaluation")]
     [AWSCmdlet("Calls the AWS Config PutEvaluations API operation.", Operation = new[] {"PutEvaluations"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutEvaluationsResponse), LegacyAlias="Write-CFGEvaluations")]
     [AWSCmdletOutput("Amazon.ConfigService.Model.Evaluation or Amazon.ConfigService.Model.PutEvaluationsResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.Evaluation objects.",
-        "The service call response (type Amazon.ConfigService.Model.PutEvaluationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.PutEvaluationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGEvaluationCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Evaluation
         /// <summary>
         /// <para>
         /// <para>The assessments that the Lambda function performs. Each evaluation identifies an Amazon
         /// Web Services resource and indicates whether it complies with the Config rule that
-        /// invokes the Lambda function.</para>
+        /// invokes the Lambda function.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -98,16 +105,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "FailedEvaluations";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Evaluation parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Evaluation' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Evaluation' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -118,9 +115,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Evaluation), MyInvocation.BoundParameters);
@@ -134,21 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutEvaluationsResponse, WriteCFGEvaluationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Evaluation;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Evaluation != null)
             {
                 context.Evaluation = new List<Amazon.ConfigService.Model.Evaluation>(this.Evaluation);
@@ -227,13 +218,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutEvaluations");
             try
             {
-                #if DESKTOP
-                return client.PutEvaluations(request);
-                #elif CORECLR
-                return client.PutEvaluationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutEvaluationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

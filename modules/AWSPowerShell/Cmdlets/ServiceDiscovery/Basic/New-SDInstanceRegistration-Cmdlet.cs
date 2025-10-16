@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceDiscovery;
 using Amazon.ServiceDiscovery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SD
 {
     /// <summary>
@@ -64,19 +66,20 @@ namespace Amazon.PowerShell.Cmdlets.SD
     [AWSCmdlet("Calls the AWS Cloud Map RegisterInstance API operation.", Operation = new[] {"RegisterInstance"}, SelectReturnType = typeof(Amazon.ServiceDiscovery.Model.RegisterInstanceResponse))]
     [AWSCmdletOutput("System.String or Amazon.ServiceDiscovery.Model.RegisterInstanceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ServiceDiscovery.Model.RegisterInstanceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceDiscovery.Model.RegisterInstanceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSDInstanceRegistrationCmdlet : AmazonServiceDiscoveryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
         /// <para>
         /// <para>A string map that contains the following information for the service that you specify
-        /// in <c>ServiceId</c>:</para><ul><li><para>The attributes that apply to the records that are defined in the service. </para></li><li><para>For each attribute, the applicable value.</para></li></ul><note><para>Do not include sensitive information in the attributes if the namespace is discoverable
-        /// by public DNS queries.</para></note><para>Supported attribute keys include the following:</para><dl><dt>AWS_ALIAS_DNS_NAME</dt><dd><para>If you want Cloud Map to create an Amazon Route 53 alias record that routes traffic
+        /// in <c>ServiceId</c>:</para><ul><li><para>The attributes that apply to the records that are defined in the service. </para></li><li><para>For each attribute, the applicable value.</para></li></ul><important><para>Do not include sensitive information in the attributes if the namespace is discoverable
+        /// by public DNS queries.</para></important><para>The following are the supported attribute keys.</para><dl><dt>AWS_ALIAS_DNS_NAME</dt><dd><para>If you want Cloud Map to create an Amazon Route 53 alias record that routes traffic
         /// to an Elastic Load Balancing load balancer, specify the DNS name that's associated
         /// with the load balancer. For information about how to get the DNS name, see "DNSName"
         /// in the topic <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_AliasTarget.html">AliasTarget</a>
@@ -86,7 +89,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
         /// settings, Cloud Map will create the Route 53 health check, but it doesn't associate
         /// the health check with the alias record.</para></li><li><para>Cloud Map currently doesn't support creating alias records that route traffic to Amazon
         /// Web Services resources other than Elastic Load Balancing load balancers.</para></li><li><para>If you specify a value for <c>AWS_ALIAS_DNS_NAME</c>, don't specify values for any
-        /// of the <c>AWS_INSTANCE</c> attributes.</para></li></ul></dd><dt>AWS_EC2_INSTANCE_ID</dt><dd><para><i>HTTP namespaces only.</i> The Amazon EC2 instance ID for the instance. If the
+        /// of the <c>AWS_INSTANCE</c> attributes.</para></li><li><para>The <c>AWS_ALIAS_DNS_NAME</c> is not supported in the GovCloud (US) Regions.</para></li></ul></dd><dt>AWS_EC2_INSTANCE_ID</dt><dd><para><i>HTTP namespaces only.</i> The Amazon EC2 instance ID for the instance. If the
         /// <c>AWS_EC2_INSTANCE_ID</c> attribute is specified, then the only other attribute that
         /// can be specified is <c>AWS_INIT_HEALTH_STATUS</c>. When the <c>AWS_EC2_INSTANCE_ID</c>
         /// attribute is specified, then the <c>AWS_INSTANCE_IPV4</c> attribute will be filled
@@ -109,7 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.SD
         /// health check when you created the service.</para></dd><dt>Custom attributes</dt><dd><para>You can add up to 30 custom attributes. For each key-value pair, the maximum length
         /// of the attribute name is 255 characters, and the maximum length of the attribute value
         /// is 1,024 characters. The total size of all provided attributes (sum of all keys and
-        /// values) must not exceed 5,000 characters.</para></dd></dl>
+        /// values) must not exceed 5,000 characters.</para></dd></dl><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -167,7 +174,10 @@ namespace Amazon.PowerShell.Cmdlets.SD
         #region Parameter ServiceId
         /// <summary>
         /// <para>
-        /// <para>The ID of the service that you want to use for settings for the instance.</para>
+        /// <para>The ID or Amazon Resource Name (ARN) of the service that you want to use for settings
+        /// for the instance. For services created in a shared namespace, specify the service
+        /// ARN. For more information about shared namespaces, see <a href="https://docs.aws.amazon.com/cloud-map/latest/dg/sharing-namespaces.html">Cross-account
+        /// Cloud Map namespace sharing</a> in the <i>Cloud Map Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -192,16 +202,6 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public string Select { get; set; } = "OperationId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -212,9 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -228,21 +232,11 @@ namespace Amazon.PowerShell.Cmdlets.SD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceDiscovery.Model.RegisterInstanceResponse, NewSDInstanceRegistrationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Attribute != null)
             {
                 context.Attribute = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -342,13 +336,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cloud Map", "RegisterInstance");
             try
             {
-                #if DESKTOP
-                return client.RegisterInstance(request);
-                #elif CORECLR
-                return client.RegisterInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Gets the specified IdP.
+    /// Given the identifier of an identity provider (IdP), for example <c>examplecorp</c>,
+    /// returns information about the user pool configuration for that IdP. For more information
+    /// about IdPs, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-identity-federation.html">Third-party
+    /// IdP sign-in</a>.
     /// </summary>
     [Cmdlet("Get", "CGIPIdentityProviderByIdentifier")]
     [OutputType("Amazon.CognitoIdentityProvider.Model.IdentityProviderType")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider GetIdentityProviderByIdentifier API operation.", Operation = new[] {"GetIdentityProviderByIdentifier"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.GetIdentityProviderByIdentifierResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.IdentityProviderType or Amazon.CognitoIdentityProvider.Model.GetIdentityProviderByIdentifierResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.IdentityProviderType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.GetIdentityProviderByIdentifierResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.GetIdentityProviderByIdentifierResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGIPIdentityProviderByIdentifierCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IdpIdentifier
         /// <summary>
         /// <para>
-        /// <para>The IdP identifier.</para>
+        /// <para>The identifier that you assigned to your user pool. The identifier is an alternative
+        /// name for an IdP that is distinct from the IdP name. For example, an IdP with a name
+        /// of <c>MyIdP</c> might have an identifier of the email domain <c>example.com</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,7 +70,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID.</para>
+        /// <para>The ID of the user pool where you want to get information about the IdP.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -87,19 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "IdentityProvider";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IdpIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IdpIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IdpIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -107,21 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.GetIdentityProviderByIdentifierResponse, GetCGIPIdentityProviderByIdentifierCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IdpIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.IdpIdentifier = this.IdpIdentifier;
             #if MODULAR
             if (this.IdpIdentifier == null && ParameterWasBound(nameof(this.IdpIdentifier)))
@@ -198,13 +190,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "GetIdentityProviderByIdentifier");
             try
             {
-                #if DESKTOP
-                return client.GetIdentityProviderByIdentifier(request);
-                #elif CORECLR
-                return client.GetIdentityProviderByIdentifierAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetIdentityProviderByIdentifierAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.StepFunctions;
 using Amazon.StepFunctions.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SFN
 {
     /// <summary>
@@ -39,7 +41,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
     /// An <a href="https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-services.html">Amazon
     /// Web Services service integration</a> request and response
     /// </para></li><li><para>
-    /// An <a href="https://docs.aws.amazon.com/step-functions/latest/dg/connect-third-party-apis.html">HTTP
+    /// An <a href="https://docs.aws.amazon.com/step-functions/latest/dg/call-https-apis.html">HTTP
     /// Task</a> request and response
     /// </para></li></ul><para>
     /// You can call this API on only one state at a time. The states that you can test include
@@ -64,16 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
     [OutputType("Amazon.StepFunctions.Model.TestStateResponse")]
     [AWSCmdlet("Calls the AWS Step Functions TestState API operation.", Operation = new[] {"TestState"}, SelectReturnType = typeof(Amazon.StepFunctions.Model.TestStateResponse))]
     [AWSCmdletOutput("Amazon.StepFunctions.Model.TestStateResponse",
-        "This cmdlet returns an Amazon.StepFunctions.Model.TestStateResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.StepFunctions.Model.TestStateResponse object containing multiple properties."
     )]
     public partial class TestSFNStateCmdlet : AmazonStepFunctionsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Definition
         /// <summary>
@@ -145,15 +144,20 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         /// for the state.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String RoleArn { get; set; }
+        #endregion
+        
+        #region Parameter Variable
+        /// <summary>
+        /// <para>
+        /// <para>JSON object literal that sets variables used in the state under test. Object keys
+        /// are the variable names and values are the variable values.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Variables")]
+        public System.String Variable { get; set; }
         #endregion
         
         #region Parameter Select
@@ -167,9 +171,13 @@ namespace Amazon.PowerShell.Cmdlets.SFN
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -193,12 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             context.InspectionLevel = this.InspectionLevel;
             context.RevealSecret = this.RevealSecret;
             context.RoleArn = this.RoleArn;
-            #if MODULAR
-            if (this.RoleArn == null && ParameterWasBound(nameof(this.RoleArn)))
-            {
-                WriteWarning("You are passing $null as a value for parameter RoleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.Variable = this.Variable;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -234,6 +237,10 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             if (cmdletContext.RoleArn != null)
             {
                 request.RoleArn = cmdletContext.RoleArn;
+            }
+            if (cmdletContext.Variable != null)
+            {
+                request.Variables = cmdletContext.Variable;
             }
             
             CmdletOutput output;
@@ -273,13 +280,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Step Functions", "TestState");
             try
             {
-                #if DESKTOP
-                return client.TestState(request);
-                #elif CORECLR
-                return client.TestStateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TestStateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -301,6 +302,7 @@ namespace Amazon.PowerShell.Cmdlets.SFN
             public Amazon.StepFunctions.InspectionLevel InspectionLevel { get; set; }
             public System.Boolean? RevealSecret { get; set; }
             public System.String RoleArn { get; set; }
+            public System.String Variable { get; set; }
             public System.Func<Amazon.StepFunctions.Model.TestStateResponse, TestSFNStateCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

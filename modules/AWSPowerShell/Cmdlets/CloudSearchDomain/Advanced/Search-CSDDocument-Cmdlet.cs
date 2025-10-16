@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,6 +22,7 @@ using Amazon.PowerShell.Common;
 using Amazon.Runtime;
 using Amazon.CloudSearchDomain;
 using Amazon.CloudSearchDomain.Model;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.CSD
 {
@@ -55,10 +56,12 @@ namespace Amazon.PowerShell.Cmdlets.CSD
     [OutputType("Amazon.CloudSearchDomain.Model.SearchResponse")]
     [AWSCmdlet("Calls the Amazon CloudSearchDomain Search API operation.", Operation = new[] { "Search" }, SelectReturnType = typeof(Amazon.CloudSearchDomain.Model.SearchResponse), LegacyAlias = "Search-CSDDocuments")]
     [AWSCmdletOutput("Amazon.CloudSearchDomain.Model.SearchResponse",
-        "This cmdlet returns an Amazon.CloudSearchDomain.Model.SearchResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudSearchDomain.Model.SearchResponse object containing multiple properties. The object can be returned by specifying '-Select *'."
     )]
     public class SearchCSDDocumentCmdlet : AmazonCloudSearchDomainClientCmdlet, IExecutor
     {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
         #region Parameter ServiceUrl
         /// <summary>
         /// Specifies the Search or Document service endpoint.
@@ -492,6 +495,13 @@ namespace Amazon.PowerShell.Cmdlets.CSD
         [System.Management.Automation.Parameter]
         public string Select { get; set; } = "*";
         #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
+
         protected override void ProcessRecord()
         {
             this._ExecuteWithAnonymousCredentials =
@@ -626,13 +636,7 @@ namespace Amazon.PowerShell.Cmdlets.CSD
 
             try
             {
-#if DESKTOP
-                return client.Search(request);
-#elif CORECLR
-                return client.SearchAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.SearchAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

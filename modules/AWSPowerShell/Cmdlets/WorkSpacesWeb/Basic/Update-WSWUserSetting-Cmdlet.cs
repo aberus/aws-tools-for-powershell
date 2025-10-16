@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpacesWeb;
 using Amazon.WorkSpacesWeb.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WSW
 {
     /// <summary>
@@ -35,22 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.WSW
     [AWSCmdlet("Calls the Amazon WorkSpaces Web UpdateUserSettings API operation.", Operation = new[] {"UpdateUserSettings"}, SelectReturnType = typeof(Amazon.WorkSpacesWeb.Model.UpdateUserSettingsResponse))]
     [AWSCmdletOutput("Amazon.WorkSpacesWeb.Model.UserSettings or Amazon.WorkSpacesWeb.Model.UpdateUserSettingsResponse",
         "This cmdlet returns an Amazon.WorkSpacesWeb.Model.UserSettings object.",
-        "The service call response (type Amazon.WorkSpacesWeb.Model.UpdateUserSettingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkSpacesWeb.Model.UpdateUserSettingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateWSWUserSettingCmdlet : AmazonWorkSpacesWebClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CookieSynchronizationConfiguration_Allowlist
         /// <summary>
         /// <para>
         /// <para>The list of cookie specifications that are allowed to be synchronized to the remote
-        /// browser.</para>
+        /// browser.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -61,7 +64,11 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// <summary>
         /// <para>
         /// <para>The list of cookie specifications that are blocked from being synchronized to the
-        /// remote browser.</para>
+        /// remote browser.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -77,6 +84,18 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.WorkSpacesWeb.EnabledType")]
         public Amazon.WorkSpacesWeb.EnabledType CopyAllowed { get; set; }
+        #endregion
+        
+        #region Parameter DeepLinkAllowed
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether the user can use deep links that open automatically when connecting
+        /// to a session.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpacesWeb.EnabledType")]
+        public Amazon.WorkSpacesWeb.EnabledType DeepLinkAllowed { get; set; }
         #endregion
         
         #region Parameter DisconnectTimeoutInMinute
@@ -102,6 +121,21 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public Amazon.WorkSpacesWeb.EnabledType DownloadAllowed { get; set; }
         #endregion
         
+        #region Parameter ToolbarConfiguration_HiddenToolbarItem
+        /// <summary>
+        /// <para>
+        /// <para>The list of toolbar items to be hidden.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ToolbarConfiguration_HiddenToolbarItems")]
+        public System.String[] ToolbarConfiguration_HiddenToolbarItem { get; set; }
+        #endregion
+        
         #region Parameter IdleDisconnectTimeoutInMinute
         /// <summary>
         /// <para>
@@ -112,6 +146,17 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("IdleDisconnectTimeoutInMinutes")]
         public System.Int32? IdleDisconnectTimeoutInMinute { get; set; }
+        #endregion
+        
+        #region Parameter ToolbarConfiguration_MaxDisplayResolution
+        /// <summary>
+        /// <para>
+        /// <para>The maximum display resolution that is allowed for the session.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpacesWeb.MaxDisplayResolution")]
+        public Amazon.WorkSpacesWeb.MaxDisplayResolution ToolbarConfiguration_MaxDisplayResolution { get; set; }
         #endregion
         
         #region Parameter PasteAllowed
@@ -134,6 +179,17 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.WorkSpacesWeb.EnabledType")]
         public Amazon.WorkSpacesWeb.EnabledType PrintAllowed { get; set; }
+        #endregion
+        
+        #region Parameter ToolbarConfiguration_ToolbarType
+        /// <summary>
+        /// <para>
+        /// <para>The type of toolbar displayed during the session.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpacesWeb.ToolbarType")]
+        public Amazon.WorkSpacesWeb.ToolbarType ToolbarConfiguration_ToolbarType { get; set; }
         #endregion
         
         #region Parameter UploadAllowed
@@ -165,6 +221,17 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public System.String UserSettingsArn { get; set; }
         #endregion
         
+        #region Parameter ToolbarConfiguration_VisualMode
+        /// <summary>
+        /// <para>
+        /// <para>The visual mode of the toolbar.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpacesWeb.VisualMode")]
+        public Amazon.WorkSpacesWeb.VisualMode ToolbarConfiguration_VisualMode { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
@@ -172,7 +239,8 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// the request. Idempotency ensures that an API request completes only once. With an
         /// idempotent request, if the original request completes successfully, subsequent retries
         /// with the same client token return the result from the original successful request.
-        /// </para><para>If you do not specify a client token, one is automatically generated by the AWS SDK.</para>
+        /// </para><para>If you do not specify a client token, one is automatically generated by the Amazon
+        /// Web Services SDK.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -190,16 +258,6 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public string Select { get; set; } = "UserSettings";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserSettingsArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserSettingsArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserSettingsArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -210,9 +268,13 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserSettingsArn), MyInvocation.BoundParameters);
@@ -226,21 +288,11 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpacesWeb.Model.UpdateUserSettingsResponse, UpdateWSWUserSettingCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserSettingsArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             if (this.CookieSynchronizationConfiguration_Allowlist != null)
             {
@@ -251,11 +303,19 @@ namespace Amazon.PowerShell.Cmdlets.WSW
                 context.CookieSynchronizationConfiguration_Blocklist = new List<Amazon.WorkSpacesWeb.Model.CookieSpecification>(this.CookieSynchronizationConfiguration_Blocklist);
             }
             context.CopyAllowed = this.CopyAllowed;
+            context.DeepLinkAllowed = this.DeepLinkAllowed;
             context.DisconnectTimeoutInMinute = this.DisconnectTimeoutInMinute;
             context.DownloadAllowed = this.DownloadAllowed;
             context.IdleDisconnectTimeoutInMinute = this.IdleDisconnectTimeoutInMinute;
             context.PasteAllowed = this.PasteAllowed;
             context.PrintAllowed = this.PrintAllowed;
+            if (this.ToolbarConfiguration_HiddenToolbarItem != null)
+            {
+                context.ToolbarConfiguration_HiddenToolbarItem = new List<System.String>(this.ToolbarConfiguration_HiddenToolbarItem);
+            }
+            context.ToolbarConfiguration_MaxDisplayResolution = this.ToolbarConfiguration_MaxDisplayResolution;
+            context.ToolbarConfiguration_ToolbarType = this.ToolbarConfiguration_ToolbarType;
+            context.ToolbarConfiguration_VisualMode = this.ToolbarConfiguration_VisualMode;
             context.UploadAllowed = this.UploadAllowed;
             context.UserSettingsArn = this.UserSettingsArn;
             #if MODULAR
@@ -317,6 +377,10 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             {
                 request.CopyAllowed = cmdletContext.CopyAllowed;
             }
+            if (cmdletContext.DeepLinkAllowed != null)
+            {
+                request.DeepLinkAllowed = cmdletContext.DeepLinkAllowed;
+            }
             if (cmdletContext.DisconnectTimeoutInMinute != null)
             {
                 request.DisconnectTimeoutInMinutes = cmdletContext.DisconnectTimeoutInMinute.Value;
@@ -336,6 +400,55 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             if (cmdletContext.PrintAllowed != null)
             {
                 request.PrintAllowed = cmdletContext.PrintAllowed;
+            }
+            
+             // populate ToolbarConfiguration
+            var requestToolbarConfigurationIsNull = true;
+            request.ToolbarConfiguration = new Amazon.WorkSpacesWeb.Model.ToolbarConfiguration();
+            List<System.String> requestToolbarConfiguration_toolbarConfiguration_HiddenToolbarItem = null;
+            if (cmdletContext.ToolbarConfiguration_HiddenToolbarItem != null)
+            {
+                requestToolbarConfiguration_toolbarConfiguration_HiddenToolbarItem = cmdletContext.ToolbarConfiguration_HiddenToolbarItem;
+            }
+            if (requestToolbarConfiguration_toolbarConfiguration_HiddenToolbarItem != null)
+            {
+                request.ToolbarConfiguration.HiddenToolbarItems = requestToolbarConfiguration_toolbarConfiguration_HiddenToolbarItem;
+                requestToolbarConfigurationIsNull = false;
+            }
+            Amazon.WorkSpacesWeb.MaxDisplayResolution requestToolbarConfiguration_toolbarConfiguration_MaxDisplayResolution = null;
+            if (cmdletContext.ToolbarConfiguration_MaxDisplayResolution != null)
+            {
+                requestToolbarConfiguration_toolbarConfiguration_MaxDisplayResolution = cmdletContext.ToolbarConfiguration_MaxDisplayResolution;
+            }
+            if (requestToolbarConfiguration_toolbarConfiguration_MaxDisplayResolution != null)
+            {
+                request.ToolbarConfiguration.MaxDisplayResolution = requestToolbarConfiguration_toolbarConfiguration_MaxDisplayResolution;
+                requestToolbarConfigurationIsNull = false;
+            }
+            Amazon.WorkSpacesWeb.ToolbarType requestToolbarConfiguration_toolbarConfiguration_ToolbarType = null;
+            if (cmdletContext.ToolbarConfiguration_ToolbarType != null)
+            {
+                requestToolbarConfiguration_toolbarConfiguration_ToolbarType = cmdletContext.ToolbarConfiguration_ToolbarType;
+            }
+            if (requestToolbarConfiguration_toolbarConfiguration_ToolbarType != null)
+            {
+                request.ToolbarConfiguration.ToolbarType = requestToolbarConfiguration_toolbarConfiguration_ToolbarType;
+                requestToolbarConfigurationIsNull = false;
+            }
+            Amazon.WorkSpacesWeb.VisualMode requestToolbarConfiguration_toolbarConfiguration_VisualMode = null;
+            if (cmdletContext.ToolbarConfiguration_VisualMode != null)
+            {
+                requestToolbarConfiguration_toolbarConfiguration_VisualMode = cmdletContext.ToolbarConfiguration_VisualMode;
+            }
+            if (requestToolbarConfiguration_toolbarConfiguration_VisualMode != null)
+            {
+                request.ToolbarConfiguration.VisualMode = requestToolbarConfiguration_toolbarConfiguration_VisualMode;
+                requestToolbarConfigurationIsNull = false;
+            }
+             // determine if request.ToolbarConfiguration should be set to null
+            if (requestToolbarConfigurationIsNull)
+            {
+                request.ToolbarConfiguration = null;
             }
             if (cmdletContext.UploadAllowed != null)
             {
@@ -383,13 +496,7 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces Web", "UpdateUserSettings");
             try
             {
-                #if DESKTOP
-                return client.UpdateUserSettings(request);
-                #elif CORECLR
-                return client.UpdateUserSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateUserSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -410,11 +517,16 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             public List<Amazon.WorkSpacesWeb.Model.CookieSpecification> CookieSynchronizationConfiguration_Allowlist { get; set; }
             public List<Amazon.WorkSpacesWeb.Model.CookieSpecification> CookieSynchronizationConfiguration_Blocklist { get; set; }
             public Amazon.WorkSpacesWeb.EnabledType CopyAllowed { get; set; }
+            public Amazon.WorkSpacesWeb.EnabledType DeepLinkAllowed { get; set; }
             public System.Int32? DisconnectTimeoutInMinute { get; set; }
             public Amazon.WorkSpacesWeb.EnabledType DownloadAllowed { get; set; }
             public System.Int32? IdleDisconnectTimeoutInMinute { get; set; }
             public Amazon.WorkSpacesWeb.EnabledType PasteAllowed { get; set; }
             public Amazon.WorkSpacesWeb.EnabledType PrintAllowed { get; set; }
+            public List<System.String> ToolbarConfiguration_HiddenToolbarItem { get; set; }
+            public Amazon.WorkSpacesWeb.MaxDisplayResolution ToolbarConfiguration_MaxDisplayResolution { get; set; }
+            public Amazon.WorkSpacesWeb.ToolbarType ToolbarConfiguration_ToolbarType { get; set; }
+            public Amazon.WorkSpacesWeb.VisualMode ToolbarConfiguration_VisualMode { get; set; }
             public Amazon.WorkSpacesWeb.EnabledType UploadAllowed { get; set; }
             public System.String UserSettingsArn { get; set; }
             public System.Func<Amazon.WorkSpacesWeb.Model.UpdateUserSettingsResponse, UpdateWSWUserSettingCmdlet, object> Select { get; set; } =

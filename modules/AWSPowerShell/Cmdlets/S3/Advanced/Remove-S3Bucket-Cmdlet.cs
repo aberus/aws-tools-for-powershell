@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,6 +22,7 @@ using Amazon.Runtime;
 using Amazon.S3.Model;
 using Amazon.S3.Util;
 using Amazon.S3;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.S3
 {
@@ -35,32 +36,26 @@ namespace Amazon.PowerShell.Cmdlets.S3
                     Operation = new [] {"DeleteBucket"}, SelectReturnType = typeof(Amazon.S3.Model.DeleteBucketResponse)
     )]
     [AWSCmdletOutput("Amazon.S3.Model.DeleteBucketResponse",
-        "This cmdlet returns an Amazon.S3.Model.DeleteBucketResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.S3.Model.DeleteBucketResponse object containing multiple properties. The object can be returned by specifying '-Select *'."
     )]
     public class RemoveS3BucketCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
         #region Parameter BucketName
         /// <summary>
         /// <para>
-        /// The name of the bucket to be deleted.
+        /// Specifies the bucket being deleted.
         /// </para>
         ///  
         /// <para>
-        /// When using this action with an access point, you must direct requests to the access
-        /// point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com.
-        /// When using this action with an access point through the Amazon Web Services SDKs,
-        /// you provide the access point ARN in place of the bucket name. For more information
-        /// about access point ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html">Using
-        /// access points</a> in the <i>Amazon S3 User Guide</i>.
-        /// </para>
-        ///  
-        /// <para>
-        /// When you use this action with Amazon S3 on Outposts, you must direct requests to the
-        /// S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>.
-        /// When you use this action with S3 on Outposts through the Amazon Web Services SDKs,
-        /// you provide the Outposts access point ARN in place of the bucket name. For more information
-        /// about S3 on Outposts ARNs, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html">What
-        /// is S3 on Outposts</a> in the <i>Amazon S3 User Guide</i>.
+        ///  <b>Directory buckets </b> - When you use this operation with a directory bucket,
+        /// you must use path-style requests in the format <c>https://s3express-control.<i>region_code</i>.amazonaws.com/<i>bucket-name</i>
+        /// </c>. Virtual-hosted-style requests aren't supported. Directory bucket names must
+        /// be unique in the chosen Availability Zone. Bucket names must also follow the format
+        /// <c> <i>bucket_base_name</i>--<i>az_id</i>--x-s3</c> (for example, <c> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</c>).
+        /// For information about bucket naming restrictions, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html">Directory
+        /// bucket naming rules</a> in the <i>Amazon S3 User Guide</i> 
         /// </para>
         /// </summary>
         [Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
@@ -105,6 +100,12 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "*";
         #endregion
 
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
+
         protected override void ProcessRecord()
         {
             base.ProcessRecord();
@@ -138,23 +139,12 @@ namespace Amazon.PowerShell.Cmdlets.S3
             if (cmdletContext.DeleteObjects)
             {
                 output = null;
-#if DESKTOP
-                AmazonS3Util.DeleteS3BucketWithObjects(Client,
-                                                       cmdletContext.BucketName, 
-                                                       new S3DeleteBucketWithObjectsOptions 
-                                                       { 
-                                                           ContinueOnError = false 
-                                                       });
-#elif CORECLR
                 AmazonS3Util.DeleteS3BucketWithObjectsAsync(Client,
                                                              cmdletContext.BucketName,
                                                              new S3DeleteBucketWithObjectsOptions
                                                              {
                                                                  ContinueOnError = false
-                                                             }).Wait();
-#else
-#error "Unknown build edition"
-#endif
+                                                             }, _cancellationTokenSource.Token).Wait();
             }
             else
             {
@@ -198,13 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
 
             try
             {
-#if DESKTOP
-                return client.DeleteBucket(request);
-#elif CORECLR
-                return client.DeleteBucketAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.DeleteBucketAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

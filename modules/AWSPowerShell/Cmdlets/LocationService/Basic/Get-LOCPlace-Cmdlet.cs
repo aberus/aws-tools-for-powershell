@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LocationService;
 using Amazon.LocationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LOC
 {
     /// <summary>
@@ -39,23 +41,24 @@ namespace Amazon.PowerShell.Cmdlets.LOC
     /// Amazon Web Services Region
     /// </para></li><li><para>
     /// Data provider specified in the place index resource
-    /// </para></li></ul></note>
+    /// </para></li></ul></note><note><para>
+    /// If your Place index resource is configured with Grab as your geolocation provider
+    /// and Storage as Intended use, the GetPlace operation is unavailable. For more information,
+    /// see <a href="http://aws.amazon.com/service-terms">AWS service terms</a>.
+    /// </para></note>
     /// </summary>
     [Cmdlet("Get", "LOCPlace")]
     [OutputType("Amazon.LocationService.Model.Place")]
     [AWSCmdlet("Calls the Amazon Location Service GetPlace API operation.", Operation = new[] {"GetPlace"}, SelectReturnType = typeof(Amazon.LocationService.Model.GetPlaceResponse))]
     [AWSCmdletOutput("Amazon.LocationService.Model.Place or Amazon.LocationService.Model.GetPlaceResponse",
         "This cmdlet returns an Amazon.LocationService.Model.Place object.",
-        "The service call response (type Amazon.LocationService.Model.GetPlaceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.LocationService.Model.GetPlaceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetLOCPlaceCmdlet : AmazonLocationServiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IndexName
         /// <summary>
@@ -77,7 +80,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         #region Parameter Key
         /// <summary>
         /// <para>
-        /// <para>The optional <a href="https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html">API
+        /// <para>The optional <a href="https://docs.aws.amazon.com/location/previous/developerguide/using-apikeys.html">API
         /// key</a> to authorize the request.</para>
         /// </para>
         /// </summary>
@@ -105,21 +108,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         #region Parameter PlaceId
         /// <summary>
         /// <para>
-        /// <para>The identifier of the place to find.</para><para>While you can use PlaceID in subsequent requests, PlaceID is not intended to be a
-        /// permanent identifier and the ID can change between consecutive API calls. Please see
-        /// the following PlaceID behaviour for each data provider:</para><ul><li><para>Esri: Place IDs will change every quarter at a minimum. The typical time period for
-        /// these changes would be March, June, September, and December. Place IDs might also
-        /// change between the typical quarterly change but that will be much less frequent.</para></li><li><para>HERE: We recommend that you cache data for no longer than a week to keep your data
-        /// data fresh. You can assume that less than 1% ID shifts will release over release which
-        /// is approximately 1 - 2 times per week.</para></li><li><para>Grab: Place IDs can expire or become invalid in the following situations.</para><ul><li><para>Data operations: The POI may be removed from Grab POI database by Grab Map Ops based
-        /// on the ground-truth, such as being closed in the real world, being detected as a duplicate
-        /// POI, or having incorrect information. Grab will synchronize data to the Waypoint environment
-        /// on weekly basis.</para></li><li><para>Interpolated POI: Interpolated POI is a temporary POI generated in real time when
-        /// serving a request, and it will be marked as derived in the <c>place.result_type</c>
-        /// field in the response. The information of interpolated POIs will be retained for at
-        /// least 30 days, which means that within 30 days, you are able to obtain POI details
-        /// by Place ID from Place Details API. After 30 days, the interpolated POIs(both Place
-        /// ID and details) may expire and inaccessible from the Places Details API.</para></li></ul></li></ul>
+        /// <para>The identifier of the place to find.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -144,19 +133,13 @@ namespace Amazon.PowerShell.Cmdlets.LOC
         public string Select { get; set; } = "Place";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IndexName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IndexName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IndexName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -164,21 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LocationService.Model.GetPlaceResponse, GetLOCPlaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IndexName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.IndexName = this.IndexName;
             #if MODULAR
             if (this.IndexName == null && ParameterWasBound(nameof(this.IndexName)))
@@ -265,13 +238,7 @@ namespace Amazon.PowerShell.Cmdlets.LOC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Location Service", "GetPlace");
             try
             {
-                #if DESKTOP
-                return client.GetPlace(request);
-                #elif CORECLR
-                return client.GetPlaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPlaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

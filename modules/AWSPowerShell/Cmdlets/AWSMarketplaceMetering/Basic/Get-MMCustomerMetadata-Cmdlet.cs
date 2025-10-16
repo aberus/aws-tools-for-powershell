@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AWSMarketplaceMetering;
 using Amazon.AWSMarketplaceMetering.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MM
 {
     /// <summary>
@@ -35,23 +37,33 @@ namespace Amazon.PowerShell.Cmdlets.MM
     /// and <c>ProductCode</c>.
     /// 
     ///  <note><para>
-    /// The API needs to called from the seller account id used to publish the SaaS application
-    /// to successfully resolve the token.
+    /// To successfully resolve the token, the API must be called from the account that was
+    /// used to publish the SaaS application. For an example of using <c>ResolveCustomer</c>,
+    /// see <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/saas-code-examples.html#saas-resolvecustomer-example">
+    /// ResolveCustomer code example</a> in the <i>Amazon Web Services Marketplace Seller
+    /// Guide</i>.
+    /// </para></note><para>
+    /// Permission is required for this operation. Your IAM role or user performing this operation
+    /// requires a policy to allow the <c>aws-marketplace:ResolveCustomer</c> action. For
+    /// more information, see <a href="https://docs.aws.amazon.com/service-authorization/latest/reference/list_awsmarketplacemeteringservice.html">Actions,
+    /// resources, and condition keys for Amazon Web Services Marketplace Metering Service</a>
+    /// in the <i>Service Authorization Reference</i>.
     /// </para><para>
-    /// For an example of using <c>ResolveCustomer</c>, see <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/saas-code-examples.html#saas-resolvecustomer-example">
-    /// ResolveCustomer code example</a> in the <i>AWS Marketplace Seller Guide</i>.
-    /// </para></note>
+    /// For Amazon Web Services Regions that support <c>ResolveCustomer</c>, see <a href="https://docs.aws.amazon.com/marketplace/latest/APIReference/metering-regions.html#resolvecustomer-region-support">ResolveCustomer
+    /// Region support</a>. 
+    /// </para>
     /// </summary>
     [Cmdlet("Get", "MMCustomerMetadata")]
     [OutputType("Amazon.AWSMarketplaceMetering.Model.ResolveCustomerResponse")]
     [AWSCmdlet("Calls the AWS Marketplace Metering ResolveCustomer API operation.", Operation = new[] {"ResolveCustomer"}, SelectReturnType = typeof(Amazon.AWSMarketplaceMetering.Model.ResolveCustomerResponse))]
     [AWSCmdletOutput("Amazon.AWSMarketplaceMetering.Model.ResolveCustomerResponse",
-        "This cmdlet returns an Amazon.AWSMarketplaceMetering.Model.ResolveCustomerResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AWSMarketplaceMetering.Model.ResolveCustomerResponse object containing multiple properties."
     )]
     public partial class GetMMCustomerMetadataCmdlet : AmazonAWSMarketplaceMeteringClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RegistrationToken
         /// <summary>
@@ -83,19 +95,13 @@ namespace Amazon.PowerShell.Cmdlets.MM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RegistrationToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RegistrationToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RegistrationToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -103,21 +109,11 @@ namespace Amazon.PowerShell.Cmdlets.MM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AWSMarketplaceMetering.Model.ResolveCustomerResponse, GetMMCustomerMetadataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RegistrationToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.RegistrationToken = this.RegistrationToken;
             #if MODULAR
             if (this.RegistrationToken == null && ParameterWasBound(nameof(this.RegistrationToken)))
@@ -183,13 +179,7 @@ namespace Amazon.PowerShell.Cmdlets.MM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Metering", "ResolveCustomer");
             try
             {
-                #if DESKTOP
-                return client.ResolveCustomer(request);
-                #elif CORECLR
-                return client.ResolveCustomerAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ResolveCustomerAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,33 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
-    /// Sets the specified user's password in a user pool as an administrator. Works on any
-    /// user. 
+    /// Sets the specified user's password in a user pool. This operation administratively
+    /// sets a temporary or permanent password for a user. With this operation, you can bypass
+    /// self-service password changes and permit immediate sign-in with the password that
+    /// you set. To do this, set <c>Permanent</c> to <c>true</c>.
     /// 
     ///  
     /// <para>
-    /// The password can be temporary or permanent. If it is temporary, the user status enters
-    /// the <c>FORCE_CHANGE_PASSWORD</c> state. When the user next tries to sign in, the InitiateAuth/AdminInitiateAuth
-    /// response will contain the <c>NEW_PASSWORD_REQUIRED</c> challenge. If the user doesn't
-    /// sign in before it expires, the user won't be able to sign in, and an administrator
-    /// must reset their password. 
+    /// You can also set a new temporary password in this request, send it to a user, and
+    /// require them to choose a new password on their next sign-in. To do this, set <c>Permanent</c>
+    /// to <c>false</c>.
     /// </para><para>
-    /// Once the user has set a new password, or the password is permanent, the user status
-    /// is set to <c>Confirmed</c>.
+    /// If the password is temporary, the user's <c>Status</c> becomes <c>FORCE_CHANGE_PASSWORD</c>.
+    /// When the user next tries to sign in, the <c>InitiateAuth</c> or <c>AdminInitiateAuth</c>
+    /// response includes the <c>NEW_PASSWORD_REQUIRED</c> challenge. If the user doesn't
+    /// sign in before the temporary password expires, they can no longer sign in and you
+    /// must repeat this operation to set a temporary or permanent password for them.
+    /// </para><para>
+    /// After the user sets a new password, or if you set a permanent password, their status
+    /// becomes <c>Confirmed</c>.
     /// </para><para><c>AdminSetUserPassword</c> can set a password for the user profile that Amazon Cognito
     /// creates for third-party federated users. When you set a password, the federated user's
     /// status changes from <c>EXTERNAL_PROVIDER</c> to <c>CONFIRMED</c>. A user in this state
@@ -64,19 +72,21 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider AdminSetUserPassword API operation.", Operation = new[] {"AdminSetUserPassword"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.AdminSetUserPasswordResponse))]
     [AWSCmdletOutput("None or Amazon.CognitoIdentityProvider.Model.AdminSetUserPasswordResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CognitoIdentityProvider.Model.AdminSetUserPasswordResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CognitoIdentityProvider.Model.AdminSetUserPasswordResponse) be returned by specifying '-Select *'."
     )]
     public partial class SetCGIPUserPasswordAdminCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Password
         /// <summary>
         /// <para>
-        /// <para>The password for the user.</para>
+        /// <para>The new temporary or permanent password that you want to set for the user. You can't
+        /// remove the password for a user who already has a password so that they can only sign
+        /// in with passwordless methods. In this scenario, you must create a new user without
+        /// a password.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,7 +103,9 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Permanent
         /// <summary>
         /// <para>
-        /// <para><c>True</c> if the password is permanent, <c>False</c> if it is temporary.</para>
+        /// <para>Set to <c>true</c> to set a password that the user can immediately sign in with. Set
+        /// to <c>false</c> to set a temporary password that the user must change on their next
+        /// sign-in.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,10 +115,10 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Username
         /// <summary>
         /// <para>
-        /// <para>The username of the user that you want to query or modify. The value of this parameter
+        /// <para>The name of the user that you want to query or modify. The value of this parameter
         /// is typically your user's username, but it can be any of their alias attributes. If
-        /// <c>username</c> isn't an alias attribute in your user pool, you can also use their
-        /// <c>sub</c> in this request.</para>
+        /// <c>username</c> isn't an alias attribute in your user pool, this value must be the
+        /// <c>sub</c> of a local user or the username of a user from a third-party IdP.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -123,7 +135,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool where you want to set the user's password.</para>
+        /// <para>The ID of the user pool where you want to set the user's password.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -147,16 +159,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Username parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Username' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Username' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -167,9 +169,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Username), MyInvocation.BoundParameters);
@@ -183,21 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.AdminSetUserPasswordResponse, SetCGIPUserPasswordAdminCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Username;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Password = this.Password;
             #if MODULAR
             if (this.Password == null && ParameterWasBound(nameof(this.Password)))
@@ -290,13 +286,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "AdminSetUserPassword");
             try
             {
-                #if DESKTOP
-                return client.AdminSetUserPassword(request);
-                #elif CORECLR
-                return client.AdminSetUserPasswordAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AdminSetUserPasswordAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

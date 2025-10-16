@@ -1,0 +1,1 @@
+Get-S3Version -BucketName 'amzn-s3-demo-bucket'

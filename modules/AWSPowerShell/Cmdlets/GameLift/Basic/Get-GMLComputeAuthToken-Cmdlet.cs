@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,23 +22,32 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// Requests an authentication token from Amazon GameLift for a registered compute in
-    /// an Anywhere fleet. The game servers that are running on the compute use this token
-    /// to authenticate with the Amazon GameLift service. Each server process must provide
-    /// a valid authentication token in its call to the Amazon GameLift server SDK action
-    /// <c>InitSDK()</c>.
+    /// Requests an authentication token from Amazon GameLift Servers for a compute resource
+    /// in an Amazon GameLift Servers fleet. Game servers that are running on the compute
+    /// use this token to communicate with the Amazon GameLift Servers service, such as when
+    /// calling the Amazon GameLift Servers server SDK action <c>InitSDK()</c>. Authentication
+    /// tokens are valid for a limited time span, so you need to request a fresh token before
+    /// the current token expires.
     /// 
     ///  
-    /// <para>
-    /// Authentication tokens are valid for a limited time span. Use a mechanism to regularly
-    /// request a fresh authentication token before the current token expires.
-    /// </para><para><b>Learn more</b></para><ul><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-creating-anywhere.html">Create
+    /// <para><b>Request options</b></para><ul><li><para>
+    /// For managed EC2 fleets (compute type <c>EC2</c>), auth token retrieval and refresh
+    /// is handled automatically. All game servers that are running on all fleet instances
+    /// have access to a valid auth token.
+    /// </para></li><li><para>
+    /// For Anywhere fleets (compute type <c>ANYWHERE</c>), if you're using the Amazon GameLift
+    /// Servers Agent, auth token retrieval and refresh is handled automatically for any compute
+    /// where the Agent is running. If you're not using the Agent, create a mechanism to retrieve
+    /// and refresh auth tokens for computes that are running game server processes.
+    /// </para></li></ul><para><b>Learn more</b></para><ul><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/fleets-creating-anywhere.html">Create
     /// an Anywhere fleet</a></para></li><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/integration-testing.html">Test
     /// your integration</a></para></li><li><para><a href="https://docs.aws.amazon.com/gamelift/latest/developerguide/reference-serversdk.html">Server
     /// SDK reference guides</a> (for version 5.x)
@@ -48,17 +57,20 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [OutputType("Amazon.GameLift.Model.GetComputeAuthTokenResponse")]
     [AWSCmdlet("Calls the Amazon GameLift Service GetComputeAuthToken API operation.", Operation = new[] {"GetComputeAuthToken"}, SelectReturnType = typeof(Amazon.GameLift.Model.GetComputeAuthTokenResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GetComputeAuthTokenResponse",
-        "This cmdlet returns an Amazon.GameLift.Model.GetComputeAuthTokenResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GameLift.Model.GetComputeAuthTokenResponse object containing multiple properties."
     )]
     public partial class GetGMLComputeAuthTokenCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComputeName
         /// <summary>
         /// <para>
-        /// <para>The name of the compute resource you are requesting the authentication token for.</para>
+        /// <para>The name of the compute resource you are requesting the authentication token for.
+        /// For an Anywhere fleet compute, use the registered compute name. For an EC2 fleet instance,
+        /// use the instance ID.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -100,19 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ComputeName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ComputeName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ComputeName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -120,21 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.GetComputeAuthTokenResponse, GetGMLComputeAuthTokenCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ComputeName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ComputeName = this.ComputeName;
             #if MODULAR
             if (this.ComputeName == null && ParameterWasBound(nameof(this.ComputeName)))
@@ -211,13 +207,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "GetComputeAuthToken");
             try
             {
-                #if DESKTOP
-                return client.GetComputeAuthToken(request);
-                #elif CORECLR
-                return client.GetComputeAuthTokenAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetComputeAuthTokenAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

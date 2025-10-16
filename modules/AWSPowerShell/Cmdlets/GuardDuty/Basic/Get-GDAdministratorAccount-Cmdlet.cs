@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GuardDuty;
 using Amazon.GuardDuty.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GD
 {
     /// <summary>
     /// Provides the details of the GuardDuty administrator account associated with the current
     /// GuardDuty member account.
     /// 
-    ///  <note><para>
-    /// If the organization's management account or a delegated administrator runs this API,
-    /// it will return success (<c>HTTP 200</c>) but no content.
-    /// </para></note>
+    ///  
+    /// <para>
+    /// Based on the type of account that runs this API, the following list shows how the
+    /// API behavior varies:
+    /// </para><ul><li><para>
+    /// When the GuardDuty administrator account runs this API, it will return success (<c>HTTP
+    /// 200</c>) but no content.
+    /// </para></li><li><para>
+    /// When a member account runs this API, it will return the details of the GuardDuty administrator
+    /// account that is associated with this calling member account.
+    /// </para></li><li><para>
+    /// When an individual account (not associated with an organization) runs this API, it
+    /// will return success (<c>HTTP 200</c>) but no content.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Get", "GDAdministratorAccount")]
     [OutputType("Amazon.GuardDuty.Model.Administrator")]
     [AWSCmdlet("Calls the Amazon GuardDuty GetAdministratorAccount API operation.", Operation = new[] {"GetAdministratorAccount"}, SelectReturnType = typeof(Amazon.GuardDuty.Model.GetAdministratorAccountResponse))]
     [AWSCmdletOutput("Amazon.GuardDuty.Model.Administrator or Amazon.GuardDuty.Model.GetAdministratorAccountResponse",
         "This cmdlet returns an Amazon.GuardDuty.Model.Administrator object.",
-        "The service call response (type Amazon.GuardDuty.Model.GetAdministratorAccountResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GuardDuty.Model.GetAdministratorAccountResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGDAdministratorAccountCmdlet : AmazonGuardDutyClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DetectorId
         /// <summary>
@@ -76,19 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.GD
         public string Select { get; set; } = "Administrator";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DetectorId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DetectorId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -96,21 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.GD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GuardDuty.Model.GetAdministratorAccountResponse, GetGDAdministratorAccountCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DetectorId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DetectorId = this.DetectorId;
             #if MODULAR
             if (this.DetectorId == null && ParameterWasBound(nameof(this.DetectorId)))
@@ -176,13 +173,7 @@ namespace Amazon.PowerShell.Cmdlets.GD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GuardDuty", "GetAdministratorAccount");
             try
             {
-                #if DESKTOP
-                return client.GetAdministratorAccount(request);
-                #elif CORECLR
-                return client.GetAdministratorAccountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAdministratorAccountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

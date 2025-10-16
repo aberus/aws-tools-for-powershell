@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAF;
 using Amazon.WAF.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAF
 {
     /// <summary>
@@ -43,12 +45,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF
     [AWSCmdlet("Calls the AWS WAF ListRules API operation.", Operation = new[] {"ListRules"}, SelectReturnType = typeof(Amazon.WAF.Model.ListRulesResponse))]
     [AWSCmdletOutput("Amazon.WAF.Model.RuleSummary or Amazon.WAF.Model.ListRulesResponse",
         "This cmdlet returns a collection of Amazon.WAF.Model.RuleSummary objects.",
-        "The service call response (type Amazon.WAF.Model.ListRulesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WAF.Model.ListRulesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetWAFRuleListCmdlet : AmazonWAFClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Limit
         /// <summary>
@@ -81,7 +84,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextMarker $null' for the first call and '-NextMarker $AWSHistory.LastServiceResponse.NextMarker' for subsequent calls.
+        /// <br/>'NextMarker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextMarker' to null for the first call then set the 'NextMarker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,9 +113,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -272,7 +279,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Rules.Count;
+                    int _receivedThisCall = response.Rules?.Count ?? 0;
                     
                     _nextToken = response.NextMarker;
                     _retrievedSoFar += _receivedThisCall;
@@ -321,13 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF", "ListRules");
             try
             {
-                #if DESKTOP
-                return client.ListRules(request);
-                #elif CORECLR
-                return client.ListRulesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListRulesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

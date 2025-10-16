@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -33,12 +35,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     ///  
     /// <para>
     /// The number of IP addresses you can assign to a network interface varies by instance
-    /// type. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html#AvailableIpPerENI">IP
-    /// Addresses Per ENI Per Instance Type</a> in the <i>Amazon Virtual Private Cloud User
-    /// Guide</i>.
+    /// type.
     /// </para><para>
     /// For more information about network interfaces, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html">Elastic
-    /// network interfaces</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// network interfaces</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "EC2NetworkInterface", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -46,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateNetworkInterface API operation.", Operation = new[] {"CreateNetworkInterface"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateNetworkInterfaceResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.NetworkInterface or Amazon.EC2.Model.CreateNetworkInterfaceResponse",
         "This cmdlet returns an Amazon.EC2.Model.NetworkInterface object.",
-        "The service call response (type Amazon.EC2.Model.CreateNetworkInterfaceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateNetworkInterfaceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2NetworkInterfaceCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Description
         /// <summary>
@@ -61,6 +62,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EnablePrimaryIpv6
@@ -87,7 +100,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Group
         /// <summary>
         /// <para>
-        /// <para>The IDs of one or more security groups.</para>
+        /// <para>The IDs of the security groups.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
@@ -98,7 +115,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InterfaceType
         /// <summary>
         /// <para>
-        /// <para>The type of network interface. The default is <c>interface</c>.</para><para>The only supported values are <c>interface</c>, <c>efa</c>, and <c>trunk</c>.</para>
+        /// <para>The type of network interface. The default is <c>interface</c>.</para><para>If you specify <c>efa-only</c>, do not assign any IP addresses to the network interface.
+        /// EFA-only network interfaces do not support IP addresses.</para><para>The only supported values are <c>interface</c>, <c>efa</c>, <c>efa-only</c>, and <c>trunk</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +141,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The IPv4 prefixes assigned to the network interface.</para><para>You can't specify IPv4 prefixes if you've specified one of the following: a count
-        /// of IPv4 prefixes, specific private IPv4 addresses, or a count of private IPv4 addresses.</para>
+        /// of IPv4 prefixes, specific private IPv4 addresses, or a count of private IPv4 addresses.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -149,7 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The IPv6 addresses from the IPv6 CIDR block range of your subnet.</para><para>You can't specify IPv6 addresses using this parameter if you've specified one of the
-        /// following: a count of IPv6 addresses, specific IPv6 prefixes, or a count of IPv6 prefixes.</para>
+        /// following: a count of IPv6 addresses, specific IPv6 prefixes, or a count of IPv6 prefixes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -173,12 +199,26 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The IPv6 prefixes assigned to the network interface.</para><para>You can't specify IPv6 prefixes if you've specified one of the following: a count
-        /// of IPv6 prefixes, specific IPv6 addresses, or a count of IPv6 addresses.</para>
+        /// of IPv6 prefixes, specific IPv6 addresses, or a count of IPv6 addresses.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Ipv6Prefixes")]
         public Amazon.EC2.Model.Ipv6PrefixSpecificationRequest[] Ipv6Prefix { get; set; }
+        #endregion
+        
+        #region Parameter Operator_Principal
+        /// <summary>
+        /// <para>
+        /// <para>The service provider that manages the resource.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Operator_Principal { get; set; }
         #endregion
         
         #region Parameter PrivateIpAddress
@@ -198,7 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The private IPv4 addresses.</para><para>You can't specify private IPv4 addresses if you've specified one of the following:
-        /// a count of private IPv4 addresses, specific IPv4 prefixes, or a count of IPv4 prefixes.</para>
+        /// a count of private IPv4 addresses, specific IPv4 prefixes, or a count of IPv4 prefixes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -241,7 +285,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the new network interface.</para>
+        /// <para>The tags to apply to the new network interface.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -289,8 +337,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Unique, case-sensitive identifier that you provide to ensure the idempotency of the
-        /// request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
-        /// Idempotency</a>.</para>
+        /// request. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -308,16 +356,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "NetworkInterface";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SubnetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SubnetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SubnetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -328,9 +366,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SubnetId), MyInvocation.BoundParameters);
@@ -344,26 +386,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateNetworkInterfaceResponse, NewEC2NetworkInterfaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SubnetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.ConnectionTrackingSpecification_TcpEstablishedTimeout = this.ConnectionTrackingSpecification_TcpEstablishedTimeout;
             context.ConnectionTrackingSpecification_UdpStreamTimeout = this.ConnectionTrackingSpecification_UdpStreamTimeout;
             context.ConnectionTrackingSpecification_UdpTimeout = this.ConnectionTrackingSpecification_UdpTimeout;
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
             context.EnablePrimaryIpv6 = this.EnablePrimaryIpv6;
             if (this.Group != null)
             {
@@ -385,6 +418,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 context.Ipv6Prefix = new List<Amazon.EC2.Model.Ipv6PrefixSpecificationRequest>(this.Ipv6Prefix);
             }
+            context.Operator_Principal = this.Operator_Principal;
             context.PrivateIpAddress = this.PrivateIpAddress;
             if (this.PrivateIpAddressSet != null)
             {
@@ -465,6 +499,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.EnablePrimaryIpv6 != null)
             {
                 request.EnablePrimaryIpv6 = cmdletContext.EnablePrimaryIpv6.Value;
@@ -500,6 +538,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Ipv6Prefix != null)
             {
                 request.Ipv6Prefixes = cmdletContext.Ipv6Prefix;
+            }
+            
+             // populate Operator
+            var requestOperatorIsNull = true;
+            request.Operator = new Amazon.EC2.Model.OperatorRequest();
+            System.String requestOperator_operator_Principal = null;
+            if (cmdletContext.Operator_Principal != null)
+            {
+                requestOperator_operator_Principal = cmdletContext.Operator_Principal;
+            }
+            if (requestOperator_operator_Principal != null)
+            {
+                request.Operator.Principal = requestOperator_operator_Principal;
+                requestOperatorIsNull = false;
+            }
+             // determine if request.Operator should be set to null
+            if (requestOperatorIsNull)
+            {
+                request.Operator = null;
             }
             if (cmdletContext.PrivateIpAddress != null)
             {
@@ -559,13 +616,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateNetworkInterface");
             try
             {
-                #if DESKTOP
-                return client.CreateNetworkInterface(request);
-                #elif CORECLR
-                return client.CreateNetworkInterfaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateNetworkInterfaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -587,6 +638,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.Int32? ConnectionTrackingSpecification_UdpStreamTimeout { get; set; }
             public System.Int32? ConnectionTrackingSpecification_UdpTimeout { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? EnablePrimaryIpv6 { get; set; }
             public List<System.String> Group { get; set; }
             public Amazon.EC2.NetworkInterfaceCreationType InterfaceType { get; set; }
@@ -596,6 +648,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public List<Amazon.EC2.Model.InstanceIpv6Address> Ipv6Address { get; set; }
             public System.Int32? Ipv6PrefixCount { get; set; }
             public List<Amazon.EC2.Model.Ipv6PrefixSpecificationRequest> Ipv6Prefix { get; set; }
+            public System.String Operator_Principal { get; set; }
             public System.String PrivateIpAddress { get; set; }
             public List<Amazon.EC2.Model.PrivateIpAddressSpecification> PrivateIpAddressSet { get; set; }
             public System.Int32? SecondaryPrivateIpAddressCount { get; set; }

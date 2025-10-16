@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Rekognition;
 using Amazon.Rekognition.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.REK
 {
     /// <summary>
@@ -89,18 +91,22 @@ namespace Amazon.PowerShell.Cmdlets.REK
     /// the operation response contains a pagination token for getting the next set of results.
     /// To get the next page of results, call <c>GetlabelDetection</c> and populate the <c>NextToken</c>
     /// request parameter with the token value returned from the previous call to <c>GetLabelDetection</c>.
+    /// </para><para>
+    /// If you are retrieving results while using the Amazon Simple Notification Service,
+    /// note that you will receive an "ERROR" notification if the job encounters an issue.
     /// </para><br/><br/>In the AWS.Tools.Rekognition module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "REKLabelDetection")]
     [OutputType("Amazon.Rekognition.Model.GetLabelDetectionResponse")]
     [AWSCmdlet("Calls the Amazon Rekognition GetLabelDetection API operation.", Operation = new[] {"GetLabelDetection"}, SelectReturnType = typeof(Amazon.Rekognition.Model.GetLabelDetectionResponse))]
     [AWSCmdletOutput("Amazon.Rekognition.Model.GetLabelDetectionResponse",
-        "This cmdlet returns an Amazon.Rekognition.Model.GetLabelDetectionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Rekognition.Model.GetLabelDetectionResponse object containing multiple properties."
     )]
     public partial class GetREKLabelDetectionCmdlet : AmazonRekognitionClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AggregateBy
         /// <summary>
@@ -168,7 +174,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.Rekognition module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -198,9 +204,13 @@ namespace Amazon.PowerShell.Cmdlets.REK
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -372,13 +382,7 @@ namespace Amazon.PowerShell.Cmdlets.REK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Rekognition", "GetLabelDetection");
             try
             {
-                #if DESKTOP
-                return client.GetLabelDetection(request);
-                #elif CORECLR
-                return client.GetLabelDetectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetLabelDetectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

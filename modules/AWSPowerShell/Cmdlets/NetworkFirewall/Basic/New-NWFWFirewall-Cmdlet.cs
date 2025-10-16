@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkFirewall;
 using Amazon.NetworkFirewall.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NWFW
 {
     /// <summary>
@@ -49,18 +51,53 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
     /// operations, <a>ListTagsForResource</a>, <a>TagResource</a>, and <a>UntagResource</a>.
     /// </para><para>
     /// To retrieve information about firewalls, use <a>ListFirewalls</a> and <a>DescribeFirewall</a>.
+    /// </para><para>
+    /// To generate a report on the last 30 days of traffic monitored by a firewall, use <a>StartAnalysisReport</a>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "NWFWFirewall", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.NetworkFirewall.Model.CreateFirewallResponse")]
     [AWSCmdlet("Calls the AWS Network Firewall CreateFirewall API operation.", Operation = new[] {"CreateFirewall"}, SelectReturnType = typeof(Amazon.NetworkFirewall.Model.CreateFirewallResponse))]
     [AWSCmdletOutput("Amazon.NetworkFirewall.Model.CreateFirewallResponse",
-        "This cmdlet returns an Amazon.NetworkFirewall.Model.CreateFirewallResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NetworkFirewall.Model.CreateFirewallResponse object containing multiple properties."
     )]
     public partial class NewNWFWFirewallCmdlet : AmazonNetworkFirewallClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter AvailabilityZoneChangeProtection
+        /// <summary>
+        /// <para>
+        /// <para>Optional. A setting indicating whether the firewall is protected against changes to
+        /// its Availability Zone configuration. When set to <c>TRUE</c>, you cannot add or remove
+        /// Availability Zones without first disabling this protection using <a>UpdateAvailabilityZoneChangeProtection</a>.</para><para>Default value: <c>FALSE</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? AvailabilityZoneChangeProtection { get; set; }
+        #endregion
+        
+        #region Parameter AvailabilityZoneMapping
+        /// <summary>
+        /// <para>
+        /// <para>Required. The Availability Zones where you want to create firewall endpoints for a
+        /// transit gateway-attached firewall. You must specify at least one Availability Zone.
+        /// Consider enabling the firewall in every Availability Zone where you have workloads
+        /// to maintain Availability Zone isolation.</para><para>You can modify Availability Zones later using <a>AssociateAvailabilityZones</a> or
+        /// <a>DisassociateAvailabilityZones</a>, but this may briefly disrupt traffic. The <c>AvailabilityZoneChangeProtection</c>
+        /// setting controls whether you can make these modifications.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("AvailabilityZoneMappings")]
+        public Amazon.NetworkFirewall.Model.AvailabilityZoneMapping[] AvailabilityZoneMapping { get; set; }
+        #endregion
         
         #region Parameter DeleteProtection
         /// <summary>
@@ -83,6 +120,22 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter EnabledAnalysisType
+        /// <summary>
+        /// <para>
+        /// <para>An optional setting indicating the specific traffic analysis types to enable on the
+        /// firewall. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("EnabledAnalysisTypes")]
+        public System.String[] EnabledAnalysisType { get; set; }
         #endregion
         
         #region Parameter FirewallName
@@ -166,17 +219,14 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// <para>
         /// <para>The public subnets to use for your Network Firewall firewalls. Each subnet must belong
         /// to a different Availability Zone in the VPC. Network Firewall creates a firewall endpoint
-        /// in each subnet. </para>
+        /// in each subnet. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("SubnetMappings")]
         public Amazon.NetworkFirewall.Model.SubnetMapping[] SubnetMapping { get; set; }
         #endregion
@@ -184,12 +234,32 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The key:value pairs to associate with the resource.</para>
+        /// <para>The key:value pairs to associate with the resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public Amazon.NetworkFirewall.Model.Tag[] Tag { get; set; }
+        #endregion
+        
+        #region Parameter TransitGatewayId
+        /// <summary>
+        /// <para>
+        /// <para>Required when creating a transit gateway-attached firewall. The unique identifier
+        /// of the transit gateway to attach to this firewall. You can provide either a transit
+        /// gateway from your account or one that has been shared with you through Resource Access
+        /// Manager.</para><important><para>After creating the firewall, you cannot change the transit gateway association. To
+        /// use a different transit gateway, you must create a new firewall.</para></important><para>For information about creating firewalls, see <a>CreateFirewall</a>. For specific
+        /// guidance about transit gateway-attached firewalls, see <a href="https://docs.aws.amazon.com/network-firewall/latest/developerguide/tgw-firewall-considerations.html">Considerations
+        /// for transit gateway-attached firewalls</a> in the <i>Network Firewall Developer Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String TransitGatewayId { get; set; }
         #endregion
         
         #region Parameter EncryptionConfiguration_Type
@@ -211,14 +281,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         /// </para><para>You can't change this setting after you create the firewall. </para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String VpcId { get; set; }
         #endregion
         
@@ -233,16 +296,6 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FirewallPolicyArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FirewallPolicyArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FirewallPolicyArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -253,9 +306,13 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FirewallName), MyInvocation.BoundParameters);
@@ -269,23 +326,22 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkFirewall.Model.CreateFirewallResponse, NewNWFWFirewallCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
+            context.AvailabilityZoneChangeProtection = this.AvailabilityZoneChangeProtection;
+            if (this.AvailabilityZoneMapping != null)
             {
-                context.Select = (response, cmdlet) => this.FirewallPolicyArn;
+                context.AvailabilityZoneMapping = new List<Amazon.NetworkFirewall.Model.AvailabilityZoneMapping>(this.AvailabilityZoneMapping);
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeleteProtection = this.DeleteProtection;
             context.Description = this.Description;
+            if (this.EnabledAnalysisType != null)
+            {
+                context.EnabledAnalysisType = new List<System.String>(this.EnabledAnalysisType);
+            }
             context.EncryptionConfiguration_KeyId = this.EncryptionConfiguration_KeyId;
             context.EncryptionConfiguration_Type = this.EncryptionConfiguration_Type;
             context.FirewallName = this.FirewallName;
@@ -308,23 +364,12 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             {
                 context.SubnetMapping = new List<Amazon.NetworkFirewall.Model.SubnetMapping>(this.SubnetMapping);
             }
-            #if MODULAR
-            if (this.SubnetMapping == null && ParameterWasBound(nameof(this.SubnetMapping)))
-            {
-                WriteWarning("You are passing $null as a value for parameter SubnetMapping which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.NetworkFirewall.Model.Tag>(this.Tag);
             }
+            context.TransitGatewayId = this.TransitGatewayId;
             context.VpcId = this.VpcId;
-            #if MODULAR
-            if (this.VpcId == null && ParameterWasBound(nameof(this.VpcId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter VpcId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -341,6 +386,14 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             // create request
             var request = new Amazon.NetworkFirewall.Model.CreateFirewallRequest();
             
+            if (cmdletContext.AvailabilityZoneChangeProtection != null)
+            {
+                request.AvailabilityZoneChangeProtection = cmdletContext.AvailabilityZoneChangeProtection.Value;
+            }
+            if (cmdletContext.AvailabilityZoneMapping != null)
+            {
+                request.AvailabilityZoneMappings = cmdletContext.AvailabilityZoneMapping;
+            }
             if (cmdletContext.DeleteProtection != null)
             {
                 request.DeleteProtection = cmdletContext.DeleteProtection.Value;
@@ -348,6 +401,10 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            if (cmdletContext.EnabledAnalysisType != null)
+            {
+                request.EnabledAnalysisTypes = cmdletContext.EnabledAnalysisType;
             }
             
              // populate EncryptionConfiguration
@@ -402,6 +459,10 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             {
                 request.Tags = cmdletContext.Tag;
             }
+            if (cmdletContext.TransitGatewayId != null)
+            {
+                request.TransitGatewayId = cmdletContext.TransitGatewayId;
+            }
             if (cmdletContext.VpcId != null)
             {
                 request.VpcId = cmdletContext.VpcId;
@@ -444,13 +505,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Firewall", "CreateFirewall");
             try
             {
-                #if DESKTOP
-                return client.CreateFirewall(request);
-                #elif CORECLR
-                return client.CreateFirewallAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFirewallAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -467,8 +522,11 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? AvailabilityZoneChangeProtection { get; set; }
+            public List<Amazon.NetworkFirewall.Model.AvailabilityZoneMapping> AvailabilityZoneMapping { get; set; }
             public System.Boolean? DeleteProtection { get; set; }
             public System.String Description { get; set; }
+            public List<System.String> EnabledAnalysisType { get; set; }
             public System.String EncryptionConfiguration_KeyId { get; set; }
             public Amazon.NetworkFirewall.EncryptionType EncryptionConfiguration_Type { get; set; }
             public System.String FirewallName { get; set; }
@@ -477,6 +535,7 @@ namespace Amazon.PowerShell.Cmdlets.NWFW
             public System.Boolean? SubnetChangeProtection { get; set; }
             public List<Amazon.NetworkFirewall.Model.SubnetMapping> SubnetMapping { get; set; }
             public List<Amazon.NetworkFirewall.Model.Tag> Tag { get; set; }
+            public System.String TransitGatewayId { get; set; }
             public System.String VpcId { get; set; }
             public System.Func<Amazon.NetworkFirewall.Model.CreateFirewallResponse, NewNWFWFirewallCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

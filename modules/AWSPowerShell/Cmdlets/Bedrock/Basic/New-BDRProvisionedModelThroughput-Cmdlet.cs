@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,38 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Bedrock;
 using Amazon.Bedrock.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BDR
 {
     /// <summary>
-    /// Creates a provisioned throughput with dedicated capacity for a foundation model or
-    /// a fine-tuned model.
-    /// 
-    ///  
-    /// <para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Provisioned
-    /// throughput</a> in the Bedrock User Guide.
-    /// </para>
+    /// Creates dedicated throughput for a base or custom model with the model units and for
+    /// the duration that you specify. For pricing details, see <a href="http://aws.amazon.com/bedrock/pricing/">Amazon
+    /// Bedrock Pricing</a>. For more information, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/prov-throughput.html">Provisioned
+    /// Throughput</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+    /// Bedrock User Guide</a>.
     /// </summary>
     [Cmdlet("New", "BDRProvisionedModelThroughput", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon Bedrock CreateProvisionedModelThroughput API operation.", Operation = new[] {"CreateProvisionedModelThroughput"}, SelectReturnType = typeof(Amazon.Bedrock.Model.CreateProvisionedModelThroughputResponse))]
     [AWSCmdletOutput("System.String or Amazon.Bedrock.Model.CreateProvisionedModelThroughputResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Bedrock.Model.CreateProvisionedModelThroughputResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Bedrock.Model.CreateProvisionedModelThroughputResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewBDRProvisionedModelThroughputCmdlet : AmazonBedrockClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
         /// <para>
-        /// <para>Unique token value that you can provide. If this token matches a previous request,
-        /// Amazon Bedrock ignores the request, but does not return an error.</para>
+        /// <para>A unique, case-sensitive identifier to ensure that the API request completes no more
+        /// than one time. If this token matches a previous request, Amazon Bedrock ignores the
+        /// request, but does not return an error. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
+        /// idempotency</a> in the Amazon S3 User Guide.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -63,7 +65,12 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter CommitmentDuration
         /// <summary>
         /// <para>
-        /// <para>Commitment duration requested for the provisioned throughput.</para>
+        /// <para>The commitment duration requested for the Provisioned Throughput. Billing occurs hourly
+        /// and is discounted for longer commitment terms. To request a no-commit Provisioned
+        /// Throughput, omit this field.</para><para>Custom models support all levels of commitment. To see which base models support no
+        /// commitment, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/pt-supported.html">Supported
+        /// regions and models for Provisioned Throughput</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+        /// Bedrock User Guide</a></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -74,7 +81,11 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter ModelId
         /// <summary>
         /// <para>
-        /// <para>Name or ARN of the model to associate with this provisioned throughput.</para>
+        /// <para>The Amazon Resource Name (ARN) or name of the model to associate with this Provisioned
+        /// Throughput. For a list of models for which you can purchase Provisioned Throughput,
+        /// see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html#prov-throughput-models">Amazon
+        /// Bedrock model IDs for purchasing Provisioned Throughput</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+        /// Bedrock User Guide</a>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -91,7 +102,15 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter ModelUnit
         /// <summary>
         /// <para>
-        /// <para>Number of model units to allocate.</para>
+        /// <para>Number of model units to allocate. A model unit delivers a specific throughput level
+        /// for the specified model. The throughput level of a model unit specifies the total
+        /// number of input and output tokens that it can process and generate within a span of
+        /// one minute. By default, your account has no model units for purchasing Provisioned
+        /// Throughputs with commitment. You must first visit the <a href="https://console.aws.amazon.com/support/home#/case/create?issueType=service-limit-increase">Amazon
+        /// Web Services support center</a> to request MUs.</para><para>For model unit quotas, see <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/quotas.html#prov-thru-quotas">Provisioned
+        /// Throughput quotas</a> in the <a href="https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-service.html">Amazon
+        /// Bedrock User Guide</a>.</para><para>For more information about what an MU specifies, contact your Amazon Web Services
+        /// account manager.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -108,7 +127,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter ProvisionedModelName
         /// <summary>
         /// <para>
-        /// <para>Unique name for this provisioned throughput.</para>
+        /// <para>The name for this Provisioned Throughput.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -125,7 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags to associate with this provisioned throughput.</para>
+        /// <para>Tags to associate with this Provisioned Throughput.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -154,9 +177,13 @@ namespace Amazon.PowerShell.Cmdlets.BDR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ModelId), MyInvocation.BoundParameters);
@@ -280,13 +307,7 @@ namespace Amazon.PowerShell.Cmdlets.BDR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Bedrock", "CreateProvisionedModelThroughput");
             try
             {
-                #if DESKTOP
-                return client.CreateProvisionedModelThroughput(request);
-                #elif CORECLR
-                return client.CreateProvisionedModelThroughputAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateProvisionedModelThroughputAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
@@ -34,6 +36,20 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// <para>
     /// If <c>MessageAction</c> isn't set, the default is to send a welcome message via email
     /// or phone (SMS).
+    /// </para><para>
+    /// This message is based on a template that you configured in your call to create or
+    /// update a user pool. This template includes your custom sign-up instructions and placeholders
+    /// for user name and temporary password.
+    /// </para><para>
+    /// Alternatively, you can call <c>AdminCreateUser</c> with <c>SUPPRESS</c> for the <c>MessageAction</c>
+    /// parameter, and Amazon Cognito won't send any email. 
+    /// </para><para>
+    /// In either case, if the user has a password, they will be in the <c>FORCE_CHANGE_PASSWORD</c>
+    /// state until they sign in and set their password. Your invitation message template
+    /// must have the <c>{####}</c> password placeholder if your users have passwords. If
+    /// your template doesn't have this placeholder, Amazon Cognito doesn't deliver the invitation
+    /// message. In this case, you must update your message template and resend the password
+    /// with a new <c>AdminCreateUser</c> request with a <c>MessageAction</c> value of <c>RESEND</c>.
     /// </para><note><para>
     /// This action might generate an SMS text message. Starting June 1, 2021, US telecom
     /// carriers require you to register an origination phone number before you can send SMS
@@ -44,24 +60,14 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// their accounts, or sign in.
     /// </para><para>
     /// If you have never used SMS text messages with Amazon Cognito or any other Amazon Web
-    /// Service, Amazon Simple Notification Service might place your account in the SMS sandbox.
-    /// In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
+    /// Services service, Amazon Simple Notification Service might place your account in the
+    /// SMS sandbox. In <i><a href="https://docs.aws.amazon.com/sns/latest/dg/sns-sms-sandbox.html">sandbox
     /// mode</a></i>, you can send messages only to verified phone numbers. After you test
     /// your app while in the sandbox environment, you can move out of the sandbox and into
     /// production. For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-sms-settings.html">
     /// SMS message settings for Amazon Cognito user pools</a> in the <i>Amazon Cognito Developer
     /// Guide</i>.
-    /// </para></note><para>
-    /// This message is based on a template that you configured in your call to create or
-    /// update a user pool. This template includes your custom sign-up instructions and placeholders
-    /// for user name and temporary password.
-    /// </para><para>
-    /// Alternatively, you can call <c>AdminCreateUser</c> with <c>SUPPRESS</c> for the <c>MessageAction</c>
-    /// parameter, and Amazon Cognito won't send any email. 
-    /// </para><para>
-    /// In either case, the user will be in the <c>FORCE_CHANGE_PASSWORD</c> state until they
-    /// sign in and change their password.
-    /// </para><note><para>
+    /// </para></note><note><para>
     /// Amazon Cognito evaluates Identity and Access Management (IAM) policies in requests
     /// for this API operation. For this operation, you must use IAM credentials to authorize
     /// requests, and you must grant yourself the corresponding IAM permission in a policy.
@@ -74,16 +80,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider AdminCreateUser API operation.", Operation = new[] {"AdminCreateUser"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.AdminCreateUserResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.UserType or Amazon.CognitoIdentityProvider.Model.AdminCreateUserResponse",
         "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.UserType object.",
-        "The service call response (type Amazon.CognitoIdentityProvider.Model.AdminCreateUserResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentityProvider.Model.AdminCreateUserResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCGIPUserAdminCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientMetadata
         /// <summary>
@@ -93,15 +96,19 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// you use the AdminCreateUser API action, Amazon Cognito invokes the function that is
         /// assigned to the <i>pre sign-up</i> trigger. When Amazon Cognito invokes this function,
         /// it passes a JSON payload, which the function receives as input. This payload contains
-        /// a <c>clientMetadata</c> attribute, which provides the data that you assigned to the
+        /// a <c>ClientMetadata</c> attribute, which provides the data that you assigned to the
         /// ClientMetadata parameter in your AdminCreateUser request. In your function code in
         /// Lambda, you can process the <c>clientMetadata</c> value to enhance your workflow for
         /// your specific needs.</para><para>For more information, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html">
-        /// Customizing user pool Workflows with Lambda Triggers</a> in the <i>Amazon Cognito
-        /// Developer Guide</i>.</para><note><para>When you use the ClientMetadata parameter, remember that Amazon Cognito won't do the
-        /// following:</para><ul><li><para>Store the ClientMetadata value. This data is available only to Lambda triggers that
-        /// are assigned to a user pool to support custom workflows. If your user pool configuration
-        /// doesn't include triggers, the ClientMetadata parameter serves no purpose.</para></li><li><para>Validate the ClientMetadata value.</para></li><li><para>Encrypt the ClientMetadata value. Don't use Amazon Cognito to provide sensitive information.</para></li></ul></note>
+        /// Using Lambda triggers</a> in the <i>Amazon Cognito Developer Guide</i>.</para><note><para>When you use the <c>ClientMetadata</c> parameter, note that Amazon Cognito won't do
+        /// the following:</para><ul><li><para>Store the <c>ClientMetadata</c> value. This data is available only to Lambda triggers
+        /// that are assigned to a user pool to support custom workflows. If your user pool configuration
+        /// doesn't include triggers, the <c>ClientMetadata</c> parameter serves no purpose.</para></li><li><para>Validate the <c>ClientMetadata</c> value.</para></li><li><para>Encrypt the <c>ClientMetadata</c> value. Don't send sensitive information in this
+        /// parameter.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter DesiredDeliveryMedium
         /// <summary>
         /// <para>
-        /// <para>Specify <c>"EMAIL"</c> if email will be used to send the welcome message. Specify
-        /// <c>"SMS"</c> if the phone number will be used. The default value is <c>"SMS"</c>.
-        /// You can specify more than one value.</para>
+        /// <para>Specify <c>EMAIL</c> if email will be used to send the welcome message. Specify <c>SMS</c>
+        /// if the phone number will be used. The default value is <c>SMS</c>. You can specify
+        /// more than one value.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,9 +137,9 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <para>
         /// <para>This parameter is used only if the <c>phone_number_verified</c> or <c>email_verified</c>
         /// attribute is set to <c>True</c>. Otherwise, it is ignored.</para><para>If this parameter is set to <c>True</c> and the phone number or email address specified
-        /// in the UserAttributes parameter already exists as an alias with a different user,
-        /// the API call will migrate the alias from the previous user to the newly created user.
-        /// The previous user will no longer be able to log in using that alias.</para><para>If this parameter is set to <c>False</c>, the API throws an <c>AliasExistsException</c>
+        /// in the <c>UserAttributes</c> parameter already exists as an alias with a different
+        /// user, this request migrates the alias from the previous user to the newly-created
+        /// user. The previous user will no longer be able to log in using that alias.</para><para>If this parameter is set to <c>False</c>, the API throws an <c>AliasExistsException</c>
         /// error if the alias already exists. The default value is <c>False</c>.</para>
         /// </para>
         /// </summary>
@@ -139,9 +150,9 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter MessageAction
         /// <summary>
         /// <para>
-        /// <para>Set to <c>RESEND</c> to resend the invitation message to a user that already exists
-        /// and reset the expiration limit on the user's account. Set to <c>SUPPRESS</c> to suppress
-        /// sending the message. You can specify only one value.</para>
+        /// <para>Set to <c>RESEND</c> to resend the invitation message to a user that already exists,
+        /// and to reset the temporary-password duration with a new temporary password. Set to
+        /// <c>SUPPRESS</c> to suppress sending the message. You can specify only one value.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -153,10 +164,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <summary>
         /// <para>
         /// <para>The user's temporary password. This password must conform to the password policy that
-        /// you specified when you created the user pool.</para><para>The temporary password is valid only once. To complete the Admin Create User flow,
+        /// you specified when you created the user pool.</para><para>The exception to the requirement for a password is when your user pool supports passwordless
+        /// sign-in with email or SMS OTPs. To create a user with no password, omit this parameter
+        /// or submit a blank value. You can only create a passwordless user when passwordless
+        /// sign-in is available.</para><para>The temporary password is valid only once. To complete the Admin Create User flow,
         /// the user must enter the temporary password in the sign-in page, along with a new password
-        /// to be used in all future sign-ins.</para><para>This parameter isn't required. If you don't specify a value, Amazon Cognito generates
-        /// one for you.</para><para>The temporary password can only be used until the user account expiration limit that
+        /// to be used in all future sign-ins.</para><para>If you don't specify a value, Amazon Cognito generates one for you unless you have
+        /// passwordless options active for your user pool.</para><para>The temporary password can only be used until the user account expiration limit that
         /// you set for your user pool. To reset the account after that time limit, you must call
         /// <c>AdminCreateUser</c> again and specify <c>RESEND</c> for the <c>MessageAction</c>
         /// parameter.</para>
@@ -177,15 +191,18 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// sign up in response to your welcome message).</para><para>For custom attributes, you must prepend the <c>custom:</c> prefix to the attribute
         /// name.</para><para>To send a message inviting the user to sign up, you must specify the user's email
         /// address or phone number. You can do this in your call to AdminCreateUser or in the
-        /// <b>Users</b> tab of the Amazon Cognito console for managing your user pools.</para><para>In your call to <c>AdminCreateUser</c>, you can set the <c>email_verified</c> attribute
-        /// to <c>True</c>, and you can set the <c>phone_number_verified</c> attribute to <c>True</c>.
-        /// You can also do this by calling <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminUpdateUserAttributes.html">AdminUpdateUserAttributes</a>.</para><ul><li><para><b>email</b>: The email address of the user to whom the message that contains the
-        /// code and username will be sent. Required if the <c>email_verified</c> attribute is
-        /// set to <c>True</c>, or if <c>"EMAIL"</c> is specified in the <c>DesiredDeliveryMediums</c>
-        /// parameter.</para></li><li><para><b>phone_number</b>: The phone number of the user to whom the message that contains
-        /// the code and username will be sent. Required if the <c>phone_number_verified</c> attribute
-        /// is set to <c>True</c>, or if <c>"SMS"</c> is specified in the <c>DesiredDeliveryMediums</c>
-        /// parameter.</para></li></ul>
+        /// <b>Users</b> tab of the Amazon Cognito console for managing your user pools.</para><para>You must also provide an email address or phone number when you expect the user to
+        /// do passwordless sign-in with an email or SMS OTP. These attributes must be provided
+        /// when passwordless options are the only available, or when you don't submit a <c>TemporaryPassword</c>.</para><para>In your <c>AdminCreateUser</c> request, you can set the <c>email_verified</c> and
+        /// <c>phone_number_verified</c> attributes to <c>true</c>. The following conditions apply:</para><dl><dt>email</dt><dd><para>The email address where you want the user to receive their confirmation code and username.
+        /// You must provide a value for <c>email</c> when you want to set <c>email_verified</c>
+        /// to <c>true</c>, or if you set <c>EMAIL</c> in the <c>DesiredDeliveryMediums</c> parameter.</para></dd><dt>phone_number</dt><dd><para>The phone number where you want the user to receive their confirmation code and username.
+        /// You must provide a value for <c>phone_number</c> when you want to set <c>phone_number_verified</c>
+        /// to <c>true</c>, or if you set <c>SMS</c> in the <c>DesiredDeliveryMediums</c> parameter.</para></dd></dl><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -218,7 +235,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter UserPoolId
         /// <summary>
         /// <para>
-        /// <para>The user pool ID for the user pool where the user will be created.</para>
+        /// <para>The ID of the user pool where you want to create a user.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -238,11 +255,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         /// <para>Temporary user attributes that contribute to the outcomes of your pre sign-up Lambda
         /// trigger. This set of key-value pairs are for custom validation of information that
         /// you collect from your users but don't need to retain.</para><para>Your Lambda function can analyze this additional data and act on it. Your function
-        /// might perform external API operations like logging user attributes and validation
-        /// data to Amazon CloudWatch Logs. Validation data might also affect the response that
-        /// your function returns to Amazon Cognito, like automatically confirming the user if
-        /// they sign up from within your network.</para><para>For more information about the pre sign-up Lambda trigger, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-sign-up.html">Pre
-        /// sign-up Lambda trigger</a>.</para>
+        /// can automatically confirm and verify select users or perform external API operations
+        /// like logging user attributes and validation data to Amazon CloudWatch Logs.</para><para>For more information about the pre sign-up Lambda trigger, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-sign-up.html">Pre
+        /// sign-up Lambda trigger</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -260,16 +279,6 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public string Select { get; set; } = "User";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the UserPoolId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^UserPoolId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -280,9 +289,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.UserPoolId), MyInvocation.BoundParameters);
@@ -296,21 +309,11 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CognitoIdentityProvider.Model.AdminCreateUserResponse, NewCGIPUserAdminCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.UserPoolId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.ClientMetadata != null)
             {
                 context.ClientMetadata = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
@@ -438,13 +441,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "AdminCreateUser");
             try
             {
-                #if DESKTOP
-                return client.AdminCreateUser(request);
-                #elif CORECLR
-                return client.AdminCreateUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AdminCreateUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

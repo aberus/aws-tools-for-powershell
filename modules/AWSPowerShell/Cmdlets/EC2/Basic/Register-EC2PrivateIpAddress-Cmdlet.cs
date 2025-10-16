@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,23 +22,23 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Assigns one or more secondary private IP addresses to the specified network interface.
+    /// Assigns the specified secondary private IP addresses to the specified network interface.
     /// 
     ///  
     /// <para>
-    /// You can specify one or more specific secondary IP addresses, or you can specify the
-    /// number of secondary IP addresses to be automatically assigned within the subnet's
-    /// CIDR block range. The number of secondary IP addresses that you can assign to an instance
-    /// varies by instance type. For information about instance types, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">Instance
-    /// Types</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>. For more information
-    /// about Elastic IP addresses, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Elastic
-    /// IP Addresses</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// You can specify specific secondary IP addresses, or you can specify the number of
+    /// secondary IP addresses to be automatically assigned from the subnet's CIDR block range.
+    /// The number of secondary IP addresses that you can assign to an instance varies by
+    /// instance type. For more information about Elastic IP addresses, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/elastic-ip-addresses-eip.html">Elastic
+    /// IP Addresses</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para>
     /// When you move a secondary private IP address to another network interface, any Elastic
     /// IP address that is associated with the IP address is also moved.
@@ -52,8 +52,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// You can optionally use Prefix Delegation on the network interface. You must specify
     /// either the IPv4 Prefix Delegation prefixes, or the IPv4 Prefix Delegation count. For
     /// information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-prefix-eni.html">
-    /// Assigning prefixes to Amazon EC2 network interfaces</a> in the <i>Amazon Elastic Compute
-    /// Cloud User Guide</i>.
+    /// Assigning prefixes to network interfaces</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Register", "EC2PrivateIpAddress", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -61,12 +60,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) AssignPrivateIpAddresses API operation.", Operation = new[] {"AssignPrivateIpAddresses"}, SelectReturnType = typeof(Amazon.EC2.Model.AssignPrivateIpAddressesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.AssignedPrivateIpAddress or Amazon.EC2.Model.AssignPrivateIpAddressesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.AssignedPrivateIpAddress objects.",
-        "The service call response (type Amazon.EC2.Model.AssignPrivateIpAddressesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.AssignPrivateIpAddressesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterEC2PrivateIpAddressCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowReassignment
         /// <summary>
@@ -83,8 +83,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The number of IPv4 prefixes that Amazon Web Services automatically assigns to the
-        /// network interface. You cannot use this option if you use the <c>Ipv4 Prefixes</c>
-        /// option.</para>
+        /// network interface. You can't use this option if you use the <c>Ipv4 Prefixes</c> option.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -94,8 +93,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Ipv4Prefix
         /// <summary>
         /// <para>
-        /// <para>One or more IPv4 prefixes assigned to the network interface. You cannot use this option
-        /// if you use the <c>Ipv4PrefixCount</c> option.</para>
+        /// <para>One or more IPv4 prefixes assigned to the network interface. You can't use this option
+        /// if you use the <c>Ipv4PrefixCount</c> option.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -125,7 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>The IP addresses to be assigned as a secondary private IP address to the network interface.
         /// You can't specify this parameter when also specifying a number of secondary IP addresses.</para><para>If you don't specify an IP address, Amazon EC2 automatically selects an IP address
-        /// within the subnet range.</para>
+        /// within the subnet range.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
@@ -155,16 +162,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "AssignedPrivateIpAddresses";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the NetworkInterfaceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^NetworkInterfaceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^NetworkInterfaceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -175,9 +172,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.NetworkInterfaceId), MyInvocation.BoundParameters);
@@ -191,21 +192,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.AssignPrivateIpAddressesResponse, RegisterEC2PrivateIpAddressCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.NetworkInterfaceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllowReassignment = this.AllowReassignment;
             context.Ipv4PrefixCount = this.Ipv4PrefixCount;
             if (this.Ipv4Prefix != null)
@@ -302,13 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "AssignPrivateIpAddresses");
             try
             {
-                #if DESKTOP
-                return client.AssignPrivateIpAddresses(request);
-                #elif CORECLR
-                return client.AssignPrivateIpAddressesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssignPrivateIpAddressesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaConnect;
 using Amazon.MediaConnect.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMCN
 {
     /// <summary>
-    /// Displays a list of instances associated with the AWS account. This request returns
-    /// a paginated result. You can use the filterArn property to display only the instances
-    /// associated with the selected Gateway Amazon Resource Name (ARN).<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Displays a list of instances associated with the Amazon Web Services account. This
+    /// request returns a paginated result. You can use the filterArn property to display
+    /// only the instances associated with the selected Gateway Amazon Resource Name (ARN).<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EMCNGatewayInstanceList")]
     [OutputType("Amazon.MediaConnect.Model.ListedGatewayInstance")]
     [AWSCmdlet("Calls the AWS Elemental MediaConnect ListGatewayInstances API operation.", Operation = new[] {"ListGatewayInstances"}, SelectReturnType = typeof(Amazon.MediaConnect.Model.ListGatewayInstancesResponse))]
     [AWSCmdletOutput("Amazon.MediaConnect.Model.ListedGatewayInstance or Amazon.MediaConnect.Model.ListGatewayInstancesResponse",
         "This cmdlet returns a collection of Amazon.MediaConnect.Model.ListedGatewayInstance objects.",
-        "The service call response (type Amazon.MediaConnect.Model.ListGatewayInstancesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaConnect.Model.ListGatewayInstancesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEMCNGatewayInstanceListCmdlet : AmazonMediaConnectClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FilterArn
         /// <summary>
         /// <para>
-        /// Filter the list results to display only the
-        /// instances associated with the selected Gateway Amazon Resource Name (ARN).
+        /// <para> Filter the list results to display only the instances associated with the selected
+        /// Gateway ARN.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -58,13 +61,12 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// The maximum number of results to return per
-        /// API request. For example, you submit a ListInstances request with MaxResults set at
-        /// 5. Although 20 items match your request, the service returns no more than the first
-        /// 5 items. (The service also returns a NextToken value that you can use to fetch the
-        /// next batch of results.) The service might return fewer results than the MaxResults
-        /// value. If MaxResults is not included in the request, the service defaults to pagination
-        /// with a maximum of 10 results per page.
+        /// <para> The maximum number of results to return per API request. </para><para>For example, you submit a ListInstances request with <c>MaxResults</c> set at 5. Although
+        /// 20 items match your request, the service returns no more than the first 5 items. (The
+        /// service also returns a <c>NextToken</c> value that you can use to fetch the next batch
+        /// of results.) </para><para>The service might return fewer results than the <c>MaxResults</c> value. If <c>MaxResults</c>
+        /// is not included in the request, the service defaults to pagination with a maximum
+        /// of 10 results per page.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -75,15 +77,14 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// The token that identifies which batch of results
-        /// that you want to see. For example, you submit a ListInstances request with MaxResults
-        /// set at 5. The service returns the first batch of results (up to 5) and a NextToken
-        /// value. To see the next batch of results, you can submit the ListInstances request
-        /// a second time and specify the NextToken value.
+        /// <para> The token that identifies the batch of results that you want to see. </para><para>For example, you submit a <c>ListInstances</c> request with <c>MaxResults</c> set
+        /// at 5. The service returns the first batch of results (up to 5) and a <c>NextToken</c>
+        /// value. To see the next batch of results, you can submit the <c>ListInstances</c> request
+        /// a second time and specify the <c>NextToken</c> value.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,16 +102,6 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public string Select { get; set; } = "Instances";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FilterArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FilterArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FilterArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -121,9 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -131,21 +126,11 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaConnect.Model.ListGatewayInstancesResponse, GetEMCNGatewayInstanceListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FilterArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.FilterArn = this.FilterArn;
             context.MaxResult = this.MaxResult;
             context.NextToken = this.NextToken;
@@ -162,9 +147,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.MediaConnect.Model.ListGatewayInstancesRequest();
@@ -239,13 +222,7 @@ namespace Amazon.PowerShell.Cmdlets.EMCN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaConnect", "ListGatewayInstances");
             try
             {
-                #if DESKTOP
-                return client.ListGatewayInstances(request);
-                #elif CORECLR
-                return client.ListGatewayInstancesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListGatewayInstancesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

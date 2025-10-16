@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpacesWeb;
 using Amazon.WorkSpacesWeb.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WSW
 {
     /// <summary>
@@ -35,14 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WSW
     [AWSCmdlet("Calls the Amazon WorkSpaces Web CreateIdentityProvider API operation.", Operation = new[] {"CreateIdentityProvider"}, SelectReturnType = typeof(Amazon.WorkSpacesWeb.Model.CreateIdentityProviderResponse))]
     [AWSCmdletOutput("System.String or Amazon.WorkSpacesWeb.Model.CreateIdentityProviderResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.WorkSpacesWeb.Model.CreateIdentityProviderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WorkSpacesWeb.Model.CreateIdentityProviderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewWSWIdentityProviderCmdlet : AmazonWorkSpacesWebClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter IdentityProviderDetail
         /// <summary>
@@ -52,7 +53,11 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         /// key</i></para></li><li><para><c>token_url</c><i>if not available from discovery URL specified by <c>oidc_issuer</c>
         /// key</i></para></li><li><para><c>attributes_url</c><i>if not available from discovery URL specified by <c>oidc_issuer</c>
         /// key</i></para></li><li><para><c>jwks_uri</c><i>if not available from discovery URL specified by <c>oidc_issuer</c>
-        /// key</i></para></li></ul></li><li><para>For SAML providers:</para><ul><li><para><c>MetadataFile</c> OR <c>MetadataURL</c></para></li><li><para><c>IDPSignout</c> (boolean) <i>optional</i></para></li></ul></li></ul>
+        /// key</i></para></li></ul></li><li><para>For SAML providers:</para><ul><li><para><c>MetadataFile</c> OR <c>MetadataURL</c></para></li><li><para><c>IDPSignout</c> (boolean) <i>optional</i></para></li><li><para><c>IDPInit</c> (boolean) <i>optional</i></para></li><li><para><c>RequestSigningAlgorithm</c> (string) <i>optional</i> - Only accepts <c>rsa-sha256</c></para></li><li><para><c>EncryptedResponses</c> (boolean) <i>optional</i></para></li></ul></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -118,13 +123,29 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public System.String PortalArn { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>The tags to add to the identity provider resource. A tag is a key-value pair.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.WorkSpacesWeb.Model.Tag[] Tag { get; set; }
+        #endregion
+        
         #region Parameter ClientToken
         /// <summary>
         /// <para>
         /// <para>A unique, case-sensitive identifier that you provide to ensure the idempotency of
         /// the request. Idempotency ensures that an API request completes only once. With an
         /// idempotent request, if the original request completes successfully, subsequent retries
-        /// with the same client token returns the result from the original successful request.</para><para>If you do not specify a client token, one is automatically generated by the AWS SDK.</para>
+        /// with the same client token returns the result from the original successful request.</para><para>If you do not specify a client token, one is automatically generated by the Amazon
+        /// Web Services SDK.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.WSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PortalArn), MyInvocation.BoundParameters);
@@ -209,6 +234,10 @@ namespace Amazon.PowerShell.Cmdlets.WSW
                 WriteWarning("You are passing $null as a value for parameter PortalArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.WorkSpacesWeb.Model.Tag>(this.Tag);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -244,6 +273,10 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             if (cmdletContext.PortalArn != null)
             {
                 request.PortalArn = cmdletContext.PortalArn;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             
             CmdletOutput output;
@@ -283,13 +316,7 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces Web", "CreateIdentityProvider");
             try
             {
-                #if DESKTOP
-                return client.CreateIdentityProvider(request);
-                #elif CORECLR
-                return client.CreateIdentityProviderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateIdentityProviderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -311,6 +338,7 @@ namespace Amazon.PowerShell.Cmdlets.WSW
             public System.String IdentityProviderName { get; set; }
             public Amazon.WorkSpacesWeb.IdentityProviderType IdentityProviderType { get; set; }
             public System.String PortalArn { get; set; }
+            public List<Amazon.WorkSpacesWeb.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.WorkSpacesWeb.Model.CreateIdentityProviderResponse, NewWSWIdentityProviderCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.IdentityProviderArn;
         }

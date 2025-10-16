@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
-    /// Retrieves a list of sequence stores.
+    /// Retrieves a list of sequence stores and returns each sequence store's metadata.
+    /// 
+    ///  
+    /// <para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/omics/latest/dev/create-sequence-store.html">Creating
+    /// a HealthOmics sequence store</a> in the <i>Amazon Web Services HealthOmics User Guide</i>.
+    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration. This cmdlet didn't autopaginate in V4, auto-pagination support was added in V5.
     /// </summary>
     [Cmdlet("Get", "OMICSSequenceStoreList")]
     [OutputType("Amazon.Omics.Model.SequenceStoreDetail")]
     [AWSCmdlet("Calls the Amazon Omics ListSequenceStores API operation.", Operation = new[] {"ListSequenceStores"}, SelectReturnType = typeof(Amazon.Omics.Model.ListSequenceStoresResponse))]
     [AWSCmdletOutput("Amazon.Omics.Model.SequenceStoreDetail or Amazon.Omics.Model.ListSequenceStoresResponse",
         "This cmdlet returns a collection of Amazon.Omics.Model.SequenceStoreDetail objects.",
-        "The service call response (type Amazon.Omics.Model.ListSequenceStoresResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Omics.Model.ListSequenceStoresResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetOMICSSequenceStoreListCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter_CreatedAfter
         /// <summary>
@@ -72,15 +81,51 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public System.String Filter_Name { get; set; }
         #endregion
         
+        #region Parameter Filter_Status
+        /// <summary>
+        /// <para>
+        /// <para>Filter results based on status.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Omics.SequenceStoreStatus")]
+        public Amazon.Omics.SequenceStoreStatus Filter_Status { get; set; }
+        #endregion
+        
+        #region Parameter Filter_UpdatedAfter
+        /// <summary>
+        /// <para>
+        /// <para>Filter results based on stores updated after the specified time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.DateTime? Filter_UpdatedAfter { get; set; }
+        #endregion
+        
+        #region Parameter Filter_UpdatedBefore
+        /// <summary>
+        /// <para>
+        /// <para>Filter results based on stores updated before the specified time.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.DateTime? Filter_UpdatedBefore { get; set; }
+        #endregion
+        
         #region Parameter MaxResult
         /// <summary>
         /// <para>
         /// <para>The maximum number of stores to return in one page of results.</para>
         /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> In AWSPowerShell and AWSPowerShell.NetCore this parameter is used to limit the total number of items returned by the cmdlet.
+        /// <br/>In AWS.Tools this parameter is simply passed to the service to specify how many items should be returned by each service call.
+        /// <br/>Pipe the output of this cmdlet into Select-Object -First to terminate retrieving data pages early and control the number of items returned.
+        /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [Alias("MaxResults")]
-        public System.Int32? MaxResult { get; set; }
+        [Alias("MaxItems","MaxResults")]
+        public int? MaxResult { get; set; }
         #endregion
         
         #region Parameter NextToken
@@ -88,6 +133,10 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         /// <para>
         /// <para>Specify the pagination token from a previous request to retrieve the next page of
         /// results.</para>
+        /// </para>
+        /// <para>
+        /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,9 +154,24 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public string Select { get; set; } = "SequenceStores";
         #endregion
         
+        #region Parameter NoAutoIteration
+        /// <summary>
+        /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
+        /// service calls. If set, the cmdlet will retrieve only the next 'page' of results using the value of NextToken
+        /// as the start point.
+        /// This cmdlet didn't autopaginate in V4. To preserve the V4 autopagination behavior for all cmdlets, run Set-AWSAutoIterationMode -IterationMode v4.
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public SwitchParameter NoAutoIteration { get; set; }
+        #endregion
+        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,7 +187,19 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             context.Filter_CreatedAfter = this.Filter_CreatedAfter;
             context.Filter_CreatedBefore = this.Filter_CreatedBefore;
             context.Filter_Name = this.Filter_Name;
+            context.Filter_Status = this.Filter_Status;
+            context.Filter_UpdatedAfter = this.Filter_UpdatedAfter;
+            context.Filter_UpdatedBefore = this.Filter_UpdatedBefore;
             context.MaxResult = this.MaxResult;
+            #if !MODULAR
+            if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
+            {
+                WriteWarning("AWSPowerShell and AWSPowerShell.NetCore use the MaxResult parameter to limit the total number of items returned by the cmdlet." +
+                    " This behavior is obsolete and will be removed in a future version of these modules. Pipe the output of this cmdlet into Select-Object -First to terminate" +
+                    " retrieving data pages early and control the number of items returned. AWS.Tools already implements the new behavior of simply passing MaxResult" +
+                    " to the service to specify how many items should be returned by each service call.");
+            }
+            #endif
             context.NextToken = this.NextToken;
             
             // allow further manipulation of loaded context prior to processing
@@ -138,7 +214,9 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            // create request
+            var useParameterSelect = this.Select.StartsWith("^");
+            
+            // create request and set iteration invariants
             var request = new Amazon.Omics.Model.ListSequenceStoresRequest();
             
             
@@ -175,6 +253,36 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
                 request.Filter.Name = requestFilter_filter_Name;
                 requestFilterIsNull = false;
             }
+            Amazon.Omics.SequenceStoreStatus requestFilter_filter_Status = null;
+            if (cmdletContext.Filter_Status != null)
+            {
+                requestFilter_filter_Status = cmdletContext.Filter_Status;
+            }
+            if (requestFilter_filter_Status != null)
+            {
+                request.Filter.Status = requestFilter_filter_Status;
+                requestFilterIsNull = false;
+            }
+            System.DateTime? requestFilter_filter_UpdatedAfter = null;
+            if (cmdletContext.Filter_UpdatedAfter != null)
+            {
+                requestFilter_filter_UpdatedAfter = cmdletContext.Filter_UpdatedAfter.Value;
+            }
+            if (requestFilter_filter_UpdatedAfter != null)
+            {
+                request.Filter.UpdatedAfter = requestFilter_filter_UpdatedAfter.Value;
+                requestFilterIsNull = false;
+            }
+            System.DateTime? requestFilter_filter_UpdatedBefore = null;
+            if (cmdletContext.Filter_UpdatedBefore != null)
+            {
+                requestFilter_filter_UpdatedBefore = cmdletContext.Filter_UpdatedBefore.Value;
+            }
+            if (requestFilter_filter_UpdatedBefore != null)
+            {
+                request.Filter.UpdatedBefore = requestFilter_filter_UpdatedBefore.Value;
+                requestFilterIsNull = false;
+            }
              // determine if request.Filter should be set to null
             if (requestFilterIsNull)
             {
@@ -182,34 +290,55 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             }
             if (cmdletContext.MaxResult != null)
             {
-                request.MaxResults = cmdletContext.MaxResult.Value;
-            }
-            if (cmdletContext.NextToken != null)
-            {
-                request.NextToken = cmdletContext.NextToken;
+                request.MaxResults = AutoIterationHelpers.ConvertEmitLimitToServiceTypeInt32(cmdletContext.MaxResult.Value);
             }
             
-            CmdletOutput output;
+            // Initialize loop variant and commence piping
+            var _nextToken = cmdletContext.NextToken;
+            var _userControllingPaging = this.NoAutoIteration.IsPresent || ParameterWasBound(nameof(this.NextToken));
+            var _shouldAutoIterate = !(SessionState.PSVariable.GetValue("AWSPowerShell_AutoIteration_Mode")?.ToString() == "v4");
             
-            // issue call
             var client = Client ?? CreateClient(_CurrentCredentials, _RegionEndpoint);
-            try
+            do
             {
-                var response = CallAWSServiceOperation(client, request);
-                object pipelineOutput = null;
-                pipelineOutput = cmdletContext.Select(response, this);
-                output = new CmdletOutput
+                request.NextToken = _nextToken;
+                
+                CmdletOutput output;
+                
+                try
                 {
-                    PipelineOutput = pipelineOutput,
-                    ServiceResponse = response
-                };
-            }
-            catch (Exception e)
+                    
+                    var response = CallAWSServiceOperation(client, request);
+                    
+                    object pipelineOutput = null;
+                    if (!useParameterSelect)
+                    {
+                        pipelineOutput = cmdletContext.Select(response, this);
+                    }
+                    output = new CmdletOutput
+                    {
+                        PipelineOutput = pipelineOutput,
+                        ServiceResponse = response
+                    };
+                    
+                    _nextToken = response.NextToken;
+                }
+                catch (Exception e)
+                {
+                    output = new CmdletOutput { ErrorResponse = e };
+                }
+                
+                ProcessOutput(output);
+                
+            } while (!_userControllingPaging && _shouldAutoIterate && AutoIterationHelpers.HasValue(_nextToken));
+            
+            if (useParameterSelect)
             {
-                output = new CmdletOutput { ErrorResponse = e };
+                WriteObject(cmdletContext.Select(null, this));
             }
             
-            return output;
+            
+            return null;
         }
         
         public ExecutorContext CreateContext()
@@ -226,13 +355,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "ListSequenceStores");
             try
             {
-                #if DESKTOP
-                return client.ListSequenceStores(request);
-                #elif CORECLR
-                return client.ListSequenceStoresAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListSequenceStoresAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -252,7 +375,10 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             public System.DateTime? Filter_CreatedAfter { get; set; }
             public System.DateTime? Filter_CreatedBefore { get; set; }
             public System.String Filter_Name { get; set; }
-            public System.Int32? MaxResult { get; set; }
+            public Amazon.Omics.SequenceStoreStatus Filter_Status { get; set; }
+            public System.DateTime? Filter_UpdatedAfter { get; set; }
+            public System.DateTime? Filter_UpdatedBefore { get; set; }
+            public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.Func<Amazon.Omics.Model.ListSequenceStoresResponse, GetOMICSSequenceStoreListCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.SequenceStores;

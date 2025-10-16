@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,37 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudTrail;
 using Amazon.CloudTrail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CT
 {
     /// <summary>
-    /// Adds one or more tags to a trail, event data store, or channel, up to a limit of 50.
-    /// Overwrites an existing tag's value when a new value is specified for an existing tag
-    /// key. Tag key names must be unique; you cannot have two keys with the same name but
-    /// different values. If you specify a key without a value, the tag will be created with
-    /// the specified key and a value of null. You can tag a trail or event data store that
-    /// applies to all Amazon Web Services Regions only from the Region in which the trail
-    /// or event data store was created (also known as its home Region).
+    /// Adds one or more tags to a trail, event data store, dashboard, or channel, up to a
+    /// limit of 50. Overwrites an existing tag's value when a new value is specified for
+    /// an existing tag key. Tag key names must be unique; you cannot have two keys with the
+    /// same name but different values. If you specify a key without a value, the tag will
+    /// be created with the specified key and a value of null. You can tag a trail or event
+    /// data store that applies to all Amazon Web Services Regions only from the Region in
+    /// which the trail or event data store was created (also known as its home Region).
     /// </summary>
     [Cmdlet("Add", "CTResourceTag", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS CloudTrail AddTags API operation.", Operation = new[] {"AddTags"}, SelectReturnType = typeof(Amazon.CloudTrail.Model.AddTagsResponse), LegacyAlias="Add-CTTag")]
     [AWSCmdletOutput("None or Amazon.CloudTrail.Model.AddTagsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudTrail.Model.AddTagsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudTrail.Model.AddTagsResponse) be returned by specifying '-Select *'."
     )]
     public partial class AddCTResourceTagCmdlet : AmazonCloudTrailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceId
         /// <summary>
         /// <para>
-        /// <para>Specifies the ARN of the trail, event data store, or channel to which one or more
-        /// tags will be added.</para><para>The format of a trail ARN is: <c>arn:aws:cloudtrail:us-east-2:123456789012:trail/MyTrail</c></para><para>The format of an event data store ARN is: <c>arn:aws:cloudtrail:us-east-2:123456789012:eventdatastore/EXAMPLE-f852-4e8f-8bd1-bcf6cEXAMPLE</c></para><para>The format of a channel ARN is: <c>arn:aws:cloudtrail:us-east-2:123456789012:channel/01234567890</c></para>
+        /// <para>Specifies the ARN of the trail, event data store, dashboard, or channel to which one
+        /// or more tags will be added.</para><para>The format of a trail ARN is: <c>arn:aws:cloudtrail:us-east-2:123456789012:trail/MyTrail</c></para><para>The format of an event data store ARN is: <c>arn:aws:cloudtrail:us-east-2:123456789012:eventdatastore/EXAMPLE-f852-4e8f-8bd1-bcf6cEXAMPLE</c></para><para>The format of a dashboard ARN is: <c>arn:aws:cloudtrail:us-east-1:123456789012:dashboard/exampleDash</c></para><para>The format of a channel ARN is: <c>arn:aws:cloudtrail:us-east-2:123456789012:channel/01234567890</c></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -69,7 +72,11 @@ namespace Amazon.PowerShell.Cmdlets.CT
         #region Parameter TagsList
         /// <summary>
         /// <para>
-        /// <para>Contains a list of tags, up to a limit of 50</para>
+        /// <para>Contains a list of tags, up to a limit of 50</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -93,16 +100,6 @@ namespace Amazon.PowerShell.Cmdlets.CT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -113,9 +110,13 @@ namespace Amazon.PowerShell.Cmdlets.CT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceId), MyInvocation.BoundParameters);
@@ -129,21 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.CT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudTrail.Model.AddTagsResponse, AddCTResourceTagCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceId = this.ResourceId;
             #if MODULAR
             if (this.ResourceId == null && ParameterWasBound(nameof(this.ResourceId)))
@@ -223,13 +214,7 @@ namespace Amazon.PowerShell.Cmdlets.CT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudTrail", "AddTags");
             try
             {
-                #if DESKTOP
-                return client.AddTags(request);
-                #elif CORECLR
-                return client.AddTagsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AddTagsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

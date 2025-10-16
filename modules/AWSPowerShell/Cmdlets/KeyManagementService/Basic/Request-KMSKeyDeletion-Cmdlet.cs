@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KeyManagementService;
 using Amazon.KeyManagementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KMS
 {
     /// <summary>
@@ -41,7 +43,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// Deleting a KMS key is a destructive and potentially dangerous operation. When a KMS
     /// key is deleted, all data that was encrypted under the KMS key is unrecoverable. (The
     /// only exception is a <a href="https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-delete.html">multi-Region
-    /// replica key</a>, or an <a href="kms/latest/developerguide/importing-keys-managing.html#import-delete-key">asymmetric
+    /// replica key</a>, or an <a href="https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html#import-delete-key">asymmetric
     /// or HMAC KMS key with imported key material</a>.) To prevent the use of a KMS key without
     /// deleting it, use <a>DisableKey</a>. 
     /// </para></important><para>
@@ -51,14 +53,14 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// to <c>PendingReplicaDeletion</c> and it cannot be replicated or used in cryptographic
     /// operations. This status can continue indefinitely. When the last of its replicas keys
     /// is deleted (not just scheduled), the key state of the primary key changes to <c>PendingDeletion</c>
-    /// and its waiting period (<c>PendingWindowInDays</c>) begins. For details, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-delete.html">Deleting
+    /// and its waiting period (<c>PendingWindowInDays</c>) begins. For details, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html#deleting-mrks">Deleting
     /// multi-Region keys</a> in the <i>Key Management Service Developer Guide</i>.
     /// </para><para>
-    /// When KMS <a href="https://docs.aws.amazon.com/kms/latest/developerguide/delete-cmk-keystore.html">deletes
+    /// When KMS <a href="https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html#delete-cmk-keystore">deletes
     /// a KMS key from an CloudHSM key store</a>, it makes a best effort to delete the associated
     /// key material from the associated CloudHSM cluster. However, you might need to manually
     /// <a href="https://docs.aws.amazon.com/kms/latest/developerguide/fix-keystore.html#fix-keystore-orphaned-key">delete
-    /// the orphaned key material</a> from the cluster and its backups. <a href="https://docs.aws.amazon.com/kms/latest/developerguide/delete-xks-key.html">Deleting
+    /// the orphaned key material</a> from the cluster and its backups. <a href="https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html#delete-xks-key">Deleting
     /// a KMS key from an external key store</a> has no effect on the associated external
     /// key. However, for both types of custom key stores, deleting a KMS key is destructive
     /// and irreversible. You cannot decrypt ciphertext encrypted under the KMS key by using
@@ -75,7 +77,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     /// different Amazon Web Services account.
     /// </para><para><b>Required permissions</b>: kms:ScheduleKeyDeletion (key policy)
     /// </para><para><b>Related operations</b></para><ul><li><para><a>CancelKeyDeletion</a></para></li><li><para><a>DisableKey</a></para></li></ul><para><b>Eventual consistency</b>: The KMS API follows an eventual consistency model. For
-    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/programming-eventual-consistency.html">KMS
+    /// more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/accessing-kms.html#programming-eventual-consistency">KMS
     /// eventual consistency</a>.
     /// </para>
     /// </summary>
@@ -83,12 +85,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
     [OutputType("Amazon.KeyManagementService.Model.ScheduleKeyDeletionResponse")]
     [AWSCmdlet("Calls the AWS Key Management Service ScheduleKeyDeletion API operation.", Operation = new[] {"ScheduleKeyDeletion"}, SelectReturnType = typeof(Amazon.KeyManagementService.Model.ScheduleKeyDeletionResponse))]
     [AWSCmdletOutput("Amazon.KeyManagementService.Model.ScheduleKeyDeletionResponse",
-        "This cmdlet returns an Amazon.KeyManagementService.Model.ScheduleKeyDeletionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.KeyManagementService.Model.ScheduleKeyDeletionResponse object containing multiple properties."
     )]
     public partial class RequestKMSKeyDeletionCmdlet : AmazonKeyManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyId
         /// <summary>
@@ -134,16 +137,6 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -154,9 +147,13 @@ namespace Amazon.PowerShell.Cmdlets.KMS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KeyId), MyInvocation.BoundParameters);
@@ -170,21 +167,11 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.KeyManagementService.Model.ScheduleKeyDeletionResponse, RequestKMSKeyDeletionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KeyId = this.KeyId;
             #if MODULAR
             if (this.KeyId == null && ParameterWasBound(nameof(this.KeyId)))
@@ -255,13 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.KMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Key Management Service", "ScheduleKeyDeletion");
             try
             {
-                #if DESKTOP
-                return client.ScheduleKeyDeletion(request);
-                #elif CORECLR
-                return client.ScheduleKeyDeletionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ScheduleKeyDeletionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

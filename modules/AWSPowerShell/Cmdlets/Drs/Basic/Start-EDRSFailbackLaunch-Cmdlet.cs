@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Drs;
 using Amazon.Drs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EDRS
 {
     /// <summary>
@@ -37,21 +39,22 @@ namespace Amazon.PowerShell.Cmdlets.EDRS
     [AWSCmdlet("Calls the Elastic Disaster Recovery Service StartFailbackLaunch API operation.", Operation = new[] {"StartFailbackLaunch"}, SelectReturnType = typeof(Amazon.Drs.Model.StartFailbackLaunchResponse))]
     [AWSCmdletOutput("Amazon.Drs.Model.Job or Amazon.Drs.Model.StartFailbackLaunchResponse",
         "This cmdlet returns an Amazon.Drs.Model.Job object.",
-        "The service call response (type Amazon.Drs.Model.StartFailbackLaunchResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Drs.Model.StartFailbackLaunchResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartEDRSFailbackLaunchCmdlet : AmazonDrsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RecoveryInstanceIDs
         /// <summary>
         /// <para>
-        /// <para>The IDs of the Recovery Instance whose failback launch we want to request.</para>
+        /// <para>The IDs of the Recovery Instance whose failback launch we want to request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -68,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.EDRS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags to be associated with the failback launch Job.</para>
+        /// <para>The tags to be associated with the failback launch Job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,9 +104,13 @@ namespace Amazon.PowerShell.Cmdlets.EDRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -198,13 +209,7 @@ namespace Amazon.PowerShell.Cmdlets.EDRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Disaster Recovery Service", "StartFailbackLaunch");
             try
             {
-                #if DESKTOP
-                return client.StartFailbackLaunch(request);
-                #elif CORECLR
-                return client.StartFailbackLaunchAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartFailbackLaunchAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

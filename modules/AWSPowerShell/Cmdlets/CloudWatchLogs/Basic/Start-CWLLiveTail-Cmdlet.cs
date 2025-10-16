@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
@@ -58,13 +60,16 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// Logs buffers up to 10 <c>LiveTailSessionUpdate</c> events or 5000 log events, after
     /// which it starts dropping the oldest events.
     /// </para></li><li><para>
-    /// A <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_SessionStreamingException.html">SessionStreamingException</a>
+    /// A <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_StartLiveTailResponseStream.html#CWL-Type-StartLiveTailResponseStream-SessionStreamingException">SessionStreamingException</a>
     /// object is returned if an unknown error occurs on the server side.
     /// </para></li><li><para>
-    /// A <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_SessionTimeoutException.html">SessionTimeoutException</a>
+    /// A <a href="https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_StartLiveTailResponseStream.html#CWL-Type-StartLiveTailResponseStream-SessionTimeoutException">SessionTimeoutException</a>
     /// object is returned when the session times out, after it has been kept open for three
     /// hours.
-    /// </para></li></ul><important><para>
+    /// </para></li></ul><note><para>
+    /// The <c>StartLiveTail</c> API routes requests to <c>streaming-logs.<i>Region</i>.amazonaws.com</c>
+    /// using SDK host prefix injection. VPC endpoint support is not available for this API.
+    /// </para></note><important><para>
     /// You can end a session before it times out by closing the session stream or by closing
     /// the client that is receiving the stream. The session also ends if the established
     /// connection between the client and the server breaks.
@@ -78,12 +83,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs StartLiveTail API operation.", Operation = new[] {"StartLiveTail"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.StartLiveTailResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchLogs.Model.StartLiveTailResponseStream or Amazon.CloudWatchLogs.Model.StartLiveTailResponse",
         "This cmdlet returns an Amazon.CloudWatchLogs.Model.StartLiveTailResponseStream object.",
-        "The service call response (type Amazon.CloudWatchLogs.Model.StartLiveTailResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudWatchLogs.Model.StartLiveTailResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCWLLiveTailCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LogEventFilterPattern
         /// <summary>
@@ -101,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         #region Parameter LogGroupIdentifier
         /// <summary>
         /// <para>
-        /// <para>An array where each item in the array is a log group to include in the Live Tail session.</para><para>Specify each log group by its ARN. </para><para>If you specify an ARN, the ARN can't end with an asterisk (*).</para><note><para> You can include up to 10 log groups.</para></note>
+        /// <para>An array where each item in the array is a log group to include in the Live Tail session.</para><para>Specify each log group by its ARN. </para><para>If you specify an ARN, the ARN can't end with an asterisk (*).</para><note><para> You can include up to 10 log groups.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -120,7 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <summary>
         /// <para>
         /// <para>If you specify this parameter, then only log events in the log streams that have names
-        /// that start with the prefixes that you specify here are included in the Live Tail session.</para><para>If you specify this field, you can't also specify the <c>logStreamNames</c> field.</para><note><para>You can specify this parameter only if you specify only one log group in <c>logGroupIdentifiers</c>.</para></note>
+        /// that start with the prefixes that you specify here are included in the Live Tail session.</para><para>If you specify this field, you can't also specify the <c>logStreamNames</c> field.</para><note><para>You can specify this parameter only if you specify only one log group in <c>logGroupIdentifiers</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +147,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <para>
         /// <para>If you specify this parameter, then only log events in the log streams that you specify
         /// here are included in the Live Tail session.</para><para>If you specify this field, you can't also specify the <c>logStreamNamePrefixes</c>
-        /// field.</para><note><para>You can specify this parameter only if you specify only one log group in <c>logGroupIdentifiers</c>.</para></note>
+        /// field.</para><note><para>You can specify this parameter only if you specify only one log group in <c>logGroupIdentifiers</c>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -152,16 +170,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "ResponseStream";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogEventFilterPattern parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogEventFilterPattern' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogEventFilterPattern' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -172,9 +180,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LogEventFilterPattern), MyInvocation.BoundParameters);
@@ -188,21 +200,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.StartLiveTailResponse, StartCWLLiveTailCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LogEventFilterPattern;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LogEventFilterPattern = this.LogEventFilterPattern;
             if (this.LogGroupIdentifier != null)
             {
@@ -292,13 +294,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "StartLiveTail");
             try
             {
-                #if DESKTOP
-                return client.StartLiveTail(request);
-                #elif CORECLR
-                return client.StartLiveTailAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartLiveTailAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

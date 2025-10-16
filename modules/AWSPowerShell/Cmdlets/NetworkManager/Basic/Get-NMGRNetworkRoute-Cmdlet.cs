@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.NetworkManager;
 using Amazon.NetworkManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.NMGR
 {
     /// <summary>
@@ -34,12 +36,24 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
     [OutputType("Amazon.NetworkManager.Model.GetNetworkRoutesResponse")]
     [AWSCmdlet("Calls the AWS Network Manager GetNetworkRoutes API operation.", Operation = new[] {"GetNetworkRoutes"}, SelectReturnType = typeof(Amazon.NetworkManager.Model.GetNetworkRoutesResponse))]
     [AWSCmdletOutput("Amazon.NetworkManager.Model.GetNetworkRoutesResponse",
-        "This cmdlet returns an Amazon.NetworkManager.Model.GetNetworkRoutesResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.NetworkManager.Model.GetNetworkRoutesResponse object containing multiple properties."
     )]
     public partial class GetNMGRNetworkRouteCmdlet : AmazonNetworkManagerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter CoreNetworkNetworkFunctionGroup_CoreNetworkId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of the core network.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RouteTableIdentifier_CoreNetworkNetworkFunctionGroup_CoreNetworkId")]
+        public System.String CoreNetworkNetworkFunctionGroup_CoreNetworkId { get; set; }
+        #endregion
         
         #region Parameter CoreNetworkSegmentEdge_CoreNetworkId
         /// <summary>
@@ -56,12 +70,27 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         /// <summary>
         /// <para>
         /// <para>Filter by route table destination. Possible Values: TRANSIT_GATEWAY_ATTACHMENT_ID,
-        /// RESOURCE_ID, or RESOURCE_TYPE.</para>
+        /// RESOURCE_ID, or RESOURCE_TYPE.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("DestinationFilters")]
         public System.Collections.Hashtable DestinationFilter { get; set; }
+        #endregion
+        
+        #region Parameter CoreNetworkNetworkFunctionGroup_EdgeLocation
+        /// <summary>
+        /// <para>
+        /// <para>The location for the core network edge.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RouteTableIdentifier_CoreNetworkNetworkFunctionGroup_EdgeLocation")]
+        public System.String CoreNetworkNetworkFunctionGroup_EdgeLocation { get; set; }
         #endregion
         
         #region Parameter CoreNetworkSegmentEdge_EdgeLocation
@@ -78,7 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter ExactCidrMatch
         /// <summary>
         /// <para>
-        /// <para>An exact CIDR block.</para>
+        /// <para>An exact CIDR block.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +139,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter LongestPrefixMatch
         /// <summary>
         /// <para>
-        /// <para>The most specific route that matches the traffic (longest prefix match).</para>
+        /// <para>The most specific route that matches the traffic (longest prefix match).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,10 +151,25 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public System.String[] LongestPrefixMatch { get; set; }
         #endregion
         
+        #region Parameter CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName
+        /// <summary>
+        /// <para>
+        /// <para>The network function group name.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("RouteTableIdentifier_CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName")]
+        public System.String CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName { get; set; }
+        #endregion
+        
         #region Parameter PrefixListId
         /// <summary>
         /// <para>
-        /// <para>The IDs of the prefix lists.</para>
+        /// <para>The IDs of the prefix lists.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -139,7 +191,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter State
         /// <summary>
         /// <para>
-        /// <para>The route states.</para>
+        /// <para>The route states.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter SubnetOfMatch
         /// <summary>
         /// <para>
-        /// <para>The routes with a subnet that match the specified CIDR filter.</para>
+        /// <para>The routes with a subnet that match the specified CIDR filter.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -162,7 +222,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         /// <summary>
         /// <para>
         /// <para>The routes with a CIDR that encompasses the CIDR filter. Example: If you specify 10.0.1.0/30,
-        /// then the result returns 10.0.1.0/29.</para>
+        /// then the result returns 10.0.1.0/29.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -184,7 +248,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         #region Parameter Type
         /// <summary>
         /// <para>
-        /// <para>The route types.</para>
+        /// <para>The route types.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -203,19 +271,13 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GlobalNetworkId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GlobalNetworkId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GlobalNetworkId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -223,21 +285,11 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.NetworkManager.Model.GetNetworkRoutesResponse, GetNMGRNetworkRouteCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GlobalNetworkId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.DestinationFilter != null)
             {
                 context.DestinationFilter = new Dictionary<System.String, List<System.String>>(StringComparer.Ordinal);
@@ -277,6 +329,9 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             {
                 context.PrefixListId = new List<System.String>(this.PrefixListId);
             }
+            context.CoreNetworkNetworkFunctionGroup_CoreNetworkId = this.CoreNetworkNetworkFunctionGroup_CoreNetworkId;
+            context.CoreNetworkNetworkFunctionGroup_EdgeLocation = this.CoreNetworkNetworkFunctionGroup_EdgeLocation;
+            context.CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName = this.CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName;
             context.CoreNetworkSegmentEdge_CoreNetworkId = this.CoreNetworkSegmentEdge_CoreNetworkId;
             context.CoreNetworkSegmentEdge_EdgeLocation = this.CoreNetworkSegmentEdge_EdgeLocation;
             context.CoreNetworkSegmentEdge_SegmentName = this.CoreNetworkSegmentEdge_SegmentName;
@@ -345,6 +400,51 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             if (requestRouteTableIdentifier_routeTableIdentifier_TransitGatewayRouteTableArn != null)
             {
                 request.RouteTableIdentifier.TransitGatewayRouteTableArn = requestRouteTableIdentifier_routeTableIdentifier_TransitGatewayRouteTableArn;
+                requestRouteTableIdentifierIsNull = false;
+            }
+            Amazon.NetworkManager.Model.CoreNetworkNetworkFunctionGroupIdentifier requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup = null;
+            
+             // populate CoreNetworkNetworkFunctionGroup
+            var requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroupIsNull = true;
+            requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup = new Amazon.NetworkManager.Model.CoreNetworkNetworkFunctionGroupIdentifier();
+            System.String requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_CoreNetworkId = null;
+            if (cmdletContext.CoreNetworkNetworkFunctionGroup_CoreNetworkId != null)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_CoreNetworkId = cmdletContext.CoreNetworkNetworkFunctionGroup_CoreNetworkId;
+            }
+            if (requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_CoreNetworkId != null)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup.CoreNetworkId = requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_CoreNetworkId;
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroupIsNull = false;
+            }
+            System.String requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_EdgeLocation = null;
+            if (cmdletContext.CoreNetworkNetworkFunctionGroup_EdgeLocation != null)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_EdgeLocation = cmdletContext.CoreNetworkNetworkFunctionGroup_EdgeLocation;
+            }
+            if (requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_EdgeLocation != null)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup.EdgeLocation = requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_EdgeLocation;
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroupIsNull = false;
+            }
+            System.String requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_NetworkFunctionGroupName = null;
+            if (cmdletContext.CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName != null)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_NetworkFunctionGroupName = cmdletContext.CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName;
+            }
+            if (requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_NetworkFunctionGroupName != null)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup.NetworkFunctionGroupName = requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup_coreNetworkNetworkFunctionGroup_NetworkFunctionGroupName;
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroupIsNull = false;
+            }
+             // determine if requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup should be set to null
+            if (requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroupIsNull)
+            {
+                requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup = null;
+            }
+            if (requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup != null)
+            {
+                request.RouteTableIdentifier.CoreNetworkNetworkFunctionGroup = requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkNetworkFunctionGroup;
                 requestRouteTableIdentifierIsNull = false;
             }
             Amazon.NetworkManager.Model.CoreNetworkSegmentEdgeIdentifier requestRouteTableIdentifier_routeTableIdentifier_CoreNetworkSegmentEdge = null;
@@ -451,13 +551,7 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Network Manager", "GetNetworkRoutes");
             try
             {
-                #if DESKTOP
-                return client.GetNetworkRoutes(request);
-                #elif CORECLR
-                return client.GetNetworkRoutesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetNetworkRoutesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -479,6 +573,9 @@ namespace Amazon.PowerShell.Cmdlets.NMGR
             public System.String GlobalNetworkId { get; set; }
             public List<System.String> LongestPrefixMatch { get; set; }
             public List<System.String> PrefixListId { get; set; }
+            public System.String CoreNetworkNetworkFunctionGroup_CoreNetworkId { get; set; }
+            public System.String CoreNetworkNetworkFunctionGroup_EdgeLocation { get; set; }
+            public System.String CoreNetworkNetworkFunctionGroup_NetworkFunctionGroupName { get; set; }
             public System.String CoreNetworkSegmentEdge_CoreNetworkId { get; set; }
             public System.String CoreNetworkSegmentEdge_EdgeLocation { get; set; }
             public System.String CoreNetworkSegmentEdge_SegmentName { get; set; }

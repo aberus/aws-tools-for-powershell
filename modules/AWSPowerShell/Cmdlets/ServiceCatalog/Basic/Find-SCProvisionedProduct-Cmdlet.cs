@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceCatalog;
 using Amazon.ServiceCatalog.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SC
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SC
     [AWSCmdlet("Calls the AWS Service Catalog SearchProvisionedProducts API operation.", Operation = new[] {"SearchProvisionedProducts"}, SelectReturnType = typeof(Amazon.ServiceCatalog.Model.SearchProvisionedProductsResponse))]
     [AWSCmdletOutput("Amazon.ServiceCatalog.Model.ProvisionedProductAttribute or Amazon.ServiceCatalog.Model.SearchProvisionedProductsResponse",
         "This cmdlet returns a collection of Amazon.ServiceCatalog.Model.ProvisionedProductAttribute objects.",
-        "The service call response (type Amazon.ServiceCatalog.Model.SearchProvisionedProductsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceCatalog.Model.SearchProvisionedProductsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class FindSCProvisionedProductCmdlet : AmazonServiceCatalogClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AcceptLanguage
         /// <summary>
@@ -59,7 +62,11 @@ namespace Amazon.PowerShell.Cmdlets.SC
         /// <c>id</c>, <c>lastRecordId</c>, <c>idempotencyToken</c>, <c>name</c>, <c>physicalId</c>,
         /// <c>productId</c>, <c>provisioningArtifactId</c>, <c>type</c>, <c>status</c>, <c>tags</c>,
         /// <c>userArn</c>, <c>userArnSession</c>, <c>lastProvisioningRecordId</c>, <c>lastSuccessfulProvisioningRecordId</c>,
-        /// <c>productName</c>, and <c>provisioningArtifactName</c>.</para><para>Example: <c>"SearchQuery":["status:AVAILABLE"]</c></para>
+        /// <c>productName</c>, and <c>provisioningArtifactName</c>.</para><para>Example: <c>"SearchQuery":["status:AVAILABLE"]</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -134,7 +141,7 @@ namespace Amazon.PowerShell.Cmdlets.SC
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-PageToken $null' for the first call and '-PageToken $AWSHistory.LastServiceResponse.NextPageToken' for subsequent calls.
+        /// <br/>'PageToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-PageToken' to null for the first call then set the 'PageToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,9 +170,13 @@ namespace Amazon.PowerShell.Cmdlets.SC
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -429,7 +440,7 @@ namespace Amazon.PowerShell.Cmdlets.SC
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ProvisionedProducts.Count;
+                    int _receivedThisCall = response.ProvisionedProducts?.Count ?? 0;
                     
                     _nextToken = response.NextPageToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -478,13 +489,7 @@ namespace Amazon.PowerShell.Cmdlets.SC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Service Catalog", "SearchProvisionedProducts");
             try
             {
-                #if DESKTOP
-                return client.SearchProvisionedProducts(request);
-                #elif CORECLR
-                return client.SearchProvisionedProductsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SearchProvisionedProductsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

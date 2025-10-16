@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeBuild;
 using Amazon.CodeBuild.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CB
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
     [AWSCmdlet("Calls the AWS CodeBuild UpdateProject API operation.", Operation = new[] {"UpdateProject"}, SelectReturnType = typeof(Amazon.CodeBuild.Model.UpdateProjectResponse))]
     [AWSCmdletOutput("Amazon.CodeBuild.Model.Project or Amazon.CodeBuild.Model.UpdateProjectResponse",
         "This cmdlet returns an Amazon.CodeBuild.Model.Project object.",
-        "The service call response (type Amazon.CodeBuild.Model.UpdateProjectResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeBuild.Model.UpdateProjectResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCBProjectCmdlet : AmazonCodeBuildClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Artifacts_ArtifactIdentifier
         /// <summary>
@@ -50,6 +53,18 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Artifacts_ArtifactIdentifier { get; set; }
+        #endregion
+        
+        #region Parameter AutoRetryLimit
+        /// <summary>
+        /// <para>
+        /// <para>The maximum number of additional automatic retries after a failed build. For example,
+        /// if the auto-retry limit is set to 2, CodeBuild will call the <c>RetryBuild</c> API
+        /// to automatically retry your build for up to 2 additional times.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? AutoRetryLimit { get; set; }
         #endregion
         
         #region Parameter BadgeEnabled
@@ -116,6 +131,18 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public System.String Source_Buildspec { get; set; }
         #endregion
         
+        #region Parameter Cache_CacheNamespace
+        /// <summary>
+        /// <para>
+        /// <para>Defines the scope of the cache. You can use this namespace to share a cache across
+        /// multiple projects. For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/caching-s3.html#caching-s3-sharing">Cache
+        /// sharing between projects</a> in the <i>CodeBuild User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Cache_CacheNamespace { get; set; }
+        #endregion
+        
         #region Parameter Environment_Certificate
         /// <summary>
         /// <para>
@@ -143,28 +170,47 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter Environment_ComputeType
         /// <summary>
         /// <para>
-        /// <para>Information about the compute resources the build project uses. Available values include:</para><ul><li><para><c>BUILD_GENERAL1_SMALL</c>: Use up to 3 GB memory and 2 vCPUs for builds.</para></li><li><para><c>BUILD_GENERAL1_MEDIUM</c>: Use up to 7 GB memory and 4 vCPUs for builds.</para></li><li><para><c>BUILD_GENERAL1_LARGE</c>: Use up to 16 GB memory and 8 vCPUs for builds, depending
-        /// on your environment type.</para></li><li><para><c>BUILD_GENERAL1_XLARGE</c>: Use up to 70 GB memory and 36 vCPUs for builds, depending
-        /// on your environment type.</para></li><li><para><c>BUILD_GENERAL1_2XLARGE</c>: Use up to 145 GB memory, 72 vCPUs, and 824 GB of SSD
-        /// storage for builds. This compute type supports Docker images up to 100 GB uncompressed.</para></li><li><para><c>BUILD_LAMBDA_1GB</c>: Use up to 1 GB memory for builds. Only available for environment
-        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_2GB</c>: Use up to 2 GB memory for builds. Only available for environment
-        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_4GB</c>: Use up to 4 GB memory for builds. Only available for environment
-        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_8GB</c>: Use up to 8 GB memory for builds. Only available for environment
-        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_10GB</c>: Use up to 10 GB memory for builds. Only available for environment
-        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li></ul><para> If you use <c>BUILD_GENERAL1_SMALL</c>: </para><ul><li><para> For environment type <c>LINUX_CONTAINER</c>, you can use up to 3 GB memory and 2
-        /// vCPUs for builds. </para></li><li><para> For environment type <c>LINUX_GPU_CONTAINER</c>, you can use up to 16 GB memory,
-        /// 4 vCPUs, and 1 NVIDIA A10G Tensor Core GPU for builds.</para></li><li><para> For environment type <c>ARM_CONTAINER</c>, you can use up to 4 GB memory and 2 vCPUs
-        /// on ARM-based processors for builds.</para></li></ul><para> If you use <c>BUILD_GENERAL1_LARGE</c>: </para><ul><li><para> For environment type <c>LINUX_CONTAINER</c>, you can use up to 15 GB memory and 8
-        /// vCPUs for builds. </para></li><li><para> For environment type <c>LINUX_GPU_CONTAINER</c>, you can use up to 255 GB memory,
-        /// 32 vCPUs, and 4 NVIDIA Tesla V100 GPUs for builds.</para></li><li><para> For environment type <c>ARM_CONTAINER</c>, you can use up to 16 GB memory and 8 vCPUs
-        /// on ARM-based processors for builds.</para></li></ul><note><para>If you're using compute fleets during project creation, <c>computeType</c> will be
-        /// ignored.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html">Build
-        /// Environment Compute Types</a> in the <i>CodeBuild User Guide.</i></para>
+        /// <para>Information about the compute resources the build project uses. Available values include:</para><ul><li><para><c>ATTRIBUTE_BASED_COMPUTE</c>: Specify the amount of vCPUs, memory, disk space,
+        /// and the type of machine.</para><note><para> If you use <c>ATTRIBUTE_BASED_COMPUTE</c>, you must define your attributes by using
+        /// <c>computeConfiguration</c>. CodeBuild will select the cheapest instance that satisfies
+        /// your specified attributes. For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html#environment-reserved-capacity.types">Reserved
+        /// capacity environment types</a> in the <i>CodeBuild User Guide</i>.</para></note></li><li><para><c>BUILD_GENERAL1_SMALL</c>: Use up to 4 GiB memory and 2 vCPUs for builds.</para></li><li><para><c>BUILD_GENERAL1_MEDIUM</c>: Use up to 8 GiB memory and 4 vCPUs for builds.</para></li><li><para><c>BUILD_GENERAL1_LARGE</c>: Use up to 16 GiB memory and 8 vCPUs for builds, depending
+        /// on your environment type.</para></li><li><para><c>BUILD_GENERAL1_XLARGE</c>: Use up to 72 GiB memory and 36 vCPUs for builds, depending
+        /// on your environment type.</para></li><li><para><c>BUILD_GENERAL1_2XLARGE</c>: Use up to 144 GiB memory, 72 vCPUs, and 824 GB of
+        /// SSD storage for builds. This compute type supports Docker images up to 100 GB uncompressed.</para></li><li><para><c>BUILD_LAMBDA_1GB</c>: Use up to 1 GiB memory for builds. Only available for environment
+        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_2GB</c>: Use up to 2 GiB memory for builds. Only available for environment
+        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_4GB</c>: Use up to 4 GiB memory for builds. Only available for environment
+        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_8GB</c>: Use up to 8 GiB memory for builds. Only available for environment
+        /// type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li><li><para><c>BUILD_LAMBDA_10GB</c>: Use up to 10 GiB memory for builds. Only available for
+        /// environment type <c>LINUX_LAMBDA_CONTAINER</c> and <c>ARM_LAMBDA_CONTAINER</c>.</para></li></ul><para> If you use <c>BUILD_GENERAL1_SMALL</c>: </para><ul><li><para> For environment type <c>LINUX_CONTAINER</c>, you can use up to 4 GiB memory and 2
+        /// vCPUs for builds. </para></li><li><para> For environment type <c>LINUX_GPU_CONTAINER</c>, you can use up to 16 GiB memory,
+        /// 4 vCPUs, and 1 NVIDIA A10G Tensor Core GPU for builds.</para></li><li><para> For environment type <c>ARM_CONTAINER</c>, you can use up to 4 GiB memory and 2 vCPUs
+        /// on ARM-based processors for builds.</para></li></ul><para> If you use <c>BUILD_GENERAL1_LARGE</c>: </para><ul><li><para> For environment type <c>LINUX_CONTAINER</c>, you can use up to 16 GiB memory and
+        /// 8 vCPUs for builds. </para></li><li><para> For environment type <c>LINUX_GPU_CONTAINER</c>, you can use up to 255 GiB memory,
+        /// 32 vCPUs, and 4 NVIDIA Tesla V100 GPUs for builds.</para></li><li><para> For environment type <c>ARM_CONTAINER</c>, you can use up to 16 GiB memory and 8
+        /// vCPUs on ARM-based processors for builds.</para></li></ul><para>For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html#environment.types">On-demand
+        /// environment types</a> in the <i>CodeBuild User Guide.</i></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.CodeBuild.ComputeType")]
         public Amazon.CodeBuild.ComputeType Environment_ComputeType { get; set; }
+        #endregion
+        
+        #region Parameter DockerServer_ComputeType
+        /// <summary>
+        /// <para>
+        /// <para>Information about the compute resources the docker server uses. Available values include:</para><ul><li><para><c>BUILD_GENERAL1_SMALL</c>: Use up to 4 GiB memory and 2 vCPUs for your docker server.</para></li><li><para><c>BUILD_GENERAL1_MEDIUM</c>: Use up to 8 GiB memory and 4 vCPUs for your docker
+        /// server.</para></li><li><para><c>BUILD_GENERAL1_LARGE</c>: Use up to 16 GiB memory and 8 vCPUs for your docker
+        /// server.</para></li><li><para><c>BUILD_GENERAL1_XLARGE</c>: Use up to 64 GiB memory and 32 vCPUs for your docker
+        /// server.</para></li><li><para><c>BUILD_GENERAL1_2XLARGE</c>: Use up to 128 GiB memory and 64 vCPUs for your docker
+        /// server.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_DockerServer_ComputeType")]
+        [AWSConstantClassSource("Amazon.CodeBuild.ComputeType")]
+        public Amazon.CodeBuild.ComputeType DockerServer_ComputeType { get; set; }
         #endregion
         
         #region Parameter Restrictions_ComputeTypesAllowed
@@ -173,7 +219,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <para>An array of strings that specify the compute types that are allowed for the batch
         /// build. See <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html">Build
         /// environment compute types</a> in the <i>CodeBuild User Guide</i> for these values.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -245,6 +295,17 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter ComputeConfiguration_Disk
+        /// <summary>
+        /// <para>
+        /// <para>The amount of disk space of the instance type included in your fleet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_ComputeConfiguration_Disk")]
+        public System.Int64? ComputeConfiguration_Disk { get; set; }
+        #endregion
+        
         #region Parameter Artifacts_EncryptionDisabled
         /// <summary>
         /// <para>
@@ -285,7 +346,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter Environment_EnvironmentVariable
         /// <summary>
         /// <para>
-        /// <para>A set of environment variables to make available to builds for this build project.</para>
+        /// <para>A set of environment variables to make available to builds for this build project.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -310,7 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <para> An array of <c>ProjectFileSystemLocation</c> objects for a CodeBuild build project.
         /// A <c>ProjectFileSystemLocation</c> object specifies the <c>identifier</c>, <c>location</c>,
         /// <c>mountOptions</c>, <c>mountPoint</c>, and <c>type</c> of a file system created using
-        /// Amazon Elastic File System. </para>
+        /// Amazon Elastic File System. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -327,6 +396,24 @@ namespace Amazon.PowerShell.Cmdlets.CB
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Environment_Fleet_FleetArn")]
         public System.String Fleet_FleetArn { get; set; }
+        #endregion
+        
+        #region Parameter Restrictions_FleetsAllowed
+        /// <summary>
+        /// <para>
+        /// <para>An array of strings that specify the fleets that are allowed for the batch build.
+        /// See <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/fleets.html">Run
+        /// builds on reserved capacity fleets</a> in the <i>CodeBuild User Guide</i> for more
+        /// information. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("BuildBatchConfig_Restrictions_FleetsAllowed")]
+        public System.String[] Restrictions_FleetsAllowed { get; set; }
         #endregion
         
         #region Parameter Source_GitCloneDepth
@@ -393,6 +480,17 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public System.Boolean? Source_InsecureSsl { get; set; }
         #endregion
         
+        #region Parameter ComputeConfiguration_InstanceType
+        /// <summary>
+        /// <para>
+        /// <para>The EC2 instance type to be launched in your fleet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_ComputeConfiguration_InstanceType")]
+        public System.String ComputeConfiguration_InstanceType { get; set; }
+        #endregion
+        
         #region Parameter Artifacts_Location
         /// <summary>
         /// <para>
@@ -447,7 +545,17 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// and then choose <b>Authorize application</b>. (After you have connected to your GitHub
         /// account, you do not need to finish creating the build project. You can leave the CodeBuild
         /// console.) To instruct CodeBuild to use this connection, in the <c>source</c> object,
-        /// set the <c>auth</c> object's <c>type</c> value to <c>OAUTH</c>.</para></li><li><para>For source code in a Bitbucket repository, the HTTPS clone URL to the repository that
+        /// set the <c>auth</c> object's <c>type</c> value to <c>OAUTH</c>.</para></li><li><para>For source code in an GitLab or self-managed GitLab repository, the HTTPS clone URL
+        /// to the repository that contains the source and the buildspec file. You must connect
+        /// your Amazon Web Services account to your GitLab account. Use the CodeBuild console
+        /// to start creating a build project. When you use the console to connect (or reconnect)
+        /// with GitLab, on the Connections <b>Authorize application</b> page, choose <b>Authorize</b>.
+        /// Then on the CodeConnections <b>Create GitLab connection</b> page, choose <b>Connect
+        /// to GitLab</b>. (After you have connected to your GitLab account, you do not need to
+        /// finish creating the build project. You can leave the CodeBuild console.) To instruct
+        /// CodeBuild to override the default connection and use this connection instead, set
+        /// the <c>auth</c> object's <c>type</c> value to <c>CODECONNECTIONS</c> in the <c>source</c>
+        /// object.</para></li><li><para>For source code in a Bitbucket repository, the HTTPS clone URL to the repository that
         /// contains the source and the buildspec file. You must connect your Amazon Web Services
         /// account to your Bitbucket account. Use the CodeBuild console to start creating a build
         /// project. When you use the console to connect (or reconnect) with Bitbucket, on the
@@ -463,6 +571,18 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public System.String Source_Location { get; set; }
         #endregion
         
+        #region Parameter ComputeConfiguration_MachineType
+        /// <summary>
+        /// <para>
+        /// <para>The machine type of the instance type included in your fleet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_ComputeConfiguration_MachineType")]
+        [AWSConstantClassSource("Amazon.CodeBuild.MachineType")]
+        public Amazon.CodeBuild.MachineType ComputeConfiguration_MachineType { get; set; }
+        #endregion
+        
         #region Parameter Restrictions_MaximumBuildsAllowed
         /// <summary>
         /// <para>
@@ -472,6 +592,28 @@ namespace Amazon.PowerShell.Cmdlets.CB
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("BuildBatchConfig_Restrictions_MaximumBuildsAllowed")]
         public System.Int32? Restrictions_MaximumBuildsAllowed { get; set; }
+        #endregion
+        
+        #region Parameter ComputeConfiguration_Memory
+        /// <summary>
+        /// <para>
+        /// <para>The amount of memory of the instance type included in your fleet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_ComputeConfiguration_Memory")]
+        public System.Int64? ComputeConfiguration_Memory { get; set; }
+        #endregion
+        
+        #region Parameter Status_Message
+        /// <summary>
+        /// <para>
+        /// <para>A message associated with the status of a docker server.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_DockerServer_Status_Message")]
+        public System.String Status_Message { get; set; }
         #endregion
         
         #region Parameter Cache_Mode
@@ -491,7 +633,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// you use a custom cache: </para><ul><li><para>Only directories can be specified for caching. You cannot specify individual files.
         /// </para></li><li><para>Symlinks are used to reference cached directories. </para></li><li><para>Cached directories are linked to your build before it downloads its project sources.
         /// Cached items are overridden if a source item has the same name. Directories are specified
-        /// using cache paths in the buildspec file. </para></li></ul></dd></dl>
+        /// using cache paths in the buildspec file. </para></li></ul></dd></dl><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -630,8 +776,9 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <para>
         /// <para> Set to true to report the status of a build's start and finish to your source provider.
         /// This option is valid only when your source provider is GitHub, GitHub Enterprise,
-        /// or Bitbucket. If this is set and you use a different source provider, an <c>invalidInputException</c>
-        /// is thrown. </para><para>To be able to report the build status to the source provider, the user associated
+        /// GitLab, GitLab Self Managed, GitLab, GitLab Self Managed, or Bitbucket. If this is
+        /// set and you use a different source provider, an <c>invalidInputException</c> is thrown.
+        /// </para><para>To be able to report the build status to the source provider, the user associated
         /// with the source provider must have write access to the repo. If the user does not
         /// have write access, the build status cannot be updated. For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/access-tokens.html">Source
         /// provider access</a> in the <i>CodeBuild User Guide</i>.</para><para>The status of a build triggered by a webhook is always reported to your source provider.
@@ -657,7 +804,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter SecondaryArtifact
         /// <summary>
         /// <para>
-        /// <para> An array of <c>ProjectArtifact</c> objects. </para>
+        /// <para> An array of <c>ProjectArtifact</c> objects. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -668,7 +819,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter SecondarySource
         /// <summary>
         /// <para>
-        /// <para> An array of <c>ProjectSource</c> objects. </para>
+        /// <para> An array of <c>ProjectSource</c> objects. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -681,7 +836,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <para>
         /// <para> An array of <c>ProjectSourceVersion</c> objects. If <c>secondarySourceVersions</c>
         /// is specified at the build level, then they take over these <c>secondarySourceVersions</c>
-        /// (at the project level). </para>
+        /// (at the project level). </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -689,10 +848,30 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public Amazon.CodeBuild.Model.ProjectSourceVersion[] SecondarySourceVersion { get; set; }
         #endregion
         
+        #region Parameter DockerServer_SecurityGroupId
+        /// <summary>
+        /// <para>
+        /// <para>A list of one or more security groups IDs.</para><note><para>Security groups configured for Docker servers should allow ingress network traffic
+        /// from the VPC configured in the project. They should allow ingress on port 9876.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_DockerServer_SecurityGroupIds")]
+        public System.String[] DockerServer_SecurityGroupId { get; set; }
+        #endregion
+        
         #region Parameter VpcConfig_SecurityGroupId
         /// <summary>
         /// <para>
-        /// <para>A list of one or more security groups IDs in your Amazon VPC.</para>
+        /// <para>A list of one or more security groups IDs in your Amazon VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -740,7 +919,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// to the version of the source code you want to build. If a pull request ID is specified,
         /// it must use the format <c>pr/pull-request-ID</c> (for example <c>pr/25</c>). If a
         /// branch name is specified, the branch's HEAD commit ID is used. If not specified, the
-        /// default branch's HEAD commit ID is used.</para></li><li><para>For Bitbucket: the commit ID, branch name, or tag name that corresponds to the version
+        /// default branch's HEAD commit ID is used.</para></li><li><para>For GitLab: the commit ID, branch, or Git tag to use.</para></li><li><para>For Bitbucket: the commit ID, branch name, or tag name that corresponds to the version
         /// of the source code you want to build. If a branch name is specified, the branch's
         /// HEAD commit ID is used. If not specified, the default branch's HEAD commit ID is used.</para></li><li><para>For Amazon S3: the version ID of the object that represents the build input ZIP file
         /// to use.</para></li></ul><para> If <c>sourceVersion</c> is specified at the build level, then that version takes
@@ -750,6 +929,17 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SourceVersion { get; set; }
+        #endregion
+        
+        #region Parameter Status_Status
+        /// <summary>
+        /// <para>
+        /// <para>The status of the docker server.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_DockerServer_Status_Status")]
+        public System.String Status_Status { get; set; }
         #endregion
         
         #region Parameter CloudWatchLogs_Status
@@ -792,7 +982,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter VpcConfig_Subnet
         /// <summary>
         /// <para>
-        /// <para>A list of one or more subnet IDs in your Amazon VPC.</para>
+        /// <para>A list of one or more subnet IDs in your Amazon VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -804,7 +998,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <summary>
         /// <para>
         /// <para>An updated list of tag key and value pairs associated with this build project.</para><para>These tags are available for use by Amazon Web Services services that support CodeBuild
-        /// build project tags.</para>
+        /// build project tags.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -843,8 +1041,8 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter TimeoutInMinute
         /// <summary>
         /// <para>
-        /// <para>The replacement value in minutes, from 5 to 480 (8 hours), for CodeBuild to wait before
-        /// timing out any related build that did not get marked as completed.</para>
+        /// <para>The replacement value in minutes, from 5 to 2160 (36 hours), for CodeBuild to wait
+        /// before timing out any related build that did not get marked as completed.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -879,20 +1077,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter Environment_Type
         /// <summary>
         /// <para>
-        /// <para>The type of build environment to use for related builds.</para><ul><li><para>The environment type <c>ARM_CONTAINER</c> is available only in regions US East (N.
-        /// Virginia), US East (Ohio), US West (Oregon), EU (Ireland), Asia Pacific (Mumbai),
-        /// Asia Pacific (Tokyo), Asia Pacific (Sydney), and EU (Frankfurt).</para></li><li><para>The environment type <c>LINUX_CONTAINER</c> is available only in regions US East (N.
-        /// Virginia), US East (Ohio), US West (Oregon), Canada (Central), EU (Ireland), EU (London),
-        /// EU (Frankfurt), Asia Pacific (Tokyo), Asia Pacific (Seoul), Asia Pacific (Singapore),
-        /// Asia Pacific (Sydney), China (Beijing), and China (Ningxia).</para></li><li><para>The environment type <c>LINUX_GPU_CONTAINER</c> is available only in regions US East
-        /// (N. Virginia), US East (Ohio), US West (Oregon), Canada (Central), EU (Ireland), EU
-        /// (London), EU (Frankfurt), Asia Pacific (Tokyo), Asia Pacific (Seoul), Asia Pacific
-        /// (Singapore), Asia Pacific (Sydney) , China (Beijing), and China (Ningxia).</para></li></ul><ul><li><para>The environment types <c>ARM_LAMBDA_CONTAINER</c> and <c>LINUX_LAMBDA_CONTAINER</c>
-        /// are available only in regions US East (N. Virginia), US East (Ohio), US West (Oregon),
-        /// Asia Pacific (Mumbai), Asia Pacific (Singapore), Asia Pacific (Sydney), Asia Pacific
-        /// (Tokyo), EU (Frankfurt), EU (Ireland), and South America (São Paulo).</para></li></ul><ul><li><para>The environment types <c>WINDOWS_CONTAINER</c> and <c>WINDOWS_SERVER_2019_CONTAINER</c>
-        /// are available only in regions US East (N. Virginia), US East (Ohio), US West (Oregon),
-        /// and EU (Ireland).</para></li></ul><note><para>If you're using compute fleets during project creation, <c>type</c> will be ignored.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html">Build
+        /// <para>The type of build environment to use for related builds.</para><note><para>If you're using compute fleets during project creation, <c>type</c> will be ignored.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-compute-types.html">Build
         /// environment compute types</a> in the <i>CodeBuild user guide</i>.</para>
         /// </para>
         /// </summary>
@@ -904,8 +1089,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
         #region Parameter Auth_Type
         /// <summary>
         /// <para>
-        /// <note><para> This data type is deprecated and is no longer accurate or used. </para></note><para>The authorization type to use. The only valid value is <c>OAUTH</c>, which represents
-        /// the OAuth authorization type.</para>
+        /// <para>The authorization type to use. Valid options are OAUTH, CODECONNECTIONS, or SECRETS_MANAGER.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -918,12 +1102,23 @@ namespace Amazon.PowerShell.Cmdlets.CB
         /// <summary>
         /// <para>
         /// <para>The type of repository that contains the source code to be built. Valid values include:</para><ul><li><para><c>BITBUCKET</c>: The source code is in a Bitbucket repository.</para></li><li><para><c>CODECOMMIT</c>: The source code is in an CodeCommit repository.</para></li><li><para><c>CODEPIPELINE</c>: The source code settings are specified in the source action
-        /// of a pipeline in CodePipeline.</para></li><li><para><c>GITHUB</c>: The source code is in a GitHub or GitHub Enterprise Cloud repository.</para></li><li><para><c>GITHUB_ENTERPRISE</c>: The source code is in a GitHub Enterprise Server repository.</para></li><li><para><c>NO_SOURCE</c>: The project does not have input source code.</para></li><li><para><c>S3</c>: The source code is in an Amazon S3 bucket.</para></li></ul>
+        /// of a pipeline in CodePipeline.</para></li><li><para><c>GITHUB</c>: The source code is in a GitHub repository.</para></li><li><para><c>GITHUB_ENTERPRISE</c>: The source code is in a GitHub Enterprise Server repository.</para></li><li><para><c>GITLAB</c>: The source code is in a GitLab repository.</para></li><li><para><c>GITLAB_SELF_MANAGED</c>: The source code is in a self-managed GitLab repository.</para></li><li><para><c>NO_SOURCE</c>: The project does not have input source code.</para></li><li><para><c>S3</c>: The source code is in an Amazon S3 bucket.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.CodeBuild.SourceType")]
         public Amazon.CodeBuild.SourceType Source_Type { get; set; }
+        #endregion
+        
+        #region Parameter ComputeConfiguration_VCpu
+        /// <summary>
+        /// <para>
+        /// <para>The number of vCPUs of the instance type included in your fleet.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Environment_ComputeConfiguration_VCpu")]
+        public System.Int64? ComputeConfiguration_VCpu { get; set; }
         #endregion
         
         #region Parameter VpcConfig_VpcId
@@ -947,16 +1142,6 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public string Select { get; set; } = "Project";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -967,9 +1152,13 @@ namespace Amazon.PowerShell.Cmdlets.CB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -983,21 +1172,11 @@ namespace Amazon.PowerShell.Cmdlets.CB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CodeBuild.Model.UpdateProjectResponse, UpdateCBProjectCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Artifacts_ArtifactIdentifier = this.Artifacts_ArtifactIdentifier;
             context.Artifacts_BucketOwnerAccess = this.Artifacts_BucketOwnerAccess;
             context.Artifacts_EncryptionDisabled = this.Artifacts_EncryptionDisabled;
@@ -1008,6 +1187,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
             context.Artifacts_Packaging = this.Artifacts_Packaging;
             context.Artifacts_Path = this.Artifacts_Path;
             context.Artifacts_Type = this.Artifacts_Type;
+            context.AutoRetryLimit = this.AutoRetryLimit;
             context.BadgeEnabled = this.BadgeEnabled;
             context.BuildBatchConfig_BatchReportMode = this.BuildBatchConfig_BatchReportMode;
             context.BuildBatchConfig_CombineArtifact = this.BuildBatchConfig_CombineArtifact;
@@ -1015,9 +1195,14 @@ namespace Amazon.PowerShell.Cmdlets.CB
             {
                 context.Restrictions_ComputeTypesAllowed = new List<System.String>(this.Restrictions_ComputeTypesAllowed);
             }
+            if (this.Restrictions_FleetsAllowed != null)
+            {
+                context.Restrictions_FleetsAllowed = new List<System.String>(this.Restrictions_FleetsAllowed);
+            }
             context.Restrictions_MaximumBuildsAllowed = this.Restrictions_MaximumBuildsAllowed;
             context.BuildBatchConfig_ServiceRole = this.BuildBatchConfig_ServiceRole;
             context.BuildBatchConfig_TimeoutInMin = this.BuildBatchConfig_TimeoutInMin;
+            context.Cache_CacheNamespace = this.Cache_CacheNamespace;
             context.Cache_Location = this.Cache_Location;
             if (this.Cache_Mode != null)
             {
@@ -1028,7 +1213,19 @@ namespace Amazon.PowerShell.Cmdlets.CB
             context.Description = this.Description;
             context.EncryptionKey = this.EncryptionKey;
             context.Environment_Certificate = this.Environment_Certificate;
+            context.ComputeConfiguration_Disk = this.ComputeConfiguration_Disk;
+            context.ComputeConfiguration_InstanceType = this.ComputeConfiguration_InstanceType;
+            context.ComputeConfiguration_MachineType = this.ComputeConfiguration_MachineType;
+            context.ComputeConfiguration_Memory = this.ComputeConfiguration_Memory;
+            context.ComputeConfiguration_VCpu = this.ComputeConfiguration_VCpu;
             context.Environment_ComputeType = this.Environment_ComputeType;
+            context.DockerServer_ComputeType = this.DockerServer_ComputeType;
+            if (this.DockerServer_SecurityGroupId != null)
+            {
+                context.DockerServer_SecurityGroupId = new List<System.String>(this.DockerServer_SecurityGroupId);
+            }
+            context.Status_Message = this.Status_Message;
+            context.Status_Status = this.Status_Status;
             if (this.Environment_EnvironmentVariable != null)
             {
                 context.Environment_EnvironmentVariable = new List<Amazon.CodeBuild.Model.EnvironmentVariable>(this.Environment_EnvironmentVariable);
@@ -1224,6 +1421,10 @@ namespace Amazon.PowerShell.Cmdlets.CB
             {
                 request.Artifacts = null;
             }
+            if (cmdletContext.AutoRetryLimit != null)
+            {
+                request.AutoRetryLimit = cmdletContext.AutoRetryLimit.Value;
+            }
             if (cmdletContext.BadgeEnabled != null)
             {
                 request.BadgeEnabled = cmdletContext.BadgeEnabled.Value;
@@ -1287,6 +1488,16 @@ namespace Amazon.PowerShell.Cmdlets.CB
                 requestBuildBatchConfig_buildBatchConfig_Restrictions.ComputeTypesAllowed = requestBuildBatchConfig_buildBatchConfig_Restrictions_restrictions_ComputeTypesAllowed;
                 requestBuildBatchConfig_buildBatchConfig_RestrictionsIsNull = false;
             }
+            List<System.String> requestBuildBatchConfig_buildBatchConfig_Restrictions_restrictions_FleetsAllowed = null;
+            if (cmdletContext.Restrictions_FleetsAllowed != null)
+            {
+                requestBuildBatchConfig_buildBatchConfig_Restrictions_restrictions_FleetsAllowed = cmdletContext.Restrictions_FleetsAllowed;
+            }
+            if (requestBuildBatchConfig_buildBatchConfig_Restrictions_restrictions_FleetsAllowed != null)
+            {
+                requestBuildBatchConfig_buildBatchConfig_Restrictions.FleetsAllowed = requestBuildBatchConfig_buildBatchConfig_Restrictions_restrictions_FleetsAllowed;
+                requestBuildBatchConfig_buildBatchConfig_RestrictionsIsNull = false;
+            }
             System.Int32? requestBuildBatchConfig_buildBatchConfig_Restrictions_restrictions_MaximumBuildsAllowed = null;
             if (cmdletContext.Restrictions_MaximumBuildsAllowed != null)
             {
@@ -1316,6 +1527,16 @@ namespace Amazon.PowerShell.Cmdlets.CB
              // populate Cache
             var requestCacheIsNull = true;
             request.Cache = new Amazon.CodeBuild.Model.ProjectCache();
+            System.String requestCache_cache_CacheNamespace = null;
+            if (cmdletContext.Cache_CacheNamespace != null)
+            {
+                requestCache_cache_CacheNamespace = cmdletContext.Cache_CacheNamespace;
+            }
+            if (requestCache_cache_CacheNamespace != null)
+            {
+                request.Cache.CacheNamespace = requestCache_cache_CacheNamespace;
+                requestCacheIsNull = false;
+            }
             System.String requestCache_cache_Location = null;
             if (cmdletContext.Cache_Location != null)
             {
@@ -1495,6 +1716,141 @@ namespace Amazon.PowerShell.Cmdlets.CB
             if (requestEnvironment_environment_RegistryCredential != null)
             {
                 request.Environment.RegistryCredential = requestEnvironment_environment_RegistryCredential;
+                requestEnvironmentIsNull = false;
+            }
+            Amazon.CodeBuild.Model.DockerServer requestEnvironment_environment_DockerServer = null;
+            
+             // populate DockerServer
+            var requestEnvironment_environment_DockerServerIsNull = true;
+            requestEnvironment_environment_DockerServer = new Amazon.CodeBuild.Model.DockerServer();
+            Amazon.CodeBuild.ComputeType requestEnvironment_environment_DockerServer_dockerServer_ComputeType = null;
+            if (cmdletContext.DockerServer_ComputeType != null)
+            {
+                requestEnvironment_environment_DockerServer_dockerServer_ComputeType = cmdletContext.DockerServer_ComputeType;
+            }
+            if (requestEnvironment_environment_DockerServer_dockerServer_ComputeType != null)
+            {
+                requestEnvironment_environment_DockerServer.ComputeType = requestEnvironment_environment_DockerServer_dockerServer_ComputeType;
+                requestEnvironment_environment_DockerServerIsNull = false;
+            }
+            List<System.String> requestEnvironment_environment_DockerServer_dockerServer_SecurityGroupId = null;
+            if (cmdletContext.DockerServer_SecurityGroupId != null)
+            {
+                requestEnvironment_environment_DockerServer_dockerServer_SecurityGroupId = cmdletContext.DockerServer_SecurityGroupId;
+            }
+            if (requestEnvironment_environment_DockerServer_dockerServer_SecurityGroupId != null)
+            {
+                requestEnvironment_environment_DockerServer.SecurityGroupIds = requestEnvironment_environment_DockerServer_dockerServer_SecurityGroupId;
+                requestEnvironment_environment_DockerServerIsNull = false;
+            }
+            Amazon.CodeBuild.Model.DockerServerStatus requestEnvironment_environment_DockerServer_environment_DockerServer_Status = null;
+            
+             // populate Status
+            var requestEnvironment_environment_DockerServer_environment_DockerServer_StatusIsNull = true;
+            requestEnvironment_environment_DockerServer_environment_DockerServer_Status = new Amazon.CodeBuild.Model.DockerServerStatus();
+            System.String requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Message = null;
+            if (cmdletContext.Status_Message != null)
+            {
+                requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Message = cmdletContext.Status_Message;
+            }
+            if (requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Message != null)
+            {
+                requestEnvironment_environment_DockerServer_environment_DockerServer_Status.Message = requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Message;
+                requestEnvironment_environment_DockerServer_environment_DockerServer_StatusIsNull = false;
+            }
+            System.String requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Status = null;
+            if (cmdletContext.Status_Status != null)
+            {
+                requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Status = cmdletContext.Status_Status;
+            }
+            if (requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Status != null)
+            {
+                requestEnvironment_environment_DockerServer_environment_DockerServer_Status.Status = requestEnvironment_environment_DockerServer_environment_DockerServer_Status_status_Status;
+                requestEnvironment_environment_DockerServer_environment_DockerServer_StatusIsNull = false;
+            }
+             // determine if requestEnvironment_environment_DockerServer_environment_DockerServer_Status should be set to null
+            if (requestEnvironment_environment_DockerServer_environment_DockerServer_StatusIsNull)
+            {
+                requestEnvironment_environment_DockerServer_environment_DockerServer_Status = null;
+            }
+            if (requestEnvironment_environment_DockerServer_environment_DockerServer_Status != null)
+            {
+                requestEnvironment_environment_DockerServer.Status = requestEnvironment_environment_DockerServer_environment_DockerServer_Status;
+                requestEnvironment_environment_DockerServerIsNull = false;
+            }
+             // determine if requestEnvironment_environment_DockerServer should be set to null
+            if (requestEnvironment_environment_DockerServerIsNull)
+            {
+                requestEnvironment_environment_DockerServer = null;
+            }
+            if (requestEnvironment_environment_DockerServer != null)
+            {
+                request.Environment.DockerServer = requestEnvironment_environment_DockerServer;
+                requestEnvironmentIsNull = false;
+            }
+            Amazon.CodeBuild.Model.ComputeConfiguration requestEnvironment_environment_ComputeConfiguration = null;
+            
+             // populate ComputeConfiguration
+            var requestEnvironment_environment_ComputeConfigurationIsNull = true;
+            requestEnvironment_environment_ComputeConfiguration = new Amazon.CodeBuild.Model.ComputeConfiguration();
+            System.Int64? requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Disk = null;
+            if (cmdletContext.ComputeConfiguration_Disk != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Disk = cmdletContext.ComputeConfiguration_Disk.Value;
+            }
+            if (requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Disk != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration.Disk = requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Disk.Value;
+                requestEnvironment_environment_ComputeConfigurationIsNull = false;
+            }
+            System.String requestEnvironment_environment_ComputeConfiguration_computeConfiguration_InstanceType = null;
+            if (cmdletContext.ComputeConfiguration_InstanceType != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration_computeConfiguration_InstanceType = cmdletContext.ComputeConfiguration_InstanceType;
+            }
+            if (requestEnvironment_environment_ComputeConfiguration_computeConfiguration_InstanceType != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration.InstanceType = requestEnvironment_environment_ComputeConfiguration_computeConfiguration_InstanceType;
+                requestEnvironment_environment_ComputeConfigurationIsNull = false;
+            }
+            Amazon.CodeBuild.MachineType requestEnvironment_environment_ComputeConfiguration_computeConfiguration_MachineType = null;
+            if (cmdletContext.ComputeConfiguration_MachineType != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration_computeConfiguration_MachineType = cmdletContext.ComputeConfiguration_MachineType;
+            }
+            if (requestEnvironment_environment_ComputeConfiguration_computeConfiguration_MachineType != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration.MachineType = requestEnvironment_environment_ComputeConfiguration_computeConfiguration_MachineType;
+                requestEnvironment_environment_ComputeConfigurationIsNull = false;
+            }
+            System.Int64? requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Memory = null;
+            if (cmdletContext.ComputeConfiguration_Memory != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Memory = cmdletContext.ComputeConfiguration_Memory.Value;
+            }
+            if (requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Memory != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration.Memory = requestEnvironment_environment_ComputeConfiguration_computeConfiguration_Memory.Value;
+                requestEnvironment_environment_ComputeConfigurationIsNull = false;
+            }
+            System.Int64? requestEnvironment_environment_ComputeConfiguration_computeConfiguration_VCpu = null;
+            if (cmdletContext.ComputeConfiguration_VCpu != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration_computeConfiguration_VCpu = cmdletContext.ComputeConfiguration_VCpu.Value;
+            }
+            if (requestEnvironment_environment_ComputeConfiguration_computeConfiguration_VCpu != null)
+            {
+                requestEnvironment_environment_ComputeConfiguration.VCpu = requestEnvironment_environment_ComputeConfiguration_computeConfiguration_VCpu.Value;
+                requestEnvironment_environment_ComputeConfigurationIsNull = false;
+            }
+             // determine if requestEnvironment_environment_ComputeConfiguration should be set to null
+            if (requestEnvironment_environment_ComputeConfigurationIsNull)
+            {
+                requestEnvironment_environment_ComputeConfiguration = null;
+            }
+            if (requestEnvironment_environment_ComputeConfiguration != null)
+            {
+                request.Environment.ComputeConfiguration = requestEnvironment_environment_ComputeConfiguration;
                 requestEnvironmentIsNull = false;
             }
              // determine if request.Environment should be set to null
@@ -1902,13 +2258,7 @@ namespace Amazon.PowerShell.Cmdlets.CB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CodeBuild", "UpdateProject");
             try
             {
-                #if DESKTOP
-                return client.UpdateProject(request);
-                #elif CORECLR
-                return client.UpdateProjectAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateProjectAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1935,13 +2285,16 @@ namespace Amazon.PowerShell.Cmdlets.CB
             public Amazon.CodeBuild.ArtifactPackaging Artifacts_Packaging { get; set; }
             public System.String Artifacts_Path { get; set; }
             public Amazon.CodeBuild.ArtifactsType Artifacts_Type { get; set; }
+            public System.Int32? AutoRetryLimit { get; set; }
             public System.Boolean? BadgeEnabled { get; set; }
             public Amazon.CodeBuild.BatchReportModeType BuildBatchConfig_BatchReportMode { get; set; }
             public System.Boolean? BuildBatchConfig_CombineArtifact { get; set; }
             public List<System.String> Restrictions_ComputeTypesAllowed { get; set; }
+            public List<System.String> Restrictions_FleetsAllowed { get; set; }
             public System.Int32? Restrictions_MaximumBuildsAllowed { get; set; }
             public System.String BuildBatchConfig_ServiceRole { get; set; }
             public System.Int32? BuildBatchConfig_TimeoutInMin { get; set; }
+            public System.String Cache_CacheNamespace { get; set; }
             public System.String Cache_Location { get; set; }
             public List<System.String> Cache_Mode { get; set; }
             public Amazon.CodeBuild.CacheType Cache_Type { get; set; }
@@ -1949,7 +2302,16 @@ namespace Amazon.PowerShell.Cmdlets.CB
             public System.String Description { get; set; }
             public System.String EncryptionKey { get; set; }
             public System.String Environment_Certificate { get; set; }
+            public System.Int64? ComputeConfiguration_Disk { get; set; }
+            public System.String ComputeConfiguration_InstanceType { get; set; }
+            public Amazon.CodeBuild.MachineType ComputeConfiguration_MachineType { get; set; }
+            public System.Int64? ComputeConfiguration_Memory { get; set; }
+            public System.Int64? ComputeConfiguration_VCpu { get; set; }
             public Amazon.CodeBuild.ComputeType Environment_ComputeType { get; set; }
+            public Amazon.CodeBuild.ComputeType DockerServer_ComputeType { get; set; }
+            public List<System.String> DockerServer_SecurityGroupId { get; set; }
+            public System.String Status_Message { get; set; }
+            public System.String Status_Status { get; set; }
             public List<Amazon.CodeBuild.Model.EnvironmentVariable> Environment_EnvironmentVariable { get; set; }
             public System.String Fleet_FleetArn { get; set; }
             public System.String Environment_Image { get; set; }

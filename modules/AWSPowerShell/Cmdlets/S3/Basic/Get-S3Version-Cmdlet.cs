@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,26 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3;
 using Amazon.S3.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3
 {
     /// <summary>
-    /// <note><para>
-    /// This operation is not supported by directory buckets.
+    /// <important><para>
+    /// End of support notice: Beginning October 1, 2025, Amazon S3 will stop returning <c>DisplayName</c>.
+    /// Update your applications to use canonical IDs (unique identifier for Amazon Web Services
+    /// accounts), Amazon Web Services account ID (12 digit identifier) or IAM ARNs (full
+    /// resource naming) as a direct replacement of <c>DisplayName</c>. 
+    /// </para><para>
+    /// This change affects the following Amazon Web Services Regions: US East (N. Virginia)
+    /// Region, US West (N. California) Region, US West (Oregon) Region, Asia Pacific (Singapore)
+    /// Region, Asia Pacific (Sydney) Region, Asia Pacific (Tokyo) Region, Europe (Ireland)
+    /// Region, and South America (São Paulo) Region.
+    /// </para></important><note><para>
+    /// This operation is not supported for directory buckets.
     /// </para></note><para>
     /// Returns metadata about all versions of the objects in a bucket. You can also use request
     /// parameters as selection criteria to return metadata about a subset of all the object
@@ -50,12 +62,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
     [OutputType("Amazon.S3.Model.ListVersionsResponse")]
     [AWSCmdlet("Calls the Amazon Simple Storage Service (S3) ListVersions API operation.", Operation = new[] {"ListVersions"}, SelectReturnType = typeof(Amazon.S3.Model.ListVersionsResponse))]
     [AWSCmdletOutput("Amazon.S3.Model.ListVersionsResponse",
-        "This cmdlet returns an Amazon.S3.Model.ListVersionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.S3.Model.ListVersionsResponse object containing multiple properties."
     )]
     public partial class GetS3VersionCmdlet : AmazonS3ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
@@ -63,19 +76,21 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>The bucket name that contains the objects. </para>
         /// </para>
         /// </summary>
+        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        #else
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
+        [System.Management.Automation.AllowEmptyString]
+        [System.Management.Automation.AllowNull]
+        #endif
+        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String BucketName { get; set; }
         #endregion
         
         #region Parameter Encoding
         /// <summary>
         /// <para>
-        /// Requests Amazon S3 to encode the object keys in the response and specifies
-        /// the encoding method to use. An object key may contain any Unicode character;
-        /// however, XML 1.0 parser cannot parse some characters, such as characters
-        /// with an ASCII value from 0 to 10. For characters that are not supported in
-        /// XML 1.0, you can add this parameter to request that Amazon S3 encode the
-        /// keys in the response.
+        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -88,7 +103,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>
         /// <para>The account ID of the expected bucket owner. If the account ID that you provide does
         /// not match the actual owner of the bucket, the request fails with the HTTP status code
-        /// <code>403 Forbidden</code> (access denied).</para>
+        /// <c>403 Forbidden</c> (access denied).</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -98,7 +113,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter KeyMarker
         /// <summary>
         /// <para>
-        /// Specifies the key to start with when listing objects in a bucket.
+        /// <para>Specifies the key to start with when listing objects in a bucket.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,7 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>Specifies the optional fields that you want returned in the response. Fields that
-        /// you do not specify are not returned.</para>
+        /// you do not specify are not returned.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -131,7 +150,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
         #region Parameter VersionIdMarker
         /// <summary>
         /// <para>
-        /// Specifies the object version you want to start listing from.
+        /// <para>Specifies the object version you want to start listing from.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -142,10 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <summary>
         /// <para>
         /// <para>A delimiter is a character that you specify to group keys. All keys that contain the
-        /// same string between the <code>prefix</code> and the first occurrence of the delimiter
-        /// are grouped under a single result element in <code>CommonPrefixes</code>. These groups
-        /// are counted as one result against the <code>max-keys</code> limitation. These keys
-        /// are not returned elsewhere in the response.</para>
+        /// same string between the <c>prefix</c> and the first occurrence of the delimiter are
+        /// grouped under a single result element in <c>CommonPrefixes</c>. These groups are counted
+        /// as one result against the <c>max-keys</c> limitation. These keys are not returned
+        /// elsewhere in the response.</para><para><c>CommonPrefixes</c> is filtered out from results if it is not lexicographically
+        /// greater than the key-marker.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -158,8 +178,8 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>Sets the maximum number of keys returned in the response. By default, the action returns
         /// up to 1,000 key names. The response might contain fewer keys but will never contain
         /// more. If additional keys satisfy the search criteria, but were not returned because
-        /// <code>max-keys</code> was exceeded, the response contains <code>&lt;isTruncated&gt;true&lt;/isTruncated&gt;</code>.
-        /// To return the additional keys, see <code>key-marker</code> and <code>version-id-marker</code>.</para>
+        /// <c>max-keys</c> was exceeded, the response contains <c>&lt;isTruncated&gt;true&lt;/isTruncated&gt;</c>.
+        /// To return the additional keys, see <c>key-marker</c> and <c>version-id-marker</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -172,9 +192,9 @@ namespace Amazon.PowerShell.Cmdlets.S3
         /// <para>
         /// <para>Use this parameter to select only those keys that begin with the specified prefix.
         /// You can use prefixes to separate a bucket into different groupings of keys. (You can
-        /// think of using <code>prefix</code> to make groups in the same way that you'd use a
-        /// folder in a file system.) You can use <code>prefix</code> with <code>delimiter</code>
-        /// to roll up numerous objects into a single result under <code>CommonPrefixes</code>.</para>
+        /// think of using <c>prefix</c> to make groups in the same way that you'd use a folder
+        /// in a file system.) You can use <c>prefix</c> with <c>delimiter</c> to roll up numerous
+        /// objects into a single result under <c>CommonPrefixes</c>. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -192,19 +212,13 @@ namespace Amazon.PowerShell.Cmdlets.S3
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -212,23 +226,21 @@ namespace Amazon.PowerShell.Cmdlets.S3
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3.Model.ListVersionsResponse, GetS3VersionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
+            #if MODULAR
+            if (this.BucketName == null && ParameterWasBound(nameof(this.BucketName)))
+            {
+                WriteWarning("You are passing $null as a value for parameter BucketName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
+            }
+            #endif
             context.Delimiter = this.Delimiter;
+            context.Encoding = this.Encoding;
+            context.ExpectedBucketOwner = this.ExpectedBucketOwner;
             context.KeyMarker = this.KeyMarker;
             context.MaxKey = this.MaxKey;
             if (this.OptionalObjectAttribute != null)
@@ -238,8 +250,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
             context.Prefix = this.Prefix;
             context.RequestPayer = this.RequestPayer;
             context.VersionIdMarker = this.VersionIdMarker;
-            context.Encoding = this.Encoding;
-            context.ExpectedBucketOwner = this.ExpectedBucketOwner;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -264,6 +274,14 @@ namespace Amazon.PowerShell.Cmdlets.S3
             {
                 request.Delimiter = cmdletContext.Delimiter;
             }
+            if (cmdletContext.Encoding != null)
+            {
+                request.Encoding = cmdletContext.Encoding;
+            }
+            if (cmdletContext.ExpectedBucketOwner != null)
+            {
+                request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
+            }
             if (cmdletContext.KeyMarker != null)
             {
                 request.KeyMarker = cmdletContext.KeyMarker;
@@ -287,14 +305,6 @@ namespace Amazon.PowerShell.Cmdlets.S3
             if (cmdletContext.VersionIdMarker != null)
             {
                 request.VersionIdMarker = cmdletContext.VersionIdMarker;
-            }
-            if (cmdletContext.Encoding != null)
-            {
-                request.Encoding = cmdletContext.Encoding;
-            }
-            if (cmdletContext.ExpectedBucketOwner != null)
-            {
-                request.ExpectedBucketOwner = cmdletContext.ExpectedBucketOwner;
             }
             
             CmdletOutput output;
@@ -334,13 +344,7 @@ namespace Amazon.PowerShell.Cmdlets.S3
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Storage Service (S3)", "ListVersions");
             try
             {
-                #if DESKTOP
-                return client.ListVersions(request);
-                #elif CORECLR
-                return client.ListVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -359,14 +363,14 @@ namespace Amazon.PowerShell.Cmdlets.S3
         {
             public System.String BucketName { get; set; }
             public System.String Delimiter { get; set; }
+            public Amazon.S3.EncodingType Encoding { get; set; }
+            public System.String ExpectedBucketOwner { get; set; }
             public System.String KeyMarker { get; set; }
             public System.Int32? MaxKey { get; set; }
             public List<System.String> OptionalObjectAttribute { get; set; }
             public System.String Prefix { get; set; }
             public Amazon.S3.RequestPayer RequestPayer { get; set; }
             public System.String VersionIdMarker { get; set; }
-            public Amazon.S3.EncodingType Encoding { get; set; }
-            public System.String ExpectedBucketOwner { get; set; }
             public System.Func<Amazon.S3.Model.ListVersionsResponse, GetS3VersionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

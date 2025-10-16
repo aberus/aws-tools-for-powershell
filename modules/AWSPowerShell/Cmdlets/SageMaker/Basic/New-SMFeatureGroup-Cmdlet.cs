@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateFeatureGroup API operation.", Operation = new[] {"CreateFeatureGroup"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateFeatureGroupResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateFeatureGroupResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateFeatureGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateFeatureGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMFeatureGroupCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DataCatalogConfig_Catalog
         /// <summary>
@@ -143,7 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>
         /// <para>A list of <c>Feature</c> names and types. <c>Name</c> and <c>Type</c> is compulsory
         /// per <c>Feature</c>. </para><para>Valid feature <c>FeatureType</c>s are <c>Integral</c>, <c>Fractional</c> and <c>String</c>.</para><para><c>FeatureName</c>s cannot be any of the following: <c>is_deleted</c>, <c>write_time</c>,
-        /// <c>api_invocation_time</c></para><para>You can create up to 2,500 <c>FeatureDefinition</c>s per <c>FeatureGroup</c>.</para>
+        /// <c>api_invocation_time</c></para><para>You can create up to 2,500 <c>FeatureDefinition</c>s per <c>FeatureGroup</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -162,7 +169,8 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>The name of the <c>FeatureGroup</c>. The name must be unique within an Amazon Web
-        /// Services Region in an Amazon Web Services account. The name:</para><ul><li><para>Must start and end with an alphanumeric character.</para></li><li><para>Can only contain alphanumeric character and hyphens. Spaces are not allowed. </para></li></ul>
+        /// Services Region in an Amazon Web Services account.</para><para>The name:</para><ul><li><para>Must start with an alphanumeric character.</para></li><li><para>Can only include alphanumeric characters, underscores, and hyphens. Spaces are not
+        /// allowed.</para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -234,7 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>The name of the <c>Feature</c> whose value uniquely identifies a <c>Record</c> defined
         /// in the <c>FeatureStore</c>. Only the latest record per identifier value will be stored
         /// in the <c>OnlineStore</c>. <c>RecordIdentifierFeatureName</c> must be one of feature
-        /// definitions' names.</para><para>You use the <c>RecordIdentifierFeatureName</c> to access data in a <c>FeatureStore</c>.</para><para>This name:</para><ul><li><para>Must start and end with an alphanumeric character.</para></li><li><para>Can only contains alphanumeric characters, hyphens, underscores. Spaces are not allowed.
+        /// definitions' names.</para><para>You use the <c>RecordIdentifierFeatureName</c> to access data in a <c>FeatureStore</c>.</para><para>This name:</para><ul><li><para>Must start with an alphanumeric character.</para></li><li><para>Can only contains alphanumeric characters, hyphens, underscores. Spaces are not allowed.
         /// </para></li></ul>
         /// </para>
         /// </summary>
@@ -320,7 +328,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>Tags used to identify <c>Features</c> in each <c>FeatureGroup</c>.</para>
+        /// <para>Tags used to identify <c>Features</c> in each <c>FeatureGroup</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -374,16 +386,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "FeatureGroupArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the FeatureGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^FeatureGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^FeatureGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -394,9 +396,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FeatureGroupName), MyInvocation.BoundParameters);
@@ -410,21 +416,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateFeatureGroupResponse, NewSMFeatureGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.FeatureGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Description = this.Description;
             context.EventTimeFeatureName = this.EventTimeFeatureName;
             #if MODULAR
@@ -807,13 +803,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateFeatureGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateFeatureGroup(request);
-                #elif CORECLR
-                return client.CreateFeatureGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateFeatureGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

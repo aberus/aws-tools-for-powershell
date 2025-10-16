@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Keyspaces;
 using Amazon.Keyspaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KS
 {
     /// <summary>
@@ -35,8 +37,8 @@ namespace Amazon.PowerShell.Cmdlets.KS
     /// <para><c>CreateKeyspace</c> is an asynchronous operation. You can monitor the creation
     /// status of the new keyspace by using the <c>GetKeyspace</c> operation.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/working-with-keyspaces.html#keyspaces-create">Creating
-    /// keyspaces</a> in the <i>Amazon Keyspaces Developer Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/getting-started.keyspaces.html">Create
+    /// a keyspace</a> in the <i>Amazon Keyspaces Developer Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("New", "KSKeyspace", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -44,12 +46,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
     [AWSCmdlet("Calls the Amazon Keyspaces CreateKeyspace API operation.", Operation = new[] {"CreateKeyspace"}, SelectReturnType = typeof(Amazon.Keyspaces.Model.CreateKeyspaceResponse))]
     [AWSCmdletOutput("System.String or Amazon.Keyspaces.Model.CreateKeyspaceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Keyspaces.Model.CreateKeyspaceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Keyspaces.Model.CreateKeyspaceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewKSKeyspaceCmdlet : AmazonKeyspacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyspaceName
         /// <summary>
@@ -71,8 +74,12 @@ namespace Amazon.PowerShell.Cmdlets.KS
         #region Parameter ReplicationSpecification_RegionList
         /// <summary>
         /// <para>
-        /// <para> The <c>regionList</c> can contain up to six Amazon Web Services Regions where the
-        /// keyspace is replicated in. </para>
+        /// <para> The <c>regionList</c> contains the Amazon Web Services Regions where the keyspace
+        /// is replicated in. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -96,7 +103,11 @@ namespace Amazon.PowerShell.Cmdlets.KS
         /// <para>
         /// <para>A list of key-value pair tags to be attached to the keyspace.</para><para>For more information, see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/tagging-keyspaces.html">Adding
         /// tags and labels to Amazon Keyspaces resources</a> in the <i>Amazon Keyspaces Developer
-        /// Guide</i>.</para>
+        /// Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public string Select { get; set; } = "ResourceArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the KeyspaceName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^KeyspaceName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^KeyspaceName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -135,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.KeyspaceName), MyInvocation.BoundParameters);
@@ -151,21 +156,11 @@ namespace Amazon.PowerShell.Cmdlets.KS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Keyspaces.Model.CreateKeyspaceResponse, NewKSKeyspaceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.KeyspaceName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.KeyspaceName = this.KeyspaceName;
             #if MODULAR
             if (this.KeyspaceName == null && ParameterWasBound(nameof(this.KeyspaceName)))
@@ -273,13 +268,7 @@ namespace Amazon.PowerShell.Cmdlets.KS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Keyspaces", "CreateKeyspace");
             try
             {
-                #if DESKTOP
-                return client.CreateKeyspace(request);
-                #elif CORECLR
-                return client.CreateKeyspaceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateKeyspaceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

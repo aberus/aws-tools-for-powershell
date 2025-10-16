@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
-    /// This request creates a logical container to where backups may be copied.
+    /// Creates a logical container to where backups may be copied.
     /// 
     ///  
     /// <para>
@@ -43,19 +45,20 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [OutputType("Amazon.Backup.Model.CreateLogicallyAirGappedBackupVaultResponse")]
     [AWSCmdlet("Calls the AWS Backup CreateLogicallyAirGappedBackupVault API operation.", Operation = new[] {"CreateLogicallyAirGappedBackupVault"}, SelectReturnType = typeof(Amazon.Backup.Model.CreateLogicallyAirGappedBackupVaultResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.CreateLogicallyAirGappedBackupVaultResponse",
-        "This cmdlet returns an Amazon.Backup.Model.CreateLogicallyAirGappedBackupVaultResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Backup.Model.CreateLogicallyAirGappedBackupVaultResponse object containing multiple properties."
     )]
     public partial class NewBAKLogicallyAirGappedBackupVaultCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupVaultName
         /// <summary>
         /// <para>
-        /// <para>This is the name of the vault that is being created.</para>
+        /// <para>The name of a logical container where backups are stored. Logically air-gapped backup
+        /// vaults are identified by names that are unique to the account used to create them
+        /// and the Region where they are created.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -72,7 +75,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter BackupVaultTag
         /// <summary>
         /// <para>
-        /// <para>These are the tags that will be included in the newly-created vault.</para>
+        /// <para>The tags to assign to the vault.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -83,7 +90,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter CreatorRequestId
         /// <summary>
         /// <para>
-        /// <para>This is the ID of the creation request.</para><para>This parameter is optional. If used, this parameter must contain 1 to 50 alphanumeric
+        /// <para>The ID of the creation request.</para><para>This parameter is optional. If used, this parameter must contain 1 to 50 alphanumeric
         /// or '-_.' characters.</para>
         /// </para>
         /// </summary>
@@ -94,14 +101,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter MaxRetentionDay
         /// <summary>
         /// <para>
-        /// <para>This is the setting that specifies the maximum retention period that the vault retains
-        /// its recovery points. If this parameter is not specified, Backup does not enforce a
-        /// maximum retention period on the recovery points in the vault (allowing indefinite
-        /// storage).</para><para>If specified, any backup or copy job to the vault must have a lifecycle policy with
-        /// a retention period equal to or shorter than the maximum retention period. If the job
-        /// retention period is longer than that maximum retention period, then the vault fails
-        /// the backup or copy job, and you should either modify your lifecycle settings or use
-        /// a different vault.</para>
+        /// <para>The maximum retention period that the vault retains its recovery points.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -119,11 +119,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <summary>
         /// <para>
         /// <para>This setting specifies the minimum retention period that the vault retains its recovery
-        /// points. If this parameter is not specified, no minimum retention period is enforced.</para><para>If specified, any backup or copy job to the vault must have a lifecycle policy with
-        /// a retention period equal to or longer than the minimum retention period. If a job
-        /// retention period is shorter than that minimum retention period, then the vault fails
-        /// the backup or copy job, and you should either modify your lifecycle settings or use
-        /// a different vault.</para>
+        /// points.</para><para>The minimum value accepted is 7 days.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -148,16 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BackupVaultName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BackupVaultName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -168,9 +154,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BackupVaultName), MyInvocation.BoundParameters);
@@ -184,21 +174,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.CreateLogicallyAirGappedBackupVaultResponse, NewBAKLogicallyAirGappedBackupVaultCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BackupVaultName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BackupVaultName = this.BackupVaultName;
             #if MODULAR
             if (this.BackupVaultName == null && ParameterWasBound(nameof(this.BackupVaultName)))
@@ -303,13 +283,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "CreateLogicallyAirGappedBackupVault");
             try
             {
-                #if DESKTOP
-                return client.CreateLogicallyAirGappedBackupVault(request);
-                #elif CORECLR
-                return client.CreateLogicallyAirGappedBackupVaultAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateLogicallyAirGappedBackupVaultAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

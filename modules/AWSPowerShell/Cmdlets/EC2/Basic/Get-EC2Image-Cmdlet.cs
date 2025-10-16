@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -41,19 +43,51 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// then return empty results. After all instances that reference a deregistered AMI are
     /// terminated, specifying the ID of the image will eventually return an error indicating
     /// that the AMI ID cannot be found.
-    /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// </para><para>
+    /// When Allowed AMIs is set to <c>enabled</c>, only allowed images are returned in the
+    /// results, with the <c>imageAllowed</c> field set to <c>true</c> for each image. In
+    /// <c>audit-mode</c>, the <c>imageAllowed</c> field is set to <c>true</c> for images
+    /// that meet the account's Allowed AMIs criteria, and <c>false</c> for images that don't
+    /// meet the criteria. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-allowed-amis.html">Allowed
+    /// AMIs</a>.
+    /// </para><para>
+    /// The Amazon EC2 API follows an eventual consistency model. This means that the result
+    /// of an API command you run that creates or modifies resources might not be immediately
+    /// available to all subsequent commands you run. For guidance on how to manage eventual
+    /// consistency, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/eventual-consistency.html">Eventual
+    /// consistency in the Amazon EC2 API</a> in the <i>Amazon EC2 Developer Guide</i>.
+    /// </para><important><para>
+    /// We strongly recommend using only paginated requests. Unpaginated requests are susceptible
+    /// to throttling and timeouts.
+    /// </para></important><note><para>
+    /// The order of the elements in the response, including those within nested structures,
+    /// might vary. Applications should not assume the elements appear in a particular order.
+    /// </para></note><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "EC2Image")]
     [OutputType("Amazon.EC2.Model.Image")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeImages API operation.", Operation = new[] {"DescribeImages"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeImagesResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.Image or Amazon.EC2.Model.DescribeImagesResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.Image objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeImagesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeImagesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2ImageCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter ExecutableUser
         /// <summary>
@@ -64,7 +98,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// with that specific Amazon Web Services account ID are returned. However, AMIs that
         /// are shared with the account’s organization or organizational unit (OU) are not returned.</para></li><li><para>If you specify <c>self</c> or your own Amazon Web Services account ID, AMIs shared
         /// with your account are returned. In addition, AMIs that are shared with the organization
-        /// or OU of which you are member are also returned. </para></li><li><para>If you specify <c>all</c>, all public AMIs are returned.</para></li></ul>
+        /// or OU of which you are member are also returned. </para></li><li><para>If you specify <c>all</c>, all public AMIs are returned.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
@@ -86,19 +124,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// in the UTC time zone (YYYY-MM-DDThh:mm:ss.sssZ), for example, <c>2021-09-29T11:04:43.305Z</c>.
         /// You can use a wildcard (<c>*</c>), for example, <c>2021-09-29T*</c>, which matches
         /// an entire day.</para></li><li><para><c>description</c> - The description of the image (provided during image creation).</para></li><li><para><c>ena-support</c> - A Boolean that indicates whether enhanced networking with ENA
-        /// is enabled.</para></li><li><para><c>hypervisor</c> - The hypervisor type (<c>ovm</c> | <c>xen</c>).</para></li><li><para><c>image-id</c> - The ID of the image.</para></li><li><para><c>image-type</c> - The image type (<c>machine</c> | <c>kernel</c> | <c>ramdisk</c>).</para></li><li><para><c>is-public</c> - A Boolean that indicates whether the image is public.</para></li><li><para><c>kernel-id</c> - The kernel ID.</para></li><li><para><c>manifest-location</c> - The location of the image manifest.</para></li><li><para><c>name</c> - The name of the AMI (provided during image creation).</para></li><li><para><c>owner-alias</c> - The owner alias (<c>amazon</c> | <c>aws-marketplace</c>). The
-        /// valid aliases are defined in an Amazon-maintained list. This is not the Amazon Web
-        /// Services account alias that can be set using the IAM console. We recommend that you
-        /// use the <b>Owner</b> request parameter instead of this filter.</para></li><li><para><c>owner-id</c> - The Amazon Web Services account ID of the owner. We recommend that
+        /// is enabled.</para></li><li><para><c>free-tier-eligible</c> - A Boolean that indicates whether this image can be used
+        /// under the Amazon Web Services Free Tier (<c>true</c> | <c>false</c>).</para></li><li><para><c>hypervisor</c> - The hypervisor type (<c>ovm</c> | <c>xen</c>).</para></li><li><para><c>image-allowed</c> - A Boolean that indicates whether the image meets the criteria
+        /// specified for Allowed AMIs.</para></li><li><para><c>image-id</c> - The ID of the image.</para></li><li><para><c>image-type</c> - The image type (<c>machine</c> | <c>kernel</c> | <c>ramdisk</c>).</para></li><li><para><c>is-public</c> - A Boolean that indicates whether the image is public.</para></li><li><para><c>kernel-id</c> - The kernel ID.</para></li><li><para><c>manifest-location</c> - The location of the image manifest.</para></li><li><para><c>name</c> - The name of the AMI (provided during image creation).</para></li><li><para><c>owner-alias</c> - The owner alias (<c>amazon</c> | <c>aws-backup-vault</c> | <c>aws-marketplace</c>).
+        /// The valid aliases are defined in an Amazon-maintained list. This is not the Amazon
+        /// Web Services account alias that can be set using the IAM console. We recommend that
+        /// you use the <b>Owner</b> request parameter instead of this filter.</para></li><li><para><c>owner-id</c> - The Amazon Web Services account ID of the owner. We recommend that
         /// you use the <b>Owner</b> request parameter instead of this filter.</para></li><li><para><c>platform</c> - The platform. The only supported value is <c>windows</c>.</para></li><li><para><c>product-code</c> - The product code.</para></li><li><para><c>product-code.type</c> - The type of the product code (<c>marketplace</c>).</para></li><li><para><c>ramdisk-id</c> - The RAM disk ID.</para></li><li><para><c>root-device-name</c> - The device name of the root device volume (for example,
-        /// <c>/dev/sda1</c>).</para></li><li><para><c>root-device-type</c> - The type of the root device volume (<c>ebs</c> | <c>instance-store</c>).</para></li><li><para><c>source-instance-id</c> - The ID of the instance that the AMI was created from
+        /// <c>/dev/sda1</c>).</para></li><li><para><c>root-device-type</c> - The type of the root device volume (<c>ebs</c> | <c>instance-store</c>).</para></li><li><para><c>source-image-id</c> - The ID of the source AMI from which the AMI was created.</para></li><li><para><c>source-image-region</c> - The Region of the source AMI.</para></li><li><para><c>source-instance-id</c> - The ID of the instance that the AMI was created from
         /// if the AMI was created using CreateImage. This filter is applicable only if the AMI
         /// was created using <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateImage.html">CreateImage</a>.</para></li><li><para><c>state</c> - The state of the image (<c>available</c> | <c>pending</c> | <c>failed</c>).</para></li><li><para><c>state-reason-code</c> - The reason code for the state change.</para></li><li><para><c>state-reason-message</c> - The message for the state change.</para></li><li><para><c>sriov-net-support</c> - A value of <c>simple</c> indicates that enhanced networking
-        /// with the Intel 82599 VF interface is enabled.</para></li><li><para><c>tag</c>:&lt;key&gt; - The key/value combination of a tag assigned to the resource.
+        /// with the Intel 82599 VF interface is enabled.</para></li><li><para><c>tag:&lt;key&gt;</c> - The key/value combination of a tag assigned to the resource.
         /// Use the tag key in the filter name and the tag value as the filter value. For example,
         /// to find all resources that have a tag with the key <c>Owner</c> and the value <c>TeamA</c>,
         /// specify <c>tag:Owner</c> for the filter name and <c>TeamA</c> for the filter value.</para></li><li><para><c>tag-key</c> - The key of a tag assigned to the resource. Use this filter to find
-        /// all resources assigned a tag with a specific key, regardless of the tag value.</para></li><li><para><c>virtualization-type</c> - The virtualization type (<c>paravirtual</c> | <c>hvm</c>).</para></li></ul>
+        /// all resources assigned a tag with a specific key, regardless of the tag value.</para></li><li><para><c>virtualization-type</c> - The virtualization type (<c>paravirtual</c> | <c>hvm</c>).</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
@@ -109,7 +153,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ImageId
         /// <summary>
         /// <para>
-        /// <para>The image IDs.</para><para>Default: Describes all images available to you.</para>
+        /// <para>The image IDs.</para><para>Default: Describes all images available to you.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -142,9 +190,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Scopes the results to images with the specified owners. You can specify a combination
-        /// of Amazon Web Services account IDs, <c>self</c>, <c>amazon</c>, and <c>aws-marketplace</c>.
-        /// If you omit this parameter, the results include all images for which you have launch
-        /// permissions, regardless of ownership.</para>
+        /// of Amazon Web Services account IDs, <c>self</c>, <c>amazon</c>, <c>aws-backup-vault</c>,
+        /// and <c>aws-marketplace</c>. If you omit this parameter, the results include all images
+        /// for which you have launch permissions, regardless of ownership.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 1, ValueFromPipelineByPropertyName = true)]
@@ -173,7 +225,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,16 +243,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "Images";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -211,9 +253,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -221,21 +267,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DescribeImagesResponse, GetEC2ImageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.DryRun = this.DryRun;
             if (this.ExecutableUser != null)
             {
                 context.ExecutableUser = new List<System.String>(this.ExecutableUser);
@@ -269,13 +306,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.EC2.Model.DescribeImagesRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.ExecutableUser != null)
             {
                 request.ExecutableUsers = cmdletContext.ExecutableUser;
@@ -366,13 +405,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeImages");
             try
             {
-                #if DESKTOP
-                return client.DescribeImages(request);
-                #elif CORECLR
-                return client.DescribeImagesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeImagesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -389,6 +422,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public List<System.String> ExecutableUser { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public List<System.String> ImageId { get; set; }

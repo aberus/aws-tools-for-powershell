@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,46 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Omics;
 using Amazon.Omics.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OMICS
 {
     /// <summary>
-    /// Creates a share offer that can be accepted outside the account by a subscriber. The
-    /// share is created by the owner and accepted by the principal subscriber.
+    /// Creates a cross-account shared resource. The resource owner makes an offer to share
+    /// the resource with the principal subscriber (an AWS user with a different account than
+    /// the resource owner).
+    /// 
+    ///  
+    /// <para>
+    /// The following resources support cross-account sharing:
+    /// </para><ul><li><para>
+    /// HealthOmics variant stores
+    /// </para></li><li><para>
+    /// HealthOmics annotation stores
+    /// </para></li><li><para>
+    /// Private workflows
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("New", "OMICSShare", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Omics.Model.CreateShareResponse")]
     [AWSCmdlet("Calls the Amazon Omics CreateShare API operation.", Operation = new[] {"CreateShare"}, SelectReturnType = typeof(Amazon.Omics.Model.CreateShareResponse))]
     [AWSCmdletOutput("Amazon.Omics.Model.CreateShareResponse",
-        "This cmdlet returns an Amazon.Omics.Model.CreateShareResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Omics.Model.CreateShareResponse object containing multiple properties."
     )]
     public partial class NewOMICSShareCmdlet : AmazonOmicsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PrincipalSubscriber
         /// <summary>
         /// <para>
-        /// <para> The principal subscriber is the account being given access to the analytics store
-        /// data through the share offer. </para>
+        /// <para>The principal subscriber is the account being offered shared access to the resource.
+        /// </para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -63,7 +78,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter ResourceArn
         /// <summary>
         /// <para>
-        /// <para> The resource ARN for the analytics store to be shared. </para>
+        /// <para>The ARN of the resource to be shared.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -80,7 +95,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         #region Parameter ShareName
         /// <summary>
         /// <para>
-        /// <para> A name given to the share. </para>
+        /// <para>A name that the owner defines for the share.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,9 +123,13 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceArn), MyInvocation.BoundParameters);
@@ -210,13 +229,7 @@ namespace Amazon.PowerShell.Cmdlets.OMICS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Omics", "CreateShare");
             try
             {
-                #if DESKTOP
-                return client.CreateShare(request);
-                #elif CORECLR
-                return client.CreateShareAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateShareAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

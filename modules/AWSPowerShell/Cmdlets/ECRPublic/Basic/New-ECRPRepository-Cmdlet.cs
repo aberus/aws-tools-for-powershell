@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECRPublic;
 using Amazon.ECRPublic.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECRP
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
     [OutputType("Amazon.ECRPublic.Model.CreateRepositoryResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Container Registry Public CreateRepository API operation.", Operation = new[] {"CreateRepository"}, SelectReturnType = typeof(Amazon.ECRPublic.Model.CreateRepositoryResponse))]
     [AWSCmdletOutput("Amazon.ECRPublic.Model.CreateRepositoryResponse",
-        "This cmdlet returns an Amazon.ECRPublic.Model.CreateRepositoryResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ECRPublic.Model.CreateRepositoryResponse object containing multiple properties."
     )]
     public partial class NewECRPRepositoryCmdlet : AmazonECRPublicClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CatalogData_AboutText
         /// <summary>
@@ -60,7 +63,11 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
         /// the Amazon ECR Public Gallery, the following supported architectures appear as badges
         /// on the repository and are used as search filters.</para><note><para>If an unsupported tag is added to your repository catalog data, it's associated with
         /// the repository and can be retrieved using the API but isn't discoverable in the Amazon
-        /// ECR Public Gallery.</para></note><ul><li><para><c>ARM</c></para></li><li><para><c>ARM 64</c></para></li><li><para><c>x86</c></para></li><li><para><c>x86-64</c></para></li></ul>
+        /// ECR Public Gallery.</para></note><ul><li><para><c>ARM</c></para></li><li><para><c>ARM 64</c></para></li><li><para><c>x86</c></para></li><li><para><c>x86-64</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
         /// Amazon ECR Public Gallery, the following supported operating systems appear as badges
         /// on the repository and are used as search filters.</para><note><para>If an unsupported tag is added to your repository catalog data, it's associated with
         /// the repository and can be retrieved using the API but isn't discoverable in the Amazon
-        /// ECR Public Gallery.</para></note><ul><li><para><c>Linux</c></para></li><li><para><c>Windows</c></para></li></ul>
+        /// ECR Public Gallery.</para></note><ul><li><para><c>Linux</c></para></li><li><para><c>Windows</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,7 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
         /// <para>The metadata that you apply to each repository to help categorize and organize your
         /// repositories. Each tag consists of a key and an optional value. You define both of
         /// them. Tag keys can have a maximum character length of 128 characters, and tag values
-        /// can have a maximum length of 256 characters.</para>
+        /// can have a maximum length of 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -165,16 +180,6 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RepositoryName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RepositoryName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RepositoryName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -185,9 +190,13 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RepositoryName), MyInvocation.BoundParameters);
@@ -201,21 +210,11 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECRPublic.Model.CreateRepositoryResponse, NewECRPRepositoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RepositoryName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CatalogData_AboutText = this.CatalogData_AboutText;
             if (this.CatalogData_Architecture != null)
             {
@@ -383,13 +382,7 @@ namespace Amazon.PowerShell.Cmdlets.ECRP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Container Registry Public", "CreateRepository");
             try
             {
-                #if DESKTOP
-                return client.CreateRepository(request);
-                #elif CORECLR
-                return client.CreateRepositoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRepositoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

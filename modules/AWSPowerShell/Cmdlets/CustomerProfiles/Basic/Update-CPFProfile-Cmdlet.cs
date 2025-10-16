@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CustomerProfiles;
 using Amazon.CustomerProfiles.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CPF
 {
     /// <summary>
@@ -43,19 +45,18 @@ namespace Amazon.PowerShell.Cmdlets.CPF
     [AWSCmdlet("Calls the Amazon Connect Customer Profiles UpdateProfile API operation.", Operation = new[] {"UpdateProfile"}, SelectReturnType = typeof(Amazon.CustomerProfiles.Model.UpdateProfileResponse))]
     [AWSCmdletOutput("System.String or Amazon.CustomerProfiles.Model.UpdateProfileResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.CustomerProfiles.Model.UpdateProfileResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CustomerProfiles.Model.UpdateProfileResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCPFProfileCmdlet : AmazonCustomerProfilesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountNumber
         /// <summary>
         /// <para>
-        /// <para>A unique account number that you have given to the customer.</para>
+        /// <para>An account number that you have assigned to the customer.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -235,7 +236,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter Attribute
         /// <summary>
         /// <para>
-        /// <para>A key value pair of attributes of a customer profile.</para>
+        /// <para>A key value pair of attributes of a customer profile.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -420,6 +425,20 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public System.String DomainName { get; set; }
         #endregion
         
+        #region Parameter EngagementPreferences_Email
+        /// <summary>
+        /// <para>
+        /// <para>A list of email-related contact preferences</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.CustomerProfiles.Model.ContactPreference[] EngagementPreferences_Email { get; set; }
+        #endregion
+        
         #region Parameter EmailAddress
         /// <summary>
         /// <para>
@@ -533,6 +552,20 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public System.String PersonalEmailAddress { get; set; }
         #endregion
         
+        #region Parameter EngagementPreferences_Phone
+        /// <summary>
+        /// <para>
+        /// <para>A list of phone-related contact preferences</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public Amazon.CustomerProfiles.Model.ContactPreference[] EngagementPreferences_Phone { get; set; }
+        #endregion
+        
         #region Parameter PhoneNumber
         /// <summary>
         /// <para>
@@ -599,6 +632,17 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ProfileId { get; set; }
+        #endregion
+        
+        #region Parameter ProfileType
+        /// <summary>
+        /// <para>
+        /// <para>Determines the type of the profile.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CustomerProfiles.ProfileType")]
+        public Amazon.CustomerProfiles.ProfileType ProfileType { get; set; }
         #endregion
         
         #region Parameter Address_Province
@@ -692,16 +736,6 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public string Select { get; set; } = "ProfileId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProfileId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProfileId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProfileId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -712,9 +746,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProfileId), MyInvocation.BoundParameters);
@@ -728,21 +766,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CustomerProfiles.Model.UpdateProfileResponse, UpdateCPFProfileCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProfileId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountNumber = this.AccountNumber;
             context.AdditionalInformation = this.AdditionalInformation;
             context.Address_Address1 = this.Address_Address1;
@@ -785,6 +813,14 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             }
             #endif
             context.EmailAddress = this.EmailAddress;
+            if (this.EngagementPreferences_Email != null)
+            {
+                context.EngagementPreferences_Email = new List<Amazon.CustomerProfiles.Model.ContactPreference>(this.EngagementPreferences_Email);
+            }
+            if (this.EngagementPreferences_Phone != null)
+            {
+                context.EngagementPreferences_Phone = new List<Amazon.CustomerProfiles.Model.ContactPreference>(this.EngagementPreferences_Phone);
+            }
             context.FirstName = this.FirstName;
             context.Gender = this.Gender;
             context.GenderString = this.GenderString;
@@ -813,6 +849,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 WriteWarning("You are passing $null as a value for parameter ProfileId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ProfileType = this.ProfileType;
             context.ShippingAddress_Address1 = this.ShippingAddress_Address1;
             context.ShippingAddress_Address2 = this.ShippingAddress_Address2;
             context.ShippingAddress_Address3 = this.ShippingAddress_Address3;
@@ -1093,6 +1130,35 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             {
                 request.EmailAddress = cmdletContext.EmailAddress;
             }
+            
+             // populate EngagementPreferences
+            var requestEngagementPreferencesIsNull = true;
+            request.EngagementPreferences = new Amazon.CustomerProfiles.Model.EngagementPreferences();
+            List<Amazon.CustomerProfiles.Model.ContactPreference> requestEngagementPreferences_engagementPreferences_Email = null;
+            if (cmdletContext.EngagementPreferences_Email != null)
+            {
+                requestEngagementPreferences_engagementPreferences_Email = cmdletContext.EngagementPreferences_Email;
+            }
+            if (requestEngagementPreferences_engagementPreferences_Email != null)
+            {
+                request.EngagementPreferences.Email = requestEngagementPreferences_engagementPreferences_Email;
+                requestEngagementPreferencesIsNull = false;
+            }
+            List<Amazon.CustomerProfiles.Model.ContactPreference> requestEngagementPreferences_engagementPreferences_Phone = null;
+            if (cmdletContext.EngagementPreferences_Phone != null)
+            {
+                requestEngagementPreferences_engagementPreferences_Phone = cmdletContext.EngagementPreferences_Phone;
+            }
+            if (requestEngagementPreferences_engagementPreferences_Phone != null)
+            {
+                request.EngagementPreferences.Phone = requestEngagementPreferences_engagementPreferences_Phone;
+                requestEngagementPreferencesIsNull = false;
+            }
+             // determine if request.EngagementPreferences should be set to null
+            if (requestEngagementPreferencesIsNull)
+            {
+                request.EngagementPreferences = null;
+            }
             if (cmdletContext.FirstName != null)
             {
                 request.FirstName = cmdletContext.FirstName;
@@ -1250,6 +1316,10 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             {
                 request.ProfileId = cmdletContext.ProfileId;
             }
+            if (cmdletContext.ProfileType != null)
+            {
+                request.ProfileType = cmdletContext.ProfileType;
+            }
             
              // populate ShippingAddress
             var requestShippingAddressIsNull = true;
@@ -1397,13 +1467,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Customer Profiles", "UpdateProfile");
             try
             {
-                #if DESKTOP
-                return client.UpdateProfile(request);
-                #elif CORECLR
-                return client.UpdateProfileAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateProfileAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1449,6 +1513,8 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             public System.String BusinessPhoneNumber { get; set; }
             public System.String DomainName { get; set; }
             public System.String EmailAddress { get; set; }
+            public List<Amazon.CustomerProfiles.Model.ContactPreference> EngagementPreferences_Email { get; set; }
+            public List<Amazon.CustomerProfiles.Model.ContactPreference> EngagementPreferences_Phone { get; set; }
             public System.String FirstName { get; set; }
             public Amazon.CustomerProfiles.Gender Gender { get; set; }
             public System.String GenderString { get; set; }
@@ -1471,6 +1537,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             public System.String PersonalEmailAddress { get; set; }
             public System.String PhoneNumber { get; set; }
             public System.String ProfileId { get; set; }
+            public Amazon.CustomerProfiles.ProfileType ProfileType { get; set; }
             public System.String ShippingAddress_Address1 { get; set; }
             public System.String ShippingAddress_Address2 { get; set; }
             public System.String ShippingAddress_Address3 { get; set; }

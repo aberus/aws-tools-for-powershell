@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -40,26 +42,39 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// than 200 versions in a single request, use <a>DeleteLaunchTemplate</a>, which deletes
     /// the launch template and all of its versions.
     /// </para><para>
-    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-launch-template-versions.html#delete-launch-template-version">Delete
-    /// a launch template version</a> in the <i>EC2 User Guide</i>.
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/delete-launch-template.html#delete-launch-template-version">Delete
+    /// a launch template version</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para>
     /// </summary>
     [Cmdlet("Remove", "EC2TemplateVersion", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.High)]
     [OutputType("Amazon.EC2.Model.DeleteLaunchTemplateVersionsResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DeleteLaunchTemplateVersions API operation.", Operation = new[] {"DeleteLaunchTemplateVersions"}, SelectReturnType = typeof(Amazon.EC2.Model.DeleteLaunchTemplateVersionsResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.DeleteLaunchTemplateVersionsResponse",
-        "This cmdlet returns an Amazon.EC2.Model.DeleteLaunchTemplateVersionsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.DeleteLaunchTemplateVersionsResponse object containing multiple properties."
     )]
     public partial class RemoveEC2TemplateVersionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter LaunchTemplateId
         /// <summary>
         /// <para>
-        /// <para>The ID of the launch template.</para><para>You must specify either the <c>LaunchTemplateId</c> or the <c>LaunchTemplateName</c>,
-        /// but not both.</para>
+        /// <para>The ID of the launch template.</para><para>You must specify either the launch template ID or the launch template name, but not
+        /// both.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -69,8 +84,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter LaunchTemplateName
         /// <summary>
         /// <para>
-        /// <para>The name of the launch template.</para><para>You must specify either the <c>LaunchTemplateName</c> or the <c>LaunchTemplateId</c>,
-        /// but not both.</para>
+        /// <para>The name of the launch template.</para><para>You must specify either the launch template ID or the launch template name, but not
+        /// both.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -81,7 +96,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>The version numbers of one or more launch template versions to delete. You can specify
-        /// up to 200 launch template version numbers.</para>
+        /// up to 200 launch template version numbers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -117,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -138,6 +161,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.DeleteLaunchTemplateVersionsResponse, RemoveEC2TemplateVersionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.DryRun = this.DryRun;
             context.LaunchTemplateId = this.LaunchTemplateId;
             context.LaunchTemplateName = this.LaunchTemplateName;
             if (this.Version != null)
@@ -166,6 +190,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // create request
             var request = new Amazon.EC2.Model.DeleteLaunchTemplateVersionsRequest();
             
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.LaunchTemplateId != null)
             {
                 request.LaunchTemplateId = cmdletContext.LaunchTemplateId;
@@ -216,13 +244,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DeleteLaunchTemplateVersions");
             try
             {
-                #if DESKTOP
-                return client.DeleteLaunchTemplateVersions(request);
-                #elif CORECLR
-                return client.DeleteLaunchTemplateVersionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteLaunchTemplateVersionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -239,6 +261,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? DryRun { get; set; }
             public System.String LaunchTemplateId { get; set; }
             public System.String LaunchTemplateName { get; set; }
             public List<System.String> Version { get; set; }

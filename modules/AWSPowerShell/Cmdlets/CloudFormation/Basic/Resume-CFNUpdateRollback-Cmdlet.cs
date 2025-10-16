@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
-    /// For a specified stack that's in the <c>UPDATE_ROLLBACK_FAILED</c> state, continues
-    /// rolling it back to the <c>UPDATE_ROLLBACK_COMPLETE</c> state. Depending on the cause
-    /// of the failure, you can manually <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/troubleshooting.html#troubleshooting-errors-update-rollback-failed">
-    /// fix the error</a> and continue the rollback. By continuing the rollback, you can return
-    /// your stack to a working state (the <c>UPDATE_ROLLBACK_COMPLETE</c> state), and then
-    /// try to update the stack again.
+    /// Continues rolling back a stack from <c>UPDATE_ROLLBACK_FAILED</c> to <c>UPDATE_ROLLBACK_COMPLETE</c>
+    /// state. Depending on the cause of the failure, you can manually fix the error and continue
+    /// the rollback. By continuing the rollback, you can return your stack to a working state
+    /// (the <c>UPDATE_ROLLBACK_COMPLETE</c> state) and then try to update the stack again.
     /// 
     ///  
     /// <para>
-    /// A stack goes into the <c>UPDATE_ROLLBACK_FAILED</c> state when CloudFormation can't
-    /// roll back all changes after a failed stack update. For example, you might have a stack
-    /// that's rolling back to an old database instance that was deleted outside of CloudFormation.
-    /// Because CloudFormation doesn't know the database was deleted, it assumes that the
-    /// database instance still exists and attempts to roll back to it, causing the update
-    /// rollback to fail.
+    /// A stack enters the <c>UPDATE_ROLLBACK_FAILED</c> state when CloudFormation can't roll
+    /// back all changes after a failed stack update. For example, this might occur when a
+    /// stack attempts to roll back to an old database that was deleted outside of CloudFormation.
+    /// Because CloudFormation doesn't know the instance was deleted, it assumes the instance
+    /// still exists and attempts to roll back to it, causing the update rollback to fail.
+    /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-continueupdaterollback.html">Continue
+    /// rolling back an update</a> in the <i>CloudFormation User Guide</i>. For information
+    /// for troubleshooting a failed update rollback, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/troubleshooting.html#troubleshooting-errors-update-rollback-failed">Update
+    /// rollback failed</a>.
     /// </para>
     /// </summary>
     [Cmdlet("Resume", "CFNUpdateRollback", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -50,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [AWSCmdlet("Calls the AWS CloudFormation ContinueUpdateRollback API operation.", Operation = new[] {"ContinueUpdateRollback"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.ContinueUpdateRollbackResponse))]
     [AWSCmdletOutput("None or Amazon.CloudFormation.Model.ContinueUpdateRollbackResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudFormation.Model.ContinueUpdateRollbackResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudFormation.Model.ContinueUpdateRollbackResponse) be returned by specifying '-Select *'."
     )]
     public partial class ResumeCFNUpdateRollbackCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -93,8 +98,12 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         /// in one of the following states: <c>DELETE_IN_PROGRESS</c>, <c>DELETE_COMPLETE</c>,
         /// or <c>DELETE_FAILED</c>.</para><note><para>Don't confuse a child stack's name with its corresponding logical ID defined in the
         /// parent stack. For an example of a continue update rollback operation with nested stacks,
-        /// see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-continueupdaterollback.html#nested-stacks">Using
-        /// ResourcesToSkip to recover a nested stacks hierarchy</a>.</para></note>
+        /// see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-continueupdaterollback.html#nested-stacks">Continue
+        /// rolling back from failed nested stack updates</a>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -104,12 +113,12 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter RoleARN
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of an Identity and Access Management (IAM) role that
-        /// CloudFormation assumes to roll back the stack. CloudFormation uses the role's credentials
-        /// to make calls on your behalf. CloudFormation always uses this role for all future
-        /// operations on the stack. Provided that users have permission to operate on the stack,
-        /// CloudFormation uses this role even if the users don't have permission to pass it.
-        /// Ensure that the role grants least permission.</para><para>If you don't specify a value, CloudFormation uses the role that was previously associated
+        /// <para>The Amazon Resource Name (ARN) of an IAM role that CloudFormation assumes to roll
+        /// back the stack. CloudFormation uses the role's credentials to make calls on your behalf.
+        /// CloudFormation always uses this role for all future operations on the stack. Provided
+        /// that users have permission to operate on the stack, CloudFormation uses this role
+        /// even if the users don't have permission to pass it. Ensure that the role grants least
+        /// permission.</para><para>If you don't specify a value, CloudFormation uses the role that was previously associated
         /// with the stack. If no role is available, CloudFormation uses a temporary session that's
         /// generated from your user credentials.</para>
         /// </para>
@@ -147,16 +156,6 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StackName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -167,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.StackName), MyInvocation.BoundParameters);
@@ -183,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFormation.Model.ContinueUpdateRollbackResponse, ResumeCFNUpdateRollbackCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StackName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             if (this.ResourcesToSkip != null)
             {
@@ -281,13 +274,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "ContinueUpdateRollback");
             try
             {
-                #if DESKTOP
-                return client.ContinueUpdateRollback(request);
-                #elif CORECLR
-                return client.ContinueUpdateRollbackAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ContinueUpdateRollbackAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

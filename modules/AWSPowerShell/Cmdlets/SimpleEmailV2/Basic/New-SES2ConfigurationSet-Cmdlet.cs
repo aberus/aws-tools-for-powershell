@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES2
 {
     /// <summary>
@@ -39,12 +41,24 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     [AWSCmdlet("Calls the Amazon Simple Email Service V2 (SES V2) CreateConfigurationSet API operation.", Operation = new[] {"CreateConfigurationSet"}, SelectReturnType = typeof(Amazon.SimpleEmailV2.Model.CreateConfigurationSetResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleEmailV2.Model.CreateConfigurationSetResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleEmailV2.Model.CreateConfigurationSetResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleEmailV2.Model.CreateConfigurationSetResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewSES2ConfigurationSetCmdlet : AmazonSimpleEmailServiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter ArchivingOptions_ArchiveArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the MailManager archive where the Amazon SES API
+        /// v2 will archive sent emails.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ArchivingOptions_ArchiveArn { get; set; }
+        #endregion
         
         #region Parameter ConfigurationSetName
         /// <summary>
@@ -87,6 +101,17 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public Amazon.SimpleEmailV2.FeatureStatus DashboardOptions_EngagementMetric { get; set; }
         #endregion
         
+        #region Parameter TrackingOptions_HttpsPolicy
+        /// <summary>
+        /// <para>
+        /// <para>The https policy to use for tracking open and click events.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SimpleEmailV2.HttpsPolicy")]
+        public Amazon.SimpleEmailV2.HttpsPolicy TrackingOptions_HttpsPolicy { get; set; }
+        #endregion
+        
         #region Parameter ReputationOptions_LastFreshStart
         /// <summary>
         /// <para>
@@ -97,6 +122,19 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.DateTime? ReputationOptions_LastFreshStart { get; set; }
+        #endregion
+        
+        #region Parameter DeliveryOptions_MaxDeliverySecond
+        /// <summary>
+        /// <para>
+        /// <para>The maximum amount of time, in seconds, that Amazon SES API v2 will attempt delivery
+        /// of email. If specified, the value must greater than or equal to 300 seconds (5 minutes)
+        /// and less than or equal to 50400 seconds (840 minutes). </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DeliveryOptions_MaxDeliverySeconds")]
+        public System.Int64? DeliveryOptions_MaxDeliverySecond { get; set; }
         #endregion
         
         #region Parameter GuardianOptions_OptimizedSharedDelivery
@@ -152,7 +190,11 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         /// <para>A list that contains the reasons that email addresses are automatically added to the
         /// suppression list for your account. This list can contain any or all of the following:</para><ul><li><para><c>COMPLAINT</c> – Amazon SES adds an email address to the suppression list for your
         /// account when a message sent to that address results in a complaint.</para></li><li><para><c>BOUNCE</c> – Amazon SES adds an email address to the suppression list for your
-        /// account when a message sent to that address results in a hard bounce.</para></li></ul>
+        /// account when a message sent to that address results in a hard bounce.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -164,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         /// <summary>
         /// <para>
         /// <para>An array of objects that define the tags (keys and values) to associate with the configuration
-        /// set.</para>
+        /// set.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,16 +242,6 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigurationSetName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigurationSetName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigurationSetName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -216,9 +252,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigurationSetName), MyInvocation.BoundParameters);
@@ -232,21 +272,12 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleEmailV2.Model.CreateConfigurationSetResponse, NewSES2ConfigurationSetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigurationSetName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ArchivingOptions_ArchiveArn = this.ArchivingOptions_ArchiveArn;
             context.ConfigurationSetName = this.ConfigurationSetName;
             #if MODULAR
             if (this.ConfigurationSetName == null && ParameterWasBound(nameof(this.ConfigurationSetName)))
@@ -254,6 +285,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
                 WriteWarning("You are passing $null as a value for parameter ConfigurationSetName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DeliveryOptions_MaxDeliverySecond = this.DeliveryOptions_MaxDeliverySecond;
             context.DeliveryOptions_SendingPoolName = this.DeliveryOptions_SendingPoolName;
             context.DeliveryOptions_TlsPolicy = this.DeliveryOptions_TlsPolicy;
             context.ReputationOptions_LastFreshStart = this.ReputationOptions_LastFreshStart;
@@ -268,6 +300,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
                 context.Tag = new List<Amazon.SimpleEmailV2.Model.Tag>(this.Tag);
             }
             context.TrackingOptions_CustomRedirectDomain = this.TrackingOptions_CustomRedirectDomain;
+            context.TrackingOptions_HttpsPolicy = this.TrackingOptions_HttpsPolicy;
             context.DashboardOptions_EngagementMetric = this.DashboardOptions_EngagementMetric;
             context.GuardianOptions_OptimizedSharedDelivery = this.GuardianOptions_OptimizedSharedDelivery;
             
@@ -286,6 +319,25 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             // create request
             var request = new Amazon.SimpleEmailV2.Model.CreateConfigurationSetRequest();
             
+            
+             // populate ArchivingOptions
+            var requestArchivingOptionsIsNull = true;
+            request.ArchivingOptions = new Amazon.SimpleEmailV2.Model.ArchivingOptions();
+            System.String requestArchivingOptions_archivingOptions_ArchiveArn = null;
+            if (cmdletContext.ArchivingOptions_ArchiveArn != null)
+            {
+                requestArchivingOptions_archivingOptions_ArchiveArn = cmdletContext.ArchivingOptions_ArchiveArn;
+            }
+            if (requestArchivingOptions_archivingOptions_ArchiveArn != null)
+            {
+                request.ArchivingOptions.ArchiveArn = requestArchivingOptions_archivingOptions_ArchiveArn;
+                requestArchivingOptionsIsNull = false;
+            }
+             // determine if request.ArchivingOptions should be set to null
+            if (requestArchivingOptionsIsNull)
+            {
+                request.ArchivingOptions = null;
+            }
             if (cmdletContext.ConfigurationSetName != null)
             {
                 request.ConfigurationSetName = cmdletContext.ConfigurationSetName;
@@ -294,6 +346,16 @@ namespace Amazon.PowerShell.Cmdlets.SES2
              // populate DeliveryOptions
             var requestDeliveryOptionsIsNull = true;
             request.DeliveryOptions = new Amazon.SimpleEmailV2.Model.DeliveryOptions();
+            System.Int64? requestDeliveryOptions_deliveryOptions_MaxDeliverySecond = null;
+            if (cmdletContext.DeliveryOptions_MaxDeliverySecond != null)
+            {
+                requestDeliveryOptions_deliveryOptions_MaxDeliverySecond = cmdletContext.DeliveryOptions_MaxDeliverySecond.Value;
+            }
+            if (requestDeliveryOptions_deliveryOptions_MaxDeliverySecond != null)
+            {
+                request.DeliveryOptions.MaxDeliverySeconds = requestDeliveryOptions_deliveryOptions_MaxDeliverySecond.Value;
+                requestDeliveryOptionsIsNull = false;
+            }
             System.String requestDeliveryOptions_deliveryOptions_SendingPoolName = null;
             if (cmdletContext.DeliveryOptions_SendingPoolName != null)
             {
@@ -404,6 +466,16 @@ namespace Amazon.PowerShell.Cmdlets.SES2
                 request.TrackingOptions.CustomRedirectDomain = requestTrackingOptions_trackingOptions_CustomRedirectDomain;
                 requestTrackingOptionsIsNull = false;
             }
+            Amazon.SimpleEmailV2.HttpsPolicy requestTrackingOptions_trackingOptions_HttpsPolicy = null;
+            if (cmdletContext.TrackingOptions_HttpsPolicy != null)
+            {
+                requestTrackingOptions_trackingOptions_HttpsPolicy = cmdletContext.TrackingOptions_HttpsPolicy;
+            }
+            if (requestTrackingOptions_trackingOptions_HttpsPolicy != null)
+            {
+                request.TrackingOptions.HttpsPolicy = requestTrackingOptions_trackingOptions_HttpsPolicy;
+                requestTrackingOptionsIsNull = false;
+            }
              // determine if request.TrackingOptions should be set to null
             if (requestTrackingOptionsIsNull)
             {
@@ -506,13 +578,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service V2 (SES V2)", "CreateConfigurationSet");
             try
             {
-                #if DESKTOP
-                return client.CreateConfigurationSet(request);
-                #elif CORECLR
-                return client.CreateConfigurationSetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateConfigurationSetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -529,7 +595,9 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String ArchivingOptions_ArchiveArn { get; set; }
             public System.String ConfigurationSetName { get; set; }
+            public System.Int64? DeliveryOptions_MaxDeliverySecond { get; set; }
             public System.String DeliveryOptions_SendingPoolName { get; set; }
             public Amazon.SimpleEmailV2.TlsPolicy DeliveryOptions_TlsPolicy { get; set; }
             public System.DateTime? ReputationOptions_LastFreshStart { get; set; }
@@ -538,6 +606,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             public List<System.String> SuppressionOptions_SuppressedReason { get; set; }
             public List<Amazon.SimpleEmailV2.Model.Tag> Tag { get; set; }
             public System.String TrackingOptions_CustomRedirectDomain { get; set; }
+            public Amazon.SimpleEmailV2.HttpsPolicy TrackingOptions_HttpsPolicy { get; set; }
             public Amazon.SimpleEmailV2.FeatureStatus DashboardOptions_EngagementMetric { get; set; }
             public Amazon.SimpleEmailV2.FeatureStatus GuardianOptions_OptimizedSharedDelivery { get; set; }
             public System.Func<Amazon.SimpleEmailV2.Model.CreateConfigurationSetResponse, NewSES2ConfigurationSetCmdlet, object> Select { get; set; } =

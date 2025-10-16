@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,48 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Modifies a Capacity Reservation's capacity and the conditions under which it is to
-    /// be released. You cannot change a Capacity Reservation's instance type, EBS optimization,
-    /// instance store settings, platform, Availability Zone, or instance eligibility. If
-    /// you need to modify any of these attributes, we recommend that you cancel the Capacity
-    /// Reservation, and then create a new one with the required attributes.
+    /// Modifies a Capacity Reservation's capacity, instance eligibility, and the conditions
+    /// under which it is to be released. You can't modify a Capacity Reservation's instance
+    /// type, EBS optimization, platform, instance store settings, Availability Zone, or tenancy.
+    /// If you need to modify any of these attributes, we recommend that you cancel the Capacity
+    /// Reservation, and then create a new one with the required attributes. For more information,
+    /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/capacity-reservations-modify.html">
+    /// Modify an active Capacity Reservation</a>.
+    /// 
+    ///  
+    /// <para>
+    /// The allowed modifications depend on the state of the Capacity Reservation:
+    /// </para><ul><li><para><c>assessing</c> or <c>scheduled</c> state - You can modify the tags only.
+    /// </para></li><li><para><c>pending</c> state - You can't modify the Capacity Reservation in any way.
+    /// </para></li><li><para><c>active</c> state but still within the commitment duration - You can't decrease
+    /// the instance count or set an end date that is within the commitment duration. All
+    /// other modifications are allowed.
+    /// </para></li><li><para><c>active</c> state with no commitment duration or elapsed commitment duration -
+    /// All modifications are allowed.
+    /// </para></li><li><para><c>expired</c>, <c>cancelled</c>, <c>unsupported</c>, or <c>failed</c> state - You
+    /// can't modify the Capacity Reservation in any way.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Edit", "EC2CapacityReservation", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.Boolean")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyCapacityReservation API operation.", Operation = new[] {"ModifyCapacityReservation"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyCapacityReservationResponse))]
     [AWSCmdletOutput("System.Boolean or Amazon.EC2.Model.ModifyCapacityReservationResponse",
-        "This cmdlet returns a System.Boolean object.",
-        "The service call response (type Amazon.EC2.Model.ModifyCapacityReservationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns a collection of System.Boolean objects.",
+        "The service call response (type Amazon.EC2.Model.ModifyCapacityReservationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2CapacityReservationCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Accept
         /// <summary>
@@ -81,6 +100,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String CapacityReservationId { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EndDate
@@ -124,6 +155,24 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.Int32? InstanceCount { get; set; }
         #endregion
         
+        #region Parameter InstanceMatchCriterion
+        /// <summary>
+        /// <para>
+        /// <para> The matching criteria (instance eligibility) that you want to use in the modified
+        /// Capacity Reservation. If you change the instance eligibility of an existing Capacity
+        /// Reservation from <c>targeted</c> to <c>open</c>, any running instances that match
+        /// the attributes of the Capacity Reservation, have the <c>CapacityReservationPreference</c>
+        /// set to <c>open</c>, and are not yet running in the Capacity Reservation, will automatically
+        /// use the modified Capacity Reservation. </para><para>To modify the instance eligibility, the Capacity Reservation must be completely idle
+        /// (zero usage).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("InstanceMatchCriteria")]
+        [AWSConstantClassSource("Amazon.EC2.InstanceMatchCriteria")]
+        public Amazon.EC2.InstanceMatchCriteria InstanceMatchCriterion { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Return'.
@@ -133,16 +182,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Return";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CapacityReservationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CapacityReservationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CapacityReservationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -155,9 +194,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.CapacityReservationId), MyInvocation.BoundParameters);
@@ -171,21 +214,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyCapacityReservationResponse, EditEC2CapacityReservationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CapacityReservationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Accept = this.Accept;
             context.AdditionalInfo = this.AdditionalInfo;
             context.CapacityReservationId = this.CapacityReservationId;
@@ -195,9 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter CapacityReservationId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DryRun = this.DryRun;
             context.EndDate = this.EndDate;
             context.EndDateType = this.EndDateType;
             context.InstanceCount = this.InstanceCount;
+            context.InstanceMatchCriterion = this.InstanceMatchCriterion;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -226,6 +261,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.CapacityReservationId = cmdletContext.CapacityReservationId;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.EndDate != null)
             {
                 request.EndDate = cmdletContext.EndDate.Value;
@@ -237,6 +276,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.InstanceCount != null)
             {
                 request.InstanceCount = cmdletContext.InstanceCount.Value;
+            }
+            if (cmdletContext.InstanceMatchCriterion != null)
+            {
+                request.InstanceMatchCriteria = cmdletContext.InstanceMatchCriterion;
             }
             
             CmdletOutput output;
@@ -276,13 +319,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyCapacityReservation");
             try
             {
-                #if DESKTOP
-                return client.ModifyCapacityReservation(request);
-                #elif CORECLR
-                return client.ModifyCapacityReservationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyCapacityReservationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -302,9 +339,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.Boolean? Accept { get; set; }
             public System.String AdditionalInfo { get; set; }
             public System.String CapacityReservationId { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.DateTime? EndDate { get; set; }
             public Amazon.EC2.EndDateType EndDateType { get; set; }
             public System.Int32? InstanceCount { get; set; }
+            public Amazon.EC2.InstanceMatchCriteria InstanceMatchCriterion { get; set; }
             public System.Func<Amazon.EC2.Model.ModifyCapacityReservationResponse, EditEC2CapacityReservationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Return;
         }

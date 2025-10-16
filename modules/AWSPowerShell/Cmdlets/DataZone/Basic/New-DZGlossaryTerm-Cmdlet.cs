@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,58 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
     /// Creates a business glossary term.
+    /// 
+    ///  
+    /// <para>
+    /// A glossary term represents an individual entry within the Amazon DataZone glossary,
+    /// serving as a standardized definition for a specific business concept or data element.
+    /// Each term can include rich metadata such as detailed definitions, synonyms, related
+    /// terms, and usage examples. Glossary terms can be linked directly to data assets, providing
+    /// business context to technical data elements. This linking capability helps users understand
+    /// the business meaning of data fields and ensures consistent interpretation across different
+    /// systems and teams. Terms can also have relationships with other terms, creating a
+    /// semantic network that reflects the complexity of business concepts.
+    /// </para><para>
+    /// Prerequisites:
+    /// </para><ul><li><para>
+    /// Domain must exist. 
+    /// </para></li><li><para>
+    /// Glossary must exist.
+    /// </para></li><li><para>
+    /// The term name must be unique within the glossary.
+    /// </para></li><li><para>
+    /// Ensure term does not conflict with existing terms in hierarchy.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("New", "DZGlossaryTerm", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DataZone.Model.CreateGlossaryTermResponse")]
     [AWSCmdlet("Calls the Amazon DataZone CreateGlossaryTerm API operation.", Operation = new[] {"CreateGlossaryTerm"}, SelectReturnType = typeof(Amazon.DataZone.Model.CreateGlossaryTermResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.CreateGlossaryTermResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.CreateGlossaryTermResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.CreateGlossaryTermResponse object containing multiple properties."
     )]
     public partial class NewDZGlossaryTermCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter TermRelations_Classify
         /// <summary>
         /// <para>
-        /// <para>The classifies of the term relations.</para>
+        /// <para>The classifies of the term relations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -93,7 +118,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter TermRelations_IsA
         /// <summary>
         /// <para>
-        /// <para>The <c>isA</c> property of the term relations.</para>
+        /// <para>The <c>isA</c> property of the term relations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,16 +199,6 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GlossaryIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GlossaryIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GlossaryIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -190,9 +209,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GlossaryIdentifier), MyInvocation.BoundParameters);
@@ -206,21 +229,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.CreateGlossaryTermResponse, NewDZGlossaryTermCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GlossaryIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.DomainIdentifier = this.DomainIdentifier;
             #if MODULAR
@@ -365,13 +378,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "CreateGlossaryTerm");
             try
             {
-                #if DESKTOP
-                return client.CreateGlossaryTerm(request);
-                #elif CORECLR
-                return client.CreateGlossaryTermAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGlossaryTermAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

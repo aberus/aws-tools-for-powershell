@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,17 +22,19 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AWSHealth;
 using Amazon.AWSHealth.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.HLTH
 {
     /// <summary>
     /// Returns a list of entities that have been affected by the specified events, based
     /// on the specified filter criteria. Entities can refer to individual customer resources,
     /// groups of customer resources, or any other construct, depending on the Amazon Web
-    /// Service. Events that have impact beyond that of the affected entities, or where the
-    /// extent of impact is unknown, include at least one entity indicating this.
+    /// Services service. Events that have impact beyond that of the affected entities, or
+    /// where the extent of impact is unknown, include at least one entity indicating this.
     /// 
     ///  
     /// <para>
@@ -51,17 +53,22 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
     [AWSCmdlet("Calls the AWS Health DescribeAffectedEntities API operation.", Operation = new[] {"DescribeAffectedEntities"}, SelectReturnType = typeof(Amazon.AWSHealth.Model.DescribeAffectedEntitiesResponse))]
     [AWSCmdletOutput("Amazon.AWSHealth.Model.AffectedEntity or Amazon.AWSHealth.Model.DescribeAffectedEntitiesResponse",
         "This cmdlet returns a collection of Amazon.AWSHealth.Model.AffectedEntity objects.",
-        "The service call response (type Amazon.AWSHealth.Model.DescribeAffectedEntitiesResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AWSHealth.Model.DescribeAffectedEntitiesResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetHLTHAffectedEntityCmdlet : AmazonAWSHealthClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter_EntityArn
         /// <summary>
         /// <para>
-        /// <para>A list of entity ARNs (unique identifiers).</para>
+        /// <para>A list of entity ARNs (unique identifiers).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -72,7 +79,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_EntityValue
         /// <summary>
         /// <para>
-        /// <para>A list of IDs for affected entities.</para>
+        /// <para>A list of IDs for affected entities.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -84,7 +95,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         /// <summary>
         /// <para>
         /// <para>A list of event ARNs (unique identifiers). For example: <c>"arn:aws:health:us-east-1::event/EC2/EC2_INSTANCE_RETIREMENT_SCHEDULED/EC2_INSTANCE_RETIREMENT_SCHEDULED_ABC123-CDE456",
-        /// "arn:aws:health:us-west-1::event/EBS/AWS_EBS_LOST_VOLUME/AWS_EBS_LOST_VOLUME_CHI789_JKL101"</c></para>
+        /// "arn:aws:health:us-west-1::event/EBS/AWS_EBS_LOST_VOLUME/AWS_EBS_LOST_VOLUME_CHI789_JKL101"</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -102,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_LastUpdatedTime
         /// <summary>
         /// <para>
-        /// <para>A list of the most recent dates and times that the entity was updated.</para>
+        /// <para>A list of the most recent dates and times that the entity was updated.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +143,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_StatusCode
         /// <summary>
         /// <para>
-        /// <para>A list of entity status codes (<c>IMPAIRED</c>, <c>UNIMPAIRED</c>, or <c>UNKNOWN</c>).</para>
+        /// <para>A list of entity status codes (<c>IMPAIRED</c>, <c>UNIMPAIRED</c>, or <c>UNKNOWN</c>).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -135,7 +158,11 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         #region Parameter Filter_Tag
         /// <summary>
         /// <para>
-        /// <para>A map of entity tags attached to the affected entity.</para><note><para>Currently, the <c>tags</c> property isn't supported.</para></note>
+        /// <para>A map of entity tags attached to the affected entity.</para><note><para>Currently, the <c>tags</c> property isn't supported.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +197,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -198,9 +225,13 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -535,7 +566,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Entities.Count;
+                    int _receivedThisCall = response.Entities?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -584,13 +615,7 @@ namespace Amazon.PowerShell.Cmdlets.HLTH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Health", "DescribeAffectedEntities");
             try
             {
-                #if DESKTOP
-                return client.DescribeAffectedEntities(request);
-                #elif CORECLR
-                return client.DescribeAffectedEntitiesAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAffectedEntitiesAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

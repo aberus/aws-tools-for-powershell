@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Lightsail;
 using Amazon.Lightsail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LS
 {
     /// <summary>
@@ -34,7 +36,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
     /// <para>
     /// A bucket is a cloud storage resource available in the Lightsail object storage service.
     /// Use buckets to store objects such as data and its descriptive metadata. For more information
-    /// about buckets, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/buckets-in-amazon-lightsail">Buckets
+    /// about buckets, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/buckets-in-amazon-lightsail">Buckets
     /// in Amazon Lightsail</a> in the <i>Amazon Lightsail Developer Guide</i>.
     /// </para>
     /// </summary>
@@ -42,17 +44,18 @@ namespace Amazon.PowerShell.Cmdlets.LS
     [OutputType("Amazon.Lightsail.Model.CreateBucketResponse")]
     [AWSCmdlet("Calls the Amazon Lightsail CreateBucket API operation.", Operation = new[] {"CreateBucket"}, SelectReturnType = typeof(Amazon.Lightsail.Model.CreateBucketResponse))]
     [AWSCmdletOutput("Amazon.Lightsail.Model.CreateBucketResponse",
-        "This cmdlet returns an Amazon.Lightsail.Model.CreateBucketResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Lightsail.Model.CreateBucketResponse object containing multiple properties."
     )]
     public partial class NewLSBucketCmdlet : AmazonLightsailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketName
         /// <summary>
         /// <para>
-        /// <para>The name for the bucket.</para><para>For more information about bucket names, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/bucket-naming-rules-in-amazon-lightsail">Bucket
+        /// <para>The name for the bucket.</para><para>For more information about bucket names, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/bucket-naming-rules-in-amazon-lightsail">Bucket
         /// naming rules in Amazon Lightsail</a> in the <i>Amazon Lightsail Developer Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -90,7 +93,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
         #region Parameter EnableObjectVersioning
         /// <summary>
         /// <para>
-        /// <para>A Boolean value that indicates whether to enable versioning of objects in the bucket.</para><para>For more information about versioning, see <a href="https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-managing-bucket-object-versioning">Enabling
+        /// <para>A Boolean value that indicates whether to enable versioning of objects in the bucket.</para><para>For more information about versioning, see <a href="https://docs.aws.amazon.com/lightsail/latest/userguide/amazon-lightsail-managing-bucket-object-versioning">Enabling
         /// and suspending object versioning in a bucket in Amazon Lightsail</a> in the <i>Amazon
         /// Lightsail Developer Guide</i>.</para>
         /// </para>
@@ -103,7 +106,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
         /// <summary>
         /// <para>
         /// <para>The tag keys and optional values to add to the bucket during creation.</para><para>Use the <a href="https://docs.aws.amazon.com/lightsail/2016-11-28/api-reference/API_TagResource.html">TagResource</a>
-        /// action to tag the bucket after it's created.</para>
+        /// action to tag the bucket after it's created.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -122,16 +129,6 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BucketName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BucketName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -142,9 +139,13 @@ namespace Amazon.PowerShell.Cmdlets.LS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BucketName), MyInvocation.BoundParameters);
@@ -158,21 +159,11 @@ namespace Amazon.PowerShell.Cmdlets.LS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Lightsail.Model.CreateBucketResponse, NewLSBucketCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BucketName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketName = this.BucketName;
             #if MODULAR
             if (this.BucketName == null && ParameterWasBound(nameof(this.BucketName)))
@@ -262,13 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.LS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lightsail", "CreateBucket");
             try
             {
-                #if DESKTOP
-                return client.CreateBucket(request);
-                #elif CORECLR
-                return client.CreateBucketAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBucketAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

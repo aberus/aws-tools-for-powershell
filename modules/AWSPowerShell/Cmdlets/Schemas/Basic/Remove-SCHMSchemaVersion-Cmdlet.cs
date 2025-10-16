@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Schemas;
 using Amazon.Schemas.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SCHM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SCHM
     [AWSCmdlet("Calls the Amazon EventBridge Schema Registry DeleteSchemaVersion API operation.", Operation = new[] {"DeleteSchemaVersion"}, SelectReturnType = typeof(Amazon.Schemas.Model.DeleteSchemaVersionResponse))]
     [AWSCmdletOutput("None or Amazon.Schemas.Model.DeleteSchemaVersionResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Schemas.Model.DeleteSchemaVersionResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Schemas.Model.DeleteSchemaVersionResponse) be returned by specifying '-Select *'."
     )]
     public partial class RemoveSCHMSchemaVersionCmdlet : AmazonSchemasClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RegistryName
         /// <summary>
@@ -113,9 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.SCHM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SchemaName), MyInvocation.BoundParameters);
@@ -221,13 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.SCHM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge Schema Registry", "DeleteSchemaVersion");
             try
             {
-                #if DESKTOP
-                return client.DeleteSchemaVersion(request);
-                #elif CORECLR
-                return client.DeleteSchemaVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteSchemaVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

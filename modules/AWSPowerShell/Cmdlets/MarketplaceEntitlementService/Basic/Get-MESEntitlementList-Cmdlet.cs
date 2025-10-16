@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,33 +22,49 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MarketplaceEntitlementService;
 using Amazon.MarketplaceEntitlementService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MES
 {
     /// <summary>
     /// GetEntitlements retrieves entitlement values for a given product. The results can
-    /// be filtered based on customer identifier or product dimensions.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// be filtered based on customer identifier, AWS account ID, or product dimensions.
+    /// 
+    ///  <important><para>
+    ///  The <c>CustomerIdentifier</c> parameter is on path for deprecation. Use <c>CustomerAWSAccountID</c>
+    /// instead.
+    /// </para><para>
+    /// These parameters are mutually exclusive. You can't specify both <c>CustomerIdentifier</c>
+    /// and <c>CustomerAWSAccountID</c> in the same request. 
+    /// </para></important><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "MESEntitlementList")]
     [OutputType("Amazon.MarketplaceEntitlementService.Model.Entitlement")]
     [AWSCmdlet("Calls the AWS Marketplace Entitlement Service GetEntitlements API operation.", Operation = new[] {"GetEntitlements"}, SelectReturnType = typeof(Amazon.MarketplaceEntitlementService.Model.GetEntitlementsResponse))]
     [AWSCmdletOutput("Amazon.MarketplaceEntitlementService.Model.Entitlement or Amazon.MarketplaceEntitlementService.Model.GetEntitlementsResponse",
         "This cmdlet returns a collection of Amazon.MarketplaceEntitlementService.Model.Entitlement objects.",
-        "The service call response (type Amazon.MarketplaceEntitlementService.Model.GetEntitlementsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MarketplaceEntitlementService.Model.GetEntitlementsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetMESEntitlementListCmdlet : AmazonMarketplaceEntitlementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
         /// <para>Filter is used to return entitlements for a specific customer or for a specific dimension.
         /// Filters are described as keys mapped to a lists of values. Filtered requests are <i>unioned</i>
-        /// for each value in the value list, and then <i>intersected</i> for each filter key.</para>
+        /// for each value in the value list, and then <i>intersected</i> for each filter key.</para><para><c>CustomerIdentifier</c> and <c>CustomerAWSAccountID</c> are mutually exclusive.
+        /// You can't specify both in the same request. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +113,7 @@ namespace Amazon.PowerShell.Cmdlets.MES
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -115,16 +131,6 @@ namespace Amazon.PowerShell.Cmdlets.MES
         public string Select { get; set; } = "Entitlements";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProductCode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProductCode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProductCode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -135,9 +141,13 @@ namespace Amazon.PowerShell.Cmdlets.MES
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -145,21 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.MES
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MarketplaceEntitlementService.Model.GetEntitlementsResponse, GetMESEntitlementListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProductCode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Filter != null)
             {
                 context.Filter = new Dictionary<System.String, List<System.String>>(StringComparer.Ordinal);
@@ -212,9 +212,7 @@ namespace Amazon.PowerShell.Cmdlets.MES
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.MarketplaceEntitlementService.Model.GetEntitlementsRequest();
@@ -282,7 +280,7 @@ namespace Amazon.PowerShell.Cmdlets.MES
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.MarketplaceEntitlementService.Model.GetEntitlementsRequest();
@@ -341,7 +339,7 @@ namespace Amazon.PowerShell.Cmdlets.MES
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Entitlements.Count;
+                    int _receivedThisCall = response.Entitlements?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -390,13 +388,7 @@ namespace Amazon.PowerShell.Cmdlets.MES
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Entitlement Service", "GetEntitlements");
             try
             {
-                #if DESKTOP
-                return client.GetEntitlements(request);
-                #elif CORECLR
-                return client.GetEntitlementsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetEntitlementsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

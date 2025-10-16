@@ -189,6 +189,13 @@ $LM_Completers = {
             break
         }
 
+        # Amazon.Lambda.RecursiveLoop
+        "Write-LMFunctionRecursionConfig/RecursiveLoop"
+        {
+            $v = "Allow","Terminate"
+            break
+        }
+
         # Amazon.Lambda.ResponseStreamingInvocationType
         "Invoke-LMWithResponseStream/InvocationType"
         {
@@ -204,7 +211,19 @@ $LM_Completers = {
             ($_ -eq "Update-LMFunctionConfiguration/Runtime")
         }
         {
-            $v = "dotnet6","dotnetcore1.0","dotnetcore2.0","dotnetcore2.1","dotnetcore3.1","go1.x","java11","java17","java21","java8","java8.al2","nodejs","nodejs10.x","nodejs12.x","nodejs14.x","nodejs16.x","nodejs18.x","nodejs20.x","nodejs4.3","nodejs4.3-edge","nodejs6.10","nodejs8.10","provided","provided.al2","provided.al2023","python2.7","python3.10","python3.11","python3.12","python3.6","python3.7","python3.8","python3.9","ruby2.5","ruby2.7","ruby3.2"
+            $v = "dotnet6","dotnet8","dotnetcore1.0","dotnetcore2.0","dotnetcore2.1","dotnetcore3.1","go1.x","java11","java17","java21","java8","java8.al2","nodejs","nodejs10.x","nodejs12.x","nodejs14.x","nodejs16.x","nodejs18.x","nodejs20.x","nodejs22.x","nodejs4.3","nodejs4.3-edge","nodejs6.10","nodejs8.10","provided","provided.al2","provided.al2023","python2.7","python3.10","python3.11","python3.12","python3.13","python3.6","python3.7","python3.8","python3.9","ruby2.5","ruby2.7","ruby3.2","ruby3.3","ruby3.4"
+            break
+        }
+
+        # Amazon.Lambda.SchemaRegistryEventRecordFormat
+        {
+            ($_ -eq "New-LMEventSourceMapping/AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat") -Or
+            ($_ -eq "Update-LMEventSourceMapping/AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat") -Or
+            ($_ -eq "New-LMEventSourceMapping/SchemaRegistryConfig_EventRecordFormat") -Or
+            ($_ -eq "Update-LMEventSourceMapping/SchemaRegistryConfig_EventRecordFormat")
+        }
+        {
+            $v = "JSON","SOURCE"
             break
         }
 
@@ -254,6 +273,7 @@ $LM_Completers = {
 }
 
 $LM_map = @{
+    "AmazonManagedKafkaEventSourceConfig_SchemaRegistryConfig_EventRecordFormat"=@("New-LMEventSourceMapping","Update-LMEventSourceMapping")
     "AuthType"=@("New-LMFunctionUrlConfig","Update-LMFunctionUrlConfig")
     "CodeSigningPolicies_UntrustedArtifactOnDeployment"=@("New-LMCodeSigningConfig","Update-LMCodeSigningConfig")
     "CompatibleArchitecture"=@("Get-LMLayerList","Get-LMLayerVersionList")
@@ -268,7 +288,9 @@ $LM_map = @{
     "LoggingConfig_SystemLogLevel"=@("Publish-LMFunction","Update-LMFunctionConfiguration")
     "LogType"=@("Invoke-LMFunction","Invoke-LMWithResponseStream")
     "PackageType"=@("Publish-LMFunction")
+    "RecursiveLoop"=@("Write-LMFunctionRecursionConfig")
     "Runtime"=@("Publish-LMFunction","Update-LMFunctionConfiguration")
+    "SchemaRegistryConfig_EventRecordFormat"=@("New-LMEventSourceMapping","Update-LMEventSourceMapping")
     "SnapStart_ApplyOn"=@("Publish-LMFunction","Update-LMFunctionConfiguration")
     "StartingPosition"=@("New-LMEventSourceMapping")
     "TracingConfig_Mode"=@("Publish-LMFunction","Update-LMFunctionConfiguration")
@@ -351,6 +373,7 @@ $LM_SelectMap = @{
                "Get-LMFunctionConcurrency",
                "Get-LMFunctionConfiguration",
                "Get-LMFunctionEventInvokeConfig",
+               "Get-LMFunctionRecursionConfig",
                "Get-LMFunctionUrlConfig",
                "Get-LMLayerVersion",
                "Get-LMLayerVersionByArn",
@@ -359,7 +382,6 @@ $LM_SelectMap = @{
                "Get-LMProvisionedConcurrencyConfig",
                "Get-LMRuntimeManagementConfig",
                "Invoke-LMFunction",
-               "Invoke-LMFunctionAsync",
                "Invoke-LMWithResponseStream",
                "Get-LMAliasList",
                "Get-LMCodeSigningConfigList",
@@ -378,6 +400,7 @@ $LM_SelectMap = @{
                "Write-LMFunctionCodeSigningConfig",
                "Write-LMFunctionConcurrency",
                "Write-LMFunctionEventInvokeConfig",
+               "Write-LMFunctionRecursionConfig",
                "Write-LMProvisionedConcurrencyConfig",
                "Write-LMRuntimeManagementConfig",
                "Remove-LMLayerVersionPermission",

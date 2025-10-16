@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECR;
 using Amazon.ECR.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECR
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.ECR
     [AWSCmdlet("Calls the Amazon EC2 Container Registry CreateRepository API operation.", Operation = new[] {"CreateRepository"}, SelectReturnType = typeof(Amazon.ECR.Model.CreateRepositoryResponse))]
     [AWSCmdletOutput("Amazon.ECR.Model.Repository or Amazon.ECR.Model.CreateRepositoryResponse",
         "This cmdlet returns an Amazon.ECR.Model.Repository object.",
-        "The service call response (type Amazon.ECR.Model.CreateRepositoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECR.Model.CreateRepositoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewECRRepositoryCmdlet : AmazonECRClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EncryptionConfiguration_EncryptionType
         /// <summary>
@@ -49,14 +52,14 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         /// <para>The encryption type to use.</para><para>If you use the <c>KMS</c> encryption type, the contents of the repository will be
         /// encrypted using server-side encryption with Key Management Service key stored in KMS.
         /// When you use KMS to encrypt your data, you can either use the default Amazon Web Services
-        /// managed KMS key for Amazon ECR, or specify your own KMS key, which you already created.
-        /// For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingKMSEncryption.html">Protecting
-        /// data using server-side encryption with an KMS key stored in Key Management Service
-        /// (SSE-KMS)</a> in the <i>Amazon Simple Storage Service Console Developer Guide</i>.</para><para>If you use the <c>AES256</c> encryption type, Amazon ECR uses server-side encryption
+        /// managed KMS key for Amazon ECR, or specify your own KMS key, which you already created.</para><para>If you use the <c>KMS_DSSE</c> encryption type, the contents of the repository will
+        /// be encrypted with two layers of encryption using server-side encryption with the KMS
+        /// Management Service key stored in KMS. Similar to the <c>KMS</c> encryption type, you
+        /// can either use the default Amazon Web Services managed KMS key for Amazon ECR, or
+        /// specify your own KMS key, which you've already created. </para><para>If you use the <c>AES256</c> encryption type, Amazon ECR uses server-side encryption
         /// with Amazon S3-managed encryption keys which encrypts the images in the repository
-        /// using an AES-256 encryption algorithm. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingServerSideEncryption.html">Protecting
-        /// data using server-side encryption with Amazon S3-managed encryption keys (SSE-S3)</a>
-        /// in the <i>Amazon Simple Storage Service Console Developer Guide</i>.</para>
+        /// using an AES256 encryption algorithm.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html">Amazon
+        /// ECR encryption at rest</a> in the <i>Amazon Elastic Container Registry User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,6 +79,22 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.ECR.ImageTagMutability")]
         public Amazon.ECR.ImageTagMutability ImageTagMutability { get; set; }
+        #endregion
+        
+        #region Parameter ImageTagMutabilityExclusionFilter
+        /// <summary>
+        /// <para>
+        /// <para>Creates a repository with a list of filters that define which image tags can override
+        /// the default image tag mutability setting.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ImageTagMutabilityExclusionFilters")]
+        public Amazon.ECR.Model.ImageTagMutabilityExclusionFilter[] ImageTagMutabilityExclusionFilter { get; set; }
         #endregion
         
         #region Parameter EncryptionConfiguration_KmsKey
@@ -142,7 +161,11 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         /// <para>The metadata that you apply to the repository to help you categorize and organize
         /// them. Each tag consists of a key and an optional value, both of which you define.
         /// Tag keys can have a maximum character length of 128 characters, and tag values can
-        /// have a maximum length of 256 characters.</para>
+        /// have a maximum length of 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,16 +184,6 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         public string Select { get; set; } = "Repository";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RepositoryName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RepositoryName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RepositoryName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -181,9 +194,13 @@ namespace Amazon.PowerShell.Cmdlets.ECR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RepositoryName), MyInvocation.BoundParameters);
@@ -197,25 +214,19 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECR.Model.CreateRepositoryResponse, NewECRRepositoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RepositoryName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EncryptionConfiguration_EncryptionType = this.EncryptionConfiguration_EncryptionType;
             context.EncryptionConfiguration_KmsKey = this.EncryptionConfiguration_KmsKey;
             context.ImageScanningConfiguration_ScanOnPush = this.ImageScanningConfiguration_ScanOnPush;
             context.ImageTagMutability = this.ImageTagMutability;
+            if (this.ImageTagMutabilityExclusionFilter != null)
+            {
+                context.ImageTagMutabilityExclusionFilter = new List<Amazon.ECR.Model.ImageTagMutabilityExclusionFilter>(this.ImageTagMutabilityExclusionFilter);
+            }
             context.RegistryId = this.RegistryId;
             context.RepositoryName = this.RepositoryName;
             #if MODULAR
@@ -296,6 +307,10 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             {
                 request.ImageTagMutability = cmdletContext.ImageTagMutability;
             }
+            if (cmdletContext.ImageTagMutabilityExclusionFilter != null)
+            {
+                request.ImageTagMutabilityExclusionFilters = cmdletContext.ImageTagMutabilityExclusionFilter;
+            }
             if (cmdletContext.RegistryId != null)
             {
                 request.RegistryId = cmdletContext.RegistryId;
@@ -346,13 +361,7 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Registry", "CreateRepository");
             try
             {
-                #if DESKTOP
-                return client.CreateRepository(request);
-                #elif CORECLR
-                return client.CreateRepositoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRepositoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -373,6 +382,7 @@ namespace Amazon.PowerShell.Cmdlets.ECR
             public System.String EncryptionConfiguration_KmsKey { get; set; }
             public System.Boolean? ImageScanningConfiguration_ScanOnPush { get; set; }
             public Amazon.ECR.ImageTagMutability ImageTagMutability { get; set; }
+            public List<Amazon.ECR.Model.ImageTagMutabilityExclusionFilter> ImageTagMutabilityExclusionFilter { get; set; }
             public System.String RegistryId { get; set; }
             public System.String RepositoryName { get; set; }
             public List<Amazon.ECR.Model.Tag> Tag { get; set; }

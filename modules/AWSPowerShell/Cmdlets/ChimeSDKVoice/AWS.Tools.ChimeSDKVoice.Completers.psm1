@@ -108,6 +108,13 @@ $CHMVO_Completers = {
             break
         }
 
+        # Amazon.ChimeSDKVoice.NetworkType
+        "New-CHMVOVoiceConnector/NetworkType"
+        {
+            $v = "DUAL_STACK","IPV4_ONLY"
+            break
+        }
+
         # Amazon.ChimeSDKVoice.NumberSelectionBehavior
         "New-CHMVOProxySession/NumberSelectionBehavior"
         {
@@ -162,6 +169,13 @@ $CHMVO_Completers = {
             break
         }
 
+        # Amazon.ChimeSDKVoice.VoiceConnectorIntegrationType
+        "New-CHMVOVoiceConnector/IntegrationType"
+        {
+            $v = "CONNECT_ANALYTICS_CONNECTOR","CONNECT_CALL_TRANSFER_CONNECTOR"
+            break
+        }
+
 
     }
 
@@ -175,7 +189,9 @@ $CHMVO_map = @{
     "CallLeg"=@("Start-CHMVOSpeakerSearchTask")
     "FilterName"=@("Get-CHMVOPhoneNumberList")
     "GeoMatchLevel"=@("New-CHMVOProxySession")
+    "IntegrationType"=@("New-CHMVOVoiceConnector")
     "LanguageCode"=@("Start-CHMVOVoiceToneAnalysisTask")
+    "NetworkType"=@("New-CHMVOVoiceConnector")
     "NumberSelectionBehavior"=@("New-CHMVOProxySession")
     "PhoneNumberType"=@("Search-CHMVOAvailablePhoneNumber")
     "ProductType"=@("Get-CHMVOPhoneNumberList","Get-CHMVOSupportedPhoneNumberCountryList","New-CHMVOPhoneNumberOrder","Update-CHMVOPhoneNumber")
@@ -253,6 +269,7 @@ $CHMVO_SelectMap = @{
                "Remove-CHMVOSipRule",
                "Remove-CHMVOVoiceConnector",
                "Remove-CHMVOVoiceConnectorEmergencyCallingConfiguration",
+               "Remove-CHMVOVoiceConnectorExternalSystemsConfiguration",
                "Remove-CHMVOVoiceConnectorGroup",
                "Remove-CHMVOVoiceConnectorOrigination",
                "Remove-CHMVOVoiceConnectorProxy",
@@ -275,6 +292,7 @@ $CHMVO_SelectMap = @{
                "Get-CHMVOSpeakerSearchTask",
                "Get-CHMVOVoiceConnector",
                "Get-CHMVOVoiceConnectorEmergencyCallingConfiguration",
+               "Get-CHMVOVoiceConnectorExternalSystemsConfiguration",
                "Get-CHMVOVoiceConnectorGroup",
                "Get-CHMVOVoiceConnectorLoggingConfiguration",
                "Get-CHMVOVoiceConnectorOrigination",
@@ -301,6 +319,7 @@ $CHMVO_SelectMap = @{
                "Write-CHMVOSipMediaApplicationAlexaSkillConfiguration",
                "Write-CHMVOSipMediaApplicationLoggingConfiguration",
                "Write-CHMVOVoiceConnectorEmergencyCallingConfiguration",
+               "Write-CHMVOVoiceConnectorExternalSystemsConfiguration",
                "Write-CHMVOVoiceConnectorLoggingConfiguration",
                "Write-CHMVOVoiceConnectorOrigination",
                "Write-CHMVOVoiceConnectorProxy",

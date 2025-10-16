@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WAFV2;
 using Amazon.WAFV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WAF2
 {
     /// <summary>
-    /// Retrieves an array of the Amazon Resource Names (ARNs) for the regional resources
-    /// that are associated with the specified web ACL. 
+    /// Retrieves an array of the Amazon Resource Names (ARNs) for the resources that are
+    /// associated with the specified web ACL. 
     /// 
     ///  
     /// <para>
@@ -47,20 +49,20 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
     [AWSCmdlet("Calls the AWS WAF V2 ListResourcesForWebACL API operation.", Operation = new[] {"ListResourcesForWebACL"}, SelectReturnType = typeof(Amazon.WAFV2.Model.ListResourcesForWebACLResponse))]
     [AWSCmdletOutput("System.String or Amazon.WAFV2.Model.ListResourcesForWebACLResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.WAFV2.Model.ListResourcesForWebACLResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.WAFV2.Model.ListResourcesForWebACLResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetWAF2ResourcesForWebACLListCmdlet : AmazonWAFV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ResourceType
         /// <summary>
         /// <para>
-        /// <para>Used for web ACLs that are scoped for regional applications. A regional application
-        /// can be an Application Load Balancer (ALB), an Amazon API Gateway REST API, an AppSync
-        /// GraphQL API, an Amazon Cognito user pool, an App Runner service, or an Amazon Web
-        /// Services Verified Access instance. </para><note><para>If you don't provide a resource type, the call uses the resource type <c>APPLICATION_LOAD_BALANCER</c>.
+        /// <para>Retrieves the web ACLs that are used by the specified resource type. </para><para>For Amazon CloudFront, don't use this call. Instead, use the CloudFront call <c>ListDistributionsByWebACLId</c>.
+        /// For information, see <a href="https://docs.aws.amazon.com/cloudfront/latest/APIReference/API_ListDistributionsByWebACLId.html">ListDistributionsByWebACLId</a>
+        /// in the <i>Amazon CloudFront API Reference</i>. </para><note><para>If you don't provide a resource type, the call uses the resource type <c>APPLICATION_LOAD_BALANCER</c>.
         /// </para></note><para>Default: <c>APPLICATION_LOAD_BALANCER</c></para>
         /// </para>
         /// </summary>
@@ -97,19 +99,13 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
         public string Select { get; set; } = "ResourceArns";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WebACLArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WebACLArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WebACLArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -117,21 +113,11 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WAFV2.Model.ListResourcesForWebACLResponse, GetWAF2ResourcesForWebACLListCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WebACLArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ResourceType = this.ResourceType;
             context.WebACLArn = this.WebACLArn;
             #if MODULAR
@@ -202,13 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.WAF2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS WAF V2", "ListResourcesForWebACL");
             try
             {
-                #if DESKTOP
-                return client.ListResourcesForWebACL(request);
-                #elif CORECLR
-                return client.ListResourcesForWebACLAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListResourcesForWebACLAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

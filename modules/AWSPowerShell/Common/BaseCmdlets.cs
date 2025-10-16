@@ -1,5 +1,5 @@
 ﻿/*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -25,6 +25,11 @@ using Amazon.Runtime;
 using System.Collections;
 using Amazon.Util.Internal;
 using Amazon.PowerShell.Common.Internal;
+using Amazon.Runtime.CredentialManagement;
+using Amazon.Util;
+using Amazon.Runtime.Telemetry.Tracing;
+using Amazon.Runtime.Telemetry;
+using Amazon.Runtime.Internal.Util;
 
 namespace Amazon.PowerShell.Common
 {
@@ -41,23 +46,20 @@ namespace Amazon.PowerShell.Common
         // update user agent string for current process
         internal static bool AWSPowerShellUserAgentSet;
 
+        // update user agent string for current process
+        protected string UserAgentAddition = null;
+
         // the max number of items to use in a confirmation prompt, to avoid
         // a wall of text
         const int ArrayTruncationThreshold = 10;
 
         static readonly object[] EmptyObjectArray = new object[0];
 
-        // True if request contain any sensitive data
-        protected virtual bool IsSensitiveRequest { get; set; }
-
-        // True if response contain any sensitive data
-        protected virtual bool IsSensitiveResponse { get; set; }
-
         protected virtual bool IsGeneratedCmdlet { get; set; }
 
-        private bool IsSanitizingRequestError { get; set; }
-        private bool IsSanitizingResponseError { get; set; }
+        private TraceSpan TraceSpan { get; set; }
 
+        protected string AWSServiceId { get; set; } = "NoServiceClient";
 
         #region Error calls
 
@@ -119,6 +121,9 @@ namespace Amazon.PowerShell.Common
         /// <param name="innerException">The exception that was caught, if any</param>
         protected void ThrowExecutionError(string message, object errorSource, Exception innerException)
         {
+            TraceSpan?.RecordException(innerException);
+            TraceSpan?.Dispose();
+            TraceSpan = null;
             this.ThrowTerminatingError(new ErrorRecord(new InvalidOperationException(message, innerException),
                                                         innerException == null
                                                             ? "InvalidOperationException"
@@ -163,59 +168,150 @@ namespace Amazon.PowerShell.Common
         /// </summary>
         public string FormatParameterValuesForConfirmationMsg(string targetParameterName, IDictionary<string, object> boundParameters)
         {
-            if (string.IsNullOrEmpty(targetParameterName) || boundParameters.Keys.Count == 0)
-                return string.Empty;
-
-            object paramValue;
-            if (!boundParameters.TryGetValue(targetParameterName, out paramValue) || paramValue == null)
-                return string.Empty;
-
-            // probe to determine the data type and format accordingly - very few types will actually
-            // be used as resource-identifier parameters (string and string[] are the most likely)
-            var asString = paramValue as string;
-            if (asString != null)
-                return asString;
-
-            var asEnumerable = paramValue as IEnumerable;
-            if (asEnumerable != null)
+            try
             {
-                // try and keep the set of items to a reasonable value, to avoid the
-                // command line 'exploding' with a wall of text. Take() would work here
-                // except we want to add a 'plus n more items' suffix, so we need the
-                // overall count
-                var sb = new StringBuilder();
-                var itemCount = 0;
-                foreach (var item in asEnumerable)
-                {
-                    if (itemCount < ArrayTruncationThreshold)
-                    {
-                        if (sb.Length != 0)
-                            sb.Append(", ");
-                        sb.Append(item);
-                    }
+                // Backward compatibility - single parameter
+                return FormatParameterValuesForConfirmationMsg(new[] { targetParameterName }, boundParameters);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
 
-                    itemCount++;
+        /// <summary>
+        /// Returns formatted string containing the target of the operation for use in
+        /// confirmation messages. Collections are truncated to avoid message bloat.
+        /// For multiple parameters, values are concatenated with hyphens and truncated to 100 characters.
+        /// </summary>
+        public string FormatParameterValuesForConfirmationMsg(string[] targetParameterNames, IDictionary<string, object> boundParameters)
+        {
+            try
+            {
+                if (targetParameterNames == null || targetParameterNames.Length == 0 || boundParameters == null || boundParameters.Keys.Count == 0)
+                    return string.Empty;
+
+                if (targetParameterNames.Length == 1)
+                {
+                    // Single parameter - use existing logic for backward compatibility
+                    var parameterName = targetParameterNames[0];
+                    if (string.IsNullOrEmpty(parameterName))
+                        return string.Empty;
+
+                    object paramValue;
+                    if (!boundParameters.TryGetValue(parameterName, out paramValue) || paramValue == null)
+                        return string.Empty;
+
+                    return FormatSingleParameterValue(paramValue, parameterName);
                 }
 
-                if (itemCount > ArrayTruncationThreshold)
-                    sb.AppendFormat(" (plus {0} more)", itemCount - ArrayTruncationThreshold);
+                // Multiple parameters - concatenate with hyphens
+                var parameterValues = new List<string>();
+                
+                foreach (var paramName in targetParameterNames)
+                {
+                    if (string.IsNullOrEmpty(paramName))
+                        continue;
 
-                return sb.ToString();
+                    object paramValue;
+                    if (boundParameters.TryGetValue(paramName, out paramValue) && paramValue != null)
+                    {
+                        // For multiple parameters, if any parameter is an array, use only the first parameter
+                        var asEnumerable = paramValue as IEnumerable;
+                        if (asEnumerable != null && !(paramValue is string))
+                        {
+                            // Found an array parameter - use only the first parameter's value
+                            var firstParamName = targetParameterNames[0];
+                            object firstParamValue;
+                            if (boundParameters.TryGetValue(firstParamName, out firstParamValue) && firstParamValue != null)
+                            {
+                                return FormatSingleParameterValue(firstParamValue, firstParamName);
+                            }
+                            return string.Empty;
+                        }
+
+                        var formattedValue = FormatSingleParameterValue(paramValue, paramName);
+                        if (!string.IsNullOrEmpty(formattedValue))
+                        {
+                            parameterValues.Add(formattedValue);
+                        }
+                    }
+                }
+                
+                if (parameterValues.Count == 0)
+                    return string.Empty;
+                
+                var result = string.Join("-", parameterValues);
+                
+                // Truncate to 100 characters for multiple parameters
+                if (result.Length > 100)
+                {
+                    result = result.Substring(0, 100) + "...";
+                }
+                
+                return result;
             }
+            catch
+            {
+                return string.Empty;
+            }
+        }
 
-            if (TypeFactory.GetTypeInfo(paramValue.GetType()).IsValueType) // unlikely but just in case...
-                return paramValue.ToString();
+        /// <summary>
+        /// Formats a single parameter value for confirmation messages.
+        /// </summary>
+        private string FormatSingleParameterValue(object paramValue, string parameterName)
+        {
+            try
+            {
+                // probe to determine the data type and format accordingly - very few types will actually
+                // be used as resource-identifier parameters (string and string[] are the most likely)
+                var asString = paramValue as string;
+                if (asString != null)
+                    return asString;
 
-            // otherwise give up and report the parameter name for x-checking purposes
-            return string.Format("values bound to the parameter {0}", targetParameterName);
+                var asEnumerable = paramValue as IEnumerable;
+                if (asEnumerable != null && !(paramValue is string))
+                {
+                    // try and keep the set of items to a reasonable value, to avoid the
+                    // command line 'exploding' with a wall of text. Take() would work here
+                    // except we want to add a 'plus n more items' suffix, so we need the
+                    // overall count
+                    var sb = new StringBuilder();
+                    var itemCount = 0;
+                    foreach (var item in asEnumerable)
+                    {
+                        if (itemCount < ArrayTruncationThreshold)
+                        {
+                            if (sb.Length != 0)
+                                sb.Append(", ");
+                            sb.Append(item?.ToString() ?? "null");
+                        }
+
+                        itemCount++;
+                    }
+
+                    if (itemCount > ArrayTruncationThreshold)
+                        sb.AppendFormat(" (plus {0} more)", itemCount - ArrayTruncationThreshold);
+
+                    return sb.ToString();
+                }
+
+                if (paramValue.GetType().IsValueType) // unlikely but just in case...
+                    return paramValue.ToString();
+
+                // otherwise give up and report the parameter name for x-checking purposes
+                return string.Format("values bound to the parameter {0}", parameterName);
+            }
+            catch
+            {
+                return string.Empty;
+            }
         }
 
         /// <summary>
         /// Inspects the bound parameters to return the first from the set that has a value.
-        /// Used when we are overriding the output for otherwise-void output cmdlets for -PassThru 
-        /// and the user had a choice of parameters to specify to mean the same underlying object
-        /// (eg Beanstalk's EnvironmentId or EnvironmentName). If no bound parameter is found, the 
-        /// routine yields null.
+        // If no bound parameter is found, the routine yields null.
         /// </summary>
         /// <param name="parameterNames"></param>
         /// <returns></returns>
@@ -321,10 +417,12 @@ namespace Amazon.PowerShell.Common
                 return new object[] { value };
         }
 
-        protected AWSCmdletHistory ServiceCalls { get; private set; }
-
         protected override void BeginProcessing()
         {
+            string serviceId = AWSServiceId.Replace(" ", "");
+            TraceSpan = AWSConfigs.TelemetryProvider.TracerProvider.GetTracer($"{TelemetryConstants.TelemetryScopePrefix}.PS.{serviceId}")
+                .CreateSpan(this.MyInvocation.InvocationName, null, Amazon.Runtime.Telemetry.Tracing.SpanKind.CLIENT);
+
             base.BeginProcessing();
 
             if (!AWSPowerShellUserAgentSet)
@@ -333,41 +431,18 @@ namespace Amazon.PowerShell.Common
                 AWSPowerShellUserAgentSet = true;
             }
 
-            // wanted to emit just the stack, or copy of it (to prevent modification) but if we do that,
-            // we see only the Count of entries, not the actual content - need to figure out
-            if (this.SessionState.PSVariable.Get(SessionKeys.AWSCallHistoryName) == null)
-                this.SessionState.PSVariable.Set(SessionKeys.AWSCallHistoryName, new PSObject(AWSCmdletHistoryBuffer.Instance));
-
-            ServiceCalls = AWSCmdletHistoryBuffer.Instance.StartCmdletHistory(this.MyInvocation.MyCommand.Name);
         }
 
         protected override void EndProcessing()
         {
             // if we get here, there were no terminating errors during ProcessRecord
-            AWSCmdletHistoryBuffer.Instance.PushCmdletHistory(ServiceCalls);
             base.EndProcessing();
             
-            // Writing Non-terminating error in EndProcessing since we should only write a single error message when commands are run in a pipeline
-            // Moved this.WriteError from ResponseEventHandler to EndProcessing since Write Methods can be only called from BeginProcessing, ProcessRecord and EndProcessing
-            if (IsSanitizingRequestError || IsSanitizingResponseError)
-            {
-                // Build error message
-                string failedType = "";
-                if (IsSanitizingRequestError && IsSanitizingResponseError)
-                {
-                    failedType = "Request and Response are";
-                }
-                else if (IsSanitizingRequestError) { 
-                    failedType = "Request is";
-                }
-                else if (IsSanitizingResponseError) { 
-                    failedType = "Response is";
-                }
+            base.EndProcessing();
 
-                string errorMessage = $"Error occurred in sensitive data redaction, as a result {failedType} being omitted from $AWSHistory. In case you rely on $AWSHistory, run Set-AWSHistoryConfiguration -IncludeSensitiveData command to skip sensitive data redaction. Please report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.";
-                this.WriteError(new ErrorRecord(new Exception(errorMessage), "", ErrorCategory.InvalidOperation, this));
-            }
-        }
+            TraceSpan?.Dispose();
+            TraceSpan = null;
+    }
 
         protected virtual void ProcessOutput(CmdletOutput cmdletOutput)
         {
@@ -376,37 +451,22 @@ namespace Amazon.PowerShell.Common
 
             if (cmdletOutput.ErrorResponse != null)
             {
-                ServiceCalls.PushServiceResponse(cmdletOutput.ErrorResponse, null);
-                // need to manually end the history data here, as once we throw the error we won't
-                // get called to run EndProcessing...
-                AWSCmdletHistoryBuffer.Instance.PushCmdletHistory(ServiceCalls);
-
                 ThrowExecutionError(cmdletOutput.ErrorResponse.Message, this, cmdletOutput.ErrorResponse);
             }
-            else
+            else if (cmdletOutput.PipelineOutput != null)
             {
-                // pipe the output manually, so we can track the number of emitted objects to add
-                // as a convenience note on the LastServiceResponse
-                int emittedObjectCount = 0;
-                if (cmdletOutput.PipelineOutput != null)
+                IEnumerator enumerator = LanguagePrimitives.GetEnumerator(cmdletOutput.PipelineOutput);
+                if (enumerator == null)
                 {
-                    IEnumerator enumerator = LanguagePrimitives.GetEnumerator(cmdletOutput.PipelineOutput);
-                    if (enumerator == null)
-                    {
-                        WriteObject(cmdletOutput.PipelineOutput);
-                        emittedObjectCount++;
-                    }
-                    else
-                    {
-                        while (enumerator.MoveNext())
-                        {
-                            WriteObject(enumerator.Current);
-                            emittedObjectCount++;
-                        }
-                    }
+                    WriteObject(cmdletOutput.PipelineOutput);
                 }
-
-                ServiceCalls.EmittedObjectsCount += emittedObjectCount;
+                else
+                {
+                    while (enumerator.MoveNext())
+                    {
+                        WriteObject(enumerator.Current);
+                    }
+                }       
             }
         }
 
@@ -417,88 +477,15 @@ namespace Amazon.PowerShell.Common
 
             var response = wsrea.Response;
             if (response == null) return;
-
-            AmazonWebServiceResponse sanitizedResponse = GetSanitizedData(response);
-            if (sanitizedResponse == null) return;
-
-            ServiceCalls.PushServiceResponse(sanitizedResponse);
-
-        }
-
-        private AmazonWebServiceResponse GetSanitizedData(AmazonWebServiceResponse response)
-        {
-            var sanitizedResponse = response;
-
-            try
-            {
-                if (!AWSCmdletHistoryBuffer.Instance.IncludeSensitiveData)
-                {
-                    if (!IsGeneratedCmdlet && !IsSensitiveResponse)
-                    {
-                        // Evaluate IsSensitiveResponse for Advanced Cmdlets if not already overridden
-                        IsSensitiveResponse = SensitiveData.TypeContainsSensitiveData(response.GetType());
-                    }
-
-                    if (IsSensitiveResponse)
-                    {
-                        sanitizedResponse = SensitiveData.GetSanitizedData(response) as AmazonWebServiceResponse;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                IsSanitizingResponseError = true;
-                return null;
-            }
-
-            return sanitizedResponse;
         }
 
         protected void RequestEventHandler(object sender, RequestEventArgs args)
         {
             var wsrea = args as WebServiceRequestEventArgs;
-            if (wsrea == null) return;
-
-            var request = wsrea.Request;
-
-            if (request == null) return;
-
-            AmazonWebServiceRequest sanitizedRequest = GetSanitizedData(request);
-
-            if (sanitizedRequest == null) return;
-
-            ServiceCalls.PushServiceRequest(sanitizedRequest, this.MyInvocation);
-        }
-
-        private AmazonWebServiceRequest GetSanitizedData(AmazonWebServiceRequest request)
-        {
-            var sanitizedRequest = request;
-
-            if (!AWSCmdletHistoryBuffer.Instance.RecordServiceRequests) return null;
-
-            try
+            if (wsrea != null && wsrea.Request != null)
             {
-                if (!AWSCmdletHistoryBuffer.Instance.IncludeSensitiveData)
-                {
-                    if (!IsGeneratedCmdlet && !IsSensitiveRequest)
-                    {
-                        // Evaluate IsSensitiveRequest for Advanced Cmdlets if not already overridden
-                        IsSensitiveRequest = SensitiveData.TypeContainsSensitiveData(request.GetType());
-                    }
-
-                    if (IsSensitiveRequest)
-                    {
-                        sanitizedRequest = SensitiveData.GetSanitizedData(sanitizedRequest) as AmazonWebServiceRequest;
-                    }
-                }
-
+                ((Runtime.Internal.IAmazonWebServiceRequest)wsrea.Request).UserAgentDetails.AddUserAgentComponent(UserAgentAddition);
             }
-            catch (Exception ex)
-            {
-                IsSanitizingRequestError = true;
-                return null;
-            }
-            return sanitizedRequest;
         }
 
         #endregion
@@ -750,7 +737,6 @@ namespace Amazon.PowerShell.Common
         public RegionEndpoint _RegionEndpoint { get; private set; }
         protected bool _ExecuteWithAnonymousCredentials { get; set; }
         protected ClientConfig _ClientConfig { get; set; }
-        protected string _AWSSignerType { get; set; }
 
         /// <summary>
         /// <para>
@@ -779,14 +765,10 @@ namespace Amazon.PowerShell.Common
             // if user passes $null as value, we see a bound parameter
             if (ParameterWasBound("EndpointUrl") && !string.IsNullOrEmpty(this.EndpointUrl))
             {
-                if(_AWSSignerType != "bearer" || (_AWSSignerType == "bearer" && config?.AWSTokenProvider == null))
-                {
-                    // To allow use of urls that do not contain region info, swap any region
-                    // we've already detected for the command into AuthRegion for the config;
-                    // setting ServiceUrl will clear RegionEndpoint on the config.
-                    config.AuthenticationRegion = config.RegionEndpoint.SystemName;
-                }
-
+                // To allow use of urls that do not contain region info, swap any region
+                // we've already detected for the command into AuthRegion for the config;
+                // setting ServiceUrl will clear RegionEndpoint on the config.
+                config.AuthenticationRegion = config.RegionEndpoint.SystemName;
                 config.ServiceURL = this.EndpointUrl.ToString();
             }
         }
@@ -803,11 +785,23 @@ namespace Amazon.PowerShell.Common
             else
             {
                 AWSPSCredentials awsPSCredentials;
-                if (!this.TryGetCredentials(Host, out awsPSCredentials, SessionState))
-                    ThrowExecutionError("No credentials specified or obtained from persisted/shell defaults.", this);
+                if (this.TryGetCredentials(Host, out awsPSCredentials, SessionState))
+                {
+                    _CurrentCredentials = awsPSCredentials.Credentials;
+                    WriteCredentialSourceDiagnostic(awsPSCredentials);
+                    if (_CurrentCredentials is SSOAWSCredentials ssoAWSCredentials)
+                    {
+                        // Setting SupportsGettingNewToken to false ensures that the sso login flow is not initiated when
+                        // sso token has expired.
+                        ssoAWSCredentials.Options.SupportsGettingNewToken = false;
+                        ValidateSSOToken(ssoAWSCredentials);
+                    }
+                }
+                else
+                {
+                    WriteVerbose("Offloading credential resolution to .NET SDK.");
+                }
 
-                _CurrentCredentials = awsPSCredentials.Credentials;
-                WriteCredentialSourceDiagnostic(awsPSCredentials);
             }
 
             this.TryGetRegion(useInstanceMetadata: true, out var region, out var regionSource, SessionState);
@@ -830,19 +824,7 @@ namespace Amazon.PowerShell.Common
                 }
             }
 
-            if(_AWSSignerType == "bearer")
-            {
-                //Bearer tokens using AWSTokenProvider/Profiles do not require a region as it will be resolved by the .NET SDK.
-
-                //AWSTokenProvider is set as:
-                //  1. $config.AWSTokenProvider = New-Object -TypeName Amazon.Runtime.ProfileTokenProvider("SOME_PROFILE")
-                //  2. $config.AWSTokenProvider = New-Object -TypeName Amazon.Runtime.StaticTokenProvider("SOME_TOKEN")
-
-                _RegionEndpoint = null;
-                regionSource = RegionSource.String;
-                WriteRegionSourceDiagnostic("bearer-token", null);
-            }
-            else if (_RegionEndpoint == null)
+            if (_RegionEndpoint == null)
             {
                 if (String.IsNullOrEmpty(_DefaultRegion))
                     ThrowExecutionError("No region specified or obtained from persisted/shell defaults.", this);
@@ -857,6 +839,21 @@ namespace Amazon.PowerShell.Common
                 WriteRegionSourceDiagnostic(regionSource, region.SystemName);
             }
         }
+
+        private void ValidateSSOToken(SSOAWSCredentials ssoAWSCredentials)
+        {
+            var ssoTokenManagerGetTokenOptions = SSOUtils.BuildSSOTokenManagerGetTokenOptions(ssoAWSCredentials, supportsGettingNewToken: false, ssoVerificationCallback: null);
+
+            bool isLoginRequired = SSOUtils.IsSsoLoginRequiredAsync(ssoTokenManagerGetTokenOptions).GetAwaiter().GetResult();
+            if (isLoginRequired)
+            {
+                string message = $"SSO Token has expired. Please login by running Invoke-AWSSSOLogin.";
+                this.ThrowTerminatingError(new ErrorRecord(new UnauthorizedAccessException(message),
+                                                            "UnauthorizedAccessException",
+                                                            ErrorCategory.PermissionDenied,
+                                                            this));
+            }
+        }
     }
 
     /// <summary>
@@ -867,7 +864,6 @@ namespace Amazon.PowerShell.Common
     {
         protected RegionEndpoint _RegionEndpoint { get; private set; }
         protected ClientConfig _ClientConfig { get; set; }
-        protected string _AWSSignerType { get; set; }
 
         #region Parameter EndpointURL
         /// <summary>

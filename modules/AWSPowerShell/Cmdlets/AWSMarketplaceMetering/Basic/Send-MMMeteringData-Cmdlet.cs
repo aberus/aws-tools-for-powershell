@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,24 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AWSMarketplaceMetering;
 using Amazon.AWSMarketplaceMetering.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MM
 {
     /// <summary>
-    /// API to emit metering records. For identical requests, the API is idempotent. It simply
-    /// returns the metering record ID.
+    /// API to emit metering records. For identical requests, the API is idempotent and returns
+    /// the metering record ID. This is used for metering flexible consumption pricing (FCP)
+    /// Amazon Machine Images (AMI) and container products.
     /// 
     ///  
-    /// <para><c>MeterUsage</c> is authenticated on the buyer's AWS account using credentials from
-    /// the EC2 instance, ECS task, or EKS pod.
+    /// <para><c>MeterUsage</c> is authenticated on the buyer's Amazon Web Services account using
+    /// credentials from the Amazon EC2 instance, Amazon ECS task, or Amazon EKS pod.
     /// </para><para><c>MeterUsage</c> can optionally include multiple usage allocations, to provide customers
     /// with usage data split into buckets by tags that you define (or allow the customer
     /// to define).
     /// </para><para>
     /// Usage records are expected to be submitted as quickly as possible after the event
     /// that is being recorded, and are not accepted more than 6 hours after the event.
+    /// </para><para>
+    /// For Amazon Web Services Regions that support <c>MeterUsage</c>, see <a href="https://docs.aws.amazon.com/marketplace/latest/APIReference/metering-regions.html#meterusage-region-support-ec2">MeterUsage
+    /// Region support for Amazon EC2</a> and <a href="https://docs.aws.amazon.com/marketplace/latest/APIReference/metering-regions.html#meterusage-region-support-ecs-eks">MeterUsage
+    /// Region support for Amazon ECS and Amazon EKS</a>. 
     /// </para>
     /// </summary>
     [Cmdlet("Send", "MMMeteringData", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -47,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.MM
     [AWSCmdlet("Calls the AWS Marketplace Metering MeterUsage API operation.", Operation = new[] {"MeterUsage"}, SelectReturnType = typeof(Amazon.AWSMarketplaceMetering.Model.MeterUsageResponse))]
     [AWSCmdletOutput("System.String or Amazon.AWSMarketplaceMetering.Model.MeterUsageResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.AWSMarketplaceMetering.Model.MeterUsageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AWSMarketplaceMetering.Model.MeterUsageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SendMMMeteringDataCmdlet : AmazonAWSMarketplaceMeteringClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DryRun
         /// <summary>
@@ -70,8 +78,9 @@ namespace Amazon.PowerShell.Cmdlets.MM
         #region Parameter ProductCode
         /// <summary>
         /// <para>
-        /// <para>Product code is used to uniquely identify a product in AWS Marketplace. The product
-        /// code should be the same as the one used during the publishing of a new product.</para>
+        /// <para>Product code is used to uniquely identify a product in Amazon Web Services Marketplace.
+        /// The product code should be the same as the one used during the publishing of a new
+        /// product.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -89,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.MM
         /// <summary>
         /// <para>
         /// <para>Timestamp, in UTC, for which the usage is being reported. Your application can meter
-        /// usage for up to one hour in the past. Make sure the <c>timestamp</c> value is not
+        /// usage for up to six hours in the past. Make sure the <c>timestamp</c> value is not
         /// before the start of the software usage.</para>
         /// </para>
         /// </summary>
@@ -108,7 +117,11 @@ namespace Amazon.PowerShell.Cmdlets.MM
         /// <para>
         /// <para>The set of <c>UsageAllocations</c> to submit.</para><para>The sum of all <c>UsageAllocation</c> quantities must equal the <c>UsageQuantity</c>
         /// of the <c>MeterUsage</c> request, and each <c>UsageAllocation</c> must have a unique
-        /// set of tags (include no tags).</para>
+        /// set of tags (include no tags).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -154,16 +167,6 @@ namespace Amazon.PowerShell.Cmdlets.MM
         public string Select { get; set; } = "MeteringRecordId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProductCode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProductCode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProductCode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -174,9 +177,13 @@ namespace Amazon.PowerShell.Cmdlets.MM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProductCode), MyInvocation.BoundParameters);
@@ -190,21 +197,11 @@ namespace Amazon.PowerShell.Cmdlets.MM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AWSMarketplaceMetering.Model.MeterUsageResponse, SendMMMeteringDataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProductCode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DryRun = this.DryRun;
             context.ProductCode = this.ProductCode;
             #if MODULAR
@@ -310,13 +307,7 @@ namespace Amazon.PowerShell.Cmdlets.MM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Metering", "MeterUsage");
             try
             {
-                #if DESKTOP
-                return client.MeterUsage(request);
-                #elif CORECLR
-                return client.MeterUsageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.MeterUsageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConnectParticipant;
 using Amazon.ConnectParticipant.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CONNP
 {
     /// <summary>
     /// Provides a pre-signed Amazon S3 URL in response for uploading the file directly to
     /// S3.
     /// 
-    ///  <note><para><c>ConnectionToken</c> is used for invoking this API instead of <c>ParticipantToken</c>.
+    ///  
+    /// <para>
+    /// For security recommendations, see <a href="https://docs.aws.amazon.com/connect/latest/adminguide/security-best-practices.html#bp-security-chat">Amazon
+    /// Connect Chat security best practices</a>. 
+    /// </para><note><para><c>ConnectionToken</c> is used for invoking this API instead of <c>ParticipantToken</c>.
     /// </para></note><para>
     /// The Amazon Connect Participant Service APIs do not use <a href="https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html">Signature
     /// Version 4 authentication</a>.
@@ -41,12 +47,13 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
     [OutputType("Amazon.ConnectParticipant.Model.StartAttachmentUploadResponse")]
     [AWSCmdlet("Calls the Amazon Connect Participant Service StartAttachmentUpload API operation.", Operation = new[] {"StartAttachmentUpload"}, SelectReturnType = typeof(Amazon.ConnectParticipant.Model.StartAttachmentUploadResponse))]
     [AWSCmdletOutput("Amazon.ConnectParticipant.Model.StartAttachmentUploadResponse",
-        "This cmdlet returns an Amazon.ConnectParticipant.Model.StartAttachmentUploadResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ConnectParticipant.Model.StartAttachmentUploadResponse object containing multiple properties."
     )]
     public partial class StartCONNPAttachmentUploadCmdlet : AmazonConnectParticipantClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttachmentName
         /// <summary>
@@ -142,16 +149,6 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConnectionToken parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConnectionToken' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConnectionToken' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -162,9 +159,13 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AttachmentName), MyInvocation.BoundParameters);
@@ -178,21 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConnectParticipant.Model.StartAttachmentUploadResponse, StartCONNPAttachmentUploadCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConnectionToken;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AttachmentName = this.AttachmentName;
             #if MODULAR
             if (this.AttachmentName == null && ParameterWasBound(nameof(this.AttachmentName)))
@@ -296,13 +287,7 @@ namespace Amazon.PowerShell.Cmdlets.CONNP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Participant Service", "StartAttachmentUpload");
             try
             {
-                #if DESKTOP
-                return client.StartAttachmentUpload(request);
-                #elif CORECLR
-                return client.StartAttachmentUploadAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartAttachmentUploadAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

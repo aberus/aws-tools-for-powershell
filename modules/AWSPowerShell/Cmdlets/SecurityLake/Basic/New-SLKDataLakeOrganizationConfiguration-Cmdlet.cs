@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,43 +22,50 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecurityLake;
 using Amazon.SecurityLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SLK
 {
     /// <summary>
     /// Automatically enables Amazon Security Lake for new member accounts in your organization.
     /// Security Lake is not automatically enabled for any existing member accounts in your
     /// organization.
+    /// 
+    ///  
+    /// <para>
+    /// This operation merges the new data lake organization configuration with the existing
+    /// configuration for Security Lake in your organization. If you want to create a new
+    /// data lake organization configuration, you must delete the existing one using <a href="https://docs.aws.amazon.com/security-lake/latest/APIReference/API_DeleteDataLakeOrganizationConfiguration.html">DeleteDataLakeOrganizationConfiguration</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "SLKDataLakeOrganizationConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon Security Lake CreateDataLakeOrganizationConfiguration API operation.", Operation = new[] {"CreateDataLakeOrganizationConfiguration"}, SelectReturnType = typeof(Amazon.SecurityLake.Model.CreateDataLakeOrganizationConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.SecurityLake.Model.CreateDataLakeOrganizationConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SecurityLake.Model.CreateDataLakeOrganizationConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SecurityLake.Model.CreateDataLakeOrganizationConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class NewSLKDataLakeOrganizationConfigurationCmdlet : AmazonSecurityLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoEnableNewAccount
         /// <summary>
         /// <para>
         /// <para>Enable Security Lake with the specified configuration settings, to begin collecting
-        /// security data for new accounts in your organization.</para>
+        /// security data for new accounts in your organization.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public Amazon.SecurityLake.Model.DataLakeAutoEnableNewAccountConfiguration[] AutoEnableNewAccount { get; set; }
         #endregion
         
@@ -82,9 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.SLK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutoEnableNewAccount), MyInvocation.BoundParameters);
@@ -107,12 +118,6 @@ namespace Amazon.PowerShell.Cmdlets.SLK
             {
                 context.AutoEnableNewAccount = new List<Amazon.SecurityLake.Model.DataLakeAutoEnableNewAccountConfiguration>(this.AutoEnableNewAccount);
             }
-            #if MODULAR
-            if (this.AutoEnableNewAccount == null && ParameterWasBound(nameof(this.AutoEnableNewAccount)))
-            {
-                WriteWarning("You are passing $null as a value for parameter AutoEnableNewAccount which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -171,13 +176,7 @@ namespace Amazon.PowerShell.Cmdlets.SLK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Security Lake", "CreateDataLakeOrganizationConfiguration");
             try
             {
-                #if DESKTOP
-                return client.CreateDataLakeOrganizationConfiguration(request);
-                #elif CORECLR
-                return client.CreateDataLakeOrganizationConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDataLakeOrganizationConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

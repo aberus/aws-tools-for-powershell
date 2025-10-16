@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Budgets;
 using Amazon.Budgets.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BGT
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.BGT
     [AWSCmdlet("Calls the AWS Budgets DescribeBudgetPerformanceHistory API operation.", Operation = new[] {"DescribeBudgetPerformanceHistory"}, SelectReturnType = typeof(Amazon.Budgets.Model.DescribeBudgetPerformanceHistoryResponse))]
     [AWSCmdletOutput("Amazon.Budgets.Model.BudgetPerformanceHistory or Amazon.Budgets.Model.DescribeBudgetPerformanceHistoryResponse",
         "This cmdlet returns an Amazon.Budgets.Model.BudgetPerformanceHistory object.",
-        "The service call response (type Amazon.Budgets.Model.DescribeBudgetPerformanceHistoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Budgets.Model.DescribeBudgetPerformanceHistoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetBGTBudgetPerformanceHistoryCmdlet : AmazonBudgetsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -96,9 +99,9 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         /// <para>
         /// <para>The start date for a budget. If you created your budget and didn't specify a start
         /// date, Amazon Web Services defaults to the start of your chosen time period (DAILY,
-        /// MONTHLY, QUARTERLY, or ANNUALLY). For example, if you created your budget on January
-        /// 24, 2018, chose <c>DAILY</c>, and didn't set a start date, Amazon Web Services set
-        /// your start date to <c>01/24/18 00:00 UTC</c>. If you chose <c>MONTHLY</c>, Amazon
+        /// MONTHLY, QUARTERLY, ANNUALLY, or CUSTOM). For example, if you created your budget
+        /// on January 24, 2018, chose <c>DAILY</c>, and didn't set a start date, Amazon Web Services
+        /// set your start date to <c>01/24/18 00:00 UTC</c>. If you chose <c>MONTHLY</c>, Amazon
         /// Web Services set your start date to <c>01/01/18 00:00 UTC</c>. The defaults are the
         /// same for the Billing and Cost Management console and the API.</para><para>You can change your start date with the <c>UpdateBudget</c> operation.</para>
         /// </para>
@@ -125,7 +128,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.Budgets module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,16 +146,6 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         public string Select { get; set; } = "BudgetPerformanceHistory";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BudgetName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BudgetName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BudgetName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -165,9 +158,13 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -175,21 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Budgets.Model.DescribeBudgetPerformanceHistoryResponse, GetBGTBudgetPerformanceHistoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BudgetName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             #if MODULAR
             if (this.AccountId == null && ParameterWasBound(nameof(this.AccountId)))
@@ -222,9 +209,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Budgets.Model.DescribeBudgetPerformanceHistoryRequest();
@@ -408,13 +393,7 @@ namespace Amazon.PowerShell.Cmdlets.BGT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Budgets", "DescribeBudgetPerformanceHistory");
             try
             {
-                #if DESKTOP
-                return client.DescribeBudgetPerformanceHistory(request);
-                #elif CORECLR
-                return client.DescribeBudgetPerformanceHistoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeBudgetPerformanceHistoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

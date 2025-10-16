@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AmplifyUIBuilder;
 using Amazon.AmplifyUIBuilder.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AMPUI
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
     [AWSCmdlet("Calls the AWS Amplify UI Builder GetCodegenJob API operation.", Operation = new[] {"GetCodegenJob"}, SelectReturnType = typeof(Amazon.AmplifyUIBuilder.Model.GetCodegenJobResponse))]
     [AWSCmdletOutput("Amazon.AmplifyUIBuilder.Model.CodegenJob or Amazon.AmplifyUIBuilder.Model.GetCodegenJobResponse",
         "This cmdlet returns an Amazon.AmplifyUIBuilder.Model.CodegenJob object.",
-        "The service call response (type Amazon.AmplifyUIBuilder.Model.GetCodegenJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AmplifyUIBuilder.Model.GetCodegenJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAMPUICodegenJobCmdlet : AmazonAmplifyUIBuilderClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppId
         /// <summary>
@@ -105,19 +108,13 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
         public string Select { get; set; } = "Job";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -125,21 +122,11 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AmplifyUIBuilder.Model.GetCodegenJobResponse, GetAMPUICodegenJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppId = this.AppId;
             #if MODULAR
             if (this.AppId == null && ParameterWasBound(nameof(this.AppId)))
@@ -227,13 +214,7 @@ namespace Amazon.PowerShell.Cmdlets.AMPUI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Amplify UI Builder", "GetCodegenJob");
             try
             {
-                #if DESKTOP
-                return client.GetCodegenJob(request);
-                #elif CORECLR
-                return client.GetCodegenJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetCodegenJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

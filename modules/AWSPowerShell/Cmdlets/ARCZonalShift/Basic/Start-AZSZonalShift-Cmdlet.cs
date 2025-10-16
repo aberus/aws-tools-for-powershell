@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ARCZonalShift;
 using Amazon.ARCZonalShift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AZS
 {
     /// <summary>
@@ -32,41 +34,47 @@ namespace Amazon.PowerShell.Cmdlets.AZS
     /// Zone in an Amazon Web Services Region, to help your application recover immediately,
     /// for example, from a developer's bad code deployment or from an Amazon Web Services
     /// infrastructure failure in a single Availability Zone. You can start a zonal shift
-    /// in Route 53 ARC only for managed resources in your Amazon Web Services account in
-    /// an Amazon Web Services Region. Resources are automatically registered with Route 53
-    /// ARC by Amazon Web Services services.
+    /// in ARC only for managed resources in your Amazon Web Services account in an Amazon
+    /// Web Services Region. Resources are automatically registered with ARC by Amazon Web
+    /// Services services.
     /// 
     ///  
     /// <para>
-    /// At this time, you can only start a zonal shift for Network Load Balancers and Application
-    /// Load Balancers with cross-zone load balancing turned off.
-    /// </para><para>
+    /// Amazon Application Recovery Controller currently supports enabling the following resources
+    /// for zonal shift and zonal autoshift:
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.ec2-auto-scaling-groups.html">Amazon
+    /// EC2 Auto Scaling groups</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.eks.html">Amazon
+    /// Elastic Kubernetes Service</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.app-load-balancers.html">Application
+    /// Load Balancer</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.network-load-balancers.html">Network
+    /// Load Balancer</a></para></li></ul><para>
     /// When you start a zonal shift, traffic for the resource is no longer routed to the
-    /// Availability Zone. The zonal shift is created immediately in Route 53 ARC. However,
-    /// it can take a short time, typically up to a few minutes, for existing, in-progress
-    /// connections in the Availability Zone to complete.
+    /// Availability Zone. The zonal shift is created immediately in ARC. However, it can
+    /// take a short time, typically up to a few minutes, for existing, in-progress connections
+    /// in the Availability Zone to complete.
     /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.html">Zonal
-    /// shift</a> in the Amazon Route 53 Application Recovery Controller Developer Guide.
+    /// shift</a> in the Amazon Application Recovery Controller Developer Guide.
     /// </para>
     /// </summary>
     [Cmdlet("Start", "AZSZonalShift", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ARCZonalShift.Model.StartZonalShiftResponse")]
     [AWSCmdlet("Calls the AWS ARC - Zonal Shift StartZonalShift API operation.", Operation = new[] {"StartZonalShift"}, SelectReturnType = typeof(Amazon.ARCZonalShift.Model.StartZonalShiftResponse))]
     [AWSCmdletOutput("Amazon.ARCZonalShift.Model.StartZonalShiftResponse",
-        "This cmdlet returns an Amazon.ARCZonalShift.Model.StartZonalShiftResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ARCZonalShift.Model.StartZonalShiftResponse object containing multiple properties."
     )]
     public partial class StartAZSZonalShiftCmdlet : AmazonARCZonalShiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwayFrom
         /// <summary>
         /// <para>
-        /// <para>The Availability Zone that traffic is moved away from for a resource when you start
-        /// a zonal shift. Until the zonal shift expires or you cancel it, traffic for the resource
-        /// is instead moved to other Availability Zones in the Amazon Web Services Region.</para>
+        /// <para>The Availability Zone (for example, <c>use1-az1</c>) that traffic is moved away from
+        /// for a resource when you start a zonal shift. Until the zonal shift expires or you
+        /// cancel it, traffic for the resource is instead moved to other Availability Zones in
+        /// the Amazon Web Services Region.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -101,8 +109,8 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         #region Parameter ExpiresIn
         /// <summary>
         /// <para>
-        /// <para>The length of time that you want a zonal shift to be active, which Route 53 ARC converts
-        /// to an expiry time (expiration time). Zonal shifts are temporary. You can set a zonal
+        /// <para>The length of time that you want a zonal shift to be active, which ARC converts to
+        /// an expiry time (expiration time). Zonal shifts are temporary. You can set a zonal
         /// shift to be active initially for up to three days (72 hours).</para><para>If you want to still keep traffic away from an Availability Zone, you can update the
         /// zonal shift and set a new expiration. You can also cancel a zonal shift, before it
         /// expires, for example, if you're ready to restore traffic to the Availability Zone.</para><para>To set a length of time for a zonal shift to be active, specify a whole number, and
@@ -124,9 +132,13 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         #region Parameter ResourceIdentifier
         /// <summary>
         /// <para>
-        /// <para>The identifier for the resource to shift away traffic for. The identifier is the Amazon
-        /// Resource Name (ARN) for the resource.</para><para>At this time, supported resources are Network Load Balancers and Application Load
-        /// Balancers with cross-zone load balancing turned off.</para>
+        /// <para>The identifier for the resource that Amazon Web Services shifts traffic for. The identifier
+        /// is the Amazon Resource Name (ARN) for the resource.</para><para>Amazon Application Recovery Controller currently supports enabling the following resources
+        /// for zonal shift and zonal autoshift:</para><ul><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.ec2-auto-scaling-groups.html">Amazon
+        /// EC2 Auto Scaling groups</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.eks.html">Amazon
+        /// Elastic Kubernetes Service</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.app-load-balancers.html">Application
+        /// Load Balancer</a></para></li><li><para><a href="https://docs.aws.amazon.com/r53recovery/latest/dg/arc-zonal-shift.resource-types.network-load-balancers.html">Network
+        /// Load Balancer</a></para></li></ul>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -151,16 +163,6 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ResourceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ResourceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -171,9 +173,13 @@ namespace Amazon.PowerShell.Cmdlets.AZS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ResourceIdentifier), MyInvocation.BoundParameters);
@@ -187,21 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.AZS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ARCZonalShift.Model.StartZonalShiftResponse, StartAZSZonalShiftCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ResourceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwayFrom = this.AwayFrom;
             #if MODULAR
             if (this.AwayFrom == null && ParameterWasBound(nameof(this.AwayFrom)))
@@ -300,13 +296,7 @@ namespace Amazon.PowerShell.Cmdlets.AZS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS ARC - Zonal Shift", "StartZonalShift");
             try
             {
-                #if DESKTOP
-                return client.StartZonalShift(request);
-                #elif CORECLR
-                return client.StartZonalShiftAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartZonalShiftAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

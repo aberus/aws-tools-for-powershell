@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkMail;
 using Amazon.WorkMail.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WM
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
     [AWSCmdlet("Calls the Amazon WorkMail PutEmailMonitoringConfiguration API operation.", Operation = new[] {"PutEmailMonitoringConfiguration"}, SelectReturnType = typeof(Amazon.WorkMail.Model.PutEmailMonitoringConfigurationResponse))]
     [AWSCmdletOutput("None or Amazon.WorkMail.Model.PutEmailMonitoringConfigurationResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkMail.Model.PutEmailMonitoringConfigurationResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.WorkMail.Model.PutEmailMonitoringConfigurationResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteWMEmailMonitoringConfigurationCmdlet : AmazonWorkMailClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LogGroupArn
         /// <summary>
@@ -81,17 +84,11 @@ namespace Amazon.PowerShell.Cmdlets.WM
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of the IAM Role associated with the email monitoring
-        /// configuration.</para>
+        /// configuration. If absent, the IAM Role Arn of AWSServiceRoleForAmazonWorkMailEvents
+        /// will be used.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String RoleArn { get; set; }
         #endregion
         
@@ -105,16 +102,6 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OrganizationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OrganizationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OrganizationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -125,9 +112,13 @@ namespace Amazon.PowerShell.Cmdlets.WM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.OrganizationId), MyInvocation.BoundParameters);
@@ -141,21 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.WM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkMail.Model.PutEmailMonitoringConfigurationResponse, WriteWMEmailMonitoringConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OrganizationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.LogGroupArn = this.LogGroupArn;
             #if MODULAR
             if (this.LogGroupArn == null && ParameterWasBound(nameof(this.LogGroupArn)))
@@ -171,12 +152,6 @@ namespace Amazon.PowerShell.Cmdlets.WM
             }
             #endif
             context.RoleArn = this.RoleArn;
-            #if MODULAR
-            if (this.RoleArn == null && ParameterWasBound(nameof(this.RoleArn)))
-            {
-                WriteWarning("You are passing $null as a value for parameter RoleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -243,13 +218,7 @@ namespace Amazon.PowerShell.Cmdlets.WM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkMail", "PutEmailMonitoringConfiguration");
             try
             {
-                #if DESKTOP
-                return client.PutEmailMonitoringConfiguration(request);
-                #elif CORECLR
-                return client.PutEmailMonitoringConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutEmailMonitoringConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

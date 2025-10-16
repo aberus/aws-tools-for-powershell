@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,41 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.PinpointSMSVoiceV2;
 using Amazon.PinpointSMSVoiceV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMSV
 {
     /// <summary>
     /// Create a new registration attachment to use for uploading a file or a URL to a file.
-    /// The maximum file size is 1MiB and valid file extensions are PDF, JPEG and PNG. For
+    /// The maximum file size is 500KB and valid file extensions are PDF, JPEG and PNG. For
     /// example, many sender ID registrations require a signed “letter of authorization” (LOA)
     /// to be submitted.
+    /// 
+    ///  
+    /// <para>
+    /// Use either <c>AttachmentUrl</c> or <c>AttachmentBody</c> to upload your attachment.
+    /// If both are specified then an exception is returned.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "SMSVRegistrationAttachment", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.PinpointSMSVoiceV2.Model.CreateRegistrationAttachmentResponse")]
     [AWSCmdlet("Calls the Amazon Pinpoint SMS Voice V2 CreateRegistrationAttachment API operation.", Operation = new[] {"CreateRegistrationAttachment"}, SelectReturnType = typeof(Amazon.PinpointSMSVoiceV2.Model.CreateRegistrationAttachmentResponse))]
     [AWSCmdletOutput("Amazon.PinpointSMSVoiceV2.Model.CreateRegistrationAttachmentResponse",
-        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.CreateRegistrationAttachmentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.PinpointSMSVoiceV2.Model.CreateRegistrationAttachmentResponse object containing multiple properties."
     )]
     public partial class NewSMSVRegistrationAttachmentCmdlet : AmazonPinpointSMSVoiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttachmentBody
         /// <summary>
         /// <para>
-        /// <para>The registration file to upload. The maximum file size is 1MiB and valid file extensions
+        /// <para>The registration file to upload. The maximum file size is 500KB and valid file extensions
         /// are PDF, JPEG and PNG.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
@@ -60,8 +69,8 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter AttachmentUrl
         /// <summary>
         /// <para>
-        /// <para>A URL to the required registration file. For example, you can provide the S3 object
-        /// URL.</para>
+        /// <para>Registration files have to be stored in an Amazon S3 bucket. The URI to use when sending
+        /// is in the format <c>s3://BucketName/FileName</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -71,7 +80,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>An array of tags (key and value pairs) to associate with the registration attachment.</para>
+        /// <para>An array of tags (key and value pairs) to associate with the registration attachment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,16 +115,6 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AttachmentBody parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AttachmentBody' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AttachmentBody' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -122,9 +125,13 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AttachmentBody), MyInvocation.BoundParameters);
@@ -138,21 +145,11 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.PinpointSMSVoiceV2.Model.CreateRegistrationAttachmentResponse, NewSMSVRegistrationAttachmentCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AttachmentBody;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AttachmentBody = this.AttachmentBody;
             context.AttachmentUrl = this.AttachmentUrl;
             context.ClientToken = this.ClientToken;
@@ -243,13 +240,7 @@ namespace Amazon.PowerShell.Cmdlets.SMSV
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Pinpoint SMS Voice V2", "CreateRegistrationAttachment");
             try
             {
-                #if DESKTOP
-                return client.CreateRegistrationAttachment(request);
-                #elif CORECLR
-                return client.CreateRegistrationAttachmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateRegistrationAttachmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

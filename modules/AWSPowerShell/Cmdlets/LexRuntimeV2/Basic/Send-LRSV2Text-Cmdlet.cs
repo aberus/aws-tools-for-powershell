@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LexRuntimeV2;
 using Amazon.LexRuntimeV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LRSV2
 {
     /// <summary>
@@ -56,23 +58,24 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
     [OutputType("Amazon.LexRuntimeV2.Model.RecognizeTextResponse")]
     [AWSCmdlet("Calls the Amazon Lex Runtime V2 RecognizeText API operation.", Operation = new[] {"RecognizeText"}, SelectReturnType = typeof(Amazon.LexRuntimeV2.Model.RecognizeTextResponse))]
     [AWSCmdletOutput("Amazon.LexRuntimeV2.Model.RecognizeTextResponse",
-        "This cmdlet returns an Amazon.LexRuntimeV2.Model.RecognizeTextResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.LexRuntimeV2.Model.RecognizeTextResponse object containing multiple properties."
     )]
     public partial class SendLRSV2TextCmdlet : AmazonLexRuntimeV2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SessionStateValue_ActiveContext
         /// <summary>
         /// <para>
         /// <para>One or more contexts that indicate to Amazon Lex V2 the context of a request. When
         /// a context is active, Amazon Lex V2 considers intents with the matching context as
-        /// a trigger as the next intent in a session.</para>
+        /// a trigger as the next intent in a session.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,7 +173,11 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         /// <para>
         /// <para>Request-specific information passed between the client application and Amazon Lex
         /// V2 </para><para>The namespace <c>x-amz-lex:</c> is reserved for special attributes. Don't create any
-        /// request attributes with the prefix <c>x-amz-lex:</c>.</para>
+        /// request attributes with the prefix <c>x-amz-lex:</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -182,7 +189,11 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         /// <summary>
         /// <para>
         /// <para>Map of key/value pairs representing session-specific context information. It contains
-        /// application information passed between Amazon Lex V2 and a client application.</para>
+        /// application information passed between Amazon Lex V2 and a client application.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -227,7 +238,11 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         /// <para>A list of the slots in the intent that should have runtime hints added, and the phrases
         /// that should be added for each slot.</para><para>The first level of the <c>slotHints</c> map is the name of the intent. The second
         /// level is the name of the slot within the intent. For more information, see <a href="https://docs.aws.amazon.com/lexv2/latest/dg/using-hints.html">Using
-        /// hints to improve accuracy</a>.</para><para>The intent name and slot name must exist.</para>
+        /// hints to improve accuracy</a>.</para><para>The intent name and slot name must exist.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -239,7 +254,11 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         /// <summary>
         /// <para>
         /// <para>A map of all of the slots for the intent. The name of the slot maps to the value of
-        /// the slot. If a slot has not been filled, the value is null.</para>
+        /// the slot. If a slot has not been filled, the value is null.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -329,16 +348,6 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Text parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Text' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Text' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -349,9 +358,13 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -365,21 +378,11 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.LexRuntimeV2.Model.RecognizeTextResponse, SendLRSV2TextCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Text;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BotAliasId = this.BotAliasId;
             #if MODULAR
             if (this.BotAliasId == null && ParameterWasBound(nameof(this.BotAliasId)))
@@ -711,13 +714,7 @@ namespace Amazon.PowerShell.Cmdlets.LRSV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Lex Runtime V2", "RecognizeText");
             try
             {
-                #if DESKTOP
-                return client.RecognizeText(request);
-                #elif CORECLR
-                return client.RecognizeTextAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RecognizeTextAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

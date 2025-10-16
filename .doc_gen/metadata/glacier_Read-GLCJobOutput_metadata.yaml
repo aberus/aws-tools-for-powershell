@@ -1,0 +1,22 @@
+---
+glacier_GetJobOutput:
+  title: Use Read-GLCJobOutput
+  title_abbrev: Read-GLCJobOutput
+  synopsis: use Read-GLCJobOutput
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Read-GLCJobOutput
+        excerpts:
+        - description: |-
+            <emphasis role="bold">Example 1: Downloads the archive content that was scheduled for retrieval in the specified job and stores the contents into a file on disk. The download validates the checksum for you, if one is available.
+
+            If desired the entire response including the checksum can be returned by specifying <code>-Select '*'</code>.</emphasis>
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/glacier_Read-GLCJobOutput.1.1.ps1
+  services:
+    glacier:
+      GetJobOutput:

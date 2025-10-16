@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Organizations;
 using Amazon.Organizations.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ORG
 {
     /// <summary>
@@ -65,10 +67,9 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     /// </para><important><ul><li><para>
     /// When you create an account in an organization using the Organizations console, API,
     /// or CLI commands, the information required for the account to operate as a standalone
-    /// account, such as a payment method and signing the end user license agreement (EULA)
-    /// is <i>not</i> automatically collected. If you must remove an account from your organization
-    /// later, you can do so only after you provide the missing information. For more information,
-    /// see <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_account-before-remove.html">Considerations
+    /// account, such as a payment method is <i>not</i> automatically collected. If you must
+    /// remove an account from your organization later, you can do so only after you provide
+    /// the missing information. For more information, see <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_account-before-remove.html">Considerations
     /// before removing an account from an organization</a> in the <i>Organizations User Guide</i>.
     /// </para></li><li><para>
     /// If you get an exception that indicates that you exceeded your account limits for the
@@ -79,10 +80,10 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     /// is still initializing, wait one hour and then try again. If the error persists, contact
     /// <a href="https://console.aws.amazon.com/support/home#/">Amazon Web Services Support</a>.
     /// </para></li><li><para>
-    /// Using <c>CreateAccount</c> to create multiple temporary accounts isn't recommended.
-    /// You can only close an account from the Billing and Cost Management console, and you
-    /// must be signed in as the root user. For information on the requirements and process
-    /// for closing an account, see <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_close.html">Closing
+    /// It isn't recommended to use <c>CreateAccount</c> to create multiple temporary accounts,
+    /// and using the <c>CreateAccount</c> API to close accounts is subject to a 30-day usage
+    /// quota. For information on the requirements and process for closing an account, see
+    /// <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_accounts_close.html">Closing
     /// a member account in your organization</a> in the <i>Organizations User Guide</i>.
     /// </para></li></ul></important><note><para>
     /// When you create a member account with this operation, you can choose whether to create
@@ -99,16 +100,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     [AWSCmdlet("Calls the AWS Organizations CreateAccount API operation.", Operation = new[] {"CreateAccount"}, SelectReturnType = typeof(Amazon.Organizations.Model.CreateAccountResponse))]
     [AWSCmdletOutput("Amazon.Organizations.Model.CreateAccountStatus or Amazon.Organizations.Model.CreateAccountResponse",
         "This cmdlet returns an Amazon.Organizations.Model.CreateAccountStatus object.",
-        "The service call response (type Amazon.Organizations.Model.CreateAccountResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Organizations.Model.CreateAccountResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewORGAccountCmdlet : AmazonOrganizationsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountName
         /// <summary>
@@ -195,7 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         /// an empty string, but you can't set it to <c>null</c>. For more information about tagging,
         /// see <a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_tagging.html">Tagging
         /// Organizations resources</a> in the Organizations User Guide.</para><note><para>If any one of the tags is not valid or if you exceed the maximum allowed number of
-        /// tags for an account, then the entire request fails and the account is not created.</para></note>
+        /// tags for an account, then the entire request fails and the account is not created.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -214,16 +216,6 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         public string Select { get; set; } = "CreateAccountStatus";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AccountName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AccountName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AccountName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -234,9 +226,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AccountName), MyInvocation.BoundParameters);
@@ -250,21 +246,11 @@ namespace Amazon.PowerShell.Cmdlets.ORG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Organizations.Model.CreateAccountResponse, NewORGAccountCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AccountName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountName = this.AccountName;
             #if MODULAR
             if (this.AccountName == null && ParameterWasBound(nameof(this.AccountName)))
@@ -359,13 +345,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Organizations", "CreateAccount");
             try
             {
-                #if DESKTOP
-                return client.CreateAccount(request);
-                #elif CORECLR
-                return client.CreateAccountAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAccountAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

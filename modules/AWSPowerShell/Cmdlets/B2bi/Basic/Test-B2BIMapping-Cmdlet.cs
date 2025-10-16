@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.B2bi;
 using Amazon.B2bi.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.B2BI
 {
     /// <summary>
@@ -37,12 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
     [AWSCmdlet("Calls the AWS B2B Data Interchange TestMapping API operation.", Operation = new[] {"TestMapping"}, SelectReturnType = typeof(Amazon.B2bi.Model.TestMappingResponse))]
     [AWSCmdletOutput("System.String or Amazon.B2bi.Model.TestMappingResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.B2bi.Model.TestMappingResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.B2bi.Model.TestMappingResponse) can be returned by specifying '-Select *'."
     )]
     public partial class TestB2BIMappingCmdlet : AmazonB2biClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FileFormat
         /// <summary>
@@ -83,8 +86,9 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         #region Parameter MappingTemplate
         /// <summary>
         /// <para>
-        /// <para>Specifies the name of the mapping template for the transformer. This template is used
-        /// to convert the input document into the correct set of objects.</para>
+        /// <para>Specifies the mapping template for the transformer. This template is used to map the
+        /// parsed EDI file using JSONata or XSLT.</para><note><para>This parameter is available for backwards compatibility. Use the <a href="https://docs.aws.amazon.com/b2bi/latest/APIReference/API_Mapping.html">Mapping</a>
+        /// data type instead.</para></note>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -109,9 +113,13 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
         public string Select { get; set; } = "MappedFileContent";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -211,13 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.B2BI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS B2B Data Interchange", "TestMapping");
             try
             {
-                #if DESKTOP
-                return client.TestMapping(request);
-                #elif CORECLR
-                return client.TestMappingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.TestMappingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

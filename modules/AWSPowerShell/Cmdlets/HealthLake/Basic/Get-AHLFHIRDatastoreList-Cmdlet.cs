@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,34 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.HealthLake;
 using Amazon.HealthLake.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AHL
 {
     /// <summary>
-    /// Lists all FHIR data stores that are in the user’s account, regardless of data store
-    /// status.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// List all FHIR-enabled data stores in a user’s account, regardless of data store status.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "AHLFHIRDatastoreList")]
     [OutputType("Amazon.HealthLake.Model.DatastoreProperties")]
     [AWSCmdlet("Calls the Amazon HealthLake ListFHIRDatastores API operation.", Operation = new[] {"ListFHIRDatastores"}, SelectReturnType = typeof(Amazon.HealthLake.Model.ListFHIRDatastoresResponse))]
     [AWSCmdletOutput("Amazon.HealthLake.Model.DatastoreProperties or Amazon.HealthLake.Model.ListFHIRDatastoresResponse",
         "This cmdlet returns a collection of Amazon.HealthLake.Model.DatastoreProperties objects.",
-        "The service call response (type Amazon.HealthLake.Model.ListFHIRDatastoresResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.HealthLake.Model.ListFHIRDatastoresResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAHLFHIRDatastoreListCmdlet : AmazonHealthLakeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter_CreatedAfter
         /// <summary>
         /// <para>
-        /// <para>A filter that allows the user to set cutoff dates for records. All data stores created
-        /// after the specified date will be included in the results.</para>
+        /// <para>Filter to set cutoff dates for records. All data stores created after the specified
+        /// date are included in the results.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,8 +59,8 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter Filter_CreatedBefore
         /// <summary>
         /// <para>
-        /// <para>A filter that allows the user to set cutoff dates for records. All data stores created
-        /// before the specified date will be included in the results. </para>
+        /// <para>Filter to set cutoff dates for records. All data stores created before the specified
+        /// date are included in the results. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -68,7 +70,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter Filter_DatastoreName
         /// <summary>
         /// <para>
-        /// <para>Allows the user to filter data store results by name.</para>
+        /// <para>Filter data store results by name.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -78,7 +80,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter Filter_DatastoreStatus
         /// <summary>
         /// <para>
-        /// <para>Allows the user to filter data store results by status.</para>
+        /// <para>Filter data store results by status.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -89,8 +91,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter MaxResult
         /// <summary>
         /// <para>
-        /// <para>The maximum number of data stores returned in a single page of a ListFHIRDatastoresRequest
-        /// call.</para>
+        /// <para>The maximum number of data stores returned on a page.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,11 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         #region Parameter NextToken
         /// <summary>
         /// <para>
-        /// <para>Fetches the next page of data stores when results are paginated.</para>
+        /// <para>The token used to retrieve the next page of data stores when results are paginated.</para>
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -133,9 +134,13 @@ namespace Amazon.PowerShell.Cmdlets.AHL
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -287,13 +292,7 @@ namespace Amazon.PowerShell.Cmdlets.AHL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon HealthLake", "ListFHIRDatastores");
             try
             {
-                #if DESKTOP
-                return client.ListFHIRDatastores(request);
-                #elif CORECLR
-                return client.ListFHIRDatastoresAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListFHIRDatastoresAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DatabaseMigrationService;
 using Amazon.DatabaseMigrationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DMS
 {
     /// <summary>
@@ -56,12 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
     [AWSCmdlet("Calls the AWS Database Migration Service DescribeApplicableIndividualAssessments API operation.", Operation = new[] {"DescribeApplicableIndividualAssessments"}, SelectReturnType = typeof(Amazon.DatabaseMigrationService.Model.DescribeApplicableIndividualAssessmentsResponse))]
     [AWSCmdletOutput("System.String or Amazon.DatabaseMigrationService.Model.DescribeApplicableIndividualAssessmentsResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.DatabaseMigrationService.Model.DescribeApplicableIndividualAssessmentsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DatabaseMigrationService.Model.DescribeApplicableIndividualAssessmentsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetDMSApplicableIndividualAssessmentCmdlet : AmazonDatabaseMigrationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MigrationType
         /// <summary>
@@ -72,6 +75,17 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.DatabaseMigrationService.MigrationTypeValue")]
         public Amazon.DatabaseMigrationService.MigrationTypeValue MigrationType { get; set; }
+        #endregion
+        
+        #region Parameter ReplicationConfigArn
+        /// <summary>
+        /// <para>
+        /// <para>Amazon Resource Name (ARN) of a serverless replication on which you want to base the
+        /// default list of individual assessments.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ReplicationConfigArn { get; set; }
         #endregion
         
         #region Parameter ReplicationInstanceArn
@@ -125,7 +139,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-Marker $null' for the first call and '-Marker $AWSHistory.LastServiceResponse.Marker' for subsequent calls.
+        /// <br/>'Marker' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-Marker' to null for the first call then set the 'Marker' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,9 +181,13 @@ namespace Amazon.PowerShell.Cmdlets.DMS
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -185,6 +203,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             context.Marker = this.Marker;
             context.MaxRecord = this.MaxRecord;
             context.MigrationType = this.MigrationType;
+            context.ReplicationConfigArn = this.ReplicationConfigArn;
             context.ReplicationInstanceArn = this.ReplicationInstanceArn;
             context.ReplicationTaskArn = this.ReplicationTaskArn;
             context.SourceEngineName = this.SourceEngineName;
@@ -214,6 +233,10 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             if (cmdletContext.MigrationType != null)
             {
                 request.MigrationType = cmdletContext.MigrationType;
+            }
+            if (cmdletContext.ReplicationConfigArn != null)
+            {
+                request.ReplicationConfigArn = cmdletContext.ReplicationConfigArn;
             }
             if (cmdletContext.ReplicationInstanceArn != null)
             {
@@ -293,13 +316,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Database Migration Service", "DescribeApplicableIndividualAssessments");
             try
             {
-                #if DESKTOP
-                return client.DescribeApplicableIndividualAssessments(request);
-                #elif CORECLR
-                return client.DescribeApplicableIndividualAssessmentsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeApplicableIndividualAssessmentsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -319,6 +336,7 @@ namespace Amazon.PowerShell.Cmdlets.DMS
             public System.String Marker { get; set; }
             public System.Int32? MaxRecord { get; set; }
             public Amazon.DatabaseMigrationService.MigrationTypeValue MigrationType { get; set; }
+            public System.String ReplicationConfigArn { get; set; }
             public System.String ReplicationInstanceArn { get; set; }
             public System.String ReplicationTaskArn { get; set; }
             public System.String SourceEngineName { get; set; }

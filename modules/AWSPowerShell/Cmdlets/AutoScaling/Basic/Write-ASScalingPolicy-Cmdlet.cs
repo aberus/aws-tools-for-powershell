@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AutoScaling;
 using Amazon.AutoScaling.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AS
 {
     /// <summary>
@@ -41,21 +43,23 @@ namespace Amazon.PowerShell.Cmdlets.AS
     /// For more information about using predictive scaling, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-predictive-scaling.html">Predictive
     /// scaling for Amazon EC2 Auto Scaling</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.
     /// </para><para>
-    /// You can view the scaling policies for an Auto Scaling group using the <a>DescribePolicies</a>
+    /// You can view the scaling policies for an Auto Scaling group using the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DescribePolicies.html">DescribePolicies</a>
     /// API call. If you are no longer using a scaling policy, you can delete it by calling
-    /// the <a>DeletePolicy</a> API.
+    /// the <a href="https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_DeletePolicy.html">DeletePolicy</a>
+    /// API.
     /// </para>
     /// </summary>
     [Cmdlet("Write", "ASScalingPolicy", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.AutoScaling.Model.PutScalingPolicyResponse")]
     [AWSCmdlet("Calls the AWS Auto Scaling PutScalingPolicy API operation.", Operation = new[] {"PutScalingPolicy"}, SelectReturnType = typeof(Amazon.AutoScaling.Model.PutScalingPolicyResponse))]
     [AWSCmdletOutput("Amazon.AutoScaling.Model.PutScalingPolicyResponse",
-        "This cmdlet returns an Amazon.AutoScaling.Model.PutScalingPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AutoScaling.Model.PutScalingPolicyResponse object containing multiple properties."
     )]
     public partial class WriteASScalingPolicyCmdlet : AmazonAutoScalingClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdjustmentType
         /// <summary>
@@ -92,7 +96,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <summary>
         /// <para>
         /// <para>A cooldown period, in seconds, that applies to a specific simple scaling policy. When
-        /// a cooldown period is specified here, it overrides the default cooldown.</para><para>Valid only if the policy type is <c>SimpleScaling</c>. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html">Scaling
+        /// a cooldown period is specified here, it overrides the default cooldown.</para><para>Valid only if the policy type is <c>SimpleScaling</c>. For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-scaling-cooldowns.html">Scaling
         /// cooldowns for Amazon EC2 Auto Scaling</a> in the <i>Amazon EC2 Auto Scaling User Guide</i>.</para><para>Default: None</para>
         /// </para>
         /// </summary>
@@ -104,7 +108,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <summary>
         /// <para>
         /// <para>The dimensions of the metric.</para><para>Conditional: If you published your metric with dimensions, you must specify the same
-        /// dimensions in your scaling policy.</para>
+        /// dimensions in your scaling policy.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -129,7 +137,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <summary>
         /// <para>
         /// <para>Indicates whether the scaling policy is enabled or disabled. The default is enabled.
-        /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-enable-disable-scaling-policy.html">Disabling
+        /// For more information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-enable-disable-scaling-policy.html">Disable
         /// a scaling policy for an Auto Scaling group</a> in the <i>Amazon EC2 Auto Scaling User
         /// Guide</i>.</para>
         /// </para>
@@ -158,11 +166,14 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <para>
         /// <para>Defines the behavior that should be applied if the forecast capacity approaches or
         /// exceeds the maximum capacity of the Auto Scaling group. Defaults to <c>HonorMaxCapacity</c>
-        /// if not specified.</para><para>The following are possible values:</para><ul><li><para><c>HonorMaxCapacity</c> - Amazon EC2 Auto Scaling cannot scale out capacity higher
-        /// than the maximum capacity. The maximum capacity is enforced as a hard limit. </para></li><li><para><c>IncreaseMaxCapacity</c> - Amazon EC2 Auto Scaling can scale out capacity higher
-        /// than the maximum capacity when the forecast capacity is close to or exceeds the maximum
-        /// capacity. The upper limit is determined by the forecasted capacity and the value for
-        /// <c>MaxCapacityBuffer</c>.</para></li></ul>
+        /// if not specified.</para><para>The following are possible values:</para><ul><li><para><c>HonorMaxCapacity</c> - Amazon EC2 Auto Scaling can't increase the maximum capacity
+        /// of the group when the forecast capacity is close to or exceeds the maximum capacity.</para></li><li><para><c>IncreaseMaxCapacity</c> - Amazon EC2 Auto Scaling can increase the maximum capacity
+        /// of the group when the forecast capacity is close to or exceeds the maximum capacity.
+        /// The upper limit is determined by the forecasted capacity and the value for <c>MaxCapacityBuffer</c>.</para></li></ul><important><para>Use caution when allowing the maximum capacity to be automatically increased. This
+        /// can lead to more instances being launched than intended if the increased maximum capacity
+        /// is not monitored and managed. The increased maximum capacity then becomes the new
+        /// normal maximum capacity for the Auto Scaling group until you manually update it. The
+        /// maximum capacity does not automatically decrease back to the original maximum.</para></important>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -215,7 +226,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <summary>
         /// <para>
         /// <para>The metrics to include in the target tracking scaling policy, as a metric data query.
-        /// This can include both raw metric and metric math expressions.</para>
+        /// This can include both raw metric and metric math expressions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -229,7 +244,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <para>This structure includes the metrics and target utilization to use for predictive scaling.
         /// </para><para>This is an array, but we currently only support a single metric specification. That
         /// is, you can specify a target value and a single metric pair, or a target value and
-        /// one scaling metric and one load metric.</para>
+        /// one scaling metric and one load metric.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -285,6 +304,20 @@ namespace Amazon.PowerShell.Cmdlets.AS
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("TargetTrackingConfiguration_CustomizedMetricSpecification_Namespace")]
         public System.String CustomizedMetricSpecification_Namespace { get; set; }
+        #endregion
+        
+        #region Parameter CustomizedMetricSpecification_Period
+        /// <summary>
+        /// <para>
+        /// <para> The period of the metric in seconds. The default value is 60. Accepted values are
+        /// 10, 30, and 60. For high resolution metric, set the value to less than 60. For more
+        /// information, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/policy-creating-high-resolution-metrics.html">Create
+        /// a target tracking policy using high-resolution metrics for faster response</a>. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TargetTrackingConfiguration_CustomizedMetricSpecification_Period")]
+        public System.Int32? CustomizedMetricSpecification_Period { get; set; }
         #endregion
         
         #region Parameter PolicyName
@@ -395,7 +428,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
         /// <summary>
         /// <para>
         /// <para>A set of adjustments that enable you to scale based on the size of the alarm breach.</para><para>Required if the policy type is <c>StepScaling</c>. (Not used with any other policy
-        /// type.) </para>
+        /// type.) </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -441,16 +478,6 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AutoScalingGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AutoScalingGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -461,9 +488,13 @@ namespace Amazon.PowerShell.Cmdlets.AS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AutoScalingGroupName), MyInvocation.BoundParameters);
@@ -477,21 +508,11 @@ namespace Amazon.PowerShell.Cmdlets.AS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AutoScaling.Model.PutScalingPolicyResponse, WriteASScalingPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AutoScalingGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AdjustmentType = this.AdjustmentType;
             context.AutoScalingGroupName = this.AutoScalingGroupName;
             #if MODULAR
@@ -537,6 +558,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
                 context.CustomizedMetricSpecification_Metric = new List<Amazon.AutoScaling.Model.TargetTrackingMetricDataQuery>(this.CustomizedMetricSpecification_Metric);
             }
             context.CustomizedMetricSpecification_Namespace = this.CustomizedMetricSpecification_Namespace;
+            context.CustomizedMetricSpecification_Period = this.CustomizedMetricSpecification_Period;
             context.CustomizedMetricSpecification_Statistic = this.CustomizedMetricSpecification_Statistic;
             context.CustomizedMetricSpecification_Unit = this.CustomizedMetricSpecification_Unit;
             context.TargetTrackingConfiguration_DisableScaleIn = this.TargetTrackingConfiguration_DisableScaleIn;
@@ -770,6 +792,16 @@ namespace Amazon.PowerShell.Cmdlets.AS
                 requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification.Namespace = requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification_customizedMetricSpecification_Namespace;
                 requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecificationIsNull = false;
             }
+            System.Int32? requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification_customizedMetricSpecification_Period = null;
+            if (cmdletContext.CustomizedMetricSpecification_Period != null)
+            {
+                requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification_customizedMetricSpecification_Period = cmdletContext.CustomizedMetricSpecification_Period.Value;
+            }
+            if (requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification_customizedMetricSpecification_Period != null)
+            {
+                requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification.Period = requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification_customizedMetricSpecification_Period.Value;
+                requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecificationIsNull = false;
+            }
             Amazon.AutoScaling.MetricStatistic requestTargetTrackingConfiguration_targetTrackingConfiguration_CustomizedMetricSpecification_customizedMetricSpecification_Statistic = null;
             if (cmdletContext.CustomizedMetricSpecification_Statistic != null)
             {
@@ -843,13 +875,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Auto Scaling", "PutScalingPolicy");
             try
             {
-                #if DESKTOP
-                return client.PutScalingPolicy(request);
-                #elif CORECLR
-                return client.PutScalingPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutScalingPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -887,6 +913,7 @@ namespace Amazon.PowerShell.Cmdlets.AS
             public System.String CustomizedMetricSpecification_MetricName { get; set; }
             public List<Amazon.AutoScaling.Model.TargetTrackingMetricDataQuery> CustomizedMetricSpecification_Metric { get; set; }
             public System.String CustomizedMetricSpecification_Namespace { get; set; }
+            public System.Int32? CustomizedMetricSpecification_Period { get; set; }
             public Amazon.AutoScaling.MetricStatistic CustomizedMetricSpecification_Statistic { get; set; }
             public System.String CustomizedMetricSpecification_Unit { get; set; }
             public System.Boolean? TargetTrackingConfiguration_DisableScaleIn { get; set; }

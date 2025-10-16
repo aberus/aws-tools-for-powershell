@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53
 {
     /// <summary>
@@ -41,18 +43,23 @@ namespace Amazon.PowerShell.Cmdlets.R53
     [AWSCmdlet("Calls the Amazon Route 53 UpdateHealthCheck API operation.", Operation = new[] {"UpdateHealthCheck"}, SelectReturnType = typeof(Amazon.Route53.Model.UpdateHealthCheckResponse))]
     [AWSCmdletOutput("Amazon.Route53.Model.HealthCheck or Amazon.Route53.Model.UpdateHealthCheckResponse",
         "This cmdlet returns an Amazon.Route53.Model.HealthCheck object.",
-        "The service call response (type Amazon.Route53.Model.UpdateHealthCheckResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Route53.Model.UpdateHealthCheckResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateR53HealthCheckCmdlet : AmazonRoute53ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ChildHealthCheck
         /// <summary>
         /// <para>
         /// <para>A complex type that contains one <c>ChildHealthCheck</c> element for each health check
-        /// that you want to associate with a <c>CALCULATED</c> health check.</para>
+        /// that you want to associate with a <c>CALCULATED</c> health check.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -69,8 +76,9 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// health checks.</para></li><li><para><b>Health checks that monitor CloudWatch alarms:</b> Route 53 stops monitoring the
         /// corresponding CloudWatch metrics.</para></li></ul><para>After you disable a health check, Route 53 considers the status of the health check
         /// to always be healthy. If you configured DNS failover, Route 53 continues to route
-        /// traffic to the corresponding resources. If you want to stop routing traffic to a resource,
-        /// change the value of <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_UpdateHealthCheck.html#Route53-UpdateHealthCheck-request-Inverted">Inverted</a>.
+        /// traffic to the corresponding resources. Additionally, in disabled state, you can also
+        /// invert the status of the health check to route traffic differently. For more information,
+        /// see <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_UpdateHealthCheck.html#Route53-UpdateHealthCheck-request-Inverted">Inverted</a>.
         /// </para><para>Charges for a health check still apply when the health check is disabled. For more
         /// information, see <a href="http://aws.amazon.com/route53/pricing/">Amazon Route 53
         /// Pricing</a>.</para>
@@ -309,7 +317,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// <summary>
         /// <para>
         /// <para>A complex type that contains one <c>Region</c> element for each region that you want
-        /// Amazon Route 53 health checkers to check the specified endpoint from.</para>
+        /// Amazon Route 53 health checkers to check the specified endpoint from.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -326,7 +338,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
         /// to null.</para></li><li><para><c>FullyQualifiedDomainName</c>: Route 53 resets <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_UpdateHealthCheck.html#Route53-UpdateHealthCheck-request-FullyQualifiedDomainName">FullyQualifiedDomainName</a>.
         /// to null.</para></li><li><para><c>Regions</c>: Route 53 resets the <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html#Route53-Type-HealthCheckConfig-Regions">Regions</a>
         /// list to the default set of regions. </para></li><li><para><c>ResourcePath</c>: Route 53 resets <a href="https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html#Route53-Type-HealthCheckConfig-ResourcePath">ResourcePath</a>
-        /// to null.</para></li></ul>
+        /// to null.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -372,16 +388,6 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public string Select { get; set; } = "HealthCheck";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the HealthCheckId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^HealthCheckId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^HealthCheckId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -392,9 +398,13 @@ namespace Amazon.PowerShell.Cmdlets.R53
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.HealthCheckId), MyInvocation.BoundParameters);
@@ -408,21 +418,11 @@ namespace Amazon.PowerShell.Cmdlets.R53
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Route53.Model.UpdateHealthCheckResponse, UpdateR53HealthCheckCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.HealthCheckId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.HealthCheckId = this.HealthCheckId;
             #if MODULAR
             if (this.HealthCheckId == null && ParameterWasBound(nameof(this.HealthCheckId)))
@@ -603,13 +603,7 @@ namespace Amazon.PowerShell.Cmdlets.R53
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53", "UpdateHealthCheck");
             try
             {
-                #if DESKTOP
-                return client.UpdateHealthCheck(request);
-                #elif CORECLR
-                return client.UpdateHealthCheckAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateHealthCheckAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

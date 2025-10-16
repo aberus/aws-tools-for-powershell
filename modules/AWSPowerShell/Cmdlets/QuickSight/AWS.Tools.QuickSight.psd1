@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The QuickSight module of AWS Tools for PowerShell lets developers and administrators manage Amazon QuickSight from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,10 +54,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
         'AWSSDK.QuickSight.dll'
     )
@@ -89,8 +90,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Add-QSResourceTag', 
         'Find-QSGroup', 
         'Get-QSAccountCustomization', 
+        'Get-QSAccountCustomPermission', 
         'Get-QSAccountSetting', 
         'Get-QSAccountSubscription', 
+        'Get-QSActionConnector', 
+        'Get-QSActionConnectorList', 
+        'Get-QSActionConnectorPermission', 
         'Get-QSAnalysis', 
         'Get-QSAnalysisDefinition', 
         'Get-QSAnalysisList', 
@@ -99,6 +104,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-QSAssetBundleExportJobList', 
         'Get-QSAssetBundleImportJob', 
         'Get-QSAssetBundleImportJobList', 
+        'Get-QSBrand', 
+        'Get-QSBrandAssignment', 
+        'Get-QSBrandList', 
+        'Get-QSBrandPublishedVersion', 
+        'Get-QSCustomPermission', 
+        'Get-QSCustomPermissionList', 
         'Get-QSDashboard', 
         'Get-QSDashboardDefinition', 
         'Get-QSDashboardEmbedUrl', 
@@ -106,6 +117,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-QSDashboardPermission', 
         'Get-QSDashboardSnapshotJob', 
         'Get-QSDashboardSnapshotJobResult', 
+        'Get-QSDashboardsQAConfiguration', 
         'Get-QSDashboardVersionList', 
         'Get-QSDataSet', 
         'Get-QSDataSetList', 
@@ -114,11 +126,16 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-QSDataSource', 
         'Get-QSDataSourceList', 
         'Get-QSDataSourcePermission', 
+        'Get-QSDefaultQBusinessApplication', 
+        'Get-QSFlowList', 
+        'Get-QSFlowMetadata', 
+        'Get-QSFlowPermission', 
         'Get-QSFolder', 
         'Get-QSFolderList', 
         'Get-QSFolderMemberList', 
         'Get-QSFolderPermission', 
         'Get-QSFolderResolvedPermission', 
+        'Get-QSFoldersForResourceList', 
         'Get-QSGroup', 
         'Get-QSGroupList', 
         'Get-QSGroupMembership', 
@@ -130,8 +147,11 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-QSIngestion', 
         'Get-QSIngestionList', 
         'Get-QSIpRestriction', 
+        'Get-QSKeyRegistration', 
         'Get-QSNamespace', 
         'Get-QSNamespaceList', 
+        'Get-QSQPersonalizationConfiguration', 
+        'Get-QSQuickSightQSearchConfiguration', 
         'Get-QSRefreshSchedule', 
         'Get-QSRefreshScheduleList', 
         'Get-QSResourceTag', 
@@ -157,14 +177,19 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-QSTopicRefresh', 
         'Get-QSTopicRefreshSchedule', 
         'Get-QSTopicRefreshScheduleList', 
+        'Get-QSTopicReviewedAnswerList', 
         'Get-QSUser', 
         'Get-QSUserGroupList', 
         'Get-QSUserList', 
         'Get-QSVPCConnection', 
         'Get-QSVPCConnectionList', 
+        'Initialize-QSEmbedUrlForRegisteredUserWithIdentity', 
         'New-QSAccountCustomization', 
         'New-QSAccountSubscription', 
+        'New-QSActionConnector', 
         'New-QSAnalysis', 
+        'New-QSBrand', 
+        'New-QSCustomPermission', 
         'New-QSDashboard', 
         'New-QSDataSet', 
         'New-QSDataSource', 
@@ -188,12 +213,18 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-QSVPCConnection', 
         'Register-QSUser', 
         'Remove-QSAccountCustomization', 
+        'Remove-QSAccountCustomPermission', 
         'Remove-QSAccountSubscription', 
+        'Remove-QSActionConnector', 
         'Remove-QSAnalysis', 
+        'Remove-QSBrand', 
+        'Remove-QSBrandAssignment', 
+        'Remove-QSCustomPermission', 
         'Remove-QSDashboard', 
         'Remove-QSDataSet', 
         'Remove-QSDataSetRefreshProperty', 
         'Remove-QSDataSource', 
+        'Remove-QSDefaultQBusinessApplication', 
         'Remove-QSFolder', 
         'Remove-QSFolderMembership', 
         'Remove-QSGroup', 
@@ -213,38 +244,61 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-QSTopicRefreshSchedule', 
         'Remove-QSUser', 
         'Remove-QSUserByPrincipalId', 
+        'Remove-QSUserCustomPermission', 
         'Remove-QSVPCConnection', 
         'Restore-QSAnalysis', 
+        'Search-QSActionConnector', 
         'Search-QSAnalysis', 
         'Search-QSDashboard', 
         'Search-QSDataSet', 
         'Search-QSDataSource', 
+        'Search-QSFlow', 
         'Search-QSFolder', 
+        'Search-QSQAResult', 
+        'Search-QSTopic', 
+        'Set-QSBatchCreateTopicReviewedAnswer', 
+        'Set-QSBatchDeleteTopicReviewedAnswer', 
         'Start-QSAssetBundleExportJob', 
         'Start-QSAssetBundleImportJob', 
         'Start-QSDashboardSnapshotJob', 
+        'Start-QSDashboardSnapshotJobSchedule', 
         'Stop-QSIngestion', 
         'Update-QSAccountCustomization', 
+        'Update-QSAccountCustomPermission', 
         'Update-QSAccountSetting', 
+        'Update-QSActionConnector', 
+        'Update-QSActionConnectorPermission', 
         'Update-QSAnalysis', 
         'Update-QSAnalysisPermission', 
+        'Update-QSApplicationWithTokenExchangeGrant', 
+        'Update-QSBrand', 
+        'Update-QSBrandAssignment', 
+        'Update-QSBrandPublishedVersion', 
+        'Update-QSCustomPermission', 
         'Update-QSDashboard', 
         'Update-QSDashboardLink', 
         'Update-QSDashboardPermission', 
         'Update-QSDashboardPublishedVersion', 
+        'Update-QSDashboardsQAConfiguration', 
         'Update-QSDataSet', 
         'Update-QSDataSetPermission', 
         'Update-QSDataSource', 
         'Update-QSDataSourcePermission', 
+        'Update-QSDefaultQBusinessApplication', 
+        'Update-QSFlowPermission', 
         'Update-QSFolder', 
         'Update-QSFolderPermission', 
         'Update-QSGroup', 
         'Update-QSIAMPolicyAssignment', 
         'Update-QSIdentityPropagationConfig', 
         'Update-QSIpRestriction', 
+        'Update-QSKeyRegistration', 
         'Update-QSPublicSharingSetting', 
+        'Update-QSQPersonalizationConfiguration', 
+        'Update-QSQuickSightQSearchConfiguration', 
         'Update-QSRefreshSchedule', 
         'Update-QSRoleCustomPermission', 
+        'Update-QSSPICECapacityConfiguration', 
         'Update-QSTemplate', 
         'Update-QSTemplateAlias', 
         'Update-QSTemplatePermission', 
@@ -255,6 +309,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-QSTopicPermission', 
         'Update-QSTopicRefreshSchedule', 
         'Update-QSUser', 
+        'Update-QSUserCustomPermission', 
         'Update-QSVPCConnection', 
         'Write-QSDataSetRefreshProperty')
 
@@ -280,7 +335,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

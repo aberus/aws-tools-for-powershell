@@ -82,8 +82,8 @@ $MPV2_Completers = {
     {
         # Amazon.MediaPackageV2.CmafEncryptionMethod
         {
-            ($_ -eq "New-MPV2OriginEndpoint/Segment_Encryption_EncryptionMethod_CmafEncryptionMethod") -Or
-            ($_ -eq "Update-MPV2OriginEndpoint/Segment_Encryption_EncryptionMethod_CmafEncryptionMethod")
+            ($_ -eq "New-MPV2OriginEndpoint/EncryptionMethod_CmafEncryptionMethod") -Or
+            ($_ -eq "Update-MPV2OriginEndpoint/EncryptionMethod_CmafEncryptionMethod")
         }
         {
             $v = "CBCS","CENC"
@@ -96,14 +96,38 @@ $MPV2_Completers = {
             ($_ -eq "Update-MPV2OriginEndpoint/ContainerType")
         }
         {
-            $v = "CMAF","TS"
+            $v = "CMAF","ISM","TS"
+            break
+        }
+
+        # Amazon.MediaPackageV2.HarvestJobStatus
+        "Get-MPV2HarvestJobList/Status"
+        {
+            $v = "CANCELLED","COMPLETED","FAILED","IN_PROGRESS","QUEUED"
+            break
+        }
+
+        # Amazon.MediaPackageV2.InputType
+        "New-MPV2Channel/InputType"
+        {
+            $v = "CMAF","HLS"
+            break
+        }
+
+        # Amazon.MediaPackageV2.IsmEncryptionMethod
+        {
+            ($_ -eq "New-MPV2OriginEndpoint/EncryptionMethod_IsmEncryptionMethod") -Or
+            ($_ -eq "Update-MPV2OriginEndpoint/EncryptionMethod_IsmEncryptionMethod")
+        }
+        {
+            $v = "CENC"
             break
         }
 
         # Amazon.MediaPackageV2.PresetSpeke20Audio
         {
-            ($_ -eq "New-MPV2OriginEndpoint/Segment_Encryption_SpekeKeyProvider_EncryptionContractConfiguration_PresetSpeke20Audio") -Or
-            ($_ -eq "Update-MPV2OriginEndpoint/Segment_Encryption_SpekeKeyProvider_EncryptionContractConfiguration_PresetSpeke20Audio")
+            ($_ -eq "New-MPV2OriginEndpoint/EncryptionContractConfiguration_PresetSpeke20Audio") -Or
+            ($_ -eq "Update-MPV2OriginEndpoint/EncryptionContractConfiguration_PresetSpeke20Audio")
         }
         {
             $v = "PRESET_AUDIO_1","PRESET_AUDIO_2","PRESET_AUDIO_3","SHARED","UNENCRYPTED"
@@ -112,8 +136,8 @@ $MPV2_Completers = {
 
         # Amazon.MediaPackageV2.PresetSpeke20Video
         {
-            ($_ -eq "New-MPV2OriginEndpoint/Segment_Encryption_SpekeKeyProvider_EncryptionContractConfiguration_PresetSpeke20Video") -Or
-            ($_ -eq "Update-MPV2OriginEndpoint/Segment_Encryption_SpekeKeyProvider_EncryptionContractConfiguration_PresetSpeke20Video")
+            ($_ -eq "New-MPV2OriginEndpoint/EncryptionContractConfiguration_PresetSpeke20Video") -Or
+            ($_ -eq "Update-MPV2OriginEndpoint/EncryptionContractConfiguration_PresetSpeke20Video")
         }
         {
             $v = "PRESET_VIDEO_1","PRESET_VIDEO_2","PRESET_VIDEO_3","PRESET_VIDEO_4","PRESET_VIDEO_5","PRESET_VIDEO_6","PRESET_VIDEO_7","PRESET_VIDEO_8","SHARED","UNENCRYPTED"
@@ -122,8 +146,8 @@ $MPV2_Completers = {
 
         # Amazon.MediaPackageV2.TsEncryptionMethod
         {
-            ($_ -eq "New-MPV2OriginEndpoint/Segment_Encryption_EncryptionMethod_TsEncryptionMethod") -Or
-            ($_ -eq "Update-MPV2OriginEndpoint/Segment_Encryption_EncryptionMethod_TsEncryptionMethod")
+            ($_ -eq "New-MPV2OriginEndpoint/EncryptionMethod_TsEncryptionMethod") -Or
+            ($_ -eq "Update-MPV2OriginEndpoint/EncryptionMethod_TsEncryptionMethod")
         }
         {
             $v = "AES_128","SAMPLE_AES"
@@ -140,10 +164,13 @@ $MPV2_Completers = {
 
 $MPV2_map = @{
     "ContainerType"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
-    "Segment_Encryption_EncryptionMethod_CmafEncryptionMethod"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
-    "Segment_Encryption_EncryptionMethod_TsEncryptionMethod"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
-    "Segment_Encryption_SpekeKeyProvider_EncryptionContractConfiguration_PresetSpeke20Audio"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
-    "Segment_Encryption_SpekeKeyProvider_EncryptionContractConfiguration_PresetSpeke20Video"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
+    "EncryptionContractConfiguration_PresetSpeke20Audio"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
+    "EncryptionContractConfiguration_PresetSpeke20Video"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
+    "EncryptionMethod_CmafEncryptionMethod"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
+    "EncryptionMethod_IsmEncryptionMethod"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
+    "EncryptionMethod_TsEncryptionMethod"=@("New-MPV2OriginEndpoint","Update-MPV2OriginEndpoint")
+    "InputType"=@("New-MPV2Channel")
+    "Status"=@("Get-MPV2HarvestJobList")
 }
 
 _awsArgumentCompleterRegistration $MPV2_Completers $MPV2_map
@@ -196,8 +223,10 @@ $MPV2_SelectCompleters = {
 }
 
 $MPV2_SelectMap = @{
-    "Select"=@("New-MPV2Channel",
+    "Select"=@("Stop-MPV2HarvestJob",
+               "New-MPV2Channel",
                "New-MPV2ChannelGroup",
+               "New-MPV2HarvestJob",
                "New-MPV2OriginEndpoint",
                "Remove-MPV2Channel",
                "Remove-MPV2ChannelGroup",
@@ -207,14 +236,18 @@ $MPV2_SelectMap = @{
                "Get-MPV2Channel",
                "Get-MPV2ChannelGroup",
                "Get-MPV2ChannelPolicy",
+               "Get-MPV2HarvestJob",
                "Get-MPV2OriginEndpoint",
                "Get-MPV2OriginEndpointPolicy",
                "Get-MPV2ChannelGroupList",
                "Get-MPV2ChannelList",
+               "Get-MPV2HarvestJobList",
                "Get-MPV2OriginEndpointList",
                "Get-MPV2ResourceTag",
                "Write-MPV2ChannelPolicy",
                "Write-MPV2OriginEndpointPolicy",
+               "Reset-MPV2ChannelState",
+               "Reset-MPV2OriginEndpointState",
                "Add-MPV2ResourceTag",
                "Remove-MPV2ResourceTag",
                "Update-MPV2Channel",

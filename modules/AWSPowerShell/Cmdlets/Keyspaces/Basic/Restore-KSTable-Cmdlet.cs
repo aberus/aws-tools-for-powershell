@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Keyspaces;
 using Amazon.Keyspaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KS
 {
     /// <summary>
@@ -76,12 +78,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
     [AWSCmdlet("Calls the Amazon Keyspaces RestoreTable API operation.", Operation = new[] {"RestoreTable"}, SelectReturnType = typeof(Amazon.Keyspaces.Model.RestoreTableResponse))]
     [AWSCmdletOutput("System.String or Amazon.Keyspaces.Model.RestoreTableResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Keyspaces.Model.RestoreTableResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Keyspaces.Model.RestoreTableResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RestoreKSTableCmdlet : AmazonKeyspacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ReadCapacityAutoScaling_AutoScalingDisabled
         /// <summary>
@@ -208,7 +211,11 @@ namespace Amazon.PowerShell.Cmdlets.KS
         #region Parameter ReplicaSpecification
         /// <summary>
         /// <para>
-        /// <para>The optional Region specific settings of a multi-Regional table.</para>
+        /// <para>The optional Region specific settings of a multi-Regional table.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -324,7 +331,11 @@ namespace Amazon.PowerShell.Cmdlets.KS
         /// <para>
         /// <para>A list of key-value pair tags to be attached to the restored table. </para><para>For more information, see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/tagging-keyspaces.html">Adding
         /// tags and labels to Amazon Keyspaces resources</a> in the <i>Amazon Keyspaces Developer
-        /// Guide</i>.</para>
+        /// Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -456,9 +467,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -942,13 +957,7 @@ namespace Amazon.PowerShell.Cmdlets.KS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Keyspaces", "RestoreTable");
             try
             {
-                #if DESKTOP
-                return client.RestoreTable(request);
-                #elif CORECLR
-                return client.RestoreTableAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RestoreTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,0 +1,35 @@
+---
+cloudtrail_LookupEvents:
+  title: Use Find-CTEvent
+  title_abbrev: Find-CTEvent
+  synopsis: use Find-CTEvent
+  languages:
+    PowerShell:
+      versions:
+      - sdk_version: 5
+        sdk_action: Find-CTEvent
+        excerpts:
+        - description: '<emphasis role="bold">Example 1: Returns all events that have occurred over the last seven days. The cmdlet by default automatically makes multiple calls to deliver all events, exiting when the service indicates no further data is available.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudtrail_Find-CTEvent.1.1.ps1
+        - description: '<emphasis role="bold">Example 2: Returns all events that have occurred over the last seven days specifying a region that is not the current shell default.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudtrail_Find-CTEvent.2.1.ps1
+        - description: '<emphasis role="bold">Example 3: Returns all events that are associated with the RunInstances API call.</emphasis>'
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudtrail_Find-CTEvent.3.1.ps1
+        - description: "<emphasis role=\"bold\">Example 4: Returns the first 5 available events.</emphasis>"
+          snippet_files: []
+        - description:
+          snippet_files:
+          - .doc_gen/snippet_files/cloudtrail_Find-CTEvent.4.1.ps1
+  services:
+    cloudtrail:
+      LookupEvents:
+

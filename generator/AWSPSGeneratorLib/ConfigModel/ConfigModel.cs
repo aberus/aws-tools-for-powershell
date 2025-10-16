@@ -679,6 +679,9 @@ namespace AWSPowerShellGenerator.ServiceConfig
         public IEnumerable<string> SDKDependencies { get; set; }
 
         [XmlIgnore]
+        public IEnumerable<string> AdditionalServiceAssemblies { get; set; } = Array.Empty<string>();
+
+        [XmlIgnore]
         public readonly List<AnalysisError> AnalysisErrors = new List<AnalysisError>();
 
         [XmlIgnore]
@@ -914,17 +917,35 @@ namespace AWSPowerShellGenerator.ServiceConfig
         public bool NoPipelineParameter;
 
         /// <summary>
-        /// Custom pass-thru expression override to use instead of automatically
-        /// emitted the parameter marked for pipeline input to the output, for
-        /// operations that have an output type of 'void'.
-        /// </summary>
-        public PassThruOverride PassThru;
-
-        /// <summary>
         /// Overrides the service level iteration settings for an operation, for
         /// services that use inconsistent markers etc across their apis
         /// </summary>
         public AutoIteration AutoIterate;
+
+        /// <summary>
+        /// This should not be set to true for new operations. 
+        /// When set to true, auto-iteration defined in the config will be used.
+        /// otherwise .NET SDK's Paginator attributes will be used.
+        /// </summary>
+        [XmlAttribute]
+        [DefaultValue(false)]
+        public bool LegacyV4Pagination = false;
+
+        /// <summary>
+        /// When set to true, auto-iteration code will not be generated, instead a method ProcessCustomAutoIteration 
+        /// will be created in the generated cmdlet file. The extensions file will need to define the ProcessCustomAutoIteration method.
+        /// </summary>
+        [XmlAttribute]
+        [DefaultValue(false)]
+        public bool CustomAutoIteration = false;
+
+        /// <summary>
+        /// When set to true, initialized required parameter object would not be reset to null if none of the child properties are set 
+        /// and would be sent as an empty object down the wire.
+        /// </summary>
+        [XmlAttribute]
+        [DefaultValue(false)]
+        public bool NoResetToNullForRequiredParameter = false;
 
         public enum LegacyPaginationType
         {
@@ -1041,6 +1062,9 @@ namespace AWSPowerShellGenerator.ServiceConfig
 
         [XmlIgnore]
         public readonly List<AnalysisError> AnalysisErrors = new List<AnalysisError>();
+
+        [XmlIgnore]
+        public readonly List<InfoMessage> InfoMessages = new List<InfoMessage>();
 
         #endregion
     }
@@ -1273,6 +1297,13 @@ namespace AWSPowerShellGenerator.ServiceConfig
         public bool PageSizeIsRequired;
 
         /// <summary>
+        /// Whether an operation should support legacy auto-iteration mode added in v5 to preserve v4 auto-iteration behaviour.
+        /// </summary>
+        [XmlIgnore]
+        public bool SupportLegacyAutoIterationMode = false;
+
+
+        /// <summary>
         /// Returns the autoiteration settings, if any, for an operation by combining the service level
         /// settings and any operation-level overrides. For operation level overrides, not all settings
         /// need to be specified. For operations that have less fields than the service level, specify
@@ -1407,47 +1438,6 @@ namespace AWSPowerShellGenerator.ServiceConfig
             ParamName = paramName;
             EmitterType = emitterType;
         }
-    }
-
-    /// <summary>
-    /// Contains the custom code expression and documentation for the -PassThru parameter.
-    /// <para>
-    /// If not specified (the default) for a service operation that has an output type of
-    /// 'void', the value passed to the parameter declared as the PipelineParameter will 
-    /// be emitted (so long as the user sets the -PassThru switch). 
-    /// </para>
-    /// <para>
-    /// If this customization is specified, the assignment to the CmdletOutput's PipelineOutput
-    /// property in the cmdlet executor is done from the code expression supplied as
-    /// Expression. This can be a reference to a request object field (e.g. 'request.Tags') or 
-    /// a call to a custom method built as part of an extension class to the cmdlet.
-    /// </para>
-    /// </summary>
-    public class PassThruOverride
-    {
-        /// <summary>
-        /// The code expression that yields the output from the cmdlet. This can
-        /// be a reference to a member of the SDK request object, or a member of the 
-        /// cmdletContext instance or a call to a method implemented in an extension
-        /// class for the cmdlet.
-        /// </summary>
-        /// <example>context.Tags</example>
-        /// <example>GetTagOutputFromHere(context.Tags)</example>
-        public string Expression { get; set; }
-
-        /// <summary>
-        /// The type of the object that is output (for collections, this should 
-        /// be the collected object type). This is used to augment the OutputType
-        /// attribute on the cmdlet.
-        /// </summary>
-        public string Type { get; set; }
-
-        /// <summary>
-        /// 'One liner' documentation describing what is output. The generator will
-        /// automatically append a 'By default, this cmdlet does not generate any output.'
-        /// suffix to follow other cmdlet standards.
-        /// </summary>
-        public string Documentation { get; set; }
     }
 
     /// <summary>

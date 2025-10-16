@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.LaunchWizard;
 using Amazon.LaunchWizard.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.LWIZ
 {
     /// <summary>
@@ -37,14 +39,13 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
     [AWSCmdlet("Calls the AWS Launch Wizard CreateDeployment API operation.", Operation = new[] {"CreateDeployment"}, SelectReturnType = typeof(Amazon.LaunchWizard.Model.CreateDeploymentResponse))]
     [AWSCmdletOutput("System.String or Amazon.LaunchWizard.Model.CreateDeploymentResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.LaunchWizard.Model.CreateDeploymentResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.LaunchWizard.Model.CreateDeploymentResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewLWIZDeploymentCmdlet : AmazonLaunchWizardClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeploymentPatternName
         /// <summary>
@@ -97,9 +98,15 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
         #region Parameter Specification
         /// <summary>
         /// <para>
-        /// <para>The settings specified for the deployment. For more information on the specifications
-        /// required for creating a deployment, see <a href="https://docs.aws.amazon.com/launchwizard/latest/APIReference/launch-wizard-specifications.html">Workload
-        /// specifications</a>.</para>
+        /// <para>The settings specified for the deployment. These settings define how to deploy and
+        /// configure your resources created by the deployment. For more information about the
+        /// specifications required for creating a deployment for a SAP workload, see <a href="https://docs.aws.amazon.com/launchwizard/latest/APIReference/launch-wizard-specifications-sap.html">SAP
+        /// deployment specifications</a>. To retrieve the specifications required to create a
+        /// deployment for other workloads, use the <a href="https://docs.aws.amazon.com/launchwizard/latest/APIReference/API_GetWorkloadDeploymentPattern.html"><c>GetWorkloadDeploymentPattern</c></a> operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -114,11 +121,25 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
         public System.Collections.Hashtable Specification { get; set; }
         #endregion
         
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>The tags to add to the deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
         #region Parameter WorkloadName
         /// <summary>
         /// <para>
-        /// <para>The name of the workload. You can use the <a href="https://docs.aws.amazon.com/launchwizard/latest/APIReference/API_ListWorkloadDeploymentPatterns.html"><c>ListWorkloadDeploymentPatterns</c></a> operation to discover supported values
-        /// for this parameter.</para>
+        /// <para>The name of the workload. You can use the <a href="https://docs.aws.amazon.com/launchwizard/latest/APIReference/API_ListWorkloads.html"><c>ListWorkloads</c></a> operation to discover supported values for this parameter.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -153,9 +174,13 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -203,6 +228,14 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
                 WriteWarning("You are passing $null as a value for parameter Specification which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Tag != null)
+            {
+                context.Tag = new Dictionary<System.String, System.String>(StringComparer.Ordinal);
+                foreach (var hashKey in this.Tag.Keys)
+                {
+                    context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
+                }
+            }
             context.WorkloadName = this.WorkloadName;
             #if MODULAR
             if (this.WorkloadName == null && ParameterWasBound(nameof(this.WorkloadName)))
@@ -241,6 +274,10 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
             if (cmdletContext.Specification != null)
             {
                 request.Specifications = cmdletContext.Specification;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
             }
             if (cmdletContext.WorkloadName != null)
             {
@@ -284,13 +321,7 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Launch Wizard", "CreateDeployment");
             try
             {
-                #if DESKTOP
-                return client.CreateDeployment(request);
-                #elif CORECLR
-                return client.CreateDeploymentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateDeploymentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -311,6 +342,7 @@ namespace Amazon.PowerShell.Cmdlets.LWIZ
             public System.Boolean? DryRun { get; set; }
             public System.String Name { get; set; }
             public Dictionary<System.String, System.String> Specification { get; set; }
+            public Dictionary<System.String, System.String> Tag { get; set; }
             public System.String WorkloadName { get; set; }
             public System.Func<Amazon.LaunchWizard.Model.CreateDeploymentResponse, NewLWIZDeploymentCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.DeploymentId;

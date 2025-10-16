@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,31 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.FSx;
 using Amazon.FSx.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.FSX
 {
     /// <summary>
     /// Indicates whether participant accounts in your organization can create Amazon FSx
     /// for NetApp ONTAP Multi-AZ file systems in subnets that are shared by a virtual private
-    /// cloud (VPC) owner. For more information, see the <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/maz-shared-vpc.html">Amazon
-    /// FSx for NetApp ONTAP User Guide</a>.
+    /// cloud (VPC) owner. For more information, see <a href="https://docs.aws.amazon.com/fsx/latest/ONTAPGuide/creating-file-systems.html#fsxn-vpc-shared-subnets">Creating
+    /// FSx for ONTAP file systems in shared subnets</a>.
     /// </summary>
     [Cmdlet("Get", "FSXSharedVpcConfiguration")]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon FSx DescribeSharedVpcConfiguration API operation.", Operation = new[] {"DescribeSharedVpcConfiguration"}, SelectReturnType = typeof(Amazon.FSx.Model.DescribeSharedVpcConfigurationResponse))]
     [AWSCmdletOutput("System.String or Amazon.FSx.Model.DescribeSharedVpcConfigurationResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.FSx.Model.DescribeSharedVpcConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.FSx.Model.DescribeSharedVpcConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetFSXSharedVpcConfigurationCmdlet : AmazonFSxClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -56,9 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.FSX
         public string Select { get; set; } = "EnableFsxRouteTableUpdatesFromParticipantAccounts";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -125,13 +132,7 @@ namespace Amazon.PowerShell.Cmdlets.FSX
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon FSx", "DescribeSharedVpcConfiguration");
             try
             {
-                #if DESKTOP
-                return client.DescribeSharedVpcConfiguration(request);
-                #elif CORECLR
-                return client.DescribeSharedVpcConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeSharedVpcConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

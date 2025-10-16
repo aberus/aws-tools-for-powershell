@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -26,6 +27,7 @@ namespace AWSPowerShellGenerator.Utils
         private readonly SortedDictionary<string, Assembly> Assemblies = new SortedDictionary<string, Assembly>();
         private readonly Dictionary<string, XmlDocument> NDocs = new Dictionary<string, XmlDocument>();
         private readonly string AwsPowerShellModuleFolder;
+        private readonly string PreviewLabel;
 
         /// <summary>
         /// The default location that nupkg files will be loaded from
@@ -33,14 +35,22 @@ namespace AWSPowerShellGenerator.Utils
         public string SdkAssembliesFolder { get; }
 
         public const string SDKAssemblyNamePrefix = "AWSSDK.";
-        public const string DotNetPlatformNet45 = "net45";
+        public const string DotNetPlatform = "net472";
         public const string DotNetPlatformNetStandard20 = "netstandard2.0";
 
         private const string AWSPowerShellCommonGuid = "e5b05bf3-9eee-47b2-81f2-41ddc0501b86";
         private const string AWSPowerShellNetCoreGuid = "cb0b9b96-f3f2-4eff-b7f4-cbe0a9203683";
         private const string AWSPowerShellGuid = "21f083f2-4c41-4b5d-88ec-7d24c9e88769";
         private readonly string[] AwsToolsCommonSdkAssemblies = { "AWSSDK.Core", "AWSSDK.SecurityToken" };
-        private readonly string[] AdditionalCrtAssemblies = { "aws-crt", "aws-crt-auth", "aws-crt-http", "aws-crt-checksums", "AWSSDK.Extensions.CrtIntegration" };
+        private readonly string[] AdditionalAssemblies = { "aws-crt", "aws-crt-auth", "aws-crt-http", "aws-crt-checksums", "AWSSDK.Extensions.CrtIntegration", "AWSSDK.Extensions.CborProtocol", "System.Formats.Cbor" };
+        // Additional service assemblies that are added to Project files and Manifest files.
+        private readonly Dictionary<string, List<string>> _additionalServiceAssemblies = new()
+        {
+            ["CloudFront"] = ["AWSSDK.Extensions.CloudFront.Signers"],
+            ["EC2"] = ["AWSSDK.Extensions.EC2.DecryptPassword"]
+        };
+
+        private string[] AllAdditionalServiceAssemblies => _additionalServiceAssemblies.SelectMany(x => x.Value).ToArray();
 
         //All paths are relative to the AwsPowerShellModuleFolder
         public static readonly string AWSPowerShellModularSolutionFilename = Path.Combine("..", "..", "solutions", "ModularAWSPowerShell.sln");
@@ -65,14 +75,15 @@ namespace AWSPowerShellGenerator.Utils
         // aliases file and is not loaded by default
         public const string AdditionalAliasesFilename = "AWSAliases.ps1";
 
-        private static string[] PlatformsToExtractLibrariesFor = new string[] { DotNetPlatformNet45, DotNetPlatformNetStandard20 };
+        private static string[] PlatformsToExtractLibrariesFor = new string[] { DotNetPlatform, DotNetPlatformNetStandard20 };
 
         public string ModuleVersionNumber { get; }
 
-        public GenerationSources(string awsPowerShellModuleFolder, string sdkAssembliesFolder, string versionNumber)
+        public GenerationSources(string awsPowerShellModuleFolder, string sdkAssembliesFolder, string versionNumber, string previewLabel)
         {
             AwsPowerShellModuleFolder = awsPowerShellModuleFolder;
             SdkAssembliesFolder = sdkAssembliesFolder;
+            PreviewLabel = previewLabel;
 
             Func<string, string> sanitizeInteger = (string s) =>
             {
@@ -86,7 +97,7 @@ namespace AWSPowerShellGenerator.Utils
             var splitVersion = versionNumber.Split('.');
             if (versionNumber != "0.0.0.0" &&
                 (splitVersion.Length < 3 ||
-                 !versionNumber.StartsWith("4.1.") ||
+                 !versionNumber.StartsWith("5.0.") ||
                  versionNumber != string.Join(".", splitVersion.Select(sanitizeInteger))))
             {
                 throw new FileFormatException($"Invalid version number {versionNumber}");
@@ -138,7 +149,7 @@ namespace AWSPowerShellGenerator.Utils
         }
 
         /// <summary>
-        /// Finds all the distinct net45 and netstandard2.0 SDK filenames from the assemblies folder.
+        /// Finds all the distinct net472 and netstandard2.0 SDK filenames from the assemblies folder.
         /// </summary>
         /// <param name="SdkAssembliesFolder">Location of the SDK assemblies to generate against.</param>
         /// <param name="EnumerateFiles">Function used to enumerate the files in the assemblies folder. This
@@ -148,9 +159,9 @@ namespace AWSPowerShellGenerator.Utils
         public static IEnumerable<string> SDKFindAssemblyFilenames(string SdkAssembliesFolder,
             Func<string, string, SearchOption, IEnumerable<string>> EnumerateFiles)
         {
-            //PowerShell works with netstandard2.0 and net45 so we will find those AWSSDK assembly filenames.
-            var foundNet45SdkFilenames = EnumerateFiles(
-                Path.Combine(SdkAssembliesFolder, DotNetPlatformNet45),
+            //PowerShell works with netstandard2.0 and net472 so we will find those AWSSDK assembly filenames.
+            var foundNetFrameworkSdkFilenames = EnumerateFiles(
+                Path.Combine(SdkAssembliesFolder, DotNetPlatform),
                 "AWSSDK.*.dll",
                 SearchOption.TopDirectoryOnly)
                 .Select(fullFilename => Path.GetFileNameWithoutExtension(fullFilename).Substring("AWSSDK.".Length));
@@ -159,10 +170,12 @@ namespace AWSPowerShellGenerator.Utils
                 "AWSSDK.*.dll",
                 SearchOption.TopDirectoryOnly)
                 .Select(fullFilename => Path.GetFileNameWithoutExtension(fullFilename).Substring("AWSSDK.".Length));
-            var distinctAssemblyFilenames = foundNet45SdkFilenames.Union(foundNetstandard20SdkFilenames)
+            var distinctAssemblyFilenames = foundNetFrameworkSdkFilenames.Union(foundNetstandard20SdkFilenames)
                 .Where(name => !name.StartsWith("Extensions.", StringComparison.OrdinalIgnoreCase)
                     && !name.Equals("Core", StringComparison.OrdinalIgnoreCase)
-                    && !name.Equals("Macie", StringComparison.OrdinalIgnoreCase));
+                    && !name.Equals("OpsWorks", StringComparison.OrdinalIgnoreCase)
+                    && !name.Equals("OpsWorksCM", StringComparison.OrdinalIgnoreCase)
+                    && !name.Equals("ServerMigrationService", StringComparison.OrdinalIgnoreCase));
 
             return distinctAssemblyFilenames;
         }
@@ -184,6 +197,19 @@ namespace AWSPowerShellGenerator.Utils
 
             Assemblies.Add(baseName, assembly);
             NDocs.Add(baseName, ndoc);
+        }
+
+        /// <summary>
+        /// Set AdditionalServiceAssemblies property in the ConfigModels.
+        /// </summary>
+
+        /// <param name="services"></param>
+        public void SetAdditionalServiceAssemblies(ConfigModelCollection services)
+        {
+            foreach (var service in services.ConfigModels.Values.Where(x => _additionalServiceAssemblies.ContainsKey(x.AssemblyName)))
+            {
+                service.AdditionalServiceAssemblies = _additionalServiceAssemblies[service.AssemblyName];
+            }
         }
 
         public void WriteModularSolution(IEnumerable<ConfigModel> services)
@@ -255,13 +281,15 @@ namespace AWSPowerShellGenerator.Utils
                     "Alternative modules, AWSPowerShell.NetCore and AWSPowerShell, provide support for all AWS services from a single module and also support older versions of Windows PowerShell and .NET Framework.",
                 compatiblePowerShellVersion: 5,
                 compatiblePowerShellMinorVersion: 1,
-                assemblies: AwsToolsCommonSdkAssemblies.Concat(AdditionalCrtAssemblies),
+                assemblies: AwsToolsCommonSdkAssemblies.Concat(AdditionalAssemblies),
                 nestedModulesFiles: new string[] { "AWS.Tools.Common.Completers.psm1",
                                                    "AWS.Tools.Common.Aliases.psm1" },
                 fileList: new string[] { "AWS.Tools.Common.dll-Help.xml" },
                 scriptsToProcess: new string[] { "ImportGuard.ps1" },
                 aliasesToExport: commonLegacyAliases.SelectMany(cmdlet => cmdlet.Value),
-                cmdletsToExport: commonAdvancedCmdlets);
+                cmdletsToExport: commonAdvancedCmdlets,
+                prereleaseTag: PreviewLabel
+                );
 
             File.WriteAllText(projectFile, fileContents);
         }
@@ -287,16 +315,18 @@ namespace AWSPowerShellGenerator.Utils
                     "This version of AWS Tools for Windows PowerShell is compatible with Windows PowerShell 2-5.1. An alternative module, AWSPowerShell.NetCore, provides support for Windows PowerShell 3+ and PowerShell Core 6+ on Windows, Linux and macOS." + Environment.NewLine +
                     "This product provides support for all AWS services in a single module. As an alternative, a modular variant is also available: separate smaller modules (e.g. AWS.Tools.EC2, AWS.Tools.S3...) allow managing each AWS Service.",
                 compatiblePowerShellVersion: 3,
-                compatibleFrameworkVersion: netStandard ? "4.7.2" : "4.5",
+                compatibleFrameworkVersion: "4.7.2",
                 netStandard: netStandard,
-                assemblies: Assemblies.Keys.ToArray().Concat(AdditionalCrtAssemblies),
+                assemblies: Assemblies.Keys.ToArray().Concat(AdditionalAssemblies).Concat(AllAdditionalServiceAssemblies),
                 typesToProcessFiles: new string[] { "AWSPowerShell.TypeExtensions.ps1xml" },
                 formatsToProcessFiles: new string[] { $"AWSPowerShell{(netStandard ? ".NetCore" : "")}.Format.ps1xml" },
                 nestedModulesFiles: new string[] { "AWSPowerShellCompleters.psm1",
                                                    "AWSPowerShellLegacyAliases.psm1" },
                 scriptsToProcess: new string[] { "ImportGuard.ps1" },
                 fileList: new string[] { $"AWSPowerShell{(netStandard ? ".NetCore" : "")}.dll-Help.xml",
-                                         "CHANGELOG.txt"});
+                                         "CHANGELOG.txt"},
+                prereleaseTag: PreviewLabel
+                );
 
             File.WriteAllText(filePath, fileContents);
         }
@@ -330,7 +360,7 @@ namespace AWSPowerShellGenerator.Utils
                             "This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5.1+ and PowerShell Core 6+ on Windows, Linux and macOS. When running on Windows PowerShell, .NET Framework 4.7.2 or newer is required. Alternative modules AWSPowerShell.NetCore and AWSPowerShell, provide support for all AWS services from a single module and also support older versions of Windows PowerShell and .NET Framework.",
                         compatiblePowerShellVersion: 5,
                         compatiblePowerShellMinorVersion: 1,
-                        assemblies: new string[] { $"AWSSDK.{project.Key}" }.Except(AwsToolsCommonSdkAssemblies),
+                        assemblies: new string[] { $"AWSSDK.{project.Key}" }.Except(AwsToolsCommonSdkAssemblies).Concat(mainServiceConfig.AdditionalServiceAssemblies),
                         formatsToProcessFiles: new string[] { $"AWS.Tools.{project.Key}.Format.ps1xml" },
                         fileList: new string[] { $"AWS.Tools.{project.Key}.dll-Help.xml" },
                         nestedModulesFiles: new string[] { $"AWS.Tools.{project.Key}.Completers.psm1",
@@ -346,7 +376,8 @@ namespace AWSPowerShellGenerator.Utils
                             .Concat(project
                                 .SelectMany(service => service.AdvancedCmdlets.Keys))
                             .OrderBy(name => name),
-                        aliasesToExport: projectAliases.Keys);
+                        aliasesToExport: projectAliases.Keys,
+                        prereleaseTag: PreviewLabel);
 
                     File.WriteAllText(Path.Combine(AwsPowerShellModuleFolder, CmdletGenerator.CmdletsOutputSubFoldername, project.Key, $"AWS.Tools.{project.Key}.psd1"), fileContents);
                 }
@@ -370,9 +401,55 @@ namespace AWSPowerShellGenerator.Utils
                         new JProperty("latest", ModuleVersionNumber))),
                 new JProperty("awspowershell",
                     new JObject(
-                        new JProperty("latest", ModuleVersionNumber))));
+                        new JProperty("latest", ModuleVersionNumber))),
+                new JProperty("installer",
+                    new JObject(
+                        new JProperty("latest", GetInstallerVersion()))));
 
             File.WriteAllText(filePath, versionRecap.ToString());
+        }
+
+        private string GetInstallerVersion()
+        {
+            var installerPsd1Path = Path.Combine(Path.GetDirectoryName(AwsPowerShellModuleFolder), "Installer", "AWS.Tools.Installer.psd1");
+            return ReadVersionFromPsd1(installerPsd1Path);
+        }
+
+        private string ReadVersionFromPsd1(string psd1Path)
+        {
+            if (!File.Exists(psd1Path))
+            {
+                throw new FileNotFoundException($"Installer manifest not found at {psd1Path}");
+            }
+
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "pwsh",
+                    Arguments = $"-NoProfile -Command \"$manifest = Import-PowerShellDataFile '{psd1Path}'; Write-Output $manifest.ModuleVersion\"",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            
+            process.Start();
+            var version = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExit();
+            
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"Failed to read installer version from {psd1Path}");
+            }
+            
+            // Add version validation
+            if (string.IsNullOrEmpty(version) || !System.Version.TryParse(version, out var parsedVersion))
+            {
+                throw new InvalidOperationException($"Invalid version format returned from {psd1Path}: '{version}'");
+            }
+            
+            return version;
         }
 
         public void WriteCopyModularArtifactsScript(IEnumerable<ConfigModel> services)
@@ -428,7 +505,7 @@ namespace AWSPowerShellGenerator.Utils
                 writer.WriteLine(fileHeader);
                 writer.WriteLine();
                 writer.WriteLine(completionScript);
-                foreach(var customCompleterFile in customCompleterFiles)
+                foreach (var customCompleterFile in customCompleterFiles)
                 {
                     string content = File.ReadAllText(customCompleterFile);
                     writer.WriteLine();
@@ -508,7 +585,7 @@ namespace AWSPowerShellGenerator.Utils
         {
             string projectFilePath = Path.Combine(AwsPowerShellModuleFolder, MonolithicProjectFileName);
 
-            string fileContent = MonolithicProjectFileTemplate.Generate(Assemblies.Keys, ModuleVersionNumber);
+            string fileContent = MonolithicProjectFileTemplate.Generate(Assemblies.Keys.ToArray().Concat(AllAdditionalServiceAssemblies), ModuleVersionNumber);
 
             File.WriteAllText(projectFilePath, fileContent, Encoding.UTF8);
         }

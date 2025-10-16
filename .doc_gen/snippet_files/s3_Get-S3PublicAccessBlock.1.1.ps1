@@ -1,0 +1,1 @@
+Get-S3PublicAccessBlock -BucketName 'amzn-s3-demo-bucket'

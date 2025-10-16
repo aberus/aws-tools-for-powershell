@@ -1,0 +1,1 @@
+Remove-S3BucketReplication -BucketName amzn-s3-demo-bucket

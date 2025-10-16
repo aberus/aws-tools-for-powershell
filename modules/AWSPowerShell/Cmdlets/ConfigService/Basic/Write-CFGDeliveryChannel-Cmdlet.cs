@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,25 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
-    /// Creates a delivery channel object to deliver configuration information and other compliance
-    /// information to an Amazon S3 bucket and Amazon SNS topic. For more information, see
-    /// <a href="https://docs.aws.amazon.com/config/latest/developerguide/notifications-for-AWS-Config.html">Notifications
-    /// that Config Sends to an Amazon SNS topic</a>.
+    /// Creates or updates a delivery channel to deliver configuration information and other
+    /// compliance information.
     /// 
     ///  
     /// <para>
-    /// Before you can create a delivery channel, you must create a configuration recorder.
+    /// You can use this operation to create a new delivery channel or to update the Amazon
+    /// S3 bucket and the Amazon SNS topic of an existing delivery channel.
     /// </para><para>
-    /// You can use this action to change the Amazon S3 bucket or an Amazon SNS topic of the
-    /// existing delivery channel. To change the Amazon S3 bucket or an Amazon SNS topic,
-    /// call this action and specify the changed values for the S3 bucket and the SNS topic.
-    /// If you specify a different value for either the S3 bucket or the SNS topic, this action
-    /// will keep the existing value for the parameter that is not changed.
-    /// </para><note><para>
-    /// You can have only one delivery channel per region in your account.
+    /// For more information, see <a href="https://docs.aws.amazon.com/config/latest/developerguide/manage-delivery-channel.html"><b>Working with the Delivery Channel</b></a> in the <i>Config Developer Guide.</i></para><note><para><b>One delivery channel per account per Region</b></para><para>
+    /// You can have only one delivery channel for each account for each Amazon Web Services
+    /// Region.
     /// </para></note>
     /// </summary>
     [Cmdlet("Write", "CFGDeliveryChannel", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -51,12 +48,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config PutDeliveryChannel API operation.", Operation = new[] {"PutDeliveryChannel"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutDeliveryChannelResponse))]
     [AWSCmdletOutput("None or Amazon.ConfigService.Model.PutDeliveryChannelResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.ConfigService.Model.PutDeliveryChannelResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.ConfigService.Model.PutDeliveryChannelResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGDeliveryChannelCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigSnapshotDeliveryProperties_DeliveryFrequency
         /// <summary>
@@ -144,16 +142,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DeliveryChannelName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DeliveryChannelName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DeliveryChannelName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -164,9 +152,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeliveryChannelName), MyInvocation.BoundParameters);
@@ -180,21 +172,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutDeliveryChannelResponse, WriteCFGDeliveryChannelCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DeliveryChannelName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConfigSnapshotDeliveryProperties_DeliveryFrequency = this.ConfigSnapshotDeliveryProperties_DeliveryFrequency;
             context.DeliveryChannelName = this.DeliveryChannelName;
             context.DeliveryChannel_S3BucketName = this.DeliveryChannel_S3BucketName;
@@ -339,13 +321,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutDeliveryChannel");
             try
             {
-                #if DESKTOP
-                return client.PutDeliveryChannel(request);
-                #elif CORECLR
-                return client.PutDeliveryChannelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutDeliveryChannelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

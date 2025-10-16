@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Organizations;
 using Amazon.Organizations.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ORG
 {
     /// <summary>
@@ -33,19 +35,11 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     /// the other account's owner. The invitation is implemented as a <a>Handshake</a> whose
     /// details are in the response.
     /// 
-    ///  <important><ul><li><para>
-    /// You can invite Amazon Web Services accounts only from the same seller as the management
-    /// account. For example, if your organization's management account was created by Amazon
-    /// Internet Services Pvt. Ltd (AISPL), an Amazon Web Services seller in India, you can
-    /// invite only other AISPL accounts to your organization. You can't combine accounts
-    /// from AISPL and Amazon Web Services or from any other Amazon Web Services seller. For
-    /// more information, see <a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/useconsolidatedbilling-India.html">Consolidated
-    /// billing in India</a>.
-    /// </para></li><li><para>
+    ///  <important><para>
     /// If you receive an exception that indicates that you exceeded your account limits for
     /// the organization or that the operation failed because your organization is still initializing,
     /// wait one hour and then try again. If the error persists after an hour, contact <a href="https://console.aws.amazon.com/support/home#/">Amazon Web Services Support</a>.
-    /// </para></li></ul></important><para>
+    /// </para></important><para>
     /// If the request includes tags, then the requester must have the <c>organizations:TagResource</c>
     /// permission.
     /// </para><para>
@@ -57,16 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
     [AWSCmdlet("Calls the AWS Organizations InviteAccountToOrganization API operation.", Operation = new[] {"InviteAccountToOrganization"}, SelectReturnType = typeof(Amazon.Organizations.Model.InviteAccountToOrganizationResponse))]
     [AWSCmdletOutput("Amazon.Organizations.Model.Handshake or Amazon.Organizations.Model.InviteAccountToOrganizationResponse",
         "This cmdlet returns an Amazon.Organizations.Model.Handshake object.",
-        "The service call response (type Amazon.Organizations.Model.InviteAccountToOrganizationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Organizations.Model.InviteAccountToOrganizationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewORGAccountInvitationCmdlet : AmazonOrganizationsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Target_Id
         /// <summary>
@@ -110,7 +101,11 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         /// match the requirements of the policy at that time. Tag policy compliance is <i><b>not</b></i> checked again when the invitation is accepted and the tags are actually attached
         /// to the account. That means that if the tag policy changes between the invitation and
         /// the acceptance, then that tags could potentially be non-compliant.</para></important><note><para>If any one of the tags is not valid or if you exceed the allowed number of tags for
-        /// an account, then the entire request fails and invitations are not sent.</para></note>
+        /// an account, then the entire request fails and invitations are not sent.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -146,16 +141,6 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         public string Select { get; set; } = "Handshake";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Target_Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Target_Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Target_Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -166,9 +151,13 @@ namespace Amazon.PowerShell.Cmdlets.ORG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Target_Id), MyInvocation.BoundParameters);
@@ -182,21 +171,11 @@ namespace Amazon.PowerShell.Cmdlets.ORG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Organizations.Model.InviteAccountToOrganizationResponse, NewORGAccountInvitationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Target_Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Note = this.Note;
             if (this.Tag != null)
             {
@@ -307,13 +286,7 @@ namespace Amazon.PowerShell.Cmdlets.ORG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Organizations", "InviteAccountToOrganization");
             try
             {
-                #if DESKTOP
-                return client.InviteAccountToOrganization(request);
-                #elif CORECLR
-                return client.InviteAccountToOrganizationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.InviteAccountToOrganizationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

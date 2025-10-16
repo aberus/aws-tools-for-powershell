@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -25,6 +25,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
 using Amazon.PowerShell.Cmdlets.DDB.Model;
+using System.Threading;
 
 namespace Amazon.PowerShell.Cmdlets.DDB
 {
@@ -42,10 +43,12 @@ namespace Amazon.PowerShell.Cmdlets.DDB
     [AWSCmdlet("Calls the Amazon DynamoDB CreateTable API operation.", Operation = new [] {"CreateTable"}, SelectReturnType = typeof(Amazon.DynamoDBv2.Model.CreateTableResponse))]
     [AWSCmdletOutput("Amazon.DynamoDBv2.Model.TableDescription or Amazon.DynamoDBv2.Model.CreateTableResponse",
         "This cmdlet returns aN Amazon.DynamoDBv2.Model.TableDescription object.",
-        "The service call response (type Amazon.DynamoDBv2.Model.CreateTableResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.DynamoDBv2.Model.CreateTableResponse) can be returned by specifying '-Select *'."
     )]
     public class NewDDBTableCmdlet : AmazonDynamoDBClientCmdlet, IExecutor
     {
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+
         #region Parameter TableName
         /// <summary>
         /// <para>
@@ -145,6 +148,12 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         [System.Management.Automation.Parameter]
         public string Select { get; set; } = "TableDescription";
         #endregion
+
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
 
         protected override void ProcessRecord()
         {
@@ -361,16 +370,9 @@ namespace Amazon.PowerShell.Cmdlets.DDB
         private Amazon.DynamoDBv2.Model.CreateTableResponse CallAWSServiceOperation(IAmazonDynamoDB client, Amazon.DynamoDBv2.Model.CreateTableRequest request)
         {
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DynamoDB", "CreateTable");
-
             try
             {
-#if DESKTOP
-                return client.CreateTable(request);
-#elif CORECLR
-                return client.CreateTableAsync(request).GetAwaiter().GetResult();
-#else
-#error "Unknown build edition"
-#endif
+                return client.CreateTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GreengrassV2;
 using Amazon.GreengrassV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GGV2
 {
     /// <summary>
@@ -50,17 +52,10 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
     /// this operation to migrate Lambda functions from IoT Greengrass V1 to IoT Greengrass
     /// V2.
     /// </para><para>
-    /// This function only accepts Lambda functions that use the following runtimes:
-    /// </para><ul><li><para>
-    /// Python 2.7 – <c>python2.7</c></para></li><li><para>
-    /// Python 3.7 – <c>python3.7</c></para></li><li><para>
-    /// Python 3.8 – <c>python3.8</c></para></li><li><para>
-    /// Python 3.9 – <c>python3.9</c></para></li><li><para>
-    /// Java 8 – <c>java8</c></para></li><li><para>
-    /// Java 11 – <c>java11</c></para></li><li><para>
-    /// Node.js 10 – <c>nodejs10.x</c></para></li><li><para>
-    /// Node.js 12 – <c>nodejs12.x</c></para></li><li><para>
-    /// Node.js 14 – <c>nodejs14.x</c></para></li></ul><para>
+    /// This function accepts Lambda functions in all supported versions of Python, Node.js,
+    /// and Java runtimes. IoT Greengrass doesn't apply any additional restrictions on deprecated
+    /// Lambda runtime versions.
+    /// </para><para>
     /// To create a component from a Lambda function, specify <c>lambdaFunction</c> when you
     /// call this operation.
     /// </para><note><para>
@@ -71,17 +66,22 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
     [OutputType("Amazon.GreengrassV2.Model.CreateComponentVersionResponse")]
     [AWSCmdlet("Calls the AWS GreengrassV2 CreateComponentVersion API operation.", Operation = new[] {"CreateComponentVersion"}, SelectReturnType = typeof(Amazon.GreengrassV2.Model.CreateComponentVersionResponse))]
     [AWSCmdletOutput("Amazon.GreengrassV2.Model.CreateComponentVersionResponse",
-        "This cmdlet returns an Amazon.GreengrassV2.Model.CreateComponentVersionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.GreengrassV2.Model.CreateComponentVersionResponse object containing multiple properties."
     )]
     public partial class NewGGV2ComponentVersionCmdlet : AmazonGreengrassV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LambdaFunction_ComponentDependency
         /// <summary>
         /// <para>
-        /// <para>The component versions on which this Lambda function component depends.</para>
+        /// <para>The component versions on which this Lambda function component depends.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,7 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         #region Parameter LambdaFunction_ComponentPlatform
         /// <summary>
         /// <para>
-        /// <para>The platforms that the component version supports.</para>
+        /// <para>The platforms that the component version supports.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,7 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         #region Parameter ContainerParams_Device
         /// <summary>
         /// <para>
-        /// <para>The list of system devices that the container can access.</para>
+        /// <para>The list of system devices that the container can access.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,7 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         /// <summary>
         /// <para>
         /// <para>The map of environment variables that are available to the Lambda function when it
-        /// runs.</para>
+        /// runs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -150,7 +162,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         /// <para>The list of event sources to which to subscribe to receive work messages. The Lambda
         /// function runs when it receives a message from an event source. You can subscribe this
         /// function to local publish/subscribe messages and Amazon Web Services IoT Core MQTT
-        /// messages.</para>
+        /// messages.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,7 +177,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         #region Parameter ComponentLambdaParameters_ExecArg
         /// <summary>
         /// <para>
-        /// <para>The list of arguments to pass to the Lambda function when it runs.</para>
+        /// <para>The list of arguments to pass to the Lambda function when it runs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -310,7 +330,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         /// <para>
         /// <para>A list of key-value pairs that contain metadata for the resource. For more information,
         /// see <a href="https://docs.aws.amazon.com/greengrass/v2/developerguide/tag-resources.html">Tag
-        /// your resources</a> in the <i>IoT Greengrass V2 Developer Guide</i>.</para>
+        /// your resources</a> in the <i>IoT Greengrass V2 Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -333,7 +357,11 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         #region Parameter ContainerParams_Volume
         /// <summary>
         /// <para>
-        /// <para>The list of volumes that the container can access.</para>
+        /// <para>The list of volumes that the container can access.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -377,9 +405,13 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -790,13 +822,7 @@ namespace Amazon.PowerShell.Cmdlets.GGV2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS GreengrassV2", "CreateComponentVersion");
             try
             {
-                #if DESKTOP
-                return client.CreateComponentVersion(request);
-                #elif CORECLR
-                return client.CreateComponentVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateComponentVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

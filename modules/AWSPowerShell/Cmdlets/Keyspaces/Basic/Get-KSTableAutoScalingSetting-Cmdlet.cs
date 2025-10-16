@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Keyspaces;
 using Amazon.Keyspaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KS
 {
     /// <summary>
@@ -39,18 +41,23 @@ namespace Amazon.PowerShell.Cmdlets.KS
     /// automatically in response to application traffic. For more information, see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/autoscaling.html">Managing
     /// throughput capacity automatically with Amazon Keyspaces auto scaling</a> in the <i>Amazon
     /// Keyspaces Developer Guide</i>.
-    /// </para>
+    /// </para><important><para><c>GetTableAutoScalingSettings</c> can't be used as an action in an IAM policy.
+    /// </para></important><para>
+    /// To define permissions for <c>GetTableAutoScalingSettings</c>, you must allow the following
+    /// two actions in the IAM policy statement's <c>Action</c> element:
+    /// </para><ul><li><para><c>application-autoscaling:DescribeScalableTargets</c></para></li><li><para><c>application-autoscaling:DescribeScalingPolicies</c></para></li></ul>
     /// </summary>
     [Cmdlet("Get", "KSTableAutoScalingSetting")]
     [OutputType("Amazon.Keyspaces.Model.GetTableAutoScalingSettingsResponse")]
     [AWSCmdlet("Calls the Amazon Keyspaces GetTableAutoScalingSettings API operation.", Operation = new[] {"GetTableAutoScalingSettings"}, SelectReturnType = typeof(Amazon.Keyspaces.Model.GetTableAutoScalingSettingsResponse))]
     [AWSCmdletOutput("Amazon.Keyspaces.Model.GetTableAutoScalingSettingsResponse",
-        "This cmdlet returns an Amazon.Keyspaces.Model.GetTableAutoScalingSettingsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Keyspaces.Model.GetTableAutoScalingSettingsResponse object containing multiple properties."
     )]
     public partial class GetKSTableAutoScalingSettingCmdlet : AmazonKeyspacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter KeyspaceName
         /// <summary>
@@ -97,9 +104,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -188,13 +199,7 @@ namespace Amazon.PowerShell.Cmdlets.KS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Keyspaces", "GetTableAutoScalingSettings");
             try
             {
-                #if DESKTOP
-                return client.GetTableAutoScalingSettings(request);
-                #elif CORECLR
-                return client.GetTableAutoScalingSettingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTableAutoScalingSettingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

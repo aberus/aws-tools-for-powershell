@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.APIGateway;
 using Amazon.APIGateway.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AG
 {
     /// <summary>
@@ -34,12 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
     [OutputType("Amazon.APIGateway.Model.GetBasePathMappingResponse")]
     [AWSCmdlet("Calls the Amazon API Gateway GetBasePathMapping API operation.", Operation = new[] {"GetBasePathMapping"}, SelectReturnType = typeof(Amazon.APIGateway.Model.GetBasePathMappingResponse))]
     [AWSCmdletOutput("Amazon.APIGateway.Model.GetBasePathMappingResponse",
-        "This cmdlet returns an Amazon.APIGateway.Model.GetBasePathMappingResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.APIGateway.Model.GetBasePathMappingResponse object containing multiple properties."
     )]
     public partial class GetAGBasePathMappingCmdlet : AmazonAPIGatewayClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BasePath
         /// <summary>
@@ -78,6 +81,17 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public System.String DomainName { get; set; }
         #endregion
         
+        #region Parameter DomainNameId
+        /// <summary>
+        /// <para>
+        /// <para>The identifier for the domain name resource. Supported only for private custom domain
+        /// names. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String DomainNameId { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -89,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.AG
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -118,6 +136,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
                 WriteWarning("You are passing $null as a value for parameter DomainName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DomainNameId = this.DomainNameId;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -141,6 +160,10 @@ namespace Amazon.PowerShell.Cmdlets.AG
             if (cmdletContext.DomainName != null)
             {
                 request.DomainName = cmdletContext.DomainName;
+            }
+            if (cmdletContext.DomainNameId != null)
+            {
+                request.DomainNameId = cmdletContext.DomainNameId;
             }
             
             CmdletOutput output;
@@ -180,13 +203,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon API Gateway", "GetBasePathMapping");
             try
             {
-                #if DESKTOP
-                return client.GetBasePathMapping(request);
-                #elif CORECLR
-                return client.GetBasePathMappingAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetBasePathMappingAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -205,6 +222,7 @@ namespace Amazon.PowerShell.Cmdlets.AG
         {
             public System.String BasePath { get; set; }
             public System.String DomainName { get; set; }
+            public System.String DomainNameId { get; set; }
             public System.Func<Amazon.APIGateway.Model.GetBasePathMappingResponse, GetAGBasePathMappingCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

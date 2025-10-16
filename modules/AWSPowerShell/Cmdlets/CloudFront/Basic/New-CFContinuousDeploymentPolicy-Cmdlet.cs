@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
@@ -47,12 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
     [OutputType("Amazon.CloudFront.Model.CreateContinuousDeploymentPolicyResponse")]
     [AWSCmdlet("Calls the Amazon CloudFront CreateContinuousDeploymentPolicy API operation.", Operation = new[] {"CreateContinuousDeploymentPolicy"}, SelectReturnType = typeof(Amazon.CloudFront.Model.CreateContinuousDeploymentPolicyResponse))]
     [AWSCmdletOutput("Amazon.CloudFront.Model.CreateContinuousDeploymentPolicyResponse",
-        "This cmdlet returns an Amazon.CloudFront.Model.CreateContinuousDeploymentPolicyResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudFront.Model.CreateContinuousDeploymentPolicyResponse object containing multiple properties."
     )]
     public partial class NewCFContinuousDeploymentPolicyCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ContinuousDeploymentPolicyConfig_Enabled
         /// <summary>
@@ -99,7 +102,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter StagingDistributionDnsNames_Item
         /// <summary>
         /// <para>
-        /// <para>The CloudFront domain name of the staging distribution.</para>
+        /// <para>The CloudFront domain name of the staging distribution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
         /// <summary>
         /// <para>
         /// <para>The maximum amount of time to consider requests from the viewer as being part of the
-        /// same session. Allowed values are 300–3600 seconds (5–60 minutes).</para><para>The value must be less than or equal to <c>IdleTTL</c>.</para>
+        /// same session. Allowed values are 300–3600 seconds (5–60 minutes).</para><para>The value must be greater than or equal to <c>IdleTTL</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -163,7 +170,8 @@ namespace Amazon.PowerShell.Cmdlets.CF
         /// <summary>
         /// <para>
         /// <para>The percentage of traffic to send to a staging distribution, expressed as a decimal
-        /// number between 0 and .15.</para>
+        /// number between 0 and 0.15. For example, a value of 0.10 means 10% of traffic is sent
+        /// to the staging distribution.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,9 +200,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -465,13 +477,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "CreateContinuousDeploymentPolicy");
             try
             {
-                #if DESKTOP
-                return client.CreateContinuousDeploymentPolicy(request);
-                #elif CORECLR
-                return client.CreateContinuousDeploymentPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateContinuousDeploymentPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ElasticLoadBalancingV2;
 using Amazon.ElasticLoadBalancingV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ELB2
 {
     /// <summary>
@@ -43,17 +45,22 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
     [AWSCmdlet("Calls the Elastic Load Balancing V2 ModifyRule API operation.", Operation = new[] {"ModifyRule"}, SelectReturnType = typeof(Amazon.ElasticLoadBalancingV2.Model.ModifyRuleResponse))]
     [AWSCmdletOutput("Amazon.ElasticLoadBalancingV2.Model.Rule or Amazon.ElasticLoadBalancingV2.Model.ModifyRuleResponse",
         "This cmdlet returns a collection of Amazon.ElasticLoadBalancingV2.Model.Rule objects.",
-        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.ModifyRuleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ElasticLoadBalancingV2.Model.ModifyRuleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditELB2RuleCmdlet : AmazonElasticLoadBalancingV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Action
         /// <summary>
         /// <para>
-        /// <para>The actions.</para>
+        /// <para>The actions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -64,12 +71,28 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         #region Parameter Condition
         /// <summary>
         /// <para>
-        /// <para>The conditions.</para>
+        /// <para>The conditions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Conditions")]
         public Amazon.ElasticLoadBalancingV2.Model.RuleCondition[] Condition { get; set; }
+        #endregion
+        
+        #region Parameter ResetTransform
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether to remove all transforms from the rule. If you specify <c>ResetTransforms</c>,
+        /// you can't specify <c>Transforms</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ResetTransforms")]
+        public System.Boolean? ResetTransform { get; set; }
         #endregion
         
         #region Parameter RuleArn
@@ -89,6 +112,23 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public System.String RuleArn { get; set; }
         #endregion
         
+        #region Parameter Transform
+        /// <summary>
+        /// <para>
+        /// <para>The transforms to apply to requests that match this rule. You can add one host header
+        /// rewrite transform and one URL rewrite transform. If you specify <c>Transforms</c>,
+        /// you can't specify <c>ResetTransforms</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Transforms")]
+        public Amazon.ElasticLoadBalancingV2.Model.RuleTransform[] Transform { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is 'Rules'.
@@ -98,16 +138,6 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "Rules";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RuleArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RuleArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RuleArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -120,9 +150,13 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RuleArn), MyInvocation.BoundParameters);
@@ -136,21 +170,11 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ElasticLoadBalancingV2.Model.ModifyRuleResponse, EditELB2RuleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RuleArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.Action != null)
             {
                 context.Action = new List<Amazon.ElasticLoadBalancingV2.Model.Action>(this.Action);
@@ -159,6 +183,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             {
                 context.Condition = new List<Amazon.ElasticLoadBalancingV2.Model.RuleCondition>(this.Condition);
             }
+            context.ResetTransform = this.ResetTransform;
             context.RuleArn = this.RuleArn;
             #if MODULAR
             if (this.RuleArn == null && ParameterWasBound(nameof(this.RuleArn)))
@@ -166,6 +191,10 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
                 WriteWarning("You are passing $null as a value for parameter RuleArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Transform != null)
+            {
+                context.Transform = new List<Amazon.ElasticLoadBalancingV2.Model.RuleTransform>(this.Transform);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -190,9 +219,17 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             {
                 request.Conditions = cmdletContext.Condition;
             }
+            if (cmdletContext.ResetTransform != null)
+            {
+                request.ResetTransforms = cmdletContext.ResetTransform.Value;
+            }
             if (cmdletContext.RuleArn != null)
             {
                 request.RuleArn = cmdletContext.RuleArn;
+            }
+            if (cmdletContext.Transform != null)
+            {
+                request.Transforms = cmdletContext.Transform;
             }
             
             CmdletOutput output;
@@ -232,13 +269,7 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Elastic Load Balancing V2", "ModifyRule");
             try
             {
-                #if DESKTOP
-                return client.ModifyRule(request);
-                #elif CORECLR
-                return client.ModifyRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -257,7 +288,9 @@ namespace Amazon.PowerShell.Cmdlets.ELB2
         {
             public List<Amazon.ElasticLoadBalancingV2.Model.Action> Action { get; set; }
             public List<Amazon.ElasticLoadBalancingV2.Model.RuleCondition> Condition { get; set; }
+            public System.Boolean? ResetTransform { get; set; }
             public System.String RuleArn { get; set; }
+            public List<Amazon.ElasticLoadBalancingV2.Model.RuleTransform> Transform { get; set; }
             public System.Func<Amazon.ElasticLoadBalancingV2.Model.ModifyRuleResponse, EditELB2RuleCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Rules;
         }

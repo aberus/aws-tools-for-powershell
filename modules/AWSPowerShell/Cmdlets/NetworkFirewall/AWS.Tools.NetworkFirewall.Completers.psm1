@@ -80,6 +80,13 @@ $NWFW_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.NetworkFirewall.EnabledAnalysisType
+        "Start-NWFWAnalysisReport/AnalysisType"
+        {
+            $v = "HTTP_HOST","TLS_SNI"
+            break
+        }
+
         # Amazon.NetworkFirewall.EncryptionType
         {
             ($_ -eq "New-NWFWFirewall/EncryptionConfiguration_Type") -Or
@@ -96,13 +103,27 @@ $NWFW_Completers = {
             break
         }
 
+        # Amazon.NetworkFirewall.FlowOperationType
+        "Get-NWFWFlowOperationList/FlowOperationType"
+        {
+            $v = "FLOW_CAPTURE","FLOW_FLUSH"
+            break
+        }
+
         # Amazon.NetworkFirewall.GeneratedRulesType
         {
-            ($_ -eq "New-NWFWRuleGroup/RuleGroup_RulesSource_RulesSourceList_GeneratedRulesType") -Or
-            ($_ -eq "Update-NWFWRuleGroup/RuleGroup_RulesSource_RulesSourceList_GeneratedRulesType")
+            ($_ -eq "New-NWFWRuleGroup/RulesSourceList_GeneratedRulesType") -Or
+            ($_ -eq "Update-NWFWRuleGroup/RulesSourceList_GeneratedRulesType")
         }
         {
-            $v = "ALLOWLIST","DENYLIST"
+            $v = "ALERTLIST","ALLOWLIST","DENYLIST","REJECTLIST"
+            break
+        }
+
+        # Amazon.NetworkFirewall.IPAddressType
+        "New-NWFWVpcEndpointAssociation/SubnetMapping_IPAddressType"
+        {
+            $v = "DUALSTACK","IPV4","IPV6"
             break
         }
 
@@ -116,7 +137,7 @@ $NWFW_Completers = {
         # Amazon.NetworkFirewall.ResourceManagedType
         "Get-NWFWRuleGroupList/ManagedType"
         {
-            $v = "AWS_MANAGED_DOMAIN_LISTS","AWS_MANAGED_THREAT_SIGNATURES"
+            $v = "ACTIVE_THREAT_DEFENSE","AWS_MANAGED_DOMAIN_LISTS","AWS_MANAGED_THREAT_SIGNATURES"
             break
         }
 
@@ -125,6 +146,7 @@ $NWFW_Completers = {
             ($_ -eq "Get-NWFWRuleGroup/Type") -Or
             ($_ -eq "Get-NWFWRuleGroupList/Type") -Or
             ($_ -eq "Get-NWFWRuleGroupMetadata/Type") -Or
+            ($_ -eq "Get-NWFWRuleGroupSummary/Type") -Or
             ($_ -eq "New-NWFWRuleGroup/Type") -Or
             ($_ -eq "Remove-NWFWRuleGroup/Type") -Or
             ($_ -eq "Update-NWFWRuleGroup/Type")
@@ -136,10 +158,10 @@ $NWFW_Completers = {
 
         # Amazon.NetworkFirewall.RuleOrder
         {
-            ($_ -eq "New-NWFWFirewallPolicy/FirewallPolicy_StatefulEngineOptions_RuleOrder") -Or
-            ($_ -eq "Update-NWFWFirewallPolicy/FirewallPolicy_StatefulEngineOptions_RuleOrder") -Or
-            ($_ -eq "New-NWFWRuleGroup/RuleGroup_StatefulRuleOptions_RuleOrder") -Or
-            ($_ -eq "Update-NWFWRuleGroup/RuleGroup_StatefulRuleOptions_RuleOrder")
+            ($_ -eq "New-NWFWFirewallPolicy/StatefulEngineOptions_RuleOrder") -Or
+            ($_ -eq "Update-NWFWFirewallPolicy/StatefulEngineOptions_RuleOrder") -Or
+            ($_ -eq "New-NWFWRuleGroup/StatefulRuleOptions_RuleOrder") -Or
+            ($_ -eq "Update-NWFWRuleGroup/StatefulRuleOptions_RuleOrder")
         }
         {
             $v = "DEFAULT_ACTION_ORDER","STRICT_ORDER"
@@ -148,8 +170,8 @@ $NWFW_Completers = {
 
         # Amazon.NetworkFirewall.StreamExceptionPolicy
         {
-            ($_ -eq "New-NWFWFirewallPolicy/FirewallPolicy_StatefulEngineOptions_StreamExceptionPolicy") -Or
-            ($_ -eq "Update-NWFWFirewallPolicy/FirewallPolicy_StatefulEngineOptions_StreamExceptionPolicy")
+            ($_ -eq "New-NWFWFirewallPolicy/StatefulEngineOptions_StreamExceptionPolicy") -Or
+            ($_ -eq "Update-NWFWFirewallPolicy/StatefulEngineOptions_StreamExceptionPolicy")
         }
         {
             $v = "CONTINUE","DROP","REJECT"
@@ -165,14 +187,17 @@ $NWFW_Completers = {
 }
 
 $NWFW_map = @{
+    "AnalysisType"=@("Start-NWFWAnalysisReport")
     "EncryptionConfiguration_Type"=@("New-NWFWFirewall","New-NWFWFirewallPolicy","New-NWFWRuleGroup","New-NWFWTLSInspectionConfiguration","Update-NWFWFirewallEncryptionConfiguration","Update-NWFWFirewallPolicy","Update-NWFWRuleGroup","Update-NWFWTLSInspectionConfiguration")
-    "FirewallPolicy_StatefulEngineOptions_RuleOrder"=@("New-NWFWFirewallPolicy","Update-NWFWFirewallPolicy")
-    "FirewallPolicy_StatefulEngineOptions_StreamExceptionPolicy"=@("New-NWFWFirewallPolicy","Update-NWFWFirewallPolicy")
+    "FlowOperationType"=@("Get-NWFWFlowOperationList")
     "ManagedType"=@("Get-NWFWRuleGroupList")
-    "RuleGroup_RulesSource_RulesSourceList_GeneratedRulesType"=@("New-NWFWRuleGroup","Update-NWFWRuleGroup")
-    "RuleGroup_StatefulRuleOptions_RuleOrder"=@("New-NWFWRuleGroup","Update-NWFWRuleGroup")
+    "RulesSourceList_GeneratedRulesType"=@("New-NWFWRuleGroup","Update-NWFWRuleGroup")
     "Scope"=@("Get-NWFWRuleGroupList")
-    "Type"=@("Get-NWFWRuleGroup","Get-NWFWRuleGroupList","Get-NWFWRuleGroupMetadata","New-NWFWRuleGroup","Remove-NWFWRuleGroup","Update-NWFWRuleGroup")
+    "StatefulEngineOptions_RuleOrder"=@("New-NWFWFirewallPolicy","Update-NWFWFirewallPolicy")
+    "StatefulEngineOptions_StreamExceptionPolicy"=@("New-NWFWFirewallPolicy","Update-NWFWFirewallPolicy")
+    "StatefulRuleOptions_RuleOrder"=@("New-NWFWRuleGroup","Update-NWFWRuleGroup")
+    "SubnetMapping_IPAddressType"=@("New-NWFWVpcEndpointAssociation")
+    "Type"=@("Get-NWFWRuleGroup","Get-NWFWRuleGroupList","Get-NWFWRuleGroupMetadata","Get-NWFWRuleGroupSummary","New-NWFWRuleGroup","Remove-NWFWRuleGroup","Update-NWFWRuleGroup")
 }
 
 _awsArgumentCompleterRegistration $NWFW_Completers $NWFW_map
@@ -225,33 +250,54 @@ $NWFW_SelectCompleters = {
 }
 
 $NWFW_SelectMap = @{
-    "Select"=@("Register-NWFWFirewallPolicy",
+    "Select"=@("Receive-NWFWNetworkFirewallTransitGatewayAttachment",
+               "Join-NWFWAvailabilityZone",
+               "Register-NWFWFirewallPolicy",
                "Register-NWFWSubnet",
                "New-NWFWFirewall",
                "New-NWFWFirewallPolicy",
                "New-NWFWRuleGroup",
                "New-NWFWTLSInspectionConfiguration",
+               "New-NWFWVpcEndpointAssociation",
                "Remove-NWFWFirewall",
                "Remove-NWFWFirewallPolicy",
+               "Remove-NWFWNetworkFirewallTransitGatewayAttachment",
                "Remove-NWFWResourcePolicy",
                "Remove-NWFWRuleGroup",
                "Remove-NWFWTLSInspectionConfiguration",
+               "Remove-NWFWVpcEndpointAssociation",
                "Get-NWFWFirewall",
+               "Get-NWFWFirewallMetadata",
                "Get-NWFWFirewallPolicy",
+               "Get-NWFWFlowOperation",
                "Get-NWFWLoggingConfiguration",
                "Get-NWFWResourcePolicy",
                "Get-NWFWRuleGroup",
                "Get-NWFWRuleGroupMetadata",
+               "Get-NWFWRuleGroupSummary",
                "Get-NWFWTLSInspectionConfiguration",
+               "Get-NWFWVpcEndpointAssociation",
+               "Remove-NWFWAvailabilityZone",
                "Unregister-NWFWSubnet",
+               "Get-NWFWAnalysisReportResult",
+               "Get-NWFWAnalysisReportList",
                "Get-NWFWFirewallPolicyList",
                "Get-NWFWFirewallList",
+               "Get-NWFWFlowOperationResultList",
+               "Get-NWFWFlowOperationList",
                "Get-NWFWRuleGroupList",
                "Get-NWFWResourceTag",
                "Get-NWFWTLSInspectionConfigurationList",
+               "Get-NWFWVpcEndpointAssociationList",
                "Write-NWFWResourcePolicy",
+               "Deny-NWFWNetworkFirewallTransitGatewayAttachment",
+               "Start-NWFWAnalysisReport",
+               "Start-NWFWFlowCapture",
+               "Start-NWFWFlowFlush",
                "Add-NWFWResourceTag",
                "Remove-NWFWResourceTag",
+               "Update-NWFWAvailabilityZoneChangeProtection",
+               "Update-NWFWFirewallAnalysisSetting",
                "Update-NWFWFirewallDeleteProtection",
                "Update-NWFWFirewallDescription",
                "Update-NWFWFirewallEncryptionConfiguration",

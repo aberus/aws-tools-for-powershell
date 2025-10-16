@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,40 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudHSMV2;
 using Amazon.CloudHSMV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.HSM2
 {
     /// <summary>
-    /// Creates a new AWS CloudHSM cluster.
+    /// Creates a new CloudHSM cluster.
+    /// 
+    ///  
+    /// <para><b>Cross-account use:</b> Yes. To perform this operation with an CloudHSM backup
+    /// in a different AWS account, specify the full backup ARN in the value of the SourceBackupId
+    /// parameter.
+    /// </para>
     /// </summary>
     [Cmdlet("New", "HSM2Cluster", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CloudHSMV2.Model.Cluster")]
     [AWSCmdlet("Calls the AWS CloudHSM V2 CreateCluster API operation.", Operation = new[] {"CreateCluster"}, SelectReturnType = typeof(Amazon.CloudHSMV2.Model.CreateClusterResponse))]
     [AWSCmdletOutput("Amazon.CloudHSMV2.Model.Cluster or Amazon.CloudHSMV2.Model.CreateClusterResponse",
         "This cmdlet returns an Amazon.CloudHSMV2.Model.Cluster object.",
-        "The service call response (type Amazon.CloudHSMV2.Model.CreateClusterResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudHSMV2.Model.CreateClusterResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewHSM2ClusterCmdlet : AmazonCloudHSMV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter HsmType
         /// <summary>
         /// <para>
-        /// <para>The type of HSM to use in the cluster. Currently the only allowed value is <c>hsm1.medium</c>.</para>
+        /// <para>The type of HSM to use in the cluster. The allowed values are <c>hsm1.medium</c> and
+        /// <c>hsm2m.medium</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -59,12 +69,36 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         public System.String HsmType { get; set; }
         #endregion
         
+        #region Parameter Mode
+        /// <summary>
+        /// <para>
+        /// <para>The mode to use in the cluster. The allowed values are <c>FIPS</c> and <c>NON_FIPS</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CloudHSMV2.ClusterMode")]
+        public Amazon.CloudHSMV2.ClusterMode Mode { get; set; }
+        #endregion
+        
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The NetworkType to create a cluster with. The allowed values are <c>IPV4</c> and <c>DUALSTACK</c>.
+        /// </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CloudHSMV2.NetworkType")]
+        public Amazon.CloudHSMV2.NetworkType NetworkType { get; set; }
+        #endregion
+        
         #region Parameter SourceBackupId
         /// <summary>
         /// <para>
-        /// <para>The identifier (ID) of the cluster backup to restore. Use this value to restore the
-        /// cluster from a backup instead of creating a new cluster. To find the backup ID, use
-        /// <a>DescribeBackups</a>.</para>
+        /// <para>The identifier (ID) or the Amazon Resource Name (ARN) of the cluster backup to restore.
+        /// Use this value to restore the cluster from a backup instead of creating a new cluster.
+        /// To find the backup ID or ARN, use <a>DescribeBackups</a>. <i>If using a backup in
+        /// another account, the full ARN must be supplied.</i></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,7 +110,11 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         /// <para>
         /// <para>The identifiers (IDs) of the subnets where you are creating the cluster. You must
         /// specify at least one subnet. If you specify multiple subnets, they must meet the following
-        /// criteria:</para><ul><li><para>All subnets must be in the same virtual private cloud (VPC).</para></li><li><para>You can specify only one subnet per Availability Zone.</para></li></ul>
+        /// criteria:</para><ul><li><para>All subnets must be in the same virtual private cloud (VPC).</para></li><li><para>You can specify only one subnet per Availability Zone.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -94,7 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         #region Parameter TagList
         /// <summary>
         /// <para>
-        /// <para>Tags to apply to the CloudHSM cluster during creation.</para>
+        /// <para>Tags to apply to the CloudHSM cluster during creation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -144,9 +186,13 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -174,6 +220,8 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
                 WriteWarning("You are passing $null as a value for parameter HsmType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.Mode = this.Mode;
+            context.NetworkType = this.NetworkType;
             context.SourceBackupId = this.SourceBackupId;
             if (this.SubnetId != null)
             {
@@ -238,6 +286,14 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             {
                 request.HsmType = cmdletContext.HsmType;
             }
+            if (cmdletContext.Mode != null)
+            {
+                request.Mode = cmdletContext.Mode;
+            }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
+            }
             if (cmdletContext.SourceBackupId != null)
             {
                 request.SourceBackupId = cmdletContext.SourceBackupId;
@@ -288,13 +344,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudHSM V2", "CreateCluster");
             try
             {
-                #if DESKTOP
-                return client.CreateCluster(request);
-                #elif CORECLR
-                return client.CreateClusterAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateClusterAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -314,6 +364,8 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             public Amazon.CloudHSMV2.BackupRetentionType BackupRetentionPolicy_Type { get; set; }
             public System.String BackupRetentionPolicy_Value { get; set; }
             public System.String HsmType { get; set; }
+            public Amazon.CloudHSMV2.ClusterMode Mode { get; set; }
+            public Amazon.CloudHSMV2.NetworkType NetworkType { get; set; }
             public System.String SourceBackupId { get; set; }
             public List<System.String> SubnetId { get; set; }
             public List<Amazon.CloudHSMV2.Model.Tag> TagList { get; set; }

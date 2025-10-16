@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,45 +22,102 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.QuickSight;
 using Amazon.QuickSight.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.QS
 {
     /// <summary>
-    /// Starts an asynchronous job that generates a dashboard snapshot. You can request one
-    /// of the following format configurations per API call.
+    /// Starts an asynchronous job that generates a snapshot of a dashboard's output. You
+    /// can request one or several of the following format configurations in each API call.
     /// 
     ///  <ul><li><para>
-    /// 1 paginated PDF
+    /// 1 Paginated PDF
     /// </para></li><li><para>
-    /// 1 Excel workbook
+    /// 1 Excel workbook that includes up to 5 table or pivot table visuals
     /// </para></li><li><para>
-    /// 5 CSVs
+    /// 5 CSVs from table or pivot table visuals
     /// </para></li></ul><para>
-    /// Poll job descriptions with a <c>DescribeDashboardSnapshotJob</c> API call. Once the
-    /// job succeeds, use the <c>DescribeDashboardSnapshotJobResult</c> API to obtain the
-    /// download URIs that the job generates.
-    /// </para>
+    /// The status of a submitted job can be polled with the <c>DescribeDashboardSnapshotJob</c>
+    /// API. When you call the <c>DescribeDashboardSnapshotJob</c> API, check the <c>JobStatus</c>
+    /// field in the response. Once the job reaches a <c>COMPLETED</c> or <c>FAILED</c> status,
+    /// use the <c>DescribeDashboardSnapshotJobResult</c> API to obtain the URLs for the generated
+    /// files. If the job fails, the <c>DescribeDashboardSnapshotJobResult</c> API returns
+    /// detailed information about the error that occurred.
+    /// </para><para><b>StartDashboardSnapshotJob API throttling</b></para><para>
+    /// Quick Sight utilizes API throttling to create a more consistent user experience within
+    /// a time span for customers when they call the <c>StartDashboardSnapshotJob</c>. By
+    /// default, 12 jobs can run simlutaneously in one Amazon Web Services account and users
+    /// can submit up 10 API requests per second before an account is throttled. If an overwhelming
+    /// number of API requests are made by the same user in a short period of time, Quick
+    /// Sight throttles the API calls to maintin an optimal experience and reliability for
+    /// all Quick Sight users.
+    /// </para><para><b>Common throttling scenarios</b></para><para>
+    /// The following list provides information about the most commin throttling scenarios
+    /// that can occur.
+    /// </para><ul><li><para><b>A large number of <c>SnapshotExport</c> API jobs are running simultaneously on
+    /// an Amazon Web Services account.</b> When a new <c>StartDashboardSnapshotJob</c> is
+    /// created and there are already 12 jobs with the <c>RUNNING</c> status, the new job
+    /// request fails and returns a <c>LimitExceededException</c> error. Wait for a current
+    /// job to comlpete before you resubmit the new job.
+    /// </para></li><li><para><b>A large number of API requests are submitted on an Amazon Web Services account.</b>
+    /// When a user makes more than 10 API calls to the Quick Sight API in one second, a <c>ThrottlingException</c>
+    /// is returned.
+    /// </para></li></ul><para>
+    /// If your use case requires a higher throttling limit, contact your account admin or
+    /// <a href="http://aws.amazon.com/contact-us/">Amazon Web ServicesSupport</a> to explore
+    /// options to tailor a more optimal expereince for your account.
+    /// </para><para><b>Best practices to handle throttling</b></para><para>
+    /// If your use case projects high levels of API traffic, try to reduce the degree of
+    /// frequency and parallelism of API calls as much as you can to avoid throttling. You
+    /// can also perform a timing test to calculate an estimate for the total processing time
+    /// of your projected load that stays within the throttling limits of the Quick Sight
+    /// APIs. For example, if your projected traffic is 100 snapshot jobs before 12:00 PM
+    /// per day, start 12 jobs in parallel and measure the amount of time it takes to proccess
+    /// all 12 jobs. Once you obtain the result, multiply the duration by 9, for example <c>(12
+    /// minutes * 9 = 108 minutes)</c>. Use the new result to determine the latest time at
+    /// which the jobs need to be started to meet your target deadline.
+    /// </para><para>
+    /// The time that it takes to process a job can be impacted by the following factors:
+    /// </para><ul><li><para>
+    /// The dataset type (Direct Query or SPICE).
+    /// </para></li><li><para>
+    /// The size of the dataset.
+    /// </para></li><li><para>
+    /// The complexity of the calculated fields that are used in the dashboard.
+    /// </para></li><li><para>
+    /// The number of visuals that are on a sheet.
+    /// </para></li><li><para>
+    /// The types of visuals that are on the sheet.
+    /// </para></li><li><para>
+    /// The number of formats and snapshots that are requested in the job configuration.
+    /// </para></li><li><para>
+    /// The size of the generated snapshots.
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Start", "QSDashboardSnapshotJob", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.QuickSight.Model.StartDashboardSnapshotJobResponse")]
     [AWSCmdlet("Calls the Amazon QuickSight StartDashboardSnapshotJob API operation.", Operation = new[] {"StartDashboardSnapshotJob"}, SelectReturnType = typeof(Amazon.QuickSight.Model.StartDashboardSnapshotJobResponse))]
     [AWSCmdletOutput("Amazon.QuickSight.Model.StartDashboardSnapshotJobResponse",
-        "This cmdlet returns an Amazon.QuickSight.Model.StartDashboardSnapshotJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.QuickSight.Model.StartDashboardSnapshotJobResponse object containing multiple properties."
     )]
     public partial class StartQSDashboardSnapshotJobCmdlet : AmazonQuickSightClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter UserConfiguration_AnonymousUser
         /// <summary>
         /// <para>
         /// <para>An array of records that describe the anonymous users that the dashboard snapshot
-        /// is generated for.</para>
+        /// is generated for.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -106,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Parameters_DateTimeParameter
         /// <summary>
         /// <para>
-        /// <para>The parameters that have a data type of date-time.</para>
+        /// <para>The parameters that have a data type of date-time.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,7 +178,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Parameters_DecimalParameter
         /// <summary>
         /// <para>
-        /// <para>The parameters that have a data type of decimal.</para>
+        /// <para>The parameters that have a data type of decimal.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -130,7 +195,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para>A list of <c>SnapshotJobResultFileGroup</c> objects that contain information about
         /// the snapshot that is generated. This list can hold a maximum of 6 <c>FileGroup</c>
-        /// configurations.</para>
+        /// configurations.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -148,7 +217,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Parameters_IntegerParameter
         /// <summary>
         /// <para>
-        /// <para>The parameters that have a data type of integer.</para>
+        /// <para>The parameters that have a data type of integer.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -161,7 +234,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         /// <para>
         /// <para> A list of <c>SnapshotS3DestinationConfiguration</c> objects that contain Amazon S3
         /// destination configurations. This structure can hold a maximum of 1 <c>S3DestinationConfiguration</c>.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,7 +269,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
         #region Parameter Parameters_StringParameter
         /// <summary>
         /// <para>
-        /// <para>The parameters that have a data type of string.</para>
+        /// <para>The parameters that have a data type of string.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -211,16 +292,6 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SnapshotJobId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SnapshotJobId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SnapshotJobId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -231,9 +302,13 @@ namespace Amazon.PowerShell.Cmdlets.QS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -247,21 +322,11 @@ namespace Amazon.PowerShell.Cmdlets.QS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.QuickSight.Model.StartDashboardSnapshotJobResponse, StartQSDashboardSnapshotJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SnapshotJobId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsAccountId = this.AwsAccountId;
             #if MODULAR
             if (this.AwsAccountId == null && ParameterWasBound(nameof(this.AwsAccountId)))
@@ -501,13 +566,7 @@ namespace Amazon.PowerShell.Cmdlets.QS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon QuickSight", "StartDashboardSnapshotJob");
             try
             {
-                #if DESKTOP
-                return client.StartDashboardSnapshotJob(request);
-                #elif CORECLR
-                return client.StartDashboardSnapshotJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartDashboardSnapshotJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

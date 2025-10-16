@@ -108,17 +108,25 @@ $DS_Completers = {
         # Amazon.DirectoryService.DirectoryEdition
         "New-DSMicrosoftAD/Edition"
         {
-            $v = "Enterprise","Standard"
+            $v = "Enterprise","Hybrid","Standard"
             break
         }
 
         # Amazon.DirectoryService.DirectorySize
         {
+            ($_ -eq "Update-DSDirectorySetup/DirectorySizeUpdateSettings_DirectorySize") -Or
             ($_ -eq "Connect-DSDirectory/Size") -Or
             ($_ -eq "New-DSDirectory/Size")
         }
         {
             $v = "Large","Small"
+            break
+        }
+
+        # Amazon.DirectoryService.HybridUpdateType
+        "Get-DSHybridADUpdate/UpdateType"
+        {
+            $v = "HybridAdministratorAccount","SelfManagedInstances"
             break
         }
 
@@ -130,6 +138,18 @@ $DS_Completers = {
         }
         {
             $v = "Client"
+            break
+        }
+
+        # Amazon.DirectoryService.NetworkType
+        {
+            ($_ -eq "Connect-DSDirectory/NetworkType") -Or
+            ($_ -eq "New-DSDirectory/NetworkType") -Or
+            ($_ -eq "New-DSMicrosoftAD/NetworkType") -Or
+            ($_ -eq "Update-DSDirectorySetup/NetworkUpdateSettings_NetworkType")
+        }
+        {
+            $v = "Dual-stack","IPv4","IPv6"
             break
         }
 
@@ -197,7 +217,7 @@ $DS_Completers = {
             ($_ -eq "Update-DSDirectorySetup/UpdateType")
         }
         {
-            $v = "OS"
+            $v = "NETWORK","OS","SIZE"
             break
         }
 
@@ -210,7 +230,10 @@ $DS_Completers = {
 }
 
 $DS_map = @{
+    "DirectorySizeUpdateSettings_DirectorySize"=@("Update-DSDirectorySetup")
     "Edition"=@("New-DSMicrosoftAD")
+    "NetworkType"=@("Connect-DSDirectory","New-DSDirectory","New-DSMicrosoftAD")
+    "NetworkUpdateSettings_NetworkType"=@("Update-DSDirectorySetup")
     "OSUpdateSettings_OSVersion"=@("Update-DSDirectorySetup")
     "RadiusSettings_AuthenticationProtocol"=@("Enable-DSRadius","Update-DSRadius")
     "SelectiveAuth"=@("New-DSTrust","Update-DSTrust")
@@ -222,7 +245,7 @@ $DS_map = @{
     "TrustType"=@("New-DSTrust")
     "Type"=@("Disable-DSClientAuthentication","Disable-DSLDAPS","Enable-DSClientAuthentication","Enable-DSLDAPS","Get-DSClientAuthenticationSetting","Get-DSLDAPSSetting","Register-DSCertificate")
     "UnshareTarget_Type"=@("Disable-DSDirectoryShare")
-    "UpdateType"=@("Get-DSUpdateDirectory","Update-DSDirectorySetup")
+    "UpdateType"=@("Get-DSHybridADUpdate","Get-DSUpdateDirectory","Update-DSDirectorySetup")
 }
 
 _awsArgumentCompleterRegistration $DS_Completers $DS_map
@@ -285,10 +308,12 @@ $DS_SelectMap = @{
                "New-DSComputer",
                "New-DSConditionalForwarder",
                "New-DSDirectory",
+               "New-DSHybridAD",
                "New-DSLogSubscription",
                "New-DSMicrosoftAD",
                "New-DSSnapshot",
                "New-DSTrust",
+               "Remove-DSADAssessment",
                "Remove-DSConditionalForwarder",
                "Remove-DSDirectory",
                "Remove-DSLogSubscription",
@@ -296,12 +321,16 @@ $DS_SelectMap = @{
                "Remove-DSTrust",
                "Unregister-DSCertificate",
                "Unregister-DSEventTopic",
+               "Get-DSADAssessment",
+               "Get-DSCAEnrollmentPolicy",
                "Get-DSCertificate",
                "Get-DSClientAuthenticationSetting",
                "Get-DSConditionalForwarder",
                "Get-DSDirectory",
+               "Get-DSDirectoryDataAccess",
                "Get-DSDomainControllerList",
                "Get-DSEventTopic",
+               "Get-DSHybridADUpdate",
                "Get-DSLDAPSSetting",
                "Get-DSRegion",
                "Get-DSSetting",
@@ -309,16 +338,21 @@ $DS_SelectMap = @{
                "Get-DSSnapshot",
                "Get-DSTrust",
                "Get-DSUpdateDirectory",
+               "Disable-DSCAEnrollmentPolicy",
                "Disable-DSClientAuthentication",
+               "Disable-DSDirectoryDataAccess",
                "Disable-DSLDAPS",
                "Disable-DSRadius",
                "Disable-DSSso",
+               "Enable-DSCAEnrollmentPolicy",
                "Enable-DSClientAuthentication",
+               "Enable-DSDirectoryDataAccess",
                "Enable-DSLDAPS",
                "Enable-DSRadius",
                "Enable-DSSso",
                "Get-DSDirectoryLimit",
                "Get-DSSnapshotLimit",
+               "Get-DSADAssessmentList",
                "Get-DSCertificateList",
                "Get-DSIpRouteList",
                "Get-DSLogSubscriptionList",
@@ -333,10 +367,12 @@ $DS_SelectMap = @{
                "Reset-DSUserPassword",
                "Restore-DSFromSnapshot",
                "Enable-DSDirectoryShare",
+               "Start-DSADAssessment",
                "Start-DSSchemaExtension",
                "Disable-DSDirectoryShare",
                "Update-DSConditionalForwarder",
                "Update-DSDirectorySetup",
+               "Update-DSHybridAD",
                "Set-DSDomainControllerCount",
                "Update-DSRadius",
                "Update-DSSetting",

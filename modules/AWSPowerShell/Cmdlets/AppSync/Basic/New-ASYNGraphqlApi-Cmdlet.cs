@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppSync;
 using Amazon.AppSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ASYN
 {
     /// <summary>
@@ -35,17 +37,22 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
     [AWSCmdlet("Calls the AWS AppSync CreateGraphqlApi API operation.", Operation = new[] {"CreateGraphqlApi"}, SelectReturnType = typeof(Amazon.AppSync.Model.CreateGraphqlApiResponse))]
     [AWSCmdletOutput("Amazon.AppSync.Model.GraphqlApi or Amazon.AppSync.Model.CreateGraphqlApiResponse",
         "This cmdlet returns an Amazon.AppSync.Model.GraphqlApi object.",
-        "The service call response (type Amazon.AppSync.Model.CreateGraphqlApiResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppSync.Model.CreateGraphqlApiResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewASYNGraphqlApiCmdlet : AmazonAppSyncClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalAuthenticationProvider
         /// <summary>
         /// <para>
-        /// <para>A list of additional authentication providers for the <c>GraphqlApi</c> API.</para>
+        /// <para>A list of additional authentication providers for the <c>GraphqlApi</c> API.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -143,6 +150,22 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String LogConfig_CloudWatchLogsRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter EnhancedMetricsConfig_DataSourceLevelMetricsBehavior
+        /// <summary>
+        /// <para>
+        /// <para>Controls how data source metrics will be emitted to CloudWatch. Data source metrics
+        /// include:</para><ul><li><para>Requests: The number of invocations that occured during a request.</para></li><li><para>Latency: The time to complete a data source invocation.</para></li><li><para>Errors: The number of errors that occurred during a data source invocation.</para></li></ul><para>These metrics can be emitted to CloudWatch per data source or for all data sources
+        /// in the request. Metrics will be recorded by API ID and data source name. <c>dataSourceLevelMetricsBehavior</c>
+        /// accepts one of these values at a time:</para><ul><li><para><c>FULL_REQUEST_DATA_SOURCE_METRICS</c>: Records and emits metric data for all data
+        /// sources in the request.</para></li><li><para><c>PER_DATA_SOURCE_METRICS</c>: Records and emits metric data for data sources that
+        /// have the <c>metricsConfig</c> value set to <c>ENABLED</c>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AppSync.DataSourceLevelMetricsBehavior")]
+        public Amazon.AppSync.DataSourceLevelMetricsBehavior EnhancedMetricsConfig_DataSourceLevelMetricsBehavior { get; set; }
         #endregion
         
         #region Parameter LogConfig_ExcludeVerboseContent
@@ -243,6 +266,19 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter EnhancedMetricsConfig_OperationLevelMetricsConfig
+        /// <summary>
+        /// <para>
+        /// <para> Controls how operation metrics will be emitted to CloudWatch. Operation metrics include:</para><ul><li><para>Requests: The number of times a specified GraphQL operation was called.</para></li><li><para>GraphQL errors: The number of GraphQL errors that occurred during a specified GraphQL
+        /// operation.</para></li></ul><para>Metrics will be recorded by API ID and operation name. You can set the value to <c>ENABLED</c>
+        /// or <c>DISABLED</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AppSync.OperationLevelMetricsConfig")]
+        public Amazon.AppSync.OperationLevelMetricsConfig EnhancedMetricsConfig_OperationLevelMetricsConfig { get; set; }
+        #endregion
+        
         #region Parameter OwnerContact
         /// <summary>
         /// <para>
@@ -281,10 +317,29 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public System.Int32? ResolverCountLimit { get; set; }
         #endregion
         
+        #region Parameter EnhancedMetricsConfig_ResolverLevelMetricsBehavior
+        /// <summary>
+        /// <para>
+        /// <para>Controls how resolver metrics will be emitted to CloudWatch. Resolver metrics include:</para><ul><li><para>GraphQL errors: The number of GraphQL errors that occurred.</para></li><li><para>Requests: The number of invocations that occurred during a request. </para></li><li><para>Latency: The time to complete a resolver invocation.</para></li><li><para>Cache hits: The number of cache hits during a request.</para></li><li><para>Cache misses: The number of cache misses during a request.</para></li></ul><para>These metrics can be emitted to CloudWatch per resolver or for all resolvers in the
+        /// request. Metrics will be recorded by API ID and resolver name. <c>resolverLevelMetricsBehavior</c>
+        /// accepts one of these values at a time:</para><ul><li><para><c>FULL_REQUEST_RESOLVER_METRICS</c>: Records and emits metric data for all resolvers
+        /// in the request.</para></li><li><para><c>PER_RESOLVER_METRICS</c>: Records and emits metric data for resolvers that have
+        /// the <c>metricsConfig</c> value set to <c>ENABLED</c>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.AppSync.ResolverLevelMetricsBehavior")]
+        public Amazon.AppSync.ResolverLevelMetricsBehavior EnhancedMetricsConfig_ResolverLevelMetricsBehavior { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>A <c>TagMap</c> object.</para>
+        /// <para>A <c>TagMap</c> object.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -336,16 +391,6 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public string Select { get; set; } = "GraphqlApi";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Name parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Name' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -356,9 +401,13 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -372,21 +421,11 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppSync.Model.CreateGraphqlApiResponse, NewASYNGraphqlApiCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Name;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AdditionalAuthenticationProvider != null)
             {
                 context.AdditionalAuthenticationProvider = new List<Amazon.AppSync.Model.AdditionalAuthenticationProvider>(this.AdditionalAuthenticationProvider);
@@ -399,6 +438,9 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
                 WriteWarning("You are passing $null as a value for parameter AuthenticationType which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.EnhancedMetricsConfig_DataSourceLevelMetricsBehavior = this.EnhancedMetricsConfig_DataSourceLevelMetricsBehavior;
+            context.EnhancedMetricsConfig_OperationLevelMetricsConfig = this.EnhancedMetricsConfig_OperationLevelMetricsConfig;
+            context.EnhancedMetricsConfig_ResolverLevelMetricsBehavior = this.EnhancedMetricsConfig_ResolverLevelMetricsBehavior;
             context.IntrospectionConfig = this.IntrospectionConfig;
             context.LambdaAuthorizerConfig_AuthorizerResultTtlInSecond = this.LambdaAuthorizerConfig_AuthorizerResultTtlInSecond;
             context.LambdaAuthorizerConfig_AuthorizerUri = this.LambdaAuthorizerConfig_AuthorizerUri;
@@ -459,6 +501,45 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             if (cmdletContext.AuthenticationType != null)
             {
                 request.AuthenticationType = cmdletContext.AuthenticationType;
+            }
+            
+             // populate EnhancedMetricsConfig
+            var requestEnhancedMetricsConfigIsNull = true;
+            request.EnhancedMetricsConfig = new Amazon.AppSync.Model.EnhancedMetricsConfig();
+            Amazon.AppSync.DataSourceLevelMetricsBehavior requestEnhancedMetricsConfig_enhancedMetricsConfig_DataSourceLevelMetricsBehavior = null;
+            if (cmdletContext.EnhancedMetricsConfig_DataSourceLevelMetricsBehavior != null)
+            {
+                requestEnhancedMetricsConfig_enhancedMetricsConfig_DataSourceLevelMetricsBehavior = cmdletContext.EnhancedMetricsConfig_DataSourceLevelMetricsBehavior;
+            }
+            if (requestEnhancedMetricsConfig_enhancedMetricsConfig_DataSourceLevelMetricsBehavior != null)
+            {
+                request.EnhancedMetricsConfig.DataSourceLevelMetricsBehavior = requestEnhancedMetricsConfig_enhancedMetricsConfig_DataSourceLevelMetricsBehavior;
+                requestEnhancedMetricsConfigIsNull = false;
+            }
+            Amazon.AppSync.OperationLevelMetricsConfig requestEnhancedMetricsConfig_enhancedMetricsConfig_OperationLevelMetricsConfig = null;
+            if (cmdletContext.EnhancedMetricsConfig_OperationLevelMetricsConfig != null)
+            {
+                requestEnhancedMetricsConfig_enhancedMetricsConfig_OperationLevelMetricsConfig = cmdletContext.EnhancedMetricsConfig_OperationLevelMetricsConfig;
+            }
+            if (requestEnhancedMetricsConfig_enhancedMetricsConfig_OperationLevelMetricsConfig != null)
+            {
+                request.EnhancedMetricsConfig.OperationLevelMetricsConfig = requestEnhancedMetricsConfig_enhancedMetricsConfig_OperationLevelMetricsConfig;
+                requestEnhancedMetricsConfigIsNull = false;
+            }
+            Amazon.AppSync.ResolverLevelMetricsBehavior requestEnhancedMetricsConfig_enhancedMetricsConfig_ResolverLevelMetricsBehavior = null;
+            if (cmdletContext.EnhancedMetricsConfig_ResolverLevelMetricsBehavior != null)
+            {
+                requestEnhancedMetricsConfig_enhancedMetricsConfig_ResolverLevelMetricsBehavior = cmdletContext.EnhancedMetricsConfig_ResolverLevelMetricsBehavior;
+            }
+            if (requestEnhancedMetricsConfig_enhancedMetricsConfig_ResolverLevelMetricsBehavior != null)
+            {
+                request.EnhancedMetricsConfig.ResolverLevelMetricsBehavior = requestEnhancedMetricsConfig_enhancedMetricsConfig_ResolverLevelMetricsBehavior;
+                requestEnhancedMetricsConfigIsNull = false;
+            }
+             // determine if request.EnhancedMetricsConfig should be set to null
+            if (requestEnhancedMetricsConfigIsNull)
+            {
+                request.EnhancedMetricsConfig = null;
             }
             if (cmdletContext.IntrospectionConfig != null)
             {
@@ -665,13 +746,7 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS AppSync", "CreateGraphqlApi");
             try
             {
-                #if DESKTOP
-                return client.CreateGraphqlApi(request);
-                #elif CORECLR
-                return client.CreateGraphqlApiAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGraphqlApiAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -691,6 +766,9 @@ namespace Amazon.PowerShell.Cmdlets.ASYN
             public List<Amazon.AppSync.Model.AdditionalAuthenticationProvider> AdditionalAuthenticationProvider { get; set; }
             public Amazon.AppSync.GraphQLApiType ApiType { get; set; }
             public Amazon.AppSync.AuthenticationType AuthenticationType { get; set; }
+            public Amazon.AppSync.DataSourceLevelMetricsBehavior EnhancedMetricsConfig_DataSourceLevelMetricsBehavior { get; set; }
+            public Amazon.AppSync.OperationLevelMetricsConfig EnhancedMetricsConfig_OperationLevelMetricsConfig { get; set; }
+            public Amazon.AppSync.ResolverLevelMetricsBehavior EnhancedMetricsConfig_ResolverLevelMetricsBehavior { get; set; }
             public Amazon.AppSync.GraphQLApiIntrospectionConfig IntrospectionConfig { get; set; }
             public System.Int32? LambdaAuthorizerConfig_AuthorizerResultTtlInSecond { get; set; }
             public System.String LambdaAuthorizerConfig_AuthorizerUri { get; set; }

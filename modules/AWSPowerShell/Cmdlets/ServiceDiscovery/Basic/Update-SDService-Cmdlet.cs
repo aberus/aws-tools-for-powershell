@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceDiscovery;
 using Amazon.ServiceDiscovery.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SD
 {
     /// <summary>
@@ -44,7 +46,15 @@ namespace Amazon.PowerShell.Cmdlets.SD
     /// </para></li><li><para>
     /// If you omit an existing <c>HealthCheckCustomConfig</c> configuration from an <c>UpdateService</c>
     /// request, the configuration isn't deleted from the service.
-    /// </para></li></ul><para>
+    /// </para></li></ul><note><para>
+    /// You can't call <c>UpdateService</c> and update settings in the following scenarios:
+    /// </para><ul><li><para>
+    /// When the service is associated with an HTTP namespace
+    /// </para></li><li><para>
+    /// When the service is associated with a shared namespace and contains instances that
+    /// were registered by Amazon Web Services accounts other than the account making the
+    /// <c>UpdateService</c> call
+    /// </para></li></ul></note><para>
     /// When you update settings for a service, Cloud Map also updates the corresponding settings
     /// in all the records and health checks that were created by using the specified service.
     /// </para>
@@ -54,17 +64,21 @@ namespace Amazon.PowerShell.Cmdlets.SD
     [AWSCmdlet("Calls the AWS Cloud Map UpdateService API operation.", Operation = new[] {"UpdateService"}, SelectReturnType = typeof(Amazon.ServiceDiscovery.Model.UpdateServiceResponse))]
     [AWSCmdletOutput("System.String or Amazon.ServiceDiscovery.Model.UpdateServiceResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.ServiceDiscovery.Model.UpdateServiceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceDiscovery.Model.UpdateServiceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateSDServiceCmdlet : AmazonServiceDiscoveryClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Id
         /// <summary>
         /// <para>
-        /// <para>The ID of the service that you want to update.</para>
+        /// <para>The ID or Amazon Resource Name (ARN) of the service that you want to update. If the
+        /// namespace associated with the service is shared with your Amazon Web Services account,
+        /// specify the service ARN. For more information about shared namespaces, see <a href="https://docs.aws.amazon.com/cloud-map/latest/dg/sharing-namespaces.html">Cross-account
+        /// Cloud Map namespace sharing</a> in the <i>Cloud Map Developer Guide</i></para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -81,7 +95,8 @@ namespace Amazon.PowerShell.Cmdlets.SD
         #region Parameter Service
         /// <summary>
         /// <para>
-        /// <para>A complex type that contains the new settings for the service.</para>
+        /// <para>A complex type that contains the new settings for the service. You can specify a maximum
+        /// of 30 attributes (key-value pairs).</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -105,16 +120,6 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public string Select { get; set; } = "OperationId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -125,9 +130,13 @@ namespace Amazon.PowerShell.Cmdlets.SD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -141,21 +150,11 @@ namespace Amazon.PowerShell.Cmdlets.SD
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceDiscovery.Model.UpdateServiceResponse, UpdateSDServiceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Id = this.Id;
             #if MODULAR
             if (this.Id == null && ParameterWasBound(nameof(this.Id)))
@@ -232,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.SD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Cloud Map", "UpdateService");
             try
             {
-                #if DESKTOP
-                return client.UpdateService(request);
-                #elif CORECLR
-                return client.UpdateServiceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateServiceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

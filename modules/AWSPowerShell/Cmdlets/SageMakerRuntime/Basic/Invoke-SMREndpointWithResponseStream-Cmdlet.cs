@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMakerRuntime;
 using Amazon.SageMakerRuntime.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SMR
 {
     /// <summary>
@@ -64,16 +66,13 @@ namespace Amazon.PowerShell.Cmdlets.SMR
     [OutputType("Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse")]
     [AWSCmdlet("Calls the Amazon SageMaker Runtime InvokeEndpointWithResponseStream API operation.", Operation = new[] {"InvokeEndpointWithResponseStream"}, SelectReturnType = typeof(Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse))]
     [AWSCmdletOutput("Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse",
-        "This cmdlet returns an Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse object containing multiple properties."
     )]
     public partial class InvokeSMREndpointWithResponseStreamCmdlet : AmazonSageMakerRuntimeClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Accept
         /// <summary>
@@ -177,6 +176,20 @@ namespace Amazon.PowerShell.Cmdlets.SMR
         public System.String InferenceId { get; set; }
         #endregion
         
+        #region Parameter SessionId
+        /// <summary>
+        /// <para>
+        /// <para>The ID of a stateful session to handle your request.</para><para>You can't create a stateful session by using the <c>InvokeEndpointWithResponseStream</c>
+        /// action. Instead, you can create one by using the <c><a>InvokeEndpoint</a></c> action.
+        /// In your request, you specify <c>NEW_SESSION</c> for the <c>SessionId</c> request parameter.
+        /// The response to that request provides the session ID for the <c>NewSessionId</c> response
+        /// parameter.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SessionId { get; set; }
+        #endregion
+        
         #region Parameter TargetContainerHostname
         /// <summary>
         /// <para>
@@ -213,16 +226,6 @@ namespace Amazon.PowerShell.Cmdlets.SMR
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the EndpointName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^EndpointName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^EndpointName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -233,9 +236,13 @@ namespace Amazon.PowerShell.Cmdlets.SMR
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.EndpointName), MyInvocation.BoundParameters);
@@ -249,21 +256,11 @@ namespace Amazon.PowerShell.Cmdlets.SMR
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse, InvokeSMREndpointWithResponseStreamCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.EndpointName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Accept = this.Accept;
             context.Body = this.Body;
             #if MODULAR
@@ -283,6 +280,7 @@ namespace Amazon.PowerShell.Cmdlets.SMR
             #endif
             context.InferenceComponentName = this.InferenceComponentName;
             context.InferenceId = this.InferenceId;
+            context.SessionId = this.SessionId;
             context.TargetContainerHostname = this.TargetContainerHostname;
             context.TargetVariant = this.TargetVariant;
             
@@ -333,6 +331,10 @@ namespace Amazon.PowerShell.Cmdlets.SMR
                 if (cmdletContext.InferenceId != null)
                 {
                     request.InferenceId = cmdletContext.InferenceId;
+                }
+                if (cmdletContext.SessionId != null)
+                {
+                    request.SessionId = cmdletContext.SessionId;
                 }
                 if (cmdletContext.TargetContainerHostname != null)
                 {
@@ -388,13 +390,7 @@ namespace Amazon.PowerShell.Cmdlets.SMR
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Runtime", "InvokeEndpointWithResponseStream");
             try
             {
-                #if DESKTOP
-                return client.InvokeEndpointWithResponseStream(request);
-                #elif CORECLR
-                return client.InvokeEndpointWithResponseStreamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.InvokeEndpointWithResponseStreamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -418,6 +414,7 @@ namespace Amazon.PowerShell.Cmdlets.SMR
             public System.String EndpointName { get; set; }
             public System.String InferenceComponentName { get; set; }
             public System.String InferenceId { get; set; }
+            public System.String SessionId { get; set; }
             public System.String TargetContainerHostname { get; set; }
             public System.String TargetVariant { get; set; }
             public System.Func<Amazon.SageMakerRuntime.Model.InvokeEndpointWithResponseStreamResponse, InvokeSMREndpointWithResponseStreamCmdlet, object> Select { get; set; } =

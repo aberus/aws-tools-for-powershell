@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -35,14 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue CreateJob API operation.", Operation = new[] {"CreateJob"}, SelectReturnType = typeof(Amazon.Glue.Model.CreateJobResponse))]
     [AWSCmdletOutput("System.String or Amazon.Glue.Model.CreateJobResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Glue.Model.CreateJobResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Glue.Model.CreateJobResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGLUEJobCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter SourceControlDetails_AuthStrategy
         /// <summary>
@@ -80,7 +81,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <summary>
         /// <para>
         /// <para>The representation of a directed acyclic graph on which both the Glue Studio visual
-        /// component and Glue Studio code generation is based.</para>
+        /// component and Glue Studio code generation is based.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,7 +112,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         #region Parameter Connections_Connection
         /// <summary>
         /// <para>
-        /// <para>A list of connections used by the job.</para>
+        /// <para>A list of connections used by the job.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -126,7 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// Spark jobs, see the <a href="https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html">Special
         /// Parameters Used by Glue</a> topic in the developer guide.</para><para>For information about the arguments you can provide to this field when configuring
         /// Ray jobs, see <a href="https://docs.aws.amazon.com/glue/latest/dg/author-job-ray-job-parameters.html">Using
-        /// job parameters in Ray jobs</a> in the developer guide.</para>
+        /// job parameters in Ray jobs</a> in the developer guide.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,6 +199,30 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String GlueVersion { get; set; }
         #endregion
         
+        #region Parameter JobMode
+        /// <summary>
+        /// <para>
+        /// <para>A mode that describes how a job was created. Valid values are:</para><ul><li><para><c>SCRIPT</c> - The job was created using the Glue Studio script editor.</para></li><li><para><c>VISUAL</c> - The job was created using the Glue Studio visual editor.</para></li><li><para><c>NOTEBOOK</c> - The job was created using an interactive sessions notebook.</para></li></ul><para>When the <c>JobMode</c> field is missing or null, <c>SCRIPT</c> is assigned as the
+        /// default value.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Glue.JobMode")]
+        public Amazon.Glue.JobMode JobMode { get; set; }
+        #endregion
+        
+        #region Parameter JobRunQueuingEnabled
+        /// <summary>
+        /// <para>
+        /// <para>Specifies whether job run queuing is enabled for the job runs for this job.</para><para>A value of true means job run queuing is enabled for the job runs. If false or not
+        /// populated, the job runs will not be considered for queueing.</para><para>If this field does not match the value set in the job run, then the value from the
+        /// job run field will be used.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? JobRunQueuingEnabled { get; set; }
+        #endregion
+        
         #region Parameter SourceControlDetails_LastCommitId
         /// <summary>
         /// <para>
@@ -204,6 +241,20 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String LogUri { get; set; }
+        #endregion
+        
+        #region Parameter MaintenanceWindow
+        /// <summary>
+        /// <para>
+        /// <para>This field specifies a day of the week and hour for a maintenance window for streaming
+        /// jobs. Glue periodically performs maintenance activities. During these maintenance
+        /// windows, Glue will need to restart your streaming jobs.</para><para>Glue will restart the job within 3 hours of the specified maintenance window. For
+        /// instance, if you set up the maintenance window for Monday at 10:00AM GMT, your jobs
+        /// will be restarted between 10:00AM GMT to 1:00PM GMT.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MaintenanceWindow { get; set; }
         #endregion
         
         #region Parameter MaxCapacity
@@ -272,7 +323,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <summary>
         /// <para>
         /// <para>Arguments for this job that are not overridden when providing job arguments in a job
-        /// run, specified as name-value pairs.</para>
+        /// run, specified as name-value pairs.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -366,7 +421,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <para>
         /// <para>The tags to use with this job. You may use tags to limit access to the job. For more
         /// information about tags in Glue, see <a href="https://docs.aws.amazon.com/glue/latest/dg/monitor-tags.html">Amazon
-        /// Web Services Tags in Glue</a> in the developer guide.</para>
+        /// Web Services Tags in Glue</a> in the developer guide.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -378,8 +437,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <summary>
         /// <para>
         /// <para>The job timeout in minutes. This is the maximum time that a job run can consume resources
-        /// before it is terminated and enters <c>TIMEOUT</c> status. The default is 2,880 minutes
-        /// (48 hours).</para>
+        /// before it is terminated and enters <c>TIMEOUT</c> status.</para><para>Jobs must have timeout values less than 7 days or 10080 minutes. Otherwise, the jobs
+        /// will throw an exception.</para><para>When the value is left blank, the timeout is defaulted to 2880 minutes.</para><para>Any existing Glue jobs that had a timeout value greater than 7 days will be defaulted
+        /// to 7 days. For instance if you have specified a timeout of 20 days for a batch job,
+        /// it will be stopped on the 7th day.</para><para>For streaming jobs, if you have set up a maintenance window, it will be restarted
+        /// during the maintenance window after 7 days.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -391,29 +453,29 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <para>
         /// <para>The type of predefined worker that is allocated when a job runs. Accepts a value of
         /// G.1X, G.2X, G.4X, G.8X or G.025X for Spark jobs. Accepts the value Z.2X for Ray jobs.</para><ul><li><para>For the <c>G.1X</c> worker type, each worker maps to 1 DPU (4 vCPUs, 16 GB of memory)
-        /// with 84GB disk (approximately 34GB free), and provides 1 executor per worker. We recommend
-        /// this worker type for workloads such as data transforms, joins, and queries, to offers
-        /// a scalable and cost effective way to run most jobs.</para></li><li><para>For the <c>G.2X</c> worker type, each worker maps to 2 DPU (8 vCPUs, 32 GB of memory)
-        /// with 128GB disk (approximately 77GB free), and provides 1 executor per worker. We
-        /// recommend this worker type for workloads such as data transforms, joins, and queries,
-        /// to offers a scalable and cost effective way to run most jobs.</para></li><li><para>For the <c>G.4X</c> worker type, each worker maps to 4 DPU (16 vCPUs, 64 GB of memory)
-        /// with 256GB disk (approximately 235GB free), and provides 1 executor per worker. We
-        /// recommend this worker type for jobs whose workloads contain your most demanding transforms,
-        /// aggregations, joins, and queries. This worker type is available only for Glue version
-        /// 3.0 or later Spark ETL jobs in the following Amazon Web Services Regions: US East
-        /// (Ohio), US East (N. Virginia), US West (Oregon), Asia Pacific (Singapore), Asia Pacific
-        /// (Sydney), Asia Pacific (Tokyo), Canada (Central), Europe (Frankfurt), Europe (Ireland),
-        /// and Europe (Stockholm).</para></li><li><para>For the <c>G.8X</c> worker type, each worker maps to 8 DPU (32 vCPUs, 128 GB of memory)
-        /// with 512GB disk (approximately 487GB free), and provides 1 executor per worker. We
-        /// recommend this worker type for jobs whose workloads contain your most demanding transforms,
-        /// aggregations, joins, and queries. This worker type is available only for Glue version
-        /// 3.0 or later Spark ETL jobs, in the same Amazon Web Services Regions as supported
-        /// for the <c>G.4X</c> worker type.</para></li><li><para>For the <c>G.025X</c> worker type, each worker maps to 0.25 DPU (2 vCPUs, 4 GB of
-        /// memory) with 84GB disk (approximately 34GB free), and provides 1 executor per worker.
-        /// We recommend this worker type for low volume streaming jobs. This worker type is only
-        /// available for Glue version 3.0 streaming jobs.</para></li><li><para>For the <c>Z.2X</c> worker type, each worker maps to 2 M-DPU (8vCPUs, 64 GB of memory)
-        /// with 128 GB disk (approximately 120GB free), and provides up to 8 Ray workers based
-        /// on the autoscaler.</para></li></ul>
+        /// with 94GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for workloads such as data transforms, joins, and queries, to offers a scalable and
+        /// cost effective way to run most jobs.</para></li><li><para>For the <c>G.2X</c> worker type, each worker maps to 2 DPU (8 vCPUs, 32 GB of memory)
+        /// with 138GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for workloads such as data transforms, joins, and queries, to offers a scalable and
+        /// cost effective way to run most jobs.</para></li><li><para>For the <c>G.4X</c> worker type, each worker maps to 4 DPU (16 vCPUs, 64 GB of memory)
+        /// with 256GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for jobs whose workloads contain your most demanding transforms, aggregations, joins,
+        /// and queries. This worker type is available only for Glue version 3.0 or later Spark
+        /// ETL jobs in the following Amazon Web Services Regions: US East (Ohio), US East (N.
+        /// Virginia), US West (N. California), US West (Oregon), Asia Pacific (Mumbai), Asia
+        /// Pacific (Seoul), Asia Pacific (Singapore), Asia Pacific (Sydney), Asia Pacific (Tokyo),
+        /// Canada (Central), Europe (Frankfurt), Europe (Ireland), Europe (London), Europe (Spain),
+        /// Europe (Stockholm), and South America (São Paulo).</para></li><li><para>For the <c>G.8X</c> worker type, each worker maps to 8 DPU (32 vCPUs, 128 GB of memory)
+        /// with 512GB disk, and provides 1 executor per worker. We recommend this worker type
+        /// for jobs whose workloads contain your most demanding transforms, aggregations, joins,
+        /// and queries. This worker type is available only for Glue version 3.0 or later Spark
+        /// ETL jobs, in the same Amazon Web Services Regions as supported for the <c>G.4X</c>
+        /// worker type.</para></li><li><para>For the <c>G.025X</c> worker type, each worker maps to 0.25 DPU (2 vCPUs, 4 GB of
+        /// memory) with 84GB disk, and provides 1 executor per worker. We recommend this worker
+        /// type for low volume streaming jobs. This worker type is only available for Glue version
+        /// 3.0 or later streaming jobs.</para></li><li><para>For the <c>Z.2X</c> worker type, each worker maps to 2 M-DPU (8vCPUs, 64 GB of memory)
+        /// with 128 GB disk, and provides up to 8 Ray workers based on the autoscaler.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -447,16 +509,6 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "Name";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Command parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Command' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Command' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -467,9 +519,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -483,21 +539,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.CreateJobResponse, NewGLUEJobCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Command;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocatedCapacity = this.AllocatedCapacity;
             #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -532,7 +578,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             context.ExecutionClass = this.ExecutionClass;
             context.ExecutionProperty_MaxConcurrentRun = this.ExecutionProperty_MaxConcurrentRun;
             context.GlueVersion = this.GlueVersion;
+            context.JobMode = this.JobMode;
+            context.JobRunQueuingEnabled = this.JobRunQueuingEnabled;
             context.LogUri = this.LogUri;
+            context.MaintenanceWindow = this.MaintenanceWindow;
             context.MaxCapacity = this.MaxCapacity;
             context.MaxRetry = this.MaxRetry;
             context.Name = this.Name;
@@ -662,9 +711,21 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             {
                 request.GlueVersion = cmdletContext.GlueVersion;
             }
+            if (cmdletContext.JobMode != null)
+            {
+                request.JobMode = cmdletContext.JobMode;
+            }
+            if (cmdletContext.JobRunQueuingEnabled != null)
+            {
+                request.JobRunQueuingEnabled = cmdletContext.JobRunQueuingEnabled.Value;
+            }
             if (cmdletContext.LogUri != null)
             {
                 request.LogUri = cmdletContext.LogUri;
+            }
+            if (cmdletContext.MaintenanceWindow != null)
+            {
+                request.MaintenanceWindow = cmdletContext.MaintenanceWindow;
             }
             if (cmdletContext.MaxCapacity != null)
             {
@@ -852,13 +913,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "CreateJob");
             try
             {
-                #if DESKTOP
-                return client.CreateJob(request);
-                #elif CORECLR
-                return client.CreateJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -885,7 +940,10 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             public Amazon.Glue.ExecutionClass ExecutionClass { get; set; }
             public System.Int32? ExecutionProperty_MaxConcurrentRun { get; set; }
             public System.String GlueVersion { get; set; }
+            public Amazon.Glue.JobMode JobMode { get; set; }
+            public System.Boolean? JobRunQueuingEnabled { get; set; }
             public System.String LogUri { get; set; }
+            public System.String MaintenanceWindow { get; set; }
             public System.Double? MaxCapacity { get; set; }
             public System.Int32? MaxRetry { get; set; }
             public System.String Name { get; set; }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Glue;
 using Amazon.Glue.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GLUE
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
     [AWSCmdlet("Calls the AWS Glue UpdateTable API operation.", Operation = new[] {"UpdateTable"}, SelectReturnType = typeof(Amazon.Glue.Model.UpdateTableResponse))]
     [AWSCmdletOutput("None or Amazon.Glue.Model.UpdateTableResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.Glue.Model.UpdateTableResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.Glue.Model.UpdateTableResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateGLUETableCmdlet : AmazonGlueClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CatalogId
         /// <summary>
@@ -71,6 +74,28 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String DatabaseName { get; set; }
         #endregion
         
+        #region Parameter ForceUpdate
+        /// <summary>
+        /// <para>
+        /// <para>A flag that can be set to true to ignore matching storage descriptor and subobject
+        /// matching requirements.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ForceUpdate { get; set; }
+        #endregion
+        
+        #region Parameter Name
+        /// <summary>
+        /// <para>
+        /// <para>The unique identifier for the table within the specified database that will be created
+        /// in the Glue Data Catalog.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Name { get; set; }
+        #endregion
+        
         #region Parameter SkipArchive
         /// <summary>
         /// <para>
@@ -89,13 +114,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// <para>An updated <c>TableInput</c> object to define the metadata table in the catalog.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
-        #else
-        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public Amazon.Glue.Model.TableInput TableInput { get; set; }
         #endregion
         
@@ -109,6 +128,22 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public System.String TransactionId { get; set; }
         #endregion
         
+        #region Parameter UpdateIcebergTableInput_Update
+        /// <summary>
+        /// <para>
+        /// <para>The list of table update operations that specify the changes to be made to the Iceberg
+        /// table, including schema modifications, partition specifications, and table properties.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("UpdateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput_Updates")]
+        public Amazon.Glue.Model.IcebergTableUpdate[] UpdateIcebergTableInput_Update { get; set; }
+        #endregion
+        
         #region Parameter VersionId
         /// <summary>
         /// <para>
@@ -117,6 +152,17 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String VersionId { get; set; }
+        #endregion
+        
+        #region Parameter ViewUpdateAction
+        /// <summary>
+        /// <para>
+        /// <para>The operation to be performed when updating the view.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Glue.ViewUpdateAction")]
+        public Amazon.Glue.ViewUpdateAction ViewUpdateAction { get; set; }
         #endregion
         
         #region Parameter Select
@@ -129,16 +175,6 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TableInput parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TableInput' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TableInput' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -149,9 +185,13 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DatabaseName), MyInvocation.BoundParameters);
@@ -165,21 +205,11 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Glue.Model.UpdateTableResponse, UpdateGLUETableCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TableInput;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CatalogId = this.CatalogId;
             context.DatabaseName = this.DatabaseName;
             #if MODULAR
@@ -188,16 +218,17 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
                 WriteWarning("You are passing $null as a value for parameter DatabaseName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ForceUpdate = this.ForceUpdate;
+            context.Name = this.Name;
             context.SkipArchive = this.SkipArchive;
             context.TableInput = this.TableInput;
-            #if MODULAR
-            if (this.TableInput == null && ParameterWasBound(nameof(this.TableInput)))
-            {
-                WriteWarning("You are passing $null as a value for parameter TableInput which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.TransactionId = this.TransactionId;
+            if (this.UpdateIcebergTableInput_Update != null)
+            {
+                context.UpdateIcebergTableInput_Update = new List<Amazon.Glue.Model.IcebergTableUpdate>(this.UpdateIcebergTableInput_Update);
+            }
             context.VersionId = this.VersionId;
+            context.ViewUpdateAction = this.ViewUpdateAction;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -222,6 +253,14 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             {
                 request.DatabaseName = cmdletContext.DatabaseName;
             }
+            if (cmdletContext.ForceUpdate != null)
+            {
+                request.Force = cmdletContext.ForceUpdate.Value;
+            }
+            if (cmdletContext.Name != null)
+            {
+                request.Name = cmdletContext.Name;
+            }
             if (cmdletContext.SkipArchive != null)
             {
                 request.SkipArchive = cmdletContext.SkipArchive.Value;
@@ -234,9 +273,62 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             {
                 request.TransactionId = cmdletContext.TransactionId;
             }
+            
+             // populate UpdateOpenTableFormatInput
+            var requestUpdateOpenTableFormatInputIsNull = true;
+            request.UpdateOpenTableFormatInput = new Amazon.Glue.Model.UpdateOpenTableFormatInput();
+            Amazon.Glue.Model.UpdateIcebergInput requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput = null;
+            
+             // populate UpdateIcebergInput
+            var requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInputIsNull = true;
+            requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput = new Amazon.Glue.Model.UpdateIcebergInput();
+            Amazon.Glue.Model.UpdateIcebergTableInput requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput = null;
+            
+             // populate UpdateIcebergTableInput
+            var requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInputIsNull = true;
+            requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput = new Amazon.Glue.Model.UpdateIcebergTableInput();
+            List<Amazon.Glue.Model.IcebergTableUpdate> requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput_updateIcebergTableInput_Update = null;
+            if (cmdletContext.UpdateIcebergTableInput_Update != null)
+            {
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput_updateIcebergTableInput_Update = cmdletContext.UpdateIcebergTableInput_Update;
+            }
+            if (requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput_updateIcebergTableInput_Update != null)
+            {
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput.Updates = requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput_updateIcebergTableInput_Update;
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInputIsNull = false;
+            }
+             // determine if requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput should be set to null
+            if (requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInputIsNull)
+            {
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput = null;
+            }
+            if (requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput != null)
+            {
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput.UpdateIcebergTableInput = requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput_updateOpenTableFormatInput_UpdateIcebergInput_UpdateIcebergTableInput;
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInputIsNull = false;
+            }
+             // determine if requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput should be set to null
+            if (requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInputIsNull)
+            {
+                requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput = null;
+            }
+            if (requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput != null)
+            {
+                request.UpdateOpenTableFormatInput.UpdateIcebergInput = requestUpdateOpenTableFormatInput_updateOpenTableFormatInput_UpdateIcebergInput;
+                requestUpdateOpenTableFormatInputIsNull = false;
+            }
+             // determine if request.UpdateOpenTableFormatInput should be set to null
+            if (requestUpdateOpenTableFormatInputIsNull)
+            {
+                request.UpdateOpenTableFormatInput = null;
+            }
             if (cmdletContext.VersionId != null)
             {
                 request.VersionId = cmdletContext.VersionId;
+            }
+            if (cmdletContext.ViewUpdateAction != null)
+            {
+                request.ViewUpdateAction = cmdletContext.ViewUpdateAction;
             }
             
             CmdletOutput output;
@@ -276,13 +368,7 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Glue", "UpdateTable");
             try
             {
-                #if DESKTOP
-                return client.UpdateTable(request);
-                #elif CORECLR
-                return client.UpdateTableAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -301,10 +387,14 @@ namespace Amazon.PowerShell.Cmdlets.GLUE
         {
             public System.String CatalogId { get; set; }
             public System.String DatabaseName { get; set; }
+            public System.Boolean? ForceUpdate { get; set; }
+            public System.String Name { get; set; }
             public System.Boolean? SkipArchive { get; set; }
             public Amazon.Glue.Model.TableInput TableInput { get; set; }
             public System.String TransactionId { get; set; }
+            public List<Amazon.Glue.Model.IcebergTableUpdate> UpdateIcebergTableInput_Update { get; set; }
             public System.String VersionId { get; set; }
+            public Amazon.Glue.ViewUpdateAction ViewUpdateAction { get; set; }
             public System.Func<Amazon.Glue.Model.UpdateTableResponse, UpdateGLUETableCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => null;
         }

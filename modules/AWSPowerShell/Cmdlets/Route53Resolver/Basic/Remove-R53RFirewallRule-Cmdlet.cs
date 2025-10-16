@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Route53Resolver;
 using Amazon.Route53Resolver.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.R53R
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.R53R
     [AWSCmdlet("Calls the Amazon Route 53 Resolver DeleteFirewallRule API operation.", Operation = new[] {"DeleteFirewallRule"}, SelectReturnType = typeof(Amazon.Route53Resolver.Model.DeleteFirewallRuleResponse))]
     [AWSCmdletOutput("Amazon.Route53Resolver.Model.FirewallRule or Amazon.Route53Resolver.Model.DeleteFirewallRuleResponse",
         "This cmdlet returns an Amazon.Route53Resolver.Model.FirewallRule object.",
-        "The service call response (type Amazon.Route53Resolver.Model.DeleteFirewallRuleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Route53Resolver.Model.DeleteFirewallRuleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveR53RFirewallRuleCmdlet : AmazonRoute53ResolverClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter FirewallDomainListId
         /// <summary>
@@ -48,14 +51,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         /// <para>The ID of the domain list that's used in the rule. </para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String FirewallDomainListId { get; set; }
         #endregion
         
@@ -77,11 +73,24 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         public System.String FirewallRuleGroupId { get; set; }
         #endregion
         
+        #region Parameter FirewallThreatProtectionId
+        /// <summary>
+        /// <para>
+        /// <para> The ID that is created for a DNS Firewall Advanced rule. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String FirewallThreatProtectionId { get; set; }
+        #endregion
+        
         #region Parameter Qtype
         /// <summary>
         /// <para>
         /// <para> The DNS query type that the rule you are deleting evaluates. Allowed values are;
-        /// </para><ul><li><para> A: Returns an IPv4 address.</para></li><li><para>AAAA: Returns an Ipv6 address.</para></li><li><para>CAA: Restricts CAs that can create SSL/TLS certifications for the domain.</para></li><li><para>CNAME: Returns another domain name.</para></li><li><para>DS: Record that identifies the DNSSEC signing key of a delegated zone.</para></li><li><para>MX: Specifies mail servers.</para></li><li><para>NAPTR: Regular-expression-based rewriting of domain names.</para></li><li><para>NS: Authoritative name servers.</para></li><li><para>PTR: Maps an IP address to a domain name.</para></li><li><para>SOA: Start of authority record for the zone.</para></li><li><para>SPF: Lists the servers authorized to send emails from a domain.</para></li><li><para>SRV: Application specific values that identify servers.</para></li><li><para>TXT: Verifies email senders and application-specific values.</para></li></ul>
+        /// </para><ul><li><para> A: Returns an IPv4 address.</para></li><li><para>AAAA: Returns an Ipv6 address.</para></li><li><para>CAA: Restricts CAs that can create SSL/TLS certifications for the domain.</para></li><li><para>CNAME: Returns another domain name.</para></li><li><para>DS: Record that identifies the DNSSEC signing key of a delegated zone.</para></li><li><para>MX: Specifies mail servers.</para></li><li><para>NAPTR: Regular-expression-based rewriting of domain names.</para></li><li><para>NS: Authoritative name servers.</para></li><li><para>PTR: Maps an IP address to a domain name.</para></li><li><para>SOA: Start of authority record for the zone.</para></li><li><para>SPF: Lists the servers authorized to send emails from a domain.</para></li><li><para>SRV: Application specific values that identify servers.</para></li><li><para>TXT: Verifies email senders and application-specific values.</para></li><li><para>A query type you define by using the DNS type ID, for example 28 for AAAA. The values
+        /// must be defined as TYPENUMBER, where the NUMBER can be 1-65334, for example, TYPE28.
+        /// For more information, see <a href="https://en.wikipedia.org/wiki/List_of_DNS_record_types">List
+        /// of DNS record types</a>.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FirewallRuleGroupId), MyInvocation.BoundParameters);
@@ -131,12 +144,6 @@ namespace Amazon.PowerShell.Cmdlets.R53R
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.FirewallDomainListId = this.FirewallDomainListId;
-            #if MODULAR
-            if (this.FirewallDomainListId == null && ParameterWasBound(nameof(this.FirewallDomainListId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter FirewallDomainListId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.FirewallRuleGroupId = this.FirewallRuleGroupId;
             #if MODULAR
             if (this.FirewallRuleGroupId == null && ParameterWasBound(nameof(this.FirewallRuleGroupId)))
@@ -144,6 +151,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
                 WriteWarning("You are passing $null as a value for parameter FirewallRuleGroupId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.FirewallThreatProtectionId = this.FirewallThreatProtectionId;
             context.Qtype = this.Qtype;
             
             // allow further manipulation of loaded context prior to processing
@@ -168,6 +176,10 @@ namespace Amazon.PowerShell.Cmdlets.R53R
             if (cmdletContext.FirewallRuleGroupId != null)
             {
                 request.FirewallRuleGroupId = cmdletContext.FirewallRuleGroupId;
+            }
+            if (cmdletContext.FirewallThreatProtectionId != null)
+            {
+                request.FirewallThreatProtectionId = cmdletContext.FirewallThreatProtectionId;
             }
             if (cmdletContext.Qtype != null)
             {
@@ -211,13 +223,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Route 53 Resolver", "DeleteFirewallRule");
             try
             {
-                #if DESKTOP
-                return client.DeleteFirewallRule(request);
-                #elif CORECLR
-                return client.DeleteFirewallRuleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteFirewallRuleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -236,6 +242,7 @@ namespace Amazon.PowerShell.Cmdlets.R53R
         {
             public System.String FirewallDomainListId { get; set; }
             public System.String FirewallRuleGroupId { get; set; }
+            public System.String FirewallThreatProtectionId { get; set; }
             public System.String Qtype { get; set; }
             public System.Func<Amazon.Route53Resolver.Model.DeleteFirewallRuleResponse, RemoveR53RFirewallRuleCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.FirewallRule;

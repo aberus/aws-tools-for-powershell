@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,27 +22,29 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
     /// Deletes a specified service within a cluster. You can delete a service if you have
     /// no running tasks in it and the desired task count is zero. If the service is actively
     /// maintaining tasks, you can't delete it, and you must update the service to a desired
-    /// task count of zero. For more information, see <a>UpdateService</a>.
+    /// task count of zero. For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_UpdateService.html">UpdateService</a>.
     /// 
     ///  <note><para>
     /// When you delete a service, if there are still running tasks that require cleanup,
     /// the service status moves from <c>ACTIVE</c> to <c>DRAINING</c>, and the service is
-    /// no longer visible in the console or in the <a>ListServices</a> API operation. After
-    /// all tasks have transitioned to either <c>STOPPING</c> or <c>STOPPED</c> status, the
-    /// service status moves from <c>DRAINING</c> to <c>INACTIVE</c>. Services in the <c>DRAINING</c>
-    /// or <c>INACTIVE</c> status can still be viewed with the <a>DescribeServices</a> API
-    /// operation. However, in the future, <c>INACTIVE</c> services may be cleaned up and
-    /// purged from Amazon ECS record keeping, and <a>DescribeServices</a> calls on those
-    /// services return a <c>ServiceNotFoundException</c> error.
+    /// no longer visible in the console or in the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ListServices.html">ListServices</a>
+    /// API operation. After all tasks have transitioned to either <c>STOPPING</c> or <c>STOPPED</c>
+    /// status, the service status moves from <c>DRAINING</c> to <c>INACTIVE</c>. Services
+    /// in the <c>DRAINING</c> or <c>INACTIVE</c> status can still be viewed with the <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_DescribeServices.html">DescribeServices</a>
+    /// API operation. However, in the future, <c>INACTIVE</c> services may be cleaned up
+    /// and purged from Amazon ECS record keeping, and <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_DescribeServices.html">DescribeServices</a>
+    /// calls on those services return a <c>ServiceNotFoundException</c> error.
     /// </para></note><important><para>
     /// If you attempt to create a new service with the same name as an existing service in
     /// either <c>ACTIVE</c> or <c>DRAINING</c> status, you receive an error.
@@ -53,12 +55,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     [AWSCmdlet("Calls the Amazon EC2 Container Service DeleteService API operation.", Operation = new[] {"DeleteService"}, SelectReturnType = typeof(Amazon.ECS.Model.DeleteServiceResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.Service or Amazon.ECS.Model.DeleteServiceResponse",
         "This cmdlet returns an Amazon.ECS.Model.Service object.",
-        "The service call response (type Amazon.ECS.Model.DeleteServiceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECS.Model.DeleteServiceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveECSServiceCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Cluster
         /// <summary>
@@ -111,16 +114,6 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public string Select { get; set; } = "Service";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Cluster parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -131,9 +124,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Service), MyInvocation.BoundParameters);
@@ -147,21 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECS.Model.DeleteServiceResponse, RemoveECSServiceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Cluster;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Cluster = this.Cluster;
             context.Enforce = this.Enforce;
             context.Service = this.Service;
@@ -237,13 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "DeleteService");
             try
             {
-                #if DESKTOP
-                return client.DeleteService(request);
-                #elif CORECLR
-                return client.DeleteServiceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DeleteServiceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

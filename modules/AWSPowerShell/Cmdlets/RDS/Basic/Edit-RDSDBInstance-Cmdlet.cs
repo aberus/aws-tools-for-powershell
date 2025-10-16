@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RDS;
 using Amazon.RDS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RDS
 {
     /// <summary>
@@ -38,12 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
     [AWSCmdlet("Calls the Amazon Relational Database Service ModifyDBInstance API operation.", Operation = new[] {"ModifyDBInstance"}, SelectReturnType = typeof(Amazon.RDS.Model.ModifyDBInstanceResponse))]
     [AWSCmdletOutput("Amazon.RDS.Model.DBInstance or Amazon.RDS.Model.ModifyDBInstanceResponse",
         "This cmdlet returns an Amazon.RDS.Model.DBInstance object.",
-        "The service call response (type Amazon.RDS.Model.ModifyDBInstanceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RDS.Model.ModifyDBInstanceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditRDSDBInstanceCmdlet : AmazonRDSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllocatedStorage
         /// <summary>
@@ -51,7 +54,9 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>The new amount of storage in gibibytes (GiB) to allocate for the DB instance.</para><para>For RDS for Db2, MariaDB, RDS for MySQL, RDS for Oracle, and RDS for PostgreSQL, the
         /// value supplied must be at least 10% greater than the current value. Values that are
         /// not at least 10% greater than the existing value are rounded up so that they are 10%
-        /// greater than the current value.</para><para>For the valid values for allocated storage for each engine, see <c>CreateDBInstance</c>.</para>
+        /// greater than the current value.</para><para>For the valid values for allocated storage for each engine, see <c>CreateDBInstance</c>.</para><para>Constraints:</para><ul><li><para>When you increase the allocated storage for a DB instance that uses Provisioned IOPS
+        /// (<c>gp3</c>, <c>io1</c>, or <c>io2</c> storage type), you must also specify the <c>Iops</c>
+        /// parameter. You can use the current value for <c>Iops</c>.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -108,7 +113,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// during the maintenance window. An outage occurs when all the following conditions
         /// are met:</para><ul><li><para>The automatic upgrade is enabled for the maintenance window.</para></li><li><para>A newer minor version is available.</para></li><li><para>RDS has enabled automatic patching for the engine version.</para></li></ul><para>If any of the preceding conditions isn't met, Amazon RDS applies the change as soon
         /// as possible and doesn't cause an outage.</para><para>For an RDS Custom DB instance, don't enable this setting. Otherwise, the operation
-        /// returns an error.</para>
+        /// returns an error.</para><para>For more information about automatic minor version upgrades, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.Upgrading.html#USER_UpgradeDBInstance.Upgrading.AutoMinorVersionUpgrades">Automatically
+        /// upgrading the minor engine version</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -181,6 +187,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? CopyTagsToSnapshot { get; set; }
+        #endregion
+        
+        #region Parameter DatabaseInsightsMode
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the mode of Database Insights to enable for the DB instance.</para><note><para>Aurora DB instances inherit this value from the DB cluster, so you can't change this
+        /// value.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.DatabaseInsightsMode")]
+        public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
         #endregion
         
         #region Parameter DBInstanceClass
@@ -256,7 +274,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>A list of DB security groups to authorize on this DB instance. Changing this setting
-        /// doesn't result in an outage and the change is asynchronously applied as soon as possible.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Constraints:</para><ul><li><para>If supplied, must match existing DB security groups.</para></li></ul>
+        /// doesn't result in an outage and the change is asynchronously applied as soon as possible.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Constraints:</para><ul><li><para>If supplied, must match existing DB security groups.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -271,7 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// DB instance to a different VPC. If your DB instance isn't in a VPC, you can also use
         /// this parameter to move your DB instance into a VPC. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.WorkingWithRDSInstanceinaVPC.html#USER_VPC.Non-VPC2VPC">Working
         /// with a DB instance in a VPC</a> in the <i>Amazon RDS User Guide</i>.</para><para>Changing the subnet group causes an outage during the change. The change is applied
-        /// during the next maintenance window, unless you enable <c>ApplyImmediately</c>.</para><para>This parameter doesn't apply to RDS Custom DB instances.</para><para>Constraints:</para><ul><li><para>If supplied, must match existing DB subnet group.</para></li></ul><para>Example: <c>mydbsubnetgroup</c></para>
+        /// during the next maintenance window, unless you enable <c>ApplyImmediately</c>.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para>Constraints:</para><ul><li><para>If supplied, must match existing DB subnet group.</para></li></ul><para>Example: <c>mydbsubnetgroup</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -294,7 +316,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>Specifies whether the DB instance has deletion protection enabled. The database can't
         /// be deleted when deletion protection is enabled. By default, deletion protection isn't
         /// enabled. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_DeleteInstance.html">
-        /// Deleting a DB Instance</a>.</para>
+        /// Deleting a DB Instance</a>.</para><para>This setting doesn't apply to Amazon Aurora DB instances. You can enable or disable
+        /// deletion protection for the DB cluster. For more information, see <c>ModifyDBCluster</c>.
+        /// DB instances in a DB cluster can be deleted even when deletion protection is enabled
+        /// for the DB cluster.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -314,7 +339,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter CloudwatchLogsExportConfiguration_DisableLogType
         /// <summary>
         /// <para>
-        /// <para>The list of log types to disable.</para>
+        /// <para>The list of log types to disable.</para><para>The following values are valid for each DB engine:</para><ul><li><para>Aurora MySQL - <c>audit | error | general | slowquery</c></para></li><li><para>Aurora PostgreSQL - <c>postgresql</c></para></li><li><para>RDS for MySQL - <c>error | general | slowquery</c></para></li><li><para>RDS for PostgreSQL - <c>postgresql | upgrade</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -351,7 +380,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The IPv4 DNS IP addresses of your primary and secondary Active Directory domain controllers.</para><para>Constraints:</para><ul><li><para>Two IP addresses must be provided. If there isn't a secondary domain controller, use
-        /// the IP address of the primary domain controller for both entries in the list.</para></li></ul><para>Example: <c>123.124.125.126,234.235.236.237</c></para>
+        /// the IP address of the primary domain controller for both entries in the list.</para></li></ul><para>Example: <c>123.124.125.126,234.235.236.237</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -422,7 +455,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter CloudwatchLogsExportConfiguration_EnableLogType
         /// <summary>
         /// <para>
-        /// <para>The list of log types to enable.</para>
+        /// <para>The list of log types to enable.</para><para>The following values are valid for each DB engine:</para><ul><li><para>Aurora MySQL - <c>audit | error | general | slowquery</c></para></li><li><para>Aurora PostgreSQL - <c>postgresql</c></para></li><li><para>RDS for MySQL - <c>error | general | slowquery</c></para></li><li><para>RDS for PostgreSQL - <c>postgresql | upgrade</c></para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -490,12 +527,12 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// the next maintenance window unless the <c>ApplyImmediately</c> parameter is enabled
         /// for this request. If you are migrating from Provisioned IOPS to standard storage,
         /// set this value to 0. The DB instance will require a reboot for the change in storage
-        /// type to take effect.</para><para>If you choose to migrate your DB instance from using standard storage to using Provisioned
-        /// IOPS, or from using Provisioned IOPS to using standard storage, the process can take
-        /// time. The duration of the migration depends on several factors such as database load,
-        /// storage size, storage type (standard or Provisioned IOPS), amount of IOPS provisioned
-        /// (if any), and the number of prior scale storage operations. Typical migration times
-        /// are under 24 hours, but the process can take up to several days in some cases. During
+        /// type to take effect.</para><para>If you choose to migrate your DB instance from using standard storage to Provisioned
+        /// IOPS (io1), or from Provisioned IOPS to standard storage, the process can take time.
+        /// The duration of the migration depends on several factors such as database load, storage
+        /// size, storage type (standard or Provisioned IOPS), amount of IOPS provisioned (if
+        /// any), and the number of prior scale storage operations. Typical migration times are
+        /// under 24 hours, but the process can take up to several days in some cases. During
         /// the migration, the DB instance is available for use, but might experience performance
         /// degradation. While the migration takes place, nightly backups for the instance are
         /// suspended. No other Amazon RDS operations can take place for the instance, including
@@ -503,7 +540,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// read replica for the instance, and creating a DB snapshot of the instance.</para><para>Constraints:</para><ul><li><para>For RDS for MariaDB, RDS for MySQL, RDS for Oracle, and RDS for PostgreSQL - The value
         /// supplied must be at least 10% greater than the current value. Values that are not
         /// at least 10% greater than the existing value are rounded up so that they are 10% greater
-        /// than the current value.</para></li></ul><para>Default: Uses existing setting</para>
+        /// than the current value.</para></li><li><para>When you increase the Provisioned IOPS, you must also specify the <c>AllocatedStorage</c>
+        /// parameter. You can use the current value for <c>AllocatedStorage</c>.</para></li></ul><para>Default: Uses existing setting</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -533,11 +571,25 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// user specified by <c>MasterUserPassword</c>.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html">Password
         /// management with Amazon Web Services Secrets Manager</a> in the <i>Amazon RDS User
         /// Guide.</i></para><para>Constraints:</para><ul><li><para>Can't manage the master user password with Amazon Web Services Secrets Manager if
-        /// <c>MasterUserPassword</c> is specified.</para></li></ul>
+        /// <c>MasterUserPassword</c> is specified.</para></li><li><para>Can't specify for RDS for Oracle CDB instances in the multi-tenant configuration.
+        /// Use <c>ModifyTenantDatabase</c> instead.</para></li><li><para>Can't specify the parameters <c>ManageMasterUserPassword</c> and <c>MultiTenant</c>
+        /// in the same operation.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? ManageMasterUserPassword { get; set; }
+        #endregion
+        
+        #region Parameter MasterUserAuthenticationType
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the authentication type for the master user. With IAM master user authentication,
+        /// you can change the master DB user to use IAM database authentication.</para><para>You can specify one of the following values:</para><ul><li><para><c>password</c> - Use standard database authentication with a password.</para></li><li><para><c>iam-db-auth</c> - Use IAM database authentication for the master user.</para></li></ul><para>This option is only valid for RDS for PostgreSQL and Aurora PostgreSQL engines.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RDS.MasterUserAuthenticationType")]
+        public Amazon.RDS.MasterUserAuthenticationType MasterUserAuthenticationType { get; set; }
         #endregion
         
         #region Parameter MasterUserPassword
@@ -548,8 +600,8 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// the request, the <c>MasterUserPassword</c> element exists in the <c>PendingModifiedValues</c>
         /// element of the operation response.</para><note><para>Amazon RDS API operations never return the password, so this operation provides a
         /// way to regain access to a primary instance user if the password is lost. This includes
-        /// restoring privileges that might have been accidentally revoked.</para></note><para>This setting doesn't apply to the following DB instances:</para><ul><li><para>Amazon Aurora (The password for the master user is managed by the DB cluster. For
-        /// more information, see <c>ModifyDBCluster</c>.)</para></li><li><para>RDS Custom</para></li></ul><para>Default: Uses existing setting</para><para>Constraints:</para><ul><li><para>Can't be specified if <c>ManageMasterUserPassword</c> is turned on.</para></li><li><para>Can include any printable ASCII character except "/", """, or "@". For RDS for Oracle,
+        /// restoring privileges that might have been accidentally revoked.</para></note><para>This setting doesn't apply to the following DB instances:</para><ul><li><para>Amazon Aurora</para><para>The password for the master user is managed by the DB cluster. For more information,
+        /// see <c>ModifyDBCluster</c>.</para></li><li><para>RDS Custom</para></li><li><para>RDS for Oracle CDBs in the multi-tenant configuration</para><para>Specify the master password in <c>ModifyTenantDatabase</c> instead.</para></li></ul><para>Default: Uses existing setting</para><para>Constraints:</para><ul><li><para>Can't be specified if <c>ManageMasterUserPassword</c> is turned on.</para></li><li><para>Can include any printable ASCII character except "/", """, or "@". For RDS for Oracle,
         /// can't include the "&amp;" (ampersand) or the "'" (single quotes) character.</para></li></ul><para>Length Constraints:</para><ul><li><para>RDS for Db2 - Must contain from 8 to 255 characters.</para></li><li><para>RDS for MariaDB - Must contain from 8 to 41 characters.</para></li><li><para>RDS for Microsoft SQL Server - Must contain from 8 to 128 characters.</para></li><li><para>RDS for MySQL - Must contain from 8 to 41 characters.</para></li><li><para>RDS for Oracle - Must contain from 8 to 30 characters.</para></li><li><para>RDS for PostgreSQL - Must contain from 8 to 128 characters.</para></li></ul>
         /// </para>
         /// </summary>
@@ -757,7 +809,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <summary>
         /// <para>
         /// <para>The number of CPU cores and the number of threads per core for the DB instance class
-        /// of the DB instance.</para><para>This setting doesn't apply to RDS Custom DB instances.</para>
+        /// of the DB instance.</para><para>This setting doesn't apply to RDS Custom DB instances.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -780,12 +836,12 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter PubliclyAccessible
         /// <summary>
         /// <para>
-        /// <para>Specifies whether the DB instance is publicly accessible.</para><para>When the DB cluster is publicly accessible, its Domain Name System (DNS) endpoint
-        /// resolves to the private IP address from within the DB cluster's virtual private cloud
-        /// (VPC). It resolves to the public IP address from outside of the DB cluster's VPC.
-        /// Access to the DB cluster is ultimately controlled by the security group it uses. That
-        /// public access isn't permitted if the security group assigned to the DB cluster doesn't
-        /// permit it.</para><para>When the DB instance isn't publicly accessible, it is an internal DB instance with
+        /// <para>Specifies whether the DB instance is publicly accessible.</para><para>When the DB instance is publicly accessible and you connect from outside of the DB
+        /// instance's virtual private cloud (VPC), its Domain Name System (DNS) endpoint resolves
+        /// to the public IP address. When you connect from within the same VPC as the DB instance,
+        /// the endpoint resolves to the private IP address. Access to the DB instance is ultimately
+        /// controlled by the security group it uses. That public access isn't permitted if the
+        /// security group assigned to the DB instance doesn't permit it.</para><para>When the DB instance isn't publicly accessible, it is an internal DB instance with
         /// a DNS name that resolves to a private IP address.</para><para><c>PubliclyAccessible</c> only applies to DB instances in a VPC. The DB instance
         /// must be part of a public subnet and <c>PubliclyAccessible</c> must be enabled for
         /// it to be publicly accessible.</para><para>Changes to the <c>PubliclyAccessible</c> parameter are applied immediately regardless
@@ -799,12 +855,18 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter ReplicaMode
         /// <summary>
         /// <para>
-        /// <para>A value that sets the open mode of a replica database to either mounted or read-only.</para><note><para>Currently, this parameter is only supported for Oracle DB instances.</para></note><para>Mounted DB replicas are included in Oracle Enterprise Edition. The main use case for
-        /// mounted replicas is cross-Region disaster recovery. The primary database doesn't use
-        /// Active Data Guard to transmit information to the mounted replica. Because it doesn't
-        /// accept user connections, a mounted replica can't serve a read-only workload. For more
-        /// information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/oracle-read-replicas.html">Working
-        /// with Oracle Read Replicas for Amazon RDS</a> in the <i>Amazon RDS User Guide</i>.</para><para>This setting doesn't apply to RDS Custom DB instances.</para>
+        /// <para>The open mode of a replica database.</para><para>This parameter is only supported for Db2 DB instances and Oracle DB instances.</para><dl><dt>Db2</dt><dd><para>Standby DB replicas are included in Db2 Advanced Edition (AE) and Db2 Standard Edition
+        /// (SE). The main use case for standby replicas is cross-Region disaster recovery. Because
+        /// it doesn't accept user connections, a standby replica can't serve a read-only workload.</para><para>You can create a combination of standby and read-only DB replicas for the same primary
+        /// DB instance. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/db2-replication.html">Working
+        /// with replicas for Amazon RDS for Db2</a> in the <i>Amazon RDS User Guide</i>.</para><para>To create standby DB replicas for RDS for Db2, set this parameter to <c>mounted</c>.</para></dd><dt>Oracle</dt><dd><para>Mounted DB replicas are included in Oracle Database Enterprise Edition. The main use
+        /// case for mounted replicas is cross-Region disaster recovery. The primary database
+        /// doesn't use Active Data Guard to transmit information to the mounted replica. Because
+        /// it doesn't accept user connections, a mounted replica can't serve a read-only workload.</para><para>You can create a combination of mounted and read-only DB replicas for the same primary
+        /// DB instance. For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/oracle-read-replicas.html">Working
+        /// with read replicas for Amazon RDS for Oracle</a> in the <i>Amazon RDS User Guide</i>.</para><para>For RDS Custom, you must specify this parameter and set it to <c>mounted</c>. The
+        /// value won't be set by default. After replica creation, you can manage the open mode
+        /// manually.</para></dd></dl>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -829,7 +891,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>Specifies whether to rotate the secret managed by Amazon Web Services Secrets Manager
         /// for the master user password.</para><para>This setting is valid only if the master user password is managed by RDS in Amazon
-        /// Web Services Secrets Manager for the DB cluster. The secret value contains the updated
+        /// Web Services Secrets Manager for the DB instance. The secret value contains the updated
         /// password.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/rds-secrets-manager.html">Password
         /// management with Amazon Web Services Secrets Manager</a> in the <i>Amazon RDS User
         /// Guide.</i></para><para>Constraints:</para><ul><li><para>You must apply the change immediately when rotating the master user password.</para></li></ul>
@@ -852,18 +914,19 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         #region Parameter StorageType
         /// <summary>
         /// <para>
-        /// <para>The storage type to associate with the DB instance.</para><para>If you specify Provisioned IOPS (<c>io1</c>), you must also include a value for the
-        /// <c>Iops</c> parameter.</para><para>If you choose to migrate your DB instance from using standard storage to using Provisioned
-        /// IOPS, or from using Provisioned IOPS to using standard storage, the process can take
-        /// time. The duration of the migration depends on several factors such as database load,
-        /// storage size, storage type (standard or Provisioned IOPS), amount of IOPS provisioned
-        /// (if any), and the number of prior scale storage operations. Typical migration times
-        /// are under 24 hours, but the process can take up to several days in some cases. During
-        /// the migration, the DB instance is available for use, but might experience performance
-        /// degradation. While the migration takes place, nightly backups for the instance are
-        /// suspended. No other Amazon RDS operations can take place for the instance, including
-        /// modifying the instance, rebooting the instance, deleting the instance, creating a
-        /// read replica for the instance, and creating a DB snapshot of the instance.</para><para>Valid Values: <c>gp2 | gp3 | io1 | standard</c></para><para>Default: <c>io1</c>, if the <c>Iops</c> parameter is specified. Otherwise, <c>gp2</c>.</para>
+        /// <para>The storage type to associate with the DB instance.</para><para>If you specify <c>io1</c>, <c>io2</c>, or <c>gp3</c> you must also include a value
+        /// for the <c>Iops</c> parameter.</para><para>If you choose to migrate your DB instance from using standard storage to gp2 (General
+        /// Purpose SSD), gp3, or Provisioned IOPS (io1), or from these storage types to standard
+        /// storage, the process can take time. The duration of the migration depends on several
+        /// factors such as database load, storage size, storage type (standard or Provisioned
+        /// IOPS), amount of IOPS provisioned (if any), and the number of prior scale storage
+        /// operations. Typical migration times are under 24 hours, but the process can take up
+        /// to several days in some cases. During the migration, the DB instance is available
+        /// for use, but might experience performance degradation. While the migration takes place,
+        /// nightly backups for the instance are suspended. No other Amazon RDS operations can
+        /// take place for the instance, including modifying the instance, rebooting the instance,
+        /// deleting the instance, creating a read replica for the instance, and creating a DB
+        /// snapshot of the instance.</para><para>Valid Values: <c>gp2 | gp3 | io1 | io2 | standard</c></para><para>Default: <c>io1</c>, if the <c>Iops</c> parameter is specified. Otherwise, <c>gp2</c>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -907,7 +970,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         /// <para>
         /// <para>A list of Amazon EC2 VPC security groups to associate with this DB instance. This
         /// change is asynchronously applied as soon as possible.</para><para>This setting doesn't apply to the following DB instances:</para><ul><li><para>Amazon Aurora (The associated list of EC2 VPC security groups is managed by the DB
-        /// cluster. For more information, see <c>ModifyDBCluster</c>.)</para></li><li><para>RDS Custom</para></li></ul><para>Constraints:</para><ul><li><para>If supplied, must match existing VPC security group IDs.</para></li></ul>
+        /// cluster. For more information, see <c>ModifyDBCluster</c>.)</para></li><li><para>RDS Custom</para></li></ul><para>Constraints:</para><ul><li><para>If supplied, must match existing VPC security group IDs.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -926,16 +993,6 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public string Select { get; set; } = "DBInstance";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DBInstanceIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DBInstanceIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -946,9 +1003,13 @@ namespace Amazon.PowerShell.Cmdlets.RDS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DBInstanceIdentifier), MyInvocation.BoundParameters);
@@ -962,21 +1023,11 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.RDS.Model.ModifyDBInstanceResponse, EditRDSDBInstanceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DBInstanceIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AllocatedStorage = this.AllocatedStorage;
             context.AllowMajorVersionUpgrade = this.AllowMajorVersionUpgrade;
             context.ApplyImmediately = this.ApplyImmediately;
@@ -995,6 +1046,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
                 context.CloudwatchLogsExportConfiguration_EnableLogType = new List<System.String>(this.CloudwatchLogsExportConfiguration_EnableLogType);
             }
             context.CopyTagsToSnapshot = this.CopyTagsToSnapshot;
+            context.DatabaseInsightsMode = this.DatabaseInsightsMode;
             context.DBInstanceClass = this.DBInstanceClass;
             context.DBInstanceIdentifier = this.DBInstanceIdentifier;
             #if MODULAR
@@ -1030,6 +1082,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             context.Iops = this.Iops;
             context.LicenseModel = this.LicenseModel;
             context.ManageMasterUserPassword = this.ManageMasterUserPassword;
+            context.MasterUserAuthenticationType = this.MasterUserAuthenticationType;
             context.MasterUserPassword = this.MasterUserPassword;
             context.MasterUserSecretKmsKeyId = this.MasterUserSecretKmsKeyId;
             context.MaxAllocatedStorage = this.MaxAllocatedStorage;
@@ -1147,6 +1200,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             {
                 request.CopyTagsToSnapshot = cmdletContext.CopyTagsToSnapshot.Value;
             }
+            if (cmdletContext.DatabaseInsightsMode != null)
+            {
+                request.DatabaseInsightsMode = cmdletContext.DatabaseInsightsMode;
+            }
             if (cmdletContext.DBInstanceClass != null)
             {
                 request.DBInstanceClass = cmdletContext.DBInstanceClass;
@@ -1238,6 +1295,10 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             if (cmdletContext.ManageMasterUserPassword != null)
             {
                 request.ManageMasterUserPassword = cmdletContext.ManageMasterUserPassword.Value;
+            }
+            if (cmdletContext.MasterUserAuthenticationType != null)
+            {
+                request.MasterUserAuthenticationType = cmdletContext.MasterUserAuthenticationType;
             }
             if (cmdletContext.MasterUserPassword != null)
             {
@@ -1381,13 +1442,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Relational Database Service", "ModifyDBInstance");
             try
             {
-                #if DESKTOP
-                return client.ModifyDBInstance(request);
-                #elif CORECLR
-                return client.ModifyDBInstanceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyDBInstanceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1416,6 +1471,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public List<System.String> CloudwatchLogsExportConfiguration_DisableLogType { get; set; }
             public List<System.String> CloudwatchLogsExportConfiguration_EnableLogType { get; set; }
             public System.Boolean? CopyTagsToSnapshot { get; set; }
+            public Amazon.RDS.DatabaseInsightsMode DatabaseInsightsMode { get; set; }
             public System.String DBInstanceClass { get; set; }
             public System.String DBInstanceIdentifier { get; set; }
             public System.String DBParameterGroupName { get; set; }
@@ -1439,6 +1495,7 @@ namespace Amazon.PowerShell.Cmdlets.RDS
             public System.Int32? Iops { get; set; }
             public System.String LicenseModel { get; set; }
             public System.Boolean? ManageMasterUserPassword { get; set; }
+            public Amazon.RDS.MasterUserAuthenticationType MasterUserAuthenticationType { get; set; }
             public System.String MasterUserPassword { get; set; }
             public System.String MasterUserSecretKmsKeyId { get; set; }
             public System.Int32? MaxAllocatedStorage { get; set; }

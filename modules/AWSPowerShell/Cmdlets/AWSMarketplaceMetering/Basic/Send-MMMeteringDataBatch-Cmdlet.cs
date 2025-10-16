@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,55 +22,62 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AWSMarketplaceMetering;
 using Amazon.AWSMarketplaceMetering.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MM
 {
     /// <summary>
-    /// <c>BatchMeterUsage</c> is called from a SaaS application listed on AWS Marketplace
-    /// to post metering records for a set of customers.
-    /// 
-    ///  
-    /// <para>
-    /// For identical requests, the API is idempotent; requests can be retried with the same
-    /// records or a subset of the input records.
+    /// <important><para>
+    ///  The <c>CustomerIdentifier</c> parameter is scheduled for deprecation. Use <c>CustomerAWSAccountID</c>
+    /// instead.
     /// </para><para>
-    /// Every request to <c>BatchMeterUsage</c> is for one product. If you need to meter usage
-    /// for multiple products, you must make multiple calls to <c>BatchMeterUsage</c>.
+    /// These parameters are mutually exclusive. You can't specify both <c>CustomerIdentifier</c>
+    /// and <c>CustomerAWSAccountID</c> in the same request. 
+    /// </para></important><para>
+    /// To post metering records for customers, SaaS applications call <c>BatchMeterUsage</c>,
+    /// which is used for metering SaaS flexible consumption pricing (FCP). Identical requests
+    /// are idempotent and can be retried with the same records or a subset of records. Each
+    /// <c>BatchMeterUsage</c> request is for only one product. If you want to meter usage
+    /// for multiple products, you must make multiple <c>BatchMeterUsage</c> calls.
     /// </para><para>
-    /// Usage records are expected to be submitted as quickly as possible after the event
-    /// that is being recorded, and are not accepted more than 6 hours after the event.
-    /// </para><para><c>BatchMeterUsage</c> can process up to 25 <c>UsageRecords</c> at a time.
+    /// Usage records should be submitted in quick succession following a recorded event.
+    /// Usage records aren't accepted 6 hours or more after an event.
+    /// </para><para><c>BatchMeterUsage</c> can process up to 25 <c>UsageRecords</c> at a time, and each
+    /// request must be less than 1 MB in size. Optionally, you can have multiple usage allocations
+    /// for usage data that's split into buckets according to predefined tags.
+    /// </para><para><c>BatchMeterUsage</c> returns a list of <c>UsageRecordResult</c> objects, which
+    /// have each <c>UsageRecord</c>. It also returns a list of <c>UnprocessedRecords</c>,
+    /// which indicate errors on the service side that should be retried.
     /// </para><para>
-    /// A <c>UsageRecord</c> can optionally include multiple usage allocations, to provide
-    /// customers with usage data split into buckets by tags that you define (or allow the
-    /// customer to define).
-    /// </para><para><c>BatchMeterUsage</c> returns a list of <c>UsageRecordResult</c> objects, showing
-    /// the result for each <c>UsageRecord</c>, as well as a list of <c>UnprocessedRecords</c>,
-    /// indicating errors in the service side that you should retry.
-    /// </para><para><c>BatchMeterUsage</c> requests must be less than 1MB in size.
+    /// For Amazon Web Services Regions that support <c>BatchMeterUsage</c>, see <a href="https://docs.aws.amazon.com/marketplace/latest/APIReference/metering-regions.html#batchmeterusage-region-support">BatchMeterUsage
+    /// Region support</a>. 
     /// </para><note><para>
-    /// For an example of using <c>BatchMeterUsage</c>, see <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/saas-code-examples.html#saas-batchmeterusage-example">
-    /// BatchMeterUsage code example</a> in the <i>AWS Marketplace Seller Guide</i>.
+    /// For an example of <c>BatchMeterUsage</c>, see <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/saas-code-examples.html#saas-batchmeterusage-example">
+    /// BatchMeterUsage code example</a> in the <i>Amazon Web Services Marketplace Seller
+    /// Guide</i>.
     /// </para></note>
     /// </summary>
     [Cmdlet("Send", "MMMeteringDataBatch", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.AWSMarketplaceMetering.Model.BatchMeterUsageResponse")]
     [AWSCmdlet("Calls the AWS Marketplace Metering BatchMeterUsage API operation.", Operation = new[] {"BatchMeterUsage"}, SelectReturnType = typeof(Amazon.AWSMarketplaceMetering.Model.BatchMeterUsageResponse))]
     [AWSCmdletOutput("Amazon.AWSMarketplaceMetering.Model.BatchMeterUsageResponse",
-        "This cmdlet returns an Amazon.AWSMarketplaceMetering.Model.BatchMeterUsageResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AWSMarketplaceMetering.Model.BatchMeterUsageResponse object containing multiple properties."
     )]
     public partial class SendMMMeteringDataBatchCmdlet : AmazonAWSMarketplaceMeteringClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ProductCode
         /// <summary>
         /// <para>
-        /// <para>Product code is used to uniquely identify a product in AWS Marketplace. The product
-        /// code should be the same as the one used during the publishing of a new product.</para>
+        /// <para>Product code is used to uniquely identify a product in Amazon Web Services Marketplace.
+        /// The product code should be the same as the one used during the publishing of a new
+        /// product.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -88,7 +95,11 @@ namespace Amazon.PowerShell.Cmdlets.MM
         /// <summary>
         /// <para>
         /// <para>The set of <c>UsageRecords</c> to submit. <c>BatchMeterUsage</c> accepts up to 25
-        /// <c>UsageRecords</c> at a time.</para>
+        /// <c>UsageRecords</c> at a time.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -114,16 +125,6 @@ namespace Amazon.PowerShell.Cmdlets.MM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ProductCode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ProductCode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ProductCode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -134,9 +135,13 @@ namespace Amazon.PowerShell.Cmdlets.MM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ProductCode), MyInvocation.BoundParameters);
@@ -150,21 +155,11 @@ namespace Amazon.PowerShell.Cmdlets.MM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AWSMarketplaceMetering.Model.BatchMeterUsageResponse, SendMMMeteringDataBatchCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ProductCode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ProductCode = this.ProductCode;
             #if MODULAR
             if (this.ProductCode == null && ParameterWasBound(nameof(this.ProductCode)))
@@ -244,13 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.MM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Marketplace Metering", "BatchMeterUsage");
             try
             {
-                #if DESKTOP
-                return client.BatchMeterUsage(request);
-                #elif CORECLR
-                return client.BatchMeterUsageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchMeterUsageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

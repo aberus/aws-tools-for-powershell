@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EventBridge;
 using Amazon.EventBridge.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EVB
 {
     /// <summary>
@@ -33,17 +35,27 @@ namespace Amazon.PowerShell.Cmdlets.EVB
     /// period of time for changes to take effect. If you do not specify a pattern to filter
     /// events sent to the archive, all events are sent to the archive except replayed events.
     /// Replayed events are not sent to an archive.
+    /// 
+    ///  <important><para>
+    /// If you have specified that EventBridge use a customer managed key for encrypting the
+    /// source event bus, we strongly recommend you also specify a customer managed key for
+    /// any archives for the event bus as well. 
+    /// </para><para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/encryption-archives.html">Encrypting
+    /// archives</a> in the <i>Amazon EventBridge User Guide</i>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("New", "EVBArchive", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EventBridge.Model.CreateArchiveResponse")]
     [AWSCmdlet("Calls the Amazon EventBridge CreateArchive API operation.", Operation = new[] {"CreateArchive"}, SelectReturnType = typeof(Amazon.EventBridge.Model.CreateArchiveResponse))]
     [AWSCmdletOutput("Amazon.EventBridge.Model.CreateArchiveResponse",
-        "This cmdlet returns an Amazon.EventBridge.Model.CreateArchiveResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EventBridge.Model.CreateArchiveResponse object containing multiple properties."
     )]
     public partial class NewEVBArchiveCmdlet : AmazonEventBridgeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ArchiveName
         /// <summary>
@@ -99,6 +111,23 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public System.String EventSourceArn { get; set; }
         #endregion
         
+        #region Parameter KmsKeyIdentifier
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of the KMS customer managed key for EventBridge to use, if you choose
+        /// to use a customer managed key to encrypt this archive. The identifier can be the key
+        /// Amazon Resource Name (ARN), KeyId, key alias, or key alias ARN.</para><para>If you do not specify a customer managed key identifier, EventBridge uses an Amazon
+        /// Web Services owned key to encrypt the archive.</para><para>For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/viewing-keys.html">Identify
+        /// and view keys</a> in the <i>Key Management Service Developer Guide</i>. </para><important><para>If you have specified that EventBridge use a customer managed key for encrypting the
+        /// source event bus, we strongly recommend you also specify a customer managed key for
+        /// any archives for the event bus as well. </para><para>For more information, see <a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/encryption-archives.html">Encrypting
+        /// archives</a> in the <i>Amazon EventBridge User Guide</i>.</para></important>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String KmsKeyIdentifier { get; set; }
+        #endregion
+        
         #region Parameter RetentionDay
         /// <summary>
         /// <para>
@@ -122,16 +151,6 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ArchiveName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ArchiveName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ArchiveName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -142,9 +161,13 @@ namespace Amazon.PowerShell.Cmdlets.EVB
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ArchiveName), MyInvocation.BoundParameters);
@@ -158,21 +181,11 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EventBridge.Model.CreateArchiveResponse, NewEVBArchiveCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ArchiveName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ArchiveName = this.ArchiveName;
             #if MODULAR
             if (this.ArchiveName == null && ParameterWasBound(nameof(this.ArchiveName)))
@@ -189,6 +202,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
                 WriteWarning("You are passing $null as a value for parameter EventSourceArn which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.KmsKeyIdentifier = this.KmsKeyIdentifier;
             context.RetentionDay = this.RetentionDay;
             
             // allow further manipulation of loaded context prior to processing
@@ -221,6 +235,10 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             if (cmdletContext.EventSourceArn != null)
             {
                 request.EventSourceArn = cmdletContext.EventSourceArn;
+            }
+            if (cmdletContext.KmsKeyIdentifier != null)
+            {
+                request.KmsKeyIdentifier = cmdletContext.KmsKeyIdentifier;
             }
             if (cmdletContext.RetentionDay != null)
             {
@@ -264,13 +282,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EventBridge", "CreateArchive");
             try
             {
-                #if DESKTOP
-                return client.CreateArchive(request);
-                #elif CORECLR
-                return client.CreateArchiveAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateArchiveAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -291,6 +303,7 @@ namespace Amazon.PowerShell.Cmdlets.EVB
             public System.String Description { get; set; }
             public System.String EventPattern { get; set; }
             public System.String EventSourceArn { get; set; }
+            public System.String KmsKeyIdentifier { get; set; }
             public System.Int32? RetentionDay { get; set; }
             public System.Func<Amazon.EventBridge.Model.CreateArchiveResponse, NewEVBArchiveCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MediaTailor;
 using Amazon.MediaTailor.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EMT
 {
     /// <summary>
@@ -35,12 +37,23 @@ namespace Amazon.PowerShell.Cmdlets.EMT
     [AWSCmdlet("Calls the AWS Elemental MediaTailor GetChannelSchedule API operation.", Operation = new[] {"GetChannelSchedule"}, SelectReturnType = typeof(Amazon.MediaTailor.Model.GetChannelScheduleResponse))]
     [AWSCmdletOutput("Amazon.MediaTailor.Model.ScheduleEntry or Amazon.MediaTailor.Model.GetChannelScheduleResponse",
         "This cmdlet returns a collection of Amazon.MediaTailor.Model.ScheduleEntry objects.",
-        "The service call response (type Amazon.MediaTailor.Model.GetChannelScheduleResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.MediaTailor.Model.GetChannelScheduleResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEMTChannelScheduleCmdlet : AmazonMediaTailorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Audience
+        /// <summary>
+        /// <para>
+        /// <para>The single audience for GetChannelScheduleRequest.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Audience { get; set; }
+        #endregion
         
         #region Parameter ChannelName
         /// <summary>
@@ -93,7 +106,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,16 +124,6 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public string Select { get; set; } = "Items";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ChannelName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ChannelName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ChannelName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -131,9 +134,13 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -141,21 +148,12 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MediaTailor.Model.GetChannelScheduleResponse, GetEMTChannelScheduleCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ChannelName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.Audience = this.Audience;
             context.ChannelName = this.ChannelName;
             #if MODULAR
             if (this.ChannelName == null && ParameterWasBound(nameof(this.ChannelName)))
@@ -179,13 +177,15 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.MediaTailor.Model.GetChannelScheduleRequest();
             
+            if (cmdletContext.Audience != null)
+            {
+                request.Audience = cmdletContext.Audience;
+            }
             if (cmdletContext.ChannelName != null)
             {
                 request.ChannelName = cmdletContext.ChannelName;
@@ -260,13 +260,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Elemental MediaTailor", "GetChannelSchedule");
             try
             {
-                #if DESKTOP
-                return client.GetChannelSchedule(request);
-                #elif CORECLR
-                return client.GetChannelScheduleAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetChannelScheduleAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -283,6 +277,7 @@ namespace Amazon.PowerShell.Cmdlets.EMT
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String Audience { get; set; }
             public System.String ChannelName { get; set; }
             public System.String DurationMinute { get; set; }
             public System.Int32? MaxResult { get; set; }

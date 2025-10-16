@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.RedshiftDataAPIService;
 using Amazon.RedshiftDataAPIService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RSD
 {
     /// <summary>
@@ -68,12 +70,13 @@ namespace Amazon.PowerShell.Cmdlets.RSD
     [AWSCmdlet("Calls the Redshift Data API Service ExecuteStatement API operation.", Operation = new[] {"ExecuteStatement"}, SelectReturnType = typeof(Amazon.RedshiftDataAPIService.Model.ExecuteStatementResponse))]
     [AWSCmdletOutput("System.String or Amazon.RedshiftDataAPIService.Model.ExecuteStatementResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.RedshiftDataAPIService.Model.ExecuteStatementResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.RedshiftDataAPIService.Model.ExecuteStatementResponse) can be returned by specifying '-Select *'."
     )]
     public partial class SendRSDStatementCmdlet : AmazonRedshiftDataAPIServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClusterIdentifier
         /// <summary>
@@ -93,14 +96,7 @@ namespace Amazon.PowerShell.Cmdlets.RSD
         /// Secrets Manager or temporary credentials. </para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Database { get; set; }
         #endregion
         
@@ -118,12 +114,28 @@ namespace Amazon.PowerShell.Cmdlets.RSD
         #region Parameter Parameter
         /// <summary>
         /// <para>
-        /// <para>The parameters for the SQL statement.</para>
+        /// <para>The parameters for the SQL statement.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Parameters")]
         public Amazon.RedshiftDataAPIService.Model.SqlParameter[] Parameter { get; set; }
+        #endregion
+        
+        #region Parameter ResultFormat
+        /// <summary>
+        /// <para>
+        /// <para>The data format of the result of the SQL statement. If no format is specified, the
+        /// default is JSON.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.RedshiftDataAPIService.ResultFormatString")]
+        public Amazon.RedshiftDataAPIService.ResultFormatString ResultFormat { get; set; }
         #endregion
         
         #region Parameter SecretArn
@@ -135,6 +147,29 @@ namespace Amazon.PowerShell.Cmdlets.RSD
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String SecretArn { get; set; }
+        #endregion
+        
+        #region Parameter SessionId
+        /// <summary>
+        /// <para>
+        /// <para>The session identifier of the query.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SessionId { get; set; }
+        #endregion
+        
+        #region Parameter SessionKeepAliveSecond
+        /// <summary>
+        /// <para>
+        /// <para>The number of seconds to keep the session alive after the query finishes. The maximum
+        /// time a session can keep alive is 24 hours. After 24 hours, the session is forced closed
+        /// and the query is terminated.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("SessionKeepAliveSeconds")]
+        public System.Int32? SessionKeepAliveSecond { get; set; }
         #endregion
         
         #region Parameter Sql
@@ -220,9 +255,13 @@ namespace Amazon.PowerShell.Cmdlets.RSD
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ClusterIdentifier), MyInvocation.BoundParameters);
@@ -244,18 +283,15 @@ namespace Amazon.PowerShell.Cmdlets.RSD
             context.ClientToken = this.ClientToken;
             context.ClusterIdentifier = this.ClusterIdentifier;
             context.Database = this.Database;
-            #if MODULAR
-            if (this.Database == null && ParameterWasBound(nameof(this.Database)))
-            {
-                WriteWarning("You are passing $null as a value for parameter Database which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.DbUser = this.DbUser;
             if (this.Parameter != null)
             {
                 context.Parameter = new List<Amazon.RedshiftDataAPIService.Model.SqlParameter>(this.Parameter);
             }
+            context.ResultFormat = this.ResultFormat;
             context.SecretArn = this.SecretArn;
+            context.SessionId = this.SessionId;
+            context.SessionKeepAliveSecond = this.SessionKeepAliveSecond;
             context.Sql = this.Sql;
             #if MODULAR
             if (this.Sql == null && ParameterWasBound(nameof(this.Sql)))
@@ -302,9 +338,21 @@ namespace Amazon.PowerShell.Cmdlets.RSD
             {
                 request.Parameters = cmdletContext.Parameter;
             }
+            if (cmdletContext.ResultFormat != null)
+            {
+                request.ResultFormat = cmdletContext.ResultFormat;
+            }
             if (cmdletContext.SecretArn != null)
             {
                 request.SecretArn = cmdletContext.SecretArn;
+            }
+            if (cmdletContext.SessionId != null)
+            {
+                request.SessionId = cmdletContext.SessionId;
+            }
+            if (cmdletContext.SessionKeepAliveSecond != null)
+            {
+                request.SessionKeepAliveSeconds = cmdletContext.SessionKeepAliveSecond.Value;
             }
             if (cmdletContext.Sql != null)
             {
@@ -360,13 +408,7 @@ namespace Amazon.PowerShell.Cmdlets.RSD
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Redshift Data API Service", "ExecuteStatement");
             try
             {
-                #if DESKTOP
-                return client.ExecuteStatement(request);
-                #elif CORECLR
-                return client.ExecuteStatementAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ExecuteStatementAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -388,7 +430,10 @@ namespace Amazon.PowerShell.Cmdlets.RSD
             public System.String Database { get; set; }
             public System.String DbUser { get; set; }
             public List<Amazon.RedshiftDataAPIService.Model.SqlParameter> Parameter { get; set; }
+            public Amazon.RedshiftDataAPIService.ResultFormatString ResultFormat { get; set; }
             public System.String SecretArn { get; set; }
+            public System.String SessionId { get; set; }
+            public System.Int32? SessionKeepAliveSecond { get; set; }
             public System.String Sql { get; set; }
             public System.String StatementName { get; set; }
             public System.Boolean? WithEvent { get; set; }

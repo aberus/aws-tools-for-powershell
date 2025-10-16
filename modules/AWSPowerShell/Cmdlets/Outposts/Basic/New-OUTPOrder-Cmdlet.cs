@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Outposts;
 using Amazon.Outposts.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.OUTP
 {
     /// <summary>
@@ -35,27 +37,25 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
     [AWSCmdlet("Calls the AWS Outposts CreateOrder API operation.", Operation = new[] {"CreateOrder"}, SelectReturnType = typeof(Amazon.Outposts.Model.CreateOrderResponse))]
     [AWSCmdletOutput("Amazon.Outposts.Model.Order or Amazon.Outposts.Model.CreateOrderResponse",
         "This cmdlet returns an Amazon.Outposts.Model.Order object.",
-        "The service call response (type Amazon.Outposts.Model.CreateOrderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Outposts.Model.CreateOrderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewOUTPOrderCmdlet : AmazonOutpostsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter LineItem
         /// <summary>
         /// <para>
-        /// <para>The line items that make up the order.</para>
+        /// <para>The line items that make up the order.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyCollection]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [Alias("LineItems")]
         public Amazon.Outposts.Model.LineItemRequest[] LineItem { get; set; }
         #endregion
@@ -116,16 +116,6 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         public string Select { get; set; } = "Order";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the OutpostIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^OutpostIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^OutpostIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.OutpostIdentifier), MyInvocation.BoundParameters);
@@ -152,31 +146,15 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Outposts.Model.CreateOrderResponse, NewOUTPOrderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.OutpostIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.LineItem != null)
             {
                 context.LineItem = new List<Amazon.Outposts.Model.LineItemRequest>(this.LineItem);
             }
-            #if MODULAR
-            if (this.LineItem == null && ParameterWasBound(nameof(this.LineItem)))
-            {
-                WriteWarning("You are passing $null as a value for parameter LineItem which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.OutpostIdentifier = this.OutpostIdentifier;
             #if MODULAR
             if (this.OutpostIdentifier == null && ParameterWasBound(nameof(this.OutpostIdentifier)))
@@ -262,13 +240,7 @@ namespace Amazon.PowerShell.Cmdlets.OUTP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Outposts", "CreateOrder");
             try
             {
-                #if DESKTOP
-                return client.CreateOrder(request);
-                #elif CORECLR
-                return client.CreateOrderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateOrderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

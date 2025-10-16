@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,27 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppIntegrationsService;
 using Amazon.AppIntegrationsService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AIS
 {
     /// <summary>
-    /// This API is in preview release and subject to change.
-    /// 
-    ///  
-    /// <para>
     /// Creates and persists an Application resource.
-    /// </para>
     /// </summary>
     [Cmdlet("New", "AISApplication", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.AppIntegrationsService.Model.CreateApplicationResponse")]
     [AWSCmdlet("Calls the Amazon AppIntegrations Service CreateApplication API operation.", Operation = new[] {"CreateApplication"}, SelectReturnType = typeof(Amazon.AppIntegrationsService.Model.CreateApplicationResponse))]
     [AWSCmdletOutput("Amazon.AppIntegrationsService.Model.CreateApplicationResponse",
-        "This cmdlet returns an Amazon.AppIntegrationsService.Model.CreateApplicationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.AppIntegrationsService.Model.CreateApplicationResponse object containing multiple properties."
     )]
     public partial class NewAISApplicationCmdlet : AmazonAppIntegrationsServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ExternalUrlConfig_AccessUrl
         /// <summary>
@@ -57,10 +55,28 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         public System.String ExternalUrlConfig_AccessUrl { get; set; }
         #endregion
         
+        #region Parameter IframeConfig_Allow
+        /// <summary>
+        /// <para>
+        /// <para>The list of features that are allowed in the iframe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] IframeConfig_Allow { get; set; }
+        #endregion
+        
         #region Parameter ExternalUrlConfig_ApprovedOrigin
         /// <summary>
         /// <para>
-        /// <para>Additional URLs to allow list if different than the access URL.</para>
+        /// <para>Additional URLs to allow list if different than the access URL.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -76,6 +92,26 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter InitializationTimeout
+        /// <summary>
+        /// <para>
+        /// <para>The maximum time in milliseconds allowed to establish a connection with the workspace.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Int32? InitializationTimeout { get; set; }
+        #endregion
+        
+        #region Parameter IsService
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether the application is a service.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? IsService { get; set; }
         #endregion
         
         #region Parameter Name
@@ -115,7 +151,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter Permission
         /// <summary>
         /// <para>
-        /// <para>The configuration of events or requests that the application has access to.</para>
+        /// <para>The configuration of events or requests that the application has access to.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,11 +163,42 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         public System.String[] Permission { get; set; }
         #endregion
         
+        #region Parameter IframeConfig_Sandbox
+        /// <summary>
+        /// <para>
+        /// <para>The list of sandbox attributes for the iframe.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String[] IframeConfig_Sandbox { get; set; }
+        #endregion
+        
+        #region Parameter ContactHandling_Scope
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether the application refreshes for each contact or refreshes only with
+        /// each new browser session.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ApplicationConfig_ContactHandling_Scope")]
+        [AWSConstantClassSource("Amazon.AppIntegrationsService.ContactHandlingScope")]
+        public Amazon.AppIntegrationsService.ContactHandlingScope ContactHandling_Scope { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>The tags used to organize, track, or control access for this resource. For example,
-        /// { "tags": {"key1":"value1", "key2":"value2"} }.</para>
+        /// { "tags": {"key1":"value1", "key2":"value2"} }.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -151,7 +222,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter Publication
         /// <summary>
         /// <para>
-        /// <para>The events that the application publishes.</para>
+        /// <para>The events that the application publishes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// <para>This parameter is deprecated.</para>
         /// </summary>
@@ -164,7 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         #region Parameter Subscription
         /// <summary>
         /// <para>
-        /// <para>The events that the application subscribes.</para>
+        /// <para>The events that the application subscribes.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// <para>This parameter is deprecated.</para>
         /// </summary>
@@ -195,9 +274,13 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -216,6 +299,7 @@ namespace Amazon.PowerShell.Cmdlets.AIS
                 context.Select = CreateSelectDelegate<Amazon.AppIntegrationsService.Model.CreateApplicationResponse, NewAISApplicationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.ContactHandling_Scope = this.ContactHandling_Scope;
             context.ExternalUrlConfig_AccessUrl = this.ExternalUrlConfig_AccessUrl;
             if (this.ExternalUrlConfig_ApprovedOrigin != null)
             {
@@ -223,6 +307,16 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             }
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
+            if (this.IframeConfig_Allow != null)
+            {
+                context.IframeConfig_Allow = new List<System.String>(this.IframeConfig_Allow);
+            }
+            if (this.IframeConfig_Sandbox != null)
+            {
+                context.IframeConfig_Sandbox = new List<System.String>(this.IframeConfig_Sandbox);
+            }
+            context.InitializationTimeout = this.InitializationTimeout;
+            context.IsService = this.IsService;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -278,6 +372,40 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             var request = new Amazon.AppIntegrationsService.Model.CreateApplicationRequest();
             
             
+             // populate ApplicationConfig
+            var requestApplicationConfigIsNull = true;
+            request.ApplicationConfig = new Amazon.AppIntegrationsService.Model.ApplicationConfig();
+            Amazon.AppIntegrationsService.Model.ContactHandling requestApplicationConfig_applicationConfig_ContactHandling = null;
+            
+             // populate ContactHandling
+            var requestApplicationConfig_applicationConfig_ContactHandlingIsNull = true;
+            requestApplicationConfig_applicationConfig_ContactHandling = new Amazon.AppIntegrationsService.Model.ContactHandling();
+            Amazon.AppIntegrationsService.ContactHandlingScope requestApplicationConfig_applicationConfig_ContactHandling_contactHandling_Scope = null;
+            if (cmdletContext.ContactHandling_Scope != null)
+            {
+                requestApplicationConfig_applicationConfig_ContactHandling_contactHandling_Scope = cmdletContext.ContactHandling_Scope;
+            }
+            if (requestApplicationConfig_applicationConfig_ContactHandling_contactHandling_Scope != null)
+            {
+                requestApplicationConfig_applicationConfig_ContactHandling.Scope = requestApplicationConfig_applicationConfig_ContactHandling_contactHandling_Scope;
+                requestApplicationConfig_applicationConfig_ContactHandlingIsNull = false;
+            }
+             // determine if requestApplicationConfig_applicationConfig_ContactHandling should be set to null
+            if (requestApplicationConfig_applicationConfig_ContactHandlingIsNull)
+            {
+                requestApplicationConfig_applicationConfig_ContactHandling = null;
+            }
+            if (requestApplicationConfig_applicationConfig_ContactHandling != null)
+            {
+                request.ApplicationConfig.ContactHandling = requestApplicationConfig_applicationConfig_ContactHandling;
+                requestApplicationConfigIsNull = false;
+            }
+             // determine if request.ApplicationConfig should be set to null
+            if (requestApplicationConfigIsNull)
+            {
+                request.ApplicationConfig = null;
+            }
+            
              // populate ApplicationSourceConfig
             var requestApplicationSourceConfigIsNull = true;
             request.ApplicationSourceConfig = new Amazon.AppIntegrationsService.Model.ApplicationSourceConfig();
@@ -328,6 +456,43 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             if (cmdletContext.Description != null)
             {
                 request.Description = cmdletContext.Description;
+            }
+            
+             // populate IframeConfig
+            var requestIframeConfigIsNull = true;
+            request.IframeConfig = new Amazon.AppIntegrationsService.Model.IframeConfig();
+            List<System.String> requestIframeConfig_iframeConfig_Allow = null;
+            if (cmdletContext.IframeConfig_Allow != null)
+            {
+                requestIframeConfig_iframeConfig_Allow = cmdletContext.IframeConfig_Allow;
+            }
+            if (requestIframeConfig_iframeConfig_Allow != null)
+            {
+                request.IframeConfig.Allow = requestIframeConfig_iframeConfig_Allow;
+                requestIframeConfigIsNull = false;
+            }
+            List<System.String> requestIframeConfig_iframeConfig_Sandbox = null;
+            if (cmdletContext.IframeConfig_Sandbox != null)
+            {
+                requestIframeConfig_iframeConfig_Sandbox = cmdletContext.IframeConfig_Sandbox;
+            }
+            if (requestIframeConfig_iframeConfig_Sandbox != null)
+            {
+                request.IframeConfig.Sandbox = requestIframeConfig_iframeConfig_Sandbox;
+                requestIframeConfigIsNull = false;
+            }
+             // determine if request.IframeConfig should be set to null
+            if (requestIframeConfigIsNull)
+            {
+                request.IframeConfig = null;
+            }
+            if (cmdletContext.InitializationTimeout != null)
+            {
+                request.InitializationTimeout = cmdletContext.InitializationTimeout.Value;
+            }
+            if (cmdletContext.IsService != null)
+            {
+                request.IsService = cmdletContext.IsService.Value;
             }
             if (cmdletContext.Name != null)
             {
@@ -395,13 +560,7 @@ namespace Amazon.PowerShell.Cmdlets.AIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon AppIntegrations Service", "CreateApplication");
             try
             {
-                #if DESKTOP
-                return client.CreateApplication(request);
-                #elif CORECLR
-                return client.CreateApplicationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateApplicationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -418,10 +577,15 @@ namespace Amazon.PowerShell.Cmdlets.AIS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.AppIntegrationsService.ContactHandlingScope ContactHandling_Scope { get; set; }
             public System.String ExternalUrlConfig_AccessUrl { get; set; }
             public List<System.String> ExternalUrlConfig_ApprovedOrigin { get; set; }
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
+            public List<System.String> IframeConfig_Allow { get; set; }
+            public List<System.String> IframeConfig_Sandbox { get; set; }
+            public System.Int32? InitializationTimeout { get; set; }
+            public System.Boolean? IsService { get; set; }
             public System.String Name { get; set; }
             public System.String Namespace { get; set; }
             public List<System.String> Permission { get; set; }

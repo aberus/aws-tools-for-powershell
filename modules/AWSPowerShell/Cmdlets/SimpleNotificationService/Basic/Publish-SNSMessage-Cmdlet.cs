@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleNotificationService;
 using Amazon.SimpleNotificationService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SNS
 {
     /// <summary>
@@ -57,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.SNS
     [AWSCmdlet("Calls the Amazon Simple Notification Service (SNS) Publish API operation.", Operation = new[] {"Publish"}, SelectReturnType = typeof(Amazon.SimpleNotificationService.Model.PublishResponse))]
     [AWSCmdletOutput("System.String or Amazon.SimpleNotificationService.Model.PublishResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SimpleNotificationService.Model.PublishResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SimpleNotificationService.Model.PublishResponse) can be returned by specifying '-Select *'."
     )]
     public partial class PublishSNSMessageCmdlet : AmazonSimpleNotificationServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Message
         /// <summary>
@@ -96,7 +99,11 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         #region Parameter MessageAttribute
         /// <summary>
         /// <para>
-        /// <para>Message attributes for Publish action.</para>
+        /// <para>Message attributes for Publish action.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,14 +114,24 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         #region Parameter MessageDeduplicationId
         /// <summary>
         /// <para>
-        /// <para>This parameter applies only to FIFO (first-in-first-out) topics. The <c>MessageDeduplicationId</c>
+        /// <ul><li><para>This parameter applies only to FIFO (first-in-first-out) topics. The <c>MessageDeduplicationId</c>
         /// can contain up to 128 alphanumeric characters <c>(a-z, A-Z, 0-9)</c> and punctuation
-        /// <c>(!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~)</c>.</para><para>Every message must have a unique <c>MessageDeduplicationId</c>, which is a token used
-        /// for deduplication of sent messages. If a message with a particular <c>MessageDeduplicationId</c>
-        /// is sent successfully, any message sent with the same <c>MessageDeduplicationId</c>
-        /// during the 5-minute deduplication interval is treated as a duplicate. </para><para>If the topic has <c>ContentBasedDeduplication</c> set, the system generates a <c>MessageDeduplicationId</c>
-        /// based on the contents of the message. Your <c>MessageDeduplicationId</c> overrides
-        /// the generated one.</para>
+        /// <c>(!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~)</c>.</para></li><li><para>Every message must have a unique <c>MessageDeduplicationId</c>, which is a token used
+        /// for deduplication of sent messages within the 5 minute minimum deduplication interval.</para></li><li><para>The scope of deduplication depends on the <c>FifoThroughputScope</c> attribute, when
+        /// set to <c>Topic</c> the message deduplication scope is across the entire topic, when
+        /// set to <c>MessageGroup</c> the message deduplication scope is within each individual
+        /// message group.</para></li><li><para>If a message with a particular <c>MessageDeduplicationId</c> is sent successfully,
+        /// subsequent messages within the deduplication scope and interval, with the same <c>MessageDeduplicationId</c>,
+        /// are accepted successfully but aren't delivered.</para></li><li><para>Every message must have a unique <c>MessageDeduplicationId</c>:</para><ul><li><para>You may provide a <c>MessageDeduplicationId</c> explicitly.</para></li><li><para>If you aren't able to provide a <c>MessageDeduplicationId</c> and you enable <c>ContentBasedDeduplication</c>
+        /// for your topic, Amazon SNS uses a SHA-256 hash to generate the <c>MessageDeduplicationId</c>
+        /// using the body of the message (but not the attributes of the message).</para></li><li><para>If you don't provide a <c>MessageDeduplicationId</c> and the topic doesn't have <c>ContentBasedDeduplication</c>
+        /// set, the action fails with an error.</para></li><li><para>If the topic has a <c>ContentBasedDeduplication</c> set, your <c>MessageDeduplicationId</c>
+        /// overrides the generated one. </para></li></ul></li><li><para>When <c>ContentBasedDeduplication</c> is in effect, messages with identical content
+        /// sent within the deduplication scope and interval are treated as duplicates and only
+        /// one copy of the message is delivered.</para></li><li><para>If you send one message with <c>ContentBasedDeduplication</c> enabled, and then another
+        /// message with a <c>MessageDeduplicationId</c> that is the same as the one generated
+        /// for the first <c>MessageDeduplicationId</c>, the two messages are treated as duplicates,
+        /// within the deduplication scope and interval, and only one copy of the message is delivered.</para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,12 +141,14 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         #region Parameter MessageGroupId
         /// <summary>
         /// <para>
-        /// <para>This parameter applies only to FIFO (first-in-first-out) topics. The <c>MessageGroupId</c>
-        /// can contain up to 128 alphanumeric characters <c>(a-z, A-Z, 0-9)</c> and punctuation
-        /// <c>(!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~)</c>.</para><para>The <c>MessageGroupId</c> is a tag that specifies that a message belongs to a specific
-        /// message group. Messages that belong to the same message group are processed in a FIFO
-        /// manner (however, messages in different message groups might be processed out of order).
-        /// Every message must include a <c>MessageGroupId</c>.</para>
+        /// <para>The <c>MessageGroupId</c> can contain up to 128 alphanumeric characters <c>(a-z, A-Z,
+        /// 0-9)</c> and punctuation <c>(!"#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~)</c>.</para><para> For FIFO topics: The <c>MessageGroupId</c> is a tag that specifies that a message
+        /// belongs to a specific message group. Messages that belong to the same message group
+        /// are processed in a FIFO manner (however, messages in different message groups might
+        /// be processed out of order). Every message must include a <c>MessageGroupId</c>. </para><para> For standard topics: The <c>MessageGroupId</c> is optional and is forwarded only
+        /// to Amazon SQS standard subscriptions to activate <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-fair-queues.html">fair
+        /// queues</a>. The <c>MessageGroupId</c> is not used for, or sent to, any other endpoint
+        /// types. When provided, the same validation rules apply as for FIFO topics. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,9 +186,8 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         /// <para>
         /// <para>Optional parameter to be used as the "Subject" line when the message is delivered
         /// to email endpoints. This field will also be included, if present, in the standard
-        /// JSON messages delivered to other endpoints.</para><para>Constraints: Subjects must be ASCII text that begins with a letter, number, or punctuation
-        /// mark; must not include line breaks or control characters; and must be less than 100
-        /// characters long.</para>
+        /// JSON messages delivered to other endpoints.</para><para>Constraints: Subjects must be UTF-8 text with no line breaks or control characters,
+        /// and less than 100 characters long.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 3, ValueFromPipelineByPropertyName = true)]
@@ -209,16 +227,6 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public string Select { get; set; } = "MessageId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the TopicArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^TopicArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^TopicArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -229,9 +237,13 @@ namespace Amazon.PowerShell.Cmdlets.SNS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.TopicArn), MyInvocation.BoundParameters);
@@ -245,21 +257,11 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleNotificationService.Model.PublishResponse, PublishSNSMessageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.TopicArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Message = this.Message;
             #if MODULAR
             if (this.Message == null && ParameterWasBound(nameof(this.Message)))
@@ -372,13 +374,7 @@ namespace Amazon.PowerShell.Cmdlets.SNS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Notification Service (SNS)", "Publish");
             try
             {
-                #if DESKTOP
-                return client.Publish(request);
-                #elif CORECLR
-                return client.PublishAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PublishAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

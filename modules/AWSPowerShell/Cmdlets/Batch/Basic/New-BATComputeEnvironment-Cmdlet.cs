@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Batch;
 using Amazon.Batch.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAT
 {
     /// <summary>
@@ -42,9 +44,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
     /// Fargate and Fargate Spot capacity in your managed compute environment. You can optionally
     /// set a maximum price so that Spot Instances only launch when the Spot Instance price
     /// is less than a specified percentage of the On-Demand price.
-    /// </para><note><para>
-    /// Multi-node parallel jobs aren't supported on Spot Instances.
-    /// </para></note><para>
+    /// </para><para>
     /// In an unmanaged compute environment, you can manage your own EC2 compute resources
     /// and have flexibility with how you configure your compute resources. For example, you
     /// can use custom AMIs. However, you must verify that each of your AMIs meet the Amazon
@@ -56,69 +56,22 @@ namespace Amazon.PowerShell.Cmdlets.BAT
     /// an Amazon ECS container instance</a> in the <i>Amazon Elastic Container Service Developer
     /// Guide</i>.
     /// </para><note><para>
-    /// To create a compute environment that uses EKS resources, the caller must have permissions
-    /// to call <c>eks:DescribeCluster</c>.
-    /// </para></note><note><para>
     /// Batch doesn't automatically upgrade the AMIs in a compute environment after it's created.
-    /// For example, it also doesn't update the AMIs in your compute environment when a newer
-    /// version of the Amazon ECS optimized AMI is available. You're responsible for the management
-    /// of the guest operating system. This includes any updates and security patches. You're
-    /// also responsible for any additional application software or utilities that you install
-    /// on the compute resources. There are two ways to use a new AMI for your Batch jobs.
-    /// The original method is to complete these steps:
-    /// </para><ol><li><para>
-    /// Create a new compute environment with the new AMI.
-    /// </para></li><li><para>
-    /// Add the compute environment to an existing job queue.
-    /// </para></li><li><para>
-    /// Remove the earlier compute environment from your job queue.
-    /// </para></li><li><para>
-    /// Delete the earlier compute environment.
-    /// </para></li></ol><para>
-    /// In April 2022, Batch added enhanced support for updating compute environments. For
-    /// more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/updating-compute-environments.html">Updating
-    /// compute environments</a>. To use the enhanced updating of compute environments to
-    /// update AMIs, follow these rules:
-    /// </para><ul><li><para>
-    /// Either don't set the service role (<c>serviceRole</c>) parameter or set it to the
-    /// <b>AWSBatchServiceRole</b> service-linked role.
-    /// </para></li><li><para>
-    /// Set the allocation strategy (<c>allocationStrategy</c>) parameter to <c>BEST_FIT_PROGRESSIVE</c>,
-    /// <c>SPOT_CAPACITY_OPTIMIZED</c>, or <c>SPOT_PRICE_CAPACITY_OPTIMIZED</c>.
-    /// </para></li><li><para>
-    /// Set the update to latest image version (<c>updateToLatestImageVersion</c>) parameter
-    /// to <c>true</c>. The <c>updateToLatestImageVersion</c> parameter is used when you update
-    /// a compute environment. This parameter is ignored when you create a compute environment.
-    /// </para></li><li><para>
-    /// Don't specify an AMI ID in <c>imageId</c>, <c>imageIdOverride</c> (in <a href="https://docs.aws.amazon.com/batch/latest/APIReference/API_Ec2Configuration.html"><c>ec2Configuration</c></a>), or in the launch template (<c>launchTemplate</c>).
-    /// In that case, Batch selects the latest Amazon ECS optimized AMI that's supported by
-    /// Batch at the time the infrastructure update is initiated. Alternatively, you can specify
-    /// the AMI ID in the <c>imageId</c> or <c>imageIdOverride</c> parameters, or the launch
-    /// template identified by the <c>LaunchTemplate</c> properties. Changing any of these
-    /// properties starts an infrastructure update. If the AMI ID is specified in the launch
-    /// template, it can't be replaced by specifying an AMI ID in either the <c>imageId</c>
-    /// or <c>imageIdOverride</c> parameters. It can only be replaced by specifying a different
-    /// launch template, or if the launch template version is set to <c>$Default</c> or <c>$Latest</c>,
-    /// by setting either a new default version for the launch template (if <c>$Default</c>)
-    /// or by adding a new version to the launch template (if <c>$Latest</c>).
-    /// </para></li></ul><para>
-    /// If these rules are followed, any update that starts an infrastructure update causes
-    /// the AMI ID to be re-selected. If the <c>version</c> setting in the launch template
-    /// (<c>launchTemplate</c>) is set to <c>$Latest</c> or <c>$Default</c>, the latest or
-    /// default version of the launch template is evaluated up at the time of the infrastructure
-    /// update, even if the <c>launchTemplate</c> wasn't updated.
+    /// For more information on how to update a compute environment's AMI, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/updating-compute-environments.html">Updating
+    /// compute environments</a> in the <i>Batch User Guide</i>.
     /// </para></note>
     /// </summary>
     [Cmdlet("New", "BATComputeEnvironment", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.Batch.Model.CreateComputeEnvironmentResponse")]
     [AWSCmdlet("Calls the AWS Batch CreateComputeEnvironment API operation.", Operation = new[] {"CreateComputeEnvironment"}, SelectReturnType = typeof(Amazon.Batch.Model.CreateComputeEnvironmentResponse))]
     [AWSCmdletOutput("Amazon.Batch.Model.CreateComputeEnvironmentResponse",
-        "This cmdlet returns an Amazon.Batch.Model.CreateComputeEnvironmentResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Batch.Model.CreateComputeEnvironmentResponse object containing multiple properties."
     )]
     public partial class NewBATComputeEnvironmentCmdlet : AmazonBatchClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ComputeResources_AllocationStrategy
         /// <summary>
@@ -147,9 +100,10 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// to select the Spot Instance pools that are the least likely to be interrupted and
         /// have the lowest possible price. This allocation strategy is only available for Spot
         /// Instance compute resources.</para></dd></dl><para>With <c>BEST_FIT_PROGRESSIVE</c>,<c>SPOT_CAPACITY_OPTIMIZED</c> and <c>SPOT_PRICE_CAPACITY_OPTIMIZED</c>
-        /// strategies using On-Demand or Spot Instances, and the <c>BEST_FIT</c> strategy using
-        /// Spot Instances, Batch might need to exceed <c>maxvCpus</c> to meet your capacity requirements.
-        /// In this event, Batch never exceeds <c>maxvCpus</c> by more than a single instance.</para>
+        /// (recommended) strategies using On-Demand or Spot Instances, and the <c>BEST_FIT</c>
+        /// strategy using Spot Instances, Batch might need to exceed <c>maxvCpus</c> to meet
+        /// your capacity requirements. In this event, Batch never exceeds <c>maxvCpus</c> by
+        /// more than a single instance.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -192,6 +146,16 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public System.String ComputeEnvironmentName { get; set; }
         #endregion
         
+        #region Parameter Context
+        /// <summary>
+        /// <para>
+        /// <para>Reserved.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String Context { get; set; }
+        #endregion
+        
         #region Parameter ComputeResources_DesiredvCpu
         /// <summary>
         /// <para>
@@ -208,10 +172,14 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter ComputeResources_Ec2Configuration
         /// <summary>
         /// <para>
-        /// <para>Provides information that's used to select Amazon Machine Images (AMIs) for EC2 instances
-        /// in the compute environment. If <c>Ec2Configuration</c> isn't specified, the default
-        /// is <c>ECS_AL2</c>.</para><para>One or two values can be provided.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
-        /// specify it.</para></note>
+        /// <para>Provides information that's used to select Amazon Machine Images (AMIs) for Amazon
+        /// EC2 instances in the compute environment. If <c>Ec2Configuration</c> isn't specified,
+        /// the default is <c>ECS_AL2</c>.</para><para>One or two values can be provided.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
+        /// specify it.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -244,8 +212,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The Amazon ECS instance profile applied to Amazon EC2 instances in a compute environment.
-        /// You can specify the short name or full Amazon Resource Name (ARN) of an instance profile.
-        /// For example, <c><i>ecsInstanceRole</i></c> or <c>arn:aws:iam::<i>&lt;aws_account_id&gt;</i>:instance-profile/<i>ecsInstanceRole</i></c>. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/instance_IAM_role.html">Amazon
+        /// This parameter is required for Amazon EC2 instances types. You can specify the short
+        /// name or full Amazon Resource Name (ARN) of an instance profile. For example, <c><i>ecsInstanceRole</i></c> or <c>arn:aws:iam::<i>&lt;aws_account_id&gt;</i>:instance-profile/<i>ecsInstanceRole</i></c>. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/instance_IAM_role.html">Amazon
         /// ECS instance role</a> in the <i>Batch User Guide</i>.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
         /// specify it.</para></note>
         /// </para>
@@ -259,14 +227,37 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <para>
         /// <para>The instances types that can be launched. You can specify instance families to launch
         /// any instance type within those families (for example, <c>c5</c> or <c>p3</c>), or
-        /// you can specify specific sizes within a family (such as <c>c5.8xlarge</c>). You can
-        /// also choose <c>optimal</c> to select instance types (from the C4, M4, and R4 instance
-        /// families) that match the demand of your job queues.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
+        /// you can specify specific sizes within a family (such as <c>c5.8xlarge</c>). </para><para>Batch can select the instance type for you if you choose one of the following:</para><ul><li><para><c>optimal</c> to select instance types (from the <c>c4</c>, <c>m4</c>, <c>r4</c>,
+        /// <c>c5</c>, <c>m5</c>, and <c>r5</c> instance families) that match the demand of your
+        /// job queues. </para></li><li><para><c>default_x86_64</c> to choose x86 based instance types (from the <c>m6i</c>, <c>c6i</c>,
+        /// <c>r6i</c>, and <c>c7i</c> instance families) that matches the resource demands of
+        /// the job queue.</para></li><li><para><c>default_arm64</c> to choose x86 based instance types (from the <c>m6g</c>, <c>c6g</c>,
+        /// <c>r6g</c>, and <c>c7g</c> instance families) that matches the resource demands of
+        /// the job queue.</para></li></ul><note><para>Starting on 11/01/2025 the behavior of <c>optimal</c> is going to be changed to match
+        /// <c>default_x86_64</c>. During the change your instance families could be updated to
+        /// a newer generation. You do not need to perform any actions for the upgrade to happen.
+        /// For more information about change, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/optimal-default-instance-troubleshooting.html">Optimal
+        /// instance type configuration to receive automatic instance family updates</a>.</para></note><note><para>Instance family availability varies by Amazon Web Services Region. For example, some
+        /// Amazon Web Services Regions may not have any fourth generation instance families but
+        /// have fifth and sixth generation instance families.</para><para>When using <c>default_x86_64</c> or <c>default_arm64</c> instance bundles, Batch selects
+        /// instance families based on a balance of cost-effectiveness and performance. While
+        /// newer generation instances often provide better price-performance, Batch may choose
+        /// an earlier generation instance family if it provides the optimal combination of availability,
+        /// cost, and performance for your workload. For example, in an Amazon Web Services Region
+        /// where both c6i and c7i instances are available, Batch might select c6i instances if
+        /// they offer better cost-effectiveness for your specific job requirements. For more
+        /// information on Batch instance types and Amazon Web Services Region availability, see
+        /// <a href="https://docs.aws.amazon.com/batch/latest/userguide/instance-type-compute-table.html">Instance
+        /// type compute table</a> in the <i>Batch User Guide</i>.</para><para>Batch periodically updates your instances in default bundles to newer, more cost-effective
+        /// options. Updates happen automatically without requiring any action from you. Your
+        /// workloads continue running during updates with no interruption </para></note><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
         /// specify it.</para></note><note><para>When you create a compute environment, the instance types that you select for the
         /// compute environment must share the same architecture. For example, you can't mix x86
-        /// and ARM instances in the same compute environment.</para></note><note><para>Currently, <c>optimal</c> uses instance types from the C4, M4, and R4 instance families.
-        /// In Regions that don't have instance types from those instance families, instance types
-        /// from the C5, M5, and R5 instance families are used.</para></note>
+        /// and ARM instances in the same compute environment.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -313,12 +304,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter ComputeResources_MaxvCpu
         /// <summary>
         /// <para>
-        /// <para>The maximum number of vCPUs that a compute environment can support.</para><note><para>With <c>BEST_FIT_PROGRESSIVE</c>, <c>SPOT_CAPACITY_OPTIMIZED</c> and <c>SPOT_PRICE_CAPACITY_OPTIMIZED</c>
-        /// allocation strategies using On-Demand or Spot Instances, and the <c>BEST_FIT</c> strategy
-        /// using Spot Instances, Batch might need to exceed <c>maxvCpus</c> to meet your capacity
-        /// requirements. In this event, Batch never exceeds <c>maxvCpus</c> by more than a single
-        /// instance. For example, no more than a single instance from among those specified in
-        /// your compute environment is allocated.</para></note>
+        /// <para>The maximum number of vCPUs that a compute environment can support.</para><note><para>With <c>BEST_FIT_PROGRESSIVE</c>,<c>SPOT_CAPACITY_OPTIMIZED</c> and <c>SPOT_PRICE_CAPACITY_OPTIMIZED</c>
+        /// (recommended) strategies using On-Demand or Spot Instances, and the <c>BEST_FIT</c>
+        /// strategy using Spot Instances, Batch might need to exceed <c>maxvCpus</c> to meet
+        /// your capacity requirements. In this event, Batch never exceeds <c>maxvCpus</c> by
+        /// more than a single instance.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -337,6 +327,26 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("ComputeResources_MinvCpus")]
         public System.Int32? ComputeResources_MinvCpu { get; set; }
+        #endregion
+        
+        #region Parameter LaunchTemplate_Override
+        /// <summary>
+        /// <para>
+        /// <para>A launch template to use in place of the default launch template. You must specify
+        /// either the launch template ID or launch template name in the request, but not both.</para><para>You can specify up to ten (10) launch template overrides that are associated to unique
+        /// instance types or families for each compute environment.</para><note><para>To unset all override templates for a compute environment, you can pass an empty array
+        /// to the <a href="https://docs.aws.amazon.com/batch/latest/APIReference/API_UpdateComputeEnvironment.html">UpdateComputeEnvironment.overrides</a>
+        /// parameter, or not include the <c>overrides</c> parameter when submitting the <c>UpdateComputeEnvironment</c>
+        /// API operation.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ComputeResources_LaunchTemplate_Overrides")]
+        public Amazon.Batch.Model.LaunchTemplateSpecificationOverride[] LaunchTemplate_Override { get; set; }
         #endregion
         
         #region Parameter ComputeResources_PlacementGroup
@@ -364,7 +374,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// required for jobs that are running on Fargate resources and must contain at least
         /// one security group. Fargate doesn't support launch templates. If security groups are
         /// specified using both <c>securityGroupIds</c> and <c>launchTemplate</c>, the values
-        /// in <c>securityGroupIds</c> are used.</para>
+        /// in <c>securityGroupIds</c> are used.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -449,7 +463,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// EKS and Amazon Web Services Local Zones</a> in the <i>Amazon EKS User Guide</i> and
         /// <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-regions-zones.html#clusters-local-zones">
         /// Amazon ECS clusters in Local Zones, Wavelength Zones, and Amazon Web Services Outposts</a>
-        /// in the <i>Amazon ECS Developer Guide</i>.</para><para>Batch on Fargate doesn't currently support Local Zones.</para></note>
+        /// in the <i>Amazon ECS Developer Guide</i>.</para><para>Batch on Fargate doesn't currently support Local Zones.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -460,15 +478,19 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         #region Parameter ComputeResources_Tag
         /// <summary>
         /// <para>
-        /// <para>Key-value pair tags to be applied to EC2 resources that are launched in the compute
-        /// environment. For Batch, these take the form of <c>"String1": "String2"</c>, where
-        /// <c>String1</c> is the tag key and <c>String2</c> is the tag value-for example, <c>{
-        /// "Name": "Batch Instance - C4OnDemand" }</c>. This is helpful for recognizing your
-        /// Batch instances in the Amazon EC2 console. Updating these tags requires an infrastructure
+        /// <para>Key-value pair tags to be applied to Amazon EC2 resources that are launched in the
+        /// compute environment. For Batch, these take the form of <c>"String1": "String2"</c>,
+        /// where <c>String1</c> is the tag key and <c>String2</c> is the tag value (for example,
+        /// <c>{ "Name": "Batch Instance - C4OnDemand" }</c>). This is helpful for recognizing
+        /// your Batch instances in the Amazon EC2 console. Updating these tags requires an infrastructure
         /// update to the compute environment. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/updating-compute-environments.html">Updating
         /// compute environments</a> in the <i>Batch User Guide</i>. These tags aren't seen when
         /// using the Batch <c>ListTagsForResource</c> API operation.</para><note><para>This parameter isn't applicable to jobs that are running on Fargate resources. Don't
-        /// specify it.</para></note>
+        /// specify it.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -484,7 +506,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging
         /// Amazon Web Services Resources</a> in <i>Amazon Web Services General Reference</i>.</para><para>These tags can be updated or removed using the <a href="https://docs.aws.amazon.com/batch/latest/APIReference/API_TagResource.html">TagResource</a>
         /// and <a href="https://docs.aws.amazon.com/batch/latest/APIReference/API_UntagResource.html">UntagResource</a>
-        /// API operations. These tags don't propagate to the underlying compute resources.</para>
+        /// API operations. These tags don't propagate to the underlying compute resources.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -499,7 +525,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/compute_environments.html">Compute
         /// environments</a> in the <i>Batch User Guide</i>.</para><para> If you choose <c>SPOT</c>, you must also specify an Amazon EC2 Spot Fleet role with
         /// the <c>spotIamFleetRole</c> parameter. For more information, see <a href="https://docs.aws.amazon.com/batch/latest/userguide/spot_fleet_IAM_role.html">Amazon
-        /// EC2 spot fleet role</a> in the <i>Batch User Guide</i>.</para>
+        /// EC2 spot fleet role</a> in the <i>Batch User Guide</i>.</para><note><para>Multi-node parallel jobs aren't supported on Spot Instances.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -530,8 +556,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         /// <summary>
         /// <para>
         /// <para>The maximum number of vCPUs for an unmanaged compute environment. This parameter is
-        /// only used for fair share scheduling to reserve vCPU capacity for new share identifiers.
-        /// If this parameter isn't provided for a fair share job queue, no vCPU capacity is reserved.</para><note><para>This parameter is only supported when the <c>type</c> parameter is set to <c>UNMANAGED</c>.</para></note>
+        /// only used for fair-share scheduling to reserve vCPU capacity for new share identifiers.
+        /// If this parameter isn't provided for a fair-share job queue, no vCPU capacity is reserved.</para><note><para>This parameter is only supported when the <c>type</c> parameter is set to <c>UNMANAGED</c>.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -539,20 +565,35 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public System.Int32? UnmanagedvCpu { get; set; }
         #endregion
         
+        #region Parameter LaunchTemplate_UserdataType
+        /// <summary>
+        /// <para>
+        /// <para>The EKS node initialization process to use. You only need to specify this value if
+        /// you are using a custom AMI. The default value is <c>EKS_BOOTSTRAP_SH</c>. If <i>imageType</i>
+        /// is a custom AMI based on EKS_AL2023 or EKS_AL2023_NVIDIA then you must choose <c>EKS_NODEADM</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ComputeResources_LaunchTemplate_UserdataType")]
+        [AWSConstantClassSource("Amazon.Batch.UserdataType")]
+        public Amazon.Batch.UserdataType LaunchTemplate_UserdataType { get; set; }
+        #endregion
+        
         #region Parameter LaunchTemplate_Version
         /// <summary>
         /// <para>
-        /// <para>The version number of the launch template, <c>$Latest</c>, or <c>$Default</c>.</para><para>If the value is <c>$Latest</c>, the latest version of the launch template is used.
-        /// If the value is <c>$Default</c>, the default version of the launch template is used.</para><important><para>If the AMI ID that's used in a compute environment is from the launch template, the
+        /// <para>The version number of the launch template, <c>$Default</c>, or <c>$Latest</c>.</para><para>If the value is <c>$Default</c>, the default version of the launch template is used.
+        /// If the value is <c>$Latest</c>, the latest version of the launch template is used.
+        /// </para><important><para>If the AMI ID that's used in a compute environment is from the launch template, the
         /// AMI isn't changed when the compute environment is updated. It's only changed if the
         /// <c>updateToLatestImageVersion</c> parameter for the compute environment is set to
-        /// <c>true</c>. During an infrastructure update, if either <c>$Latest</c> or <c>$Default</c>
+        /// <c>true</c>. During an infrastructure update, if either <c>$Default</c> or <c>$Latest</c>
         /// is specified, Batch re-evaluates the launch template version, and it might use a different
         /// version of the launch template. This is the case even if the launch template isn't
         /// specified in the update. When updating a compute environment, changing the launch
         /// template requires an infrastructure update of the compute environment. For more information,
         /// see <a href="https://docs.aws.amazon.com/batch/latest/userguide/updating-compute-environments.html">Updating
-        /// compute environments</a> in the <i>Batch User Guide</i>.</para></important><para>Default: <c>$Default</c>.</para>
+        /// compute environments</a> in the <i>Batch User Guide</i>.</para></important><para>Default: <c>$Default</c></para><para>Latest: <c>$Latest</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -602,9 +643,13 @@ namespace Amazon.PowerShell.Cmdlets.BAT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ComputeEnvironmentName), MyInvocation.BoundParameters);
@@ -648,6 +693,11 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             }
             context.LaunchTemplate_LaunchTemplateId = this.LaunchTemplate_LaunchTemplateId;
             context.LaunchTemplate_LaunchTemplateName = this.LaunchTemplate_LaunchTemplateName;
+            if (this.LaunchTemplate_Override != null)
+            {
+                context.LaunchTemplate_Override = new List<Amazon.Batch.Model.LaunchTemplateSpecificationOverride>(this.LaunchTemplate_Override);
+            }
+            context.LaunchTemplate_UserdataType = this.LaunchTemplate_UserdataType;
             context.LaunchTemplate_Version = this.LaunchTemplate_Version;
             context.ComputeResources_MaxvCpu = this.ComputeResources_MaxvCpu;
             context.ComputeResources_MinvCpu = this.ComputeResources_MinvCpu;
@@ -670,6 +720,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                 }
             }
             context.ComputeResources_Type = this.ComputeResources_Type;
+            context.Context = this.Context;
             context.EksConfiguration_EksClusterArn = this.EksConfiguration_EksClusterArn;
             context.EksConfiguration_KubernetesNamespace = this.EksConfiguration_KubernetesNamespace;
             context.ServiceRole = this.ServiceRole;
@@ -901,6 +952,26 @@ namespace Amazon.PowerShell.Cmdlets.BAT
                 requestComputeResources_computeResources_LaunchTemplate.LaunchTemplateName = requestComputeResources_computeResources_LaunchTemplate_launchTemplate_LaunchTemplateName;
                 requestComputeResources_computeResources_LaunchTemplateIsNull = false;
             }
+            List<Amazon.Batch.Model.LaunchTemplateSpecificationOverride> requestComputeResources_computeResources_LaunchTemplate_launchTemplate_Override = null;
+            if (cmdletContext.LaunchTemplate_Override != null)
+            {
+                requestComputeResources_computeResources_LaunchTemplate_launchTemplate_Override = cmdletContext.LaunchTemplate_Override;
+            }
+            if (requestComputeResources_computeResources_LaunchTemplate_launchTemplate_Override != null)
+            {
+                requestComputeResources_computeResources_LaunchTemplate.Overrides = requestComputeResources_computeResources_LaunchTemplate_launchTemplate_Override;
+                requestComputeResources_computeResources_LaunchTemplateIsNull = false;
+            }
+            Amazon.Batch.UserdataType requestComputeResources_computeResources_LaunchTemplate_launchTemplate_UserdataType = null;
+            if (cmdletContext.LaunchTemplate_UserdataType != null)
+            {
+                requestComputeResources_computeResources_LaunchTemplate_launchTemplate_UserdataType = cmdletContext.LaunchTemplate_UserdataType;
+            }
+            if (requestComputeResources_computeResources_LaunchTemplate_launchTemplate_UserdataType != null)
+            {
+                requestComputeResources_computeResources_LaunchTemplate.UserdataType = requestComputeResources_computeResources_LaunchTemplate_launchTemplate_UserdataType;
+                requestComputeResources_computeResources_LaunchTemplateIsNull = false;
+            }
             System.String requestComputeResources_computeResources_LaunchTemplate_launchTemplate_Version = null;
             if (cmdletContext.LaunchTemplate_Version != null)
             {
@@ -925,6 +996,10 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             if (requestComputeResourcesIsNull)
             {
                 request.ComputeResources = null;
+            }
+            if (cmdletContext.Context != null)
+            {
+                request.Context = cmdletContext.Context;
             }
             
              // populate EksConfiguration
@@ -1013,13 +1088,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Batch", "CreateComputeEnvironment");
             try
             {
-                #if DESKTOP
-                return client.CreateComputeEnvironment(request);
-                #elif CORECLR
-                return client.CreateComputeEnvironmentAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateComputeEnvironmentAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1048,6 +1117,8 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             public List<System.String> ComputeResources_InstanceType { get; set; }
             public System.String LaunchTemplate_LaunchTemplateId { get; set; }
             public System.String LaunchTemplate_LaunchTemplateName { get; set; }
+            public List<Amazon.Batch.Model.LaunchTemplateSpecificationOverride> LaunchTemplate_Override { get; set; }
+            public Amazon.Batch.UserdataType LaunchTemplate_UserdataType { get; set; }
             public System.String LaunchTemplate_Version { get; set; }
             public System.Int32? ComputeResources_MaxvCpu { get; set; }
             public System.Int32? ComputeResources_MinvCpu { get; set; }
@@ -1057,6 +1128,7 @@ namespace Amazon.PowerShell.Cmdlets.BAT
             public List<System.String> ComputeResources_Subnet { get; set; }
             public Dictionary<System.String, System.String> ComputeResources_Tag { get; set; }
             public Amazon.Batch.CRType ComputeResources_Type { get; set; }
+            public System.String Context { get; set; }
             public System.String EksConfiguration_EksClusterArn { get; set; }
             public System.String EksConfiguration_KubernetesNamespace { get; set; }
             public System.String ServiceRole { get; set; }

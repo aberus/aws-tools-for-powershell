@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,18 +22,25 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
-    /// <note><para>
-    /// This operation is not supported by directory buckets.
-    /// </para></note><para>
-    /// Creates an access point and associates it with the specified bucket. For more information,
+    /// Creates an access point and associates it to a specified bucket. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points.html">Managing
-    /// Data Access with Amazon S3 Access Points</a> in the <i>Amazon S3 User Guide</i>.
+    /// access to shared datasets with access points</a> or <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-directory-buckets.html">Managing
+    /// access to shared datasets in directory buckets with access points</a> in the <i>Amazon
+    /// S3 User Guide</i>.
+    /// 
+    ///  
+    /// <para>
+    /// To create an access point and attach it to a volume on an Amazon FSx file system,
+    /// see <a href="https://docs.aws.amazon.com/fsx/latest/APIReference/API_CreateAndAttachS3AccessPoint.html">CreateAndAttachS3AccessPoint</a>
+    /// in the <i>Amazon FSx API Reference</i>.
     /// </para><note><para>
     /// S3 on Outposts only supports VPC-style access points. 
     /// </para><para>
@@ -50,19 +57,24 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// section.
     /// </para><para>
     /// The following actions are related to <c>CreateAccessPoint</c>:
-    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_GetAccessPoint.html">GetAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeleteAccessPoint.html">DeleteAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListAccessPoints.html">ListAccessPoints</a></para></li></ul>
+    /// </para><ul><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_GetAccessPoint.html">GetAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_DeleteAccessPoint.html">DeleteAccessPoint</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListAccessPoints.html">ListAccessPoints</a></para></li><li><para><a href="https://docs.aws.amazon.com/AmazonS3/latest/API/API_control_ListAccessPointsForDirectoryBuckets.html">ListAccessPointsForDirectoryBuckets</a></para></li></ul><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("New", "S3CAccessPoint", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("System.String")]
     [AWSCmdlet("Calls the Amazon S3 Control CreateAccessPoint API operation.", Operation = new[] {"CreateAccessPoint"}, SelectReturnType = typeof(Amazon.S3Control.Model.CreateAccessPointResponse))]
     [AWSCmdletOutput("System.String or Amazon.S3Control.Model.CreateAccessPointResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.S3Control.Model.CreateAccessPointResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3Control.Model.CreateAccessPointResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewS3CAccessPointCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -133,7 +145,10 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         /// <summary>
         /// <para>
         /// <para>The Amazon Web Services account ID associated with the S3 bucket associated with this
-        /// access point.</para>
+        /// access point.</para><para>For same account access point when your bucket and access point belong to the same
+        /// account owner, the <c>BucketAccountId</c> is not required. For cross-account access
+        /// point when your bucket and access point are not in the same account, the <c>BucketAccountId</c>
+        /// is required. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -157,7 +172,12 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>The name you want to assign to this access point.</para>
+        /// <para>The name you want to assign to this access point.</para><para>For directory buckets, the access point name must consist of a base name that you
+        /// provide and suffix that includes the <c>ZoneID</c> (Amazon Web Services Availability
+        /// Zone or Local Zone) of your bucket location, followed by <c>--xa-s3</c>. For more
+        /// information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points-directory-buckets.html">Managing
+        /// access to shared datasets in directory buckets with access points</a> in the <i>Amazon
+        /// S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -171,13 +191,44 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public System.String Name { get; set; }
         #endregion
         
+        #region Parameter Scope_Permission
+        /// <summary>
+        /// <para>
+        /// <para>You can include one or more API operations as permissions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Scope_Permissions")]
+        public System.String[] Scope_Permission { get; set; }
+        #endregion
+        
+        #region Parameter Scope_Prefix
+        /// <summary>
+        /// <para>
+        /// <para>You can specify any amount of prefixes, but the total length of characters of all
+        /// prefixes must be less than 256 bytes in size.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Scope_Prefixes")]
+        public System.String[] Scope_Prefix { get; set; }
+        #endregion
+        
         #region Parameter PublicAccessBlockConfiguration_RestrictPublicBucket
         /// <summary>
         /// <para>
         /// <para>Specifies whether Amazon S3 should restrict public bucket policies for buckets in
         /// this account. Setting this element to <c>TRUE</c> restricts access to buckets with
-        /// public policies to only Amazon Web Service principals and authorized users within
-        /// this account.</para><para>Enabling this setting doesn't affect previously stored bucket policies, except that
+        /// public policies to only Amazon Web Services service principals and authorized users
+        /// within this account.</para><para>Enabling this setting doesn't affect previously stored bucket policies, except that
         /// public and cross-account access within any public bucket policy, including non-public
         /// delegation to specific accounts, is blocked.</para><para>This property is not supported for Amazon S3 on Outposts.</para>
         /// </para>
@@ -185,6 +236,27 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("PublicAccessBlockConfiguration_RestrictPublicBuckets")]
         public System.Boolean? PublicAccessBlockConfiguration_RestrictPublicBucket { get; set; }
+        #endregion
+        
+        #region Parameter Tag
+        /// <summary>
+        /// <para>
+        /// <para>An array of tags that you can apply to an access point. Tags are key-value pairs of
+        /// metadata used to control access to your access points. For more information about
+        /// tags, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/tagging.html">Using
+        /// tags with Amazon S3</a>. For information about tagging access points, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/tagging.html#using-tags-for-abac">Using
+        /// tags for attribute-based access control (ABAC)</a>.</para><note><ul><li><para>You must have the <c>s3:TagResource</c> permission to create an access point with
+        /// tags for a general purpose bucket. </para></li><li><para>You must have the <c>s3express:TagResource</c> permission to create an access point
+        /// with tags for a directory bucket.</para></li></ul></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Tags")]
+        public Amazon.S3Control.Model.Tag[] Tag { get; set; }
         #endregion
         
         #region Parameter VpcConfiguration_VpcId
@@ -209,16 +281,6 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public string Select { get; set; } = "AccessPointArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Bucket parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Bucket' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Bucket' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -229,9 +291,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Bucket), MyInvocation.BoundParameters);
@@ -245,21 +311,11 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.S3Control.Model.CreateAccessPointResponse, NewS3CAccessPointCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Bucket;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AccountId = this.AccountId;
             #if MODULAR
             if (this.AccountId == null && ParameterWasBound(nameof(this.AccountId)))
@@ -286,6 +342,18 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             context.PublicAccessBlockConfiguration_BlockPublicPolicy = this.PublicAccessBlockConfiguration_BlockPublicPolicy;
             context.PublicAccessBlockConfiguration_IgnorePublicAcl = this.PublicAccessBlockConfiguration_IgnorePublicAcl;
             context.PublicAccessBlockConfiguration_RestrictPublicBucket = this.PublicAccessBlockConfiguration_RestrictPublicBucket;
+            if (this.Scope_Permission != null)
+            {
+                context.Scope_Permission = new List<System.String>(this.Scope_Permission);
+            }
+            if (this.Scope_Prefix != null)
+            {
+                context.Scope_Prefix = new List<System.String>(this.Scope_Prefix);
+            }
+            if (this.Tag != null)
+            {
+                context.Tag = new List<Amazon.S3Control.Model.Tag>(this.Tag);
+            }
             context.VpcConfiguration_VpcId = this.VpcConfiguration_VpcId;
             
             // allow further manipulation of loaded context prior to processing
@@ -369,6 +437,39 @@ namespace Amazon.PowerShell.Cmdlets.S3C
                 request.PublicAccessBlockConfiguration = null;
             }
             
+             // populate Scope
+            var requestScopeIsNull = true;
+            request.Scope = new Amazon.S3Control.Model.Scope();
+            List<System.String> requestScope_scope_Permission = null;
+            if (cmdletContext.Scope_Permission != null)
+            {
+                requestScope_scope_Permission = cmdletContext.Scope_Permission;
+            }
+            if (requestScope_scope_Permission != null)
+            {
+                request.Scope.Permissions = requestScope_scope_Permission;
+                requestScopeIsNull = false;
+            }
+            List<System.String> requestScope_scope_Prefix = null;
+            if (cmdletContext.Scope_Prefix != null)
+            {
+                requestScope_scope_Prefix = cmdletContext.Scope_Prefix;
+            }
+            if (requestScope_scope_Prefix != null)
+            {
+                request.Scope.Prefixes = requestScope_scope_Prefix;
+                requestScopeIsNull = false;
+            }
+             // determine if request.Scope should be set to null
+            if (requestScopeIsNull)
+            {
+                request.Scope = null;
+            }
+            if (cmdletContext.Tag != null)
+            {
+                request.Tags = cmdletContext.Tag;
+            }
+            
              // populate VpcConfiguration
             var requestVpcConfigurationIsNull = true;
             request.VpcConfiguration = new Amazon.S3Control.Model.VpcConfiguration();
@@ -425,13 +526,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "CreateAccessPoint");
             try
             {
-                #if DESKTOP
-                return client.CreateAccessPoint(request);
-                #elif CORECLR
-                return client.CreateAccessPointAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateAccessPointAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -456,6 +551,9 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             public System.Boolean? PublicAccessBlockConfiguration_BlockPublicPolicy { get; set; }
             public System.Boolean? PublicAccessBlockConfiguration_IgnorePublicAcl { get; set; }
             public System.Boolean? PublicAccessBlockConfiguration_RestrictPublicBucket { get; set; }
+            public List<System.String> Scope_Permission { get; set; }
+            public List<System.String> Scope_Prefix { get; set; }
+            public List<Amazon.S3Control.Model.Tag> Tag { get; set; }
             public System.String VpcConfiguration_VpcId { get; set; }
             public System.Func<Amazon.S3Control.Model.CreateAccessPointResponse, NewS3CAccessPointCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.AccessPointArn;

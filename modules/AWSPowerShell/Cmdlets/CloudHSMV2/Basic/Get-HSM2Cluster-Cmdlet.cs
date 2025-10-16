@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,13 +22,15 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudHSMV2;
 using Amazon.CloudHSMV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.HSM2
 {
     /// <summary>
-    /// Gets information about AWS CloudHSM clusters.
+    /// Gets information about CloudHSM clusters.
     /// 
     ///  
     /// <para>
@@ -37,6 +39,8 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
     /// it includes a <c>NextToken</c> value. Use this value in a subsequent <c>DescribeClusters</c>
     /// request to get more clusters. When you receive a response with no <c>NextToken</c>
     /// (or an empty or null value), that means there are no more clusters to get.
+    /// </para><para><b>Cross-account use:</b> No. You cannot perform this operation on CloudHSM clusters
+    /// in a different Amazon Web Services account.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "HSM2Cluster")]
@@ -44,19 +48,24 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
     [AWSCmdlet("Calls the AWS CloudHSM V2 DescribeClusters API operation.", Operation = new[] {"DescribeClusters"}, SelectReturnType = typeof(Amazon.CloudHSMV2.Model.DescribeClustersResponse))]
     [AWSCmdletOutput("Amazon.CloudHSMV2.Model.Cluster or Amazon.CloudHSMV2.Model.DescribeClustersResponse",
         "This cmdlet returns a collection of Amazon.CloudHSMV2.Model.Cluster objects.",
-        "The service call response (type Amazon.CloudHSMV2.Model.DescribeClustersResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudHSMV2.Model.DescribeClustersResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetHSM2ClusterCmdlet : AmazonCloudHSMV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Filter
         /// <summary>
         /// <para>
         /// <para>One or more filters to limit the items returned in the response.</para><para>Use the <c>clusterIds</c> filter to return only the specified clusters. Specify clusters
         /// by their cluster identifier (ID).</para><para>Use the <c>vpcIds</c> filter to return only the clusters in the specified virtual
-        /// private clouds (VPCs). Specify VPCs by their VPC identifier (ID).</para><para>Use the <c>states</c> filter to return only clusters that match the specified state.</para>
+        /// private clouds (VPCs). Specify VPCs by their VPC identifier (ID).</para><para>Use the <c>states</c> filter to return only clusters that match the specified state.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -89,7 +98,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -117,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -296,7 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.Clusters.Count;
+                    int _receivedThisCall = response.Clusters?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -345,13 +358,7 @@ namespace Amazon.PowerShell.Cmdlets.HSM2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudHSM V2", "DescribeClusters");
             try
             {
-                #if DESKTOP
-                return client.DescribeClusters(request);
-                #elif CORECLR
-                return client.DescribeClustersAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeClustersAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

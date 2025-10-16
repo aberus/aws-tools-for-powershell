@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.MedicalImaging;
 using Amazon.MedicalImaging.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MIS
 {
     /// <summary>
@@ -34,14 +36,13 @@ namespace Amazon.PowerShell.Cmdlets.MIS
     [OutputType("Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse")]
     [AWSCmdlet("Calls the Amazon Medical Imaging Service UpdateImageSetMetadata API operation.", Operation = new[] {"UpdateImageSetMetadata"}, SelectReturnType = typeof(Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse))]
     [AWSCmdletOutput("Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse",
-        "This cmdlet returns an Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse object containing multiple properties."
     )]
     public partial class UpdateMISImageSetMetadataCmdlet : AmazonMedicalImagingClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DatastoreId
         /// <summary>
@@ -58,6 +59,18 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String DatastoreId { get; set; }
+        #endregion
+        
+        #region Parameter ForceUpdate
+        /// <summary>
+        /// <para>
+        /// <para>Setting this flag will force the <c>UpdateImageSetMetadata</c> operation for the following
+        /// attributes:</para><ul><li><para><c>Tag.StudyInstanceUID</c>, <c>Tag.SeriesInstanceUID</c>, <c>Tag.SOPInstanceUID</c>,
+        /// and <c>Tag.StudyID</c></para></li><li><para>Adding, removing, or updating private tags for an individual SOP Instance</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? ForceUpdate { get; set; }
         #endregion
         
         #region Parameter ImageSetId
@@ -107,6 +120,18 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         public byte[] DICOMUpdates_RemovableAttribute { get; set; }
         #endregion
         
+        #region Parameter UpdateImageSetMetadataUpdates_RevertToVersionId
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the previous image set version ID to revert the current image set back to.</para><note><para>You must provide either <c>revertToVersionId</c> or <c>DICOMUpdates</c> in your request.
+        /// A <c>ValidationException</c> error is thrown if both parameters are provided at the
+        /// same time.</para></note>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String UpdateImageSetMetadataUpdates_RevertToVersionId { get; set; }
+        #endregion
+        
         #region Parameter DICOMUpdates_UpdatableAttribute
         /// <summary>
         /// <para>
@@ -131,16 +156,6 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageSetId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageSetId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageSetId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -151,9 +166,13 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageSetId), MyInvocation.BoundParameters);
@@ -167,21 +186,11 @@ namespace Amazon.PowerShell.Cmdlets.MIS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse, UpdateMISImageSetMetadataCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageSetId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DatastoreId = this.DatastoreId;
             #if MODULAR
             if (this.DatastoreId == null && ParameterWasBound(nameof(this.DatastoreId)))
@@ -189,6 +198,7 @@ namespace Amazon.PowerShell.Cmdlets.MIS
                 WriteWarning("You are passing $null as a value for parameter DatastoreId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.ForceUpdate = this.ForceUpdate;
             context.ImageSetId = this.ImageSetId;
             #if MODULAR
             if (this.ImageSetId == null && ParameterWasBound(nameof(this.ImageSetId)))
@@ -205,6 +215,7 @@ namespace Amazon.PowerShell.Cmdlets.MIS
             #endif
             context.DICOMUpdates_RemovableAttribute = this.DICOMUpdates_RemovableAttribute;
             context.DICOMUpdates_UpdatableAttribute = this.DICOMUpdates_UpdatableAttribute;
+            context.UpdateImageSetMetadataUpdates_RevertToVersionId = this.UpdateImageSetMetadataUpdates_RevertToVersionId;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -230,6 +241,10 @@ namespace Amazon.PowerShell.Cmdlets.MIS
                 {
                     request.DatastoreId = cmdletContext.DatastoreId;
                 }
+                if (cmdletContext.ForceUpdate != null)
+                {
+                    request.Force = cmdletContext.ForceUpdate.Value;
+                }
                 if (cmdletContext.ImageSetId != null)
                 {
                     request.ImageSetId = cmdletContext.ImageSetId;
@@ -242,6 +257,16 @@ namespace Amazon.PowerShell.Cmdlets.MIS
                  // populate UpdateImageSetMetadataUpdates
                 var requestUpdateImageSetMetadataUpdatesIsNull = true;
                 request.UpdateImageSetMetadataUpdates = new Amazon.MedicalImaging.Model.MetadataUpdates();
+                System.String requestUpdateImageSetMetadataUpdates_updateImageSetMetadataUpdates_RevertToVersionId = null;
+                if (cmdletContext.UpdateImageSetMetadataUpdates_RevertToVersionId != null)
+                {
+                    requestUpdateImageSetMetadataUpdates_updateImageSetMetadataUpdates_RevertToVersionId = cmdletContext.UpdateImageSetMetadataUpdates_RevertToVersionId;
+                }
+                if (requestUpdateImageSetMetadataUpdates_updateImageSetMetadataUpdates_RevertToVersionId != null)
+                {
+                    request.UpdateImageSetMetadataUpdates.RevertToVersionId = requestUpdateImageSetMetadataUpdates_updateImageSetMetadataUpdates_RevertToVersionId;
+                    requestUpdateImageSetMetadataUpdatesIsNull = false;
+                }
                 Amazon.MedicalImaging.Model.DICOMUpdates requestUpdateImageSetMetadataUpdates_updateImageSetMetadataUpdates_DICOMUpdates = null;
                 
                  // populate DICOMUpdates
@@ -334,13 +359,7 @@ namespace Amazon.PowerShell.Cmdlets.MIS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Medical Imaging Service", "UpdateImageSetMetadata");
             try
             {
-                #if DESKTOP
-                return client.UpdateImageSetMetadata(request);
-                #elif CORECLR
-                return client.UpdateImageSetMetadataAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateImageSetMetadataAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -358,10 +377,12 @@ namespace Amazon.PowerShell.Cmdlets.MIS
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String DatastoreId { get; set; }
+            public System.Boolean? ForceUpdate { get; set; }
             public System.String ImageSetId { get; set; }
             public System.String LatestVersionId { get; set; }
             public byte[] DICOMUpdates_RemovableAttribute { get; set; }
             public byte[] DICOMUpdates_UpdatableAttribute { get; set; }
+            public System.String UpdateImageSetMetadataUpdates_RevertToVersionId { get; set; }
             public System.Func<Amazon.MedicalImaging.Model.UpdateImageSetMetadataResponse, UpdateMISImageSetMetadataCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

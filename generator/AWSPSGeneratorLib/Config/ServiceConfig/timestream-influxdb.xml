@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ConfigModel xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <FileVersion>0</FileVersion>
+    <SkipCmdletGeneration>false</SkipCmdletGeneration>
+    <C2jFilename>timestream-influxdb</C2jFilename>
+    <AssemblyName>TimestreamInfluxDB</AssemblyName>
+    <ServiceNounPrefix>TIDB</ServiceNounPrefix>
+    <ServiceName>Amazon Timestream InfluxDB</ServiceName>
+    <ServiceClientInterface>IAmazonTimestreamInfluxDB</ServiceClientInterface>
+    <ServiceClient>AmazonTimestreamInfluxDBClient</ServiceClient>
+    <ServiceModuleGuid>6e54484e-6bd9-4388-ba82-34929fc44436</ServiceModuleGuid>
+    <PipelineParameter />
+    <VerbMappings />
+    <NounMappings />
+    <Params />
+    <CustomAliases />
+    <LegacyAliases />
+    <ParamEmitters />
+    <MetadataProperties />
+    <ServiceOperations>
+        <ServiceOperation MethodName="CreateDbCluster" OutputProperty="*" Verb="New" Noun="DbCluster" ShouldProcessTarget="Name" PipelineParameter="" NoPipelineParameter="true" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="CreateDbInstance" OutputProperty="*" Verb="New" Noun="DbInstance" ShouldProcessTarget="Name" PipelineParameter="" NoPipelineParameter="true" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="CreateDbParameterGroup" OutputProperty="*" Verb="New" Noun="DbParameterGroup" ShouldProcessTarget="Name" PipelineParameter="Name" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params>
+                <Param Name="Parameters_InfluxDBv3Core_DataFusionRuntimeThreadKeepAlive_DurationType" NewName="InfluxDBv3Core_DataFusionRuntimeThreadKeepAlive_DurationType" Alias="Parameters_InfluxDBv3Core_DataFusionRuntimeThreadKeepAlive_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_DataFusionRuntimeThreadKeepAlive_DurationType" NewName="InfluxDBv3Enterprise_DataFusionRuntimeThreadKeepAlive_DurationType" Alias="Parameters_InfluxDBv3Enterprise_DataFusionRuntimeThreadKeepAlive_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_DataFusionRuntimeThreadKeepAlive_Value" NewName="InfluxDBv3Core_DataFusionRuntimeThreadKeepAlive_Value" Alias="Parameters_InfluxDBv3Core_DataFusionRuntimeThreadKeepAlive_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_DataFusionRuntimeThreadKeepAlive_Value" NewName="InfluxDBv3Enterprise_DataFusionRuntimeThreadKeepAlive_Value" Alias="Parameters_InfluxDBv3Enterprise_DataFusionRuntimeThreadKeepAlive_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_DeleteGracePeriod_DurationType" NewName="InfluxDBv3Core_DeleteGracePeriod_DurationType" Alias="Parameters_InfluxDBv3Core_DeleteGracePeriod_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_DeleteGracePeriod_DurationType" NewName="InfluxDBv3Enterprise_DeleteGracePeriod_DurationType" Alias="Parameters_InfluxDBv3Enterprise_DeleteGracePeriod_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_DeleteGracePeriod_Value" NewName="InfluxDBv3Core_DeleteGracePeriod_Value" Alias="Parameters_InfluxDBv3Core_DeleteGracePeriod_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_DeleteGracePeriod_Value" NewName="InfluxDBv3Enterprise_DeleteGracePeriod_Value" Alias="Parameters_InfluxDBv3Enterprise_DeleteGracePeriod_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_DistinctCacheEvictionInterval_DurationType" NewName="InfluxDBv3Core_DistinctCacheEvictionInterval_DurationType" Alias="Parameters_InfluxDBv3Core_DistinctCacheEvictionInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_DistinctCacheEvictionInterval_DurationType" NewName="InfluxDBv3Enterprise_DistinctCacheEvictionInterval_DurationType" Alias="Parameters_InfluxDBv3Enterprise_DistinctCacheEvictionInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_DistinctCacheEvictionInterval_Value" NewName="InfluxDBv3Core_DistinctCacheEvictionInterval_Value" Alias="Parameters_InfluxDBv3Core_DistinctCacheEvictionInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_DistinctCacheEvictionInterval_Value" NewName="InfluxDBv3Enterprise_DistinctCacheEvictionInterval_Value" Alias="Parameters_InfluxDBv3Enterprise_DistinctCacheEvictionInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_ExecMemPoolBytes_Absolute" NewName="InfluxDBv3Core_ExecMemPoolBytes_Absolute" Alias="Parameters_InfluxDBv3Core_ExecMemPoolBytes_Absolute" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ExecMemPoolBytes_Absolute" NewName="InfluxDBv3Enterprise_ExecMemPoolBytes_Absolute" Alias="Parameters_InfluxDBv3Enterprise_ExecMemPoolBytes_Absolute" />
+                <Param Name="Parameters_InfluxDBv3Core_ExecMemPoolBytes_Percent" NewName="InfluxDBv3Core_ExecMemPoolBytes_Percent" Alias="Parameters_InfluxDBv3Core_ExecMemPoolBytes_Percent" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ExecMemPoolBytes_Percent" NewName="InfluxDBv3Enterprise_ExecMemPoolBytes_Percent" Alias="Parameters_InfluxDBv3Enterprise_ExecMemPoolBytes_Percent" />
+                <Param Name="Parameters_InfluxDBv3Core_ForceSnapshotMemThreshold_Absolute" NewName="InfluxDBv3Core_ForceSnapshotMemThreshold_Absolute" Alias="Parameters_InfluxDBv3Core_ForceSnapshotMemThreshold_Absolute" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ForceSnapshotMemThreshold_Absolute" NewName="InfluxDBv3Enterprise_ForceSnapshotMemThreshold_Absolute" Alias="Parameters_InfluxDBv3Enterprise_ForceSnapshotMemThreshold_Absolute" />
+                <Param Name="Parameters_InfluxDBv3Core_ForceSnapshotMemThreshold_Percent" NewName="InfluxDBv3Core_ForceSnapshotMemThreshold_Percent" Alias="Parameters_InfluxDBv3Core_ForceSnapshotMemThreshold_Percent" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ForceSnapshotMemThreshold_Percent" NewName="InfluxDBv3Enterprise_ForceSnapshotMemThreshold_Percent" Alias="Parameters_InfluxDBv3Enterprise_ForceSnapshotMemThreshold_Percent" />
+                <Param Name="Parameters_InfluxDBv3Core_Gen1Duration_DurationType" NewName="InfluxDBv3Core_Gen1Duration_DurationType" Alias="Parameters_InfluxDBv3Core_Gen1Duration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_Gen1Duration_DurationType" NewName="InfluxDBv3Enterprise_Gen1Duration_DurationType" Alias="Parameters_InfluxDBv3Enterprise_Gen1Duration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_Gen1Duration_Value" NewName="InfluxDBv3Core_Gen1Duration_Value" Alias="Parameters_InfluxDBv3Core_Gen1Duration_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_Gen1Duration_Value" NewName="InfluxDBv3Enterprise_Gen1Duration_Value" Alias="Parameters_InfluxDBv3Enterprise_Gen1Duration_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_Gen1LookbackDuration_DurationType" NewName="InfluxDBv3Core_Gen1LookbackDuration_DurationType" Alias="Parameters_InfluxDBv3Core_Gen1LookbackDuration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_Gen1LookbackDuration_DurationType" NewName="InfluxDBv3Enterprise_Gen1LookbackDuration_DurationType" Alias="Parameters_InfluxDBv3Enterprise_Gen1LookbackDuration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_Gen1LookbackDuration_Value" NewName="InfluxDBv3Core_Gen1LookbackDuration_Value" Alias="Parameters_InfluxDBv3Core_Gen1LookbackDuration_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_Gen1LookbackDuration_Value" NewName="InfluxDBv3Enterprise_Gen1LookbackDuration_Value" Alias="Parameters_InfluxDBv3Enterprise_Gen1LookbackDuration_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_HardDeleteDefaultDuration_DurationType" NewName="InfluxDBv3Core_HardDeleteDefaultDuration_DurationType" Alias="Parameters_InfluxDBv3Core_HardDeleteDefaultDuration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_HardDeleteDefaultDuration_DurationType" NewName="InfluxDBv3Enterprise_HardDeleteDefaultDuration_DurationType" Alias="Parameters_InfluxDBv3Enterprise_HardDeleteDefaultDuration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_HardDeleteDefaultDuration_Value" NewName="InfluxDBv3Core_HardDeleteDefaultDuration_Value" Alias="Parameters_InfluxDBv3Core_HardDeleteDefaultDuration_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_HardDeleteDefaultDuration_Value" NewName="InfluxDBv3Enterprise_HardDeleteDefaultDuration_Value" Alias="Parameters_InfluxDBv3Enterprise_HardDeleteDefaultDuration_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_LastCacheEvictionInterval_DurationType" NewName="InfluxDBv3Core_LastCacheEvictionInterval_DurationType" Alias="Parameters_InfluxDBv3Core_LastCacheEvictionInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_LastCacheEvictionInterval_DurationType" NewName="InfluxDBv3Enterprise_LastCacheEvictionInterval_DurationType" Alias="Parameters_InfluxDBv3Enterprise_LastCacheEvictionInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_LastCacheEvictionInterval_Value" NewName="InfluxDBv3Core_LastCacheEvictionInterval_Value" Alias="Parameters_InfluxDBv3Core_LastCacheEvictionInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_LastCacheEvictionInterval_Value" NewName="InfluxDBv3Enterprise_LastCacheEvictionInterval_Value" Alias="Parameters_InfluxDBv3Enterprise_LastCacheEvictionInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_ParquetMemCachePruneInterval_DurationType" NewName="InfluxDBv3Core_ParquetMemCachePruneInterval_DurationType" Alias="Parameters_InfluxDBv3Core_ParquetMemCachePruneInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ParquetMemCachePruneInterval_DurationType" NewName="InfluxDBv3Enterprise_ParquetMemCachePruneInterval_DurationType" Alias="Parameters_InfluxDBv3Enterprise_ParquetMemCachePruneInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_ParquetMemCachePruneInterval_Value" NewName="InfluxDBv3Core_ParquetMemCachePruneInterval_Value" Alias="Parameters_InfluxDBv3Core_ParquetMemCachePruneInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ParquetMemCachePruneInterval_Value" NewName="InfluxDBv3Enterprise_ParquetMemCachePruneInterval_Value" Alias="Parameters_InfluxDBv3Enterprise_ParquetMemCachePruneInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_ParquetMemCacheQueryPathDuration_DurationType" NewName="InfluxDBv3Core_ParquetMemCacheQueryPathDuration_DurationType" Alias="Parameters_InfluxDBv3Core_ParquetMemCacheQueryPathDuration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ParquetMemCacheQueryPathDuration_DurationType" NewName="InfluxDBv3Enterprise_ParquetMemCacheQueryPathDuration_DurationType" Alias="Parameters_InfluxDBv3Enterprise_ParquetMemCacheQueryPathDuration_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_ParquetMemCacheQueryPathDuration_Value" NewName="InfluxDBv3Core_ParquetMemCacheQueryPathDuration_Value" Alias="Parameters_InfluxDBv3Core_ParquetMemCacheQueryPathDuration_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ParquetMemCacheQueryPathDuration_Value" NewName="InfluxDBv3Enterprise_ParquetMemCacheQueryPathDuration_Value" Alias="Parameters_InfluxDBv3Enterprise_ParquetMemCacheQueryPathDuration_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_ParquetMemCacheSize_Absolute" NewName="InfluxDBv3Core_ParquetMemCacheSize_Absolute" Alias="Parameters_InfluxDBv3Core_ParquetMemCacheSize_Absolute" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ParquetMemCacheSize_Absolute" NewName="InfluxDBv3Enterprise_ParquetMemCacheSize_Absolute" Alias="Parameters_InfluxDBv3Enterprise_ParquetMemCacheSize_Absolute" />
+                <Param Name="Parameters_InfluxDBv3Core_ParquetMemCacheSize_Percent" NewName="InfluxDBv3Core_ParquetMemCacheSize_Percent" Alias="Parameters_InfluxDBv3Core_ParquetMemCacheSize_Percent" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_ParquetMemCacheSize_Percent" NewName="InfluxDBv3Enterprise_ParquetMemCacheSize_Percent" Alias="Parameters_InfluxDBv3Enterprise_ParquetMemCacheSize_Percent" />
+                <Param Name="Parameters_InfluxDBv3Core_PreemptiveCacheAge_DurationType" NewName="InfluxDBv3Core_PreemptiveCacheAge_DurationType" Alias="Parameters_InfluxDBv3Core_PreemptiveCacheAge_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_PreemptiveCacheAge_DurationType" NewName="InfluxDBv3Enterprise_PreemptiveCacheAge_DurationType" Alias="Parameters_InfluxDBv3Enterprise_PreemptiveCacheAge_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_PreemptiveCacheAge_Value" NewName="InfluxDBv3Core_PreemptiveCacheAge_Value" Alias="Parameters_InfluxDBv3Core_PreemptiveCacheAge_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_PreemptiveCacheAge_Value" NewName="InfluxDBv3Enterprise_PreemptiveCacheAge_Value" Alias="Parameters_InfluxDBv3Enterprise_PreemptiveCacheAge_Value" />
+                <Param Name="Parameters_InfluxDBv3Core_RetentionCheckInterval_DurationType" NewName="InfluxDBv3Core_RetentionCheckInterval_DurationType" Alias="Parameters_InfluxDBv3Core_RetentionCheckInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_RetentionCheckInterval_DurationType" NewName="InfluxDBv3Enterprise_RetentionCheckInterval_DurationType" Alias="Parameters_InfluxDBv3Enterprise_RetentionCheckInterval_DurationType" />
+                <Param Name="Parameters_InfluxDBv3Core_RetentionCheckInterval_Value" NewName="InfluxDBv3Core_RetentionCheckInterval_Value" Alias="Parameters_InfluxDBv3Core_RetentionCheckInterval_Value" />
+                <Param Name="Parameters_InfluxDBv3Enterprise_RetentionCheckInterval_Value" NewName="InfluxDBv3Enterprise_RetentionCheckInterval_Value" Alias="Parameters_InfluxDBv3Enterprise_RetentionCheckInterval_Value" />
+            </Params>
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="DeleteDbCluster" OutputProperty="DbClusterStatus" Verb="Remove" Noun="DbCluster" ShouldProcessTarget="DbClusterId" PipelineParameter="DbClusterId" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="DeleteDbInstance" OutputProperty="*" Verb="Remove" Noun="DbInstance" ShouldProcessTarget="Identifier" PipelineParameter="Identifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetDbCluster" OutputProperty="*" Verb="Get" Noun="DbCluster" PipelineParameter="DbClusterId" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetDbInstance" OutputProperty="*" Verb="Get" Noun="DbInstance" PipelineParameter="Identifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="GetDbParameterGroup" OutputProperty="*" Verb="Get" Noun="DbParameterGroup" PipelineParameter="Identifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListDbClusters" OutputProperty="Items" Verb="Get" Noun="DbClusterList" PipelineParameter="" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListDbInstances" OutputProperty="Items" Verb="Get" Noun="DbInstanceList" PipelineParameter="" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListDbInstancesForCluster" OutputProperty="Items" Verb="Get" Noun="DbInstancesForClusterList" PipelineParameter="DbClusterId" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListDbParameterGroups" OutputProperty="Items" Verb="Get" Noun="DbParameterGroupList" PipelineParameter="" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="ListTagsForResource" OutputProperty="Tags" Verb="Get" Noun="ResourceTag" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="TagResource" Verb="Add" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="UntagResource" Verb="Remove" Noun="ResourceTag" ShouldProcessTarget="ResourceArn" PipelineParameter="ResourceArn" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="UpdateDbCluster" OutputProperty="DbClusterStatus" Verb="Update" Noun="DbCluster" ShouldProcessTarget="DbClusterId" PipelineParameter="DbClusterId" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+        <ServiceOperation MethodName="UpdateDbInstance" OutputProperty="*" Verb="Update" Noun="DbInstance" ShouldProcessTarget="Identifier" PipelineParameter="Identifier" NoPipelineParameter="false" LegacyV4Pagination="true">
+            <Params />
+            <TypesNotToFlatten />
+        </ServiceOperation>
+    </ServiceOperations>
+    <TypesNotToFlatten />
+</ConfigModel>

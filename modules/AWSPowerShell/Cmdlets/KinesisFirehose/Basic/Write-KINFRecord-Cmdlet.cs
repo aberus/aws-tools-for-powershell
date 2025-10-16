@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,40 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Writes a single data record into an Amazon Kinesis Data Firehose delivery stream.
-    /// To write multiple data records into a delivery stream, use <a>PutRecordBatch</a>.
-    /// Applications using these operations are referred to as producers.
+    /// Writes a single data record into an Firehose stream. To write multiple data records
+    /// into a Firehose stream, use <a>PutRecordBatch</a>. Applications using these operations
+    /// are referred to as producers.
     /// 
     ///  
     /// <para>
-    /// By default, each delivery stream can take in up to 2,000 transactions per second,
+    /// By default, each Firehose stream can take in up to 2,000 transactions per second,
     /// 5,000 records per second, or 5 MB per second. If you use <a>PutRecord</a> and <a>PutRecordBatch</a>,
-    /// the limits are an aggregate across these two operations for each delivery stream.
+    /// the limits are an aggregate across these two operations for each Firehose stream.
     /// For more information about limits and how to request an increase, see <a href="https://docs.aws.amazon.com/firehose/latest/dev/limits.html">Amazon
-    /// Kinesis Data Firehose Limits</a>. 
+    /// Firehose Limits</a>. 
     /// </para><para>
-    /// Kinesis Data Firehose accumulates and publishes a particular metric for a customer
-    /// account in one minute intervals. It is possible that the bursts of incoming bytes/records
-    /// ingested to a delivery stream last only for a few seconds. Due to this, the actual
-    /// spikes in the traffic might not be fully visible in the customer's 1 minute CloudWatch
-    /// metrics.
+    /// Firehose accumulates and publishes a particular metric for a customer account in one
+    /// minute intervals. It is possible that the bursts of incoming bytes/records ingested
+    /// to a Firehose stream last only for a few seconds. Due to this, the actual spikes in
+    /// the traffic might not be fully visible in the customer's 1 minute CloudWatch metrics.
     /// </para><para>
-    /// You must specify the name of the delivery stream and the data record when using <a>PutRecord</a>.
+    /// You must specify the name of the Firehose stream and the data record when using <a>PutRecord</a>.
     /// The data record consists of a data blob that can be up to 1,000 KiB in size, and any
     /// kind of data. For example, it can be a segment from a log file, geographic location
     /// data, website clickstream data, and so on.
     /// </para><para>
-    /// Kinesis Data Firehose buffers records before delivering them to the destination. To
-    /// disambiguate the data blobs at the destination, a common solution is to use delimiters
-    /// in the data, such as a newline (<c>\n</c>) or some other character unique within the
-    /// data. This allows the consumer application to parse individual data items when reading
-    /// the data from the destination.
+    /// For multi record de-aggregation, you can not put more than 500 records even if the
+    /// data blob length is less than 1000 KiB. If you include more than 500 records, the
+    /// request succeeds but the record de-aggregation doesn't work as expected and transformation
+    /// lambda is invoked with the complete base64 encoded data blob instead of de-aggregated
+    /// base64 decoded records.
+    /// </para><para>
+    /// Firehose buffers records before delivering them to the destination. To disambiguate
+    /// the data blobs at the destination, a common solution is to use delimiters in the data,
+    /// such as a newline (<c>\n</c>) or some other character unique within the data. This
+    /// allows the consumer application to parse individual data items when reading the data
+    /// from the destination.
     /// </para><para>
     /// The <c>PutRecord</c> operation returns a <c>RecordId</c>, which is a unique string
     /// assigned to each record. Producer applications can use this ID for purposes such as
@@ -63,15 +70,15 @@ namespace Amazon.PowerShell.Cmdlets.KINF
     /// </para><para>
     /// If the <c>PutRecord</c> operation throws a <c>ServiceUnavailableException</c>, the
     /// API is automatically reinvoked (retried) 3 times. If the exception persists, it is
-    /// possible that the throughput limits have been exceeded for the delivery stream. 
+    /// possible that the throughput limits have been exceeded for the Firehose stream. 
     /// </para><para>
     /// Re-invoking the Put API operations (for example, PutRecord and PutRecordBatch) can
     /// result in data duplicates. For larger data assets, allow for a longer time out before
     /// retrying Put API operations.
     /// </para><para>
-    /// Data records sent to Kinesis Data Firehose are stored for 24 hours from the time they
-    /// are added to a delivery stream as it tries to send the records to the destination.
-    /// If the destination is unreachable for more than 24 hours, the data is no longer available.
+    /// Data records sent to Firehose are stored for 24 hours from the time they are added
+    /// to a Firehose stream as it tries to send the records to the destination. If the destination
+    /// is unreachable for more than 24 hours, the data is no longer available.
     /// </para><important><para>
     /// Don't concatenate two or more base64 strings to form the data fields of your records.
     /// Instead, concatenate the raw data, then perform base64 encoding.
@@ -82,12 +89,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
     [AWSCmdlet("Calls the Amazon Kinesis Firehose PutRecord API operation.", Operation = new[] {"PutRecord"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.PutRecordResponse))]
     [AWSCmdletOutput("System.String or Amazon.KinesisFirehose.Model.PutRecordResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.KinesisFirehose.Model.PutRecordResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.KinesisFirehose.Model.PutRecordResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteKINFRecordCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Record_Data
         /// <summary>
@@ -106,7 +114,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter DeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The name of the delivery stream.</para>
+        /// <para>The name of the Firehose stream.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
@@ -134,9 +142,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DeliveryStreamName), MyInvocation.BoundParameters);
@@ -259,13 +271,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "PutRecord");
             try
             {
-                #if DESKTOP
-                return client.PutRecord(request);
-                #elif CORECLR
-                return client.PutRecordAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutRecordAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

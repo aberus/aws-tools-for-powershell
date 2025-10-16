@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.S3Control;
 using Amazon.S3Control.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.S3C
 {
     /// <summary>
@@ -33,19 +35,24 @@ namespace Amazon.PowerShell.Cmdlets.S3C
     /// </para></note><para>
     /// Returns the status of the resource policy associated with an Object Lambda Access
     /// Point.
-    /// </para>
+    /// </para><important><para>
+    /// You must URL encode any signed header values that contain spaces. For example, if
+    /// your header value is <c>my file.txt</c>, containing two spaces after <c>my</c>, you
+    /// must URL encode this value to <c>my%20%20file.txt</c>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Get", "S3CAccessPointPolicyStatusForObjectLambda")]
     [OutputType("Amazon.S3Control.Model.PolicyStatus")]
     [AWSCmdlet("Calls the Amazon S3 Control GetAccessPointPolicyStatusForObjectLambda API operation.", Operation = new[] {"GetAccessPointPolicyStatusForObjectLambda"}, SelectReturnType = typeof(Amazon.S3Control.Model.GetAccessPointPolicyStatusForObjectLambdaResponse))]
     [AWSCmdletOutput("Amazon.S3Control.Model.PolicyStatus or Amazon.S3Control.Model.GetAccessPointPolicyStatusForObjectLambdaResponse",
         "This cmdlet returns an Amazon.S3Control.Model.PolicyStatus object.",
-        "The service call response (type Amazon.S3Control.Model.GetAccessPointPolicyStatusForObjectLambdaResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.S3Control.Model.GetAccessPointPolicyStatusForObjectLambdaResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetS3CAccessPointPolicyStatusForObjectLambdaCmdlet : AmazonS3ControlClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccountId
         /// <summary>
@@ -92,9 +99,13 @@ namespace Amazon.PowerShell.Cmdlets.S3C
         public string Select { get; set; } = "PolicyStatus";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "s3v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -183,13 +194,7 @@ namespace Amazon.PowerShell.Cmdlets.S3C
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon S3 Control", "GetAccessPointPolicyStatusForObjectLambda");
             try
             {
-                #if DESKTOP
-                return client.GetAccessPointPolicyStatusForObjectLambda(request);
-                #elif CORECLR
-                return client.GetAccessPointPolicyStatusForObjectLambdaAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAccessPointPolicyStatusForObjectLambdaAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

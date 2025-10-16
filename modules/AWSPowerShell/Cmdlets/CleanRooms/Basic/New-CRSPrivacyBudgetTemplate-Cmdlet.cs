@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,30 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRooms;
 using Amazon.CleanRooms.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRS
 {
     /// <summary>
-    /// Creates a privacy budget template for a specified membership. Each membership can
-    /// have only one privacy budget template, but it can be deleted and recreated. If you
-    /// need to change the privacy budget template for a membership, use the <a>UpdatePrivacyBudgetTemplate</a>
-    /// operation.
+    /// Creates a privacy budget template for a specified collaboration. Each collaboration
+    /// can have only one privacy budget template. If you need to change the privacy budget
+    /// template, use the <a>UpdatePrivacyBudgetTemplate</a> operation.
     /// </summary>
     [Cmdlet("New", "CRSPrivacyBudgetTemplate", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CleanRooms.Model.PrivacyBudgetTemplate")]
     [AWSCmdlet("Calls the AWS Clean Rooms Service CreatePrivacyBudgetTemplate API operation.", Operation = new[] {"CreatePrivacyBudgetTemplate"}, SelectReturnType = typeof(Amazon.CleanRooms.Model.CreatePrivacyBudgetTemplateResponse))]
     [AWSCmdletOutput("Amazon.CleanRooms.Model.PrivacyBudgetTemplate or Amazon.CleanRooms.Model.CreatePrivacyBudgetTemplateResponse",
         "This cmdlet returns an Amazon.CleanRooms.Model.PrivacyBudgetTemplate object.",
-        "The service call response (type Amazon.CleanRooms.Model.CreatePrivacyBudgetTemplateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRooms.Model.CreatePrivacyBudgetTemplateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCRSPrivacyBudgetTemplateCmdlet : AmazonCleanRoomsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AutoRefresh
         /// <summary>
@@ -55,15 +57,25 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         /// the same rows will be repeatedly queried between privacy budget refreshes.</para></important>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         [AWSConstantClassSource("Amazon.CleanRooms.PrivacyBudgetTemplateAutoRefresh")]
         public Amazon.CleanRooms.PrivacyBudgetTemplateAutoRefresh AutoRefresh { get; set; }
+        #endregion
+        
+        #region Parameter AccessBudget_BudgetParameter
+        /// <summary>
+        /// <para>
+        /// <para>An array of budget parameters that define the access budget configuration for the
+        /// privacy template.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Parameters_AccessBudget_BudgetParameters")]
+        public Amazon.CleanRooms.Model.BudgetParameter[] AccessBudget_BudgetParameter { get; set; }
         #endregion
         
         #region Parameter DifferentialPrivacy_Epsilon
@@ -113,12 +125,28 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public Amazon.CleanRooms.PrivacyBudgetType PrivacyBudgetType { get; set; }
         #endregion
         
+        #region Parameter AccessBudget_ResourceArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the resource associated with this privacy budget
+        /// template.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Parameters_AccessBudget_ResourceArn")]
+        public System.String AccessBudget_ResourceArn { get; set; }
+        #endregion
+        
         #region Parameter Tag
         /// <summary>
         /// <para>
         /// <para>An optional label that you can assign to a resource when you create it. Each tag consists
         /// of a key and an optional value, both of which you define. When you use tagging, you
-        /// can also use tag-based access control in IAM policies to control access to this resource.</para>
+        /// can also use tag-based access control in IAM policies to control access to this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -159,9 +187,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MembershipIdentifier), MyInvocation.BoundParameters);
@@ -181,12 +213,6 @@ namespace Amazon.PowerShell.Cmdlets.CRS
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.AutoRefresh = this.AutoRefresh;
-            #if MODULAR
-            if (this.AutoRefresh == null && ParameterWasBound(nameof(this.AutoRefresh)))
-            {
-                WriteWarning("You are passing $null as a value for parameter AutoRefresh which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.MembershipIdentifier = this.MembershipIdentifier;
             #if MODULAR
             if (this.MembershipIdentifier == null && ParameterWasBound(nameof(this.MembershipIdentifier)))
@@ -194,6 +220,11 @@ namespace Amazon.PowerShell.Cmdlets.CRS
                 WriteWarning("You are passing $null as a value for parameter MembershipIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.AccessBudget_BudgetParameter != null)
+            {
+                context.AccessBudget_BudgetParameter = new List<Amazon.CleanRooms.Model.BudgetParameter>(this.AccessBudget_BudgetParameter);
+            }
+            context.AccessBudget_ResourceArn = this.AccessBudget_ResourceArn;
             context.DifferentialPrivacy_Epsilon = this.DifferentialPrivacy_Epsilon;
             context.DifferentialPrivacy_UsersNoisePerQuery = this.DifferentialPrivacy_UsersNoisePerQuery;
             context.PrivacyBudgetType = this.PrivacyBudgetType;
@@ -239,6 +270,41 @@ namespace Amazon.PowerShell.Cmdlets.CRS
              // populate Parameters
             var requestParametersIsNull = true;
             request.Parameters = new Amazon.CleanRooms.Model.PrivacyBudgetTemplateParametersInput();
+            Amazon.CleanRooms.Model.AccessBudgetsPrivacyTemplateParametersInput requestParameters_parameters_AccessBudget = null;
+            
+             // populate AccessBudget
+            var requestParameters_parameters_AccessBudgetIsNull = true;
+            requestParameters_parameters_AccessBudget = new Amazon.CleanRooms.Model.AccessBudgetsPrivacyTemplateParametersInput();
+            List<Amazon.CleanRooms.Model.BudgetParameter> requestParameters_parameters_AccessBudget_accessBudget_BudgetParameter = null;
+            if (cmdletContext.AccessBudget_BudgetParameter != null)
+            {
+                requestParameters_parameters_AccessBudget_accessBudget_BudgetParameter = cmdletContext.AccessBudget_BudgetParameter;
+            }
+            if (requestParameters_parameters_AccessBudget_accessBudget_BudgetParameter != null)
+            {
+                requestParameters_parameters_AccessBudget.BudgetParameters = requestParameters_parameters_AccessBudget_accessBudget_BudgetParameter;
+                requestParameters_parameters_AccessBudgetIsNull = false;
+            }
+            System.String requestParameters_parameters_AccessBudget_accessBudget_ResourceArn = null;
+            if (cmdletContext.AccessBudget_ResourceArn != null)
+            {
+                requestParameters_parameters_AccessBudget_accessBudget_ResourceArn = cmdletContext.AccessBudget_ResourceArn;
+            }
+            if (requestParameters_parameters_AccessBudget_accessBudget_ResourceArn != null)
+            {
+                requestParameters_parameters_AccessBudget.ResourceArn = requestParameters_parameters_AccessBudget_accessBudget_ResourceArn;
+                requestParameters_parameters_AccessBudgetIsNull = false;
+            }
+             // determine if requestParameters_parameters_AccessBudget should be set to null
+            if (requestParameters_parameters_AccessBudgetIsNull)
+            {
+                requestParameters_parameters_AccessBudget = null;
+            }
+            if (requestParameters_parameters_AccessBudget != null)
+            {
+                request.Parameters.AccessBudget = requestParameters_parameters_AccessBudget;
+                requestParametersIsNull = false;
+            }
             Amazon.CleanRooms.Model.DifferentialPrivacyTemplateParametersInput requestParameters_parameters_DifferentialPrivacy = null;
             
              // populate DifferentialPrivacy
@@ -325,13 +391,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Clean Rooms Service", "CreatePrivacyBudgetTemplate");
             try
             {
-                #if DESKTOP
-                return client.CreatePrivacyBudgetTemplate(request);
-                #elif CORECLR
-                return client.CreatePrivacyBudgetTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreatePrivacyBudgetTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -350,6 +410,8 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         {
             public Amazon.CleanRooms.PrivacyBudgetTemplateAutoRefresh AutoRefresh { get; set; }
             public System.String MembershipIdentifier { get; set; }
+            public List<Amazon.CleanRooms.Model.BudgetParameter> AccessBudget_BudgetParameter { get; set; }
+            public System.String AccessBudget_ResourceArn { get; set; }
             public System.Int32? DifferentialPrivacy_Epsilon { get; set; }
             public System.Int32? DifferentialPrivacy_UsersNoisePerQuery { get; set; }
             public Amazon.CleanRooms.PrivacyBudgetType PrivacyBudgetType { get; set; }

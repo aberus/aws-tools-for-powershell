@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,26 +22,47 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
     /// Gets an Amazon DataZone asset.
+    /// 
+    ///  
+    /// <para>
+    /// An asset is the fundamental building block in Amazon DataZone, representing any data
+    /// resource that needs to be cataloged and managed. It can take many forms, from Amazon
+    /// S3 buckets and database tables to dashboards and machine learning models. Each asset
+    /// contains comprehensive metadata about the resource, including its location, schema,
+    /// ownership, and lineage information. Assets are essential for organizing and managing
+    /// data resources across an organization, making them discoverable and usable while maintaining
+    /// proper governance.
+    /// </para><para>
+    /// Before using the Amazon DataZone GetAsset command, ensure the following prerequisites
+    /// are met:
+    /// </para><ul><li><para>
+    /// Domain identifier must exist and be valid
+    /// </para></li><li><para>
+    /// Asset identifier must exist
+    /// </para></li><li><para>
+    /// User must have the required permissions to perform the action
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Get", "DZAsset")]
     [OutputType("Amazon.DataZone.Model.GetAssetResponse")]
     [AWSCmdlet("Calls the Amazon DataZone GetAsset API operation.", Operation = new[] {"GetAsset"}, SelectReturnType = typeof(Amazon.DataZone.Model.GetAssetResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.GetAssetResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.GetAssetResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.GetAssetResponse object containing multiple properties."
     )]
     public partial class GetDZAssetCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DomainIdentifier
         /// <summary>
@@ -63,7 +84,9 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter Identifier
         /// <summary>
         /// <para>
-        /// <para>The ID of the Amazon DataZone asset.</para>
+        /// <para>The ID of the Amazon DataZone asset.</para><para>This parameter supports either the value of <c>assetId</c> or <c>externalIdentifier</c>
+        /// as input. If you are passing the value of <c>externalIdentifier</c>, you must prefix
+        /// this value with <c>externalIdentifer%2F</c>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -98,19 +121,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Identifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Identifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -118,21 +135,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataZone.Model.GetAssetResponse, GetDZAssetCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Identifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DomainIdentifier = this.DomainIdentifier;
             #if MODULAR
             if (this.DomainIdentifier == null && ParameterWasBound(nameof(this.DomainIdentifier)))
@@ -214,13 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "GetAsset");
             try
             {
-                #if DESKTOP
-                return client.GetAsset(request);
-                #elif CORECLR
-                return client.GetAssetAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAssetAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ECS;
 using Amazon.ECS.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ECS
 {
     /// <summary>
     /// Modifies the parameters of a service.
     /// 
-    ///  
-    /// <para>
+    ///  <note><para>
+    /// On March 21, 2024, a change was made to resolve the task definition revision before
+    /// authorization. When a task definition revision is not specified, authorization will
+    /// occur using the latest revision of a task definition.
+    /// </para></note><para>
     /// For services using the rolling update (<c>ECS</c>) you can update the desired count,
     /// deployment configuration, network configuration, load balancers, service registries,
     /// enable ECS managed tags option, propagate tags option, task placement constraints
@@ -39,11 +44,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// ECS starts new tasks with the new configuration. 
     /// </para><para>
     /// You can attach Amazon EBS volumes to Amazon ECS tasks by configuring the volume when
-    /// starting or running a task, or when creating or updating a service. For more infomation,
+    /// starting or running a task, or when creating or updating a service. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-volumes.html#ebs-volume-types">Amazon
     /// EBS volumes</a> in the <i>Amazon Elastic Container Service Developer Guide</i>. You
     /// can update your volume configurations and trigger a new deployment. <c>volumeConfigurations</c>
-    /// is only supported for REPLICA service and not DAEMON service. If you leave <c>volumeConfigurations</c><c>null</c>, it doesn't trigger a new deployment. For more infomation on volumes,
+    /// is only supported for REPLICA service and not DAEMON service. If you leave <c>volumeConfigurations</c><c>null</c>, it doesn't trigger a new deployment. For more information on volumes,
     /// see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-volumes.html#ebs-volume-types">Amazon
     /// EBS volumes</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.
     /// </para><para>
@@ -59,14 +64,14 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// count, task placement constraints and strategies, health check grace period, enable
     /// ECS managed tags option, and propagate tags option, using this API. If the launch
     /// type, load balancer, network configuration, platform version, or task definition need
-    /// to be updated, create a new task set For more information, see <a>CreateTaskSet</a>.
+    /// to be updated, create a new task set For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateTaskSet.html">CreateTaskSet</a>.
     /// </para><para>
     /// You can add to or subtract from the number of instantiations of a task definition
     /// in a service by specifying the cluster that the service is running in and a new <c>desiredCount</c>
     /// parameter.
     /// </para><para>
     /// You can attach Amazon EBS volumes to Amazon ECS tasks by configuring the volume when
-    /// starting or running a task, or when creating or updating a service. For more infomation,
+    /// starting or running a task, or when creating or updating a service. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ebs-volumes.html#ebs-volume-types">Amazon
     /// EBS volumes</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.
     /// </para><para>
@@ -100,11 +105,12 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// before stopping the four older tasks (provided that the cluster resources required
     /// to do this are available).
     /// </para></li></ul><para>
-    /// When <a>UpdateService</a> stops a task during a deployment, the equivalent of <c>docker
-    /// stop</c> is issued to the containers running in the task. This results in a <c>SIGTERM</c>
-    /// and a 30-second timeout. After this, <c>SIGKILL</c> is sent and the containers are
-    /// forcibly stopped. If the container handles the <c>SIGTERM</c> gracefully and exits
-    /// within 30 seconds from receiving it, no <c>SIGKILL</c> is sent.
+    /// When <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_UpdateService.html">UpdateService</a>
+    /// stops a task during a deployment, the equivalent of <c>docker stop</c> is issued to
+    /// the containers running in the task. This results in a <c>SIGTERM</c> and a 30-second
+    /// timeout. After this, <c>SIGKILL</c> is sent and the containers are forcibly stopped.
+    /// If the container handles the <c>SIGTERM</c> gracefully and exits within 30 seconds
+    /// from receiving it, no <c>SIGKILL</c> is sent.
     /// </para><para>
     /// When the service scheduler launches new tasks, it determines task placement in your
     /// cluster with the following logic.
@@ -136,30 +142,29 @@ namespace Amazon.PowerShell.Cmdlets.ECS
     /// Stop the task on a container instance in an optimal Availability Zone (based on the
     /// previous steps), favoring container instances with the largest number of running tasks
     /// for this service.
-    /// </para></li></ul><note><para>
-    /// You must have a service-linked role when you update any of the following service properties:
-    /// </para><ul><li><para><c>loadBalancers</c>,
-    /// </para></li><li><para><c>serviceRegistries</c></para></li></ul><para>
-    /// For more information about the role see the <c>CreateService</c> request parameter
-    /// <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html#ECS-CreateService-request-role"><c>role</c></a>. 
-    /// </para></note>
+    /// </para></li></ul>
     /// </summary>
     [Cmdlet("Update", "ECSService", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.ECS.Model.Service")]
     [AWSCmdlet("Calls the Amazon EC2 Container Service UpdateService API operation.", Operation = new[] {"UpdateService"}, SelectReturnType = typeof(Amazon.ECS.Model.UpdateServiceResponse))]
     [AWSCmdletOutput("Amazon.ECS.Model.Service or Amazon.ECS.Model.UpdateServiceResponse",
         "This cmdlet returns an Amazon.ECS.Model.Service object.",
-        "The service call response (type Amazon.ECS.Model.UpdateServiceResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ECS.Model.UpdateServiceResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateECSServiceCmdlet : AmazonECSClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Alarms_AlarmName
         /// <summary>
         /// <para>
-        /// <para>One or more CloudWatch alarm names. Use a "," to separate the alarms.</para>
+        /// <para>One or more CloudWatch alarm names. Use a "," to separate the alarms.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -170,8 +175,9 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter AwsvpcConfiguration_AssignPublicIp
         /// <summary>
         /// <para>
-        /// <para>Whether the task's elastic network interface receives a public IP address. The default
-        /// value is <c>DISABLED</c>.</para>
+        /// <para>Whether the task's elastic network interface receives a public IP address. </para><para>Consider the following when you set this value:</para><ul><li><para>When you use <c>create-service</c> or <c>update-service</c>, the default is <c>DISABLED</c>.
+        /// </para></li><li><para>When the service <c>deploymentController</c> is <c>ECS</c>, the value must be <c>DISABLED</c>.
+        /// </para></li></ul>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -180,23 +186,46 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public Amazon.ECS.AssignPublicIp AwsvpcConfiguration_AssignPublicIp { get; set; }
         #endregion
         
+        #region Parameter AvailabilityZoneRebalancing
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether to use Availability Zone rebalancing for the service.</para><para>For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-rebalancing.html">Balancing
+        /// an Amazon ECS service across Availability Zones</a> in the <i><i>Amazon Elastic Container
+        /// Service Developer Guide</i></i>.</para><para>The default behavior of <c>AvailabilityZoneRebalancing</c> differs between create
+        /// and update requests:</para><ul><li><para>For create service requests, when no value is specified for <c>AvailabilityZoneRebalancing</c>,
+        /// Amazon ECS defaults the value to <c>ENABLED</c>.</para></li><li><para>For update service requests, when no value is specified for <c>AvailabilityZoneRebalancing</c>,
+        /// Amazon ECS defaults to the existing service’s <c>AvailabilityZoneRebalancing</c> value.
+        /// If the service never had an <c>AvailabilityZoneRebalancing</c> value set, Amazon ECS
+        /// treats this as <c>DISABLED</c>.</para></li></ul><para>This parameter doesn't trigger a new service deployment.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ECS.AvailabilityZoneRebalancing")]
+        public Amazon.ECS.AvailabilityZoneRebalancing AvailabilityZoneRebalancing { get; set; }
+        #endregion
+        
+        #region Parameter DeploymentConfiguration_BakeTimeInMinute
+        /// <summary>
+        /// <para>
+        /// <para>The time period when both blue and green service revisions are running simultaneously
+        /// after the production traffic has shifted.</para><para>You must provide this parameter when you use the <c>BLUE_GREEN</c> deployment strategy.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DeploymentConfiguration_BakeTimeInMinutes")]
+        public System.Int32? DeploymentConfiguration_BakeTimeInMinute { get; set; }
+        #endregion
+        
         #region Parameter CapacityProviderStrategy
         /// <summary>
         /// <para>
-        /// <para>The capacity provider strategy to update the service to use.</para><para>if the service uses the default capacity provider strategy for the cluster, the service
-        /// can be updated to use one or more capacity providers as opposed to the default capacity
-        /// provider strategy. However, when a service is using a capacity provider strategy that's
-        /// not the default capacity provider strategy, the service can't be updated to use the
-        /// cluster's default capacity provider strategy.</para><para>A capacity provider strategy consists of one or more capacity providers along with
-        /// the <c>base</c> and <c>weight</c> to assign to them. A capacity provider must be associated
-        /// with the cluster to be used in a capacity provider strategy. The <a>PutClusterCapacityProviders</a>
-        /// API is used to associate a capacity provider with a cluster. Only capacity providers
-        /// with an <c>ACTIVE</c> or <c>UPDATING</c> status can be used.</para><para>If specifying a capacity provider that uses an Auto Scaling group, the capacity provider
-        /// must already be created. New capacity providers can be created with the <a>CreateCapacityProvider</a>
-        /// API operation.</para><para>To use a Fargate capacity provider, specify either the <c>FARGATE</c> or <c>FARGATE_SPOT</c>
-        /// capacity providers. The Fargate capacity providers are available to all accounts and
-        /// only need to be associated with a cluster to be used.</para><para>The <a>PutClusterCapacityProviders</a> API operation is used to update the list of
-        /// available capacity providers for a cluster after the cluster is created.</para>
+        /// <para>The details of a capacity provider strategy. You can set a capacity provider when
+        /// you create a cluster, run a task, or update a service.</para><para>When you use Fargate, the capacity providers are <c>FARGATE</c> or <c>FARGATE_SPOT</c>.</para><para>When you use Amazon EC2, the capacity providers are Auto Scaling groups.</para><para>You can change capacity providers for rolling deployments and blue/green deployments.</para><para>The following list provides the valid transitions:</para><ul><li><para>Update the Fargate launch type to an Auto Scaling group capacity provider.</para></li><li><para>Update the Amazon EC2 launch type to a Fargate capacity provider.</para></li><li><para>Update the Fargate capacity provider to an Auto Scaling group capacity provider.</para></li><li><para>Update the Amazon EC2 capacity provider to a Fargate capacity provider. </para></li><li><para>Update the Auto Scaling group or Fargate capacity provider back to the launch type.</para><para>Pass an empty list in the <c>capacityProviderStrategy</c> parameter.</para></li></ul><para>For information about Amazon Web Services CDK considerations, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/update-service-parameters.html">Amazon
+        /// Web Services CDK considerations</a>.</para><para>This parameter doesn't trigger a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -207,7 +236,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The short name or full Amazon Resource Name (ARN) of the cluster that your service
-        /// runs on. If you do not specify a cluster, the default cluster is assumed.</para>
+        /// runs on. If you do not specify a cluster, the default cluster is assumed.</para><para>You can't change the cluster name.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -217,7 +246,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter DesiredCount
         /// <summary>
         /// <para>
-        /// <para>The number of instantiations of the task to place and keep running in your service.</para>
+        /// <para>The number of instantiations of the task to place and keep running in your service.</para><para>This parameter doesn't trigger a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -264,7 +293,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// Your Amazon ECS Resources</a> in the <i>Amazon Elastic Container Service Developer
         /// Guide</i>.</para><para>Only tasks launched after the update will reflect the update. To update the tags on
         /// all tasks, set <c>forceNewDeployment</c> to <c>true</c>, so that Amazon ECS starts
-        /// new tasks with the updated tags.</para>
+        /// new tasks with the updated tags.</para><para>This parameter doesn't trigger a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -276,7 +305,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>If <c>true</c>, this enables execute command functionality on all task containers.</para><para>If you do not want to override the value that was set when the service was created,
-        /// you can set this to <c>null</c> when performing this action.</para>
+        /// you can set this to <c>null</c> when performing this action.</para><para>This parameter doesn't trigger a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -301,13 +330,15 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The period of time, in seconds, that the Amazon ECS service scheduler ignores unhealthy
-        /// Elastic Load Balancing target health checks after a task has first started. This is
-        /// only valid if your service is configured to use a load balancer. If your service's
-        /// tasks take a while to start and respond to Elastic Load Balancing health checks, you
-        /// can specify a health check grace period of up to 2,147,483,647 seconds. During that
-        /// time, the Amazon ECS service scheduler ignores the Elastic Load Balancing health check
-        /// status. This grace period can prevent the ECS service scheduler from marking tasks
-        /// as unhealthy and stopping them before they have time to come up.</para>
+        /// Elastic Load Balancing, VPC Lattice, and container health checks after a task has
+        /// first started. If you don't specify a health check grace period value, the default
+        /// value of <c>0</c> is used. If you don't use any of the health checks, then <c>healthCheckGracePeriodSeconds</c>
+        /// is unused.</para><para>If your service's tasks take a while to start and respond to health checks, you can
+        /// specify a health check grace period of up to 2,147,483,647 seconds (about 69 years).
+        /// During that time, the Amazon ECS service scheduler ignores health check status. This
+        /// grace period can prevent the service scheduler from marking tasks as unhealthy and
+        /// stopping them before they have time to come up.</para><para>If your service has more running tasks than desired, unhealthy tasks in the grace
+        /// period might be stopped to reach the desired count.</para><para>This parameter doesn't trigger a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -315,10 +346,26 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public System.Int32? HealthCheckGracePeriodSecond { get; set; }
         #endregion
         
+        #region Parameter DeploymentConfiguration_LifecycleHook
+        /// <summary>
+        /// <para>
+        /// <para>An array of deployment lifecycle hook objects to run custom logic at specific stages
+        /// of the deployment lifecycle.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("DeploymentConfiguration_LifecycleHooks")]
+        public Amazon.ECS.Model.DeploymentLifecycleHook[] DeploymentConfiguration_LifecycleHook { get; set; }
+        #endregion
+        
         #region Parameter LoadBalancer
         /// <summary>
         /// <para>
-        /// <para>A list of Elastic Load Balancing load balancer objects. It contains the load balancer
+        /// <note><para>You must have a service-linked role when you update this property</para></note><para>A list of Elastic Load Balancing load balancer objects. It contains the load balancer
         /// name, the container name, and the container port to access from the load balancer.
         /// The container name is as it appears in a container definition.</para><para>When you add, update, or remove a load balancer configuration, Amazon ECS starts new
         /// tasks with the updated Elastic Load Balancing configuration, and then stops the old
@@ -333,7 +380,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// Note that multiple target groups are not supported for external deployments. For more
         /// information see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/register-multiple-targetgroups.html">Register
         /// multiple target groups with a service</a> in the <i>Amazon Elastic Container Service
-        /// Developer Guide</i>. </para><para>You can remove existing <c>loadBalancers</c> by passing an empty list.</para>
+        /// Developer Guide</i>. </para><para>You can remove existing <c>loadBalancers</c> by passing an empty list.</para><para>This parameter triggers a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -346,10 +397,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>The log driver to use for the container.</para><para>For tasks on Fargate, the supported log drivers are <c>awslogs</c>, <c>splunk</c>,
         /// and <c>awsfirelens</c>.</para><para>For tasks hosted on Amazon EC2 instances, the supported log drivers are <c>awslogs</c>,
-        /// <c>fluentd</c>, <c>gelf</c>, <c>json-file</c>, <c>journald</c>, <c>logentries</c>,<c>syslog</c>,
-        /// <c>splunk</c>, and <c>awsfirelens</c>.</para><para>For more information about using the <c>awslogs</c> log driver, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html">Using
-        /// the awslogs log driver</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para><para>For more information about using the <c>awsfirelens</c> log driver, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_firelens.html">Custom
-        /// log routing</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para><note><para>If you have a custom driver that isn't listed, you can fork the Amazon ECS container
+        /// <c>fluentd</c>, <c>gelf</c>, <c>json-file</c>, <c>journald</c>, <c>syslog</c>, <c>splunk</c>,
+        /// and <c>awsfirelens</c>.</para><para>For more information about using the <c>awslogs</c> log driver, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_awslogs.html">Send
+        /// Amazon ECS logs to CloudWatch</a> in the <i>Amazon Elastic Container Service Developer
+        /// Guide</i>.</para><para>For more information about using the <c>awsfirelens</c> log driver, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/using_firelens.html">Send
+        /// Amazon ECS logs to an Amazon Web Services service or Amazon Web Services Partner</a>.</para><note><para>If you have a custom driver that isn't listed, you can fork the Amazon ECS container
         /// agent project that's <a href="https://github.com/aws/amazon-ecs-agent">available on
         /// GitHub</a> and customize it to work with that driver. We encourage you to submit pull
         /// requests for changes that you would like to have included. However, we don't currently
@@ -374,13 +426,20 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <c>maximumPercent</c> value of 200%, the scheduler may start four new tasks before
         /// stopping the four older tasks (provided that the cluster resources required to do
         /// this are available). The default <c>maximumPercent</c> value for a service using the
-        /// <c>REPLICA</c> service scheduler is 200%.</para><para>If a service is using either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c>
-        /// deployment types and tasks that use the EC2 launch type, the <b>maximum percent</b>
-        /// value is set to the default value and is used to define the upper limit on the number
-        /// of the tasks in the service that remain in the <c>RUNNING</c> state while the container
-        /// instances are in the <c>DRAINING</c> state. If the tasks in the service use the Fargate
-        /// launch type, the maximum percent value is not used, although it is returned when describing
-        /// your service.</para>
+        /// <c>REPLICA</c> service scheduler is 200%.</para><para>The Amazon ECS scheduler uses this parameter to replace unhealthy tasks by starting
+        /// replacement tasks first and then stopping the unhealthy tasks, as long as cluster
+        /// resources for starting replacement tasks are available. For more information about
+        /// how the scheduler replaces unhealthy tasks, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html">Amazon
+        /// ECS services</a>.</para><para>If a service is using either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c>
+        /// deployment types, and tasks in the service use the EC2 launch type, the <b>maximum
+        /// percent</b> value is set to the default value. The <b>maximum percent</b> value is
+        /// used to define the upper limit on the number of the tasks in the service that remain
+        /// in the <c>RUNNING</c> state while the container instances are in the <c>DRAINING</c>
+        /// state.</para><note><para>You can't specify a custom <c>maximumPercent</c> value for a service that uses either
+        /// the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c> deployment types and has tasks
+        /// that use the EC2 launch type.</para></note><para>If the service uses either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c>
+        /// deployment types, and the tasks in the service use the Fargate launch type, the maximum
+        /// percent value is not used. The value is still returned when describing your service.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -397,7 +456,12 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// using additional cluster capacity. For example, if your service has a <c>desiredCount</c>
         /// of four tasks and a <c>minimumHealthyPercent</c> of 50%, the service scheduler may
         /// stop two existing tasks to free up cluster capacity before starting two new tasks.
-        /// </para><para>For services that <i>do not</i> use a load balancer, the following should be noted:</para><ul><li><para>A service is considered healthy if all essential containers within the tasks in the
+        /// </para><para> If any tasks are unhealthy and if <c>maximumPercent</c> doesn't allow the Amazon
+        /// ECS scheduler to start replacement tasks, the scheduler stops the unhealthy tasks
+        /// one-by-one — using the <c>minimumHealthyPercent</c> as a constraint — to clear up
+        /// capacity to launch replacement tasks. For more information about how the scheduler
+        /// replaces unhealthy tasks, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_services.html">Amazon
+        /// ECS services</a>. </para><para>For services that <i>do not</i> use a load balancer, the following should be noted:</para><ul><li><para>A service is considered healthy if all essential containers within the tasks in the
         /// service pass their health checks.</para></li><li><para>If a task has no essential containers with a health check defined, the service scheduler
         /// will wait for 40 seconds after a task reaches a <c>RUNNING</c> state before the task
         /// is counted towards the minimum healthy percent total.</para></li><li><para>If a task has one or more essential containers with a health check defined, the service
@@ -410,14 +474,21 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// before counting the task towards the minimum healthy percent total.</para></li><li><para>If a task has an essential container with a health check defined, the service scheduler
         /// will wait for both the task to reach a healthy status and the load balancer target
         /// group health check to return a healthy status before counting the task towards the
-        /// minimum healthy percent total.</para></li></ul><para>If a service is using either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c>
+        /// minimum healthy percent total.</para></li></ul><para>The default value for a replica service for <c>minimumHealthyPercent</c> is 100%.
+        /// The default <c>minimumHealthyPercent</c> value for a service using the <c>DAEMON</c>
+        /// service schedule is 0% for the CLI, the Amazon Web Services SDKs, and the APIs and
+        /// 50% for the Amazon Web Services Management Console.</para><para>The minimum number of healthy tasks during a deployment is the <c>desiredCount</c>
+        /// multiplied by the <c>minimumHealthyPercent</c>/100, rounded up to the nearest integer
+        /// value.</para><para>If a service is using either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c>
         /// deployment types and is running tasks that use the EC2 launch type, the <b>minimum
-        /// healthy percent</b> value is set to the default value and is used to define the lower
-        /// limit on the number of the tasks in the service that remain in the <c>RUNNING</c>
-        /// state while the container instances are in the <c>DRAINING</c> state. If a service
-        /// is using either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c> deployment
-        /// types and is running tasks that use the Fargate launch type, the minimum healthy percent
-        /// value is not used, although it is returned when describing your service.</para>
+        /// healthy percent</b> value is set to the default value. The <b>minimum healthy percent</b>
+        /// value is used to define the lower limit on the number of the tasks in the service
+        /// that remain in the <c>RUNNING</c> state while the container instances are in the <c>DRAINING</c>
+        /// state.</para><note><para>You can't specify a custom <c>minimumHealthyPercent</c> value for a service that uses
+        /// either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c> deployment types and
+        /// has tasks that use the EC2 launch type.</para></note><para>If a service is using either the blue/green (<c>CODE_DEPLOY</c>) or <c>EXTERNAL</c>
+        /// deployment types and is running tasks that use the Fargate launch type, the minimum
+        /// healthy percent value is not used, although it is returned when describing your service.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -441,10 +512,80 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter LogConfiguration_Option
         /// <summary>
         /// <para>
-        /// <para>The configuration options to send to the log driver. This parameter requires version
-        /// 1.19 of the Docker Remote API or greater on your container instance. To check the
-        /// Docker Remote API version on your container instance, log in to your container instance
-        /// and run the following command: <c>sudo docker version --format '{{.Server.APIVersion}}'</c></para>
+        /// <para>The configuration options to send to the log driver.</para><para>The options you can specify depend on the log driver. Some of the options you can
+        /// specify when you use the <c>awslogs</c> log driver to route logs to Amazon CloudWatch
+        /// include the following:</para><dl><dt>awslogs-create-group</dt><dd><para>Required: No</para><para>Specify whether you want the log group to be created automatically. If this option
+        /// isn't specified, it defaults to <c>false</c>.</para><note><para>Your IAM policy must include the <c>logs:CreateLogGroup</c> permission before you
+        /// attempt to use <c>awslogs-create-group</c>.</para></note></dd><dt>awslogs-region</dt><dd><para>Required: Yes</para><para>Specify the Amazon Web Services Region that the <c>awslogs</c> log driver is to send
+        /// your Docker logs to. You can choose to send all of your logs from clusters in different
+        /// Regions to a single region in CloudWatch Logs. This is so that they're all visible
+        /// in one location. Otherwise, you can separate them by Region for more granularity.
+        /// Make sure that the specified log group exists in the Region that you specify with
+        /// this option.</para></dd><dt>awslogs-group</dt><dd><para>Required: Yes</para><para>Make sure to specify a log group that the <c>awslogs</c> log driver sends its log
+        /// streams to.</para></dd><dt>awslogs-stream-prefix</dt><dd><para>Required: Yes, when using Fargate.Optional when using EC2.</para><para>Use the <c>awslogs-stream-prefix</c> option to associate a log stream with the specified
+        /// prefix, the container name, and the ID of the Amazon ECS task that the container belongs
+        /// to. If you specify a prefix with this option, then the log stream takes the format
+        /// <c>prefix-name/container-name/ecs-task-id</c>.</para><para>If you don't specify a prefix with this option, then the log stream is named after
+        /// the container ID that's assigned by the Docker daemon on the container instance. Because
+        /// it's difficult to trace logs back to the container that sent them with just the Docker
+        /// container ID (which is only available on the container instance), we recommend that
+        /// you specify a prefix with this option.</para><para>For Amazon ECS services, you can use the service name as the prefix. Doing so, you
+        /// can trace log streams to the service that the container belongs to, the name of the
+        /// container that sent them, and the ID of the task that the container belongs to.</para><para>You must specify a stream-prefix for your logs to have your logs appear in the Log
+        /// pane when using the Amazon ECS console.</para></dd><dt>awslogs-datetime-format</dt><dd><para>Required: No</para><para>This option defines a multiline start pattern in Python <c>strftime</c> format. A
+        /// log message consists of a line that matches the pattern and any following lines that
+        /// don’t match the pattern. The matched line is the delimiter between log messages.</para><para>One example of a use case for using this format is for parsing output such as a stack
+        /// dump, which might otherwise be logged in multiple entries. The correct pattern allows
+        /// it to be captured in a single entry.</para><para>For more information, see <a href="https://docs.docker.com/config/containers/logging/awslogs/#awslogs-datetime-format">awslogs-datetime-format</a>.</para><para>You cannot configure both the <c>awslogs-datetime-format</c> and <c>awslogs-multiline-pattern</c>
+        /// options.</para><note><para>Multiline logging performs regular expression parsing and matching of all log messages.
+        /// This might have a negative impact on logging performance.</para></note></dd><dt>awslogs-multiline-pattern</dt><dd><para>Required: No</para><para>This option defines a multiline start pattern that uses a regular expression. A log
+        /// message consists of a line that matches the pattern and any following lines that don’t
+        /// match the pattern. The matched line is the delimiter between log messages.</para><para>For more information, see <a href="https://docs.docker.com/config/containers/logging/awslogs/#awslogs-multiline-pattern">awslogs-multiline-pattern</a>.</para><para>This option is ignored if <c>awslogs-datetime-format</c> is also configured.</para><para>You cannot configure both the <c>awslogs-datetime-format</c> and <c>awslogs-multiline-pattern</c>
+        /// options.</para><note><para>Multiline logging performs regular expression parsing and matching of all log messages.
+        /// This might have a negative impact on logging performance.</para></note></dd></dl><para>The following options apply to all supported log drivers.</para><dl><dt>mode</dt><dd><para>Required: No</para><para>Valid values: <c>non-blocking</c> | <c>blocking</c></para><para>This option defines the delivery mode of log messages from the container to the log
+        /// driver specified using <c>logDriver</c>. The delivery mode you choose affects application
+        /// availability when the flow of logs from container is interrupted.</para><para>If you use the <c>blocking</c> mode and the flow of logs is interrupted, calls from
+        /// container code to write to the <c>stdout</c> and <c>stderr</c> streams will block.
+        /// The logging thread of the application will block as a result. This may cause the application
+        /// to become unresponsive and lead to container healthcheck failure. </para><para>If you use the <c>non-blocking</c> mode, the container's logs are instead stored in
+        /// an in-memory intermediate buffer configured with the <c>max-buffer-size</c> option.
+        /// This prevents the application from becoming unresponsive when logs cannot be sent.
+        /// We recommend using this mode if you want to ensure service availability and are okay
+        /// with some log loss. For more information, see <a href="http://aws.amazon.com/blogs/containers/preventing-log-loss-with-non-blocking-mode-in-the-awslogs-container-log-driver/">Preventing
+        /// log loss with non-blocking mode in the <c>awslogs</c> container log driver</a>.</para><para>You can set a default <c>mode</c> for all containers in a specific Amazon Web Services
+        /// Region by using the <c>defaultLogDriverMode</c> account setting. If you don't specify
+        /// the <c>mode</c> option or configure the account setting, Amazon ECS will default to
+        /// the <c>non-blocking</c> mode. For more information about the account setting, see
+        /// <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-account-settings.html#default-log-driver-mode">Default
+        /// log driver mode</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para><note><para>On June 25, 2025, Amazon ECS changed the default log driver mode from <c>blocking</c>
+        /// to <c>non-blocking</c> to prioritize task availability over logging. To continue using
+        /// the <c>blocking</c> mode after this change, do one of the following:</para><ul><li><para>Set the <c>mode</c> option in your container definition's <c>logConfiguration</c>
+        /// as <c>blocking</c>.</para></li><li><para>Set the <c>defaultLogDriverMode</c> account setting to <c>blocking</c>.</para></li></ul></note></dd><dt>max-buffer-size</dt><dd><para>Required: No</para><para>Default value: <c>10m</c></para><para>When <c>non-blocking</c> mode is used, the <c>max-buffer-size</c> log option controls
+        /// the size of the buffer that's used for intermediate message storage. Make sure to
+        /// specify an adequate buffer size based on your application. When the buffer fills up,
+        /// further logs cannot be stored. Logs that cannot be stored are lost. </para></dd></dl><para>To route logs using the <c>splunk</c> log router, you need to specify a <c>splunk-token</c>
+        /// and a <c>splunk-url</c>.</para><para>When you use the <c>awsfirelens</c> log router to route logs to an Amazon Web Services
+        /// Service or Amazon Web Services Partner Network destination for log storage and analytics,
+        /// you can set the <c>log-driver-buffer-limit</c> option to limit the number of events
+        /// that are buffered in memory, before being sent to the log router container. It can
+        /// help to resolve potential log loss issue because high throughput might result in memory
+        /// running out for the buffer inside of Docker.</para><para>Other options you can specify when using <c>awsfirelens</c> to route logs depend on
+        /// the destination. When you export logs to Amazon Data Firehose, you can specify the
+        /// Amazon Web Services Region with <c>region</c> and a name for the log stream with <c>delivery_stream</c>.</para><para>When you export logs to Amazon Kinesis Data Streams, you can specify an Amazon Web
+        /// Services Region with <c>region</c> and a data stream name with <c>stream</c>.</para><para> When you export logs to Amazon OpenSearch Service, you can specify options like <c>Name</c>,
+        /// <c>Host</c> (OpenSearch Service endpoint without protocol), <c>Port</c>, <c>Index</c>,
+        /// <c>Type</c>, <c>Aws_auth</c>, <c>Aws_region</c>, <c>Suppress_Type_Name</c>, and <c>tls</c>.
+        /// For more information, see <a href="http://aws.amazon.com/blogs/containers/under-the-hood-firelens-for-amazon-ecs-tasks/">Under
+        /// the hood: FireLens for Amazon ECS Tasks</a>.</para><para>When you export logs to Amazon S3, you can specify the bucket using the <c>bucket</c>
+        /// option. You can also specify <c>region</c>, <c>total_file_size</c>, <c>upload_timeout</c>,
+        /// and <c>use_put_object</c> as options.</para><para>This parameter requires version 1.19 of the Docker Remote API or greater on your container
+        /// instance. To check the Docker Remote API version on your container instance, log in
+        /// to your container instance and run the following command: <c>sudo docker version --format
+        /// '{{.Server.APIVersion}}'</c></para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -460,7 +601,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// unchanged. If this value is specified, it will override any existing placement constraints
         /// defined for the service. To remove all existing placement constraints, specify an
         /// empty array.</para><para>You can specify a maximum of 10 constraints for each task. This limit includes constraints
-        /// in the task definition and those specified at runtime.</para>
+        /// in the task definition and those specified at runtime.</para><para>This parameter doesn't trigger a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -474,7 +619,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>The task placement strategy objects to update the service to use. If no value is specified,
         /// the existing placement strategy for the service will remain unchanged. If this value
         /// is specified, it will override the existing placement strategy defined for the service.
-        /// To remove an existing placement strategy, specify an empty object.</para><para>You can specify a maximum of five strategy rules for each service.</para>
+        /// To remove an existing placement strategy, specify an empty object.</para><para>You can specify a maximum of five strategy rules for each service.</para><para>This parameter doesn't trigger a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -487,7 +636,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>The platform version that your tasks in the service run on. A platform version is
         /// only specified for tasks using the Fargate launch type. If a platform version is not
         /// specified, the <c>LATEST</c> platform version is used. For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/platform_versions.html">Fargate
-        /// Platform Versions</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para>
+        /// Platform Versions</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para><para>This parameter triggers a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -500,7 +649,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>Determines whether to propagate the tags from the task definition or the service to
         /// the task. If no value is specified, the tags aren't propagated.</para><para>Only tasks launched after the update will reflect the update. To update the tags on
         /// all tasks, set <c>forceNewDeployment</c> to <c>true</c>, so that Amazon ECS starts
-        /// new tasks with the updated tags.</para>
+        /// new tasks with the updated tags.</para><para>This parameter doesn't trigger a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -539,7 +688,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <summary>
         /// <para>
         /// <para>The secrets to pass to the log configuration. For more information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html">Specifying
-        /// sensitive data</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para>
+        /// sensitive data</a> in the <i>Amazon Elastic Container Service Developer Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -552,7 +705,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// <para>
         /// <para>The IDs of the security groups associated with the task or service. If you don't specify
         /// a security group, the default security group for the VPC is used. There's a limit
-        /// of 5 security groups that can be specified per <c>AwsVpcConfiguration</c>.</para><note><para>All specified security groups must be from the same VPC.</para></note>
+        /// of 5 security groups that can be specified.</para><note><para>All specified security groups must be from the same VPC.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -580,11 +737,16 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         #region Parameter ServiceRegistry
         /// <summary>
         /// <para>
-        /// <para>The details for the service discovery registries to assign to this service. For more
+        /// <note><para>You must have a service-linked role when you update this property.</para><para>For more information about the role see the <c>CreateService</c> request parameter
+        /// <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_CreateService.html#ECS-CreateService-request-role"><c>role</c></a>. </para></note><para>The details for the service discovery registries to assign to this service. For more
         /// information, see <a href="https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-discovery.html">Service
         /// Discovery</a>.</para><para>When you add, update, or remove the service registries configuration, Amazon ECS starts
         /// new tasks with the updated service registries configuration, and then stops the old
-        /// tasks when the new tasks are running.</para><para>You can remove existing <c>serviceRegistries</c> by passing an empty list.</para>
+        /// tasks when the new tasks are running.</para><para>You can remove existing <c>serviceRegistries</c> by passing an empty list.</para><para>This parameter triggers a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -602,7 +764,11 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// would be a frontend application that accepts incoming requests from either a load
         /// balancer that's attached to the service or by other means.</para><para>An object selects a port from the task definition, assigns a name for the Cloud Map
         /// service, and a list of aliases (endpoints) and ports for client applications to refer
-        /// to this service.</para>
+        /// to this service.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -610,11 +776,33 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public Amazon.ECS.Model.ServiceConnectService[] ServiceConnectConfiguration_Service { get; set; }
         #endregion
         
+        #region Parameter DeploymentConfiguration_Strategy
+        /// <summary>
+        /// <para>
+        /// <para>The deployment strategy for the service. Choose from these valid values:</para><ul><li><para><c>ROLLING</c> - When you create a service which uses the rolling update (<c>ROLLING</c>)
+        /// deployment strategy, the Amazon ECS service scheduler replaces the currently running
+        /// tasks with new tasks. The number of tasks that Amazon ECS adds or removes from the
+        /// service during a rolling update is controlled by the service deployment configuration.</para></li><li><para><c>BLUE_GREEN</c> - A blue/green deployment strategy (<c>BLUE_GREEN</c>) is a release
+        /// methodology that reduces downtime and risk by running two identical production environments
+        /// called blue and green. With Amazon ECS blue/green deployments, you can validate new
+        /// service revisions before directing production traffic to them. This approach provides
+        /// a safer way to deploy changes with the ability to quickly roll back if needed.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ECS.DeploymentStrategy")]
+        public Amazon.ECS.DeploymentStrategy DeploymentConfiguration_Strategy { get; set; }
+        #endregion
+        
         #region Parameter AwsvpcConfiguration_Subnet
         /// <summary>
         /// <para>
         /// <para>The IDs of the subnets associated with the task or service. There's a limit of 16
-        /// subnets that can be specified per <c>AwsVpcConfiguration</c>.</para><note><para>All specified subnets must be from the same VPC.</para></note>
+        /// subnets that can be specified.</para><note><para>All specified subnets must be from the same VPC.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -629,11 +817,48 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// task definition to run in your service. If a <c>revision</c> is not specified, the
         /// latest <c>ACTIVE</c> revision is used. If you modify the task definition with <c>UpdateService</c>,
         /// Amazon ECS spawns a task with the new version of the task definition and then stops
-        /// an old task after the new version is running.</para>
+        /// an old task after the new version is running.</para><para>This parameter triggers a new service deployment.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String TaskDefinition { get; set; }
+        #endregion
+        
+        #region Parameter DeploymentController_Type
+        /// <summary>
+        /// <para>
+        /// <para>The deployment controller type to use.</para><para>The deployment controller is the mechanism that determines how tasks are deployed
+        /// for your service. The valid options are:</para><ul><li><para>ECS</para><para>When you create a service which uses the <c>ECS</c> deployment controller, you can
+        /// choose between the following deployment strategies:</para><ul><li><para><c>ROLLING</c>: When you create a service which uses the <i>rolling update</i> (<c>ROLLING</c>)
+        /// deployment strategy, the Amazon ECS service scheduler replaces the currently running
+        /// tasks with new tasks. The number of tasks that Amazon ECS adds or removes from the
+        /// service during a rolling update is controlled by the service deployment configuration.
+        /// </para><para>Rolling update deployments are best suited for the following scenarios:</para><ul><li><para>Gradual service updates: You need to update your service incrementally without taking
+        /// the entire service offline at once.</para></li><li><para>Limited resource requirements: You want to avoid the additional resource costs of
+        /// running two complete environments simultaneously (as required by blue/green deployments).</para></li><li><para>Acceptable deployment time: Your application can tolerate a longer deployment process,
+        /// as rolling updates replace tasks one by one.</para></li><li><para>No need for instant roll back: Your service can tolerate a rollback process that takes
+        /// minutes rather than seconds.</para></li><li><para>Simple deployment process: You prefer a straightforward deployment approach without
+        /// the complexity of managing multiple environments, target groups, and listeners.</para></li><li><para>No load balancer requirement: Your service doesn't use or require a load balancer,
+        /// Application Load Balancer, Network Load Balancer, or Service Connect (which are required
+        /// for blue/green deployments).</para></li><li><para>Stateful applications: Your application maintains state that makes it difficult to
+        /// run two parallel environments.</para></li><li><para>Cost sensitivity: You want to minimize deployment costs by not running duplicate environments
+        /// during deployment.</para></li></ul><para>Rolling updates are the default deployment strategy for services and provide a balance
+        /// between deployment safety and resource efficiency for many common application scenarios.</para></li><li><para><c>BLUE_GREEN</c>: A <i>blue/green</i> deployment strategy (<c>BLUE_GREEN</c>) is
+        /// a release methodology that reduces downtime and risk by running two identical production
+        /// environments called blue and green. With Amazon ECS blue/green deployments, you can
+        /// validate new service revisions before directing production traffic to them. This approach
+        /// provides a safer way to deploy changes with the ability to quickly roll back if needed.</para><para>Amazon ECS blue/green deployments are best suited for the following scenarios:</para><ul><li><para>Service validation: When you need to validate new service revisions before directing
+        /// production traffic to them</para></li><li><para>Zero downtime: When your service requires zero-downtime deployments</para></li><li><para>Instant roll back: When you need the ability to quickly roll back if issues are detected</para></li><li><para>Load balancer requirement: When your service uses Application Load Balancer, Network
+        /// Load Balancer, or Service Connect</para></li></ul></li></ul></li><li><para>External</para><para>Use a third-party deployment controller.</para></li><li><para>Blue/green deployment (powered by CodeDeploy)</para><para>CodeDeploy installs an updated version of the application as a new replacement task
+        /// set and reroutes production traffic from the original application task set to the
+        /// replacement task set. The original task set is terminated after a successful deployment.
+        /// Use this deployment controller to verify a new deployment of a service before sending
+        /// production traffic to it.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ECS.DeploymentControllerType")]
+        public Amazon.ECS.DeploymentControllerType DeploymentController_Type { get; set; }
         #endregion
         
         #region Parameter VolumeConfiguration
@@ -643,12 +868,31 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         /// size, volumeType, IOPS, throughput, snapshot and encryption in <a href="https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ServiceManagedEBSVolumeConfiguration.html">ServiceManagedEBSVolumeConfiguration</a>.
         /// The <c>name</c> of the volume must match the <c>name</c> from the task definition.
         /// If set to null, no new deployment is triggered. Otherwise, if this configuration differs
-        /// from the existing one, it triggers a new deployment.</para>
+        /// from the existing one, it triggers a new deployment.</para><para>This parameter triggers a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("VolumeConfigurations")]
         public Amazon.ECS.Model.ServiceVolumeConfiguration[] VolumeConfiguration { get; set; }
+        #endregion
+        
+        #region Parameter VpcLatticeConfiguration
+        /// <summary>
+        /// <para>
+        /// <para>An object representing the VPC Lattice configuration for the service being updated.</para><para>This parameter triggers a new service deployment.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("VpcLatticeConfigurations")]
+        public Amazon.ECS.Model.VpcLatticeConfiguration[] VpcLatticeConfiguration { get; set; }
         #endregion
         
         #region Parameter Select
@@ -662,16 +906,6 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public string Select { get; set; } = "Service";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Cluster parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Cluster' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -682,9 +916,13 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Service), MyInvocation.BoundParameters);
@@ -698,21 +936,12 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ECS.Model.UpdateServiceResponse, UpdateECSServiceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Cluster;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.AvailabilityZoneRebalancing = this.AvailabilityZoneRebalancing;
             if (this.CapacityProviderStrategy != null)
             {
                 context.CapacityProviderStrategy = new List<Amazon.ECS.Model.CapacityProviderStrategyItem>(this.CapacityProviderStrategy);
@@ -724,10 +953,17 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             }
             context.Alarms_Enable = this.Alarms_Enable;
             context.Alarms_Rollback = this.Alarms_Rollback;
+            context.DeploymentConfiguration_BakeTimeInMinute = this.DeploymentConfiguration_BakeTimeInMinute;
             context.DeploymentCircuitBreaker_Enable = this.DeploymentCircuitBreaker_Enable;
             context.DeploymentCircuitBreaker_Rollback = this.DeploymentCircuitBreaker_Rollback;
+            if (this.DeploymentConfiguration_LifecycleHook != null)
+            {
+                context.DeploymentConfiguration_LifecycleHook = new List<Amazon.ECS.Model.DeploymentLifecycleHook>(this.DeploymentConfiguration_LifecycleHook);
+            }
             context.DeploymentConfiguration_MaximumPercent = this.DeploymentConfiguration_MaximumPercent;
             context.DeploymentConfiguration_MinimumHealthyPercent = this.DeploymentConfiguration_MinimumHealthyPercent;
+            context.DeploymentConfiguration_Strategy = this.DeploymentConfiguration_Strategy;
+            context.DeploymentController_Type = this.DeploymentController_Type;
             context.DesiredCount = this.DesiredCount;
             context.EnableECSManagedTag = this.EnableECSManagedTag;
             context.EnableExecuteCommand = this.EnableExecuteCommand;
@@ -791,6 +1027,10 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             {
                 context.VolumeConfiguration = new List<Amazon.ECS.Model.ServiceVolumeConfiguration>(this.VolumeConfiguration);
             }
+            if (this.VpcLatticeConfiguration != null)
+            {
+                context.VpcLatticeConfiguration = new List<Amazon.ECS.Model.VpcLatticeConfiguration>(this.VpcLatticeConfiguration);
+            }
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -807,6 +1047,10 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             // create request
             var request = new Amazon.ECS.Model.UpdateServiceRequest();
             
+            if (cmdletContext.AvailabilityZoneRebalancing != null)
+            {
+                request.AvailabilityZoneRebalancing = cmdletContext.AvailabilityZoneRebalancing;
+            }
             if (cmdletContext.CapacityProviderStrategy != null)
             {
                 request.CapacityProviderStrategy = cmdletContext.CapacityProviderStrategy;
@@ -819,6 +1063,26 @@ namespace Amazon.PowerShell.Cmdlets.ECS
              // populate DeploymentConfiguration
             var requestDeploymentConfigurationIsNull = true;
             request.DeploymentConfiguration = new Amazon.ECS.Model.DeploymentConfiguration();
+            System.Int32? requestDeploymentConfiguration_deploymentConfiguration_BakeTimeInMinute = null;
+            if (cmdletContext.DeploymentConfiguration_BakeTimeInMinute != null)
+            {
+                requestDeploymentConfiguration_deploymentConfiguration_BakeTimeInMinute = cmdletContext.DeploymentConfiguration_BakeTimeInMinute.Value;
+            }
+            if (requestDeploymentConfiguration_deploymentConfiguration_BakeTimeInMinute != null)
+            {
+                request.DeploymentConfiguration.BakeTimeInMinutes = requestDeploymentConfiguration_deploymentConfiguration_BakeTimeInMinute.Value;
+                requestDeploymentConfigurationIsNull = false;
+            }
+            List<Amazon.ECS.Model.DeploymentLifecycleHook> requestDeploymentConfiguration_deploymentConfiguration_LifecycleHook = null;
+            if (cmdletContext.DeploymentConfiguration_LifecycleHook != null)
+            {
+                requestDeploymentConfiguration_deploymentConfiguration_LifecycleHook = cmdletContext.DeploymentConfiguration_LifecycleHook;
+            }
+            if (requestDeploymentConfiguration_deploymentConfiguration_LifecycleHook != null)
+            {
+                request.DeploymentConfiguration.LifecycleHooks = requestDeploymentConfiguration_deploymentConfiguration_LifecycleHook;
+                requestDeploymentConfigurationIsNull = false;
+            }
             System.Int32? requestDeploymentConfiguration_deploymentConfiguration_MaximumPercent = null;
             if (cmdletContext.DeploymentConfiguration_MaximumPercent != null)
             {
@@ -837,6 +1101,16 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             if (requestDeploymentConfiguration_deploymentConfiguration_MinimumHealthyPercent != null)
             {
                 request.DeploymentConfiguration.MinimumHealthyPercent = requestDeploymentConfiguration_deploymentConfiguration_MinimumHealthyPercent.Value;
+                requestDeploymentConfigurationIsNull = false;
+            }
+            Amazon.ECS.DeploymentStrategy requestDeploymentConfiguration_deploymentConfiguration_Strategy = null;
+            if (cmdletContext.DeploymentConfiguration_Strategy != null)
+            {
+                requestDeploymentConfiguration_deploymentConfiguration_Strategy = cmdletContext.DeploymentConfiguration_Strategy;
+            }
+            if (requestDeploymentConfiguration_deploymentConfiguration_Strategy != null)
+            {
+                request.DeploymentConfiguration.Strategy = requestDeploymentConfiguration_deploymentConfiguration_Strategy;
                 requestDeploymentConfigurationIsNull = false;
             }
             Amazon.ECS.Model.DeploymentCircuitBreaker requestDeploymentConfiguration_deploymentConfiguration_DeploymentCircuitBreaker = null;
@@ -923,6 +1197,25 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             if (requestDeploymentConfigurationIsNull)
             {
                 request.DeploymentConfiguration = null;
+            }
+            
+             // populate DeploymentController
+            var requestDeploymentControllerIsNull = true;
+            request.DeploymentController = new Amazon.ECS.Model.DeploymentController();
+            Amazon.ECS.DeploymentControllerType requestDeploymentController_deploymentController_Type = null;
+            if (cmdletContext.DeploymentController_Type != null)
+            {
+                requestDeploymentController_deploymentController_Type = cmdletContext.DeploymentController_Type;
+            }
+            if (requestDeploymentController_deploymentController_Type != null)
+            {
+                request.DeploymentController.Type = requestDeploymentController_deploymentController_Type;
+                requestDeploymentControllerIsNull = false;
+            }
+             // determine if request.DeploymentController should be set to null
+            if (requestDeploymentControllerIsNull)
+            {
+                request.DeploymentController = null;
             }
             if (cmdletContext.DesiredCount != null)
             {
@@ -1118,6 +1411,10 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             {
                 request.VolumeConfigurations = cmdletContext.VolumeConfiguration;
             }
+            if (cmdletContext.VpcLatticeConfiguration != null)
+            {
+                request.VpcLatticeConfigurations = cmdletContext.VpcLatticeConfiguration;
+            }
             
             CmdletOutput output;
             
@@ -1156,13 +1453,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon EC2 Container Service", "UpdateService");
             try
             {
-                #if DESKTOP
-                return client.UpdateService(request);
-                #elif CORECLR
-                return client.UpdateServiceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateServiceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -1179,15 +1470,20 @@ namespace Amazon.PowerShell.Cmdlets.ECS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public Amazon.ECS.AvailabilityZoneRebalancing AvailabilityZoneRebalancing { get; set; }
             public List<Amazon.ECS.Model.CapacityProviderStrategyItem> CapacityProviderStrategy { get; set; }
             public System.String Cluster { get; set; }
             public List<System.String> Alarms_AlarmName { get; set; }
             public System.Boolean? Alarms_Enable { get; set; }
             public System.Boolean? Alarms_Rollback { get; set; }
+            public System.Int32? DeploymentConfiguration_BakeTimeInMinute { get; set; }
             public System.Boolean? DeploymentCircuitBreaker_Enable { get; set; }
             public System.Boolean? DeploymentCircuitBreaker_Rollback { get; set; }
+            public List<Amazon.ECS.Model.DeploymentLifecycleHook> DeploymentConfiguration_LifecycleHook { get; set; }
             public System.Int32? DeploymentConfiguration_MaximumPercent { get; set; }
             public System.Int32? DeploymentConfiguration_MinimumHealthyPercent { get; set; }
+            public Amazon.ECS.DeploymentStrategy DeploymentConfiguration_Strategy { get; set; }
+            public Amazon.ECS.DeploymentControllerType DeploymentController_Type { get; set; }
             public System.Int32? DesiredCount { get; set; }
             public System.Boolean? EnableECSManagedTag { get; set; }
             public System.Boolean? EnableExecuteCommand { get; set; }
@@ -1211,6 +1507,7 @@ namespace Amazon.PowerShell.Cmdlets.ECS
             public List<Amazon.ECS.Model.ServiceRegistry> ServiceRegistry { get; set; }
             public System.String TaskDefinition { get; set; }
             public List<Amazon.ECS.Model.ServiceVolumeConfiguration> VolumeConfiguration { get; set; }
+            public List<Amazon.ECS.Model.VpcLatticeConfiguration> VpcLatticeConfiguration { get; set; }
             public System.Func<Amazon.ECS.Model.UpdateServiceResponse, UpdateECSServiceCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.Service;
         }

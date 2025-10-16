@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -60,18 +62,35 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [AWSCmdlet("Calls the AWS IoT SiteWise BatchPutAssetPropertyValue API operation.", Operation = new[] {"BatchPutAssetPropertyValue"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.BatchPutAssetPropertyErrorEntry or Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueResponse",
         "This cmdlet returns a collection of Amazon.IoTSiteWise.Model.BatchPutAssetPropertyErrorEntry objects.",
-        "The service call response (type Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueResponse) can be returned by specifying '-Select *'."
     )]
     public partial class ImportIOTSWPutAssetPropertyValueCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter EnablePartialEntryProcessing
+        /// <summary>
+        /// <para>
+        /// <para>This setting enables partial ingestion at entry-level. If set to <c>true</c>, we ingest
+        /// all TQVs not resulting in an error. If set to <c>false</c>, an invalid TQV fails ingestion
+        /// of the entire entry that contains it.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
+        public System.Boolean? EnablePartialEntryProcessing { get; set; }
+        #endregion
         
         #region Parameter Entry
         /// <summary>
         /// <para>
         /// <para>The list of asset property value entries for the batch put request. You can specify
-        /// up to 10 entries per request.</para>
+        /// up to 10 entries per request.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -107,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Entry), MyInvocation.BoundParameters);
@@ -128,6 +151,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
                 context.Select = CreateSelectDelegate<Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueResponse, ImportIOTSWPutAssetPropertyValueCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
+            context.EnablePartialEntryProcessing = this.EnablePartialEntryProcessing;
             if (this.Entry != null)
             {
                 context.Entry = new List<Amazon.IoTSiteWise.Model.PutAssetPropertyValueEntry>(this.Entry);
@@ -154,6 +178,10 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             // create request
             var request = new Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueRequest();
             
+            if (cmdletContext.EnablePartialEntryProcessing != null)
+            {
+                request.EnablePartialEntryProcessing = cmdletContext.EnablePartialEntryProcessing.Value;
+            }
             if (cmdletContext.Entry != null)
             {
                 request.Entries = cmdletContext.Entry;
@@ -196,13 +224,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "BatchPutAssetPropertyValue");
             try
             {
-                #if DESKTOP
-                return client.BatchPutAssetPropertyValue(request);
-                #elif CORECLR
-                return client.BatchPutAssetPropertyValueAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.BatchPutAssetPropertyValueAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -219,6 +241,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Boolean? EnablePartialEntryProcessing { get; set; }
             public List<Amazon.IoTSiteWise.Model.PutAssetPropertyValueEntry> Entry { get; set; }
             public System.Func<Amazon.IoTSiteWise.Model.BatchPutAssetPropertyValueResponse, ImportIOTSWPutAssetPropertyValueCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ErrorEntries;

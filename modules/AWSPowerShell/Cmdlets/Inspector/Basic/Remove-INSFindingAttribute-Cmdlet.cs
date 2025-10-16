@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Inspector;
 using Amazon.Inspector.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.INS
 {
     /// <summary>
@@ -36,17 +38,22 @@ namespace Amazon.PowerShell.Cmdlets.INS
     [AWSCmdlet("Calls the Amazon Inspector RemoveAttributesFromFindings API operation.", Operation = new[] {"RemoveAttributesFromFindings"}, SelectReturnType = typeof(Amazon.Inspector.Model.RemoveAttributesFromFindingsResponse))]
     [AWSCmdletOutput("System.String or Amazon.Inspector.Model.RemoveAttributesFromFindingsResponse",
         "This cmdlet returns a collection of System.String objects.",
-        "The service call response (type Amazon.Inspector.Model.RemoveAttributesFromFindingsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Inspector.Model.RemoveAttributesFromFindingsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RemoveINSFindingAttributeCmdlet : AmazonInspectorClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeKey
         /// <summary>
         /// <para>
-        /// <para>The array of attribute keys that you want to remove from specified findings.</para>
+        /// <para>The array of attribute keys that you want to remove from specified findings.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -64,7 +71,11 @@ namespace Amazon.PowerShell.Cmdlets.INS
         #region Parameter FindingArn
         /// <summary>
         /// <para>
-        /// <para>The ARNs that specify the findings that you want to remove attributes from.</para>
+        /// <para>The ARNs that specify the findings that you want to remove attributes from.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -100,9 +111,13 @@ namespace Amazon.PowerShell.Cmdlets.INS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.FindingArn), MyInvocation.BoundParameters);
@@ -203,13 +218,7 @@ namespace Amazon.PowerShell.Cmdlets.INS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Inspector", "RemoveAttributesFromFindings");
             try
             {
-                #if DESKTOP
-                return client.RemoveAttributesFromFindings(request);
-                #elif CORECLR
-                return client.RemoveAttributesFromFindingsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RemoveAttributesFromFindingsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

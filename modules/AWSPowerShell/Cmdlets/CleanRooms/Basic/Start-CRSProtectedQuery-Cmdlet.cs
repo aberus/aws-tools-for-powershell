@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CleanRooms;
 using Amazon.CleanRooms.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CRS
 {
     /// <summary>
@@ -35,16 +37,24 @@ namespace Amazon.PowerShell.Cmdlets.CRS
     [AWSCmdlet("Calls the AWS Clean Rooms Service StartProtectedQuery API operation.", Operation = new[] {"StartProtectedQuery"}, SelectReturnType = typeof(Amazon.CleanRooms.Model.StartProtectedQueryResponse))]
     [AWSCmdletOutput("Amazon.CleanRooms.Model.ProtectedQuery or Amazon.CleanRooms.Model.StartProtectedQueryResponse",
         "This cmdlet returns an Amazon.CleanRooms.Model.ProtectedQuery object.",
-        "The service call response (type Amazon.CleanRooms.Model.StartProtectedQueryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CleanRooms.Model.StartProtectedQueryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class StartCRSProtectedQueryCmdlet : AmazonCleanRoomsClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter Member_AccountId
+        /// <summary>
+        /// <para>
+        /// <para>The unique identifier for the account.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ResultConfiguration_OutputConfiguration_Member_AccountId")]
+        public System.String Member_AccountId { get; set; }
+        #endregion
         
         #region Parameter SqlParameters_AnalysisTemplateArn
         /// <summary>
@@ -78,6 +88,23 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public System.String S3_KeyPrefix { get; set; }
         #endregion
         
+        #region Parameter Distribute_Location
+        /// <summary>
+        /// <para>
+        /// <para> A list of locations where you want to distribute the protected query results. Each
+        /// location must specify either an S3 destination or a collaboration member destination.</para><important><para>You can't specify more than one S3 location.</para><para>You can't specify the query runner's account as a member location.</para><para>You must include either an S3 or member output configuration for each location, but
+        /// not both.</para></important><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ResultConfiguration_OutputConfiguration_Distribute_Locations")]
+        public Amazon.CleanRooms.Model.ProtectedQueryDistributeOutputConfigurationLocation[] Distribute_Location { get; set; }
+        #endregion
+        
         #region Parameter MembershipIdentifier
         /// <summary>
         /// <para>
@@ -96,10 +123,25 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public System.String MembershipIdentifier { get; set; }
         #endregion
         
+        #region Parameter Worker_Number
+        /// <summary>
+        /// <para>
+        /// <para> The number of workers.</para><para>SQL queries support a minimum value of 2 and a maximum value of 400. </para><para>PySpark jobs support a minimum value of 4 and a maximum value of 128.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ComputeConfiguration_Worker_Number")]
+        public System.Int32? Worker_Number { get; set; }
+        #endregion
+        
         #region Parameter SqlParameters_Parameter
         /// <summary>
         /// <para>
-        /// <para>The protected query SQL parameters.</para>
+        /// <para>The protected query SQL parameters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,6 +169,31 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         [Alias("ResultConfiguration_OutputConfiguration_S3_ResultFormat")]
         [AWSConstantClassSource("Amazon.CleanRooms.ResultFormat")]
         public Amazon.CleanRooms.ResultFormat S3_ResultFormat { get; set; }
+        #endregion
+        
+        #region Parameter S3_SingleFileOutput
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether files should be output as a single file (<c>TRUE</c>) or output
+        /// as multiple files (<c>FALSE</c>). This parameter is only supported for analyses with
+        /// the Spark analytics engine.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ResultConfiguration_OutputConfiguration_S3_SingleFileOutput")]
+        public System.Boolean? S3_SingleFileOutput { get; set; }
+        #endregion
+        
+        #region Parameter Worker_Type
+        /// <summary>
+        /// <para>
+        /// <para> The worker compute configuration type.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("ComputeConfiguration_Worker_Type")]
+        [AWSConstantClassSource("Amazon.CleanRooms.WorkerComputeType")]
+        public Amazon.CleanRooms.WorkerComputeType Worker_Type { get; set; }
         #endregion
         
         #region Parameter Type
@@ -157,16 +224,6 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public string Select { get; set; } = "ProtectedQuery";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the MembershipIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^MembershipIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^MembershipIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -177,9 +234,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.MembershipIdentifier), MyInvocation.BoundParameters);
@@ -193,21 +254,13 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CleanRooms.Model.StartProtectedQueryResponse, StartCRSProtectedQueryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.MembershipIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.Worker_Number = this.Worker_Number;
+            context.Worker_Type = this.Worker_Type;
             context.MembershipIdentifier = this.MembershipIdentifier;
             #if MODULAR
             if (this.MembershipIdentifier == null && ParameterWasBound(nameof(this.MembershipIdentifier)))
@@ -215,9 +268,15 @@ namespace Amazon.PowerShell.Cmdlets.CRS
                 WriteWarning("You are passing $null as a value for parameter MembershipIdentifier which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Distribute_Location != null)
+            {
+                context.Distribute_Location = new List<Amazon.CleanRooms.Model.ProtectedQueryDistributeOutputConfigurationLocation>(this.Distribute_Location);
+            }
+            context.Member_AccountId = this.Member_AccountId;
             context.S3_Bucket = this.S3_Bucket;
             context.S3_KeyPrefix = this.S3_KeyPrefix;
             context.S3_ResultFormat = this.S3_ResultFormat;
+            context.S3_SingleFileOutput = this.S3_SingleFileOutput;
             context.SqlParameters_AnalysisTemplateArn = this.SqlParameters_AnalysisTemplateArn;
             if (this.SqlParameters_Parameter != null)
             {
@@ -251,6 +310,50 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             // create request
             var request = new Amazon.CleanRooms.Model.StartProtectedQueryRequest();
             
+            
+             // populate ComputeConfiguration
+            var requestComputeConfigurationIsNull = true;
+            request.ComputeConfiguration = new Amazon.CleanRooms.Model.ComputeConfiguration();
+            Amazon.CleanRooms.Model.WorkerComputeConfiguration requestComputeConfiguration_computeConfiguration_Worker = null;
+            
+             // populate Worker
+            var requestComputeConfiguration_computeConfiguration_WorkerIsNull = true;
+            requestComputeConfiguration_computeConfiguration_Worker = new Amazon.CleanRooms.Model.WorkerComputeConfiguration();
+            System.Int32? requestComputeConfiguration_computeConfiguration_Worker_worker_Number = null;
+            if (cmdletContext.Worker_Number != null)
+            {
+                requestComputeConfiguration_computeConfiguration_Worker_worker_Number = cmdletContext.Worker_Number.Value;
+            }
+            if (requestComputeConfiguration_computeConfiguration_Worker_worker_Number != null)
+            {
+                requestComputeConfiguration_computeConfiguration_Worker.Number = requestComputeConfiguration_computeConfiguration_Worker_worker_Number.Value;
+                requestComputeConfiguration_computeConfiguration_WorkerIsNull = false;
+            }
+            Amazon.CleanRooms.WorkerComputeType requestComputeConfiguration_computeConfiguration_Worker_worker_Type = null;
+            if (cmdletContext.Worker_Type != null)
+            {
+                requestComputeConfiguration_computeConfiguration_Worker_worker_Type = cmdletContext.Worker_Type;
+            }
+            if (requestComputeConfiguration_computeConfiguration_Worker_worker_Type != null)
+            {
+                requestComputeConfiguration_computeConfiguration_Worker.Type = requestComputeConfiguration_computeConfiguration_Worker_worker_Type;
+                requestComputeConfiguration_computeConfiguration_WorkerIsNull = false;
+            }
+             // determine if requestComputeConfiguration_computeConfiguration_Worker should be set to null
+            if (requestComputeConfiguration_computeConfiguration_WorkerIsNull)
+            {
+                requestComputeConfiguration_computeConfiguration_Worker = null;
+            }
+            if (requestComputeConfiguration_computeConfiguration_Worker != null)
+            {
+                request.ComputeConfiguration.Worker = requestComputeConfiguration_computeConfiguration_Worker;
+                requestComputeConfigurationIsNull = false;
+            }
+             // determine if request.ComputeConfiguration should be set to null
+            if (requestComputeConfigurationIsNull)
+            {
+                request.ComputeConfiguration = null;
+            }
             if (cmdletContext.MembershipIdentifier != null)
             {
                 request.MembershipIdentifier = cmdletContext.MembershipIdentifier;
@@ -264,6 +367,56 @@ namespace Amazon.PowerShell.Cmdlets.CRS
              // populate OutputConfiguration
             var requestResultConfiguration_resultConfiguration_OutputConfigurationIsNull = true;
             requestResultConfiguration_resultConfiguration_OutputConfiguration = new Amazon.CleanRooms.Model.ProtectedQueryOutputConfiguration();
+            Amazon.CleanRooms.Model.ProtectedQueryDistributeOutputConfiguration requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute = null;
+            
+             // populate Distribute
+            var requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_DistributeIsNull = true;
+            requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute = new Amazon.CleanRooms.Model.ProtectedQueryDistributeOutputConfiguration();
+            List<Amazon.CleanRooms.Model.ProtectedQueryDistributeOutputConfigurationLocation> requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute_distribute_Location = null;
+            if (cmdletContext.Distribute_Location != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute_distribute_Location = cmdletContext.Distribute_Location;
+            }
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute_distribute_Location != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute.Locations = requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute_distribute_Location;
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_DistributeIsNull = false;
+            }
+             // determine if requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute should be set to null
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_DistributeIsNull)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute = null;
+            }
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration.Distribute = requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Distribute;
+                requestResultConfiguration_resultConfiguration_OutputConfigurationIsNull = false;
+            }
+            Amazon.CleanRooms.Model.ProtectedQueryMemberOutputConfiguration requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member = null;
+            
+             // populate Member
+            var requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_MemberIsNull = true;
+            requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member = new Amazon.CleanRooms.Model.ProtectedQueryMemberOutputConfiguration();
+            System.String requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member_member_AccountId = null;
+            if (cmdletContext.Member_AccountId != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member_member_AccountId = cmdletContext.Member_AccountId;
+            }
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member_member_AccountId != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member.AccountId = requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member_member_AccountId;
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_MemberIsNull = false;
+            }
+             // determine if requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member should be set to null
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_MemberIsNull)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member = null;
+            }
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration.Member = requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_Member;
+                requestResultConfiguration_resultConfiguration_OutputConfigurationIsNull = false;
+            }
             Amazon.CleanRooms.Model.ProtectedQueryS3OutputConfiguration requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3 = null;
             
              // populate S3
@@ -297,6 +450,16 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3_s3_ResultFormat != null)
             {
                 requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3.ResultFormat = requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3_s3_ResultFormat;
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3IsNull = false;
+            }
+            System.Boolean? requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput = null;
+            if (cmdletContext.S3_SingleFileOutput != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput = cmdletContext.S3_SingleFileOutput.Value;
+            }
+            if (requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput != null)
+            {
+                requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3.SingleFileOutput = requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3_s3_SingleFileOutput.Value;
                 requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3IsNull = false;
             }
              // determine if requestResultConfiguration_resultConfiguration_OutputConfiguration_resultConfiguration_OutputConfiguration_S3 should be set to null
@@ -405,13 +568,7 @@ namespace Amazon.PowerShell.Cmdlets.CRS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Clean Rooms Service", "StartProtectedQuery");
             try
             {
-                #if DESKTOP
-                return client.StartProtectedQuery(request);
-                #elif CORECLR
-                return client.StartProtectedQueryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.StartProtectedQueryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -428,10 +585,15 @@ namespace Amazon.PowerShell.Cmdlets.CRS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.Int32? Worker_Number { get; set; }
+            public Amazon.CleanRooms.WorkerComputeType Worker_Type { get; set; }
             public System.String MembershipIdentifier { get; set; }
+            public List<Amazon.CleanRooms.Model.ProtectedQueryDistributeOutputConfigurationLocation> Distribute_Location { get; set; }
+            public System.String Member_AccountId { get; set; }
             public System.String S3_Bucket { get; set; }
             public System.String S3_KeyPrefix { get; set; }
             public Amazon.CleanRooms.ResultFormat S3_ResultFormat { get; set; }
+            public System.Boolean? S3_SingleFileOutput { get; set; }
             public System.String SqlParameters_AnalysisTemplateArn { get; set; }
             public Dictionary<System.String, System.String> SqlParameters_Parameter { get; set; }
             public System.String SqlParameters_QueryString { get; set; }

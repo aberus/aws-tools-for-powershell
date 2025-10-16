@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -48,17 +50,21 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyInstanceAttribute API operation.", Operation = new[] {"ModifyInstanceAttribute"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyInstanceAttributeResponse))]
     [AWSCmdletOutput("None or Amazon.EC2.Model.ModifyInstanceAttributeResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.EC2.Model.ModifyInstanceAttributeResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.EC2.Model.ModifyInstanceAttributeResponse) be returned by specifying '-Select *'."
     )]
     public partial class EditEC2InstanceAttributeCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Attribute
         /// <summary>
         /// <para>
-        /// <para>The name of the attribute to modify.</para><important><para>You can modify the following attributes only: <c>disableApiTermination</c> | <c>instanceType</c>
+        /// <para>The name of the attribute to modify.</para><note><para>When changing the instance type: If the original instance type is configured for configurable
+        /// bandwidth, and the desired instance type doesn't support configurable bandwidth, first
+        /// set the existing bandwidth configuration to <c>default</c> using the <a>ModifyInstanceNetworkPerformanceOptions</a>
+        /// operation.</para></note><important><para>You can modify the following attributes only: <c>disableApiTermination</c> | <c>instanceType</c>
         /// | <c>kernel</c> | <c>ramdisk</c> | <c>instanceInitiatedShutdownBehavior</c> | <c>blockDeviceMapping</c>
         /// | <c>userData</c> | <c>sourceDestCheck</c> | <c>groupSet</c> | <c>ebsOptimized</c>
         /// | <c>sriovNetSupport</c> | <c>enaSupport</c> | <c>nvmeSupport</c> | <c>disableApiStop</c>
@@ -77,10 +83,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// The volume must be owned by the caller. If no value is specified for <c>DeleteOnTermination</c>,
         /// the default is <c>true</c> and the volume is deleted when the instance is terminated.
         /// You can't modify the <c>DeleteOnTermination</c> attribute for volumes that are attached
-        /// to Fargate tasks.</para><para>To add instance store volumes to an Amazon EBS-backed instance, you must add them
+        /// to Amazon Web Services-managed resources.</para><para>To add instance store volumes to an Amazon EBS-backed instance, you must add them
         /// when you launch the instance. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/block-device-mapping-concepts.html#Using_OverridingAMIBDM">Update
         /// the block device mapping when launching an instance</a> in the <i>Amazon EC2 User
-        /// Guide</i>.</para>
+        /// Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -92,8 +102,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>Indicates whether an instance is enabled for stop protection. For more information,
-        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Stop_Start.html#Using_StopProtection">Stop
-        /// Protection</a>.</para>
+        /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-stop-protection.html">Enable
+        /// stop protection for your instance</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -103,12 +113,25 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter DisableApiTermination
         /// <summary>
         /// <para>
-        /// <para>If the value is <c>true</c>, you can't terminate the instance using the Amazon EC2
-        /// console, CLI, or API; otherwise, you can. You cannot use this parameter for Spot Instances.</para>
+        /// <para>Enable or disable termination protection for the instance. If the value is <c>true</c>,
+        /// you can't terminate the instance using the Amazon EC2 console, command line interface,
+        /// or API. You can't enable termination protection for Spot Instances.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.Boolean? DisableApiTermination { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the operation, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EbsOptimized
@@ -140,7 +163,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>Replaces the security groups of the instance with the specified security groups. You
         /// must specify the ID of at least one security group, even if it's just the default
-        /// security group for the VPC.</para>
+        /// security group for the VPC.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -240,9 +267,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter UserData
         /// <summary>
         /// <para>
-        /// <para>Changes the instance's user data to the specified value. If you are using an Amazon
-        /// Web Services SDK or command line tool, base64-encoding is performed for you, and you
-        /// can load the text from a file. Otherwise, you must provide base64-encoded text.</para>
+        /// <para>Changes the instance's user data to the specified value. User data must be base64-encoded.
+        /// Depending on the tool or SDK that you're using, the base64-encoding might be performed
+        /// for you. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-add-user-data.html">Work
+        /// with instance user data</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -270,16 +298,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InstanceId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InstanceId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -290,9 +308,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.InstanceId), MyInvocation.BoundParameters);
@@ -306,21 +328,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyInstanceAttributeResponse, EditEC2InstanceAttributeCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InstanceId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Attribute = this.Attribute;
             if (this.BlockDeviceMapping != null)
             {
@@ -328,6 +340,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             }
             context.DisableApiStop = this.DisableApiStop;
             context.DisableApiTermination = this.DisableApiTermination;
+            context.DryRun = this.DryRun;
             context.EbsOptimized = this.EbsOptimized;
             context.EnaSupport = this.EnaSupport;
             if (this.Group != null)
@@ -380,6 +393,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.DisableApiTermination != null)
             {
                 request.DisableApiTermination = cmdletContext.DisableApiTermination.Value;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.EbsOptimized != null)
             {
@@ -467,13 +484,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyInstanceAttribute");
             try
             {
-                #if DESKTOP
-                return client.ModifyInstanceAttribute(request);
-                #elif CORECLR
-                return client.ModifyInstanceAttributeAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyInstanceAttributeAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -494,6 +505,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public List<Amazon.EC2.Model.InstanceBlockDeviceMappingSpecification> BlockDeviceMapping { get; set; }
             public System.Boolean? DisableApiStop { get; set; }
             public System.Boolean? DisableApiTermination { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? EbsOptimized { get; set; }
             public System.Boolean? EnaSupport { get; set; }
             public List<System.String> Group { get; set; }

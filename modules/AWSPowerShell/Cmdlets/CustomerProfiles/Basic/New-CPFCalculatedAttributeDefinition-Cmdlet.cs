@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CustomerProfiles;
 using Amazon.CustomerProfiles.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CPF
 {
     /// <summary>
@@ -39,21 +41,22 @@ namespace Amazon.PowerShell.Cmdlets.CPF
     [OutputType("Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse")]
     [AWSCmdlet("Calls the Amazon Connect Customer Profiles CreateCalculatedAttributeDefinition API operation.", Operation = new[] {"CreateCalculatedAttributeDefinition"}, SelectReturnType = typeof(Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse))]
     [AWSCmdletOutput("Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse",
-        "This cmdlet returns an Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse object containing multiple properties."
     )]
     public partial class NewCPFCalculatedAttributeDefinitionCmdlet : AmazonCustomerProfilesClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeDetails_Attribute
         /// <summary>
         /// <para>
-        /// <para>A list of attribute items specified in the mathematical expression.</para>
+        /// <para>A list of attribute items specified in the mathematical expression.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -122,6 +125,18 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public System.String DomainName { get; set; }
         #endregion
         
+        #region Parameter ValueRange_End
+        /// <summary>
+        /// <para>
+        /// <para>The end time of when to include objects. Use positive numbers to indicate that the
+        /// starting point is in the past, and negative numbers to indicate it is in the future.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Conditions_Range_ValueRange_End")]
+        public System.Int32? ValueRange_End { get; set; }
+        #endregion
+        
         #region Parameter AttributeDetails_Expression
         /// <summary>
         /// <para>
@@ -138,6 +153,33 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String AttributeDetails_Expression { get; set; }
+        #endregion
+        
+        #region Parameter Filter_Group
+        /// <summary>
+        /// <para>
+        /// <para>Holds the list of Filter groups within the Filter definition.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Filter_Groups")]
+        public Amazon.CustomerProfiles.Model.FilterGroup[] Filter_Group { get; set; }
+        #endregion
+        
+        #region Parameter Filter_Include
+        /// <summary>
+        /// <para>
+        /// <para>Define whether to include or exclude objects for Calculated Attributed calculation
+        /// that fit the filter groups criteria.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.CustomerProfiles.Include")]
+        public Amazon.CustomerProfiles.Include Filter_Include { get; set; }
         #endregion
         
         #region Parameter Conditions_ObjectCount
@@ -162,6 +204,18 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public Amazon.CustomerProfiles.Operator Threshold_Operator { get; set; }
         #endregion
         
+        #region Parameter ValueRange_Start
+        /// <summary>
+        /// <para>
+        /// <para>The start time of when to include objects. Use positive numbers to indicate that the
+        /// starting point is in the past, and negative numbers to indicate it is in the future.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Conditions_Range_ValueRange_Start")]
+        public System.Int32? ValueRange_Start { get; set; }
+        #endregion
+        
         #region Parameter Statistic
         /// <summary>
         /// <para>
@@ -182,12 +236,47 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags used to organize, track, or control access for this resource.</para>
+        /// <para>The tags used to organize, track, or control access for this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("Tags")]
         public System.Collections.Hashtable Tag { get; set; }
+        #endregion
+        
+        #region Parameter Range_TimestampFormat
+        /// <summary>
+        /// <para>
+        /// <para>The format the timestamp field in your JSON object is specified. This value should
+        /// be one of EPOCHMILLI (for Unix epoch timestamps with second/millisecond level precision)
+        /// or ISO_8601 (following ISO_8601 format with second/millisecond level precision, with
+        /// an optional offset of Z or in the format HH:MM or HHMM.). E.g. if your object type
+        /// is MyType and source JSON is {"generatedAt": {"timestamp": "2001-07-04T12:08:56.235-0700"}},
+        /// then TimestampFormat should be "ISO_8601".</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Conditions_Range_TimestampFormat")]
+        public System.String Range_TimestampFormat { get; set; }
+        #endregion
+        
+        #region Parameter Range_TimestampSource
+        /// <summary>
+        /// <para>
+        /// <para>An expression specifying the field in your JSON object from which the date should
+        /// be parsed. The expression should follow the structure of \"{ObjectTypeName.&lt;Location
+        /// of timestamp field in JSON pointer format&gt;}\". E.g. if your object type is MyType
+        /// and source JSON is {"generatedAt": {"timestamp": "1737587945945"}}, then TimestampSource
+        /// should be "{MyType.generatedAt.timestamp}".</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("Conditions_Range_TimestampSource")]
+        public System.String Range_TimestampSource { get; set; }
         #endregion
         
         #region Parameter Range_Unit
@@ -200,6 +289,17 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         [Alias("Conditions_Range_Unit")]
         [AWSConstantClassSource("Amazon.CustomerProfiles.Unit")]
         public Amazon.CustomerProfiles.Unit Range_Unit { get; set; }
+        #endregion
+        
+        #region Parameter UseHistoricalData
+        /// <summary>
+        /// <para>
+        /// <para>Whether historical data ingested before the Calculated Attribute was created should
+        /// be included in calculations.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? UseHistoricalData { get; set; }
         #endregion
         
         #region Parameter Range_Value
@@ -235,16 +335,6 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the CalculatedAttributeName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^CalculatedAttributeName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^CalculatedAttributeName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -255,9 +345,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -271,21 +365,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse, NewCPFCalculatedAttributeDefinitionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.CalculatedAttributeName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AttributeDetails_Attribute != null)
             {
                 context.AttributeDetails_Attribute = new List<Amazon.CustomerProfiles.Model.AttributeItem>(this.AttributeDetails_Attribute);
@@ -311,8 +395,12 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             }
             #endif
             context.Conditions_ObjectCount = this.Conditions_ObjectCount;
+            context.Range_TimestampFormat = this.Range_TimestampFormat;
+            context.Range_TimestampSource = this.Range_TimestampSource;
             context.Range_Unit = this.Range_Unit;
             context.Range_Value = this.Range_Value;
+            context.ValueRange_End = this.ValueRange_End;
+            context.ValueRange_Start = this.ValueRange_Start;
             context.Threshold_Operator = this.Threshold_Operator;
             context.Threshold_Value = this.Threshold_Value;
             context.Description = this.Description;
@@ -324,6 +412,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 WriteWarning("You are passing $null as a value for parameter DomainName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            if (this.Filter_Group != null)
+            {
+                context.Filter_Group = new List<Amazon.CustomerProfiles.Model.FilterGroup>(this.Filter_Group);
+            }
+            context.Filter_Include = this.Filter_Include;
             context.Statistic = this.Statistic;
             #if MODULAR
             if (this.Statistic == null && ParameterWasBound(nameof(this.Statistic)))
@@ -339,6 +432,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                     context.Tag.Add((String)hashKey, (System.String)(this.Tag[hashKey]));
                 }
             }
+            context.UseHistoricalData = this.UseHistoricalData;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -402,41 +496,6 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 request.Conditions.ObjectCount = requestConditions_conditions_ObjectCount.Value;
                 requestConditionsIsNull = false;
             }
-            Amazon.CustomerProfiles.Model.Range requestConditions_conditions_Range = null;
-            
-             // populate Range
-            var requestConditions_conditions_RangeIsNull = true;
-            requestConditions_conditions_Range = new Amazon.CustomerProfiles.Model.Range();
-            Amazon.CustomerProfiles.Unit requestConditions_conditions_Range_range_Unit = null;
-            if (cmdletContext.Range_Unit != null)
-            {
-                requestConditions_conditions_Range_range_Unit = cmdletContext.Range_Unit;
-            }
-            if (requestConditions_conditions_Range_range_Unit != null)
-            {
-                requestConditions_conditions_Range.Unit = requestConditions_conditions_Range_range_Unit;
-                requestConditions_conditions_RangeIsNull = false;
-            }
-            System.Int32? requestConditions_conditions_Range_range_Value = null;
-            if (cmdletContext.Range_Value != null)
-            {
-                requestConditions_conditions_Range_range_Value = cmdletContext.Range_Value.Value;
-            }
-            if (requestConditions_conditions_Range_range_Value != null)
-            {
-                requestConditions_conditions_Range.Value = requestConditions_conditions_Range_range_Value.Value;
-                requestConditions_conditions_RangeIsNull = false;
-            }
-             // determine if requestConditions_conditions_Range should be set to null
-            if (requestConditions_conditions_RangeIsNull)
-            {
-                requestConditions_conditions_Range = null;
-            }
-            if (requestConditions_conditions_Range != null)
-            {
-                request.Conditions.Range = requestConditions_conditions_Range;
-                requestConditionsIsNull = false;
-            }
             Amazon.CustomerProfiles.Model.Threshold requestConditions_conditions_Threshold = null;
             
              // populate Threshold
@@ -472,6 +531,96 @@ namespace Amazon.PowerShell.Cmdlets.CPF
                 request.Conditions.Threshold = requestConditions_conditions_Threshold;
                 requestConditionsIsNull = false;
             }
+            Amazon.CustomerProfiles.Model.Range requestConditions_conditions_Range = null;
+            
+             // populate Range
+            var requestConditions_conditions_RangeIsNull = true;
+            requestConditions_conditions_Range = new Amazon.CustomerProfiles.Model.Range();
+            System.String requestConditions_conditions_Range_range_TimestampFormat = null;
+            if (cmdletContext.Range_TimestampFormat != null)
+            {
+                requestConditions_conditions_Range_range_TimestampFormat = cmdletContext.Range_TimestampFormat;
+            }
+            if (requestConditions_conditions_Range_range_TimestampFormat != null)
+            {
+                requestConditions_conditions_Range.TimestampFormat = requestConditions_conditions_Range_range_TimestampFormat;
+                requestConditions_conditions_RangeIsNull = false;
+            }
+            System.String requestConditions_conditions_Range_range_TimestampSource = null;
+            if (cmdletContext.Range_TimestampSource != null)
+            {
+                requestConditions_conditions_Range_range_TimestampSource = cmdletContext.Range_TimestampSource;
+            }
+            if (requestConditions_conditions_Range_range_TimestampSource != null)
+            {
+                requestConditions_conditions_Range.TimestampSource = requestConditions_conditions_Range_range_TimestampSource;
+                requestConditions_conditions_RangeIsNull = false;
+            }
+            Amazon.CustomerProfiles.Unit requestConditions_conditions_Range_range_Unit = null;
+            if (cmdletContext.Range_Unit != null)
+            {
+                requestConditions_conditions_Range_range_Unit = cmdletContext.Range_Unit;
+            }
+            if (requestConditions_conditions_Range_range_Unit != null)
+            {
+                requestConditions_conditions_Range.Unit = requestConditions_conditions_Range_range_Unit;
+                requestConditions_conditions_RangeIsNull = false;
+            }
+            System.Int32? requestConditions_conditions_Range_range_Value = null;
+            if (cmdletContext.Range_Value != null)
+            {
+                requestConditions_conditions_Range_range_Value = cmdletContext.Range_Value.Value;
+            }
+            if (requestConditions_conditions_Range_range_Value != null)
+            {
+                requestConditions_conditions_Range.Value = requestConditions_conditions_Range_range_Value.Value;
+                requestConditions_conditions_RangeIsNull = false;
+            }
+            Amazon.CustomerProfiles.Model.ValueRange requestConditions_conditions_Range_conditions_Range_ValueRange = null;
+            
+             // populate ValueRange
+            var requestConditions_conditions_Range_conditions_Range_ValueRangeIsNull = true;
+            requestConditions_conditions_Range_conditions_Range_ValueRange = new Amazon.CustomerProfiles.Model.ValueRange();
+            System.Int32? requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_End = null;
+            if (cmdletContext.ValueRange_End != null)
+            {
+                requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_End = cmdletContext.ValueRange_End.Value;
+            }
+            if (requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_End != null)
+            {
+                requestConditions_conditions_Range_conditions_Range_ValueRange.End = requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_End.Value;
+                requestConditions_conditions_Range_conditions_Range_ValueRangeIsNull = false;
+            }
+            System.Int32? requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_Start = null;
+            if (cmdletContext.ValueRange_Start != null)
+            {
+                requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_Start = cmdletContext.ValueRange_Start.Value;
+            }
+            if (requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_Start != null)
+            {
+                requestConditions_conditions_Range_conditions_Range_ValueRange.Start = requestConditions_conditions_Range_conditions_Range_ValueRange_valueRange_Start.Value;
+                requestConditions_conditions_Range_conditions_Range_ValueRangeIsNull = false;
+            }
+             // determine if requestConditions_conditions_Range_conditions_Range_ValueRange should be set to null
+            if (requestConditions_conditions_Range_conditions_Range_ValueRangeIsNull)
+            {
+                requestConditions_conditions_Range_conditions_Range_ValueRange = null;
+            }
+            if (requestConditions_conditions_Range_conditions_Range_ValueRange != null)
+            {
+                requestConditions_conditions_Range.ValueRange = requestConditions_conditions_Range_conditions_Range_ValueRange;
+                requestConditions_conditions_RangeIsNull = false;
+            }
+             // determine if requestConditions_conditions_Range should be set to null
+            if (requestConditions_conditions_RangeIsNull)
+            {
+                requestConditions_conditions_Range = null;
+            }
+            if (requestConditions_conditions_Range != null)
+            {
+                request.Conditions.Range = requestConditions_conditions_Range;
+                requestConditionsIsNull = false;
+            }
              // determine if request.Conditions should be set to null
             if (requestConditionsIsNull)
             {
@@ -489,6 +638,35 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             {
                 request.DomainName = cmdletContext.DomainName;
             }
+            
+             // populate Filter
+            var requestFilterIsNull = true;
+            request.Filter = new Amazon.CustomerProfiles.Model.Filter();
+            List<Amazon.CustomerProfiles.Model.FilterGroup> requestFilter_filter_Group = null;
+            if (cmdletContext.Filter_Group != null)
+            {
+                requestFilter_filter_Group = cmdletContext.Filter_Group;
+            }
+            if (requestFilter_filter_Group != null)
+            {
+                request.Filter.Groups = requestFilter_filter_Group;
+                requestFilterIsNull = false;
+            }
+            Amazon.CustomerProfiles.Include requestFilter_filter_Include = null;
+            if (cmdletContext.Filter_Include != null)
+            {
+                requestFilter_filter_Include = cmdletContext.Filter_Include;
+            }
+            if (requestFilter_filter_Include != null)
+            {
+                request.Filter.Include = requestFilter_filter_Include;
+                requestFilterIsNull = false;
+            }
+             // determine if request.Filter should be set to null
+            if (requestFilterIsNull)
+            {
+                request.Filter = null;
+            }
             if (cmdletContext.Statistic != null)
             {
                 request.Statistic = cmdletContext.Statistic;
@@ -496,6 +674,10 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             if (cmdletContext.Tag != null)
             {
                 request.Tags = cmdletContext.Tag;
+            }
+            if (cmdletContext.UseHistoricalData != null)
+            {
+                request.UseHistoricalData = cmdletContext.UseHistoricalData.Value;
             }
             
             CmdletOutput output;
@@ -535,13 +717,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Customer Profiles", "CreateCalculatedAttributeDefinition");
             try
             {
-                #if DESKTOP
-                return client.CreateCalculatedAttributeDefinition(request);
-                #elif CORECLR
-                return client.CreateCalculatedAttributeDefinitionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateCalculatedAttributeDefinitionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -562,15 +738,22 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             public System.String AttributeDetails_Expression { get; set; }
             public System.String CalculatedAttributeName { get; set; }
             public System.Int32? Conditions_ObjectCount { get; set; }
+            public System.String Range_TimestampFormat { get; set; }
+            public System.String Range_TimestampSource { get; set; }
             public Amazon.CustomerProfiles.Unit Range_Unit { get; set; }
             public System.Int32? Range_Value { get; set; }
+            public System.Int32? ValueRange_End { get; set; }
+            public System.Int32? ValueRange_Start { get; set; }
             public Amazon.CustomerProfiles.Operator Threshold_Operator { get; set; }
             public System.String Threshold_Value { get; set; }
             public System.String Description { get; set; }
             public System.String DisplayName { get; set; }
             public System.String DomainName { get; set; }
+            public List<Amazon.CustomerProfiles.Model.FilterGroup> Filter_Group { get; set; }
+            public Amazon.CustomerProfiles.Include Filter_Include { get; set; }
             public Amazon.CustomerProfiles.Statistic Statistic { get; set; }
             public Dictionary<System.String, System.String> Tag { get; set; }
+            public System.Boolean? UseHistoricalData { get; set; }
             public System.Func<Amazon.CustomerProfiles.Model.CreateCalculatedAttributeDefinitionResponse, NewCPFCalculatedAttributeDefinitionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

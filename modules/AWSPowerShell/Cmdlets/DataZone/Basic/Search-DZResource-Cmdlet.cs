@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,31 +22,66 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataZone;
 using Amazon.DataZone.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DZ
 {
     /// <summary>
-    /// Searches for assets in Amazon DataZone.<br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// Searches for assets in Amazon DataZone.
+    /// 
+    ///  
+    /// <para>
+    /// Search in Amazon DataZone is a powerful capability that enables users to discover
+    /// and explore data assets, glossary terms, and data products across their organization.
+    /// It provides both basic and advanced search functionality, allowing users to find resources
+    /// based on names, descriptions, metadata, and other attributes. Search can be scoped
+    /// to specific types of resources (like assets, glossary terms, or data products) and
+    /// can be filtered using various criteria such as creation date, owner, or status. The
+    /// search functionality is essential for making the wealth of data resources in an organization
+    /// discoverable and usable, helping users find the right data for their needs quickly
+    /// and efficiently.
+    /// </para><para>
+    /// Many search commands in Amazon DataZone are paginated, including <c>search</c> and
+    /// <c>search-types</c>. When the result set is large, Amazon DataZone returns a <c>nextToken</c>
+    /// in the response. This token can be used to retrieve the next page of results. 
+    /// </para><para>
+    /// Prerequisites:
+    /// </para><ul><li><para>
+    /// The --domain-identifier must refer to an existing Amazon DataZone domain. 
+    /// </para></li><li><para>
+    /// --search-scope must be one of: ASSET, GLOSSARY_TERM, DATA_PRODUCT, or GLOSSARY.
+    /// </para></li><li><para>
+    /// The user must have search permissions in the specified domain.
+    /// </para></li><li><para>
+    /// If using --filters, ensure that the JSON is well-formed and that each filter includes
+    /// valid attribute and value keys. 
+    /// </para></li><li><para>
+    /// For paginated results, be prepared to use --next-token to fetch additional pages.
+    /// </para></li></ul><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Search", "DZResource", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.DataZone.Model.SearchResponse")]
     [AWSCmdlet("Calls the Amazon DataZone Search API operation.", Operation = new[] {"Search"}, SelectReturnType = typeof(Amazon.DataZone.Model.SearchResponse))]
     [AWSCmdletOutput("Amazon.DataZone.Model.SearchResponse",
-        "This cmdlet returns an Amazon.DataZone.Model.SearchResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.DataZone.Model.SearchResponse object containing multiple properties."
     )]
     public partial class SearchDZResourceCmdlet : AmazonDataZoneClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalAttribute
         /// <summary>
         /// <para>
-        /// <para>Specifies additional attributes for the <c>Search</c> action.</para>
+        /// <para>Specifies additional attributes for the <c>Search</c> action.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -57,7 +92,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter Filters_And
         /// <summary>
         /// <para>
-        /// <para>The 'and' search filter clause in Amazon DataZone.</para>
+        /// <para>The 'and' search filter clause in Amazon DataZone.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,7 +144,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter Filters_Or
         /// <summary>
         /// <para>
-        /// <para>The 'or' search filter clause in Amazon DataZone.</para>
+        /// <para>The 'or' search filter clause in Amazon DataZone.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -136,7 +179,11 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         #region Parameter SearchIn
         /// <summary>
         /// <para>
-        /// The service has not provided documentation for this parameter; please refer to the service's API reference documentation for the latest available information.
+        /// <para>The details of the search.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -206,7 +253,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -244,9 +291,13 @@ namespace Amazon.PowerShell.Cmdlets.DZ
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainIdentifier), MyInvocation.BoundParameters);
@@ -504,13 +555,7 @@ namespace Amazon.PowerShell.Cmdlets.DZ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon DataZone", "Search");
             try
             {
-                #if DESKTOP
-                return client.Search(request);
-                #elif CORECLR
-                return client.SearchAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.SearchAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

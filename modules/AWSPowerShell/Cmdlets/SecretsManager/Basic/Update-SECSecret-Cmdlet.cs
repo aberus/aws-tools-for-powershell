@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SEC
 {
     /// <summary>
@@ -67,23 +69,27 @@ namespace Amazon.PowerShell.Cmdlets.SEC
     /// and access control in Secrets Manager</a>. If you use a customer managed key, you
     /// must also have <c>kms:GenerateDataKey</c>, <c>kms:Encrypt</c>, and <c>kms:Decrypt</c>
     /// permissions on the key. If you change the KMS key and you don't have <c>kms:Encrypt</c>
-    /// permission to the new key, Secrets Manager does not re-ecrypt existing secret versions
+    /// permission to the new key, Secrets Manager does not re-encrypt existing secret versions
     /// with the new key. For more information, see <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/security-encryption.html">
     /// Secret encryption and decryption</a>.
-    /// </para>
+    /// </para><important><para>
+    /// When you enter commands in a command shell, there is a risk of the command history
+    /// being accessed or utilities having access to your command parameters. This is a concern
+    /// if the command includes the value of a secret. Learn how to <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/security_cli-exposure-risks.html">Mitigate
+    /// the risks of using command-line tools to store Secrets Manager secrets</a>.
+    /// </para></important>
     /// </summary>
     [Cmdlet("Update", "SECSecret", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.SecretsManager.Model.UpdateSecretResponse")]
     [AWSCmdlet("Calls the AWS Secrets Manager UpdateSecret API operation.", Operation = new[] {"UpdateSecret"}, SelectReturnType = typeof(Amazon.SecretsManager.Model.UpdateSecretResponse))]
     [AWSCmdletOutput("Amazon.SecretsManager.Model.UpdateSecretResponse",
-        "This cmdlet returns an Amazon.SecretsManager.Model.UpdateSecretResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SecretsManager.Model.UpdateSecretResponse object containing multiple properties."
     )]
     public partial class UpdateSECSecretCmdlet : AmazonSecretsManagerClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ClientRequestToken
         /// <summary>
@@ -120,8 +126,8 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         /// <para>The ARN, key ID, or alias of the KMS key that Secrets Manager uses to encrypt new
         /// secret versions as well as any existing versions with the staging labels <c>AWSCURRENT</c>,
         /// <c>AWSPENDING</c>, or <c>AWSPREVIOUS</c>. If you don't have <c>kms:Encrypt</c> permission
-        /// to the new key, Secrets Manager does not re-ecrypt existing secret versions with the
-        /// new key. For more information about versions and staging labels, see <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/getting-started.html#term_version">Concepts:
+        /// to the new key, Secrets Manager does not re-encrypt existing secret versions with
+        /// the new key. For more information about versions and staging labels, see <a href="https://docs.aws.amazon.com/secretsmanager/latest/userguide/getting-started.html#term_version">Concepts:
         /// Version</a>.</para><para>A key alias is always prefixed by <c>alias/</c>, for example <c>alias/aws/secretsmanager</c>.
         /// For more information, see <a href="https://docs.aws.amazon.com/kms/latest/developerguide/alias-about.html">About
         /// aliases</a>.</para><para>If you set this to an empty string, Secrets Manager uses the Amazon Web Services managed
@@ -146,7 +152,9 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         /// <para>
         /// <para>The binary data to encrypt and store in the new version of the secret. We recommend
         /// that you store your binary data in a file and then pass the contents of the file as
-        /// a parameter. </para><para>Either <c>SecretBinary</c> or <c>SecretString</c> must have a value, but not both.</para><para>You can't access this parameter in the Secrets Manager console.</para>
+        /// a parameter. </para><para>Either <c>SecretBinary</c> or <c>SecretString</c> must have a value, but not both.</para><para>You can't access this parameter in the Secrets Manager console.</para><para>Sensitive: This field contains sensitive information, so the service does not include
+        /// it in CloudTrail log entries. If you create your own log entries, you must also avoid
+        /// logging the information in this field.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
@@ -179,7 +187,9 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         /// <para>
         /// <para>The text data to encrypt and store in the new version of the secret. We recommend
         /// you use a JSON structure of key/value pairs for your secret value. </para><para>Either <c>SecretBinary</c> or <c>SecretString</c> must have a value, but not both.
-        /// </para>
+        /// </para><para>Sensitive: This field contains sensitive information, so the service does not include
+        /// it in CloudTrail log entries. If you create your own log entries, you must also avoid
+        /// logging the information in this field.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -197,16 +207,6 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the SecretString parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^SecretString' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^SecretString' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -217,9 +217,13 @@ namespace Amazon.PowerShell.Cmdlets.SEC
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.SecretId), MyInvocation.BoundParameters);
@@ -233,21 +237,11 @@ namespace Amazon.PowerShell.Cmdlets.SEC
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SecretsManager.Model.UpdateSecretResponse, UpdateSECSecretCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.SecretString;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientRequestToken = this.ClientRequestToken;
             context.Description = this.Description;
             context.KmsKeyId = this.KmsKeyId;
@@ -351,13 +345,7 @@ namespace Amazon.PowerShell.Cmdlets.SEC
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Secrets Manager", "UpdateSecret");
             try
             {
-                #if DESKTOP
-                return client.UpdateSecret(request);
-                #elif CORECLR
-                return client.UpdateSecretAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateSecretAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

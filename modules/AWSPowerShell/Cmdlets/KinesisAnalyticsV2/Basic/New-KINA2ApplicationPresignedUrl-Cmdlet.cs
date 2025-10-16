@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisAnalyticsV2;
 using Amazon.KinesisAnalyticsV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINA2
 {
     /// <summary>
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
     [AWSCmdlet("Calls the Amazon Kinesis Analytics V2 CreateApplicationPresignedUrl API operation.", Operation = new[] {"CreateApplicationPresignedUrl"}, SelectReturnType = typeof(Amazon.KinesisAnalyticsV2.Model.CreateApplicationPresignedUrlResponse))]
     [AWSCmdletOutput("System.String or Amazon.KinesisAnalyticsV2.Model.CreateApplicationPresignedUrlResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.KinesisAnalyticsV2.Model.CreateApplicationPresignedUrlResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.KinesisAnalyticsV2.Model.CreateApplicationPresignedUrlResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewKINA2ApplicationPresignedUrlCmdlet : AmazonKinesisAnalyticsV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ApplicationName
         /// <summary>
@@ -125,9 +128,13 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ApplicationName), MyInvocation.BoundParameters);
@@ -227,13 +234,7 @@ namespace Amazon.PowerShell.Cmdlets.KINA2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Analytics V2", "CreateApplicationPresignedUrl");
             try
             {
-                #if DESKTOP
-                return client.CreateApplicationPresignedUrl(request);
-                #elif CORECLR
-                return client.CreateApplicationPresignedUrlAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateApplicationPresignedUrlAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

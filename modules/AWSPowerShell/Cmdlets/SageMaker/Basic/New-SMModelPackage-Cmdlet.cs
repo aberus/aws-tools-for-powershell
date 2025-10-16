@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SageMaker;
 using Amazon.SageMaker.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SM
 {
     /// <summary>
@@ -52,12 +54,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
     [AWSCmdlet("Calls the Amazon SageMaker Service CreateModelPackage API operation.", Operation = new[] {"CreateModelPackage"}, SelectReturnType = typeof(Amazon.SageMaker.Model.CreateModelPackageResponse))]
     [AWSCmdletOutput("System.String or Amazon.SageMaker.Model.CreateModelPackageResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.SageMaker.Model.CreateModelPackageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.SageMaker.Model.CreateModelPackageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewSMModelPackageCmdlet : AmazonSageMakerClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AdditionalInferenceSpecification
         /// <summary>
@@ -65,7 +68,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>An array of additional Inference Specification objects. Each additional Inference
         /// Specification specifies artifacts based on this model package that can be used on
         /// inference endpoints. Generally used with SageMaker Neo to store the compiled artifacts.
-        /// </para>
+        /// </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -97,7 +104,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_Container
         /// <summary>
         /// <para>
-        /// <para>The Amazon ECR registry path of the Docker image that contains the inference code.</para>
+        /// <para>The Amazon ECR registry path of the Docker image that contains the inference code.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -468,7 +479,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter CustomerMetadataProperty
         /// <summary>
         /// <para>
-        /// <para>The metadata properties associated with the model package versions.</para>
+        /// <para>The metadata properties associated with the model package versions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -497,6 +512,16 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public System.String MetadataProperties_GeneratedBy { get; set; }
         #endregion
         
+        #region Parameter SecurityConfig_KmsKeyId
+        /// <summary>
+        /// <para>
+        /// <para>The KMS Key ID (<c>KMSKeyId</c>) used for encryption of model package information.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SecurityConfig_KmsKeyId { get; set; }
+        #endregion
+        
         #region Parameter ModelApprovalStatus
         /// <summary>
         /// <para>
@@ -508,6 +533,31 @@ namespace Amazon.PowerShell.Cmdlets.SM
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.SageMaker.ModelApprovalStatus")]
         public Amazon.SageMaker.ModelApprovalStatus ModelApprovalStatus { get; set; }
+        #endregion
+        
+        #region Parameter ModelCard_ModelCardContent
+        /// <summary>
+        /// <para>
+        /// <para>The content of the model card. The content must follow the schema described in <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry-details.html#model-card-schema">Model
+        /// Package Model Card Schema</a>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ModelCard_ModelCardContent { get; set; }
+        #endregion
+        
+        #region Parameter ModelCard_ModelCardStatus
+        /// <summary>
+        /// <para>
+        /// <para>The approval status of the model card within your organization. Different organizations
+        /// might have different criteria for model card review and approval.</para><ul><li><para><c>Draft</c>: The model card is a work in progress.</para></li><li><para><c>PendingReview</c>: The model card is pending review.</para></li><li><para><c>Approved</c>: The model card is approved.</para></li><li><para><c>Archived</c>: The model card is archived. No more updates can be made to the model
+        /// card content. If you try to update the model card content, you will receive the message
+        /// <c>Model Card is in Archived state</c>.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.SageMaker.ModelCardStatus")]
+        public Amazon.SageMaker.ModelCardStatus ModelCard_ModelCardStatus { get; set; }
         #endregion
         
         #region Parameter ModelPackageDescription
@@ -772,7 +822,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter SourceAlgorithmSpecification_SourceAlgorithm
         /// <summary>
         /// <para>
-        /// <para>A list of the algorithms that were used to create a model package.</para>
+        /// <para>A list of the algorithms that were used to create a model package.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -780,10 +834,56 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public Amazon.SageMaker.Model.SourceAlgorithm[] SourceAlgorithmSpecification_SourceAlgorithm { get; set; }
         #endregion
         
+        #region Parameter SourceUri
+        /// <summary>
+        /// <para>
+        /// <para>The URI of the source for the model package. If you want to clone a model package,
+        /// set it to the model package Amazon Resource Name (ARN). If you want to register a
+        /// model, set it to the model ARN.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String SourceUri { get; set; }
+        #endregion
+        
+        #region Parameter ModelLifeCycle_Stage
+        /// <summary>
+        /// <para>
+        /// <para> The current stage in the model life cycle. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ModelLifeCycle_Stage { get; set; }
+        #endregion
+        
+        #region Parameter ModelLifeCycle_StageDescription
+        /// <summary>
+        /// <para>
+        /// <para> Describes the stage related details. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ModelLifeCycle_StageDescription { get; set; }
+        #endregion
+        
+        #region Parameter ModelLifeCycle_StageStatus
+        /// <summary>
+        /// <para>
+        /// <para> The current status of a stage in model life cycle. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ModelLifeCycle_StageStatus { get; set; }
+        #endregion
+        
         #region Parameter InferenceSpecification_SupportedContentType
         /// <summary>
         /// <para>
-        /// <para>The supported MIME types for the input data.</para>
+        /// <para>The supported MIME types for the input data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -794,7 +894,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_SupportedRealtimeInferenceInstanceType
         /// <summary>
         /// <para>
-        /// <para>A list of the instance types that are used to generate inferences in real-time.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para>
+        /// <para>A list of the instance types that are used to generate inferences in real-time.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -805,7 +909,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         #region Parameter InferenceSpecification_SupportedResponseMIMEType
         /// <summary>
         /// <para>
-        /// <para>The supported MIME types for the output data.</para>
+        /// <para>The supported MIME types for the output data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -817,7 +925,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>A list of the instance types on which a transformation job can be run or on which
-        /// an endpoint can be deployed.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para>
+        /// an endpoint can be deployed.</para><para>This parameter is required for unversioned models, and optional for versioned models.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -831,7 +943,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <para>A list of key value pairs associated with the model. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">Tagging Amazon
         /// Web Services resources</a> in the <i>Amazon Web Services General Reference Guide</i>.</para><para>If you supply <c>ModelPackageGroupName</c>, your model package belongs to the model
         /// group you specify and uses the tags associated with the model group. In this case,
-        /// you cannot supply a <c>tag</c> argument. </para>
+        /// you cannot supply a <c>tag</c> argument. </para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -857,7 +973,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
         /// <summary>
         /// <para>
         /// <para>An array of <c>ModelPackageValidationProfile</c> objects, each of which specifies
-        /// a batch transform job that SageMaker runs to validate your model package.</para>
+        /// a batch transform job that SageMaker runs to validate your model package.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -896,16 +1016,6 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public string Select { get; set; } = "ModelPackageArn";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ModelPackageName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ModelPackageName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ModelPackageName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -916,9 +1026,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ModelPackageName), MyInvocation.BoundParameters);
@@ -932,21 +1046,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SageMaker.Model.CreateModelPackageResponse, NewSMModelPackageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ModelPackageName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AdditionalInferenceSpecification != null)
             {
                 context.AdditionalInferenceSpecification = new List<Amazon.SageMaker.Model.AdditionalInferenceSpecificationDefinition>(this.AdditionalInferenceSpecification);
@@ -1014,6 +1118,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             context.MetadataProperties_ProjectId = this.MetadataProperties_ProjectId;
             context.MetadataProperties_Repository = this.MetadataProperties_Repository;
             context.ModelApprovalStatus = this.ModelApprovalStatus;
+            context.ModelCard_ModelCardContent = this.ModelCard_ModelCardContent;
+            context.ModelCard_ModelCardStatus = this.ModelCard_ModelCardStatus;
+            context.ModelLifeCycle_Stage = this.ModelLifeCycle_Stage;
+            context.ModelLifeCycle_StageDescription = this.ModelLifeCycle_StageDescription;
+            context.ModelLifeCycle_StageStatus = this.ModelLifeCycle_StageStatus;
             context.PostTrainingReport_ContentDigest = this.PostTrainingReport_ContentDigest;
             context.PostTrainingReport_ContentType = this.PostTrainingReport_ContentType;
             context.PostTrainingReport_S3Uri = this.PostTrainingReport_S3Uri;
@@ -1042,11 +1151,13 @@ namespace Amazon.PowerShell.Cmdlets.SM
             context.ModelPackageGroupName = this.ModelPackageGroupName;
             context.ModelPackageName = this.ModelPackageName;
             context.SamplePayloadUrl = this.SamplePayloadUrl;
+            context.SecurityConfig_KmsKeyId = this.SecurityConfig_KmsKeyId;
             context.SkipModelValidation = this.SkipModelValidation;
             if (this.SourceAlgorithmSpecification_SourceAlgorithm != null)
             {
                 context.SourceAlgorithmSpecification_SourceAlgorithm = new List<Amazon.SageMaker.Model.SourceAlgorithm>(this.SourceAlgorithmSpecification_SourceAlgorithm);
             }
+            context.SourceUri = this.SourceUri;
             if (this.Tag != null)
             {
                 context.Tag = new List<Amazon.SageMaker.Model.Tag>(this.Tag);
@@ -1680,6 +1791,74 @@ namespace Amazon.PowerShell.Cmdlets.SM
                 request.ModelApprovalStatus = cmdletContext.ModelApprovalStatus;
             }
             
+             // populate ModelCard
+            var requestModelCardIsNull = true;
+            request.ModelCard = new Amazon.SageMaker.Model.ModelPackageModelCard();
+            System.String requestModelCard_modelCard_ModelCardContent = null;
+            if (cmdletContext.ModelCard_ModelCardContent != null)
+            {
+                requestModelCard_modelCard_ModelCardContent = cmdletContext.ModelCard_ModelCardContent;
+            }
+            if (requestModelCard_modelCard_ModelCardContent != null)
+            {
+                request.ModelCard.ModelCardContent = requestModelCard_modelCard_ModelCardContent;
+                requestModelCardIsNull = false;
+            }
+            Amazon.SageMaker.ModelCardStatus requestModelCard_modelCard_ModelCardStatus = null;
+            if (cmdletContext.ModelCard_ModelCardStatus != null)
+            {
+                requestModelCard_modelCard_ModelCardStatus = cmdletContext.ModelCard_ModelCardStatus;
+            }
+            if (requestModelCard_modelCard_ModelCardStatus != null)
+            {
+                request.ModelCard.ModelCardStatus = requestModelCard_modelCard_ModelCardStatus;
+                requestModelCardIsNull = false;
+            }
+             // determine if request.ModelCard should be set to null
+            if (requestModelCardIsNull)
+            {
+                request.ModelCard = null;
+            }
+            
+             // populate ModelLifeCycle
+            var requestModelLifeCycleIsNull = true;
+            request.ModelLifeCycle = new Amazon.SageMaker.Model.ModelLifeCycle();
+            System.String requestModelLifeCycle_modelLifeCycle_Stage = null;
+            if (cmdletContext.ModelLifeCycle_Stage != null)
+            {
+                requestModelLifeCycle_modelLifeCycle_Stage = cmdletContext.ModelLifeCycle_Stage;
+            }
+            if (requestModelLifeCycle_modelLifeCycle_Stage != null)
+            {
+                request.ModelLifeCycle.Stage = requestModelLifeCycle_modelLifeCycle_Stage;
+                requestModelLifeCycleIsNull = false;
+            }
+            System.String requestModelLifeCycle_modelLifeCycle_StageDescription = null;
+            if (cmdletContext.ModelLifeCycle_StageDescription != null)
+            {
+                requestModelLifeCycle_modelLifeCycle_StageDescription = cmdletContext.ModelLifeCycle_StageDescription;
+            }
+            if (requestModelLifeCycle_modelLifeCycle_StageDescription != null)
+            {
+                request.ModelLifeCycle.StageDescription = requestModelLifeCycle_modelLifeCycle_StageDescription;
+                requestModelLifeCycleIsNull = false;
+            }
+            System.String requestModelLifeCycle_modelLifeCycle_StageStatus = null;
+            if (cmdletContext.ModelLifeCycle_StageStatus != null)
+            {
+                requestModelLifeCycle_modelLifeCycle_StageStatus = cmdletContext.ModelLifeCycle_StageStatus;
+            }
+            if (requestModelLifeCycle_modelLifeCycle_StageStatus != null)
+            {
+                request.ModelLifeCycle.StageStatus = requestModelLifeCycle_modelLifeCycle_StageStatus;
+                requestModelLifeCycleIsNull = false;
+            }
+             // determine if request.ModelLifeCycle should be set to null
+            if (requestModelLifeCycleIsNull)
+            {
+                request.ModelLifeCycle = null;
+            }
+            
              // populate ModelMetrics
             var requestModelMetricsIsNull = true;
             request.ModelMetrics = new Amazon.SageMaker.Model.ModelMetrics();
@@ -2124,6 +2303,25 @@ namespace Amazon.PowerShell.Cmdlets.SM
             {
                 request.SamplePayloadUrl = cmdletContext.SamplePayloadUrl;
             }
+            
+             // populate SecurityConfig
+            var requestSecurityConfigIsNull = true;
+            request.SecurityConfig = new Amazon.SageMaker.Model.ModelPackageSecurityConfig();
+            System.String requestSecurityConfig_securityConfig_KmsKeyId = null;
+            if (cmdletContext.SecurityConfig_KmsKeyId != null)
+            {
+                requestSecurityConfig_securityConfig_KmsKeyId = cmdletContext.SecurityConfig_KmsKeyId;
+            }
+            if (requestSecurityConfig_securityConfig_KmsKeyId != null)
+            {
+                request.SecurityConfig.KmsKeyId = requestSecurityConfig_securityConfig_KmsKeyId;
+                requestSecurityConfigIsNull = false;
+            }
+             // determine if request.SecurityConfig should be set to null
+            if (requestSecurityConfigIsNull)
+            {
+                request.SecurityConfig = null;
+            }
             if (cmdletContext.SkipModelValidation != null)
             {
                 request.SkipModelValidation = cmdletContext.SkipModelValidation;
@@ -2146,6 +2344,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             if (requestSourceAlgorithmSpecificationIsNull)
             {
                 request.SourceAlgorithmSpecification = null;
+            }
+            if (cmdletContext.SourceUri != null)
+            {
+                request.SourceUri = cmdletContext.SourceUri;
             }
             if (cmdletContext.Tag != null)
             {
@@ -2222,13 +2424,7 @@ namespace Amazon.PowerShell.Cmdlets.SM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon SageMaker Service", "CreateModelPackage");
             try
             {
-                #if DESKTOP
-                return client.CreateModelPackage(request);
-                #elif CORECLR
-                return client.CreateModelPackageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateModelPackageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -2287,6 +2483,11 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String MetadataProperties_ProjectId { get; set; }
             public System.String MetadataProperties_Repository { get; set; }
             public Amazon.SageMaker.ModelApprovalStatus ModelApprovalStatus { get; set; }
+            public System.String ModelCard_ModelCardContent { get; set; }
+            public Amazon.SageMaker.ModelCardStatus ModelCard_ModelCardStatus { get; set; }
+            public System.String ModelLifeCycle_Stage { get; set; }
+            public System.String ModelLifeCycle_StageDescription { get; set; }
+            public System.String ModelLifeCycle_StageStatus { get; set; }
             public System.String PostTrainingReport_ContentDigest { get; set; }
             public System.String PostTrainingReport_ContentType { get; set; }
             public System.String PostTrainingReport_S3Uri { get; set; }
@@ -2315,8 +2516,10 @@ namespace Amazon.PowerShell.Cmdlets.SM
             public System.String ModelPackageGroupName { get; set; }
             public System.String ModelPackageName { get; set; }
             public System.String SamplePayloadUrl { get; set; }
+            public System.String SecurityConfig_KmsKeyId { get; set; }
             public Amazon.SageMaker.SkipModelValidation SkipModelValidation { get; set; }
             public List<Amazon.SageMaker.Model.SourceAlgorithm> SourceAlgorithmSpecification_SourceAlgorithm { get; set; }
+            public System.String SourceUri { get; set; }
             public List<Amazon.SageMaker.Model.Tag> Tag { get; set; }
             public System.String Task { get; set; }
             public List<Amazon.SageMaker.Model.ModelPackageValidationProfile> ValidationSpecification_ValidationProfile { get; set; }

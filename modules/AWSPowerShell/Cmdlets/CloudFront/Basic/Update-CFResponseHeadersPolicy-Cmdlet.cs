@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFront;
 using Amazon.CloudFront.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CF
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
     [AWSCmdlet("Calls the Amazon CloudFront UpdateResponseHeadersPolicy API operation.", Operation = new[] {"UpdateResponseHeadersPolicy"}, SelectReturnType = typeof(Amazon.CloudFront.Model.UpdateResponseHeadersPolicyResponse))]
     [AWSCmdletOutput("Amazon.CloudFront.Model.ResponseHeadersPolicy or Amazon.CloudFront.Model.UpdateResponseHeadersPolicyResponse",
         "This cmdlet returns an Amazon.CloudFront.Model.ResponseHeadersPolicy object.",
-        "The service call response (type Amazon.CloudFront.Model.UpdateResponseHeadersPolicyResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CloudFront.Model.UpdateResponseHeadersPolicyResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCFResponseHeadersPolicyCmdlet : AmazonCloudFrontClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CorsConfig_AccessControlAllowCredential
         /// <summary>
@@ -188,7 +191,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter AccessControlAllowHeaders_Item
         /// <summary>
         /// <para>
-        /// <para>The list of HTTP header names. You can specify <c>*</c> to allow all headers.</para>
+        /// <para>The list of HTTP header names. You can specify <c>*</c> to allow all headers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -199,7 +206,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter AccessControlAllowMethods_Item
         /// <summary>
         /// <para>
-        /// <para>The list of HTTP methods. Valid values are:</para><ul><li><para><c>GET</c></para></li><li><para><c>DELETE</c></para></li><li><para><c>HEAD</c></para></li><li><para><c>OPTIONS</c></para></li><li><para><c>PATCH</c></para></li><li><para><c>POST</c></para></li><li><para><c>PUT</c></para></li><li><para><c>ALL</c></para></li></ul><para><c>ALL</c> is a special value that includes all of the listed HTTP methods.</para>
+        /// <para>The list of HTTP methods. Valid values are:</para><ul><li><para><c>GET</c></para></li><li><para><c>DELETE</c></para></li><li><para><c>HEAD</c></para></li><li><para><c>OPTIONS</c></para></li><li><para><c>PATCH</c></para></li><li><para><c>POST</c></para></li><li><para><c>PUT</c></para></li><li><para><c>ALL</c></para></li></ul><para><c>ALL</c> is a special value that includes all of the listed HTTP methods.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,7 +221,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter AccessControlAllowOrigins_Item
         /// <summary>
         /// <para>
-        /// <para>The list of origins (domain names). You can specify <c>*</c> to allow all origins.</para>
+        /// <para>The list of origins (domain names). You can specify <c>*</c> to allow all origins.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -221,7 +236,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter AccessControlExposeHeaders_Item
         /// <summary>
         /// <para>
-        /// <para>The list of HTTP headers. You can specify <c>*</c> to expose all headers.</para>
+        /// <para>The list of HTTP headers. You can specify <c>*</c> to expose all headers.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -232,7 +251,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter CustomHeadersConfig_Item
         /// <summary>
         /// <para>
-        /// <para>The list of HTTP response headers and their values.</para>
+        /// <para>The list of HTTP response headers and their values.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -243,7 +266,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
         #region Parameter RemoveHeadersConfig_Item
         /// <summary>
         /// <para>
-        /// <para>The list of HTTP header names.</para>
+        /// <para>The list of HTTP header names.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -519,16 +546,6 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public string Select { get; set; } = "ResponseHeadersPolicy";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Id parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Id' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -539,9 +556,13 @@ namespace Amazon.PowerShell.Cmdlets.CF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Id), MyInvocation.BoundParameters);
@@ -555,21 +576,11 @@ namespace Amazon.PowerShell.Cmdlets.CF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFront.Model.UpdateResponseHeadersPolicyResponse, UpdateCFResponseHeadersPolicyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Id;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Id = this.Id;
             #if MODULAR
             if (this.Id == null && ParameterWasBound(nameof(this.Id)))
@@ -1272,13 +1283,7 @@ namespace Amazon.PowerShell.Cmdlets.CF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudFront", "UpdateResponseHeadersPolicy");
             try
             {
-                #if DESKTOP
-                return client.UpdateResponseHeadersPolicy(request);
-                #elif CORECLR
-                return client.UpdateResponseHeadersPolicyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateResponseHeadersPolicyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

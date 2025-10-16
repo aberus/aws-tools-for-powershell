@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Keyspaces;
 using Amazon.Keyspaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KS
 {
     /// <summary>
@@ -37,18 +39,23 @@ namespace Amazon.PowerShell.Cmdlets.KS
     [AWSCmdlet("Calls the Amazon Keyspaces UpdateTable API operation.", Operation = new[] {"UpdateTable"}, SelectReturnType = typeof(Amazon.Keyspaces.Model.UpdateTableResponse))]
     [AWSCmdletOutput("System.String or Amazon.Keyspaces.Model.UpdateTableResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.Keyspaces.Model.UpdateTableResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Keyspaces.Model.UpdateTableResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateKSTableCmdlet : AmazonKeyspacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AddColumn
         /// <summary>
         /// <para>
         /// <para>For each column to be added to the specified table:</para><ul><li><para><c>name</c> - The name of the column.</para></li><li><para><c>type</c> - An Amazon Keyspaces data type. For more information, see <a href="https://docs.aws.amazon.com/keyspaces/latest/devguide/cql.elements.html#cql.data-types">Data
-        /// types</a> in the <i>Amazon Keyspaces Developer Guide</i>.</para></li></ul>
+        /// types</a> in the <i>Amazon Keyspaces Developer Guide</i>.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -194,6 +201,18 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public System.Int64? WriteCapacityAutoScaling_MinimumUnit { get; set; }
         #endregion
         
+        #region Parameter CdcSpecification_PropagateTag
+        /// <summary>
+        /// <para>
+        /// <para>Specifies that the stream inherits the tags from the table.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CdcSpecification_PropagateTags")]
+        [AWSConstantClassSource("Amazon.Keyspaces.CdcPropagateTags")]
+        public Amazon.Keyspaces.CdcPropagateTags CdcSpecification_PropagateTag { get; set; }
+        #endregion
+        
         #region Parameter CapacitySpecification_ReadCapacityUnit
         /// <summary>
         /// <para>
@@ -209,7 +228,11 @@ namespace Amazon.PowerShell.Cmdlets.KS
         #region Parameter ReplicaSpecification
         /// <summary>
         /// <para>
-        /// <para>The Region specific settings of a multi-Regional table.</para>
+        /// <para>The Region specific settings of a multi-Regional table.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -265,6 +288,17 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public System.Int32? WriteCapacity_TargetTrackingScalingPolicyConfiguration_ScaleOutCooldown { get; set; }
         #endregion
         
+        #region Parameter CdcSpecification_Status
+        /// <summary>
+        /// <para>
+        /// <para>The status of the CDC stream. You can enable or disable a stream for a table.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Keyspaces.CdcStatus")]
+        public Amazon.Keyspaces.CdcStatus CdcSpecification_Status { get; set; }
+        #endregion
+        
         #region Parameter ClientSideTimestamps_Status
         /// <summary>
         /// <para>
@@ -313,6 +347,21 @@ namespace Amazon.PowerShell.Cmdlets.KS
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String TableName { get; set; }
+        #endregion
+        
+        #region Parameter CdcSpecification_Tag
+        /// <summary>
+        /// <para>
+        /// <para>The tags (key-value pairs) that you want to apply to the stream.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("CdcSpecification_Tags")]
+        public Amazon.Keyspaces.Model.Tag[] CdcSpecification_Tag { get; set; }
         #endregion
         
         #region Parameter ReadCapacity_TargetTrackingScalingPolicyConfiguration_TargetValue
@@ -373,6 +422,20 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public Amazon.Keyspaces.EncryptionType EncryptionSpecification_Type { get; set; }
         #endregion
         
+        #region Parameter CdcSpecification_ViewType
+        /// <summary>
+        /// <para>
+        /// <para>The view type specifies the changes Amazon Keyspaces records for each changed row
+        /// in the stream. After you create the stream, you can't make changes to this selection.
+        /// </para><para>The options are:</para><ul><li><para><c>NEW_AND_OLD_IMAGES</c> - both versions of the row, before and after the change.
+        /// This is the default.</para></li><li><para><c>NEW_IMAGE</c> - the version of the row after the change.</para></li><li><para><c>OLD_IMAGE</c> - the version of the row before the change.</para></li><li><para><c>KEYS_ONLY</c> - the partition and clustering keys of the row that was changed.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Keyspaces.ViewType")]
+        public Amazon.Keyspaces.ViewType CdcSpecification_ViewType { get; set; }
+        #endregion
+        
         #region Parameter CapacitySpecification_WriteCapacityUnit
         /// <summary>
         /// <para>
@@ -406,9 +469,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -448,6 +515,13 @@ namespace Amazon.PowerShell.Cmdlets.KS
             context.CapacitySpecification_ReadCapacityUnit = this.CapacitySpecification_ReadCapacityUnit;
             context.CapacitySpecification_ThroughputMode = this.CapacitySpecification_ThroughputMode;
             context.CapacitySpecification_WriteCapacityUnit = this.CapacitySpecification_WriteCapacityUnit;
+            context.CdcSpecification_PropagateTag = this.CdcSpecification_PropagateTag;
+            context.CdcSpecification_Status = this.CdcSpecification_Status;
+            if (this.CdcSpecification_Tag != null)
+            {
+                context.CdcSpecification_Tag = new List<Amazon.Keyspaces.Model.Tag>(this.CdcSpecification_Tag);
+            }
+            context.CdcSpecification_ViewType = this.CdcSpecification_ViewType;
             context.ClientSideTimestamps_Status = this.ClientSideTimestamps_Status;
             context.DefaultTimeToLive = this.DefaultTimeToLive;
             context.EncryptionSpecification_KmsKeyIdentifier = this.EncryptionSpecification_KmsKeyIdentifier;
@@ -771,6 +845,55 @@ namespace Amazon.PowerShell.Cmdlets.KS
                 request.CapacitySpecification = null;
             }
             
+             // populate CdcSpecification
+            var requestCdcSpecificationIsNull = true;
+            request.CdcSpecification = new Amazon.Keyspaces.Model.CdcSpecification();
+            Amazon.Keyspaces.CdcPropagateTags requestCdcSpecification_cdcSpecification_PropagateTag = null;
+            if (cmdletContext.CdcSpecification_PropagateTag != null)
+            {
+                requestCdcSpecification_cdcSpecification_PropagateTag = cmdletContext.CdcSpecification_PropagateTag;
+            }
+            if (requestCdcSpecification_cdcSpecification_PropagateTag != null)
+            {
+                request.CdcSpecification.PropagateTags = requestCdcSpecification_cdcSpecification_PropagateTag;
+                requestCdcSpecificationIsNull = false;
+            }
+            Amazon.Keyspaces.CdcStatus requestCdcSpecification_cdcSpecification_Status = null;
+            if (cmdletContext.CdcSpecification_Status != null)
+            {
+                requestCdcSpecification_cdcSpecification_Status = cmdletContext.CdcSpecification_Status;
+            }
+            if (requestCdcSpecification_cdcSpecification_Status != null)
+            {
+                request.CdcSpecification.Status = requestCdcSpecification_cdcSpecification_Status;
+                requestCdcSpecificationIsNull = false;
+            }
+            List<Amazon.Keyspaces.Model.Tag> requestCdcSpecification_cdcSpecification_Tag = null;
+            if (cmdletContext.CdcSpecification_Tag != null)
+            {
+                requestCdcSpecification_cdcSpecification_Tag = cmdletContext.CdcSpecification_Tag;
+            }
+            if (requestCdcSpecification_cdcSpecification_Tag != null)
+            {
+                request.CdcSpecification.Tags = requestCdcSpecification_cdcSpecification_Tag;
+                requestCdcSpecificationIsNull = false;
+            }
+            Amazon.Keyspaces.ViewType requestCdcSpecification_cdcSpecification_ViewType = null;
+            if (cmdletContext.CdcSpecification_ViewType != null)
+            {
+                requestCdcSpecification_cdcSpecification_ViewType = cmdletContext.CdcSpecification_ViewType;
+            }
+            if (requestCdcSpecification_cdcSpecification_ViewType != null)
+            {
+                request.CdcSpecification.ViewType = requestCdcSpecification_cdcSpecification_ViewType;
+                requestCdcSpecificationIsNull = false;
+            }
+             // determine if request.CdcSpecification should be set to null
+            if (requestCdcSpecificationIsNull)
+            {
+                request.CdcSpecification = null;
+            }
+            
              // populate ClientSideTimestamps
             var requestClientSideTimestampsIsNull = true;
             request.ClientSideTimestamps = new Amazon.Keyspaces.Model.ClientSideTimestamps();
@@ -910,13 +1033,7 @@ namespace Amazon.PowerShell.Cmdlets.KS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Keyspaces", "UpdateTable");
             try
             {
-                #if DESKTOP
-                return client.UpdateTable(request);
-                #elif CORECLR
-                return client.UpdateTableAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateTableAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -951,6 +1068,10 @@ namespace Amazon.PowerShell.Cmdlets.KS
             public System.Int64? CapacitySpecification_ReadCapacityUnit { get; set; }
             public Amazon.Keyspaces.ThroughputMode CapacitySpecification_ThroughputMode { get; set; }
             public System.Int64? CapacitySpecification_WriteCapacityUnit { get; set; }
+            public Amazon.Keyspaces.CdcPropagateTags CdcSpecification_PropagateTag { get; set; }
+            public Amazon.Keyspaces.CdcStatus CdcSpecification_Status { get; set; }
+            public List<Amazon.Keyspaces.Model.Tag> CdcSpecification_Tag { get; set; }
+            public Amazon.Keyspaces.ViewType CdcSpecification_ViewType { get; set; }
             public Amazon.Keyspaces.ClientSideTimestampsStatus ClientSideTimestamps_Status { get; set; }
             public System.Int32? DefaultTimeToLive { get; set; }
             public System.String EncryptionSpecification_KmsKeyIdentifier { get; set; }

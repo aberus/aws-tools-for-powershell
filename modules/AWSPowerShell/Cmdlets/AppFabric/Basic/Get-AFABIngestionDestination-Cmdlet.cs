@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.AppFabric;
 using Amazon.AppFabric.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.AFAB
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.AFAB
     [AWSCmdlet("Calls the Amazon Web Services AppFabric GetIngestionDestination API operation.", Operation = new[] {"GetIngestionDestination"}, SelectReturnType = typeof(Amazon.AppFabric.Model.GetIngestionDestinationResponse))]
     [AWSCmdletOutput("Amazon.AppFabric.Model.IngestionDestination or Amazon.AppFabric.Model.GetIngestionDestinationResponse",
         "This cmdlet returns an Amazon.AppFabric.Model.IngestionDestination object.",
-        "The service call response (type Amazon.AppFabric.Model.GetIngestionDestinationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.AppFabric.Model.GetIngestionDestinationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetAFABIngestionDestinationCmdlet : AmazonAppFabricClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppBundleIdentifier
         /// <summary>
@@ -107,19 +110,13 @@ namespace Amazon.PowerShell.Cmdlets.AFAB
         public string Select { get; set; } = "IngestionDestination";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the IngestionDestinationIdentifier parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^IngestionDestinationIdentifier' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^IngestionDestinationIdentifier' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -127,21 +124,11 @@ namespace Amazon.PowerShell.Cmdlets.AFAB
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.AppFabric.Model.GetIngestionDestinationResponse, GetAFABIngestionDestinationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.IngestionDestinationIdentifier;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppBundleIdentifier = this.AppBundleIdentifier;
             #if MODULAR
             if (this.AppBundleIdentifier == null && ParameterWasBound(nameof(this.AppBundleIdentifier)))
@@ -229,13 +216,7 @@ namespace Amazon.PowerShell.Cmdlets.AFAB
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Web Services AppFabric", "GetIngestionDestination");
             try
             {
-                #if DESKTOP
-                return client.GetIngestionDestination(request);
-                #elif CORECLR
-                return client.GetIngestionDestinationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetIngestionDestinationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

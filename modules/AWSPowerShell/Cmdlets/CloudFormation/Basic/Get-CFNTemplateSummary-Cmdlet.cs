@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudFormation;
 using Amazon.CloudFormation.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFN
 {
     /// <summary>
     /// Returns information about a new or existing template. The <c>GetTemplateSummary</c>
     /// action is useful for viewing parameter information, such as default parameter values
-    /// and parameter types, before you create or update a stack or stack set.
+    /// and parameter types, before you create or update a stack or StackSet.
     /// 
     ///  
     /// <para>
     /// You can use the <c>GetTemplateSummary</c> action when you submit a template, or you
-    /// can get template information for a stack set, or a running or deleted stack.
+    /// can get template information for a StackSet, or a running or deleted stack.
     /// </para><para>
     /// For deleted stacks, <c>GetTemplateSummary</c> returns the template information for
     /// up to 90 days after the stack has been deleted. If the template doesn't exist, a <c>ValidationError</c>
@@ -46,19 +48,20 @@ namespace Amazon.PowerShell.Cmdlets.CFN
     [OutputType("Amazon.CloudFormation.Model.GetTemplateSummaryResponse")]
     [AWSCmdlet("Calls the AWS CloudFormation GetTemplateSummary API operation.", Operation = new[] {"GetTemplateSummary"}, SelectReturnType = typeof(Amazon.CloudFormation.Model.GetTemplateSummaryResponse))]
     [AWSCmdletOutput("Amazon.CloudFormation.Model.GetTemplateSummaryResponse",
-        "This cmdlet returns an Amazon.CloudFormation.Model.GetTemplateSummaryResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudFormation.Model.GetTemplateSummaryResponse object containing multiple properties."
     )]
     public partial class GetCFNTemplateSummaryCmdlet : AmazonCloudFormationClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CallAs
         /// <summary>
         /// <para>
         /// <para>[Service-managed permissions] Specifies whether you are acting as an account administrator
         /// in the organization's management account or as a delegated administrator in a member
-        /// account.</para><para>By default, <c>SELF</c> is specified. Use <c>SELF</c> for stack sets with self-managed
+        /// account.</para><para>By default, <c>SELF</c> is specified. Use <c>SELF</c> for StackSets with self-managed
         /// permissions.</para><ul><li><para>If you are signed in to the management account, specify <c>SELF</c>.</para></li><li><para>If you are signed in to a delegated administrator account, specify <c>DELEGATED_ADMIN</c>.</para><para>Your Amazon Web Services account must be registered as a delegated administrator in
         /// the management account. For more information, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-orgs-delegated-admin.html">Register
         /// a delegated administrator</a> in the <i>CloudFormation User Guide</i>.</para></li></ul>
@@ -85,7 +88,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter StackSetName
         /// <summary>
         /// <para>
-        /// <para>The name or unique ID of the stack set from which the stack was created.</para><para>Conditional: You must specify only one of the following parameters: <c>StackName</c>,
+        /// <para>The name or unique ID of the StackSet from which the stack was created.</para><para>Conditional: You must specify only one of the following parameters: <c>StackName</c>,
         /// <c>StackSetName</c>, <c>TemplateBody</c>, or <c>TemplateURL</c>.</para>
         /// </para>
         /// </summary>
@@ -96,9 +99,8 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TemplateBody
         /// <summary>
         /// <para>
-        /// <para>Structure containing the template body with a minimum length of 1 byte and a maximum
-        /// length of 51,200 bytes. For more information about templates, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html">Template
-        /// anatomy</a> in the <i>CloudFormation User Guide</i>.</para><para>Conditional: You must specify only one of the following parameters: <c>StackName</c>,
+        /// <para>Structure that contains the template body with a minimum length of 1 byte and a maximum
+        /// length of 51,200 bytes.</para><para>Conditional: You must specify only one of the following parameters: <c>StackName</c>,
         /// <c>StackSetName</c>, <c>TemplateBody</c>, or <c>TemplateURL</c>.</para>
         /// </para>
         /// </summary>
@@ -109,10 +111,9 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         #region Parameter TemplateURL
         /// <summary>
         /// <para>
-        /// <para>Location of file containing the template body. The URL must point to a template (max
-        /// size: 460,800 bytes) that's located in an Amazon S3 bucket or a Systems Manager document.
-        /// For more information about templates, see <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-anatomy.html">Template
-        /// anatomy</a> in the <i>CloudFormation User Guide</i>.</para><para>Conditional: You must specify only one of the following parameters: <c>StackName</c>,
+        /// <para>The URL of a file that contains the template body. The URL must point to a template
+        /// (max size: 1 MB) that's located in an Amazon S3 bucket or a Systems Manager document.
+        /// The location for an Amazon S3 bucket must start with <c>https://</c>.</para><para>Conditional: You must specify only one of the following parameters: <c>StackName</c>,
         /// <c>StackSetName</c>, <c>TemplateBody</c>, or <c>TemplateURL</c>.</para>
         /// </para>
         /// </summary>
@@ -144,19 +145,13 @@ namespace Amazon.PowerShell.Cmdlets.CFN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the StackName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^StackName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -164,21 +159,11 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudFormation.Model.GetTemplateSummaryResponse, GetCFNTemplateSummaryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.StackName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CallAs = this.CallAs;
             context.StackName = this.StackName;
             context.StackSetName = this.StackSetName;
@@ -278,13 +263,7 @@ namespace Amazon.PowerShell.Cmdlets.CFN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS CloudFormation", "GetTemplateSummary");
             try
             {
-                #if DESKTOP
-                return client.GetTemplateSummary(request);
-                #elif CORECLR
-                return client.GetTemplateSummaryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetTemplateSummaryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

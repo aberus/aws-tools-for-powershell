@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleSystemsManagement;
 using Amazon.SimpleSystemsManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SSM
 {
     /// <summary>
@@ -59,21 +61,22 @@ namespace Amazon.PowerShell.Cmdlets.SSM
     [OutputType("Amazon.SimpleSystemsManagement.Model.UpdateMaintenanceWindowTaskResponse")]
     [AWSCmdlet("Calls the AWS Systems Manager UpdateMaintenanceWindowTask API operation.", Operation = new[] {"UpdateMaintenanceWindowTask"}, SelectReturnType = typeof(Amazon.SimpleSystemsManagement.Model.UpdateMaintenanceWindowTaskResponse))]
     [AWSCmdletOutput("Amazon.SimpleSystemsManagement.Model.UpdateMaintenanceWindowTaskResponse",
-        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.UpdateMaintenanceWindowTaskResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.SimpleSystemsManagement.Model.UpdateMaintenanceWindowTaskResponse object containing multiple properties."
     )]
     public partial class UpdateSSMMaintenanceWindowTaskCmdlet : AmazonSimpleSystemsManagementClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AlarmConfiguration_Alarm
         /// <summary>
         /// <para>
-        /// <para>The name of the CloudWatch alarm specified in the configuration.</para>
+        /// <para>The name of the CloudWatch alarm specified in the configuration.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -300,7 +303,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>The different events for which you can receive notifications. To learn more about
         /// these events, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/monitoring-sns-notifications.html">Monitoring
         /// Systems Manager status changes using Amazon SNS notifications</a> in the <i>Amazon
-        /// Web Services Systems Manager User Guide</i>.</para>
+        /// Web Services Systems Manager User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -355,7 +362,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// when it runs, instead use the <c>Parameters</c> option in the <c>TaskInvocationParameters</c>
         /// structure. For information about how Systems Manager handles these options for the
         /// supported maintenance window task types, see <a>MaintenanceWindowTaskInvocationParameters</a>.</para><para>For <c>AUTOMATION</c> task types, Amazon Web Services Systems Manager ignores any
-        /// values specified for these parameters.</para></note>
+        /// values specified for these parameters.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -366,7 +377,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter RunCommand_Parameter
         /// <summary>
         /// <para>
-        /// <para>The parameters for the <c>RUN_COMMAND</c> task execution.</para>
+        /// <para>The parameters for the <c>RUN_COMMAND</c> task execution.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -459,12 +474,14 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>
         /// <para>The Amazon Resource Name (ARN) of the IAM service role for Amazon Web Services Systems
         /// Manager to assume when running a maintenance window task. If you do not specify a
-        /// service role ARN, Systems Manager uses your account's service-linked role. If no service-linked
-        /// role for Systems Manager exists in your account, it is created when you run <c>RegisterTaskWithMaintenanceWindow</c>.</para><para>For more information, see the following topics in the in the <i>Amazon Web Services
-        /// Systems Manager User Guide</i>:</para><ul><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/using-service-linked-roles.html#slr-permissions">Using
-        /// service-linked roles for Systems Manager</a></para></li><li><para><a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-maintenance-permissions.html#maintenance-window-tasks-service-role">Should
-        /// I use a service-linked role or a custom service role to run maintenance window tasks?
-        /// </a></para></li></ul>
+        /// service role ARN, Systems Manager uses a service-linked role in your account. If no
+        /// appropriate service-linked role for Systems Manager exists in your account, it is
+        /// created when you run <c>RegisterTaskWithMaintenanceWindow</c>.</para><para>However, for an improved security posture, we strongly recommend creating a custom
+        /// policy and custom service role for running your maintenance window tasks. The policy
+        /// can be crafted to provide only the permissions needed for your particular maintenance
+        /// window tasks. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-maintenance-permissions.html">Setting
+        /// up Maintenance Windows</a> in the in the <i>Amazon Web Services Systems Manager User
+        /// Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -474,9 +491,16 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         #region Parameter RunCommand_ServiceRoleArn
         /// <summary>
         /// <para>
-        /// <para>The Amazon Resource Name (ARN) of the Identity and Access Management (IAM) service
-        /// role to use to publish Amazon Simple Notification Service (Amazon SNS) notifications
-        /// for maintenance window Run Command tasks.</para>
+        /// <para>The Amazon Resource Name (ARN) of the IAM service role for Amazon Web Services Systems
+        /// Manager to assume when running a maintenance window task. If you do not specify a
+        /// service role ARN, Systems Manager uses a service-linked role in your account. If no
+        /// appropriate service-linked role for Systems Manager exists in your account, it is
+        /// created when you run <c>RegisterTaskWithMaintenanceWindow</c>.</para><para>However, for an improved security posture, we strongly recommend creating a custom
+        /// policy and custom service role for running your maintenance window tasks. The policy
+        /// can be crafted to provide only the permissions needed for your particular maintenance
+        /// window tasks. For more information, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/sysman-maintenance-permissions.html">Setting
+        /// up Maintenance Windows</a> in the in the <i>Amazon Web Services Systems Manager User
+        /// Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -494,7 +518,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// (Automation, Lambda, and Step Functions). For more information about running tasks
         /// that don't specify targets, see <a href="https://docs.aws.amazon.com/systems-manager/latest/userguide/maintenance-windows-targetless-tasks.html">Registering
         /// maintenance window tasks without targets</a> in the <i>Amazon Web Services Systems
-        /// Manager User Guide</i>.</para></note>
+        /// Manager User Guide</i>.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -518,7 +546,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         /// <para>The parameters to modify.</para><note><para><c>TaskParameters</c> has been deprecated. To specify parameters to pass to a task
         /// when it runs, instead use the <c>Parameters</c> option in the <c>TaskInvocationParameters</c>
         /// structure. For information about how Systems Manager handles these options for the
-        /// supported maintenance window task types, see <a>MaintenanceWindowTaskInvocationParameters</a>.</para></note><para>The map has the following format:</para><para>Key: string, between 1 and 255 characters</para><para>Value: an array of strings, each string is between 1 and 255 characters</para>
+        /// supported maintenance window task types, see <a>MaintenanceWindowTaskInvocationParameters</a>.</para></note><para>The map has the following format:</para><para>Key: string, between 1 and 255 characters</para><para>Value: an array of strings, each string is between 1 and 255 characters</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -583,16 +615,6 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the WindowTaskId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^WindowTaskId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^WindowTaskId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -603,9 +625,13 @@ namespace Amazon.PowerShell.Cmdlets.SSM
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.WindowTaskId), MyInvocation.BoundParameters);
@@ -619,21 +645,11 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleSystemsManagement.Model.UpdateMaintenanceWindowTaskResponse, UpdateSSMMaintenanceWindowTaskCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.WindowTaskId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.AlarmConfiguration_Alarm != null)
             {
                 context.AlarmConfiguration_Alarm = new List<Amazon.SimpleSystemsManagement.Model.Alarm>(this.AlarmConfiguration_Alarm);
@@ -1235,13 +1251,7 @@ namespace Amazon.PowerShell.Cmdlets.SSM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Systems Manager", "UpdateMaintenanceWindowTask");
             try
             {
-                #if DESKTOP
-                return client.UpdateMaintenanceWindowTask(request);
-                #elif CORECLR
-                return client.UpdateMaintenanceWindowTaskAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateMaintenanceWindowTaskAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

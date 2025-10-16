@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -36,16 +38,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyVerifiedAccessTrustProvider API operation.", Operation = new[] {"ModifyVerifiedAccessTrustProvider"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyVerifiedAccessTrustProviderResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.VerifiedAccessTrustProvider or Amazon.EC2.Model.ModifyVerifiedAccessTrustProviderResponse",
         "This cmdlet returns an Amazon.EC2.Model.VerifiedAccessTrustProvider object.",
-        "The service call response (type Amazon.EC2.Model.ModifyVerifiedAccessTrustProviderResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.ModifyVerifiedAccessTrustProviderResponse) can be returned by specifying '-Select *'."
     )]
     public partial class EditEC2VerifiedAccessTrustProviderCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter NativeApplicationOidcOptions_AuthorizationEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>The authorization endpoint of the IdP.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_AuthorizationEndpoint { get; set; }
+        #endregion
         
         #region Parameter OidcOptions_AuthorizationEndpoint
         /// <summary>
@@ -57,6 +66,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String OidcOptions_AuthorizationEndpoint { get; set; }
         #endregion
         
+        #region Parameter NativeApplicationOidcOptions_ClientId
+        /// <summary>
+        /// <para>
+        /// <para>The OAuth 2.0 client identifier.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_ClientId { get; set; }
+        #endregion
+        
         #region Parameter OidcOptions_ClientId
         /// <summary>
         /// <para>
@@ -65,6 +84,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OidcOptions_ClientId { get; set; }
+        #endregion
+        
+        #region Parameter NativeApplicationOidcOptions_ClientSecret
+        /// <summary>
+        /// <para>
+        /// <para>The OAuth 2.0 client secret.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_ClientSecret { get; set; }
         #endregion
         
         #region Parameter OidcOptions_ClientSecret
@@ -98,6 +127,28 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String Description { get; set; }
         #endregion
         
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter NativeApplicationOidcOptions_Issuer
+        /// <summary>
+        /// <para>
+        /// <para>The OIDC issuer identifier of the IdP.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_Issuer { get; set; }
+        #endregion
+        
         #region Parameter OidcOptions_Issuer
         /// <summary>
         /// <para>
@@ -118,15 +169,35 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String SseSpecification_KmsKeyArn { get; set; }
         #endregion
         
+        #region Parameter NativeApplicationOidcOptions_PublicSigningKeyEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>The public signing key endpoint.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_PublicSigningKeyEndpoint { get; set; }
+        #endregion
+        
         #region Parameter DeviceOptions_PublicSigningKeyUrl
         /// <summary>
         /// <para>
         /// <para> The URL Amazon Web Services Verified Access will use to verify the authenticity of
-        /// the device tokens. </para>
+        /// the device tokens.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String DeviceOptions_PublicSigningKeyUrl { get; set; }
+        #endregion
+        
+        #region Parameter NativeApplicationOidcOptions_Scope
+        /// <summary>
+        /// <para>
+        /// <para>The set of user claims to be requested from the IdP.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_Scope { get; set; }
         #endregion
         
         #region Parameter OidcOptions_Scope
@@ -140,6 +211,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String OidcOptions_Scope { get; set; }
         #endregion
         
+        #region Parameter NativeApplicationOidcOptions_TokenEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>The token endpoint of the IdP.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_TokenEndpoint { get; set; }
+        #endregion
+        
         #region Parameter OidcOptions_TokenEndpoint
         /// <summary>
         /// <para>
@@ -148,6 +229,16 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String OidcOptions_TokenEndpoint { get; set; }
+        #endregion
+        
+        #region Parameter NativeApplicationOidcOptions_UserInfoEndpoint
+        /// <summary>
+        /// <para>
+        /// <para>The user info endpoint of the IdP.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String NativeApplicationOidcOptions_UserInfoEndpoint { get; set; }
         #endregion
         
         #region Parameter OidcOptions_UserInfoEndpoint
@@ -181,8 +272,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <summary>
         /// <para>
         /// <para>A unique, case-sensitive token that you provide to ensure idempotency of your modification
-        /// request. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html">Ensuring
-        /// Idempotency</a>.</para>
+        /// request. For more information, see <a href="https://docs.aws.amazon.com/ec2/latest/devguide/ec2-api-idempotency.html">Ensuring
+        /// idempotency</a>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -200,16 +291,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "VerifiedAccessTrustProvider";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the VerifiedAccessTrustProviderId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^VerifiedAccessTrustProviderId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^VerifiedAccessTrustProviderId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -220,9 +301,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VerifiedAccessTrustProviderId), MyInvocation.BoundParameters);
@@ -236,24 +321,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.ModifyVerifiedAccessTrustProviderResponse, EditEC2VerifiedAccessTrustProviderCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.VerifiedAccessTrustProviderId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ClientToken = this.ClientToken;
             context.Description = this.Description;
             context.DeviceOptions_PublicSigningKeyUrl = this.DeviceOptions_PublicSigningKeyUrl;
+            context.DryRun = this.DryRun;
+            context.NativeApplicationOidcOptions_AuthorizationEndpoint = this.NativeApplicationOidcOptions_AuthorizationEndpoint;
+            context.NativeApplicationOidcOptions_ClientId = this.NativeApplicationOidcOptions_ClientId;
+            context.NativeApplicationOidcOptions_ClientSecret = this.NativeApplicationOidcOptions_ClientSecret;
+            context.NativeApplicationOidcOptions_Issuer = this.NativeApplicationOidcOptions_Issuer;
+            context.NativeApplicationOidcOptions_PublicSigningKeyEndpoint = this.NativeApplicationOidcOptions_PublicSigningKeyEndpoint;
+            context.NativeApplicationOidcOptions_Scope = this.NativeApplicationOidcOptions_Scope;
+            context.NativeApplicationOidcOptions_TokenEndpoint = this.NativeApplicationOidcOptions_TokenEndpoint;
+            context.NativeApplicationOidcOptions_UserInfoEndpoint = this.NativeApplicationOidcOptions_UserInfoEndpoint;
             context.OidcOptions_AuthorizationEndpoint = this.OidcOptions_AuthorizationEndpoint;
             context.OidcOptions_ClientId = this.OidcOptions_ClientId;
             context.OidcOptions_ClientSecret = this.OidcOptions_ClientSecret;
@@ -312,6 +396,99 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (requestDeviceOptionsIsNull)
             {
                 request.DeviceOptions = null;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            
+             // populate NativeApplicationOidcOptions
+            var requestNativeApplicationOidcOptionsIsNull = true;
+            request.NativeApplicationOidcOptions = new Amazon.EC2.Model.ModifyVerifiedAccessNativeApplicationOidcOptions();
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_AuthorizationEndpoint = null;
+            if (cmdletContext.NativeApplicationOidcOptions_AuthorizationEndpoint != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_AuthorizationEndpoint = cmdletContext.NativeApplicationOidcOptions_AuthorizationEndpoint;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_AuthorizationEndpoint != null)
+            {
+                request.NativeApplicationOidcOptions.AuthorizationEndpoint = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_AuthorizationEndpoint;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientId = null;
+            if (cmdletContext.NativeApplicationOidcOptions_ClientId != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientId = cmdletContext.NativeApplicationOidcOptions_ClientId;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientId != null)
+            {
+                request.NativeApplicationOidcOptions.ClientId = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientId;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientSecret = null;
+            if (cmdletContext.NativeApplicationOidcOptions_ClientSecret != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientSecret = cmdletContext.NativeApplicationOidcOptions_ClientSecret;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientSecret != null)
+            {
+                request.NativeApplicationOidcOptions.ClientSecret = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_ClientSecret;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Issuer = null;
+            if (cmdletContext.NativeApplicationOidcOptions_Issuer != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Issuer = cmdletContext.NativeApplicationOidcOptions_Issuer;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Issuer != null)
+            {
+                request.NativeApplicationOidcOptions.Issuer = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Issuer;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_PublicSigningKeyEndpoint = null;
+            if (cmdletContext.NativeApplicationOidcOptions_PublicSigningKeyEndpoint != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_PublicSigningKeyEndpoint = cmdletContext.NativeApplicationOidcOptions_PublicSigningKeyEndpoint;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_PublicSigningKeyEndpoint != null)
+            {
+                request.NativeApplicationOidcOptions.PublicSigningKeyEndpoint = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_PublicSigningKeyEndpoint;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Scope = null;
+            if (cmdletContext.NativeApplicationOidcOptions_Scope != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Scope = cmdletContext.NativeApplicationOidcOptions_Scope;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Scope != null)
+            {
+                request.NativeApplicationOidcOptions.Scope = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_Scope;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_TokenEndpoint = null;
+            if (cmdletContext.NativeApplicationOidcOptions_TokenEndpoint != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_TokenEndpoint = cmdletContext.NativeApplicationOidcOptions_TokenEndpoint;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_TokenEndpoint != null)
+            {
+                request.NativeApplicationOidcOptions.TokenEndpoint = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_TokenEndpoint;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+            System.String requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_UserInfoEndpoint = null;
+            if (cmdletContext.NativeApplicationOidcOptions_UserInfoEndpoint != null)
+            {
+                requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_UserInfoEndpoint = cmdletContext.NativeApplicationOidcOptions_UserInfoEndpoint;
+            }
+            if (requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_UserInfoEndpoint != null)
+            {
+                request.NativeApplicationOidcOptions.UserInfoEndpoint = requestNativeApplicationOidcOptions_nativeApplicationOidcOptions_UserInfoEndpoint;
+                requestNativeApplicationOidcOptionsIsNull = false;
+            }
+             // determine if request.NativeApplicationOidcOptions should be set to null
+            if (requestNativeApplicationOidcOptionsIsNull)
+            {
+                request.NativeApplicationOidcOptions = null;
             }
             
              // populate OidcOptions
@@ -463,13 +640,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyVerifiedAccessTrustProvider");
             try
             {
-                #if DESKTOP
-                return client.ModifyVerifiedAccessTrustProvider(request);
-                #elif CORECLR
-                return client.ModifyVerifiedAccessTrustProviderAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyVerifiedAccessTrustProviderAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -489,6 +660,15 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String ClientToken { get; set; }
             public System.String Description { get; set; }
             public System.String DeviceOptions_PublicSigningKeyUrl { get; set; }
+            public System.Boolean? DryRun { get; set; }
+            public System.String NativeApplicationOidcOptions_AuthorizationEndpoint { get; set; }
+            public System.String NativeApplicationOidcOptions_ClientId { get; set; }
+            public System.String NativeApplicationOidcOptions_ClientSecret { get; set; }
+            public System.String NativeApplicationOidcOptions_Issuer { get; set; }
+            public System.String NativeApplicationOidcOptions_PublicSigningKeyEndpoint { get; set; }
+            public System.String NativeApplicationOidcOptions_Scope { get; set; }
+            public System.String NativeApplicationOidcOptions_TokenEndpoint { get; set; }
+            public System.String NativeApplicationOidcOptions_UserInfoEndpoint { get; set; }
             public System.String OidcOptions_AuthorizationEndpoint { get; set; }
             public System.String OidcOptions_ClientId { get; set; }
             public System.String OidcOptions_ClientSecret { get; set; }

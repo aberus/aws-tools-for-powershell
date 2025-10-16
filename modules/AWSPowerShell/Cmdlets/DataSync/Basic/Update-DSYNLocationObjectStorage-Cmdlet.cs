@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,30 +22,35 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.DataSync;
 using Amazon.DataSync.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DSYN
 {
     /// <summary>
-    /// Updates some parameters of an existing object storage location that DataSync accesses
-    /// for a transfer. For information about creating a self-managed object storage location,
-    /// see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-object-location.html">Creating
-    /// a location for object storage</a>.
+    /// Modifies the following configuration parameters of the object storage transfer location
+    /// that you're using with DataSync.
+    /// 
+    ///  
+    /// <para>
+    /// For more information, see <a href="https://docs.aws.amazon.com/datasync/latest/userguide/create-object-location.html">Configuring
+    /// DataSync transfers with an object storage system</a>.
+    /// </para>
     /// </summary>
     [Cmdlet("Update", "DSYNLocationObjectStorage", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the AWS DataSync UpdateLocationObjectStorage API operation.", Operation = new[] {"UpdateLocationObjectStorage"}, SelectReturnType = typeof(Amazon.DataSync.Model.UpdateLocationObjectStorageResponse))]
     [AWSCmdletOutput("None or Amazon.DataSync.Model.UpdateLocationObjectStorageResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.DataSync.Model.UpdateLocationObjectStorageResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.DataSync.Model.UpdateLocationObjectStorageResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateDSYNLocationObjectStorageCmdlet : AmazonDataSyncClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BucketAccessKey
         /// <summary>
@@ -61,13 +66,31 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter AgentArn
         /// <summary>
         /// <para>
-        /// <para>Specifies the Amazon Resource Names (ARNs) of the DataSync agents that can securely
-        /// connect with your location.</para>
+        /// <para>(Optional) Specifies the Amazon Resource Names (ARNs) of the DataSync agents that
+        /// can connect with your object storage system. If you are setting up an agentless cross-cloud
+        /// transfer, you do not need to specify a value for this parameter.</para><note><para>You cannot add or remove agents from a storage location after you initially create
+        /// it.</para></note><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Alias("AgentArns")]
         public System.String[] AgentArn { get; set; }
+        #endregion
+        
+        #region Parameter CmkSecretConfig_KmsKeyArn
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the ARN for the customer-managed KMS key that DataSync uses to encrypt the
+        /// DataSync-managed secret stored for <c>SecretArn</c>. DataSync provides this key to
+        /// Secrets Manager.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CmkSecretConfig_KmsKeyArn { get; set; }
         #endregion
         
         #region Parameter LocationArn
@@ -87,11 +110,47 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public System.String LocationArn { get; set; }
         #endregion
         
+        #region Parameter CustomSecretConfig_SecretAccessRoleArn
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the ARN for the Identity and Access Management role that DataSync uses to
+        /// access the secret specified for <c>SecretArn</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomSecretConfig_SecretAccessRoleArn { get; set; }
+        #endregion
+        
+        #region Parameter CmkSecretConfig_SecretArn
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the ARN for the DataSync-managed Secrets Manager secret that that is used
+        /// to access a specific storage location. This property is generated by DataSync and
+        /// is read-only. DataSync encrypts this secret with the KMS key that you specify for
+        /// <c>KmsKeyArn</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CmkSecretConfig_SecretArn { get; set; }
+        #endregion
+        
+        #region Parameter CustomSecretConfig_SecretArn
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the ARN for an Secrets Manager secret.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String CustomSecretConfig_SecretArn { get; set; }
+        #endregion
+        
         #region Parameter BucketSecretKey
         /// <summary>
         /// <para>
         /// <para>Specifies the secret key (for example, a password) if credentials are required to
-        /// authenticate with the object storage server.</para>
+        /// authenticate with the object storage server.</para><note><para>If you provide a secret using <c>SecretKey</c>, but do not provide secret configuration
+        /// details using <c>CmkSecretConfig</c> or <c>CustomSecretConfig</c>, then DataSync stores
+        /// the token using your Amazon Web Services account's Secrets Manager secret.</para></note>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -101,16 +160,30 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         #region Parameter ServerCertificate
         /// <summary>
         /// <para>
-        /// <para>Specifies a certificate to authenticate with an object storage system that uses a
-        /// private or self-signed certificate authority (CA). You must specify a Base64-encoded
-        /// <c>.pem</c> file (for example, <c>file:///home/user/.ssh/storage_sys_certificate.pem</c>).
-        /// The certificate can be up to 32768 bytes (before Base64 encoding).</para><para>To use this parameter, configure <c>ServerProtocol</c> to <c>HTTPS</c>.</para><para>Updating the certificate doesn't interfere with tasks that you have in progress.</para>
+        /// <para>Specifies a certificate chain for DataSync to authenticate with your object storage
+        /// system if the system uses a private or self-signed certificate authority (CA). You
+        /// must specify a single <c>.pem</c> file with a full certificate chain (for example,
+        /// <c>file:///home/user/.ssh/object_storage_certificates.pem</c>).</para><para>The certificate chain might include:</para><ul><li><para>The object storage system's certificate</para></li><li><para>All intermediate certificates (if there are any)</para></li><li><para>The root certificate of the signing CA</para></li></ul><para>You can concatenate your certificates into a <c>.pem</c> file (which can be up to
+        /// 32768 bytes before base64 encoding). The following example <c>cat</c> command creates
+        /// an <c>object_storage_certificates.pem</c> file that includes three certificates:</para><para><c>cat object_server_certificate.pem intermediate_certificate.pem ca_root_certificate.pem
+        /// &gt; object_storage_certificates.pem</c></para><para>To use this parameter, configure <c>ServerProtocol</c> to <c>HTTPS</c>.</para><para>Updating this parameter doesn't interfere with tasks that you have in progress.</para>
         /// </para>
         /// <para>The cmdlet will automatically convert the supplied parameter of type string, string[], System.IO.FileInfo or System.IO.Stream to byte[] before supplying it to the service.</para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [Amazon.PowerShell.Common.MemoryStreamParameterConverter]
         public byte[] ServerCertificate { get; set; }
+        #endregion
+        
+        #region Parameter ServerHostname
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the domain name or IP address (IPv4 or IPv6) of the object storage server
+        /// that your DataSync agent connects to.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ServerHostname { get; set; }
         #endregion
         
         #region Parameter ServerPort
@@ -157,16 +230,6 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LocationArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LocationArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LocationArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -177,9 +240,13 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.LocationArn), MyInvocation.BoundParameters);
@@ -193,26 +260,20 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.DataSync.Model.UpdateLocationObjectStorageResponse, UpdateDSYNLocationObjectStorageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LocationArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BucketAccessKey = this.BucketAccessKey;
             if (this.AgentArn != null)
             {
                 context.AgentArn = new List<System.String>(this.AgentArn);
             }
+            context.CmkSecretConfig_KmsKeyArn = this.CmkSecretConfig_KmsKeyArn;
+            context.CmkSecretConfig_SecretArn = this.CmkSecretConfig_SecretArn;
+            context.CustomSecretConfig_SecretAccessRoleArn = this.CustomSecretConfig_SecretAccessRoleArn;
+            context.CustomSecretConfig_SecretArn = this.CustomSecretConfig_SecretArn;
             context.LocationArn = this.LocationArn;
             #if MODULAR
             if (this.LocationArn == null && ParameterWasBound(nameof(this.LocationArn)))
@@ -222,6 +283,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             #endif
             context.BucketSecretKey = this.BucketSecretKey;
             context.ServerCertificate = this.ServerCertificate;
+            context.ServerHostname = this.ServerHostname;
             context.ServerPort = this.ServerPort;
             context.ServerProtocol = this.ServerProtocol;
             context.Subdirectory = this.Subdirectory;
@@ -253,6 +315,64 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
                 {
                     request.AgentArns = cmdletContext.AgentArn;
                 }
+                
+                 // populate CmkSecretConfig
+                var requestCmkSecretConfigIsNull = true;
+                request.CmkSecretConfig = new Amazon.DataSync.Model.CmkSecretConfig();
+                System.String requestCmkSecretConfig_cmkSecretConfig_KmsKeyArn = null;
+                if (cmdletContext.CmkSecretConfig_KmsKeyArn != null)
+                {
+                    requestCmkSecretConfig_cmkSecretConfig_KmsKeyArn = cmdletContext.CmkSecretConfig_KmsKeyArn;
+                }
+                if (requestCmkSecretConfig_cmkSecretConfig_KmsKeyArn != null)
+                {
+                    request.CmkSecretConfig.KmsKeyArn = requestCmkSecretConfig_cmkSecretConfig_KmsKeyArn;
+                    requestCmkSecretConfigIsNull = false;
+                }
+                System.String requestCmkSecretConfig_cmkSecretConfig_SecretArn = null;
+                if (cmdletContext.CmkSecretConfig_SecretArn != null)
+                {
+                    requestCmkSecretConfig_cmkSecretConfig_SecretArn = cmdletContext.CmkSecretConfig_SecretArn;
+                }
+                if (requestCmkSecretConfig_cmkSecretConfig_SecretArn != null)
+                {
+                    request.CmkSecretConfig.SecretArn = requestCmkSecretConfig_cmkSecretConfig_SecretArn;
+                    requestCmkSecretConfigIsNull = false;
+                }
+                 // determine if request.CmkSecretConfig should be set to null
+                if (requestCmkSecretConfigIsNull)
+                {
+                    request.CmkSecretConfig = null;
+                }
+                
+                 // populate CustomSecretConfig
+                var requestCustomSecretConfigIsNull = true;
+                request.CustomSecretConfig = new Amazon.DataSync.Model.CustomSecretConfig();
+                System.String requestCustomSecretConfig_customSecretConfig_SecretAccessRoleArn = null;
+                if (cmdletContext.CustomSecretConfig_SecretAccessRoleArn != null)
+                {
+                    requestCustomSecretConfig_customSecretConfig_SecretAccessRoleArn = cmdletContext.CustomSecretConfig_SecretAccessRoleArn;
+                }
+                if (requestCustomSecretConfig_customSecretConfig_SecretAccessRoleArn != null)
+                {
+                    request.CustomSecretConfig.SecretAccessRoleArn = requestCustomSecretConfig_customSecretConfig_SecretAccessRoleArn;
+                    requestCustomSecretConfigIsNull = false;
+                }
+                System.String requestCustomSecretConfig_customSecretConfig_SecretArn = null;
+                if (cmdletContext.CustomSecretConfig_SecretArn != null)
+                {
+                    requestCustomSecretConfig_customSecretConfig_SecretArn = cmdletContext.CustomSecretConfig_SecretArn;
+                }
+                if (requestCustomSecretConfig_customSecretConfig_SecretArn != null)
+                {
+                    request.CustomSecretConfig.SecretArn = requestCustomSecretConfig_customSecretConfig_SecretArn;
+                    requestCustomSecretConfigIsNull = false;
+                }
+                 // determine if request.CustomSecretConfig should be set to null
+                if (requestCustomSecretConfigIsNull)
+                {
+                    request.CustomSecretConfig = null;
+                }
                 if (cmdletContext.LocationArn != null)
                 {
                     request.LocationArn = cmdletContext.LocationArn;
@@ -265,6 +385,10 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
                 {
                     _ServerCertificateStream = new System.IO.MemoryStream(cmdletContext.ServerCertificate);
                     request.ServerCertificate = _ServerCertificateStream;
+                }
+                if (cmdletContext.ServerHostname != null)
+                {
+                    request.ServerHostname = cmdletContext.ServerHostname;
                 }
                 if (cmdletContext.ServerPort != null)
                 {
@@ -324,13 +448,7 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS DataSync", "UpdateLocationObjectStorage");
             try
             {
-                #if DESKTOP
-                return client.UpdateLocationObjectStorage(request);
-                #elif CORECLR
-                return client.UpdateLocationObjectStorageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateLocationObjectStorageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -349,9 +467,14 @@ namespace Amazon.PowerShell.Cmdlets.DSYN
         {
             public System.String BucketAccessKey { get; set; }
             public List<System.String> AgentArn { get; set; }
+            public System.String CmkSecretConfig_KmsKeyArn { get; set; }
+            public System.String CmkSecretConfig_SecretArn { get; set; }
+            public System.String CustomSecretConfig_SecretAccessRoleArn { get; set; }
+            public System.String CustomSecretConfig_SecretArn { get; set; }
             public System.String LocationArn { get; set; }
             public System.String BucketSecretKey { get; set; }
             public byte[] ServerCertificate { get; set; }
+            public System.String ServerHostname { get; set; }
             public System.Int32? ServerPort { get; set; }
             public Amazon.DataSync.ObjectStorageServerProtocol ServerProtocol { get; set; }
             public System.String Subdirectory { get; set; }

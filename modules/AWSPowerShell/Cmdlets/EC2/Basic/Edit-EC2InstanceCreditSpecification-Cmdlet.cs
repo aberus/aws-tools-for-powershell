@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -41,17 +43,34 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [OutputType("Amazon.EC2.Model.ModifyInstanceCreditSpecificationResponse")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) ModifyInstanceCreditSpecification API operation.", Operation = new[] {"ModifyInstanceCreditSpecification"}, SelectReturnType = typeof(Amazon.EC2.Model.ModifyInstanceCreditSpecificationResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.ModifyInstanceCreditSpecificationResponse",
-        "This cmdlet returns an Amazon.EC2.Model.ModifyInstanceCreditSpecificationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.EC2.Model.ModifyInstanceCreditSpecificationResponse object containing multiple properties."
     )]
     public partial class EditEC2InstanceCreditSpecificationCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the operation, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
         
         #region Parameter InstanceCreditSpecification
         /// <summary>
         /// <para>
-        /// <para>Information about the credit option for CPU usage.</para>
+        /// <para>Information about the credit option for CPU usage.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -99,9 +118,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -121,6 +144,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.ClientToken = this.ClientToken;
+            context.DryRun = this.DryRun;
             if (this.InstanceCreditSpecification != null)
             {
                 context.InstanceCreditSpecification = new List<Amazon.EC2.Model.InstanceCreditSpecificationRequest>(this.InstanceCreditSpecification);
@@ -150,6 +174,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.ClientToken != null)
             {
                 request.ClientToken = cmdletContext.ClientToken;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.InstanceCreditSpecification != null)
             {
@@ -193,13 +221,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "ModifyInstanceCreditSpecification");
             try
             {
-                #if DESKTOP
-                return client.ModifyInstanceCreditSpecification(request);
-                #elif CORECLR
-                return client.ModifyInstanceCreditSpecificationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ModifyInstanceCreditSpecificationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -217,6 +239,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ClientToken { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public List<Amazon.EC2.Model.InstanceCreditSpecificationRequest> InstanceCreditSpecification { get; set; }
             public System.Func<Amazon.EC2.Model.ModifyInstanceCreditSpecificationResponse, EditEC2InstanceCreditSpecificationCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;

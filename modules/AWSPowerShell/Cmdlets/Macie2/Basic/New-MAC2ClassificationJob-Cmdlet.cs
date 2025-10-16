@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Macie2;
 using Amazon.Macie2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.MAC2
 {
     /// <summary>
@@ -34,18 +36,23 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
     [OutputType("Amazon.Macie2.Model.CreateClassificationJobResponse")]
     [AWSCmdlet("Calls the Amazon Macie 2 CreateClassificationJob API operation.", Operation = new[] {"CreateClassificationJob"}, SelectReturnType = typeof(Amazon.Macie2.Model.CreateClassificationJobResponse))]
     [AWSCmdletOutput("Amazon.Macie2.Model.CreateClassificationJobResponse",
-        "This cmdlet returns an Amazon.Macie2.Model.CreateClassificationJobResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Macie2.Model.CreateClassificationJobResponse object containing multiple properties."
     )]
     public partial class NewMAC2ClassificationJobCmdlet : AmazonMacie2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AllowListId
         /// <summary>
         /// <para>
         /// <para>An array of unique identifiers, one for each allow list for the job to use when it
-        /// analyzes data.</para>
+        /// analyzes data.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -58,7 +65,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>An array of conditions, one for each condition that determines which buckets to include
         /// or exclude from the job. If you specify more than one condition, Amazon Macie uses
-        /// AND logic to join the conditions.</para>
+        /// AND logic to join the conditions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -70,7 +81,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>An array of conditions, one for each condition that determines which buckets to include
         /// or exclude from the job. If you specify more than one condition, Amazon Macie uses
-        /// AND logic to join the conditions.</para>
+        /// AND logic to join the conditions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,7 +97,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>An array of conditions, one for each property- or tag-based condition that determines
         /// which objects to include or exclude from the job. If you specify more than one condition,
-        /// Amazon Macie uses AND logic to join the conditions.</para>
+        /// Amazon Macie uses AND logic to join the conditions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -95,7 +114,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>An array of conditions, one for each property- or tag-based condition that determines
         /// which objects to include or exclude from the job. If you specify more than one condition,
-        /// Amazon Macie uses AND logic to join the conditions.</para>
+        /// Amazon Macie uses AND logic to join the conditions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -109,7 +132,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>An array of objects, one for each Amazon Web Services account that owns specific S3
         /// buckets to analyze. Each object specifies the account ID for an account and one or
         /// more buckets to analyze for that account. A job's definition can contain a bucketDefinitions
-        /// array or a bucketCriteria object, not both.</para>
+        /// array or a bucketCriteria object, not both.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -123,7 +150,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>An array of unique identifiers, one for each custom data identifier for the job to
         /// use when it analyzes data. To use only managed data identifiers, don't specify a value
         /// for this property and specify a value other than NONE for the managedDataIdentifierSelector
-        /// property.</para>
+        /// property.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -196,7 +227,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>The schedule for running the job. Valid values are:</para><ul><li><para>ONE_TIME - Run the job only once. If you specify this value, don't specify a value
         /// for the scheduleFrequency property.</para></li><li><para>SCHEDULED - Run the job on a daily, weekly, or monthly basis. If you specify this
-        /// value, use the scheduleFrequency property to define the recurrence pattern for the
+        /// value, use the scheduleFrequency property to specify the recurrence pattern for the
         /// job.</para></li></ul>
         /// </para>
         /// </summary>
@@ -217,7 +248,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>An array of unique identifiers, one for each managed data identifier for the job to
         /// include (use) or exclude (not use) when it analyzes data. Inclusion or exclusion depends
         /// on the managed data identifier selection type that you specify for the job (managedDataIdentifierSelector).</para><para>To retrieve a list of valid values for this property, use the ListManagedDataIdentifiers
-        /// operation.</para>
+        /// operation.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -240,9 +275,9 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// uses new managed data identifiers that are released. If you don't specify a value
         /// for this property or you specify RECOMMENDED for a recurring job, each job run automatically
         /// uses all the managed data identifiers that are in the recommended set when the run
-        /// starts.</para><para>For information about individual managed data identifiers or to determine which ones
-        /// are in the recommended set, see <a href="https://docs.aws.amazon.com/macie/latest/user/managed-data-identifiers.html">Using
-        /// managed data identifiers</a> and <a href="https://docs.aws.amazon.com/macie/latest/user/discovery-jobs-mdis-recommended.html">Recommended
+        /// starts.</para><para>To learn about individual managed data identifiers or determine which ones are in
+        /// the recommended set, see <a href="https://docs.aws.amazon.com/macie/latest/user/managed-data-identifiers.html">Using
+        /// managed data identifiers</a> or <a href="https://docs.aws.amazon.com/macie/latest/user/discovery-jobs-mdis-recommended.html">Recommended
         /// managed data identifiers</a> in the <i>Amazon Macie User Guide</i>.</para>
         /// </para>
         /// </summary>
@@ -286,7 +321,11 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         /// <para>
         /// <para>A map of key-value pairs that specifies the tags to associate with the job.</para><para>A job can have a maximum of 50 tags. Each tag consists of a tag key and an associated
         /// tag value. The maximum length of a tag key is 128 characters. The maximum length of
-        /// a tag value is 256 characters.</para>
+        /// a tag value is 256 characters.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -325,9 +364,13 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -724,13 +767,7 @@ namespace Amazon.PowerShell.Cmdlets.MAC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Macie 2", "CreateClassificationJob");
             try
             {
-                #if DESKTOP
-                return client.CreateClassificationJob(request);
-                #elif CORECLR
-                return client.CreateClassificationJobAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateClassificationJobAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

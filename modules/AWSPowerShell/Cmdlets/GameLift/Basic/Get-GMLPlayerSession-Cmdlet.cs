@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
@@ -42,9 +44,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// </para></li></ul><para>
     /// To request player sessions, specify either a player session ID, game session ID, or
     /// player ID. You can filter this request by player session status. If you provide a
-    /// specific <c>PlayerSessionId</c> or <c>PlayerId</c>, Amazon GameLift ignores the filter
-    /// criteria. Use the pagination parameters to retrieve results as a set of sequential
-    /// pages. 
+    /// specific <c>PlayerSessionId</c> or <c>PlayerId</c>, Amazon GameLift Servers ignores
+    /// the filter criteria. Use the pagination parameters to retrieve results as a set of
+    /// sequential pages. 
     /// </para><para>
     /// If successful, a <c>PlayerSession</c> object is returned for each session that matches
     /// the request.
@@ -56,16 +58,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
     [AWSCmdlet("Calls the Amazon GameLift Service DescribePlayerSessions API operation.", Operation = new[] {"DescribePlayerSessions"}, SelectReturnType = typeof(Amazon.GameLift.Model.DescribePlayerSessionsResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.PlayerSession or Amazon.GameLift.Model.DescribePlayerSessionsResponse",
         "This cmdlet returns a collection of Amazon.GameLift.Model.PlayerSession objects.",
-        "The service call response (type Amazon.GameLift.Model.DescribePlayerSessionsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.DescribePlayerSessionsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetGMLPlayerSessionCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GameSessionId
         /// <summary>
@@ -140,7 +139,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -168,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -348,7 +351,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.PlayerSessions.Count;
+                    int _receivedThisCall = response.PlayerSessions?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -397,13 +400,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "DescribePlayerSessions");
             try
             {
-                #if DESKTOP
-                return client.DescribePlayerSessions(request);
-                #elif CORECLR
-                return client.DescribePlayerSessionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribePlayerSessionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

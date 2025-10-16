@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKVoice;
 using Amazon.ChimeSDKVoice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMVO
 {
     /// <summary>
@@ -38,14 +40,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
     [AWSCmdlet("Calls the Amazon Chime SDK Voice CreateVoiceConnector API operation.", Operation = new[] {"CreateVoiceConnector"}, SelectReturnType = typeof(Amazon.ChimeSDKVoice.Model.CreateVoiceConnectorResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKVoice.Model.VoiceConnector or Amazon.ChimeSDKVoice.Model.CreateVoiceConnectorResponse",
         "This cmdlet returns an Amazon.ChimeSDKVoice.Model.VoiceConnector object.",
-        "The service call response (type Amazon.ChimeSDKVoice.Model.CreateVoiceConnectorResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ChimeSDKVoice.Model.CreateVoiceConnectorResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewCHMVOVoiceConnectorCmdlet : AmazonChimeSDKVoiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsRegion
         /// <summary>
@@ -57,6 +58,32 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         [AWSConstantClassSource("Amazon.ChimeSDKVoice.VoiceConnectorAwsRegion")]
         public Amazon.ChimeSDKVoice.VoiceConnectorAwsRegion AwsRegion { get; set; }
+        #endregion
+        
+        #region Parameter IntegrationType
+        /// <summary>
+        /// <para>
+        /// <para>The connectors for use with Amazon Connect.</para><para>The following options are available:</para><ul><li><para><c>CONNECT_CALL_TRANSFER_CONNECTOR</c> - Enables enterprises to integrate Amazon
+        /// Connect with other voice systems to directly transfer voice calls and metadata without
+        /// using the public telephone network. They can use Amazon Connect telephony and Interactive
+        /// Voice Response (IVR) with their existing voice systems to modernize the IVR experience
+        /// of their existing contact center and their enterprise and branch voice systems. Additionally,
+        /// enterprises migrating their contact center to Amazon Connect can start with Connect
+        /// telephony and IVR for immediate modernization ahead of agent migration.</para></li><li><para><c>CONNECT_ANALYTICS_CONNECTOR</c> - Enables enterprises to integrate Amazon Connect
+        /// with other voice systems for real-time and post-call analytics. They can use Amazon
+        /// Connect Contact Lens with their existing voice systems to provides call recordings,
+        /// conversational analytics (including contact transcript, sensitive data redaction,
+        /// content categorization, theme detection, sentiment analysis, real-time alerts, and
+        /// post-contact summary), and agent performance evaluations (including evaluation forms,
+        /// automated evaluation, supervisor review) with a rich user experience to display, search
+        /// and filter customer interactions, and programmatic access to data streams and the
+        /// data lake. Additionally, enterprises migrating their contact center to Amazon Connect
+        /// can start with Contact Lens analytics and performance insights ahead of agent migration.</para></li></ul>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ChimeSDKVoice.VoiceConnectorIntegrationType")]
+        public Amazon.ChimeSDKVoice.VoiceConnectorIntegrationType IntegrationType { get; set; }
         #endregion
         
         #region Parameter Name
@@ -74,6 +101,18 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Name { get; set; }
+        #endregion
+        
+        #region Parameter NetworkType
+        /// <summary>
+        /// <para>
+        /// <para>The type of network for the Voice Connector. Either IPv4 only or dual-stack (IPv4
+        /// and IPv6).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.ChimeSDKVoice.NetworkType")]
+        public Amazon.ChimeSDKVoice.NetworkType NetworkType { get; set; }
         #endregion
         
         #region Parameter RequireEncryption
@@ -95,7 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags assigned to the Voice Connector.</para>
+        /// <para>The tags assigned to the Voice Connector.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,9 +167,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Name), MyInvocation.BoundParameters);
@@ -146,6 +193,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.AwsRegion = this.AwsRegion;
+            context.IntegrationType = this.IntegrationType;
             context.Name = this.Name;
             #if MODULAR
             if (this.Name == null && ParameterWasBound(nameof(this.Name)))
@@ -153,6 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
                 WriteWarning("You are passing $null as a value for parameter Name which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.NetworkType = this.NetworkType;
             context.RequireEncryption = this.RequireEncryption;
             #if MODULAR
             if (this.RequireEncryption == null && ParameterWasBound(nameof(this.RequireEncryption)))
@@ -184,9 +233,17 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
             {
                 request.AwsRegion = cmdletContext.AwsRegion;
             }
+            if (cmdletContext.IntegrationType != null)
+            {
+                request.IntegrationType = cmdletContext.IntegrationType;
+            }
             if (cmdletContext.Name != null)
             {
                 request.Name = cmdletContext.Name;
+            }
+            if (cmdletContext.NetworkType != null)
+            {
+                request.NetworkType = cmdletContext.NetworkType;
             }
             if (cmdletContext.RequireEncryption != null)
             {
@@ -234,13 +291,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Voice", "CreateVoiceConnector");
             try
             {
-                #if DESKTOP
-                return client.CreateVoiceConnector(request);
-                #elif CORECLR
-                return client.CreateVoiceConnectorAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVoiceConnectorAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -258,7 +309,9 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         internal partial class CmdletContext : ExecutorContext
         {
             public Amazon.ChimeSDKVoice.VoiceConnectorAwsRegion AwsRegion { get; set; }
+            public Amazon.ChimeSDKVoice.VoiceConnectorIntegrationType IntegrationType { get; set; }
             public System.String Name { get; set; }
+            public Amazon.ChimeSDKVoice.NetworkType NetworkType { get; set; }
             public System.Boolean? RequireEncryption { get; set; }
             public List<Amazon.ChimeSDKVoice.Model.Tag> Tag { get; set; }
             public System.Func<Amazon.ChimeSDKVoice.Model.CreateVoiceConnectorResponse, NewCHMVOVoiceConnectorCmdlet, object> Select { get; set; } =

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ConfigService;
 using Amazon.ConfigService.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CFG
 {
     /// <summary>
@@ -34,14 +36,14 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     /// configuration. The target (SSM document) must exist and have permissions to use the
     /// target. 
     /// 
-    ///  <note><para>
+    ///  <note><para><b>Be aware of backward incompatible changes</b></para><para>
     /// If you make backward incompatible changes to the SSM document, you must call this
     /// again to ensure the remediations can run.
     /// </para><para>
     /// This API does not support adding remediation configurations for service-linked Config
     /// Rules such as Organization Config rules, the rules deployed by conformance packs,
     /// and rules deployed by Amazon Web Services Security Hub.
-    /// </para></note><note><para>
+    /// </para></note><note><para><b>Required fields</b></para><para>
     /// For manual remediation configuration, you need to provide a value for <c>automationAssumeRole</c>
     /// or use a value in the <c>assumeRole</c>field to remediate your resources. The SSM
     /// automation document can use either as long as it maps to a valid parameter.
@@ -49,6 +51,17 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     /// However, for automatic remediation configuration, the only valid <c>assumeRole</c>
     /// field value is <c>AutomationAssumeRole</c> and you need to provide a value for <c>AutomationAssumeRole</c>
     /// to remediate your resources.
+    /// </para></note><note><para><b>Auto remediation can be initiated even for compliant resources</b></para><para>
+    /// If you enable auto remediation for a specific Config rule using the <a href="https://docs.aws.amazon.com/config/latest/APIReference/emAPI_PutRemediationConfigurations.html">PutRemediationConfigurations</a>
+    /// API or the Config console, it initiates the remediation process for all non-compliant
+    /// resources for that specific rule. The auto remediation process relies on the compliance
+    /// data snapshot which is captured on a periodic basis. Any non-compliant resource that
+    /// is updated between the snapshot schedule will continue to be remediated based on the
+    /// last known compliance data snapshot.
+    /// </para><para>
+    /// This means that in some cases auto remediation can be initiated even for compliant
+    /// resources, since the bootstrap processor uses a database that can have stale evaluation
+    /// results based on the last known compliance data snapshot.
     /// </para></note>
     /// </summary>
     [Cmdlet("Write", "CFGRemediationConfiguration", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
@@ -56,17 +69,22 @@ namespace Amazon.PowerShell.Cmdlets.CFG
     [AWSCmdlet("Calls the AWS Config PutRemediationConfigurations API operation.", Operation = new[] {"PutRemediationConfigurations"}, SelectReturnType = typeof(Amazon.ConfigService.Model.PutRemediationConfigurationsResponse))]
     [AWSCmdletOutput("Amazon.ConfigService.Model.FailedRemediationBatch or Amazon.ConfigService.Model.PutRemediationConfigurationsResponse",
         "This cmdlet returns a collection of Amazon.ConfigService.Model.FailedRemediationBatch objects.",
-        "The service call response (type Amazon.ConfigService.Model.PutRemediationConfigurationsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ConfigService.Model.PutRemediationConfigurationsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteCFGRemediationConfigurationCmdlet : AmazonConfigServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter RemediationConfiguration
         /// <summary>
         /// <para>
-        /// <para>A list of remediation configuration objects.</para>
+        /// <para>A list of remediation configuration objects.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -92,16 +110,6 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public string Select { get; set; } = "FailedBatches";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the RemediationConfiguration parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^RemediationConfiguration' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^RemediationConfiguration' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -112,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.CFG
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.RemediationConfiguration), MyInvocation.BoundParameters);
@@ -128,21 +140,11 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ConfigService.Model.PutRemediationConfigurationsResponse, WriteCFGRemediationConfigurationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.RemediationConfiguration;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (this.RemediationConfiguration != null)
             {
                 context.RemediationConfiguration = new List<Amazon.ConfigService.Model.RemediationConfiguration>(this.RemediationConfiguration);
@@ -211,13 +213,7 @@ namespace Amazon.PowerShell.Cmdlets.CFG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Config", "PutRemediationConfigurations");
             try
             {
-                #if DESKTOP
-                return client.PutRemediationConfigurations(request);
-                #elif CORECLR
-                return client.PutRemediationConfigurationsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutRemediationConfigurationsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

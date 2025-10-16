@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
@@ -57,16 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateVpnConnection API operation.", Operation = new[] {"CreateVpnConnection"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateVpnConnectionResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.VpnConnection or Amazon.EC2.Model.CreateVpnConnectionResponse",
         "This cmdlet returns an Amazon.EC2.Model.VpnConnection object.",
-        "The service call response (type Amazon.EC2.Model.CreateVpnConnectionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateVpnConnectionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2VpnConnectionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CustomerGatewayId
         /// <summary>
@@ -83,6 +82,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String CustomerGatewayId { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter Options_EnableAcceleration
@@ -118,12 +129,23 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Options_OutsideIpAddressType
         /// <summary>
         /// <para>
-        /// <para>The type of IPv4 address assigned to the outside interface of the customer gateway
-        /// device.</para><para>Valid values: <c>PrivateIpv4</c> | <c>PublicIpv4</c></para><para>Default: <c>PublicIpv4</c></para>
+        /// <para>The type of IP address assigned to the outside interface of the customer gateway device.</para><para>Valid values: <c>PrivateIpv4</c> | <c>PublicIpv4</c> | <c>Ipv6</c></para><para>Default: <c>PublicIpv4</c></para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String Options_OutsideIpAddressType { get; set; }
+        #endregion
+        
+        #region Parameter PreSharedKeyStorage
+        /// <summary>
+        /// <para>
+        /// <para>Specifies the storage mode for the pre-shared key (PSK). Valid values are <c>Standard</c>"
+        /// (stored in the Site-to-Site VPN service) or <c>SecretsManager</c> (stored in Amazon
+        /// Web Services Secrets Manager).</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String PreSharedKeyStorage { get; set; }
         #endregion
         
         #region Parameter Options_RemoteIpv4NetworkCidr
@@ -162,7 +184,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter TagSpecification
         /// <summary>
         /// <para>
-        /// <para>The tags to apply to the VPN connection.</para>
+        /// <para>The tags to apply to the VPN connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -205,7 +231,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter Options_TunnelOption
         /// <summary>
         /// <para>
-        /// <para>The tunnel options for the VPN connection.</para>
+        /// <para>The tunnel options for the VPN connection.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -252,16 +282,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "VpnConnection";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Type parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Type' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Type' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -272,9 +292,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.VpnGatewayId), MyInvocation.BoundParameters);
@@ -288,21 +312,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateVpnConnectionResponse, NewEC2VpnConnectionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Type;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CustomerGatewayId = this.CustomerGatewayId;
             #if MODULAR
             if (this.CustomerGatewayId == null && ParameterWasBound(nameof(this.CustomerGatewayId)))
@@ -310,6 +324,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter CustomerGatewayId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DryRun = this.DryRun;
             context.Options_EnableAcceleration = this.Options_EnableAcceleration;
             context.Options_LocalIpv4NetworkCidr = this.Options_LocalIpv4NetworkCidr;
             context.Options_LocalIpv6NetworkCidr = this.Options_LocalIpv6NetworkCidr;
@@ -323,6 +338,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 context.Options_TunnelOption = new List<Amazon.EC2.Model.VpnTunnelOptionsSpecification>(this.Options_TunnelOption);
             }
+            context.PreSharedKeyStorage = this.PreSharedKeyStorage;
             if (this.TagSpecification != null)
             {
                 context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
@@ -355,6 +371,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.CustomerGatewayId != null)
             {
                 request.CustomerGatewayId = cmdletContext.CustomerGatewayId;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             
              // populate Options
@@ -465,6 +485,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Options = null;
             }
+            if (cmdletContext.PreSharedKeyStorage != null)
+            {
+                request.PreSharedKeyStorage = cmdletContext.PreSharedKeyStorage;
+            }
             if (cmdletContext.TagSpecification != null)
             {
                 request.TagSpecifications = cmdletContext.TagSpecification;
@@ -519,13 +543,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateVpnConnection");
             try
             {
-                #if DESKTOP
-                return client.CreateVpnConnection(request);
-                #elif CORECLR
-                return client.CreateVpnConnectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateVpnConnectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -543,6 +561,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String CustomerGatewayId { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? Options_EnableAcceleration { get; set; }
             public System.String Options_LocalIpv4NetworkCidr { get; set; }
             public System.String Options_LocalIpv6NetworkCidr { get; set; }
@@ -553,6 +572,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String Options_TransportTransitGatewayAttachmentId { get; set; }
             public Amazon.EC2.TunnelInsideIpVersion Options_TunnelInsideIpVersion { get; set; }
             public List<Amazon.EC2.Model.VpnTunnelOptionsSpecification> Options_TunnelOption { get; set; }
+            public System.String PreSharedKeyStorage { get; set; }
             public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public System.String TransitGatewayId { get; set; }
             public System.String Type { get; set; }

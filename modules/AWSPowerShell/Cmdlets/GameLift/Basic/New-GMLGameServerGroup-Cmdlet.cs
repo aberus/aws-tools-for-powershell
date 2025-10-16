@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,20 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.GameLift;
 using Amazon.GameLift.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.GML
 {
     /// <summary>
-    /// <b>This operation is used with the Amazon GameLift FleetIQ solution and game server
-    /// groups.</b><para>
-    /// Creates a Amazon GameLift FleetIQ game server group for managing game hosting on a
-    /// collection of Amazon Elastic Compute Cloud instances for game hosting. This operation
+    /// <b>This operation is used with the Amazon GameLift Servers FleetIQ solution and game
+    /// server groups.</b><para>
+    /// Creates a Amazon GameLift Servers FleetIQ game server group for managing game hosting
+    /// on a collection of Amazon Elastic Compute Cloud instances for game hosting. This operation
     /// creates the game server group, creates an Auto Scaling group in your Amazon Web Services
     /// account, and establishes a link between the two groups. You can view the status of
-    /// your game server groups in the Amazon GameLift console. Game server group metrics
-    /// and events are emitted to Amazon CloudWatch.
+    /// your game server groups in the Amazon GameLift Servers console. Game server group
+    /// metrics and events are emitted to Amazon CloudWatch.
     /// </para><para>
     /// Before creating a new game server group, you must have the following: 
     /// </para><ul><li><para>
@@ -46,44 +48,45 @@ namespace Amazon.PowerShell.Cmdlets.GML
     /// Cloud User Guide</i>. 
     /// </para></li><li><para>
     /// An IAM role that extends limited access to your Amazon Web Services account to allow
-    /// Amazon GameLift FleetIQ to create and interact with the Auto Scaling group. For more
-    /// information, see <a href="https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-iam-permissions-roles.html">Create
-    /// IAM roles for cross-service interaction</a> in the <i>Amazon GameLift FleetIQ Developer
-    /// Guide</i>.
+    /// Amazon GameLift Servers FleetIQ to create and interact with the Auto Scaling group.
+    /// For more information, see <a href="https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-iam-permissions-roles.html">Create
+    /// IAM roles for cross-service interaction</a> in the <i>Amazon GameLift Servers FleetIQ
+    /// Developer Guide</i>.
     /// </para></li></ul><para>
     /// To create a new game server group, specify a unique group name, IAM role and Amazon
     /// Elastic Compute Cloud launch template, and provide a list of instance types that can
     /// be used in the group. You must also set initial maximum and minimum limits on the
     /// group's instance count. You can optionally set an Auto Scaling policy with target
-    /// tracking based on a Amazon GameLift FleetIQ metric.
+    /// tracking based on a Amazon GameLift Servers FleetIQ metric.
     /// </para><para>
     /// Once the game server group and corresponding Auto Scaling group are created, you have
     /// full access to change the Auto Scaling group's configuration as needed. Several properties
     /// that are set when creating a game server group, including maximum/minimum size and
     /// auto-scaling policy settings, must be updated directly in the Auto Scaling group.
     /// Keep in mind that some Auto Scaling group properties are periodically updated by Amazon
-    /// GameLift FleetIQ as part of its balancing activities to optimize for availability
+    /// GameLift Servers FleetIQ as part of its balancing activities to optimize for availability
     /// and cost.
     /// </para><para><b>Learn more</b></para><para><a href="https://docs.aws.amazon.com/gamelift/latest/fleetiqguide/gsg-intro.html">Amazon
-    /// GameLift FleetIQ Guide</a></para>
+    /// GameLift Servers FleetIQ Guide</a></para>
     /// </summary>
     [Cmdlet("New", "GMLGameServerGroup", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.GameLift.Model.GameServerGroup")]
     [AWSCmdlet("Calls the Amazon GameLift Service CreateGameServerGroup API operation.", Operation = new[] {"CreateGameServerGroup"}, SelectReturnType = typeof(Amazon.GameLift.Model.CreateGameServerGroupResponse))]
     [AWSCmdletOutput("Amazon.GameLift.Model.GameServerGroup or Amazon.GameLift.Model.CreateGameServerGroupResponse",
         "This cmdlet returns an Amazon.GameLift.Model.GameServerGroup object.",
-        "The service call response (type Amazon.GameLift.Model.CreateGameServerGroupResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.GameLift.Model.CreateGameServerGroupResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewGMLGameServerGroupCmdlet : AmazonGameLiftClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BalancingStrategy
         /// <summary>
         /// <para>
-        /// <para>Indicates how Amazon GameLift FleetIQ balances the use of Spot Instances and On-Demand
-        /// Instances in the game server group. Method options include the following:</para><ul><li><para><c>SPOT_ONLY</c> - Only Spot Instances are used in the game server group. If Spot
+        /// <para>Indicates how Amazon GameLift Servers FleetIQ balances the use of Spot Instances and
+        /// On-Demand Instances in the game server group. Method options include the following:</para><ul><li><para><c>SPOT_ONLY</c> - Only Spot Instances are used in the game server group. If Spot
         /// Instances are unavailable or not viable for game hosting, the game server group provides
         /// no hosting capacity until Spot Instances can again be used. Until then, no new instances
         /// are started, and the existing nonviable Spot Instances are terminated (after current
@@ -105,9 +108,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>Length of time, in seconds, it takes for a new instance to start new game server processes
-        /// and register with Amazon GameLift FleetIQ. Specifying a warm-up time can be useful,
-        /// particularly with game servers that take a long time to start up, because it avoids
-        /// prematurely starting new instances. </para>
+        /// and register with Amazon GameLift Servers FleetIQ. Specifying a warm-up time can be
+        /// useful, particularly with game servers that take a long time to start up, because
+        /// it avoids prematurely starting new instances. </para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,8 +121,9 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>An identifier for the new game server group. This value is used to generate unique
-        /// ARN identifiers for the Amazon EC2 Auto Scaling group and the Amazon GameLift FleetIQ
-        /// game server group. The name must be unique per Region per Amazon Web Services account.</para>
+        /// ARN identifiers for the Amazon EC2 Auto Scaling group and the Amazon GameLift Servers
+        /// FleetIQ game server group. The name must be unique per Region per Amazon Web Services
+        /// account.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -155,13 +159,17 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>
         /// <para>The Amazon EC2 instance types and sizes to use in the Auto Scaling group. The instance
         /// definitions must specify at least two different instance types that are supported
-        /// by Amazon GameLift FleetIQ. For more information on instance types, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">EC2
+        /// by Amazon GameLift Servers FleetIQ. For more information on instance types, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html">EC2
         /// Instance Types</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>. You can
         /// optionally specify capacity weighting for each instance type. If no weight value is
         /// specified for an instance type, it is set to the default value "1". For more information
         /// about capacity weighting, see <a href="https://docs.aws.amazon.com/autoscaling/ec2/userguide/asg-instance-weighting.html">
         /// Instance Weighting for Amazon EC2 Auto Scaling</a> in the Amazon EC2 Auto Scaling
-        /// User Guide.</para>
+        /// User Guide.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -200,9 +208,10 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The maximum number of instances allowed in the Amazon EC2 Auto Scaling group. During
-        /// automatic scaling events, Amazon GameLift FleetIQ and EC2 do not scale up the group
-        /// above this maximum. After the Auto Scaling group is created, update this value directly
-        /// in the Auto Scaling group using the Amazon Web Services console or APIs.</para>
+        /// automatic scaling events, Amazon GameLift Servers FleetIQ and EC2 do not scale up
+        /// the group above this maximum. After the Auto Scaling group is created, update this
+        /// value directly in the Auto Scaling group using the Amazon Web Services console or
+        /// APIs.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -219,8 +228,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The minimum number of instances allowed in the Amazon EC2 Auto Scaling group. During
-        /// automatic scaling events, Amazon GameLift FleetIQ and Amazon EC2 do not scale down
-        /// the group below this minimum. In production, this value should be set to at least
+        /// automatic scaling events, Amazon GameLift Servers FleetIQ and Amazon EC2 do not scale
+        /// down the group below this minimum. In production, this value should be set to at least
         /// 1. After the Auto Scaling group is created, update this value directly in the Auto
         /// Scaling group using the Amazon Web Services console or APIs.</para>
         /// </para>
@@ -239,8 +248,8 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>The Amazon Resource Name (<a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-arn-format.html">ARN</a>)
-        /// for an IAM role that allows Amazon GameLift to access your Amazon EC2 Auto Scaling
-        /// groups.</para>
+        /// for an IAM role that allows Amazon GameLift Servers to access your Amazon EC2 Auto
+        /// Scaling groups.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -260,7 +269,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <para>A list of labels to assign to the new game server group resource. Tags are developer-defined
         /// key-value pairs. Tagging Amazon Web Services resources is useful for resource management,
         /// access management, and cost allocation. For more information, see <a href="https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html">
-        /// Tagging Amazon Web Services Resources</a> in the <i>Amazon Web Services General Reference</i>.</para>
+        /// Tagging Amazon Web Services Resources</a> in the <i>Amazon Web Services General Reference</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -295,11 +308,15 @@ namespace Amazon.PowerShell.Cmdlets.GML
         /// <summary>
         /// <para>
         /// <para>A list of virtual private cloud (VPC) subnets to use with instances in the game server
-        /// group. By default, all Amazon GameLift FleetIQ-supported Availability Zones are used.
-        /// You can use this parameter to specify VPCs that you've set up. This property cannot
-        /// be updated after the game server group is created, and the corresponding Auto Scaling
-        /// group will always use the property value that is set with this request, even if the
-        /// Auto Scaling group is updated directly.</para>
+        /// group. By default, all Amazon GameLift Servers FleetIQ-supported Availability Zones
+        /// are used. You can use this parameter to specify VPCs that you've set up. This property
+        /// cannot be updated after the game server group is created, and the corresponding Auto
+        /// Scaling group will always use the property value that is set with this request, even
+        /// if the Auto Scaling group is updated directly.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -318,16 +335,6 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public string Select { get; set; } = "GameServerGroup";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the GameServerGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^GameServerGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^GameServerGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -338,9 +345,13 @@ namespace Amazon.PowerShell.Cmdlets.GML
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.GameServerGroupName), MyInvocation.BoundParameters);
@@ -354,21 +365,11 @@ namespace Amazon.PowerShell.Cmdlets.GML
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.GameLift.Model.CreateGameServerGroupResponse, NewGMLGameServerGroupCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.GameServerGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AutoScalingPolicy_EstimatedInstanceWarmup = this.AutoScalingPolicy_EstimatedInstanceWarmup;
             context.TargetTrackingConfiguration_TargetValue = this.TargetTrackingConfiguration_TargetValue;
             context.BalancingStrategy = this.BalancingStrategy;
@@ -595,13 +596,7 @@ namespace Amazon.PowerShell.Cmdlets.GML
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon GameLift Service", "CreateGameServerGroup");
             try
             {
-                #if DESKTOP
-                return client.CreateGameServerGroup(request);
-                #elif CORECLR
-                return client.CreateGameServerGroupAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateGameServerGroupAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

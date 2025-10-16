@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,25 +22,28 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CodeGuruSecurity;
 using Amazon.CodeGuruSecurity.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGS
 {
     /// <summary>
-    /// Use to get account level configuration.
+    /// Use to get the encryption configuration for an account.
     /// </summary>
     [Cmdlet("Get", "CGSAccountConfiguration")]
     [OutputType("Amazon.CodeGuruSecurity.Model.EncryptionConfig")]
     [AWSCmdlet("Calls the Amazon CodeGuru Security GetAccountConfiguration API operation.", Operation = new[] {"GetAccountConfiguration"}, SelectReturnType = typeof(Amazon.CodeGuruSecurity.Model.GetAccountConfigurationResponse))]
     [AWSCmdletOutput("Amazon.CodeGuruSecurity.Model.EncryptionConfig or Amazon.CodeGuruSecurity.Model.GetAccountConfigurationResponse",
         "This cmdlet returns an Amazon.CodeGuruSecurity.Model.EncryptionConfig object.",
-        "The service call response (type Amazon.CodeGuruSecurity.Model.GetAccountConfigurationResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CodeGuruSecurity.Model.GetAccountConfigurationResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGSAccountConfigurationCmdlet : AmazonCodeGuruSecurityClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Select
         /// <summary>
@@ -53,9 +56,13 @@ namespace Amazon.PowerShell.Cmdlets.CGS
         public string Select { get; set; } = "EncryptionConfig";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -122,13 +129,7 @@ namespace Amazon.PowerShell.Cmdlets.CGS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CodeGuru Security", "GetAccountConfiguration");
             try
             {
-                #if DESKTOP
-                return client.GetAccountConfiguration(request);
-                #elif CORECLR
-                return client.GetAccountConfigurationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetAccountConfigurationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

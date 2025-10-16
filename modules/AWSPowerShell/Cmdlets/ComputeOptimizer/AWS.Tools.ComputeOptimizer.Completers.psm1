@@ -80,8 +80,15 @@ $CO_Completers = {
 
     switch ($("$commandName/$parameterName"))
     {
+        # Amazon.ComputeOptimizer.Dimension
+        "Get-COIdleRecommendation/OrderBy_Dimension"
+        {
+            $v = "SavingsValue","SavingsValueAfterDiscount"
+            break
+        }
+
         # Amazon.ComputeOptimizer.EnhancedInfrastructureMetrics
-        "Write-CORecommendationPreference/EnhancedInfrastructureMetrics"
+        "Write-CORecommendationPreference/EnhancedInfrastructureMetric"
         {
             $v = "Active","Inactive"
             break
@@ -100,8 +107,10 @@ $CO_Completers = {
             ($_ -eq "Export-COEBSVolumeRecommendation/FileFormat") -Or
             ($_ -eq "Export-COEC2InstanceRecommendation/FileFormat") -Or
             ($_ -eq "Export-COECSServiceRecommendation/FileFormat") -Or
+            ($_ -eq "Export-COIdleRecommendation/FileFormat") -Or
             ($_ -eq "Export-COLambdaFunctionRecommendation/FileFormat") -Or
-            ($_ -eq "Export-COLicenseRecommendation/FileFormat")
+            ($_ -eq "Export-COLicenseRecommendation/FileFormat") -Or
+            ($_ -eq "Export-CORDSDatabaseRecommendation/FileFormat")
         }
         {
             $v = "Csv"
@@ -109,7 +118,7 @@ $CO_Completers = {
         }
 
         # Amazon.ComputeOptimizer.InferredWorkloadTypesPreference
-        "Write-CORecommendationPreference/InferredWorkloadTypes"
+        "Write-CORecommendationPreference/InferredWorkloadType"
         {
             $v = "Active","Inactive"
             break
@@ -125,10 +134,18 @@ $CO_Completers = {
         # Amazon.ComputeOptimizer.MetricStatistic
         {
             ($_ -eq "Get-COEC2RecommendationProjectedMetric/Stat") -Or
-            ($_ -eq "Get-COECSServiceRecommendationProjectedMetric/Stat")
+            ($_ -eq "Get-COECSServiceRecommendationProjectedMetric/Stat") -Or
+            ($_ -eq "Get-CORDSDatabaseRecommendationProjectedMetric/Stat")
         }
         {
             $v = "Average","Maximum"
+            break
+        }
+
+        # Amazon.ComputeOptimizer.Order
+        "Get-COIdleRecommendation/OrderBy_Order"
+        {
+            $v = "Asc","Desc"
             break
         }
 
@@ -139,7 +156,7 @@ $CO_Completers = {
             ($_ -eq "Write-CORecommendationPreference/ResourceType")
         }
         {
-            $v = "AutoScalingGroup","EbsVolume","Ec2Instance","EcsService","LambdaFunction","License","NotApplicable"
+            $v = "AuroraDBClusterStorage","AutoScalingGroup","EbsVolume","Ec2Instance","EcsService","Idle","LambdaFunction","License","NotApplicable","RdsDBInstance"
             break
         }
 
@@ -177,15 +194,17 @@ $CO_Completers = {
 }
 
 $CO_map = @{
-    "EnhancedInfrastructureMetrics"=@("Write-CORecommendationPreference")
+    "EnhancedInfrastructureMetric"=@("Write-CORecommendationPreference")
     "ExternalMetricsPreference_Source"=@("Write-CORecommendationPreference")
-    "FileFormat"=@("Export-COAutoScalingGroupRecommendation","Export-COEBSVolumeRecommendation","Export-COEC2InstanceRecommendation","Export-COECSServiceRecommendation","Export-COLambdaFunctionRecommendation","Export-COLicenseRecommendation")
-    "InferredWorkloadTypes"=@("Write-CORecommendationPreference")
+    "FileFormat"=@("Export-COAutoScalingGroupRecommendation","Export-COEBSVolumeRecommendation","Export-COEC2InstanceRecommendation","Export-COECSServiceRecommendation","Export-COIdleRecommendation","Export-COLambdaFunctionRecommendation","Export-COLicenseRecommendation","Export-CORDSDatabaseRecommendation")
+    "InferredWorkloadType"=@("Write-CORecommendationPreference")
     "LookBackPeriod"=@("Write-CORecommendationPreference")
+    "OrderBy_Dimension"=@("Get-COIdleRecommendation")
+    "OrderBy_Order"=@("Get-COIdleRecommendation")
     "ResourceType"=@("Get-CORecommendationPreference","Remove-CORecommendationPreference","Write-CORecommendationPreference")
     "SavingsEstimationMode"=@("Write-CORecommendationPreference")
     "Scope_Name"=@("Get-CORecommendationPreference","Remove-CORecommendationPreference","Write-CORecommendationPreference")
-    "Stat"=@("Get-COEC2RecommendationProjectedMetric","Get-COECSServiceRecommendationProjectedMetric")
+    "Stat"=@("Get-COEC2RecommendationProjectedMetric","Get-COECSServiceRecommendationProjectedMetric","Get-CORDSDatabaseRecommendationProjectedMetric")
     "Status"=@("Update-COEnrollmentStatus")
 }
 
@@ -245,8 +264,10 @@ $CO_SelectMap = @{
                "Export-COEBSVolumeRecommendation",
                "Export-COEC2InstanceRecommendation",
                "Export-COECSServiceRecommendation",
+               "Export-COIdleRecommendation",
                "Export-COLambdaFunctionRecommendation",
                "Export-COLicenseRecommendation",
+               "Export-CORDSDatabaseRecommendation",
                "Get-COAutoScalingGroupRecommendation",
                "Get-COEBSVolumeRecommendation",
                "Get-COEC2InstanceRecommendation",
@@ -256,8 +277,11 @@ $CO_SelectMap = @{
                "Get-COEffectiveRecommendationPreference",
                "Get-COEnrollmentStatus",
                "Get-COEnrollmentStatusesForOrganization",
+               "Get-COIdleRecommendation",
                "Get-COLambdaFunctionRecommendation",
                "Get-COLicenseRecommendation",
+               "Get-CORDSDatabaseRecommendationProjectedMetric",
+               "Get-CORDSDatabaseRecommendation",
                "Get-CORecommendationPreference",
                "Get-CORecommendationSummary",
                "Write-CORecommendationPreference",

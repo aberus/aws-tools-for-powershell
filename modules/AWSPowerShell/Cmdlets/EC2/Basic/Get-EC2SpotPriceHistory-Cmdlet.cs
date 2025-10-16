@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,14 +22,16 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
     /// Describes the Spot price history. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-spot-instances-history.html">Spot
-    /// Instance pricing history</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.
+    /// Instance pricing history</a> in the <i>Amazon EC2 User Guide</i>.
     /// 
     ///  
     /// <para>
@@ -43,24 +45,49 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) DescribeSpotPriceHistory API operation.", Operation = new[] {"DescribeSpotPriceHistory"}, SelectReturnType = typeof(Amazon.EC2.Model.DescribeSpotPriceHistoryResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.SpotPrice or Amazon.EC2.Model.DescribeSpotPriceHistoryResponse",
         "This cmdlet returns a collection of Amazon.EC2.Model.SpotPrice objects.",
-        "The service call response (type Amazon.EC2.Model.DescribeSpotPriceHistoryResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.DescribeSpotPriceHistoryResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetEC2SpotPriceHistoryCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AvailabilityZone
         /// <summary>
         /// <para>
-        /// <para>Filters the results by the specified Availability Zone.</para>
+        /// <para>Filters the results by the specified Availability Zone.</para><para>Either <c>AvailabilityZone</c> or <c>AvailabilityZoneId</c> can be specified, but
+        /// not both</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AvailabilityZone { get; set; }
         #endregion
         
-        #region Parameter UtcEndTime
+        #region Parameter AvailabilityZoneId
+        /// <summary>
+        /// <para>
+        /// <para>Filters the results by the specified ID of the Availability Zone.</para><para>Either <c>AvailabilityZone</c> or <c>AvailabilityZoneId</c> can be specified, but
+        /// not both</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AvailabilityZoneId { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
+        #endregion
+        
+        #region Parameter EndTime
         /// <summary>
         /// <para>
         /// <para>The date and time, up to the current date, from which to stop retrieving the price
@@ -68,19 +95,24 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcEndTime { get; set; }
+        public System.DateTime? EndTime { get; set; }
         #endregion
         
         #region Parameter Filter
         /// <summary>
         /// <para>
-        /// <para>The filters.</para><ul><li><para><c>availability-zone</c> - The Availability Zone for which prices should be returned.</para></li><li><para><c>instance-type</c> - The type of instance (for example, <c>m3.medium</c>).</para></li><li><para><c>product-description</c> - The product description for the Spot price (<c>Linux/UNIX</c>
+        /// <para>The filters.</para><ul><li><para><c>availability-zone</c> - The Availability Zone for which prices should be returned.</para></li><li><para><c>availability-zone-id</c> - The ID of the Availability Zone for which prices should
+        /// be returned.</para></li><li><para><c>instance-type</c> - The type of instance (for example, <c>m3.medium</c>).</para></li><li><para><c>product-description</c> - The product description for the Spot price (<c>Linux/UNIX</c>
         /// | <c>Red Hat Enterprise Linux</c> | <c>SUSE Linux</c> | <c>Windows</c> | <c>Linux/UNIX
         /// (Amazon VPC)</c> | <c>Red Hat Enterprise Linux (Amazon VPC)</c> | <c>SUSE Linux (Amazon
         /// VPC)</c> | <c>Windows (Amazon VPC)</c>).</para></li><li><para><c>spot-price</c> - The Spot price. The value must match exactly (or use wildcards;
         /// greater than or less than comparison is not supported).</para></li><li><para><c>timestamp</c> - The time stamp of the Spot price history, in UTC format (for example,
         /// <i>ddd MMM dd HH</i>:<i>mm</i>:<i>ss</i> UTC <i>YYYY</i>). You can use wildcards (<c>*</c>
-        /// and <c>?</c>). Greater than or less than comparison is not supported.</para></li></ul>
+        /// and <c>?</c>). Greater than or less than comparison is not supported.</para></li></ul><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -91,7 +123,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter InstanceType
         /// <summary>
         /// <para>
-        /// <para>Filters the results by the specified instance types.</para>
+        /// <para>Filters the results by the specified instance types.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -102,7 +138,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #region Parameter ProductDescription
         /// <summary>
         /// <para>
-        /// <para>Filters the results by the specified basic product descriptions.</para>
+        /// <para>Filters the results by the specified basic product descriptions.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -110,7 +150,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String[] ProductDescription { get; set; }
         #endregion
         
-        #region Parameter UtcStartTime
+        #region Parameter StartTime
         /// <summary>
         /// <para>
         /// <para>The date and time, up to the past 90 days, from which to start retrieving the price
@@ -118,25 +158,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public System.DateTime? UtcStartTime { get; set; }
-        #endregion
-        
-        #region Parameter EndTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use EndTimeUtc instead. Setting either EndTime or EndTimeUtc
-        /// results in both EndTime and EndTimeUtc being assigned, the latest assignment to either
-        /// one of the two property is reflected in the value of both. EndTime is provided for
-        /// backwards compatibility only and assigning a non-Utc DateTime to it results in the
-        /// wrong timestamp being passed to the service.</para><para>The date and time, up to the current date, from which to stop retrieving the price
-        /// history data, in UTC format (for example, <i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcEndTime instead.")]
-        public System.DateTime? EndTime { get; set; }
+        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -165,29 +187,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String NextToken { get; set; }
-        #endregion
-        
-        #region Parameter StartTime
-        /// <summary>
-        /// <para>
-        /// <para>This property is deprecated. Setting this property results in non-UTC DateTimes not
-        /// being marshalled correctly. Use StartTimeUtc instead. Setting either StartTime or
-        /// StartTimeUtc results in both StartTime and StartTimeUtc being assigned, the latest
-        /// assignment to either one of the two property is reflected in the value of both. StartTime
-        /// is provided for backwards compatibility only and assigning a non-Utc DateTime to it
-        /// results in the wrong timestamp being passed to the service.</para><para>The date and time, up to the past 90 days, from which to start retrieving the price
-        /// history data, in UTC format (for example, <i>YYYY</i>-<i>MM</i>-<i>DD</i>T<i>HH</i>:<i>MM</i>:<i>SS</i>Z).</para>
-        /// </para>
-        /// <para>This parameter is deprecated.</para>
-        /// </summary>
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        [System.ObsoleteAttribute("This parameter is deprecated and may result in the wrong timestamp being passed to the service, use UtcStartTime instead.")]
-        public System.DateTime? StartTime { get; set; }
         #endregion
         
         #region Parameter Select
@@ -211,9 +215,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -227,7 +235,9 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
             }
             context.AvailabilityZone = this.AvailabilityZone;
-            context.UtcEndTime = this.UtcEndTime;
+            context.AvailabilityZoneId = this.AvailabilityZoneId;
+            context.DryRun = this.DryRun;
+            context.EndTime = this.EndTime;
             if (this.Filter != null)
             {
                 context.Filter = new List<Amazon.EC2.Model.Filter>(this.Filter);
@@ -251,13 +261,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 context.ProductDescription = new List<System.String>(this.ProductDescription);
             }
-            context.UtcStartTime = this.UtcStartTime;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            context.EndTime = this.EndTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.StartTime = this.StartTime;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -281,9 +285,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.AvailabilityZone = cmdletContext.AvailabilityZone;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.AvailabilityZoneId != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.AvailabilityZoneId = cmdletContext.AvailabilityZoneId;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.EndTime != null)
+            {
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.Filter != null)
             {
@@ -301,30 +313,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.ProductDescriptions = cmdletContext.ProductDescription;
             }
-            if (cmdletContext.UtcStartTime != null)
-            {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
-            }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.StartTime != null)
             {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
                 request.StartTime = cmdletContext.StartTime.Value;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variant and commence piping
             var _nextToken = cmdletContext.NextToken;
@@ -384,9 +376,17 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.AvailabilityZone = cmdletContext.AvailabilityZone;
             }
-            if (cmdletContext.UtcEndTime != null)
+            if (cmdletContext.AvailabilityZoneId != null)
             {
-                request.EndTimeUtc = cmdletContext.UtcEndTime.Value;
+                request.AvailabilityZoneId = cmdletContext.AvailabilityZoneId;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
+            if (cmdletContext.EndTime != null)
+            {
+                request.EndTime = cmdletContext.EndTime.Value;
             }
             if (cmdletContext.Filter != null)
             {
@@ -400,30 +400,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.ProductDescriptions = cmdletContext.ProductDescription;
             }
-            if (cmdletContext.UtcStartTime != null)
-            {
-                request.StartTimeUtc = cmdletContext.UtcStartTime.Value;
-            }
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            if (cmdletContext.EndTime != null)
-            {
-                if (cmdletContext.UtcEndTime != null)
-                {
-                    throw new System.ArgumentException("Parameters EndTime and UtcEndTime are mutually exclusive.", nameof(this.EndTime));
-                }
-                request.EndTime = cmdletContext.EndTime.Value;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (cmdletContext.StartTime != null)
             {
-                if (cmdletContext.UtcStartTime != null)
-                {
-                    throw new System.ArgumentException("Parameters StartTime and UtcStartTime are mutually exclusive.", nameof(this.StartTime));
-                }
                 request.StartTime = cmdletContext.StartTime.Value;
             }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             
             // Initialize loop variants and commence piping
             System.String _nextToken = null;
@@ -464,7 +444,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.SpotPriceHistory.Count;
+                    int _receivedThisCall = response.SpotPriceHistory?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -513,13 +493,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "DescribeSpotPriceHistory");
             try
             {
-                #if DESKTOP
-                return client.DescribeSpotPriceHistory(request);
-                #elif CORECLR
-                return client.DescribeSpotPriceHistoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeSpotPriceHistoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -537,16 +511,14 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String AvailabilityZone { get; set; }
-            public System.DateTime? UtcEndTime { get; set; }
+            public System.String AvailabilityZoneId { get; set; }
+            public System.Boolean? DryRun { get; set; }
+            public System.DateTime? EndTime { get; set; }
             public List<Amazon.EC2.Model.Filter> Filter { get; set; }
             public List<System.String> InstanceType { get; set; }
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public List<System.String> ProductDescription { get; set; }
-            public System.DateTime? UtcStartTime { get; set; }
-            [System.ObsoleteAttribute]
-            public System.DateTime? EndTime { get; set; }
-            [System.ObsoleteAttribute]
             public System.DateTime? StartTime { get; set; }
             public System.Func<Amazon.EC2.Model.DescribeSpotPriceHistoryResponse, GetEC2SpotPriceHistoryCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.SpotPriceHistory;

@@ -22,7 +22,7 @@
     CompanyName = 'Amazon.com, Inc'
 
     # Copyright statement for this module
-    Copyright = 'Copyright 2012-2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.'
+    Copyright = 'Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.'
 
     # Description of the functionality provided by this module
     Description = 'The CloudFront module of AWS Tools for PowerShell lets developers and administrators manage Amazon CloudFront from the PowerShell scripting environment. In order to manage each AWS service, install the corresponding module (e.g. AWS.Tools.EC2, AWS.Tools.S3...).
@@ -34,6 +34,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Name of the PowerShell host required by this module
     PowerShellHostName = ''
+
+
 
     # Minimum version of the PowerShell host required by this module
     PowerShellHostVersion = ''
@@ -52,12 +54,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         @{
             ModuleName = 'AWS.Tools.Common';
             RequiredVersion = '0.0.0.0';
-            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }
-    )
+            Guid = 'e5b05bf3-9eee-47b2-81f2-41ddc0501b86' }    )
 
-    # Assemblies that must be loaded prior to importing this module.
+# Assemblies that must be loaded prior to importing this module.
     RequiredAssemblies = @(
-        'AWSSDK.CloudFront.dll'
+        'AWSSDK.CloudFront.dll',
+        'AWSSDK.Extensions.CloudFront.Signers.dll'
     )
 
     # Script files (.ps1) that are run in the caller's environment prior to importing this module
@@ -86,8 +88,12 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
 
     # Cmdlets to export from this module
     CmdletsToExport = @(
+        'Add-CFDistributionTenantWebACL', 
+        'Add-CFDistributionWebACL', 
         'Add-CFResourceTag', 
         'Copy-CFDistribution', 
+        'Get-CFAnycastIpList', 
+        'Get-CFAnycastIpListList', 
         'Get-CFCachePolicy', 
         'Get-CFCachePolicyConfig', 
         'Get-CFCachePolicyList', 
@@ -95,6 +101,9 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CFCloudFrontOriginAccessIdentityConfig', 
         'Get-CFCloudFrontOriginAccessIdentityList', 
         'Get-CFConflictingAlias', 
+        'Get-CFConnectionGroup', 
+        'Get-CFConnectionGroupByRoutingEndpoint', 
+        'Get-CFConnectionGroupList', 
         'Get-CFContinuousDeploymentPolicy', 
         'Get-CFContinuousDeploymentPolicyConfig', 
         'Get-CFContinuousDeploymentPolicyList', 
@@ -102,11 +111,19 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CFDistributionConfig', 
         'Get-CFDistributionList', 
         'Get-CFDistributionListByWebACLId', 
+        'Get-CFDistributionsByAnycastIpListId', 
         'Get-CFDistributionsByCachePolicyId', 
+        'Get-CFDistributionsByConnectionMode', 
         'Get-CFDistributionsByKeyGroup', 
         'Get-CFDistributionsByOriginRequestPolicyId', 
         'Get-CFDistributionsByRealtimeLogConfig', 
         'Get-CFDistributionsByResponseHeadersPolicyId', 
+        'Get-CFDistributionsByVpcOriginId', 
+        'Get-CFDistributionTenant', 
+        'Get-CFDistributionTenantByDomain', 
+        'Get-CFDistributionTenantList', 
+        'Get-CFDistributionTenantsByCustomization', 
+        'Get-CFDomainConflict', 
         'Get-CFFieldLevelEncryption', 
         'Get-CFFieldLevelEncryptionConfig', 
         'Get-CFFieldLevelEncryptionConfigList', 
@@ -117,12 +134,15 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CFFunctionList', 
         'Get-CFFunctionSummary', 
         'Get-CFInvalidation', 
+        'Get-CFInvalidationForDistributionTenant', 
         'Get-CFInvalidationList', 
+        'Get-CFInvalidationsForDistributionTenant', 
         'Get-CFKeyGroup', 
         'Get-CFKeyGroupConfig', 
         'Get-CFKeyGroupList', 
         'Get-CFKeyValueStore', 
         'Get-CFKeyValueStoreListItem', 
+        'Get-CFManagedCertificateDetail', 
         'Get-CFMonitoringSubscription', 
         'Get-CFOriginAccessControl', 
         'Get-CFOriginAccessControlConfig', 
@@ -142,16 +162,22 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Get-CFStreamingDistribution', 
         'Get-CFStreamingDistributionConfig', 
         'Get-CFStreamingDistributionList', 
+        'Get-CFVpcOrigin', 
+        'Get-CFVpcOriginList', 
         'Move-CFAlias', 
+        'New-CFAnycastIpList', 
         'New-CFCachePolicy', 
         'New-CFCloudFrontOriginAccessIdentity', 
+        'New-CFConnectionGroup', 
         'New-CFContinuousDeploymentPolicy', 
         'New-CFDistribution', 
+        'New-CFDistributionTenant', 
         'New-CFDistributionWithTag', 
         'New-CFFieldLevelEncryptionConfig', 
         'New-CFFieldLevelEncryptionProfile', 
         'New-CFFunction', 
         'New-CFInvalidation', 
+        'New-CFInvalidationForDistributionTenant', 
         'New-CFKeyGroup', 
         'New-CFKeyValueStore', 
         'New-CFMonitoringSubscription', 
@@ -164,11 +190,17 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'New-CFSignedUrl', 
         'New-CFStreamingDistribution', 
         'New-CFStreamingDistributionWithTag', 
+        'New-CFVpcOrigin', 
         'Publish-CFFunction', 
+        'Remove-CFAnycastIpList', 
         'Remove-CFCachePolicy', 
         'Remove-CFCloudFrontOriginAccessIdentity', 
+        'Remove-CFConnectionGroup', 
         'Remove-CFContinuousDeploymentPolicy', 
         'Remove-CFDistribution', 
+        'Remove-CFDistributionTenant', 
+        'Remove-CFDistributionTenantWebACL', 
+        'Remove-CFDistributionWebACL', 
         'Remove-CFFieldLevelEncryptionConfig', 
         'Remove-CFFieldLevelEncryptionProfile', 
         'Remove-CFFunction', 
@@ -182,12 +214,17 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Remove-CFResourceTag', 
         'Remove-CFResponseHeadersPolicy', 
         'Remove-CFStreamingDistribution', 
+        'Remove-CFVpcOrigin', 
+        'Test-CFDnsConfiguration', 
         'Test-CFFunction', 
         'Update-CFCachePolicy', 
         'Update-CFCloudFrontOriginAccessIdentity', 
+        'Update-CFConnectionGroup', 
         'Update-CFContinuousDeploymentPolicy', 
         'Update-CFDistribution', 
+        'Update-CFDistributionTenant', 
         'Update-CFDistributionWithStagingConfig', 
+        'Update-CFDomainAssociation', 
         'Update-CFFieldLevelEncryptionConfig', 
         'Update-CFFieldLevelEncryptionProfile', 
         'Update-CFFunction', 
@@ -198,7 +235,8 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
         'Update-CFPublicKey', 
         'Update-CFRealtimeLogConfig', 
         'Update-CFResponseHeadersPolicy', 
-        'Update-CFStreamingDistribution')
+        'Update-CFStreamingDistribution', 
+        'Update-CFVpcOrigin')
 
     # Variables to export from this module
     VariablesToExport = '*'
@@ -226,7 +264,7 @@ This version of AWS Tools for PowerShell is compatible with Windows PowerShell 5
             LicenseUri = 'https://aws.amazon.com/apache-2-0/'
             ProjectUri = 'https://github.com/aws/aws-tools-for-powershell'
             IconUri = 'https://sdk-for-net.amazonwebservices.com/images/AWSLogo128x128.png'
-            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/master/CHANGELOG.md'
+            ReleaseNotes = 'https://github.com/aws/aws-tools-for-powershell/blob/main/CHANGELOG.md'
         }
     }
 }

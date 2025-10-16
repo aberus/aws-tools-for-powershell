@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGIP
 {
     /// <summary>
@@ -35,44 +37,33 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
     /// you received from Amazon Cognito.
     /// 
     ///  <note><para>
-    /// Amazon Cognito disassociates an existing software token when you verify the new token
-    /// in a <a href="https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_VerifySoftwareToken.html">
-    /// VerifySoftwareToken</a> API request. If you don't verify the software token and your
-    /// user pool doesn't require MFA, the user can then authenticate with user name and password
-    /// credentials alone. If your user pool requires TOTP MFA, Amazon Cognito generates an
-    /// <c>MFA_SETUP</c> or <c>SOFTWARE_TOKEN_SETUP</c> challenge each time your user signs.
-    /// Complete setup with <c>AssociateSoftwareToken</c> and <c>VerifySoftwareToken</c>.
-    /// </para><para>
-    /// After you set up software token MFA for your user, Amazon Cognito generates a <c>SOFTWARE_TOKEN_MFA</c>
-    /// challenge when they authenticate. Respond to this challenge with your user's TOTP.
-    /// </para></note><note><para>
     /// Amazon Cognito doesn't evaluate Identity and Access Management (IAM) policies in requests
     /// for this API operation. For this operation, you can't use IAM credentials to authorize
     /// requests, and you can't grant IAM permissions in policies. For more information about
     /// authorization models in Amazon Cognito, see <a href="https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html">Using
     /// the Amazon Cognito user pools API and user pool endpoints</a>.
-    /// </para></note>
+    /// </para></note><para>
+    /// Authorize this action with a signed-in user's access token. It must include the scope
+    /// <c>aws.cognito.signin.user.admin</c>.
+    /// </para>
     /// </summary>
     [Cmdlet("Add", "CGIPSoftwareToken", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.CognitoIdentityProvider.Model.AssociateSoftwareTokenResponse")]
     [AWSCmdlet("Calls the Amazon Cognito Identity Provider AssociateSoftwareToken API operation.", Operation = new[] {"AssociateSoftwareToken"}, SelectReturnType = typeof(Amazon.CognitoIdentityProvider.Model.AssociateSoftwareTokenResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentityProvider.Model.AssociateSoftwareTokenResponse",
-        "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.AssociateSoftwareTokenResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CognitoIdentityProvider.Model.AssociateSoftwareTokenResponse object containing multiple properties."
     )]
     public partial class AddCGIPSoftwareTokenCmdlet : AmazonCognitoIdentityProviderClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AccessToken
         /// <summary>
         /// <para>
-        /// <para>A valid access token that Amazon Cognito issued to the user whose software token you
-        /// want to generate.</para>
+        /// <para>A valid access token that Amazon Cognito issued to the currently signed-in user. Must
+        /// include a scope claim for <c>aws.cognito.signin.user.admin</c>.</para><para>You can provide either an access token or a session ID in the request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -82,8 +73,9 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         #region Parameter Session
         /// <summary>
         /// <para>
-        /// <para>The session that should be passed both ways in challenge-response calls to the service.
-        /// This allows authentication of the user as part of the MFA setup process.</para>
+        /// <para>The session identifier that maintains the state of authentication requests and challenge
+        /// responses. In <c>AssociateSoftwareToken</c>, this is the session ID from a successful
+        /// sign-in. You can provide either an access token or a session ID in the request.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -111,9 +103,13 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = string.Empty;
@@ -196,13 +192,7 @@ namespace Amazon.PowerShell.Cmdlets.CGIP
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity Provider", "AssociateSoftwareToken");
             try
             {
-                #if DESKTOP
-                return client.AssociateSoftwareToken(request);
-                #elif CORECLR
-                return client.AssociateSoftwareTokenAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.AssociateSoftwareTokenAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

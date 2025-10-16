@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CustomerProfiles;
 using Amazon.CustomerProfiles.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CPF
 {
     /// <summary>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
     [OutputType("Amazon.CustomerProfiles.Model.UpdateDomainResponse")]
     [AWSCmdlet("Calls the Amazon Connect Customer Profiles UpdateDomain API operation.", Operation = new[] {"UpdateDomain"}, SelectReturnType = typeof(Amazon.CustomerProfiles.Model.UpdateDomainResponse))]
     [AWSCmdletOutput("Amazon.CustomerProfiles.Model.UpdateDomainResponse",
-        "This cmdlet returns an Amazon.CustomerProfiles.Model.UpdateDomainResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CustomerProfiles.Model.UpdateDomainResponse object containing multiple properties."
     )]
     public partial class UpdateCPFDomainCmdlet : AmazonCustomerProfilesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AttributeTypesSelector_Address
         /// <summary>
@@ -63,7 +66,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// <c>MaillingAddress</c>, and <c>ShippingAddress</c>.</para><para>You only can use the Address type in the <c>MatchingRule</c>. For example, if you
         /// want to match profile based on <c>BusinessAddress.City</c> or <c>MaillingAddress.City</c>,
         /// you need to choose the <c>BusinessAddress</c> and the <c>MaillingAddress</c> to represent
-        /// the Address type and specify the <c>Address.City</c> on the matching rule.</para>
+        /// the Address type and specify the <c>Address.City</c> on the matching rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -186,7 +193,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// if you want to match profile based on <c>PersonalEmailAddress</c> or <c>BusinessEmailAddress</c>,
         /// you need to choose the <c>PersonalEmailAddress</c> and the <c>BusinessEmailAddress</c>
         /// to represent the <c>EmailAddress</c> type and only specify the <c>EmailAddress</c>
-        /// on the matching rule.</para>
+        /// on the matching rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -228,7 +239,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter Consolidation_MatchingAttributesList
         /// <summary>
         /// <para>
-        /// <para>A list of matching criteria.</para>
+        /// <para>A list of matching criteria.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -240,7 +255,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// <summary>
         /// <para>
         /// <para>Configures how the rule-based matching process should match profiles. You can have
-        /// up to 15 <c>MatchingRule</c> in the <c>MatchingRules</c>.</para>
+        /// up to 15 <c>MatchingRule</c> in the <c>MatchingRules</c>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -288,7 +307,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         /// and <c>MobilePhoneNumber</c>.</para><para>You only can use the <c>PhoneNumber</c> type in the <c>MatchingRule</c>. For example,
         /// if you want to match a profile based on <c>Phone</c> or <c>HomePhone</c>, you need
         /// to choose the <c>Phone</c> and the <c>HomePhone</c> to represent the <c>PhoneNumber</c>
-        /// type and only specify the <c>PhoneNumber</c> on the matching rule.</para>
+        /// type and only specify the <c>PhoneNumber</c> on the matching rule.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -364,7 +387,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags used to organize, track, or control access for this resource.</para>
+        /// <para>The tags used to organize, track, or control access for this resource.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -394,16 +421,6 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DomainName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DomainName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -414,9 +431,13 @@ namespace Amazon.PowerShell.Cmdlets.CPF
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DomainName), MyInvocation.BoundParameters);
@@ -430,21 +451,11 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CustomerProfiles.Model.UpdateDomainResponse, UpdateCPFDomainCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DomainName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.DeadLetterQueueUrl = this.DeadLetterQueueUrl;
             context.DefaultEncryptionKey = this.DefaultEncryptionKey;
             context.DefaultExpirationDay = this.DefaultExpirationDay;
@@ -966,13 +977,7 @@ namespace Amazon.PowerShell.Cmdlets.CPF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Connect Customer Profiles", "UpdateDomain");
             try
             {
-                #if DESKTOP
-                return client.UpdateDomain(request);
-                #elif CORECLR
-                return client.UpdateDomainAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateDomainAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

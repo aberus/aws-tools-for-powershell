@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,22 +22,22 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
-    /// Registers an AMI. When you're creating an AMI, this is the final step you must complete
-    /// before you can launch an instance from the AMI. For more information about creating
-    /// AMIs, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami.html">Create
-    /// your own AMI</a> in the <i>Amazon Elastic Compute Cloud User Guide</i>.
+    /// Registers an AMI. When you're creating an instance-store backed AMI, registering the
+    /// AMI is the final step in the creation process. For more information about creating
+    /// AMIs, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html#creating-launching-ami-from-snapshot">Create
+    /// an AMI from a snapshot</a> and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-instance-store.html">Create
+    /// an instance-store backed AMI</a> in the <i>Amazon EC2 User Guide</i>.
     /// 
-    ///  <note><para>
-    /// For Amazon EBS-backed instances, <a>CreateImage</a> creates and registers the AMI
-    /// in a single request, so you don't have to register the AMI yourself. We recommend
-    /// that you always use <a>CreateImage</a> unless you have a specific reason to use RegisterImage.
-    /// </para></note><para>
+    ///  
+    /// <para>
     /// If needed, you can deregister an AMI at any time. Any modifications you make to an
     /// AMI backed by an instance store volume invalidates its registration. If you make changes
     /// to an image, deregister the previous image and register the new image.
@@ -49,29 +49,28 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     /// instance launched from the AMI is encrypted.
     /// </para><para>
     /// For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html#creating-launching-ami-from-snapshot">Create
-    /// a Linux AMI from a snapshot</a> and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html">Use
-    /// encryption with Amazon EBS-backed AMIs</a> in the <i>Amazon Elastic Compute Cloud
-    /// User Guide</i>.
+    /// an AMI from a snapshot</a> and <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html">Use
+    /// encryption with EBS-backed AMIs</a> in the <i>Amazon EC2 User Guide</i>.
     /// </para><para><b>Amazon Web Services Marketplace product codes</b></para><para>
     /// If any snapshots have Amazon Web Services Marketplace product codes, they are copied
     /// to the new AMI.
     /// </para><para>
-    /// Windows and some Linux distributions, such as Red Hat Enterprise Linux (RHEL) and
-    /// SUSE Linux Enterprise Server (SLES), use the Amazon EC2 billing product code associated
-    /// with an AMI to verify the subscription status for package updates. To create a new
-    /// AMI for operating systems that require a billing product code, instead of registering
-    /// the AMI, do the following to preserve the billing product code association:
-    /// </para><ol><li><para>
-    /// Launch an instance from an existing AMI with that billing product code.
-    /// </para></li><li><para>
-    /// Customize the instance.
-    /// </para></li><li><para>
-    /// Create an AMI from the instance using <a>CreateImage</a>.
-    /// </para></li></ol><para>
+    /// In most cases, AMIs for Windows, RedHat, SUSE, and SQL Server require correct licensing
+    /// information to be present on the AMI. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-billing-info.html">Understand
+    /// AMI billing information</a> in the <i>Amazon EC2 User Guide</i>. When creating an
+    /// AMI from a snapshot, the <c>RegisterImage</c> operation derives the correct billing
+    /// information from the snapshot's metadata, but this requires the appropriate metadata
+    /// to be present. To verify if the correct billing information was applied, check the
+    /// <c>PlatformDetails</c> field on the new AMI. If the field is empty or doesn't match
+    /// the expected operating system code (for example, Windows, RedHat, SUSE, or SQL), the
+    /// AMI creation was unsuccessful, and you should discard the AMI and instead create the
+    /// AMI from an instance. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html#how-to-create-ebs-ami">Create
+    /// an AMI from an instance </a> in the <i>Amazon EC2 User Guide</i>.
+    /// </para><para>
     /// If you purchase a Reserved Instance to apply to an On-Demand Instance that was launched
     /// from an AMI with a billing product code, make sure that the Reserved Instance has
     /// the matching billing product code. If you purchase a Reserved Instance without the
-    /// matching billing product code, the Reserved Instance will not be applied to the On-Demand
+    /// matching billing product code, the Reserved Instance is not applied to the On-Demand
     /// Instance. For information about how to obtain the platform details and billing information
     /// of an AMI, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-billing-info.html">Understand
     /// AMI billing information</a> in the <i>Amazon EC2 User Guide</i>.
@@ -82,12 +81,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) RegisterImage API operation.", Operation = new[] {"RegisterImage"}, SelectReturnType = typeof(Amazon.EC2.Model.RegisterImageResponse))]
     [AWSCmdletOutput("System.String or Amazon.EC2.Model.RegisterImageResponse",
         "This cmdlet returns a System.String object.",
-        "The service call response (type Amazon.EC2.Model.RegisterImageResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.RegisterImageResponse) can be returned by specifying '-Select *'."
     )]
     public partial class RegisterEC2ImageCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Architecture
         /// <summary>
@@ -109,8 +109,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// AMIs that include billable software and list them on the Amazon Web Services Marketplace.
         /// You must first register as a seller on the Amazon Web Services Marketplace. For more
         /// information, see <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/user-guide-for-sellers.html">Getting
-        /// started as a seller</a> and <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/ami-products.html">AMI-based
-        /// products</a> in the <i>Amazon Web Services Marketplace Seller Guide</i>.</para>
+        /// started as an Amazon Web Services Marketplace seller</a> and <a href="https://docs.aws.amazon.com/marketplace/latest/userguide/ami-products.html">AMI-based
+        /// products in Amazon Web Services Marketplace</a> in the <i>Amazon Web Services Marketplace
+        /// Seller Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -124,8 +129,12 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The block device mapping entries.</para><para>If you specify an Amazon EBS volume using the ID of an Amazon EBS snapshot, you can't
         /// specify the encryption state of the volume.</para><para>If you create an AMI on an Outpost, then all backing snapshots must be on the same
         /// Outpost or in the Region of that Outpost. AMIs on an Outpost that include local snapshots
-        /// can be used to launch instances on the same Outpost only. For more information, <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshots-outposts.html#ami">Amazon
-        /// EBS local snapshots on Outposts</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// can be used to launch instances on the same Outpost only. For more information, <a href="https://docs.aws.amazon.com/ebs/latest/userguide/snapshots-outposts.html#ami">Create
+        /// AMIs from local snapshots</a> in the <i>Amazon EBS User Guide</i>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,8 +147,8 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>
         /// <para>The boot mode of the AMI. A value of <c>uefi-preferred</c> indicates that the AMI
         /// supports both UEFI and Legacy BIOS.</para><note><para>The operating system contained in the AMI must be configured to support the specified
-        /// boot mode.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html">Boot
-        /// modes</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// boot mode.</para></note><para>For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ami-boot.html">Instance
+        /// launch behavior with Amazon EC2 boot modes</a> in the <i>Amazon EC2 User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -155,6 +164,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// </summary>
         [System.Management.Automation.Parameter(Position = 2, ValueFromPipelineByPropertyName = true)]
         public System.String Description { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter EnaSupport
@@ -175,7 +196,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// <para>The full path to your AMI manifest in Amazon S3 storage. The specified bucket must
         /// have the <c>aws-exec-read</c> canned access control list (ACL) to ensure that it can
         /// be accessed by Amazon EC2. For more information, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl">Canned
-        /// ACLs</a> in the <i>Amazon S3 Service Developer Guide</i>.</para>
+        /// ACL</a> in the <i>Amazon S3 Service Developer Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
@@ -260,6 +281,22 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public System.String SriovNetSupport { get; set; }
         #endregion
         
+        #region Parameter TagSpecification
+        /// <summary>
+        /// <para>
+        /// <para>The tags to apply to the AMI.</para><para>To tag the AMI, the value for <c>ResourceType</c> must be <c>image</c>. If you specify
+        /// another value for <c>ResourceType</c>, the request fails.</para><para>To tag an AMI after it has been registered, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_CreateTags.html">CreateTags</a>.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("TagSpecifications")]
+        public Amazon.EC2.Model.TagSpecification[] TagSpecification { get; set; }
+        #endregion
+        
         #region Parameter TpmSupport
         /// <summary>
         /// <para>
@@ -280,7 +317,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         /// data, use the <a href="https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_GetInstanceUefiData">GetInstanceUefiData</a>
         /// command. You can inspect and modify the UEFI data by using the <a href="https://github.com/awslabs/python-uefivars">python-uefivars
         /// tool</a> on GitHub. For more information, see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/uefi-secure-boot.html">UEFI
-        /// Secure Boot</a> in the <i>Amazon EC2 User Guide</i>.</para>
+        /// Secure Boot for Amazon EC2 instances</a> in the <i>Amazon EC2 User Guide</i>.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -308,16 +345,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "ImageId";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ImageLocation parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ImageLocation' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ImageLocation' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -328,9 +355,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ImageLocation), MyInvocation.BoundParameters);
@@ -344,21 +375,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.RegisterImageResponse, RegisterEC2ImageCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ImageLocation;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Architecture = this.Architecture;
             if (this.BillingProduct != null)
             {
@@ -370,6 +391,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             }
             context.BootMode = this.BootMode;
             context.Description = this.Description;
+            context.DryRun = this.DryRun;
             context.EnaSupport = this.EnaSupport;
             context.ImageLocation = this.ImageLocation;
             context.ImdsSupport = this.ImdsSupport;
@@ -384,6 +406,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             context.RamdiskId = this.RamdiskId;
             context.RootDeviceName = this.RootDeviceName;
             context.SriovNetSupport = this.SriovNetSupport;
+            if (this.TagSpecification != null)
+            {
+                context.TagSpecification = new List<Amazon.EC2.Model.TagSpecification>(this.TagSpecification);
+            }
             context.TpmSupport = this.TpmSupport;
             context.UefiData = this.UefiData;
             context.VirtualizationType = this.VirtualizationType;
@@ -423,6 +449,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             {
                 request.Description = cmdletContext.Description;
             }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
+            }
             if (cmdletContext.EnaSupport != null)
             {
                 request.EnaSupport = cmdletContext.EnaSupport.Value;
@@ -454,6 +484,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.SriovNetSupport != null)
             {
                 request.SriovNetSupport = cmdletContext.SriovNetSupport;
+            }
+            if (cmdletContext.TagSpecification != null)
+            {
+                request.TagSpecifications = cmdletContext.TagSpecification;
             }
             if (cmdletContext.TpmSupport != null)
             {
@@ -505,13 +539,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "RegisterImage");
             try
             {
-                #if DESKTOP
-                return client.RegisterImage(request);
-                #elif CORECLR
-                return client.RegisterImageAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterImageAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -533,6 +561,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public List<Amazon.EC2.Model.BlockDeviceMapping> BlockDeviceMapping { get; set; }
             public Amazon.EC2.BootModeValues BootMode { get; set; }
             public System.String Description { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.Boolean? EnaSupport { get; set; }
             public System.String ImageLocation { get; set; }
             public Amazon.EC2.ImdsSupportValues ImdsSupport { get; set; }
@@ -541,6 +570,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             public System.String RamdiskId { get; set; }
             public System.String RootDeviceName { get; set; }
             public System.String SriovNetSupport { get; set; }
+            public List<Amazon.EC2.Model.TagSpecification> TagSpecification { get; set; }
             public Amazon.EC2.TpmSupportValues TpmSupport { get; set; }
             public System.String UefiData { get; set; }
             public System.String VirtualizationType { get; set; }

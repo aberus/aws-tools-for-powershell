@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Athena;
 using Amazon.Athena.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.ATH
 {
     /// <summary>
@@ -51,12 +53,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
     [AWSCmdlet("Calls the Amazon Athena GetQueryResults API operation.", Operation = new[] {"GetQueryResults"}, SelectReturnType = typeof(Amazon.Athena.Model.GetQueryResultsResponse))]
     [AWSCmdletOutput("Amazon.Athena.Model.ResultSet or Amazon.Athena.Model.GetQueryResultsResponse",
         "This cmdlet returns an Amazon.Athena.Model.ResultSet object.",
-        "The service call response (type Amazon.Athena.Model.GetQueryResultsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.Athena.Model.GetQueryResultsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetATHQueryResultCmdlet : AmazonAthenaClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter QueryExecutionId
         /// <summary>
@@ -73,6 +76,21 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String QueryExecutionId { get; set; }
+        #endregion
+        
+        #region Parameter QueryResultType
+        /// <summary>
+        /// <para>
+        /// <para> When you set this to <c>DATA_ROWS</c> or empty, <c>GetQueryResults</c> returns the
+        /// query results in rows. If set to <c>DATA_MANIFEST</c>, it returns the manifest file
+        /// in rows. Only the query types <c>CREATE TABLE AS SELECT</c>, <c>UNLOAD</c>, and <c>INSERT</c>
+        /// can generate a manifest file. If you use <c>DATA_MANIFEST</c> for other query types,
+        /// the query will fail. </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.Athena.QueryResultType")]
+        public Amazon.Athena.QueryResultType QueryResultType { get; set; }
         #endregion
         
         #region Parameter MaxResult
@@ -100,7 +118,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -118,16 +136,6 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public string Select { get; set; } = "ResultSet";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QueryExecutionId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QueryExecutionId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QueryExecutionId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         /// <summary>
         /// By default the cmdlet will auto-iterate and retrieve all results to the pipeline by performing multiple
@@ -138,9 +146,13 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -148,21 +160,11 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Athena.Model.GetQueryResultsResponse, GetATHQueryResultCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QueryExecutionId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.MaxResult = this.MaxResult;
             #if !MODULAR
             if (ParameterWasBound(nameof(this.MaxResult)) && this.MaxResult.HasValue)
@@ -181,6 +183,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
                 WriteWarning("You are passing $null as a value for parameter QueryExecutionId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.QueryResultType = this.QueryResultType;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -195,9 +198,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Athena.Model.GetQueryResultsRequest();
@@ -209,6 +210,10 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             if (cmdletContext.QueryExecutionId != null)
             {
                 request.QueryExecutionId = cmdletContext.QueryExecutionId;
+            }
+            if (cmdletContext.QueryResultType != null)
+            {
+                request.QueryResultType = cmdletContext.QueryResultType;
             }
             
             // Initialize loop variant and commence piping
@@ -261,13 +266,17 @@ namespace Amazon.PowerShell.Cmdlets.ATH
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.Athena.Model.GetQueryResultsRequest();
             if (cmdletContext.QueryExecutionId != null)
             {
                 request.QueryExecutionId = cmdletContext.QueryExecutionId;
+            }
+            if (cmdletContext.QueryResultType != null)
+            {
+                request.QueryResultType = cmdletContext.QueryResultType;
             }
             
             // Initialize loop variants and commence piping
@@ -316,7 +325,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.ResultSet.Rows.Count;
+                    int _receivedThisCall = response.ResultSet?.Rows?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -365,13 +374,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Athena", "GetQueryResults");
             try
             {
-                #if DESKTOP
-                return client.GetQueryResults(request);
-                #elif CORECLR
-                return client.GetQueryResultsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetQueryResultsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -391,6 +394,7 @@ namespace Amazon.PowerShell.Cmdlets.ATH
             public int? MaxResult { get; set; }
             public System.String NextToken { get; set; }
             public System.String QueryExecutionId { get; set; }
+            public Amazon.Athena.QueryResultType QueryResultType { get; set; }
             public System.Func<Amazon.Athena.Model.GetQueryResultsResponse, GetATHQueryResultCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.ResultSet;
         }

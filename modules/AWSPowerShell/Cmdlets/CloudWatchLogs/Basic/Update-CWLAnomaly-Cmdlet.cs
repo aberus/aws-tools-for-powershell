@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
     /// Use this operation to <i>suppress</i> anomaly detection for a specified anomaly or
-    /// pattern. If you suppress an anomaly, CloudWatch Logs won’t report new occurrences
+    /// pattern. If you suppress an anomaly, CloudWatch Logs won't report new occurrences
     /// of that anomaly and won't update that anomaly with new data. If you suppress a pattern,
-    /// CloudWatch Logs won’t report any anomalies related to that pattern.
+    /// CloudWatch Logs won't report any anomalies related to that pattern.
     /// 
     ///  
     /// <para>
@@ -49,12 +51,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     [AWSCmdlet("Calls the Amazon CloudWatch Logs UpdateAnomaly API operation.", Operation = new[] {"UpdateAnomaly"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.UpdateAnomalyResponse))]
     [AWSCmdletOutput("None or Amazon.CloudWatchLogs.Model.UpdateAnomalyResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.CloudWatchLogs.Model.UpdateAnomalyResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.CloudWatchLogs.Model.UpdateAnomalyResponse) be returned by specifying '-Select *'."
     )]
     public partial class UpdateCWLAnomalyCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AnomalyDetectorArn
         /// <summary>
@@ -83,6 +86,19 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public System.String AnomalyId { get; set; }
+        #endregion
+        
+        #region Parameter Baseline
+        /// <summary>
+        /// <para>
+        /// <para>Set this to <c>true</c> to prevent CloudWatch Logs from displaying this behavior as
+        /// an anomaly in the future. The behavior is then treated as baseline behavior. However,
+        /// if similar but more severe occurrences of this behavior occur in the future, those
+        /// will still be reported as anomalies. </para><para>The default is <c>false</c></para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? Baseline { get; set; }
         #endregion
         
         #region Parameter PatternId
@@ -142,16 +158,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AnomalyDetectorArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AnomalyDetectorArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AnomalyDetectorArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -162,9 +168,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.AnomalyDetectorArn), MyInvocation.BoundParameters);
@@ -178,21 +188,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.UpdateAnomalyResponse, UpdateCWLAnomalyCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AnomalyDetectorArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AnomalyDetectorArn = this.AnomalyDetectorArn;
             #if MODULAR
             if (this.AnomalyDetectorArn == null && ParameterWasBound(nameof(this.AnomalyDetectorArn)))
@@ -201,6 +201,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             }
             #endif
             context.AnomalyId = this.AnomalyId;
+            context.Baseline = this.Baseline;
             context.PatternId = this.PatternId;
             context.SuppressionPeriod_SuppressionUnit = this.SuppressionPeriod_SuppressionUnit;
             context.SuppressionPeriod_Value = this.SuppressionPeriod_Value;
@@ -228,6 +229,10 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             if (cmdletContext.AnomalyId != null)
             {
                 request.AnomalyId = cmdletContext.AnomalyId;
+            }
+            if (cmdletContext.Baseline != null)
+            {
+                request.Baseline = cmdletContext.Baseline.Value;
             }
             if (cmdletContext.PatternId != null)
             {
@@ -304,13 +309,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "UpdateAnomaly");
             try
             {
-                #if DESKTOP
-                return client.UpdateAnomaly(request);
-                #elif CORECLR
-                return client.UpdateAnomalyAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdateAnomalyAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -329,6 +328,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         {
             public System.String AnomalyDetectorArn { get; set; }
             public System.String AnomalyId { get; set; }
+            public System.Boolean? Baseline { get; set; }
             public System.String PatternId { get; set; }
             public Amazon.CloudWatchLogs.SuppressionUnit SuppressionPeriod_SuppressionUnit { get; set; }
             public System.Int32? SuppressionPeriod_Value { get; set; }

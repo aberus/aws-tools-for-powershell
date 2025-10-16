@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IAM
 {
     /// <summary>
@@ -35,13 +37,15 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     /// Policies returned by this operation are URL-encoded compliant with <a href="https://tools.ietf.org/html/rfc3986">RFC
     /// 3986</a>. You can use a URL decoding method to convert the policy back to plain JSON
     /// text. For example, if you use Java, you can use the <c>decode</c> method of the <c>java.net.URLDecoder</c>
-    /// utility class in the Java SDK. Other languages and SDKs provide similar functionality.
+    /// utility class in the Java SDK. Other languages and SDKs provide similar functionality,
+    /// and some SDKs do this decoding automatically.
     /// </para></note><para>
-    /// To list the available versions for a policy, use <a>ListPolicyVersions</a>.
+    /// To list the available versions for a policy, use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_ListPolicyVersions.html">ListPolicyVersions</a>.
     /// </para><para>
     /// This operation retrieves information about managed policies. To retrieve information
-    /// about an inline policy that is embedded in a user, group, or role, use <a>GetUserPolicy</a>,
-    /// <a>GetGroupPolicy</a>, or <a>GetRolePolicy</a>.
+    /// about an inline policy that is embedded in a user, group, or role, use <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetUserPolicy.html">GetUserPolicy</a>,
+    /// <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetGroupPolicy.html">GetGroupPolicy</a>,
+    /// or <a href="https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetRolePolicy.html">GetRolePolicy</a>.
     /// </para><para>
     /// For more information about the types of policies, see <a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/policies-managed-vs-inline.html">Managed
     /// policies and inline policies</a> in the <i>IAM User Guide</i>.
@@ -55,12 +59,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
     [AWSCmdlet("Calls the AWS Identity and Access Management GetPolicyVersion API operation.", Operation = new[] {"GetPolicyVersion"}, SelectReturnType = typeof(Amazon.IdentityManagement.Model.GetPolicyVersionResponse))]
     [AWSCmdletOutput("Amazon.IdentityManagement.Model.PolicyVersion or Amazon.IdentityManagement.Model.GetPolicyVersionResponse",
         "This cmdlet returns an Amazon.IdentityManagement.Model.PolicyVersion object.",
-        "The service call response (type Amazon.IdentityManagement.Model.GetPolicyVersionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.IdentityManagement.Model.GetPolicyVersionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetIAMPolicyVersionCmdlet : AmazonIdentityManagementServiceClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter PolicyArn
         /// <summary>
@@ -111,9 +116,13 @@ namespace Amazon.PowerShell.Cmdlets.IAM
         public string Select { get; set; } = "PolicyVersion";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -202,13 +211,7 @@ namespace Amazon.PowerShell.Cmdlets.IAM
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Identity and Access Management", "GetPolicyVersion");
             try
             {
-                #if DESKTOP
-                return client.GetPolicyVersion(request);
-                #elif CORECLR
-                return client.GetPolicyVersionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetPolicyVersionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

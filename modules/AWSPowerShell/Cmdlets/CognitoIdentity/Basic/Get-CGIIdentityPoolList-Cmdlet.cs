@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CognitoIdentity;
 using Amazon.CognitoIdentity.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CGI
 {
     /// <summary>
@@ -32,7 +34,7 @@ namespace Amazon.PowerShell.Cmdlets.CGI
     /// 
     ///  
     /// <para>
-    /// You must use AWS Developer credentials to call this API.
+    /// You must use Amazon Web Services developer credentials to call this operation.
     /// </para><br/><br/>This cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "CGIIdentityPoolList")]
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.CGI
     [AWSCmdlet("Calls the Amazon Cognito Identity ListIdentityPools API operation.", Operation = new[] {"ListIdentityPools"}, SelectReturnType = typeof(Amazon.CognitoIdentity.Model.ListIdentityPoolsResponse))]
     [AWSCmdletOutput("Amazon.CognitoIdentity.Model.IdentityPoolShortDescription or Amazon.CognitoIdentity.Model.ListIdentityPoolsResponse",
         "This cmdlet returns a collection of Amazon.CognitoIdentity.Model.IdentityPoolShortDescription objects.",
-        "The service call response (type Amazon.CognitoIdentity.Model.ListIdentityPoolsResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.CognitoIdentity.Model.ListIdentityPoolsResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCGIIdentityPoolListCmdlet : AmazonCognitoIdentityClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter MaxResult
         /// <summary>
@@ -71,7 +74,7 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> This parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -99,9 +102,13 @@ namespace Amazon.PowerShell.Cmdlets.CGI
         public SwitchParameter NoAutoIteration { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -267,7 +274,7 @@ namespace Amazon.PowerShell.Cmdlets.CGI
                         PipelineOutput = pipelineOutput,
                         ServiceResponse = response
                     };
-                    int _receivedThisCall = response.IdentityPools.Count;
+                    int _receivedThisCall = response.IdentityPools?.Count ?? 0;
                     
                     _nextToken = response.NextToken;
                     _retrievedSoFar += _receivedThisCall;
@@ -316,13 +323,7 @@ namespace Amazon.PowerShell.Cmdlets.CGI
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Cognito Identity", "ListIdentityPools");
             try
             {
-                #if DESKTOP
-                return client.ListIdentityPools(request);
-                #elif CORECLR
-                return client.ListIdentityPoolsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.ListIdentityPoolsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

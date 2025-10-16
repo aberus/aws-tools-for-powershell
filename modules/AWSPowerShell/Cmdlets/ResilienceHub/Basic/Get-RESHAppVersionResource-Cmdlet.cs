@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,16 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ResilienceHub;
 using Amazon.ResilienceHub.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.RESH
 {
     /// <summary>
     /// Describes a resource of the Resilience Hub application.
     /// 
     ///  <note><para>
-    /// This API accepts only one of the following parameters to descibe the resource:
+    /// This API accepts only one of the following parameters to describe the resource:
     /// </para><ul><li><para><c>resourceName</c></para></li><li><para><c>logicalResourceId</c></para></li><li><para><c>physicalResourceId</c> (Along with <c>physicalResourceId</c>, you can also provide
     /// <c>awsAccountId</c>, and <c>awsRegion</c>)
     /// </para></li></ul></note>
@@ -40,12 +42,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
     [OutputType("Amazon.ResilienceHub.Model.DescribeAppVersionResourceResponse")]
     [AWSCmdlet("Calls the AWS Resilience Hub DescribeAppVersionResource API operation.", Operation = new[] {"DescribeAppVersionResource"}, SelectReturnType = typeof(Amazon.ResilienceHub.Model.DescribeAppVersionResourceResponse))]
     [AWSCmdletOutput("Amazon.ResilienceHub.Model.DescribeAppVersionResourceResponse",
-        "This cmdlet returns an Amazon.ResilienceHub.Model.DescribeAppVersionResourceResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.ResilienceHub.Model.DescribeAppVersionResourceResponse object containing multiple properties."
     )]
     public partial class GetRESHAppVersionResourceCmdlet : AmazonResilienceHubClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppArn
         /// <summary>
@@ -187,19 +190,13 @@ namespace Amazon.PowerShell.Cmdlets.RESH
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the AppArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^AppArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^AppArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -207,21 +204,11 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ResilienceHub.Model.DescribeAppVersionResourceResponse, GetRESHAppVersionResourceCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.AppArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppArn = this.AppArn;
             #if MODULAR
             if (this.AppArn == null && ParameterWasBound(nameof(this.AppArn)))
@@ -382,13 +369,7 @@ namespace Amazon.PowerShell.Cmdlets.RESH
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Resilience Hub", "DescribeAppVersionResource");
             try
             {
-                #if DESKTOP
-                return client.DescribeAppVersionResource(request);
-                #elif CORECLR
-                return client.DescribeAppVersionResourceAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAppVersionResourceAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

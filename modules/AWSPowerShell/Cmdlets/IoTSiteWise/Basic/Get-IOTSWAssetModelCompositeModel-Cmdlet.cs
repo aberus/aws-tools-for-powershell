@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IoTSiteWise;
 using Amazon.IoTSiteWise.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IOTSW
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
     [OutputType("Amazon.IoTSiteWise.Model.DescribeAssetModelCompositeModelResponse")]
     [AWSCmdlet("Calls the AWS IoT SiteWise DescribeAssetModelCompositeModel API operation.", Operation = new[] {"DescribeAssetModelCompositeModel"}, SelectReturnType = typeof(Amazon.IoTSiteWise.Model.DescribeAssetModelCompositeModelResponse))]
     [AWSCmdletOutput("Amazon.IoTSiteWise.Model.DescribeAssetModelCompositeModelResponse",
-        "This cmdlet returns an Amazon.IoTSiteWise.Model.DescribeAssetModelCompositeModelResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.IoTSiteWise.Model.DescribeAssetModelCompositeModelResponse object containing multiple properties."
     )]
     public partial class GetIOTSWAssetModelCompositeModelCmdlet : AmazonIoTSiteWiseClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AssetModelCompositeModelId
         /// <summary>
@@ -83,6 +86,19 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public System.String AssetModelId { get; set; }
         #endregion
         
+        #region Parameter AssetModelVersion
+        /// <summary>
+        /// <para>
+        /// <para>The version alias that specifies the latest or active version of the asset model.
+        /// The details are returned in the response. The default value is <c>LATEST</c>. See
+        /// <a href="https://docs.aws.amazon.com/iot-sitewise/latest/userguide/model-active-version.html">
+        /// Asset model versions</a> in the <i>IoT SiteWise User Guide</i>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String AssetModelVersion { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
         /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
@@ -94,9 +110,13 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         public string Select { get; set; } = "*";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -123,6 +143,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
                 WriteWarning("You are passing $null as a value for parameter AssetModelId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.AssetModelVersion = this.AssetModelVersion;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -146,6 +167,10 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             if (cmdletContext.AssetModelId != null)
             {
                 request.AssetModelId = cmdletContext.AssetModelId;
+            }
+            if (cmdletContext.AssetModelVersion != null)
+            {
+                request.AssetModelVersion = cmdletContext.AssetModelVersion;
             }
             
             CmdletOutput output;
@@ -185,13 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS IoT SiteWise", "DescribeAssetModelCompositeModel");
             try
             {
-                #if DESKTOP
-                return client.DescribeAssetModelCompositeModel(request);
-                #elif CORECLR
-                return client.DescribeAssetModelCompositeModelAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeAssetModelCompositeModelAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -210,6 +229,7 @@ namespace Amazon.PowerShell.Cmdlets.IOTSW
         {
             public System.String AssetModelCompositeModelId { get; set; }
             public System.String AssetModelId { get; set; }
+            public System.String AssetModelVersion { get; set; }
             public System.Func<Amazon.IoTSiteWise.Model.DescribeAssetModelCompositeModelResponse, GetIOTSWAssetModelCompositeModelCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response;
         }

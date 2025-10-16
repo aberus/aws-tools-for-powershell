@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,29 +22,36 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Detective;
 using Amazon.Detective.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.DTCT
 {
     /// <summary>
-    /// Returns the investigation results of an investigation for a behavior graph.
+    /// Detective investigations lets you investigate IAM users and IAM roles using indicators
+    /// of compromise. An indicator of compromise (IOC) is an artifact observed in or on a
+    /// network, system, or environment that can (with a high level of confidence) identify
+    /// malicious activity or a security incident. <c>GetInvestigation</c> returns the investigation
+    /// results of an investigation for a behavior graph.
     /// </summary>
     [Cmdlet("Get", "DTCTInvestigation")]
     [OutputType("Amazon.Detective.Model.GetInvestigationResponse")]
     [AWSCmdlet("Calls the Amazon Detective GetInvestigation API operation.", Operation = new[] {"GetInvestigation"}, SelectReturnType = typeof(Amazon.Detective.Model.GetInvestigationResponse))]
     [AWSCmdletOutput("Amazon.Detective.Model.GetInvestigationResponse",
-        "This cmdlet returns an Amazon.Detective.Model.GetInvestigationResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Detective.Model.GetInvestigationResponse object containing multiple properties."
     )]
     public partial class GetDTCTInvestigationCmdlet : AmazonDetectiveClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter GraphArn
         /// <summary>
         /// <para>
-        /// <para>The ARN of the behavior graph.</para>
+        /// <para>The Amazon Resource Name (ARN) of the behavior graph.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -86,19 +93,13 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the InvestigationId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^InvestigationId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^InvestigationId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -106,21 +107,11 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Detective.Model.GetInvestigationResponse, GetDTCTInvestigationCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.InvestigationId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.GraphArn = this.GraphArn;
             #if MODULAR
             if (this.GraphArn == null && ParameterWasBound(nameof(this.GraphArn)))
@@ -197,13 +188,7 @@ namespace Amazon.PowerShell.Cmdlets.DTCT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Detective", "GetInvestigation");
             try
             {
-                #if DESKTOP
-                return client.GetInvestigation(request);
-                #elif CORECLR
-                return client.GetInvestigationAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.GetInvestigationAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

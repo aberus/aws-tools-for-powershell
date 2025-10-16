@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ServiceQuotas;
 using Amazon.ServiceQuotas.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SQ
 {
     /// <summary>
@@ -35,12 +37,13 @@ namespace Amazon.PowerShell.Cmdlets.SQ
     [AWSCmdlet("Calls the AWS Service Quotas PutServiceQuotaIncreaseRequestIntoTemplate API operation.", Operation = new[] {"PutServiceQuotaIncreaseRequestIntoTemplate"}, SelectReturnType = typeof(Amazon.ServiceQuotas.Model.PutServiceQuotaIncreaseRequestIntoTemplateResponse))]
     [AWSCmdletOutput("Amazon.ServiceQuotas.Model.ServiceQuotaIncreaseRequestInTemplate or Amazon.ServiceQuotas.Model.PutServiceQuotaIncreaseRequestIntoTemplateResponse",
         "This cmdlet returns an Amazon.ServiceQuotas.Model.ServiceQuotaIncreaseRequestInTemplate object.",
-        "The service call response (type Amazon.ServiceQuotas.Model.PutServiceQuotaIncreaseRequestIntoTemplateResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ServiceQuotas.Model.PutServiceQuotaIncreaseRequestIntoTemplateResponse) can be returned by specifying '-Select *'."
     )]
     public partial class WriteSQServiceQuotaIncreaseRequestIntoTemplateCmdlet : AmazonServiceQuotasClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AwsRegion
         /// <summary>
@@ -123,16 +126,6 @@ namespace Amazon.PowerShell.Cmdlets.SQ
         public string Select { get; set; } = "ServiceQuotaIncreaseRequestInTemplate";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the QuotaCode parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^QuotaCode' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^QuotaCode' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -143,9 +136,13 @@ namespace Amazon.PowerShell.Cmdlets.SQ
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.QuotaCode), MyInvocation.BoundParameters);
@@ -159,21 +156,11 @@ namespace Amazon.PowerShell.Cmdlets.SQ
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ServiceQuotas.Model.PutServiceQuotaIncreaseRequestIntoTemplateResponse, WriteSQServiceQuotaIncreaseRequestIntoTemplateCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.QuotaCode;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AwsRegion = this.AwsRegion;
             #if MODULAR
             if (this.AwsRegion == null && ParameterWasBound(nameof(this.AwsRegion)))
@@ -272,13 +259,7 @@ namespace Amazon.PowerShell.Cmdlets.SQ
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Service Quotas", "PutServiceQuotaIncreaseRequestIntoTemplate");
             try
             {
-                #if DESKTOP
-                return client.PutServiceQuotaIncreaseRequestIntoTemplate(request);
-                #elif CORECLR
-                return client.PutServiceQuotaIncreaseRequestIntoTemplateAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutServiceQuotaIncreaseRequestIntoTemplateAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

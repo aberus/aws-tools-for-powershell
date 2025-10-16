@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,35 +22,38 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.EC2;
 using Amazon.EC2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.EC2
 {
     /// <summary>
     /// Creates a data feed for Spot Instances, enabling you to view Spot Instance usage logs.
     /// You can create one data feed per Amazon Web Services account. For more information,
     /// see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-data-feeds.html">Spot
-    /// Instance data feed</a> in the <i>Amazon EC2 User Guide for Linux Instances</i>.
+    /// Instance data feed</a> in the <i>Amazon EC2 User Guide</i>.
     /// </summary>
     [Cmdlet("New", "EC2SpotDatafeedSubscription", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("Amazon.EC2.Model.SpotDatafeedSubscription")]
     [AWSCmdlet("Calls the Amazon Elastic Compute Cloud (EC2) CreateSpotDatafeedSubscription API operation.", Operation = new[] {"CreateSpotDatafeedSubscription"}, SelectReturnType = typeof(Amazon.EC2.Model.CreateSpotDatafeedSubscriptionResponse))]
     [AWSCmdletOutput("Amazon.EC2.Model.SpotDatafeedSubscription or Amazon.EC2.Model.CreateSpotDatafeedSubscriptionResponse",
         "This cmdlet returns an Amazon.EC2.Model.SpotDatafeedSubscription object.",
-        "The service call response (type Amazon.EC2.Model.CreateSpotDatafeedSubscriptionResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.EC2.Model.CreateSpotDatafeedSubscriptionResponse) can be returned by specifying '-Select *'."
     )]
     public partial class NewEC2SpotDatafeedSubscriptionCmdlet : AmazonEC2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter Bucket
         /// <summary>
         /// <para>
         /// <para>The name of the Amazon S3 bucket in which to store the Spot Instance data feed. For
-        /// more information about bucket names, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/dev/BucketRestrictions.html#bucketnamingrules">Rules
-        /// for bucket naming</a> in the <i>Amazon S3 Developer Guide</i>.</para>
+        /// more information about bucket names, see <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html">Bucket
+        /// naming rules</a> in the <i>Amazon S3 User Guide</i>.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -62,6 +65,18 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String Bucket { get; set; }
+        #endregion
+        
+        #region Parameter DryRun
+        /// <summary>
+        /// <para>
+        /// <para>Checks whether you have the required permissions for the action, without actually
+        /// making the request, and provides an error response. If you have the required permissions,
+        /// the error response is <c>DryRunOperation</c>. Otherwise, it is <c>UnauthorizedOperation</c>.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.Boolean? DryRun { get; set; }
         #endregion
         
         #region Parameter Prefix
@@ -85,16 +100,6 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public string Select { get; set; } = "SpotDatafeedSubscription";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the Bucket parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^Bucket' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^Bucket' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -105,9 +110,13 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.Bucket), MyInvocation.BoundParameters);
@@ -121,21 +130,11 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.EC2.Model.CreateSpotDatafeedSubscriptionResponse, NewEC2SpotDatafeedSubscriptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.Bucket;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.Bucket = this.Bucket;
             #if MODULAR
             if (this.Bucket == null && ParameterWasBound(nameof(this.Bucket)))
@@ -143,6 +142,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
                 WriteWarning("You are passing $null as a value for parameter Bucket which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.DryRun = this.DryRun;
             context.Prefix = this.Prefix;
             
             // allow further manipulation of loaded context prior to processing
@@ -163,6 +163,10 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             if (cmdletContext.Bucket != null)
             {
                 request.Bucket = cmdletContext.Bucket;
+            }
+            if (cmdletContext.DryRun != null)
+            {
+                request.DryRun = cmdletContext.DryRun.Value;
             }
             if (cmdletContext.Prefix != null)
             {
@@ -206,13 +210,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Elastic Compute Cloud (EC2)", "CreateSpotDatafeedSubscription");
             try
             {
-                #if DESKTOP
-                return client.CreateSpotDatafeedSubscription(request);
-                #elif CORECLR
-                return client.CreateSpotDatafeedSubscriptionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateSpotDatafeedSubscriptionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -230,6 +228,7 @@ namespace Amazon.PowerShell.Cmdlets.EC2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String Bucket { get; set; }
+            public System.Boolean? DryRun { get; set; }
             public System.String Prefix { get; set; }
             public System.Func<Amazon.EC2.Model.CreateSpotDatafeedSubscriptionResponse, NewEC2SpotDatafeedSubscriptionCmdlet, object> Select { get; set; } =
                 (response, cmdlet) => response.SpotDatafeedSubscription;

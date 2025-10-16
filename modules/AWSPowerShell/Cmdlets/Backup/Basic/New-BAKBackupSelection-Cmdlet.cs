@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.Backup;
 using Amazon.Backup.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.BAK
 {
     /// <summary>
@@ -36,17 +38,18 @@ namespace Amazon.PowerShell.Cmdlets.BAK
     [OutputType("Amazon.Backup.Model.CreateBackupSelectionResponse")]
     [AWSCmdlet("Calls the AWS Backup CreateBackupSelection API operation.", Operation = new[] {"CreateBackupSelection"}, SelectReturnType = typeof(Amazon.Backup.Model.CreateBackupSelectionResponse))]
     [AWSCmdletOutput("Amazon.Backup.Model.CreateBackupSelectionResponse",
-        "This cmdlet returns an Amazon.Backup.Model.CreateBackupSelectionResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.Backup.Model.CreateBackupSelectionResponse object containing multiple properties."
     )]
     public partial class NewBAKBackupSelectionCmdlet : AmazonBackupClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter BackupPlanId
         /// <summary>
         /// <para>
-        /// <para>Uniquely identifies the backup plan to be associated with the selection of resources.</para>
+        /// <para>The ID of the backup plan.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -92,11 +95,14 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter BackupSelection_ListOfTag
         /// <summary>
         /// <para>
-        /// <para>A list of conditions that you define to assign resources to your backup plans using
-        /// tags. For example, <c>"StringEquals": { "Key": "aws:ResourceTag/CreatedByCryo", "Value":
-        /// "true" },</c>. Condition operators are case sensitive.</para><para><c>ListOfTags</c> differs from <c>Conditions</c> as follows:</para><ul><li><para>When you specify more than one condition, you assign all resources that match AT LEAST
-        /// ONE condition (using OR logic).</para></li><li><para><c>ListOfTags</c> only supports <c>StringEquals</c>. <c>Conditions</c> supports <c>StringEquals</c>,
-        /// <c>StringLike</c>, <c>StringNotEquals</c>, and <c>StringNotLike</c>. </para></li></ul>
+        /// <para>The conditions that you define to assign resources to your backup plans using tags.
+        /// For example, <c>"StringEquals": { "ConditionKey": "backup", "ConditionValue": "daily"}</c>.</para><para><c>ListOfTags</c> supports only <c>StringEquals</c>. Condition operators are case
+        /// sensitive.</para><para>If you specify multiple conditions, the resources much match any of the conditions
+        /// (OR logic).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -107,10 +113,14 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter BackupSelection_NotResource
         /// <summary>
         /// <para>
-        /// <para>A list of Amazon Resource Names (ARNs) to exclude from a backup plan. The maximum
-        /// number of ARNs is 500 without wildcards, or 30 ARNs with wildcards.</para><para>If you need to exclude many resources from a backup plan, consider a different resource
+        /// <para>The Amazon Resource Names (ARNs) of the resources to exclude from a backup plan. The
+        /// maximum number of ARNs is 500 without wildcards, or 30 ARNs with wildcards.</para><para>If you need to exclude many resources from a backup plan, consider a different resource
         /// selection strategy, such as assigning only one or a few resource types or refining
-        /// your resource selection using tags.</para>
+        /// your resource selection using tags.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -121,10 +131,14 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         #region Parameter BackupSelection_Resource
         /// <summary>
         /// <para>
-        /// <para>A list of Amazon Resource Names (ARNs) to assign to a backup plan. The maximum number
-        /// of ARNs is 500 without wildcards, or 30 ARNs with wildcards.</para><para>If you need to assign many resources to a backup plan, consider a different resource
+        /// <para>The Amazon Resource Names (ARNs) of the resources to assign to a backup plan. The
+        /// maximum number of ARNs is 500 without wildcards, or 30 ARNs with wildcards.</para><para>If you need to assign many resources to a backup plan, consider a different resource
         /// selection strategy, such as assigning all resources of a resource type or refining
-        /// your resource selection using tags.</para>
+        /// your resource selection using tags.</para><para>If you specify multiple ARNs, the resources much match any of the ARNs (OR logic).</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -154,7 +168,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <summary>
         /// <para>
         /// <para>Filters the values of your tagged resources for only those resources that you tagged
-        /// with the same value. Also called "exact matching."</para>
+        /// with the same value. Also called "exact matching."</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -167,7 +185,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <para>
         /// <para>Filters the values of your tagged resources for matching tag values with the use of
         /// a wildcard character (*) anywhere in the string. For example, "prod*" or "*rod*" matches
-        /// the tag value "production".</para>
+        /// the tag value "production".</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -179,7 +201,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <summary>
         /// <para>
         /// <para>Filters the values of your tagged resources for only those resources that you tagged
-        /// that do not have the same value. Also called "negated matching."</para>
+        /// that do not have the same value. Also called "negated matching."</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -191,7 +217,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         /// <summary>
         /// <para>
         /// <para>Filters the values of your tagged resources for non-matching tag values with the use
-        /// of a wildcard character (*) anywhere in the string.</para>
+        /// of a wildcard character (*) anywhere in the string.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -210,16 +240,6 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the BackupPlanId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^BackupPlanId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^BackupPlanId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -230,9 +250,13 @@ namespace Amazon.PowerShell.Cmdlets.BAK
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.BackupPlanId), MyInvocation.BoundParameters);
@@ -246,21 +270,11 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.Backup.Model.CreateBackupSelectionResponse, NewBAKBackupSelectionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.BackupPlanId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.BackupPlanId = this.BackupPlanId;
             #if MODULAR
             if (this.BackupPlanId == null && ParameterWasBound(nameof(this.BackupPlanId)))
@@ -487,13 +501,7 @@ namespace Amazon.PowerShell.Cmdlets.BAK
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "AWS Backup", "CreateBackupSelection");
             try
             {
-                #if DESKTOP
-                return client.CreateBackupSelection(request);
-                #elif CORECLR
-                return client.CreateBackupSelectionAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.CreateBackupSelectionAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

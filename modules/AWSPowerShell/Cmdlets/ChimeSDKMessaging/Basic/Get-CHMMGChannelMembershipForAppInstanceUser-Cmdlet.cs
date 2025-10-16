@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKMessaging;
 using Amazon.ChimeSDKMessaging.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMMG
 {
     /// <summary>
@@ -41,14 +43,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMMG
     [AWSCmdlet("Calls the Amazon Chime SDK Messaging DescribeChannelMembershipForAppInstanceUser API operation.", Operation = new[] {"DescribeChannelMembershipForAppInstanceUser"}, SelectReturnType = typeof(Amazon.ChimeSDKMessaging.Model.DescribeChannelMembershipForAppInstanceUserResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKMessaging.Model.ChannelMembershipForAppInstanceUserSummary or Amazon.ChimeSDKMessaging.Model.DescribeChannelMembershipForAppInstanceUserResponse",
         "This cmdlet returns an Amazon.ChimeSDKMessaging.Model.ChannelMembershipForAppInstanceUserSummary object.",
-        "The service call response (type Amazon.ChimeSDKMessaging.Model.DescribeChannelMembershipForAppInstanceUserResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ChimeSDKMessaging.Model.DescribeChannelMembershipForAppInstanceUserResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetCHMMGChannelMembershipForAppInstanceUserCmdlet : AmazonChimeSDKMessagingClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter AppInstanceUserArn
         /// <summary>
@@ -113,19 +114,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMMG
         public string Select { get; set; } = "ChannelMembership";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ChannelArn parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ChannelArn' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ChannelArn' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -133,21 +128,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMMG
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ChimeSDKMessaging.Model.DescribeChannelMembershipForAppInstanceUserResponse, GetCHMMGChannelMembershipForAppInstanceUserCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ChannelArn;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.AppInstanceUserArn = this.AppInstanceUserArn;
             #if MODULAR
             if (this.AppInstanceUserArn == null && ParameterWasBound(nameof(this.AppInstanceUserArn)))
@@ -235,13 +220,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMMG
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Messaging", "DescribeChannelMembershipForAppInstanceUser");
             try
             {
-                #if DESKTOP
-                return client.DescribeChannelMembershipForAppInstanceUser(request);
-                #elif CORECLR
-                return client.DescribeChannelMembershipForAppInstanceUserAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeChannelMembershipForAppInstanceUserAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

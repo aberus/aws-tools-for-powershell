@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.SimpleEmailV2;
 using Amazon.SimpleEmailV2.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.SES2
 {
     /// <summary>
@@ -36,12 +38,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
     [AWSCmdlet("Calls the Amazon Simple Email Service V2 (SES V2) PutConfigurationSetDeliveryOptions API operation.", Operation = new[] {"PutConfigurationSetDeliveryOptions"}, SelectReturnType = typeof(Amazon.SimpleEmailV2.Model.PutConfigurationSetDeliveryOptionsResponse))]
     [AWSCmdletOutput("None or Amazon.SimpleEmailV2.Model.PutConfigurationSetDeliveryOptionsResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.SimpleEmailV2.Model.PutConfigurationSetDeliveryOptionsResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.SimpleEmailV2.Model.PutConfigurationSetDeliveryOptionsResponse) be returned by specifying '-Select *'."
     )]
     public partial class WriteSES2ConfigurationSetDeliveryOptionCmdlet : AmazonSimpleEmailServiceV2ClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ConfigurationSetName
         /// <summary>
@@ -58,6 +61,19 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         #endif
         [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String ConfigurationSetName { get; set; }
+        #endregion
+        
+        #region Parameter MaxDeliverySecond
+        /// <summary>
+        /// <para>
+        /// <para>The maximum amount of time, in seconds, that Amazon SES API v2 will attempt delivery
+        /// of email. If specified, the value must greater than or equal to 300 seconds (5 minutes)
+        /// and less than or equal to 50400 seconds (840 minutes). </para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [Alias("MaxDeliverySeconds")]
+        public System.Int64? MaxDeliverySecond { get; set; }
         #endregion
         
         #region Parameter SendingPoolName
@@ -94,16 +110,6 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ConfigurationSetName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ConfigurationSetName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ConfigurationSetName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -114,9 +120,13 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ConfigurationSetName), MyInvocation.BoundParameters);
@@ -130,21 +140,11 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.SimpleEmailV2.Model.PutConfigurationSetDeliveryOptionsResponse, WriteSES2ConfigurationSetDeliveryOptionCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ConfigurationSetName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ConfigurationSetName = this.ConfigurationSetName;
             #if MODULAR
             if (this.ConfigurationSetName == null && ParameterWasBound(nameof(this.ConfigurationSetName)))
@@ -152,6 +152,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
                 WriteWarning("You are passing $null as a value for parameter ConfigurationSetName which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
             }
             #endif
+            context.MaxDeliverySecond = this.MaxDeliverySecond;
             context.SendingPoolName = this.SendingPoolName;
             context.TlsPolicy = this.TlsPolicy;
             
@@ -173,6 +174,10 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             if (cmdletContext.ConfigurationSetName != null)
             {
                 request.ConfigurationSetName = cmdletContext.ConfigurationSetName;
+            }
+            if (cmdletContext.MaxDeliverySecond != null)
+            {
+                request.MaxDeliverySeconds = cmdletContext.MaxDeliverySecond.Value;
             }
             if (cmdletContext.SendingPoolName != null)
             {
@@ -220,13 +225,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Simple Email Service V2 (SES V2)", "PutConfigurationSetDeliveryOptions");
             try
             {
-                #if DESKTOP
-                return client.PutConfigurationSetDeliveryOptions(request);
-                #elif CORECLR
-                return client.PutConfigurationSetDeliveryOptionsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.PutConfigurationSetDeliveryOptionsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -244,6 +243,7 @@ namespace Amazon.PowerShell.Cmdlets.SES2
         internal partial class CmdletContext : ExecutorContext
         {
             public System.String ConfigurationSetName { get; set; }
+            public System.Int64? MaxDeliverySecond { get; set; }
             public System.String SendingPoolName { get; set; }
             public Amazon.SimpleEmailV2.TlsPolicy TlsPolicy { get; set; }
             public System.Func<Amazon.SimpleEmailV2.Model.PutConfigurationSetDeliveryOptionsResponse, WriteSES2ConfigurationSetDeliveryOptionCmdlet, object> Select { get; set; } =

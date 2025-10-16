@@ -132,6 +132,16 @@ $AG2_Completers = {
             break
         }
 
+        # Amazon.ApiGatewayV2.IpAddressType
+        {
+            ($_ -eq "New-AG2Api/IpAddressType") -Or
+            ($_ -eq "Update-AG2Api/IpAddressType")
+        }
+        {
+            $v = "dualstack","ipv4"
+            break
+        }
+
         # Amazon.ApiGatewayV2.LoggingLevel
         {
             ($_ -eq "New-AG2Stage/DefaultRouteSettings_LoggingLevel") -Or
@@ -159,6 +169,16 @@ $AG2_Completers = {
             break
         }
 
+        # Amazon.ApiGatewayV2.RoutingMode
+        {
+            ($_ -eq "New-AG2DomainName/RoutingMode") -Or
+            ($_ -eq "Update-AG2DomainName/RoutingMode")
+        }
+        {
+            $v = "API_MAPPING_ONLY","ROUTING_RULE_ONLY","ROUTING_RULE_THEN_API_MAPPING"
+            break
+        }
+
 
     }
 
@@ -174,8 +194,10 @@ $AG2_map = @{
     "ContentHandlingStrategy"=@("New-AG2Integration","New-AG2IntegrationResponse","Update-AG2Integration","Update-AG2IntegrationResponse")
     "DefaultRouteSettings_LoggingLevel"=@("New-AG2Stage","Update-AG2Stage")
     "IntegrationType"=@("New-AG2Integration","Update-AG2Integration")
+    "IpAddressType"=@("New-AG2Api","Update-AG2Api")
     "PassthroughBehavior"=@("New-AG2Integration","Update-AG2Integration")
     "ProtocolType"=@("New-AG2Api")
+    "RoutingMode"=@("New-AG2DomainName","Update-AG2DomainName")
 }
 
 _awsArgumentCompleterRegistration $AG2_Completers $AG2_map
@@ -238,6 +260,7 @@ $AG2_SelectMap = @{
                "New-AG2Model",
                "New-AG2Route",
                "New-AG2RouteResponse",
+               "New-AG2RoutingRule",
                "New-AG2Stage",
                "New-AG2VpcLink",
                "Remove-AG2AccessLogSetting",
@@ -254,6 +277,7 @@ $AG2_SelectMap = @{
                "Remove-AG2RouteRequestParameter",
                "Remove-AG2RouteResponse",
                "Remove-AG2RouteSetting",
+               "Remove-AG2RoutingRule",
                "Remove-AG2Stage",
                "Remove-AG2VpcLink",
                "Export-AG2Api",
@@ -278,12 +302,15 @@ $AG2_SelectMap = @{
                "Get-AG2RouteResponse",
                "Get-AG2RouteResponseList",
                "Get-AG2RouteList",
+               "Get-AG2RoutingRule",
                "Get-AG2Stage",
                "Get-AG2StageList",
                "Get-AG2Tag",
                "Get-AG2VpcLink",
                "Get-AG2VpcLinkList",
                "Import-AG2Api",
+               "Get-AG2RoutingRuleList",
+               "Write-AG2RoutingRule",
                "Update-AG2ApiImport",
                "Reset-AG2AuthorizersCache",
                "Add-AG2ResourceTag",

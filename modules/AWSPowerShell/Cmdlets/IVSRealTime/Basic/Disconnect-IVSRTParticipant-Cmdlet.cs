@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,32 +22,37 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.IVSRealTime;
 using Amazon.IVSRealTime.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.IVSRT
 {
     /// <summary>
-    /// Disconnects a specified participant and revokes the participant permanently from a
-    /// specified stage.
+    /// Disconnects a specified participant from a specified stage. If the participant is
+    /// publishing using an <a>IngestConfiguration</a>, DisconnectParticipant also updates
+    /// the <c>stageArn</c> in the IngestConfiguration to be an empty string.
     /// </summary>
     [Cmdlet("Disconnect", "IVSRTParticipant", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
     [OutputType("None")]
     [AWSCmdlet("Calls the Amazon Interactive Video Service RealTime DisconnectParticipant API operation.", Operation = new[] {"DisconnectParticipant"}, SelectReturnType = typeof(Amazon.IVSRealTime.Model.DisconnectParticipantResponse))]
     [AWSCmdletOutput("None or Amazon.IVSRealTime.Model.DisconnectParticipantResponse",
         "This cmdlet does not generate any output." +
-        "The service response (type Amazon.IVSRealTime.Model.DisconnectParticipantResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service response (type Amazon.IVSRealTime.Model.DisconnectParticipantResponse) be returned by specifying '-Select *'."
     )]
     public partial class DisconnectIVSRTParticipantCmdlet : AmazonIVSRealTimeClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter ParticipantId
         /// <summary>
         /// <para>
-        /// <para>Identifier of the participant to be disconnected. This is assigned by IVS and returned
-        /// by <a>CreateParticipantToken</a>.</para>
+        /// <para>Identifier of the participant to be disconnected. IVS assigns this; it is returned
+        /// by <a>CreateParticipantToken</a> (for streams using WebRTC ingest) or <a>CreateIngestConfiguration</a>
+        /// (for streams using RTMP ingest).</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -98,16 +103,6 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the ParticipantId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^ParticipantId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^ParticipantId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -118,9 +113,13 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.ParticipantId), MyInvocation.BoundParameters);
@@ -134,21 +133,11 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.IVSRealTime.Model.DisconnectParticipantResponse, DisconnectIVSRTParticipantCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.ParticipantId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.ParticipantId = this.ParticipantId;
             #if MODULAR
             if (this.ParticipantId == null && ParameterWasBound(nameof(this.ParticipantId)))
@@ -230,13 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.IVSRT
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Interactive Video Service RealTime", "DisconnectParticipant");
             try
             {
-                #if DESKTOP
-                return client.DisconnectParticipant(request);
-                #elif CORECLR
-                return client.DisconnectParticipantAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DisconnectParticipantAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

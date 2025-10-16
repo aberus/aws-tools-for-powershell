@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,9 +22,11 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.WorkSpaces;
 using Amazon.WorkSpaces.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.WKS
 {
     /// <summary>
@@ -35,16 +37,26 @@ namespace Amazon.PowerShell.Cmdlets.WKS
     /// Creating the workspaces_DefaultRole Role</a>.
     /// </summary>
     [Cmdlet("Register", "WKSWorkspaceDirectory", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
-    [OutputType("None")]
+    [OutputType("Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse")]
     [AWSCmdlet("Calls the Amazon WorkSpaces RegisterWorkspaceDirectory API operation.", Operation = new[] {"RegisterWorkspaceDirectory"}, SelectReturnType = typeof(Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse))]
-    [AWSCmdletOutput("None or Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse",
-        "This cmdlet does not generate any output." +
-        "The service response (type Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse) can be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+    [AWSCmdletOutput("Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse",
+        "This cmdlet returns an Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse object containing multiple properties."
     )]
     public partial class RegisterWKSWorkspaceDirectoryCmdlet : AmazonWorkSpacesClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        
+        #region Parameter MicrosoftEntraConfig_ApplicationConfigSecretArn
+        /// <summary>
+        /// <para>
+        /// <para>The Amazon Resource Name (ARN) of the application config.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MicrosoftEntraConfig_ApplicationConfigSecretArn { get; set; }
+        #endregion
         
         #region Parameter DirectoryId
         /// <summary>
@@ -57,15 +69,18 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         /// for WorkSpaces, and try again.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true)]
-        #else
-        [System.Management.Automation.Parameter(Position = 0, ValueFromPipelineByPropertyName = true, ValueFromPipeline = true, Mandatory = true)]
-        [System.Management.Automation.AllowEmptyString]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
         public System.String DirectoryId { get; set; }
+        #endregion
+        
+        #region Parameter ActiveDirectoryConfig_DomainName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the domain.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ActiveDirectoryConfig_DomainName { get; set; }
         #endregion
         
         #region Parameter EnableSelfService
@@ -78,23 +93,24 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public System.Boolean? EnableSelfService { get; set; }
         #endregion
         
-        #region Parameter EnableWorkDoc
+        #region Parameter IdcInstanceArn
         /// <summary>
         /// <para>
-        /// <para>Indicates whether Amazon WorkDocs is enabled or disabled. If you have enabled this
-        /// parameter and WorkDocs is not available in the Region, you will receive an OperationNotSupportedException
-        /// error. Set <c>EnableWorkDocs</c> to disabled, and try again.</para>
+        /// <para>The Amazon Resource Name (ARN) of the identity center instance.</para>
         /// </para>
         /// </summary>
-        #if !MODULAR
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        #else
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true, Mandatory = true)]
-        [System.Management.Automation.AllowNull]
-        #endif
-        [Amazon.PowerShell.Common.AWSRequiredParameter]
-        [Alias("EnableWorkDocs")]
-        public System.Boolean? EnableWorkDoc { get; set; }
+        public System.String IdcInstanceArn { get; set; }
+        #endregion
+        
+        #region Parameter ActiveDirectoryConfig_ServiceAccountSecretArn
+        /// <summary>
+        /// <para>
+        /// <para>Indicates the secret ARN on the service account.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String ActiveDirectoryConfig_ServiceAccountSecretArn { get; set; }
         #endregion
         
         #region Parameter SubnetId
@@ -103,7 +119,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         /// <para>The identifiers of the subnets for your virtual private cloud (VPC). Make sure that
         /// the subnets are in supported Availability Zones. The subnets must also be in separate
         /// Availability Zones. If these conditions are not met, you will receive an OperationNotSupportedException
-        /// error.</para>
+        /// error.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -114,7 +134,11 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         #region Parameter Tag
         /// <summary>
         /// <para>
-        /// <para>The tags associated with the directory.</para>
+        /// <para>The tags associated with the directory.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -138,24 +162,67 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public Amazon.WorkSpaces.Tenancy Tenancy { get; set; }
         #endregion
         
+        #region Parameter MicrosoftEntraConfig_TenantId
+        /// <summary>
+        /// <para>
+        /// <para>The identifier of the tenant.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String MicrosoftEntraConfig_TenantId { get; set; }
+        #endregion
+        
+        #region Parameter UserIdentityType
+        /// <summary>
+        /// <para>
+        /// <para>The type of identity management the user is using.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpaces.UserIdentityType")]
+        public Amazon.WorkSpaces.UserIdentityType UserIdentityType { get; set; }
+        #endregion
+        
+        #region Parameter WorkspaceDirectoryDescription
+        /// <summary>
+        /// <para>
+        /// <para>Description of the directory to register.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String WorkspaceDirectoryDescription { get; set; }
+        #endregion
+        
+        #region Parameter WorkspaceDirectoryName
+        /// <summary>
+        /// <para>
+        /// <para>The name of the directory to register.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        public System.String WorkspaceDirectoryName { get; set; }
+        #endregion
+        
+        #region Parameter WorkspaceType
+        /// <summary>
+        /// <para>
+        /// <para>Indicates whether the directory's WorkSpace type is personal or pools.</para>
+        /// </para>
+        /// </summary>
+        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
+        [AWSConstantClassSource("Amazon.WorkSpaces.WorkspaceType")]
+        public Amazon.WorkSpaces.WorkspaceType WorkspaceType { get; set; }
+        #endregion
+        
         #region Parameter Select
         /// <summary>
-        /// Use the -Select parameter to control the cmdlet output. The cmdlet doesn't have a return value by default.
+        /// Use the -Select parameter to control the cmdlet output. The default value is '*'.
         /// Specifying -Select '*' will result in the cmdlet returning the whole service response (Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse).
+        /// Specifying the name of a property of type Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse will result in that property being returned.
         /// Specifying -Select '^ParameterName' will result in the cmdlet returning the selected cmdlet parameter value.
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
         public string Select { get; set; } = "*";
-        #endregion
-        
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the DirectoryId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^DirectoryId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
         #endregion
         
         #region Parameter Force
@@ -168,9 +235,13 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.DirectoryId), MyInvocation.BoundParameters);
@@ -184,36 +255,18 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse, RegisterWKSWorkspaceDirectoryCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.DirectoryId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            context.ActiveDirectoryConfig_DomainName = this.ActiveDirectoryConfig_DomainName;
+            context.ActiveDirectoryConfig_ServiceAccountSecretArn = this.ActiveDirectoryConfig_ServiceAccountSecretArn;
             context.DirectoryId = this.DirectoryId;
-            #if MODULAR
-            if (this.DirectoryId == null && ParameterWasBound(nameof(this.DirectoryId)))
-            {
-                WriteWarning("You are passing $null as a value for parameter DirectoryId which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
             context.EnableSelfService = this.EnableSelfService;
-            context.EnableWorkDoc = this.EnableWorkDoc;
-            #if MODULAR
-            if (this.EnableWorkDoc == null && ParameterWasBound(nameof(this.EnableWorkDoc)))
-            {
-                WriteWarning("You are passing $null as a value for parameter EnableWorkDoc which is marked as required. In case you believe this parameter was incorrectly marked as required, report this by opening an issue at https://github.com/aws/aws-tools-for-powershell/issues.");
-            }
-            #endif
+            context.IdcInstanceArn = this.IdcInstanceArn;
+            context.MicrosoftEntraConfig_ApplicationConfigSecretArn = this.MicrosoftEntraConfig_ApplicationConfigSecretArn;
+            context.MicrosoftEntraConfig_TenantId = this.MicrosoftEntraConfig_TenantId;
             if (this.SubnetId != null)
             {
                 context.SubnetId = new List<System.String>(this.SubnetId);
@@ -223,6 +276,10 @@ namespace Amazon.PowerShell.Cmdlets.WKS
                 context.Tag = new List<Amazon.WorkSpaces.Model.Tag>(this.Tag);
             }
             context.Tenancy = this.Tenancy;
+            context.UserIdentityType = this.UserIdentityType;
+            context.WorkspaceDirectoryDescription = this.WorkspaceDirectoryDescription;
+            context.WorkspaceDirectoryName = this.WorkspaceDirectoryName;
+            context.WorkspaceType = this.WorkspaceType;
             
             // allow further manipulation of loaded context prior to processing
             PostExecutionContextLoad(context);
@@ -239,6 +296,35 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             // create request
             var request = new Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryRequest();
             
+            
+             // populate ActiveDirectoryConfig
+            var requestActiveDirectoryConfigIsNull = true;
+            request.ActiveDirectoryConfig = new Amazon.WorkSpaces.Model.ActiveDirectoryConfig();
+            System.String requestActiveDirectoryConfig_activeDirectoryConfig_DomainName = null;
+            if (cmdletContext.ActiveDirectoryConfig_DomainName != null)
+            {
+                requestActiveDirectoryConfig_activeDirectoryConfig_DomainName = cmdletContext.ActiveDirectoryConfig_DomainName;
+            }
+            if (requestActiveDirectoryConfig_activeDirectoryConfig_DomainName != null)
+            {
+                request.ActiveDirectoryConfig.DomainName = requestActiveDirectoryConfig_activeDirectoryConfig_DomainName;
+                requestActiveDirectoryConfigIsNull = false;
+            }
+            System.String requestActiveDirectoryConfig_activeDirectoryConfig_ServiceAccountSecretArn = null;
+            if (cmdletContext.ActiveDirectoryConfig_ServiceAccountSecretArn != null)
+            {
+                requestActiveDirectoryConfig_activeDirectoryConfig_ServiceAccountSecretArn = cmdletContext.ActiveDirectoryConfig_ServiceAccountSecretArn;
+            }
+            if (requestActiveDirectoryConfig_activeDirectoryConfig_ServiceAccountSecretArn != null)
+            {
+                request.ActiveDirectoryConfig.ServiceAccountSecretArn = requestActiveDirectoryConfig_activeDirectoryConfig_ServiceAccountSecretArn;
+                requestActiveDirectoryConfigIsNull = false;
+            }
+             // determine if request.ActiveDirectoryConfig should be set to null
+            if (requestActiveDirectoryConfigIsNull)
+            {
+                request.ActiveDirectoryConfig = null;
+            }
             if (cmdletContext.DirectoryId != null)
             {
                 request.DirectoryId = cmdletContext.DirectoryId;
@@ -247,9 +333,38 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             {
                 request.EnableSelfService = cmdletContext.EnableSelfService.Value;
             }
-            if (cmdletContext.EnableWorkDoc != null)
+            if (cmdletContext.IdcInstanceArn != null)
             {
-                request.EnableWorkDocs = cmdletContext.EnableWorkDoc.Value;
+                request.IdcInstanceArn = cmdletContext.IdcInstanceArn;
+            }
+            
+             // populate MicrosoftEntraConfig
+            var requestMicrosoftEntraConfigIsNull = true;
+            request.MicrosoftEntraConfig = new Amazon.WorkSpaces.Model.MicrosoftEntraConfig();
+            System.String requestMicrosoftEntraConfig_microsoftEntraConfig_ApplicationConfigSecretArn = null;
+            if (cmdletContext.MicrosoftEntraConfig_ApplicationConfigSecretArn != null)
+            {
+                requestMicrosoftEntraConfig_microsoftEntraConfig_ApplicationConfigSecretArn = cmdletContext.MicrosoftEntraConfig_ApplicationConfigSecretArn;
+            }
+            if (requestMicrosoftEntraConfig_microsoftEntraConfig_ApplicationConfigSecretArn != null)
+            {
+                request.MicrosoftEntraConfig.ApplicationConfigSecretArn = requestMicrosoftEntraConfig_microsoftEntraConfig_ApplicationConfigSecretArn;
+                requestMicrosoftEntraConfigIsNull = false;
+            }
+            System.String requestMicrosoftEntraConfig_microsoftEntraConfig_TenantId = null;
+            if (cmdletContext.MicrosoftEntraConfig_TenantId != null)
+            {
+                requestMicrosoftEntraConfig_microsoftEntraConfig_TenantId = cmdletContext.MicrosoftEntraConfig_TenantId;
+            }
+            if (requestMicrosoftEntraConfig_microsoftEntraConfig_TenantId != null)
+            {
+                request.MicrosoftEntraConfig.TenantId = requestMicrosoftEntraConfig_microsoftEntraConfig_TenantId;
+                requestMicrosoftEntraConfigIsNull = false;
+            }
+             // determine if request.MicrosoftEntraConfig should be set to null
+            if (requestMicrosoftEntraConfigIsNull)
+            {
+                request.MicrosoftEntraConfig = null;
             }
             if (cmdletContext.SubnetId != null)
             {
@@ -262,6 +377,22 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             if (cmdletContext.Tenancy != null)
             {
                 request.Tenancy = cmdletContext.Tenancy;
+            }
+            if (cmdletContext.UserIdentityType != null)
+            {
+                request.UserIdentityType = cmdletContext.UserIdentityType;
+            }
+            if (cmdletContext.WorkspaceDirectoryDescription != null)
+            {
+                request.WorkspaceDirectoryDescription = cmdletContext.WorkspaceDirectoryDescription;
+            }
+            if (cmdletContext.WorkspaceDirectoryName != null)
+            {
+                request.WorkspaceDirectoryName = cmdletContext.WorkspaceDirectoryName;
+            }
+            if (cmdletContext.WorkspaceType != null)
+            {
+                request.WorkspaceType = cmdletContext.WorkspaceType;
             }
             
             CmdletOutput output;
@@ -301,13 +432,7 @@ namespace Amazon.PowerShell.Cmdlets.WKS
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon WorkSpaces", "RegisterWorkspaceDirectory");
             try
             {
-                #if DESKTOP
-                return client.RegisterWorkspaceDirectory(request);
-                #elif CORECLR
-                return client.RegisterWorkspaceDirectoryAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.RegisterWorkspaceDirectoryAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {
@@ -324,14 +449,22 @@ namespace Amazon.PowerShell.Cmdlets.WKS
         
         internal partial class CmdletContext : ExecutorContext
         {
+            public System.String ActiveDirectoryConfig_DomainName { get; set; }
+            public System.String ActiveDirectoryConfig_ServiceAccountSecretArn { get; set; }
             public System.String DirectoryId { get; set; }
             public System.Boolean? EnableSelfService { get; set; }
-            public System.Boolean? EnableWorkDoc { get; set; }
+            public System.String IdcInstanceArn { get; set; }
+            public System.String MicrosoftEntraConfig_ApplicationConfigSecretArn { get; set; }
+            public System.String MicrosoftEntraConfig_TenantId { get; set; }
             public List<System.String> SubnetId { get; set; }
             public List<Amazon.WorkSpaces.Model.Tag> Tag { get; set; }
             public Amazon.WorkSpaces.Tenancy Tenancy { get; set; }
+            public Amazon.WorkSpaces.UserIdentityType UserIdentityType { get; set; }
+            public System.String WorkspaceDirectoryDescription { get; set; }
+            public System.String WorkspaceDirectoryName { get; set; }
+            public Amazon.WorkSpaces.WorkspaceType WorkspaceType { get; set; }
             public System.Func<Amazon.WorkSpaces.Model.RegisterWorkspaceDirectoryResponse, RegisterWKSWorkspaceDirectoryCmdlet, object> Select { get; set; } =
-                (response, cmdlet) => null;
+                (response, cmdlet) => response;
         }
         
     }

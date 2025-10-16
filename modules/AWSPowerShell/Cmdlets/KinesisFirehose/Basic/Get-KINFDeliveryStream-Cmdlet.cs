@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,19 +22,21 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.KinesisFirehose;
 using Amazon.KinesisFirehose.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.KINF
 {
     /// <summary>
-    /// Describes the specified delivery stream and its status. For example, after your delivery
-    /// stream is created, call <c>DescribeDeliveryStream</c> to see whether the delivery
+    /// Describes the specified Firehose stream and its status. For example, after your Firehose
+    /// stream is created, call <c>DescribeDeliveryStream</c> to see whether the Firehose
     /// stream is <c>ACTIVE</c> and therefore ready for data to be sent to it. 
     /// 
     ///  
     /// <para>
-    /// If the status of a delivery stream is <c>CREATING_FAILED</c>, this status doesn't
+    /// If the status of a Firehose stream is <c>CREATING_FAILED</c>, this status doesn't
     /// change, and you can't invoke <a>CreateDeliveryStream</a> again on it. However, you
     /// can invoke the <a>DeleteDeliveryStream</a> operation to delete it. If the status is
     /// <c>DELETING_FAILED</c>, you can force deletion by invoking <a>DeleteDeliveryStream</a>
@@ -46,19 +48,18 @@ namespace Amazon.PowerShell.Cmdlets.KINF
     [AWSCmdlet("Calls the Amazon Kinesis Firehose DescribeDeliveryStream API operation.", Operation = new[] {"DescribeDeliveryStream"}, SelectReturnType = typeof(Amazon.KinesisFirehose.Model.DescribeDeliveryStreamResponse))]
     [AWSCmdletOutput("Amazon.KinesisFirehose.Model.DeliveryStreamDescription or Amazon.KinesisFirehose.Model.DescribeDeliveryStreamResponse",
         "This cmdlet returns an Amazon.KinesisFirehose.Model.DeliveryStreamDescription object.",
-        "The service call response (type Amazon.KinesisFirehose.Model.DescribeDeliveryStreamResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.KinesisFirehose.Model.DescribeDeliveryStreamResponse) can be returned by specifying '-Select *'."
     )]
     public partial class GetKINFDeliveryStreamCmdlet : AmazonKinesisFirehoseClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter DeliveryStreamName
         /// <summary>
         /// <para>
-        /// <para>The name of the delivery stream.</para>
+        /// <para>The name of the Firehose stream.</para>
         /// </para>
         /// </summary>
         #if !MODULAR
@@ -75,8 +76,8 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         #region Parameter ExclusiveStartDestinationId
         /// <summary>
         /// <para>
-        /// <para>The ID of the destination to start returning the destination information. Kinesis
-        /// Data Firehose supports one destination per delivery stream.</para>
+        /// <para>The ID of the destination to start returning the destination information. Firehose
+        /// supports one destination per Firehose stream.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -87,7 +88,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         /// <summary>
         /// <para>
         /// <para>The limit on the number of destinations to return. You can have one destination per
-        /// delivery stream.</para>
+        /// Firehose stream.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -105,9 +106,13 @@ namespace Amazon.PowerShell.Cmdlets.KINF
         public string Select { get; set; } = "DeliveryStreamDescription";
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -195,13 +200,7 @@ namespace Amazon.PowerShell.Cmdlets.KINF
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Kinesis Firehose", "DescribeDeliveryStream");
             try
             {
-                #if DESKTOP
-                return client.DescribeDeliveryStream(request);
-                #elif CORECLR
-                return client.DescribeDeliveryStreamAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.DescribeDeliveryStreamAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

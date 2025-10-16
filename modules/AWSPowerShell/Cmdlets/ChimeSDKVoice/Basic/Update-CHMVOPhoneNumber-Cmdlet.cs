@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,15 +22,18 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.ChimeSDKVoice;
 using Amazon.ChimeSDKVoice.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CHMVO
 {
     /// <summary>
-    /// Updates phone number details, such as product type or calling name, for the specified
-    /// phone number ID. You can update one phone number detail at a time. For example, you
-    /// can update either the product type or the calling name in one action.
+    /// Updates phone number details, such as product type, calling name, or phone number
+    /// name for the specified phone number ID. You can update one phone number detail at
+    /// a time. For example, you can update either the product type, calling name, or phone
+    /// number name in one action.
     /// 
     ///  
     /// <para>
@@ -46,16 +49,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
     [AWSCmdlet("Calls the Amazon Chime SDK Voice UpdatePhoneNumber API operation.", Operation = new[] {"UpdatePhoneNumber"}, SelectReturnType = typeof(Amazon.ChimeSDKVoice.Model.UpdatePhoneNumberResponse))]
     [AWSCmdletOutput("Amazon.ChimeSDKVoice.Model.PhoneNumber or Amazon.ChimeSDKVoice.Model.UpdatePhoneNumberResponse",
         "This cmdlet returns an Amazon.ChimeSDKVoice.Model.PhoneNumber object.",
-        "The service call response (type Amazon.ChimeSDKVoice.Model.UpdatePhoneNumberResponse) can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "The service call response (type Amazon.ChimeSDKVoice.Model.UpdatePhoneNumberResponse) can be returned by specifying '-Select *'."
     )]
     public partial class UpdateCHMVOPhoneNumberCmdlet : AmazonChimeSDKVoiceClientCmdlet, IExecutor
     {
         
-        protected override bool IsSensitiveRequest { get; set; } = true;
-        
-        protected override bool IsSensitiveResponse { get; set; } = true;
-        
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter CallingName
         /// <summary>
@@ -70,7 +70,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         #region Parameter Name
         /// <summary>
         /// <para>
-        /// <para>Specifies the name assigned to one or more phone numbers.</para>
+        /// <para>Specifies the updated name assigned to one or more phone numbers.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -116,16 +116,6 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         public string Select { get; set; } = "PhoneNumber";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the PhoneNumberId parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^PhoneNumberId' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^PhoneNumberId' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter Force
         /// <summary>
         /// This parameter overrides confirmation prompts to force 
@@ -136,9 +126,13 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
         public SwitchParameter Force { get; set; }
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var resourceIdentifiersText = FormatParameterValuesForConfirmationMsg(nameof(this.PhoneNumberId), MyInvocation.BoundParameters);
@@ -152,21 +146,11 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.ChimeSDKVoice.Model.UpdatePhoneNumberResponse, UpdateCHMVOPhoneNumberCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.PhoneNumberId;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.CallingName = this.CallingName;
             context.Name = this.Name;
             context.PhoneNumberId = this.PhoneNumberId;
@@ -247,13 +231,7 @@ namespace Amazon.PowerShell.Cmdlets.CHMVO
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon Chime SDK Voice", "UpdatePhoneNumber");
             try
             {
-                #if DESKTOP
-                return client.UpdatePhoneNumber(request);
-                #elif CORECLR
-                return client.UpdatePhoneNumberAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.UpdatePhoneNumberAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

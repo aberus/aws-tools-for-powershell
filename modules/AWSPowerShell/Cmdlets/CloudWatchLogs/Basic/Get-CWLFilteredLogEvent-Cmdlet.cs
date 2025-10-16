@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright 2012-2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *  Licensed under the Apache License, Version 2.0 (the "License"). You may not use
  *  this file except in compliance with the License. A copy of the License is located at
  *
@@ -22,28 +22,44 @@ using System.Management.Automation;
 using System.Text;
 using Amazon.PowerShell.Common;
 using Amazon.Runtime;
+using System.Threading;
 using Amazon.CloudWatchLogs;
 using Amazon.CloudWatchLogs.Model;
 
+#pragma warning disable CS0618, CS0612
 namespace Amazon.PowerShell.Cmdlets.CWL
 {
     /// <summary>
     /// Lists log events from the specified log group. You can list all the log events or
-    /// filter the results using a filter pattern, a time range, and the name of the log stream.
+    /// filter the results using one or more of the following:
     /// 
-    ///  
-    /// <para>
+    ///  <ul><li><para>
+    /// A filter pattern
+    /// </para></li><li><para>
+    /// A time range
+    /// </para></li><li><para>
+    /// The log stream name, or a log stream name prefix that matches multiple log streams
+    /// </para></li></ul><para>
     /// You must have the <c>logs:FilterLogEvents</c> permission to perform this operation.
     /// </para><para>
     /// You can specify the log group to search by using either <c>logGroupIdentifier</c>
     /// or <c>logGroupName</c>. You must include one of these two parameters, but you can't
     /// include both. 
+    /// </para><para><c>FilterLogEvents</c> is a paginated operation. Each page returned can contain up
+    /// to 1 MB of log events or up to 10,000 log events. A returned page might only be partially
+    /// full, or even empty. For example, if the result of a query would return 15,000 log
+    /// events, the first page isn't guaranteed to have 10,000 log events even if they all
+    /// fit into 1 MB.
     /// </para><para>
-    /// By default, this operation returns as many log events as can fit in 1 MB (up to 10,000
-    /// log events) or all the events found within the specified time range. If the results
-    /// include a token, that means there are more log events available. You can get additional
-    /// results by specifying the token in a subsequent call. This operation can return empty
-    /// results while there are more log events available through the token.
+    /// Partially full or empty pages don't necessarily mean that pagination is finished.
+    /// If the results include a <c>nextToken</c>, there might be more log events available.
+    /// You can return these additional log events by providing the nextToken in a subsequent
+    /// <c>FilterLogEvents</c> operation. If the results don't include a <c>nextToken</c>,
+    /// then pagination is finished. 
+    /// </para><para>
+    /// Specifying the <c>limit</c> parameter only guarantees that a single page doesn't return
+    /// more log events than the specified limit, but it might return fewer events than the
+    /// limit. This is the expected API behavior.
     /// </para><para>
     /// The returned log events are sorted by event timestamp, the timestamp when the event
     /// was ingested by CloudWatch Logs, and the ID of the <c>PutLogEvents</c> request.
@@ -52,18 +68,24 @@ namespace Amazon.PowerShell.Cmdlets.CWL
     /// in a monitoring account and view data from the linked source accounts. For more information,
     /// see <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Unified-Cross-Account.html">CloudWatch
     /// cross-account observability</a>.
-    /// </para><br/><br/>In the AWS.Tools.CloudWatchLogs module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
+    /// </para><note><para>
+    /// If you are using <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation.html">log
+    /// transformation</a>, the <c>FilterLogEvents</c> operation returns only the original
+    /// versions of log events, before they were transformed. To view the transformed versions,
+    /// you must use a <a href="https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/AnalyzingLogData.html">CloudWatch
+    /// Logs query.</a></para></note><br/><br/>In the AWS.Tools.CloudWatchLogs module, this cmdlet automatically pages all available results to the pipeline - parameters related to iteration are only needed if you want to manually control the paginated output. To disable autopagination, use -NoAutoIteration.
     /// </summary>
     [Cmdlet("Get", "CWLFilteredLogEvent")]
     [OutputType("Amazon.CloudWatchLogs.Model.FilterLogEventsResponse")]
     [AWSCmdlet("Calls the Amazon CloudWatch Logs FilterLogEvents API operation.", Operation = new[] {"FilterLogEvents"}, SelectReturnType = typeof(Amazon.CloudWatchLogs.Model.FilterLogEventsResponse))]
     [AWSCmdletOutput("Amazon.CloudWatchLogs.Model.FilterLogEventsResponse",
-        "This cmdlet returns an Amazon.CloudWatchLogs.Model.FilterLogEventsResponse object containing multiple properties. The object can also be referenced from properties attached to the cmdlet entry in the $AWSHistory stack."
+        "This cmdlet returns an Amazon.CloudWatchLogs.Model.FilterLogEventsResponse object containing multiple properties."
     )]
     public partial class GetCWLFilteredLogEventCmdlet : AmazonCloudWatchLogsClientCmdlet, IExecutor
     {
         
         protected override bool IsGeneratedCmdlet { get; set; } = true;
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         
         #region Parameter EndTime
         /// <summary>
@@ -116,8 +138,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// <para>
         /// <para>Filters the results to include only events from log streams that have names starting
         /// with this prefix.</para><para>If you specify a value for both <c>logStreamNamePrefix</c> and <c>logStreamNames</c>,
-        /// but the value for <c>logStreamNamePrefix</c> does not match any log stream names specified
-        /// in <c>logStreamNames</c>, the action returns an <c>InvalidParameterException</c> error.</para>
+        /// the action returns an <c>InvalidParameterException</c> error.</para>
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -127,8 +148,12 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         #region Parameter LogStreamName
         /// <summary>
         /// <para>
-        /// <para>Filters the results to only logs from the log streams in this list.</para><para>If you specify a value for both <c>logStreamNamePrefix</c> and <c>logStreamNames</c>,
-        /// the action returns an <c>InvalidParameterException</c> error.</para>
+        /// <para>Filters the results to only logs from the log streams in this list.</para><para>If you specify a value for both <c>logStreamNames</c> and <c>logStreamNamePrefix</c>,
+        /// the action returns an <c>InvalidParameterException</c> error.</para><para />
+        /// Starting with version 4 of the SDK this property will default to null. If no data for this property is returned
+        /// from the service the property will also be null. This was changed to improve performance and allow the SDK and caller
+        /// to distinguish between a property not set or a property being empty to clear out a value. To retain the previous
+        /// SDK behavior set the AWSConfigs.InitializeCollections static property to true.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -194,7 +219,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         /// </para>
         /// <para>
         /// <br/><b>Note:</b> In the AWS.Tools.CloudWatchLogs module, this parameter is only used if you are manually controlling output pagination of the service API call.
-        /// <br/>In order to manually control output pagination, use '-NextToken $null' for the first call and '-NextToken $AWSHistory.LastServiceResponse.NextToken' for subsequent calls.
+        /// <br/>'NextToken' is only returned by the cmdlet when '-Select *' is specified. In order to manually control output pagination, set '-NextToken' to null for the first call then set the 'NextToken' using the same property output from the previous call for subsequent calls.
         /// </para>
         /// </summary>
         [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
@@ -212,16 +237,6 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public string Select { get; set; } = "*";
         #endregion
         
-        #region Parameter PassThru
-        /// <summary>
-        /// Changes the cmdlet behavior to return the value passed to the LogGroupName parameter.
-        /// The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.
-        /// </summary>
-        [System.Obsolete("The -PassThru parameter is deprecated, use -Select '^LogGroupName' instead. This parameter will be removed in a future version.")]
-        [System.Management.Automation.Parameter(ValueFromPipelineByPropertyName = true)]
-        public SwitchParameter PassThru { get; set; }
-        #endregion
-        
         #region Parameter NoAutoIteration
         #if MODULAR
         /// <summary>
@@ -234,9 +249,13 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         #endif
         #endregion
         
+        protected override void StopProcessing()
+        {
+            base.StopProcessing();
+            _cancellationTokenSource.Cancel();
+        }
         protected override void ProcessRecord()
         {
-            this._AWSSignerType = "v4";
             base.ProcessRecord();
             
             var context = new CmdletContext();
@@ -244,21 +263,11 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             // allow for manipulation of parameters prior to loading into context
             PreExecutionContextLoad(context);
             
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
             if (ParameterWasBound(nameof(this.Select)))
             {
                 context.Select = CreateSelectDelegate<Amazon.CloudWatchLogs.Model.FilterLogEventsResponse, GetCWLFilteredLogEventCmdlet>(Select) ??
                     throw new System.ArgumentException("Invalid value for -Select parameter.", nameof(this.Select));
-                if (this.PassThru.IsPresent)
-                {
-                    throw new System.ArgumentException("-PassThru cannot be used when -Select is specified.", nameof(this.Select));
-                }
             }
-            else if (this.PassThru.IsPresent)
-            {
-                context.Select = (response, cmdlet) => this.LogGroupName;
-            }
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
             context.EndTime = this.EndTime;
             context.FilterPattern = this.FilterPattern;
             #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
@@ -289,9 +298,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
         public object Execute(ExecutorContext context)
         {
             var cmdletContext = context as CmdletContext;
-            #pragma warning disable CS0618, CS0612 //A class member was marked with the Obsolete attribute
-            var useParameterSelect = this.Select.StartsWith("^") || this.PassThru.IsPresent;
-            #pragma warning restore CS0618, CS0612 //A class member was marked with the Obsolete attribute
+            var useParameterSelect = this.Select.StartsWith("^");
             
             // create request and set iteration invariants
             var request = new Amazon.CloudWatchLogs.Model.FilterLogEventsRequest();
@@ -477,13 +484,7 @@ namespace Amazon.PowerShell.Cmdlets.CWL
             Utils.Common.WriteVerboseEndpointMessage(this, client.Config, "Amazon CloudWatch Logs", "FilterLogEvents");
             try
             {
-                #if DESKTOP
-                return client.FilterLogEvents(request);
-                #elif CORECLR
-                return client.FilterLogEventsAsync(request).GetAwaiter().GetResult();
-                #else
-                        #error "Unknown build edition"
-                #endif
+                return client.FilterLogEventsAsync(request, _cancellationTokenSource.Token).GetAwaiter().GetResult();
             }
             catch (AmazonServiceException exc)
             {

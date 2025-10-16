@@ -132,6 +132,13 @@ $DDB_Completers = {
             break
         }
 
+        # Amazon.DynamoDBv2.ContributorInsightsMode
+        "Update-DDBContributorInsight/ContributorInsightsMode"
+        {
+            $v = "ACCESSED_AND_THROTTLED_KEYS","THROTTLED_KEYS"
+            break
+        }
+
         # Amazon.DynamoDBv2.ExportFormat
         "Export-DDBTableToPointInTime/ExportFormat"
         {
@@ -174,6 +181,13 @@ $DDB_Completers = {
             break
         }
 
+        # Amazon.DynamoDBv2.MultiRegionConsistency
+        "Update-DDBTable/MultiRegionConsistency"
+        {
+            $v = "EVENTUAL","STRONG"
+            break
+        }
+
         # Amazon.DynamoDBv2.ProjectionType
         "Add-DDBIndexSchema/ProjectionType"
         {
@@ -204,11 +218,11 @@ $DDB_Completers = {
 
         # Amazon.DynamoDBv2.ReturnItemCollectionMetrics
         {
-            ($_ -eq "Remove-DDBItem/ReturnItemCollectionMetrics") -Or
-            ($_ -eq "Set-DDBBatchItem/ReturnItemCollectionMetrics") -Or
-            ($_ -eq "Set-DDBItem/ReturnItemCollectionMetrics") -Or
-            ($_ -eq "Update-DDBItem/ReturnItemCollectionMetrics") -Or
-            ($_ -eq "Write-DDBItemTransactionally/ReturnItemCollectionMetrics")
+            ($_ -eq "Remove-DDBItem/ReturnItemCollectionMetric") -Or
+            ($_ -eq "Set-DDBBatchItem/ReturnItemCollectionMetric") -Or
+            ($_ -eq "Set-DDBItem/ReturnItemCollectionMetric") -Or
+            ($_ -eq "Update-DDBItem/ReturnItemCollectionMetric") -Or
+            ($_ -eq "Write-DDBItemTransactionally/ReturnItemCollectionMetric")
         }
         {
             $v = "NONE","SIZE"
@@ -217,9 +231,9 @@ $DDB_Completers = {
 
         # Amazon.DynamoDBv2.ReturnValue
         {
-            ($_ -eq "Remove-DDBItem/ReturnValues") -Or
-            ($_ -eq "Set-DDBItem/ReturnValues") -Or
-            ($_ -eq "Update-DDBItem/ReturnValues")
+            ($_ -eq "Remove-DDBItem/ReturnValue") -Or
+            ($_ -eq "Set-DDBItem/ReturnValue") -Or
+            ($_ -eq "Update-DDBItem/ReturnValue")
         }
         {
             $v = "ALL_NEW","ALL_OLD","NONE","UPDATED_NEW","UPDATED_OLD"
@@ -258,8 +272,8 @@ $DDB_Completers = {
 
         # Amazon.DynamoDBv2.Select
         {
-            ($_ -eq "Invoke-DDBQuery/Select") -Or
-            ($_ -eq "Invoke-DDBScan/Select")
+            ($_ -eq "Invoke-DDBQuery/SelectItem") -Or
+            ($_ -eq "Invoke-DDBScan/SelectItem")
         }
         {
             $v = "ALL_ATTRIBUTES","ALL_PROJECTED_ATTRIBUTES","COUNT","SPECIFIC_ATTRIBUTES"
@@ -268,10 +282,10 @@ $DDB_Completers = {
 
         # Amazon.DynamoDBv2.SSEType
         {
+            ($_ -eq "Import-DDBTable/SSESpecification_SSEType") -Or
             ($_ -eq "Update-DDBTable/SSESpecification_SSEType") -Or
             ($_ -eq "Restore-DDBTableFromBackup/SSESpecificationOverride_SSEType") -Or
-            ($_ -eq "Restore-DDBTableToPointInTime/SSESpecificationOverride_SSEType") -Or
-            ($_ -eq "Import-DDBTable/TableCreationParameters_SSESpecification_SSEType")
+            ($_ -eq "Restore-DDBTableToPointInTime/SSESpecificationOverride_SSEType")
         }
         {
             $v = "AES256","KMS"
@@ -306,6 +320,7 @@ $DDB_map = @{
     "BillingModeOverride"=@("Restore-DDBTableFromBackup","Restore-DDBTableToPointInTime")
     "ConditionalOperator"=@("Invoke-DDBQuery","Invoke-DDBScan","Remove-DDBItem","Set-DDBItem","Update-DDBItem")
     "ContributorInsightsAction"=@("Update-DDBContributorInsight")
+    "ContributorInsightsMode"=@("Update-DDBContributorInsight")
     "EnableKinesisStreamingConfiguration_ApproximateCreationDateTimePrecision"=@("Disable-DDBKinesisStreamingDestination","Enable-DDBKinesisStreamingDestination")
     "ExportFormat"=@("Export-DDBTableToPointInTime")
     "ExportType"=@("Export-DDBTableToPointInTime")
@@ -316,20 +331,20 @@ $DDB_map = @{
     "InputFormat"=@("Import-DDBTable")
     "KeyDataType"=@("Add-DDBKeySchema")
     "KeyType"=@("Add-DDBKeySchema")
+    "MultiRegionConsistency"=@("Update-DDBTable")
     "ProjectionType"=@("Add-DDBIndexSchema")
     "RangeKeyDataType"=@("Add-DDBIndexSchema")
     "ReturnConsumedCapacity"=@("Get-DDBBatchItem","Get-DDBItem","Get-DDBItemTransactionally","Invoke-DDBDDBBatchExecuteStatement","Invoke-DDBDDBExecuteStatement","Invoke-DDBDDBExecuteTransaction","Invoke-DDBQuery","Invoke-DDBScan","Remove-DDBItem","Set-DDBBatchItem","Set-DDBItem","Update-DDBItem","Write-DDBItemTransactionally")
-    "ReturnItemCollectionMetrics"=@("Remove-DDBItem","Set-DDBBatchItem","Set-DDBItem","Update-DDBItem","Write-DDBItemTransactionally")
-    "ReturnValues"=@("Remove-DDBItem","Set-DDBItem","Update-DDBItem")
+    "ReturnItemCollectionMetric"=@("Remove-DDBItem","Set-DDBBatchItem","Set-DDBItem","Update-DDBItem","Write-DDBItemTransactionally")
+    "ReturnValue"=@("Remove-DDBItem","Set-DDBItem","Update-DDBItem")
     "ReturnValuesOnConditionCheckFailure"=@("Invoke-DDBDDBExecuteStatement","Remove-DDBItem","Set-DDBItem","Update-DDBItem")
     "S3SseAlgorithm"=@("Export-DDBTableToPointInTime")
-    "Select"=@("Invoke-DDBQuery","Invoke-DDBScan")
-    "SSESpecification_SSEType"=@("Update-DDBTable")
+    "SelectItem"=@("Invoke-DDBQuery","Invoke-DDBScan")
+    "SSESpecification_SSEType"=@("Import-DDBTable","Update-DDBTable")
     "SSESpecificationOverride_SSEType"=@("Restore-DDBTableFromBackup","Restore-DDBTableToPointInTime")
     "StreamSpecification_StreamViewType"=@("Update-DDBTable")
     "TableClass"=@("Update-DDBTable")
     "TableCreationParameters_BillingMode"=@("Import-DDBTable")
-    "TableCreationParameters_SSESpecification_SSEType"=@("Import-DDBTable")
     "UpdateKinesisStreamingConfiguration_ApproximateCreationDateTimePrecision"=@("Update-DDBKinesisStreamingDestination")
 }
 
@@ -390,6 +405,7 @@ $DDB_SelectMap = @{
                "New-DDBGlobalTable",
                "Remove-DDBBackup",
                "Remove-DDBItem",
+               "Remove-DDBResourcePolicy",
                "Remove-DDBTable",
                "Get-DDBBackup",
                "Get-DDBContinuousBackup",
@@ -410,6 +426,7 @@ $DDB_SelectMap = @{
                "Invoke-DDBDDBExecuteTransaction",
                "Export-DDBTableToPointInTime",
                "Get-DDBItem",
+               "Get-DDBResourcePolicy",
                "Import-DDBTable",
                "Get-DDBBackupList",
                "Get-DDBContributorInsightList",
@@ -419,6 +436,7 @@ $DDB_SelectMap = @{
                "Get-DDBTableList",
                "Get-DDBResourceTag",
                "Set-DDBItem",
+               "Write-DDBResourcePolicy",
                "Invoke-DDBQuery",
                "Restore-DDBTableFromBackup",
                "Restore-DDBTableToPointInTime",
@@ -436,124 +454,6 @@ $DDB_SelectMap = @{
                "Update-DDBTable",
                "Update-DDBTableReplicaAutoScaling",
                "Update-DDBTimeToLive",
-               "Add-DDBIndexSchema",
-               "Add-DDBKeySchema",
-               "ConvertFrom-DDBItem",
-               "ConvertTo-DDBItem",
-               "New-DDBTable",
-               "New-DDBTableSchema")
-}
-
-_awsArgumentCompleterRegistration $DDB_SelectCompleters $DDB_SelectMap
-# Argument completions for service Amazon DynamoDB
-
-
-$DDB_Completers = {
-    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-
-    switch ($("$commandName/$parameterName"))
-    {
-        # Amazon.DynamoDBv2.BillingMode
-        "New-DDBTable/BillingMode"
-        {
-            $v = "PAY_PER_REQUEST","PROVISIONED"
-            break
-        }
-
-        # Amazon.DynamoDBv2.KeyType
-        "Add-DDBKeySchema/KeyType"
-        {
-            $v = "HASH","RANGE"
-            break
-        }
-
-        # Amazon.DynamoDBv2.ProjectionType
-        "Add-DDBIndexSchema/ProjectionType"
-        {
-            $v = "ALL","INCLUDE","KEYS_ONLY"
-            break
-        }
-
-        # Amazon.DynamoDBv2.ScalarAttributeType
-        {
-            ($_ -eq "Add-DDBIndexSchema/HashKeyDataType") -Or
-            ($_ -eq "Add-DDBKeySchema/KeyDataType") -Or
-            ($_ -eq "Add-DDBIndexSchema/RangeKeyDataType")
-        }
-        {
-            $v = "B","N","S"
-            break
-        }
-
-
-    }
-
-    $v |
-        Where-Object { $_ -like "$wordToComplete*" } |
-        ForEach-Object { New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_ }
-}
-
-$DDB_map = @{
-    "BillingMode"=@("New-DDBTable")
-    "HashKeyDataType"=@("Add-DDBIndexSchema")
-    "KeyDataType"=@("Add-DDBKeySchema")
-    "KeyType"=@("Add-DDBKeySchema")
-    "ProjectionType"=@("Add-DDBIndexSchema")
-    "RangeKeyDataType"=@("Add-DDBIndexSchema")
-}
-
-_awsArgumentCompleterRegistration $DDB_Completers $DDB_map
-
-$DDB_SelectCompleters = {
-    param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameter)
-
-    $cmdletType = Invoke-Expression "[Amazon.PowerShell.Cmdlets.DDB.$($commandName.Replace('-', ''))Cmdlet]"
-    if (-not $cmdletType) {
-        return
-    }
-    $awsCmdletAttribute = $cmdletType.GetCustomAttributes([Amazon.PowerShell.Common.AWSCmdletAttribute], $false)
-    if (-not $awsCmdletAttribute) {
-        return
-    }
-    $type = $awsCmdletAttribute.SelectReturnType
-    if (-not $type) {
-        return
-    }
-
-    $splitSelect = $wordToComplete -Split '\.'
-    $splitSelect | Select-Object -First ($splitSelect.Length - 1) | ForEach-Object {
-        $propertyName = $_
-        $properties = $type.GetProperties(('Instance', 'Public', 'DeclaredOnly')) | Where-Object { $_.Name -ieq $propertyName }
-        if ($properties.Length -ne 1) {
-            break
-        }
-        $type = $properties.PropertyType
-        $prefix += "$($properties.Name)."
-
-        $asEnumerableType = $type.GetInterface('System.Collections.Generic.IEnumerable`1')
-        if ($asEnumerableType -and $type -ne [System.String]) {
-            $type =  $asEnumerableType.GetGenericArguments()[0]
-        }
-    }
-
-    $v = @( '*' )
-    $properties = $type.GetProperties(('Instance', 'Public', 'DeclaredOnly')).Name | Sort-Object
-    if ($properties) {
-        $v += ($properties | ForEach-Object { $prefix + $_ })
-    }
-    $parameters = $cmdletType.GetProperties(('Instance', 'Public')) | Where-Object { $_.GetCustomAttributes([System.Management.Automation.ParameterAttribute], $true) } | Select-Object -ExpandProperty Name | Sort-Object
-    if ($parameters) {
-        $v += ($parameters | ForEach-Object { "^$_" })
-    }
-
-    $v |
-        Where-Object { $_ -match "^$([System.Text.RegularExpressions.Regex]::Escape($wordToComplete)).*" } |
-        ForEach-Object { New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_ }
-}
-
-$DDB_SelectMap = @{
-    "Select"=@("Get-DDBStream",
-               "Get-DDBStreamList",
                "Add-DDBIndexSchema",
                "Add-DDBKeySchema",
                "ConvertFrom-DDBItem",
